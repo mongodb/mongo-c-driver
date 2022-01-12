@@ -142,8 +142,8 @@ test_get_error (void)
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &error);
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, NULL);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'foo': 1}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
    mock_server_replies_simple (request,
                                "{'ok': 0, 'errmsg': 'foo', 'code': 42}");
    ASSERT (!future_get_bool (future));

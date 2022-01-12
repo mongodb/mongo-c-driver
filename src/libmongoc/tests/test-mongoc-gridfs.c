@@ -1408,6 +1408,7 @@ test_inherit_client_config (void)
    /* mock mongos: easiest way to test that read preference is configured */
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
 
    /* configure read / write concern and read prefs on client */
    client =
@@ -1429,12 +1430,13 @@ test_inherit_client_config (void)
 
    /* test read prefs and read concern */
    future = future_gridfs_find_one (gridfs, tmp_bson ("{}"), &error);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$query': {'find': 'fs.files', 'readConcern': {'level': 'majority'}},"
-      " '$readPreference': {'mode': 'secondary'}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'find': 'fs.files',"
+                " 'readConcern': {'level': 'majority'},"
+                " '$readPreference': {'mode': 'secondary'}}"));
 
    mock_server_replies_simple (
       request,
@@ -1449,19 +1451,21 @@ test_inherit_client_config (void)
    /* test write concern */
    future = future_gridfs_file_remove (file, &error);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_NONE,
-      "{'delete': 'fs.files', 'writeConcern': {'w': 2}}");
+      MONGOC_MSG_NONE,
+      tmp_bson (
+         "{'$db': 'db', 'delete': 'fs.files', 'writeConcern': {'w': 2}}"),
+      tmp_bson ("{'q': {'_id': 1}, 'limit': 1}"));
 
    mock_server_replies_ok_and_destroys (request);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_NONE,
-      "{'delete': 'fs.chunks', 'writeConcern': {'w': 2}}");
+      MONGOC_MSG_NONE,
+      tmp_bson (
+         "{'$db': 'db', 'delete': 'fs.chunks', 'writeConcern': {'w': 2}}"),
+      tmp_bson ("{'q': {'files_id': 1}, 'limit': 0}"));
 
    mock_server_replies_ok_and_destroys (request);
    ASSERT (future_get_bool (future));

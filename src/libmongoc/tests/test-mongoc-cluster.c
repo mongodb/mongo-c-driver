@@ -126,15 +126,17 @@ test_get_max_msg_size (void)
    } while (0)
 
 
-#define START_QUERY(client_port_variable)                                   \
-   do {                                                                     \
-      cursor = mongoc_collection_find_with_opts (                           \
-         collection, tmp_bson ("{}"), NULL, NULL);                          \
-      future = future_cursor_next (cursor, &doc);                           \
-      request = mock_server_receives_query (                                \
-         server, "test.test", MONGOC_QUERY_SECONDARY_OK, 0, 0, "{}", NULL); \
-      BSON_ASSERT (request);                                                \
-      client_port_variable = request_get_client_port (request);             \
+#define START_QUERY(client_port_variable)                             \
+   do {                                                               \
+      cursor = mongoc_collection_find_with_opts (                     \
+         collection, tmp_bson ("{}"), NULL, NULL);                    \
+      future = future_cursor_next (cursor, &doc);                     \
+      request = mock_server_receives_msg (                            \
+         server,                                                      \
+         MONGOC_MSG_NONE,                                             \
+         tmp_bson ("{'$db': 'test', 'find': 'test', 'filter': {}}")); \
+      BSON_ASSERT (request);                                          \
+      client_port_variable = request_get_client_port (request);       \
    } while (0)
 
 
@@ -172,6 +174,7 @@ _test_cluster_node_disconnect (bool pooled)
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
 
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
@@ -192,7 +195,12 @@ _test_cluster_node_disconnect (bool pooled)
    /* query 1 opens a new socket. set client_port_1 to the new port. */
    START_QUERY (client_port_1);
    ASSERT_CMPINT (client_port_1, !=, client_port_0);
-   mock_server_replies_simple (request, "{'a': 1}");
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "   'id': 0,"
+                               "   'ns': 'db.collection',"
+                               "   'firstBatch': [{'a': 1}]}}");
 
    /* success! */
    BSON_ASSERT (future_get_bool (future));
@@ -257,8 +265,8 @@ _test_cluster_command_timeout (bool pooled)
    /* server doesn't respond in time */
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
    client_port = request_get_client_port (request);
 
    ASSERT (!future_get_bool (future));
@@ -280,8 +288,8 @@ _test_cluster_command_timeout (bool pooled)
 
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'baz': 1}"), NULL, &reply, &error);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'baz': 1}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'baz': 1}"));
    ASSERT (request);
    /* new socket */
    ASSERT_CMPUINT16 (client_port, !=, request_get_client_port (request));
@@ -1403,7 +1411,7 @@ test_cluster_hello_hangup (void)
 }
 
 static void
-_test_cluster_command_error (bool use_op_msg)
+test_cluster_command_error (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -1411,11 +1419,7 @@ _test_cluster_command_error (bool use_op_msg)
    request_t *request;
    future_t *future;
 
-   if (use_op_msg) {
-      server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG);
-   } else {
-      server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
-   }
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1425,46 +1429,21 @@ _test_cluster_command_error (bool use_op_msg)
                                           NULL /* opts */,
                                           NULL /* read prefs */,
                                           &err);
-   if (use_op_msg) {
-      request = mock_server_receives_msg (
-         server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
-   } else {
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
-   }
+   request = mock_server_receives_msg (
+      server, MONGOC_QUERY_NONE, tmp_bson ("{'$db': 'db', 'ping': 1}"));
    mock_server_hangs_up (request);
    BSON_ASSERT (!future_get_bool (future));
    future_destroy (future);
    request_destroy (request);
-   if (use_op_msg) {
-      /* _mongoc_buffer_append_from_stream, used by opmsg gives more detail. */
-      ASSERT_ERROR_CONTAINS (err,
-                             MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_SOCKET,
-                             "Failed to send \"ping\" command with database "
-                             "\"db\": Failed to read 4 bytes: socket error or "
-                             "timeout");
-   } else {
-      ASSERT_ERROR_CONTAINS (err,
-                             MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_SOCKET,
-                             "Failed to send \"ping\" command with database "
-                             "\"db\": socket error or timeout");
-   }
+   /* _mongoc_buffer_append_from_stream, used by opmsg gives more detail. */
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_SOCKET,
+                          "Failed to send \"ping\" command with database "
+                          "\"db\": Failed to read 4 bytes: socket error or "
+                          "timeout");
    mock_server_destroy (server);
    mongoc_client_destroy (client);
-}
-
-static void
-test_cluster_command_error_op_msg (void)
-{
-   _test_cluster_command_error (true);
-}
-
-static void
-test_cluster_command_error_op_query (void)
-{
-   _test_cluster_command_error (false);
 }
 
 static void
@@ -1951,10 +1930,7 @@ test_cluster_install (TestSuite *suite)
       suite, "/Cluster/hello_hangup", test_cluster_hello_hangup);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/command_error/op_msg",
-                                test_cluster_command_error_op_msg);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cluster/command_error/op_query",
-                                test_cluster_command_error_op_query);
+                                test_cluster_command_error);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/hello_on_unknown/mock", test_hello_on_unknown);
    TestSuite_AddLive (suite,

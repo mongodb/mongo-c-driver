@@ -131,7 +131,7 @@ test_aggregate_inherit_collection (void)
                 " 'pipeline': [{'$out': 'collection2'}],"
                 " 'cursor': {},"
                 " 'readConcern': {'level': 'majority'},"
-                " 'writeConcern': {'$exists': false}}"));
+                " 'writeConcern': {'w': 2}}"));
 
    mock_server_replies_ok_and_destroys (request);
 
@@ -183,7 +183,7 @@ test_aggregate_inherit_collection (void)
                 " 'pipeline': [{'$out': 'collection2'}],"
                 " 'cursor': {},"
                 " 'readConcern': {'level': 'majority'},"
-                " 'writeConcern': {'$exists': false}}"));
+                " 'writeConcern': {'w': 2}}"));
 
    mock_server_replies_ok_and_destroys (request);
 
@@ -909,29 +909,6 @@ destroy_all (bson_t **ptr, int n)
 }
 
 
-/* verify an insert command's "documents" array has keys "0", "1", "2", ... */
-static void
-verify_keys (uint32_t n_documents, const bson_t *insert_command)
-{
-   bson_iter_t iter;
-   uint32_t len;
-   const uint8_t *data;
-   bson_t document;
-   char str[16];
-   const char *key;
-   uint32_t i;
-
-   ASSERT (bson_iter_init_find (&iter, insert_command, "documents"));
-   bson_iter_array (&iter, &len, &data);
-   ASSERT (bson_init_static (&document, data, len));
-
-   for (i = 0; i < n_documents; i++) {
-      bson_uint32_to_string (i, &key, str, sizeof str);
-      ASSERT (bson_has_field (&document, key));
-   }
-}
-
-
 /* CDRIVER-845: "insert" command must have array keys "0", "1", "2", ... */
 static void
 test_insert_command_keys (void)
@@ -962,17 +939,20 @@ test_insert_command_keys (void)
    }
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
-   request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_NONE, "{'insert': 'test'}");
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test', 'insert': 'test'}"),
+                                tmp_bson ("{'_id': 0}"),
+                                tmp_bson ("{'_id': 1}"),
+                                tmp_bson ("{'_id': 2}"));
 
-   verify_keys (3, request_get_doc (request, 0));
-   mock_server_replies_simple (request, "{'ok': 1}");
+   mock_server_replies_ok_and_destroys (request);
 
    ASSERT_OR_PRINT (future_get_uint32_t (future), error);
 
    bson_destroy (&reply);
    future_destroy (future);
-   request_destroy (request);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -2039,6 +2019,7 @@ test_count_read_pref (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -2047,12 +2028,12 @@ test_count_read_pref (void)
    mongoc_collection_set_read_prefs (collection, prefs);
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$query': {'count': 'collection'},"
-      " '$readPreference': {'mode': 'secondary'}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'count': 'collection',"
+                " '$readPreference': {'mode': 'secondary'}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -2330,6 +2311,7 @@ test_count_with_opts (void)
    /* use a mongos since we don't send SECONDARY_OK to mongos by default */
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -2343,10 +2325,10 @@ test_count_with_opts (void)
                                                NULL,
                                                &error);
 
-   request = mock_server_receives_command (server,
-                                           "db",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{'count': 'collection', 'opt': 1}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'count': 'collection', 'opt': 1}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -2985,7 +2967,7 @@ test_aggregate_modern (void *data)
       return;
    }
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -3000,17 +2982,16 @@ test_aggregate_modern (void *data)
    ASSERT (cursor);
    future = future_cursor_next (cursor, &doc);
 
-
-   /* "cursor" argument always sent if wire version >= 1 */
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'aggregate': 'collection',"
-      " 'pipeline': [{'a': 1}],"
-      " 'cursor': %s %s}",
-      context->with_batch_size ? "{'batchSize': 11}" : "{'$empty': true}",
-      context->with_options ? ", 'foo': 1" : "");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [{'a': 1}],"
+                " 'cursor': %s %s}",
+                context->with_batch_size ? "{'batchSize': 11}"
+                                         : "{'$empty': true}",
+                context->with_options ? ", 'foo': 1" : ""));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -3028,22 +3009,22 @@ test_aggregate_modern (void *data)
 
    /* create a second batch to see if batch size is still 11 */
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'getMore': 42,"
-      "'collection': 'collection',"
-      "'batchSize': %s}",
-      context->with_batch_size ? "11" : "{'$exists': false}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'getMore': {'$numberLong': '42'},"
+                "'collection': 'collection',"
+                "'batchSize': %s}",
+                context->with_batch_size ? "{'$numberLong': '11'}"
+                                         : "{'$exists': false}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
-                               "'cursor': {"
-                               "'id': 0,"
-                               "'ns': 'db.collection',"
-                               "'nextBatch': [{'_id': 123}]"
-                               "}}");
+                               " 'cursor': {"
+                               "   'id': 0,"
+                               "   'ns': 'db.collection',"
+                               "   'nextBatch': [{'_id': 123}]}}");
 
    ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
@@ -3087,12 +3068,13 @@ test_aggregate_w_server_id (void)
       collection, MONGOC_QUERY_NONE, tmp_bson (NULL), opts, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_command (rs,
-                                       "db",
-                                       MONGOC_QUERY_SECONDARY_OK,
-                                       "{'aggregate': 'collection',"
-                                       " 'cursor': {},"
-                                       " 'serverId': {'$exists': false}}");
+   request =
+      mock_rs_receives_msg (rs,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'$db': 'db',"
+                                      " 'aggregate': 'collection',"
+                                      " 'cursor': {},"
+                                      " 'serverId': {'$exists': false}}"));
 
    ASSERT (mock_rs_request_is_to_secondary (rs, request));
    mock_rs_replies_simple (request,
@@ -3125,6 +3107,7 @@ test_aggregate_w_server_id_sharded (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -3136,11 +3119,12 @@ test_aggregate_w_server_id_sharded (void)
    future = future_cursor_next (cursor, &doc);
 
    /* does NOT set secondaryOk, since this is a sharded topology */
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_NONE,
-      "{'aggregate': 'collection', 'serverId': {'$exists': false}}");
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " 'aggregate': 'collection',"
+                                          " 'serverId': {'$exists': false}}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -3484,18 +3468,19 @@ test_stats_read_pref (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_collection_set_read_prefs (collection, prefs);
    future = future_collection_stats (collection, NULL, &stats, &error);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$query': {'collStats': 'collection'},"
-      " '$readPreference': {'mode': 'secondary'}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'collStats': 'collection',"
+                " '$readPreference': {'mode': 'secondary'}}"));
 
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -3972,15 +3957,17 @@ test_find_limit (void)
                                     NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_SECONDARY_OK,
-                                         0 /* skip */,
-                                         2 /* n_return */,
-                                         "{}",
-                                         NULL);
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test',"
+                                          " 'find': 'test',"
+                                          " 'filter': {},"
+                                          " 'limit': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (request, "{}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -3994,15 +3981,17 @@ test_find_limit (void)
       NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_SECONDARY_OK,
-                                         0 /* skip */,
-                                         2 /* n_return */,
-                                         "{}",
-                                         NULL);
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test',"
+                                          " 'find': 'test',"
+                                          " 'filter': {},"
+                                          " 'limit': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (request, "{}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -4044,15 +4033,17 @@ test_find_batch_size (void)
                                     NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_SECONDARY_OK,
-                                         0 /* skip */,
-                                         2 /* n_return */,
-                                         "{}",
-                                         NULL);
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'find': 'test',"
+                " 'filter': {},"
+                " 'batchSize': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (request, "{}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -4066,15 +4057,17 @@ test_find_batch_size (void)
       NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_SECONDARY_OK,
-                                         0 /* skip */,
-                                         2 /* n_return */,
-                                         "{}",
-                                         NULL);
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'find': 'test',"
+                " 'filter': {},"
+                " 'batchSize': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (request, "{}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -4318,8 +4311,10 @@ test_find_indexes_err (void)
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    future = future_collection_find_indexes_with_opts (collection, NULL);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'listIndexes': 'collection'}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'listIndexes': 'collection'}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 0, 'code': 1234567, 'errmsg': 'foo'}");
@@ -4645,6 +4640,7 @@ test_aggregate_secondary_sharded (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -4654,12 +4650,13 @@ test_aggregate_secondary_sharded (void)
 
    ASSERT (cursor);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$query': {'aggregate': 'collection', 'pipeline': []},"
-      " '$readPreference': {'mode': 'secondary'}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [],"
+                " '$readPreference': {'mode': 'secondary'}}"));
 
    mock_server_replies_simple (request,
                                "{ 'ok':1,"

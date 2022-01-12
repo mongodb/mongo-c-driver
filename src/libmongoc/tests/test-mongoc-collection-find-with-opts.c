@@ -18,8 +18,6 @@ typedef struct {
    bson_t *opts_bson;
    mongoc_read_prefs_t *read_prefs;
    const char *expected_find_command;
-   const char *expected_op_query;
-   const char *expected_op_query_projection;
    int32_t expected_n_return;
    mongoc_query_flags_t expected_flags;
    uint32_t expected_skip;
@@ -92,10 +90,8 @@ _check_find_command (mock_server_t *server,
     * Find, getMore And killCursors Commands Spec: "When sending a find command
     * rather than a legacy OP_QUERY find only the secondaryOk flag is honored".
     */
-   return mock_server_receives_command (server,
-                                        "db",
-                                        MONGOC_QUERY_SECONDARY_OK,
-                                        test_data->expected_find_command);
+   return mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson (test_data->expected_find_command));
 }
 
 
@@ -131,7 +127,6 @@ test_dollar_or (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.filter = "{'$or': [{'_id': 1}]}";
-   test_data.expected_op_query = " {'$or': [{'_id': 1}]}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'$or': [{'_id': 1}]}}";
 
@@ -150,8 +145,6 @@ test_snapshot_dollar_or (void)
 
    test_data.filter = "{'$or': [{'_id': 1}]}";
    test_data.opts = "{'snapshot': true}";
-   test_data.expected_op_query =
-      "{'$query': {'$or': [{'_id': 1}]}, '$snapshot': true}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'$or': [{'_id': 1}]},"
       " 'snapshot': true}";
@@ -167,7 +160,6 @@ test_key_named_filter (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.filter = "{'filter': 2}";
-   test_data.expected_op_query = " {'filter': 2}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'filter': 2}}";
    _test_collection_find_with_opts (&test_data);
@@ -181,7 +173,6 @@ test_op_query_subdoc_named_filter (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.filter = "{'filter': {'i': 2}}";
-   test_data.expected_op_query = " {'filter': {'i': 2}}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'filter': {'i': 2}}}";
    _test_collection_find_with_opts (&test_data);
@@ -199,8 +190,6 @@ test_find_cmd_subdoc_named_filter_with_option (void)
 
    test_data.filter = "{'filter': {'i': 2}}";
    test_data.opts = "{'snapshot': true}";
-   test_data.expected_op_query =
-      "{'$query': {'filter': {'i': 2}}, '$snapshot': true}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'filter': {'i': 2}}, "
       " 'snapshot': true}";
@@ -216,7 +205,6 @@ test_newoption (void)
 
    test_data.filter = "{'_id': 1}";
    test_data.opts = "{'newOption': true}";
-   test_data.expected_op_query = "{'$query': {'_id': 1}, '$newOption': true}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'_id': 1}, 'newOption': true}";
 
@@ -230,7 +218,6 @@ test_sort (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.opts = "{'sort': {'_id': -1}}";
-   test_data.expected_op_query = "{'$query': {}, '$orderby': {'_id': -1}}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {}, 'sort': {'_id': -1}}";
    _test_collection_find_with_opts (&test_data);
@@ -243,7 +230,6 @@ test_fields (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.opts = "{'projection': {'_id': 0, 'b': 1}}";
-   test_data.expected_op_query_projection = "{'_id': 0, 'b': 1}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {}, 'projection': {'_id': 0, 'b': 1}}";
    _test_collection_find_with_opts (&test_data);
@@ -256,7 +242,6 @@ test_slice (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.opts = "{'projection': {'array': {'$slice': 10}}}";
-   test_data.expected_op_query_projection = "{'array': {'$slice': 10}}";
    test_data.expected_find_command =
       "{'find': 'collection', "
       " 'filter': {},"
@@ -276,16 +261,12 @@ test_int_modifiers (void)
    const char *mod;
    size_t i;
    char *opts;
-   char *query;
    char *find_command;
    test_collection_find_with_opts_t test_data = {0};
 
    for (i = 0; i < sizeof (modifiers) / sizeof (const char *); i++) {
       mod = modifiers[i];
       opts = bson_strdup_printf ("{'%s': {'$numberLong': '9999'}}", mod);
-      query = bson_strdup_printf ("{'$query': {},"
-                                  " '$%s': {'$numberLong': '9999'}}",
-                                  mod);
 
       /* find command has same modifier, without the $-prefix */
       find_command = bson_strdup_printf ("{'find': 'collection', 'filter': {},"
@@ -293,12 +274,10 @@ test_int_modifiers (void)
                                          mod);
 
       test_data.opts = opts;
-      test_data.expected_op_query = query;
       test_data.expected_find_command = find_command;
       _test_collection_find_with_opts (&test_data);
 
       bson_free (opts);
-      bson_free (query);
       bson_free (find_command);
    }
 }
@@ -316,27 +295,22 @@ test_index_spec_modifiers (void)
    const char *mod;
    size_t i;
    char *opts;
-   char *query;
    char *find_command;
    test_collection_find_with_opts_t test_data = {0};
 
    for (i = 0; i < sizeof (modifiers) / sizeof (const char *); i++) {
       mod = modifiers[i];
       opts = bson_strdup_printf ("{'%s': {'_id': 1}}", mod);
-      /* OP_QUERY modifiers use $-prefix: $hint, $min, $max */
-      query = bson_strdup_printf ("{'$query': {}, '$%s': {'_id': 1}}", mod);
 
       /* find command options have no $-prefix: hint, min, max */
       find_command = bson_strdup_printf (
          "{'find': 'collection', 'filter': {}, '%s': {'_id': 1}}", mod);
 
       test_data.opts = opts;
-      test_data.expected_op_query = query;
       test_data.expected_find_command = find_command;
       _test_collection_find_with_opts (&test_data);
 
       bson_free (opts);
-      bson_free (query);
       bson_free (find_command);
    }
 }
@@ -348,7 +322,6 @@ test_comment (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.opts = "{'comment': 'COMMENT'}";
-   test_data.expected_op_query = "{'$query': {}, '$comment': 'COMMENT'}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {}, 'comment': 'COMMENT'}";
    _test_collection_find_with_opts (&test_data);
@@ -361,7 +334,6 @@ test_snapshot (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.opts = "{'snapshot': true}";
-   test_data.expected_op_query = "{'$query': {}, '$snapshot': true}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {}, 'snapshot': true}";
    _test_collection_find_with_opts (&test_data);
@@ -375,7 +347,6 @@ test_diskloc (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.opts = "{'showRecordId': true}";
-   test_data.expected_op_query = "{'$query': {}, '$showDiskLoc': true}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {}, 'showRecordId': true}";
    _test_collection_find_with_opts (&test_data);
@@ -388,7 +359,6 @@ test_returnkey (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.opts = "{'returnKey': true}";
-   test_data.expected_op_query = "{'$query': {}, '$returnKey': true}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {}, 'returnKey': true}";
    _test_collection_find_with_opts (&test_data);
@@ -469,7 +439,6 @@ test_unrecognized_dollar_option (void)
    test_collection_find_with_opts_t test_data = {0};
 
    test_data.opts = "{'dumb': 1}";
-   test_data.expected_op_query = "{'$query': {}, '$dumb': 1}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {}, 'dumb': 1}";
 
@@ -673,11 +642,20 @@ test_find_w_server_id (void)
       collection, tmp_bson (NULL), opts, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_query (
-      rs, "db.collection", MONGOC_QUERY_SECONDARY_OK, 0, 0, "{}", NULL);
+   request = mock_rs_receives_msg (
+      rs,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'find': 'collection',"
+                " 'filter': {},"
+                " '$readPreference': {'mode': 'primaryPreferred'}}"));
 
    ASSERT (mock_rs_request_is_to_secondary (rs, request));
-   mock_rs_replies_simple (request, "{}");
+   mock_rs_replies_simple (request,
+                           "{'ok': 1,"
+                           " 'cursor': {"
+                           "   'ns': 'db.collection',"
+                           "   'firstBatch': [{}]}}");
    ASSERT_OR_PRINT (future_get_bool (future), cursor->error);
 
    future_destroy (future);
@@ -762,6 +740,7 @@ test_find_w_server_id_sharded (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -773,10 +752,20 @@ test_find_w_server_id_sharded (void)
    future = future_cursor_next (cursor, &doc);
 
    /* does NOT set secondaryOk, since this is a sharded topology */
-   request = mock_server_receives_query (
-      server, "db.collection", MONGOC_QUERY_NONE, 0, 0, "{}", NULL);
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'find': 'collection',"
+                " 'filter': {},"
+                " '$readPreference': {'$exists': false}}"));
 
-   mock_server_replies_simple (request, "{}");
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': 0,"
+                               "    'ns': 'db.collection',"
+                               "    'firstBatch': [{}]}}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    future_destroy (future);

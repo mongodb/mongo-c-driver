@@ -69,10 +69,10 @@ test_mongoc_client_max_staleness (void)
    ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=120",
                         MONGOC_LOG_LEVEL_WARNING,
                         "Invalid readPreferences");
-
-   capture_logs (true);
+   capture_logs (false);
 
    /* zero is prohibited */
+   capture_logs (true);
    client = test_framework_client_new (
       "mongodb://a/?" MONGOC_URI_READPREFERENCE
       "=nearest&" MONGOC_URI_MAXSTALENESSSECONDS "=0",
@@ -82,6 +82,7 @@ test_mongoc_client_max_staleness (void)
       MONGOC_URI_MAXSTALENESSSECONDS "=0",
       MONGOC_LOG_LEVEL_WARNING,
       "Unsupported value for \"" MONGOC_URI_MAXSTALENESSSECONDS "\": \"0\"");
+   capture_logs (false);
 
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
@@ -104,6 +105,7 @@ test_mongoc_client_max_staleness (void)
    ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=10.5",
                         MONGOC_LOG_LEVEL_WARNING,
                         "Invalid " MONGOC_URI_MAXSTALENESSSECONDS);
+   capture_logs (false);
 
    /* 1 is allowed, it'll be rejected once we begin server selection */
    client = test_framework_client_new (
@@ -129,22 +131,23 @@ test_mongos_max_staleness_read_pref (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
-   /* count command with mode "secondary", no " MONGOC_URI_MAXSTALENESSSECONDS "
-    */
+   /* count command with mode "secondary", no MONGOC_URI_MAXSTALENESSSECONDS. */
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_collection_set_read_prefs (collection, prefs);
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$" MONGOC_URI_READPREFERENCE "': {'mode': 'secondary', "
-      "                     'maxStalenessSeconds': {'$exists': false}}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " '$readPreference': {"
+                "   'mode': 'secondary',"
+                "   'maxStalenessSeconds': {'$exists': false}}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -152,21 +155,21 @@ test_mongos_max_staleness_read_pref (void)
    request_destroy (request);
    future_destroy (future);
 
-   /* count command with mode "secondary". " MONGOC_URI_MAXSTALENESSSECONDS "=1
-    * is allowed by
-    * client, although in real life mongos will reject it */
+   /* count command with mode "secondary". MONGOC_URI_MAXSTALENESSSECONDS=1 is
+    * allowed by client, although in real life mongos will reject it */
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 1);
    mongoc_collection_set_read_prefs (collection, prefs);
 
    mongoc_collection_set_read_prefs (collection, prefs);
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$readPreference': {'mode': 'secondary', 'maxStalenessSeconds': 1}}",
-      NULL);
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " '$readPreference': {"
+                "   'mode': 'secondary',"
+                "   'maxStalenessSeconds': {'$numberLong': '1'}}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -174,20 +177,19 @@ test_mongos_max_staleness_read_pref (void)
    request_destroy (request);
    future_destroy (future);
 
-   /* with readPreference mode secondaryPreferred and no maxStalenessSeconds,
-    * readPreference MUST NOT be sent. */
+   /* For all read preference modes that are not 'primary', drivers MUST set
+    * readPreference. */
    mongoc_read_prefs_set_mode (prefs, MONGOC_READ_SECONDARY_PREFERRED);
    mongoc_read_prefs_set_max_staleness_seconds (prefs, MONGOC_NO_MAX_STALENESS);
    mongoc_collection_set_read_prefs (collection, prefs);
 
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{'$readPreference': {'$exists': false}}",
-                                    NULL);
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson (
+         "{'$db': 'db', '$readPreference': {'mode': 'secondaryPreferred'}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -195,21 +197,20 @@ test_mongos_max_staleness_read_pref (void)
    request_destroy (request);
    future_destroy (future);
 
-   /* CDRIVER-3633:
-    * with readPreference mode secondaryPreferred and maxStalenessSeconds set,
-    * readPreference MUST be sent. */
+   /* CDRIVER-3633: with readPreference mode secondaryPreferred and
+    * maxStalenessSeconds set, readPreference MUST be sent. */
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 1);
    mongoc_collection_set_read_prefs (collection, prefs);
 
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$readPreference': "
-      " {'mode': 'secondaryPreferred', 'maxStalenessSeconds': 1}}",
-      NULL);
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " '$readPreference': {"
+                "   'mode': 'secondaryPreferred',"
+                "   'maxStalenessSeconds': {'$numberLong': '1'}}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);

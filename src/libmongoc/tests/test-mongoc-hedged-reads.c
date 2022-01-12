@@ -22,6 +22,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future-functions.h"
 #include "test-libmongoc.h"
+#include "test-conveniences.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test-hedged-reads"
@@ -41,24 +42,24 @@ test_mongos_hedged_reads_read_pref (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
-   /* with readPreference mode secondaryPreferred and no hedge, readPreference
-    * MUST NOT be sent. */
+   /* For all read preference modes that are not 'primary', drivers MUST set
+    * readPreference. */
    mongoc_collection_set_read_prefs (collection, prefs);
 
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{'$readPreference': { '$exists': false }}",
-                                    NULL);
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " '$readPreference': {'mode': 'secondaryPreferred'}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -75,13 +76,13 @@ test_mongos_hedged_reads_read_pref (void)
 
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$readPreference': "
-      " {'mode': 'secondaryPreferred', 'hedge': {'enabled': true}}}",
-      NULL);
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " '$readPreference': {"
+                                          "   'mode': 'secondaryPreferred',"
+                                          "   'hedge': {'enabled': true}}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);

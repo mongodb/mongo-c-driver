@@ -390,6 +390,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
    /* mock mongos: easiest way to test that read preference is configured */
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
 
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (
@@ -409,8 +410,8 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       /* simple, without read preference */
       future = future_database_command_simple (db, cmd, NULL, NULL, &error);
 
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+      request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
 
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -421,12 +422,12 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       future =
          future_database_command_simple (db, cmd, secondary_pref, NULL, &error);
 
-      request = mock_server_receives_command (
+      request = mock_server_receives_msg (
          server,
-         "db",
-         MONGOC_QUERY_SECONDARY_OK,
-         "{'$query': {'foo': 1},"
-         " '$readPreference': {'mode': 'secondary'}}");
+         MONGOC_MSG_NONE,
+         tmp_bson ("{'$db': 'db',"
+                   " 'foo': 1,"
+                   " '$readPreference': {'mode': 'secondary'}}"));
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT_OR_PRINT (future_get_bool (future), error);
       future_destroy (future);
@@ -436,8 +437,8 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       cursor = mongoc_database_command (
          db, MONGOC_QUERY_NONE, 0, 0, 0, cmd, NULL, NULL);
       future = future_cursor_next (cursor, &reply);
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+      request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
 
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT (future_get_bool (future));
@@ -449,12 +450,12 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       cursor = mongoc_database_command (
          db, MONGOC_QUERY_NONE, 0, 0, 0, cmd, NULL, secondary_pref);
       future = future_cursor_next (cursor, &reply);
-      request = mock_server_receives_command (
+      request = mock_server_receives_msg (
          server,
-         "db",
-         MONGOC_QUERY_SECONDARY_OK,
-         "{'$query': {'foo': 1},"
-         " '$readPreference': {'mode': 'secondary'}}");
+         MONGOC_MSG_NONE,
+         tmp_bson ("{'$db': 'db',"
+                   " 'foo': 1,"
+                   " '$readPreference': {'mode': 'secondary'}}"));
 
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT (future_get_bool (future));

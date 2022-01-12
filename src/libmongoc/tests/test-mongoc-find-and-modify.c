@@ -367,11 +367,13 @@ test_find_and_modify_opts (void)
 
    future = future_collection_find_and_modify_with_opts (
       collection, tmp_bson ("{}"), opts, NULL, &error);
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_NONE,
-      "{'findAndModify': 'collection', 'maxTimeMS': 42, 'foo': 1}");
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " 'findAndModify': 'collection',"
+                                          " 'maxTimeMS': 42,"
+                                          " 'foo': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 

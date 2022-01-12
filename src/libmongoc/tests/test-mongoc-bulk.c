@@ -319,25 +319,33 @@ test_bulk_error_unordered (void)
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   request =
-      mock_server_receives_command (mock_server,
-                                    "test",
-                                    MONGOC_QUERY_NONE,
-                                    "{'update': 'test',"
-                                    " 'writeConcern': {'$exists': false},"
-                                    " 'ordered': false}",
-                                    NULL);
+   request = mock_server_receives_bulk_msg (
+      mock_server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'update': 'test',"
+                " 'writeConcern': {'$exists': false},"
+                " 'ordered': false}"),
+      tmp_bson ("{'q': {'hello': 'earth'},"
+                " 'u': {'$set': {'hello': 'world'}},"
+                " 'upsert': false,"
+                " 'multi': true}"),
+      1001);
    mock_server_replies_simple (request, "{ 'ok' : 1, 'n' : 5 }");
 
    request_destroy (request);
-   request =
-      mock_server_receives_command (mock_server,
-                                    "test",
-                                    MONGOC_QUERY_NONE,
-                                    "{'update': 'test',"
-                                    " 'writeConcern': {'$exists': false},"
-                                    " 'ordered': false}",
-                                    NULL);
+   request = mock_server_receives_bulk_msg (
+      mock_server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'update': 'test',"
+                " 'writeConcern': {'$exists': false},"
+                " 'ordered': false}"),
+      tmp_bson ("{'q': {'hello': 'earth'},"
+                " 'u': {'$set': {'hello': 'world'}},"
+                " 'upsert': false,"
+                " 'multi': true}"),
+      1001);
 
    request_destroy (request);
    mock_server_destroy (mock_server);
@@ -2753,15 +2761,15 @@ _test_write_concern (bool ordered, bool multi_err)
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       mock_server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{'insert': 'test',"
-      " 'writeConcern': {'w': 2, 'wtimeout': 100},"
-      " 'ordered': %s,"
-      " 'documents': [{'_id': 1}]}",
-      ordered ? "true" : "false");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'insert': 'test',"
+                " 'writeConcern': {'w': 2, 'wtimeout': {'$numberLong': '100'}},"
+                " 'ordered': %s}",
+                ordered ? "true" : "false"),
+      tmp_bson ("{'_id': 1}"));
 
    BSON_ASSERT (request);
    mock_server_replies_simple (
@@ -2770,15 +2778,15 @@ _test_write_concern (bool ordered, bool multi_err)
       " 'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
 
    request_destroy (request);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       mock_server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{'delete': 'test',"
-      " 'writeConcern': {'w': 2, 'wtimeout': 100},"
-      " 'ordered': %s,"
-      " 'deletes': [{'q': {'_id': 2}, 'limit': 0}]}",
-      ordered ? "true" : "false");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'delete': 'test',"
+                " 'writeConcern': {'w': 2, 'wtimeout': {'$numberLong': '100'}},"
+                " 'ordered': %s}",
+                ordered ? "true" : "false"),
+      tmp_bson ("{'q': {'_id': 2}, 'limit': 0}"));
 
    if (multi_err) {
       mock_server_replies_simple (
@@ -2966,8 +2974,11 @@ _test_write_concern_err_api (int32_t error_api_version)
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   request = mock_server_receives_command (
-      mock_server, "test", MONGOC_QUERY_NONE, NULL);
+   request =
+      mock_server_receives_msg (mock_server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test', 'insert': 'test'}"),
+                                tmp_bson ("{'_id': 1}"));
 
    mock_server_replies_simple (
       request,
@@ -3103,13 +3114,14 @@ _test_wtimeout_plus_duplicate_key_err (void)
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
    request =
-      mock_server_receives_command (mock_server,
-                                    "test",
-                                    MONGOC_QUERY_NONE,
-                                    "{'insert': 'test',"
-                                    " 'writeConcern': {'$exists': false},"
-                                    " 'ordered': false,"
-                                    " 'documents': [{'_id': 1}, {'_id': 2}]}");
+      mock_server_receives_msg (mock_server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test',"
+                                          " 'insert': 'test',"
+                                          " 'writeConcern': {'$exists': false},"
+                                          " 'ordered': false}"),
+                                tmp_bson ("{'_id': 1}"),
+                                tmp_bson ("{'_id': 2}"));
 
    BSON_ASSERT (request);
    mock_server_replies (
@@ -3123,14 +3135,14 @@ _test_wtimeout_plus_duplicate_key_err (void)
       " 'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
 
    request_destroy (request);
-   request = mock_server_receives_command (
-      mock_server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{'delete': 'test',"
-      " 'writeConcern': {'$exists': false},"
-      " 'ordered': false,"
-      " 'deletes': [{'q': {'_id': 3}, 'limit': 0}]}");
+   request =
+      mock_server_receives_msg (mock_server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test',"
+                                          " 'delete': 'test',"
+                                          " 'writeConcern': {'$exists': false},"
+                                          " 'ordered': false}"),
+                                tmp_bson ("{'q': {'_id': 3}, 'limit': 0}"));
 
    BSON_ASSERT (request);
    mock_server_replies (request,
@@ -4120,8 +4132,11 @@ _test_bulk_hint (bool pooled, bool use_primary)
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   request = mock_rs_receives_command (
-      rs, "test", MONGOC_QUERY_NONE, "{'insert': 'test'}");
+   request =
+      mock_rs_receives_msg (rs,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'$db': 'test', 'insert': 'test'}"),
+                            tmp_bson ("{'_id': 1}"));
 
    BSON_ASSERT (request);
    mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");

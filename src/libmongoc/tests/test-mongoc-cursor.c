@@ -775,13 +775,8 @@ _test_kill_cursors (bool pooled)
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_request (rs);
 
-   mock_rs_replies_to_find (request,
-                            MONGOC_QUERY_SECONDARY_OK,
-                            123,
-                            1,
-                            "db.collection",
-                            "{'b': 1}",
-                            true);
+   mock_rs_replies_to_find (
+      request, MONGOC_QUERY_NONE, 123, 1, "db.collection", "{'b': 1}", true);
 
    if (!future_get_bool (future)) {
       mongoc_cursor_error (cursor, &error);
@@ -796,7 +791,11 @@ _test_kill_cursors (bool pooled)
    future = future_cursor_destroy (cursor);
 
    kill_cursors =
-      mock_rs_receives_command (rs, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+      mock_rs_receives_msg (rs,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'$db': 'db',"
+                                      " 'killCursors': 'collection',"
+                                      " 'cursors': [{'$numberLong': '123'}]}"));
 
    /* mock server framework can't test "cursors" array, CDRIVER-994 */
    ASSERT (BCON_EXTRACT ((bson_t *) request_get_doc (kill_cursors, 0),
@@ -827,8 +826,10 @@ _test_kill_cursors (bool pooled)
    bson_destroy (q);
 
    if (pooled) {
+      capture_logs (true);
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
+      capture_logs (false);
    } else {
       mongoc_client_destroy (client);
    }
@@ -874,8 +875,12 @@ _test_client_kill_cursor (bool has_primary)
    future = future_client_command_simple (
       client, "admin", tmp_bson ("{'foo': 1}"), read_prefs, NULL, &error);
 
-   request =
-      mock_rs_receives_command (rs, "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_rs_receives_msg (
+      rs,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'admin',"
+                " '$readPreference': {'mode': 'secondary'},"
+                " 'foo': 1}"));
 
    mock_rs_replies_simple (request, "{'ok': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -1432,7 +1437,6 @@ _test_cursor_hint (bool pooled, bool use_primary)
    bson_t *q = BCON_NEW ("a", BCON_INT32 (1));
    mongoc_cursor_t *cursor;
    uint32_t server_id;
-   mongoc_query_flags_t expected_flags;
    const bson_t *doc = NULL;
    future_t *future;
    request_t *request;
@@ -1457,18 +1461,18 @@ _test_cursor_hint (bool pooled, bool use_primary)
 
    if (use_primary) {
       server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
-      expected_flags = MONGOC_QUERY_NONE;
    } else {
       server_id = server_id_for_read_mode (client, MONGOC_READ_SECONDARY);
-      expected_flags = MONGOC_QUERY_SECONDARY_OK;
    }
 
    ASSERT (mongoc_cursor_set_hint (cursor, server_id));
    ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cursor));
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_query (
-      rs, "test.test", expected_flags, 0, 0, "{'a': 1}", NULL);
+   request = mock_rs_receives_msg (
+      rs,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test', 'find': 'test', 'filter': {'a': 1}}"));
 
    if (use_primary) {
       BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
@@ -1476,7 +1480,8 @@ _test_cursor_hint (bool pooled, bool use_primary)
       BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
    }
 
-   mock_rs_replies (request, 0, 0, 0, 1, "{'b': 1}");
+   mock_rs_replies_to_find (
+      request, MONGOC_QUERY_NONE, 0, 1, "test.test", "{'b': 1}", true);
    BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'b': 1}");
 
@@ -1486,8 +1491,10 @@ _test_cursor_hint (bool pooled, bool use_primary)
    mongoc_collection_destroy (collection);
 
    if (pooled) {
+      capture_logs (true);
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
+      capture_logs (false);
    } else {
       mongoc_client_destroy (client);
    }
@@ -1553,6 +1560,7 @@ test_cursor_hint_mongos (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -1568,10 +1576,17 @@ test_cursor_hint_mongos (void)
 
       future = future_cursor_next (cursor, &doc);
 
-      request = mock_server_receives_query (
-         server, "test.test", expected_flag[i], 0, 0, "{}", NULL);
+      request = mock_server_receives_msg (
+         server,
+         MONGOC_MSG_NONE,
+         tmp_bson ("{'$db': 'test', 'find': 'test', 'filter': {}}"));
 
-      mock_server_replies_simple (request, "{}");
+      mock_server_replies_simple (request,
+                                  "{'ok':1,"
+                                  " 'cursor': {"
+                                  "   'id': 0,"
+                                  "   'ns': 'test.test',"
+                                  "   'firstBatch': [{}]}}");
       BSON_ASSERT (future_get_bool (future));
 
       request_destroy (request);
@@ -1617,9 +1632,7 @@ test_cursor_hint_mongos_cmd (void)
       future = future_cursor_next (cursor, &doc);
 
       request = mock_server_receives_msg (
-         server,
-         MONGOC_MSG_NONE,
-         tmp_bson ("{'$db': 'test', 'find': 'test', 'filter': {}}"));
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'test', 'find': 'test'}"));
 
       mock_server_replies_simple (request,
                                   "{'ok': 1,"
