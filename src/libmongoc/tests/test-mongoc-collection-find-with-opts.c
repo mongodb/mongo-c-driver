@@ -46,8 +46,7 @@ static void
 _test_collection_op_query_or_find_command (
    test_collection_find_with_opts_t *test_data,
    check_request_fn_t check_request_fn,
-   const char *reply_json,
-   int32_t max_wire_version)
+   const char *reply_json)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -58,7 +57,7 @@ _test_collection_op_query_or_find_command (
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_auto_hello (max_wire_version);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -81,56 +80,6 @@ _test_collection_op_query_or_find_command (
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
-}
-
-
-static request_t *
-_check_op_query (mock_server_t *server,
-                 test_collection_find_with_opts_t *test_data)
-{
-   mongoc_query_flags_t flags;
-   request_t *request;
-   const bson_t *doc;
-   bson_iter_t iter;
-   uint32_t len;
-   const uint8_t *data;
-   bson_t query;
-
-   /* Server Selection Spec: all queries to standalone set secondaryOk. */
-   flags = test_data->expected_flags | MONGOC_QUERY_SECONDARY_OK;
-
-   request =
-      mock_server_receives_query (server,
-                                  "db.collection",
-                                  flags,
-                                  test_data->expected_skip,
-                                  test_data->expected_n_return,
-                                  test_data->expected_op_query,
-                                  test_data->expected_op_query_projection);
-
-   ASSERT (request);
-
-   /* check that nothing unexpected is in $query */
-   if (bson_empty (test_data->filter_bson)) {
-      doc = request_get_doc (request, 0);
-
-      if (bson_iter_init_find (&iter, doc, "$query")) {
-         ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
-         bson_iter_document (&iter, &len, &data);
-         bson_init_static (&query, data, (size_t) len);
-         ASSERT (bson_empty (&query));
-      }
-   }
-
-   return request;
-}
-
-
-static void
-_test_collection_op_query (test_collection_find_with_opts_t *test_data)
-{
-   _test_collection_op_query_or_find_command (
-      test_data, _check_op_query, "{}", 3 /* wire version */);
 }
 
 
@@ -160,8 +109,7 @@ _test_collection_find_command (test_collection_find_with_opts_t *test_data)
                                               " 'cursor': {"
                                               "    'id': 0,"
                                               "    'ns': 'db.collection',"
-                                              "    'firstBatch': [{}]}}",
-                                              4 /* max wire version */);
+                                              "    'firstBatch': [{}]}}");
 }
 
 
@@ -173,7 +121,6 @@ _test_collection_find_with_opts (test_collection_find_with_opts_t *test_data)
    test_data->filter_bson = tmp_bson (test_data->filter);
    test_data->opts_bson = tmp_bson (test_data->opts);
 
-   _test_collection_op_query (test_data);
    _test_collection_find_command (test_data);
 }
 

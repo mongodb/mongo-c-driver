@@ -112,7 +112,7 @@ test_change_stream_pipeline (void)
    bson_t *nonempty_pipeline =
       tmp_bson ("{ 'pipeline' : [ { '$project' : { 'ns': false } } ] }");
 
-   server = mock_server_with_auto_hello (5);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -614,7 +614,7 @@ _test_getmore_error (const char *server_reply,
    mongoc_change_stream_t *stream;
    const bson_t *next_doc = NULL;
 
-   server = mock_server_with_auto_hello (5);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -744,7 +744,7 @@ test_change_stream_resumable_error (void)
       ": [ { '$changeStream': { 'fullDocument': 'default' } } ], "
       "'cursor': {  } }";
 
-   server = mock_server_with_auto_hello (5);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -914,7 +914,7 @@ test_change_stream_options (void)
    const bson_t *next_doc = NULL;
    bson_error_t err;
 
-   server = mock_server_with_auto_hello (5);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -1838,7 +1838,7 @@ _test_resume (const char *opts,
    char *msg;
    const bson_t *doc = NULL;
 
-   server = mock_server_with_auto_hello (7);
+   server = mock_server_with_auto_hello (WIRE_VERSION_4_0);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

@@ -127,7 +127,7 @@ test_mongos_max_staleness_read_pref (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (5 /* maxWireVersion */);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

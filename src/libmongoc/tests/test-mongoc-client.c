@@ -1383,7 +1383,7 @@ test_read_command_with_opts (void)
    future_t *future;
    request_t *request;
 
-   server = mock_mongos_new (5);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1510,7 +1510,7 @@ test_command_with_opts (void)
    request_t *request;
    bson_t opts = BSON_INITIALIZER;
 
-   server = mock_mongos_new (5);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -4152,7 +4152,11 @@ test_mongoc_client_resends_handshake_on_network_error (void)
       server,
       "{'" HANDSHAKE_CMD_LEGACY_HELLO
       "': 1, 'client': {'application': {'name': 'foo'}}}");
-   mock_server_replies_simple (request, "{'ok': 1, 'maxWireVersion': 14 }");
+   mock_server_replies_simple (
+      request,
+      tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
+               WIRE_VERSION_MIN,
+               WIRE_VERSION_5_1));
    request_destroy (request);
    request = mock_server_receives_msg (
       server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
@@ -4173,7 +4177,10 @@ test_mongoc_client_resends_handshake_on_network_error (void)
       server,
       "{'" HANDSHAKE_CMD_LEGACY_HELLO
       "': 1, 'client': {'application': {'name': 'foo'}}}");
-   mock_server_replies_simple (request, "{'ok': 1, 'maxWireVersion': 14 }");
+   mock_server_replies_simple (
+      request,
+      tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d }",
+               WIRE_VERSION_5_1));
    request_destroy (request);
 
    request = mock_server_receives_msg (

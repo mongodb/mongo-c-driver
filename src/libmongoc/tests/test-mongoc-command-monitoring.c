@@ -658,7 +658,7 @@ _test_query_operation_id (bool pooled)
 
    op_id_test_init (&test);
 
-   server = mock_server_with_auto_hello (4);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -686,7 +686,7 @@ _test_query_operation_id (bool pooled)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SECONDARY_OK,
+                                MONGOC_QUERY_NONE,
                                 123 /* cursor id */,
                                 1,
                                 "db.collection",
@@ -1096,7 +1096,7 @@ test_command_failed_reply_mock (void)
     */
    cmd_failed_reply_test_init (&test);
 
-   server = mock_server_with_auto_hello (4);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -1154,7 +1154,7 @@ test_command_failed_reply_hangup (void)
     * error (i.e. the server hangs up) */
    cmd_failed_reply_test_init (&test);
 
-   server = mock_server_with_auto_hello (4);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();

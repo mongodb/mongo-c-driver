@@ -1406,7 +1406,7 @@ test_inherit_client_config (void)
    mongoc_gridfs_file_t *file;
 
    /* mock mongos: easiest way to test that read preference is configured */
-   server = mock_mongos_new (4);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    /* configure read / write concern and read prefs on client */

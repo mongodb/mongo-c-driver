@@ -462,8 +462,12 @@ _test_transient_txn_err (bool hangup)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_hello (
-      server, 7, true /* primary */, false /* tags */, server, NULL);
+   rs_response_to_hello (server,
+                         WIRE_VERSION_4_0,
+                         true /* primary */,
+                         false /* tags */,
+                         server,
+                         NULL);
 
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -629,8 +633,12 @@ test_unknown_commit_result (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_hello (
-      server, 7, true /* primary */, false /* tags */, server, NULL);
+   rs_response_to_hello (server,
+                         WIRE_VERSION_4_0,
+                         true /* primary */,
+                         false /* tags */,
+                         server,
+                         NULL);
 
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1041,8 +1049,12 @@ test_get_transaction_opts (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_hello (
-      server, 7, true /* primary */, false /* tags */, server, NULL);
+   rs_response_to_hello (server,
+                         WIRE_VERSION_4_0,
+                         true /* primary */,
+                         false /* tags */,
+                         server,
+                         NULL);
 
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

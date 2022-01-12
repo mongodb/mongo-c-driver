@@ -96,6 +96,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_5_0 13
 /* first version to support snapshot reads */
 #define WIRE_VERSION_SNAPSHOT_READS 13
+/* version corresponding to server 5.1 release */
+#define WIRE_VERSION_5_1 14
 
 struct _mongoc_collection_t;
 

@@ -1844,8 +1844,10 @@ _test_request_scan_on_error (bool pooled,
    mock_server_run (primary);
    mock_server_run (secondary);
 
-   RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary, secondary);
-   RS_RESPONSE_TO_HELLO (secondary, 6, false, false, primary, secondary);
+   RS_RESPONSE_TO_HELLO (
+      primary, WIRE_VERSION_MIN, true, false, primary, secondary);
+   RS_RESPONSE_TO_HELLO (
+      secondary, WIRE_VERSION_MIN, false, false, primary, secondary);
 
    /* set a high heartbeatFrequency. Only the first and requested scans run. */
    uri_str = bson_strdup_printf (
@@ -1906,8 +1908,10 @@ _test_request_scan_on_error (bool pooled,
    future_destroy (future);
    bson_destroy (&reply);
 
-   sd = mongoc_client_get_server_description (client, primary_id);
-   if (should_mark_unknown) {
+   RS_RESPONSE_TO_HELLO (
+      primary, WIRE_VERSION_MIN, true, false, primary, secondary);
+   RS_RESPONSE_TO_HELLO (
+      secondary, WIRE_VERSION_MIN, false, false, primary, secondary);
       BSON_ASSERT (checks_cmp (&checks, "n_unknowns", '=', 1));
       /* background monitoring may have already overwritten the unknown server
        * description if the scan was requested. */

@@ -1034,7 +1034,6 @@ test_error_msg_t errors[] = {
    message. */
 static void
 _test_not_primary (bool pooled,
-                   bool use_op_msg,
                    run_command_fn_t run_command,
                    cleanup_fn_t cleanup_fn)
 {
@@ -1050,7 +1049,7 @@ _test_not_primary (bool pooled,
    const mongoc_server_description_t *sd;
    char *reply;
 
-   server = mock_server_with_auto_hello (use_op_msg ? 6 : 5);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    if (pooled) {
@@ -1133,33 +1132,18 @@ function_command_simple_cleanup (future_t *future)
 
 
 static void
-test_not_primary_single_op_query (void)
+test_not_primary_single (void)
 {
    _test_not_primary (
-      false, false, future_command_simple, function_command_simple_cleanup);
+      false, future_command_simple, function_command_simple_cleanup);
 }
 
 
 static void
-test_not_primary_pooled_op_query (void)
+test_not_primary_pooled (void)
 {
    _test_not_primary (
-      true, false, future_command_simple, function_command_simple_cleanup);
-}
-
-static void
-test_not_primary_single_op_msg (void)
-{
-   _test_not_primary (
-      false, true, future_command_simple, function_command_simple_cleanup);
-}
-
-
-static void
-test_not_primary_pooled_op_msg (void)
-{
-   _test_not_primary (
-      true, true, future_command_simple, function_command_simple_cleanup);
+      true, future_command_simple, function_command_simple_cleanup);
 }
 
 
@@ -1196,33 +1180,18 @@ future_command_private_cleanup (future_t *future)
 
 
 static void
-test_not_primary_auth_single_op_query (void)
+test_not_primary_auth_single (void)
 {
    _test_not_primary (
-      false, false, future_command_private, future_command_private_cleanup);
+      false, future_command_private, future_command_private_cleanup);
 }
 
 
 static void
-test_not_primary_auth_pooled_op_query (void)
+test_not_primary_auth_pooled (void)
 {
    _test_not_primary (
-      true, false, future_command_private, future_command_private_cleanup);
-}
-
-static void
-test_not_primary_auth_single_op_msg (void)
-{
-   _test_not_primary (
-      false, true, future_command_private, future_command_private_cleanup);
-}
-
-
-static void
-test_not_primary_auth_pooled_op_msg (void)
-{
-   _test_not_primary (
-      true, true, future_command_private, future_command_private_cleanup);
+      true, future_command_private, future_command_private_cleanup);
 }
 
 
@@ -2033,36 +2002,20 @@ test_cluster_install (TestSuite *suite)
       test_advanced_cluster_time_not_sent_to_standalone,
       test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_primary/single/op_query",
-                                test_not_primary_single_op_query,
+                                "/Cluster/not_primary/single",
+                                test_not_primary_single,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_primary/pooled/op_query",
-                                test_not_primary_pooled_op_query,
+                                "/Cluster/not_primary/pooled",
+                                test_not_primary_pooled,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_primary/single/op_msg",
-                                test_not_primary_single_op_msg,
+                                "/Cluster/not_primary_auth/single",
+                                test_not_primary_auth_single,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_primary/pooled/op_msg",
-                                test_not_primary_pooled_op_msg,
-                                test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_primary_auth/single/op_query",
-                                test_not_primary_auth_single_op_query,
-                                test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_primary_auth/pooled/op_query",
-                                test_not_primary_auth_pooled_op_query,
-                                test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_primary_auth/single/op_msg",
-                                test_not_primary_auth_single_op_msg,
-                                test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_primary_auth/pooled/op_msg",
-                                test_not_primary_auth_pooled_op_msg,
+                                "/Cluster/not_primary_auth/pooled",
+                                test_not_primary_auth_pooled,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/hello_fails", test_cluster_hello_fails);

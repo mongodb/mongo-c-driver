@@ -107,9 +107,11 @@ _test_topology_reconcile_rs (bool pooled)
    mock_server_run (server1);
 
    /* secondary, no tags */
-   RS_RESPONSE_TO_HELLO (server0, 6, false, false, server0, server1);
+   RS_RESPONSE_TO_HELLO (
+      server0, WIRE_VERSION_MIN, false, false, server0, server1);
    /* primary, no tags */
-   RS_RESPONSE_TO_HELLO (server1, 6, true, false, server0, server1);
+   RS_RESPONSE_TO_HELLO (
+      server1, WIRE_VERSION_MIN, true, false, server0, server1);
 
    /* provide secondary in seed list */
    uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
@@ -150,7 +152,8 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * remove server1 from set. server0 is the primary, with tags.
     */
-   RS_RESPONSE_TO_HELLO (server0, 6, true, true, server0); /* server1 absent */
+   RS_RESPONSE_TO_HELLO (
+      server0, WIRE_VERSION_MIN, true, true, server0); /* server1 absent */
 
    BSON_ASSERT (selects_server (client, tag_read_prefs, server0));
    BSON_ASSERT (!client->topology->stale);
@@ -162,8 +165,10 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * server1 returns as a secondary. its scanner node is un-retired.
     */
-   RS_RESPONSE_TO_HELLO (server0, 6, true, true, server0, server1);
-   RS_RESPONSE_TO_HELLO (server1, 6, false, false, server0, server1);
+   RS_RESPONSE_TO_HELLO (
+      server0, WIRE_VERSION_MIN, true, true, server0, server1);
+   RS_RESPONSE_TO_HELLO (
+      server1, WIRE_VERSION_MIN, false, false, server0, server1);
 
    BSON_ASSERT (selects_server (client, secondary_read_prefs, server1));
 
@@ -478,8 +483,10 @@ test_topology_reconcile_retire_single (void)
    mock_server_run (secondary);
    mock_server_run (primary);
 
-   RS_RESPONSE_TO_HELLO (primary, 6, true, false, secondary, primary);
-   RS_RESPONSE_TO_HELLO (secondary, 6, false, false, secondary, primary);
+   RS_RESPONSE_TO_HELLO (
+      primary, WIRE_VERSION_MIN, true, false, secondary, primary);
+   RS_RESPONSE_TO_HELLO (
+      secondary, WIRE_VERSION_MIN, false, false, secondary, primary);
 
    /* selection timeout must be > MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS,
     * otherwise we skip second scan in pooled mode and don't hit the assert */
@@ -502,7 +509,7 @@ test_topology_reconcile_retire_single (void)
    BSON_ASSERT (selects_server (client, secondary_read_prefs, secondary));
 
    /* remove secondary from primary's config */
-   RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary);
+   RS_RESPONSE_TO_HELLO (primary, WIRE_VERSION_MIN, true, false, primary);
 
    /* step 2: cluster opens new stream to primary - force new stream in single
     * mode by disconnecting scanner nodes (also includes step 6) */
@@ -596,8 +603,9 @@ test_topology_reconcile_add_single (void)
    mock_server_run (primary);
 
    /* omit secondary from primary's hello, to start with */
-   RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary);
-   RS_RESPONSE_TO_HELLO (secondary, 6, false, false, secondary, primary);
+   RS_RESPONSE_TO_HELLO (primary, WIRE_VERSION_MIN, true, false, primary);
+   RS_RESPONSE_TO_HELLO (
+      secondary, WIRE_VERSION_MIN, false, false, secondary, primary);
 
    /* selection timeout must be > MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS,
     * otherwise we skip second scan in pooled mode and don't hit the assert */
@@ -617,7 +625,8 @@ test_topology_reconcile_add_single (void)
    BSON_ASSERT (selects_server (client, primary_read_prefs, primary));
 
    /* add secondary to primary's config */
-   RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary, secondary);
+   RS_RESPONSE_TO_HELLO (
+      primary, WIRE_VERSION_MIN, true, false, primary, secondary);
 
    /* step 2: cluster opens new stream to primary - force new stream in single
     * mode by disconnecting primary scanner node */

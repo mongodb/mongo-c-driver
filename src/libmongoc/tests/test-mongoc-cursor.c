@@ -732,9 +732,9 @@ test_kill_cursor_live (void)
 }
 
 
-/* test OP_KILLCURSORS or the killCursors command with mock servers */
+/* test the killCursors command with mock servers */
 static void
-_test_kill_cursors (bool pooled, bool use_killcursors_cmd)
+_test_kill_cursors (bool pooled)
 {
    mock_rs_t *rs;
    mongoc_client_pool_t *pool = NULL;
@@ -751,10 +751,10 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
    const char *ns_out;
    int64_t cursor_id_out;
 
-   rs = mock_rs_with_auto_hello (use_killcursors_cmd ? 4 : 3, /* wire version */
-                                 true,                        /* has primary */
-                                 5,  /* number of secondaries */
-                                 0); /* number of arbiters */
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN, /* wire version */
+                                 true,             /* has primary */
+                                 5,                /* number of secondaries */
+                                 0);               /* number of arbiters */
 
    mock_rs_run (rs);
 
@@ -775,14 +775,13 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_request (rs);
 
-   /* reply as appropriate to OP_QUERY or find command */
    mock_rs_replies_to_find (request,
                             MONGOC_QUERY_SECONDARY_OK,
                             123,
                             1,
                             "db.collection",
                             "{'b': 1}",
-                            use_killcursors_cmd);
+                            true);
 
    if (!future_get_bool (future)) {
       mongoc_cursor_error (cursor, &error);
@@ -796,26 +795,22 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
    future_destroy (future);
    future = future_cursor_destroy (cursor);
 
-   if (use_killcursors_cmd) {
-      kill_cursors =
-         mock_rs_receives_command (rs, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   kill_cursors =
+      mock_rs_receives_command (rs, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
-      /* mock server framework can't test "cursors" array, CDRIVER-994 */
-      ASSERT (BCON_EXTRACT ((bson_t *) request_get_doc (kill_cursors, 0),
-                            "killCursors",
-                            BCONE_UTF8 (ns_out),
-                            "cursors",
-                            "[",
-                            BCONE_INT64 (cursor_id_out),
-                            "]"));
+   /* mock server framework can't test "cursors" array, CDRIVER-994 */
+   ASSERT (BCON_EXTRACT ((bson_t *) request_get_doc (kill_cursors, 0),
+                         "killCursors",
+                         BCONE_UTF8 (ns_out),
+                         "cursors",
+                         "[",
+                         BCONE_INT64 (cursor_id_out),
+                         "]"));
 
-      ASSERT_CMPSTR ("collection", ns_out);
-      ASSERT_CMPINT64 ((int64_t) 123, ==, cursor_id_out);
+   ASSERT_CMPSTR ("collection", ns_out);
+   ASSERT_CMPINT64 ((int64_t) 123, ==, cursor_id_out);
 
-      mock_rs_replies_simple (request, "{'ok': 1}");
-   } else {
-      kill_cursors = mock_rs_receives_kill_cursors (rs, 123);
-   }
+   mock_rs_replies_simple (request, "{'ok': 1}");
 
    /* OP_KILLCURSORS was sent to the right secondary */
    ASSERT_CMPINT (request_get_server_port (kill_cursors),
@@ -845,36 +840,20 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
 static void
 test_kill_cursors_single (void)
 {
-   _test_kill_cursors (false, false);
+   _test_kill_cursors (false);
 }
 
 
 static void
 test_kill_cursors_pooled (void)
 {
-   _test_kill_cursors (true, false);
+   _test_kill_cursors (true);
 }
 
 
+/* Test explicit mongoc_client_kill_cursor. */
 static void
-test_kill_cursors_single_cmd (void)
-{
-   _test_kill_cursors (false, true);
-}
-
-
-static void
-test_kill_cursors_pooled_cmd (void)
-{
-   _test_kill_cursors (true, true);
-}
-
-
-/* We already test that mongoc_cursor_destroy sends OP_KILLCURSORS in
- * test_kill_cursors_single / pooled. Here, test explicit
- * mongoc_client_kill_cursor. */
-static void
-_test_client_kill_cursor (bool has_primary, bool wire_version_4)
+_test_client_kill_cursor (bool has_primary)
 {
    mock_rs_t *rs;
    mongoc_client_t *client;
@@ -883,7 +862,7 @@ _test_client_kill_cursor (bool has_primary, bool wire_version_4)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_auto_hello (wire_version_4 ? 4 : 3,
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN,
                                  has_primary, /* maybe a primary*/
                                  1,           /* definitely a secondary */
                                  0);          /* no arbiter */
@@ -931,28 +910,14 @@ _test_client_kill_cursor (bool has_primary, bool wire_version_4)
 static void
 test_client_kill_cursor_with_primary (void)
 {
-   _test_client_kill_cursor (true, false);
+   _test_client_kill_cursor (true);
 }
 
 
 static void
 test_client_kill_cursor_without_primary (void)
 {
-   _test_client_kill_cursor (false, false);
-}
-
-
-static void
-test_client_kill_cursor_with_primary_wire_version_4 (void)
-{
-   _test_client_kill_cursor (true, true);
-}
-
-
-static void
-test_client_kill_cursor_without_primary_wire_version_4 (void)
-{
-   _test_client_kill_cursor (false, true);
+   _test_client_kill_cursor (false);
 }
 
 
@@ -2361,24 +2326,12 @@ test_cursor_install (TestSuite *suite)
       suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/kill/single/cmd", test_kill_cursors_single_cmd);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/kill/pooled/cmd", test_kill_cursors_pooled_cmd);
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/client_kill_cursor/with_primary",
                                 test_client_kill_cursor_with_primary);
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/client_kill_cursor/without_primary",
                                 test_client_kill_cursor_without_primary);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Cursor/client_kill_cursor/with_primary/wv4",
-      test_client_kill_cursor_with_primary_wire_version_4);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Cursor/client_kill_cursor/without_primary/wv4",
-      test_client_kill_cursor_without_primary_wire_version_4);
    TestSuite_AddLive (
       suite, "/Cursor/empty_collection", test_cursor_empty_collection);
    TestSuite_AddLive (

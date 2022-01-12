@@ -131,7 +131,7 @@ test_find_and_modify_bypass_false (void)
 }
 
 static void
-test_find_and_modify_write_concern (int wire_version)
+test_find_and_modify_write_concern (void)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -156,10 +156,10 @@ test_find_and_modify_write_concern (int wire_version)
       mongoc_client_get_collection (client, "test", "test_find_and_modify");
 
    auto_hello (server,
-               wire_version, /* max_wire_version */
-               48000000,     /* max_message_size */
-               16777216,     /* max_bson_size */
-               1000);        /* max_write_batch_size */
+               WIRE_VERSION_MIN, /* max_wire_version */
+               48000000,         /* max_message_size */
+               16777216,         /* max_bson_size */
+               1000);            /* max_write_batch_size */
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 
@@ -176,27 +176,15 @@ test_find_and_modify_write_concern (int wire_version)
    future = future_collection_find_and_modify_with_opts (
       collection, &doc, opts, &reply, &error);
 
-   if (wire_version >= 4) {
-      request = mock_server_receives_command (
-         server,
-         "test",
-         MONGOC_QUERY_NONE,
-         "{ 'findAndModify' : 'test_find_and_modify', "
-         "'query' : { 'superduper' : 77889 },"
-         "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true,"
-         "'writeConcern' : { 'w' : 42 } }");
-   } else {
-      request = mock_server_receives_command (
-         server,
-         "test",
-         MONGOC_QUERY_NONE,
-         "{ 'findAndModify' : 'test_find_and_modify', "
-         "'query' : { 'superduper' : 77889 },"
-         "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true,"
-         "'writeConcern' : { '$exists': false } }");
-   }
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'findAndModify': 'test_find_and_modify', "
+                " 'query': {'superduper': 77889 },"
+                " 'update': {'$set': {'superduper': 1234}},"
+                " 'new': true,"
+                " 'writeConcern': {'w': 42}}"));
 
    mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -216,7 +204,7 @@ test_find_and_modify_write_concern (int wire_version)
 }
 
 static void
-test_find_and_modify_write_concern_wire_32_failure (void *context)
+test_find_and_modify_write_concern_failure (void *context)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -269,18 +257,6 @@ test_find_and_modify_write_concern_wire_32_failure (void *context)
    mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-}
-
-static void
-test_find_and_modify_write_concern_wire_32 (void)
-{
-   test_find_and_modify_write_concern (4);
-}
-
-static void
-test_find_and_modify_write_concern_wire_pre_32 (void)
-{
-   test_find_and_modify_write_concern (3);
 }
 
 static void
@@ -581,14 +557,10 @@ test_find_and_modify_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite,
       "/find_and_modify/find_and_modify/write_concern",
-      test_find_and_modify_write_concern_wire_32);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/find_and_modify/find_and_modify/write_concern_pre_32",
-      test_find_and_modify_write_concern_wire_pre_32);
+      test_find_and_modify_write_concern);
    TestSuite_AddFull (suite,
                       "/find_and_modify/find_and_modify/write_concern_failure",
-                      test_find_and_modify_write_concern_wire_32_failure,
+                      test_find_and_modify_write_concern_failure,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_replset);

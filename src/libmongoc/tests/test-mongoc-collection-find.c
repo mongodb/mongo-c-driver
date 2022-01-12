@@ -173,8 +173,7 @@ typedef void (*reply_fn_t) (request_t *request,
 static void
 _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
                                            check_request_fn_t check_request_fn,
-                                           reply_fn_t reply_fn,
-                                           int32_t max_wire_version)
+                                           reply_fn_t reply_fn)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -195,7 +194,7 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
       return;
    }
 
-   server = mock_server_with_auto_hello (max_wire_version);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -258,59 +257,6 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
 
 
 static request_t *
-_check_op_query (mock_server_t *server, test_collection_find_t *test_data)
-{
-   mongoc_query_flags_t flags;
-
-   flags = test_data->flags | MONGOC_QUERY_SECONDARY_OK;
-
-   return mock_server_receives_query (server,
-                                      "db.collection",
-                                      flags,
-                                      test_data->skip,
-                                      test_data->n_return,
-                                      test_data->expected_op_query,
-                                      test_data->fields);
-}
-
-
-static void
-_reply_to_op_query (request_t *request, test_collection_find_t *test_data)
-{
-   bson_t *docs;
-   int i;
-   bson_iter_t iter;
-   uint32_t len;
-   const uint8_t *data;
-
-   docs = bson_malloc (test_data->n_results * sizeof (bson_t));
-   bson_iter_init (&iter, test_data->expected_result_bson);
-
-   for (i = 0; i < test_data->n_results; i++) {
-      bson_iter_next (&iter);
-      bson_iter_document (&iter, &len, &data);
-      BSON_ASSERT (bson_init_static (&docs[i], data, len));
-   }
-
-   mock_server_reply_multi (request,
-                            MONGOC_REPLY_NONE,
-                            docs,
-                            test_data->n_results,
-                            0 /* cursor_id */);
-
-   bson_free (docs);
-}
-
-
-static void
-_test_collection_op_query (test_collection_find_t *test_data)
-{
-   _test_collection_op_query_or_find_command (
-      test_data, _check_op_query, _reply_to_op_query, 3 /* wire version */);
-}
-
-
-static request_t *
 _check_find_command (mock_server_t *server, test_collection_find_t *test_data)
 {
    /* Server Selection Spec: all queries to standalone set secondaryOk.
@@ -352,8 +298,7 @@ _test_collection_find_command (test_collection_find_t *test_data)
 {
    _test_collection_op_query_or_find_command (test_data,
                                               _check_find_command,
-                                              _reply_to_find_command,
-                                              4 /* max wire version */);
+                                              _reply_to_find_command);
 }
 
 
@@ -382,7 +327,6 @@ _test_collection_find (test_collection_find_t *test_data)
       }
    }
 
-   _test_collection_op_query (test_data);
    _test_collection_find_command (test_data);
 }
 
@@ -863,7 +807,7 @@ test_getmore_batch_size (void)
    char *batch_size_json;
    bson_error_t error;
 
-   server = mock_server_with_auto_hello (4);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -934,7 +878,7 @@ test_getmore_invalid_reply (void *ctx)
       return;
    }
 
-   server = mock_server_with_auto_hello (4);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1012,7 +956,7 @@ test_getmore_await (void)
    size_t i;
    char *max_time_json;
 
-   server = mock_server_with_auto_hello (4);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
