@@ -848,30 +848,6 @@ test_insert_bulk_empty (void)
 }
 
 
-static void
-auto_hello (mock_server_t *server,
-            int32_t max_wire_version,
-            int32_t max_message_size,
-            int32_t max_bson_size,
-            int32_t max_batch_size)
-{
-   char *response = bson_strdup_printf ("{'isWritablePrimary': true, "
-                                        " 'maxWireVersion': %d,"
-                                        " 'maxBsonObjectSize': %d,"
-                                        " 'maxMessageSizeBytes': %d,"
-                                        " 'maxWriteBatchSize': %d }",
-                                        max_wire_version,
-                                        max_bson_size,
-                                        max_message_size,
-                                        max_batch_size);
-
-   BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_hello (server, response);
-
-   bson_free (response);
-}
-
-
 char *
 make_string (size_t len)
 {
@@ -3534,7 +3510,7 @@ test_stats_read_pref (void)
 
 
 static void
-test_find_and_modify_write_concern (int wire_version)
+test_find_and_modify_write_concern (void)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -3557,11 +3533,18 @@ test_find_and_modify_write_concern (int wire_version)
    collection =
       mongoc_client_get_collection (client, "test", "test_find_and_modify");
 
-   auto_hello (server,
-               wire_version, /* max_wire_version */
-               48000000,     /* max_message_size */
-               16777216,     /* max_bson_size */
-               1000);        /* max_write_batch_size */
+   mock_server_auto_hello (server,
+                           "{'isWritablePrimary': true, "
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'maxBsonObjectSize': %d,"
+                           " 'maxMessageSizeBytes': %d,"
+                           " 'maxWriteBatchSize': %d}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX,
+                           16777216,
+                           48000000,
+                           1000);
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 
@@ -3573,26 +3556,15 @@ test_find_and_modify_write_concern (int wire_version)
    future = future_collection_find_and_modify (
       collection, &doc, NULL, update, NULL, false, false, true, &reply, &error);
 
-   if (wire_version >= 4) {
-      request = mock_server_receives_command (
-         server,
-         "test",
-         MONGOC_QUERY_NONE,
-         "{ 'findAndModify' : 'test_find_and_modify', "
-         "'query' : { 'superduper' : 77889 },"
-         "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true,"
-         "'writeConcern' : { 'w' : 42 } }");
-   } else {
-      request = mock_server_receives_command (
-         server,
-         "test",
-         MONGOC_QUERY_NONE,
-         "{ 'findAndModify' : 'test_find_and_modify', "
-         "'query' : { 'superduper' : 77889 },"
-         "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true }");
-   }
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'findAndModify': 'test_find_and_modify',"
+                " 'query': {'superduper': 77889},"
+                " 'update': {'$set': {'superduper': 1234}},"
+                " 'new' : true,"
+                " 'writeConcern': {'w': 42}}"));
 
    mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -3608,18 +3580,6 @@ test_find_and_modify_write_concern (int wire_version)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
    bson_destroy (&doc);
-}
-
-static void
-test_find_and_modify_write_concern_wire_32 (void)
-{
-   test_find_and_modify_write_concern (4);
-}
-
-static void
-test_find_and_modify_write_concern_wire_pre_32 (void)
-{
-   test_find_and_modify_write_concern (3);
 }
 
 static void
@@ -6356,11 +6316,7 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/find_and_modify", test_find_and_modify);
    TestSuite_AddMockServerTest (suite,
                                 "/Collection/find_and_modify/write_concern",
-                                test_find_and_modify_write_concern_wire_32);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/find_and_modify/write_concern_pre_32",
-      test_find_and_modify_write_concern_wire_pre_32);
+                                test_find_and_modify_write_concern);
    TestSuite_AddFull (suite,
                       "/Collection/large_return",
                       test_large_return,

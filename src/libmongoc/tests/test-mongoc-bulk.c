@@ -2889,12 +2889,14 @@ test_unordered_bulk_writes_with_error (void)
    /* server is "recovering": not primary, not secondary */
    mock_server_auto_hello (server,
                            "{'ok': 1,"
+                           " 'minWireVersion': %d,"
                            " 'maxWireVersion': %d,"
                            " 'maxWriteBatchSize': 1,"
                            " 'isWritablePrimary': true,"
                            " 'secondary': false,"
                            " 'setName': 'rs',"
                            " 'hosts': ['%s']}",
+                           WIRE_VERSION_MIN,
                            WIRE_VERSION_OP_MSG,
                            mock_server_get_host_and_port (server));
 
@@ -3402,9 +3404,10 @@ _test_numerous (bool ordered)
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
                            " 'isWritablePrimary': true,"
-                           " 'minWireVersion': 0,"
+                           " 'minWireVersion': %d,"
                            " 'maxWireVersion': %d,"
                            " 'maxWriteBatchSize': 3}",
+                           WIRE_VERSION_MIN,
                            WIRE_VERSION_OP_MSG);
 
    mock_server_run (server);

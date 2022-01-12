@@ -1066,6 +1066,7 @@ static void
 test_get_collection_names_error (void)
 {
    mongoc_database_t *database;
+   mongoc_uri_t *uri;
    mongoc_client_t *client;
    mock_server_t *server;
    bson_error_t error = {0};
@@ -1079,19 +1080,22 @@ test_get_collection_names_error (void)
    server = mock_server_new ();
    mock_server_auto_hello (server,
                            "{'isWritablePrimary': true,"
-                           " 'maxWireVersion': 3}");
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX);
    mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    database = mongoc_client_get_database (client, "test");
    future =
       future_database_get_collection_names_with_opts (database, NULL, &error);
-   request =
-      mock_server_receives_command (server,
-                                    "test",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{'listCollections': 1, 'nameOnly': true}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test', 'listCollections': 1, 'nameOnly': true}"));
    mock_server_hangs_up (request);
    names = future_get_char_ptr_ptr (future);
    BSON_ASSERT (!names);
@@ -1102,6 +1106,7 @@ test_get_collection_names_error (void)
    future_destroy (future);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
    mock_server_destroy (server);
    bson_destroy (&b);
 }

@@ -1293,14 +1293,23 @@ _test_service_id (bool is_loadbalanced)
          mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
       mock_server_replies_simple (
          request,
-         "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', "
-         "'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}");
+         tmp_str ("{'ismaster': true,"
+                  " 'minWireVersion': %d,"
+                  " 'maxWireVersion': %d,"
+                  " 'msg': 'isdbgrid',"
+                  " 'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}",
+                  WIRE_VERSION_MIN,
+                  WIRE_VERSION_5_0));
    } else {
       request = mock_server_receives_legacy_hello (
          server, "{'loadBalanced': { '$exists': false }}");
-      mock_server_replies_simple (
-         request,
-         "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid'}");
+      mock_server_replies_simple (request,
+                                  tmp_str ("{'ismaster': true,"
+                                           " 'minWireVersion': %d,"
+                                           " 'maxWireVersion': %d,"
+                                           " 'msg': 'isdbgrid'}",
+                                           WIRE_VERSION_MIN,
+                                           WIRE_VERSION_5_0));
    }
    request_destroy (request);
 

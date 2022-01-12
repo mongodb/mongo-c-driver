@@ -24,12 +24,21 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
-#define HELLO_PRE_OPMSG                                         \
-   "{'ok': 1, 'isWritablePrimary': true, 'minWireVersion': 0, " \
-   "'maxWireVersion': 5 }"
-#define HELLO_POST_OPMSG                                        \
-   "{'ok': 1, 'isWritablePrimary': true, 'minWireVersion': 0, " \
-   "'maxWireVersion': 6 }"
+#define HELLO_SERVER_ONE                  \
+   tmp_str ("{'ok': 1,"                   \
+            " 'isWritablePrimary': true," \
+            " 'minWireVersion': %d, "     \
+            " 'maxWireVersion': %d }",    \
+            WIRE_VERSION_MIN,             \
+            WIRE_VERSION_MIN)
+
+#define HELLO_SERVER_TWO                  \
+   tmp_str ("{'ok': 1,"                   \
+            " 'isWritablePrimary': true," \
+            " 'minWireVersion': %d,"      \
+            " 'maxWireVersion': %d }",    \
+            WIRE_VERSION_MIN,             \
+            WIRE_VERSION_MIN + 1)
 
 /* Test that a connection uses the server description from the handshake when
  * checking wire version (instead of the server description from the topology
@@ -38,8 +47,8 @@ static void
 test_server_stream_ties_server_description_pooled (void *unused)
 {
    mongoc_client_pool_t *pool;
-   mongoc_client_t *client_opquery;
-   mongoc_client_t *client_opmsg;
+   mongoc_client_t *client_one;
+   mongoc_client_t *client_two;
    mongoc_uri_t *uri;
    mock_server_t *server;
    request_t *request;
@@ -51,17 +60,16 @@ test_server_stream_ties_server_description_pooled (void *unused)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    pool = mongoc_client_pool_new (uri);
-   client_opquery = mongoc_client_pool_pop (pool);
-   client_opmsg = mongoc_client_pool_pop (pool);
+   client_one = mongoc_client_pool_pop (pool);
+   client_two = mongoc_client_pool_pop (pool);
 
-   /* Respond to the monitoring legacy hello with wire version pre 3.6 (before
-    * OP_MSG). */
+   /* Respond to the monitoring legacy hello with server one hello. */
    request = mock_server_receives_legacy_hello (server, NULL);
-   mock_server_replies_simple (request, HELLO_PRE_OPMSG);
+   mock_server_replies_simple (request, HELLO_SERVER_ONE);
    request_destroy (request);
 
-   /* Create a connection on client_opquery. */
-   future = future_client_command_simple (client_opquery,
+   /* Create a connection on client_one. */
+   future = future_client_command_simple (client_one,
                                           "admin",
                                           tmp_bson ("{'ping': 1}"),
                                           NULL /* read prefs */,
@@ -69,18 +77,16 @@ test_server_stream_ties_server_description_pooled (void *unused)
                                           &error);
    /* The first command on a pooled client creates a new connection. */
    request = mock_server_receives_legacy_hello (server, NULL);
-   mock_server_replies_simple (request, HELLO_PRE_OPMSG);
+   mock_server_replies_simple (request, HELLO_SERVER_ONE);
    request_destroy (request);
-   /* Check that the mock server receives an OP_QUERY. */
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
-   ASSERT_CMPINT ((int) request->opcode, ==, (int) MONGOC_OPCODE_QUERY);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
-   /* Create a connection on client_opmsg. */
-   future = future_client_command_simple (client_opmsg,
+   /* Create a connection on client_two. */
+   future = future_client_command_simple (client_two,
                                           "admin",
                                           tmp_bson ("{'ping': 1}"),
                                           NULL /* read prefs */,
@@ -88,54 +94,26 @@ test_server_stream_ties_server_description_pooled (void *unused)
                                           &error);
    /* The first command on a pooled client creates a new connection. */
    request = mock_server_receives_legacy_hello (server, NULL);
-   mock_server_replies_simple (request, HELLO_POST_OPMSG);
+   mock_server_replies_simple (request, HELLO_SERVER_TWO);
    request_destroy (request);
-   /* Check that the mock server receives an OP_MSG. */
-   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
-   ASSERT_CMPINT ((int) request->opcode, ==, (int) MONGOC_OPCODE_MSG);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
-   /* Re-use client_opquery, to ensure it still uses opquery. */
-   future = future_client_command_simple (client_opquery,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
-   ASSERT_CMPINT ((int) request->opcode, ==, (int) MONGOC_OPCODE_QUERY);
-   mock_server_replies_ok_and_destroys (request);
-   ASSERT_OR_PRINT (future_get_bool (future), error);
-   future_destroy (future);
-
-   /* Re-use client_opmsg, to ensure it still uses opmsg. */
-   future = future_client_command_simple (client_opmsg,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
-   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
-   ASSERT_CMPINT ((int) request->opcode, ==, (int) MONGOC_OPCODE_MSG);
-   mock_server_replies_ok_and_destroys (request);
-   ASSERT_OR_PRINT (future_get_bool (future), error);
-   future_destroy (future);
-
-   /* Check that selecting the server still returns the OP_QUERY server */
+   /* Check that selecting the server returns the second server */
    sd = mongoc_client_select_server (
-      client_opmsg, true /* for writes */, NULL /* read prefs */, &error);
+      client_two, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (sd, error);
    ASSERT_MATCH (mongoc_server_description_hello_response (sd),
-                 "{'maxWireVersion': 6}");
+                 tmp_str ("{'maxWireVersion': %d}", WIRE_VERSION_MIN + 1));
    mongoc_server_description_destroy (sd);
 
    mock_server_destroy (server);
    mongoc_uri_destroy (uri);
-   mongoc_client_pool_push (pool, client_opquery);
-   mongoc_client_pool_push (pool, client_opmsg);
+   mongoc_client_pool_push (pool, client_one);
+   mongoc_client_pool_push (pool, client_two);
    mongoc_client_pool_destroy (pool);
 }
 
@@ -168,11 +146,10 @@ test_server_stream_ties_server_description_single (void *unused)
                                           &error);
    /* The first command on a client creates a new connection. */
    request = mock_server_receives_legacy_hello (server, NULL);
-   mock_server_replies_simple (request, HELLO_POST_OPMSG);
+   mock_server_replies_simple (request, HELLO_SERVER_TWO);
    request_destroy (request);
-   /* Check that the mock server receives an OP_MSG. */
-   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
-   ASSERT_CMPINT ((int) request->opcode, ==, (int) MONGOC_OPCODE_MSG);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
@@ -182,28 +159,27 @@ test_server_stream_ties_server_description_single (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    tdmod = mc_tpld_modify_begin (client->topology);
    mongoc_topology_description_handle_hello (
-      tdmod.new_td, 1, tmp_bson (HELLO_PRE_OPMSG), 0, &error);
+      tdmod.new_td, 1, tmp_bson (HELLO_SERVER_ONE), 0, &error);
    mc_tpld_modify_commit (tdmod);
 
-   /* Send another command, it should still use OP_MSG. */
    future = future_client_command_simple (client,
                                           "admin",
                                           tmp_bson ("{'ping': 1}"),
                                           NULL /* read prefs */,
                                           NULL /* reply */,
                                           &error);
-   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
-   ASSERT_CMPINT ((int) request->opcode, ==, (int) MONGOC_OPCODE_MSG);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
-   /* Check that selecting the server returns the OP_QUERY server */
+   /* Check that selecting the server returns the first server */
    sd = mongoc_client_select_server (
       client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (sd, error);
    ASSERT_MATCH (mongoc_server_description_hello_response (sd),
-                 "{'maxWireVersion': 5}");
+                 tmp_str ("{'maxWireVersion': %d}", WIRE_VERSION_MIN));
    mongoc_server_description_destroy (sd);
 
    mock_server_destroy (server);

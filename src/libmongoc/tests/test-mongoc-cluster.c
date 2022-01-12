@@ -350,14 +350,16 @@ _test_write_disconnect (void)
    request = mock_server_receives_legacy_hello (server, NULL);
    hello = bson_strdup_printf ("{'ok': 1.0,"
                                " 'isWritablePrimary': true,"
-                               " 'minWireVersion': 2,"
-                               " 'maxWireVersion': 3}");
+                               " 'minWireVersion': %d,"
+                               " 'maxWireVersion': %d}",
+                               WIRE_VERSION_MIN,
+                               WIRE_VERSION_MAX);
 
    mock_server_replies_simple (request, hello);
    request_destroy (request);
 
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'ping': 1}"));
    mock_server_replies_simple (request, "{'ok': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
@@ -400,80 +402,6 @@ static void
 test_write_command_disconnect (void *ctx)
 {
    _test_write_disconnect ();
-}
-
-
-/* Test for CDRIVER-3306 - Do not assume non-empty server reply implies stream
- * is still valid */
-static void
-test_cluster_command_not_primary (void)
-{
-   mock_server_t *server;
-   mongoc_uri_t *uri;
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   mongoc_bulk_operation_t *bulk;
-   bson_t *doc;
-   uint32_t i;
-   bson_error_t error;
-   future_t *future;
-   request_t *request;
-   bson_t reply;
-
-   if (!TestSuite_CheckMockServerAllowed ()) {
-      return;
-   }
-
-   server = mock_server_new ();
-   mock_server_run (server);
-
-   /* server is "recovering": not primary, not secondary */
-   mock_server_auto_hello (server,
-                           "{'ok': 1,"
-                           " 'maxWireVersion': %d,"
-                           " 'isWritablePrimary': false,"
-                           " 'secondary': false,"
-                           " 'setName': 'rs',"
-                           " 'hosts': ['%s']}",
-                           WIRE_VERSION_OP_MSG - 1,
-                           mock_server_get_host_and_port (server));
-
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
-
-   client = test_framework_client_new_from_uri (uri, NULL);
-
-   collection = mongoc_client_get_collection (client, "db", "test");
-   /* use an unordered bulk write, so it attempts to continue on error */
-   bulk = mongoc_collection_create_bulk_operation_with_opts (
-      collection, tmp_bson ("{'ordered': false}"));
-   /* Set a "hint" aka "server id" to force the write to be directed to the
-    * non-primary */
-   mongoc_bulk_operation_set_hint (bulk, 1);
-   doc = tmp_bson ("{'foo': 1}");
-   /* Have enough inserts to ensure some batch splits */
-   for (i = 0; i < 10001; i++) {
-      mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
-   }
-   /* If CDRIVER-3306 is still present, then this operation will trigger a
-    * segfault; once the below non-empty reply is received from the mock
-    * server, the stream will be invalidated but the non-empty reply will be
-    * interpreted as meaning it is OK to proceed with the other operations */
-   future = future_bulk_operation_execute (bulk, &reply, &error);
-
-   request = mock_server_receives_request (server);
-   mock_server_replies_simple (
-      request, "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }");
-   ASSERT (future_wait (future));
-
-   mongoc_client_destroy (client);
-   mongoc_collection_destroy (collection);
-   mongoc_bulk_operation_destroy (bulk);
-   bson_destroy (&reply);
-   request_destroy (request);
-   future_destroy (future);
-   mongoc_uri_destroy (uri);
-   mock_server_destroy (server);
 }
 
 
@@ -904,8 +832,13 @@ future_ping (mongoc_client_t *client, bson_error_t *error)
 static void
 _test_cluster_time_comparison (bool pooled)
 {
-   const char *hello = "{'ok': 1.0, 'isWritablePrimary': true, 'msg': "
-                       "'isdbgrid', 'maxWireVersion': 6}";
+   const char *hello = tmp_str ("{'ok': 1.0,"
+                                " 'isWritablePrimary': true,"
+                                " 'msg': 'isdbgrid',"
+                                " 'minWireVersion': %d,"
+                                " 'maxWireVersion': %d}",
+                                WIRE_VERSION_MIN,
+                                WIRE_VERSION_MAX);
    mock_server_t *server;
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
@@ -1216,8 +1149,8 @@ auto_hello_callback (request_t *request, void *data, bson_t *hello_response)
    BSON_APPEND_INT32 (hello_response, "ok", 1);
    BSON_APPEND_BOOL (hello_response, "isWritablePrimary", !test->secondary);
    BSON_APPEND_BOOL (hello_response, "secondary", test->secondary);
-   BSON_APPEND_INT32 (hello_response, "minWireVersion", 0);
-   BSON_APPEND_INT32 (hello_response, "maxWireVersion", WIRE_VERSION_OP_MSG);
+   BSON_APPEND_INT32 (hello_response, "minWireVersion", WIRE_VERSION_MIN);
+   BSON_APPEND_INT32 (hello_response, "maxWireVersion", WIRE_VERSION_MAX);
    BSON_APPEND_UTF8 (hello_response, "setName", "rs");
 
    if (test->cluster_time) {
@@ -1553,9 +1486,11 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
                            " 'isWritablePrimary': true,"
-                           " 'minWireVersion': 0,"
-                           " 'maxWireVersion': 6,"
-                           " 'logicalSessionTimeoutMinutes': 30}");
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'logicalSessionTimeoutMinutes': 30}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1654,8 +1589,8 @@ _initiator_fn (const mongoc_uri_t *uri,
    return stream;
 }
 
-static void
-_test_hello_on_unknown (char *hello)
+void
+test_hello_on_unknown (void)
 {
    mock_server_t *mock_server;
    mongoc_client_pool_t *pool;
@@ -1666,7 +1601,16 @@ _test_hello_on_unknown (char *hello)
 
    mock_server = mock_server_new ();
    mock_server_run (mock_server);
-   mock_server_autoresponds (mock_server, _responder, hello, NULL);
+   mock_server_autoresponds (mock_server,
+                             _responder,
+                             (void *) tmp_str ("{ 'ok': 1.0,"
+                                               " 'isWritablePrimary': true,"
+                                               " 'minWireVersion': %d,"
+                                               " 'maxWireVersion': %d,"
+                                               " 'msg': 'isdbgrid'}",
+                                               WIRE_VERSION_MIN,
+                                               WIRE_VERSION_MAX),
+                             NULL);
 
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
 
@@ -1692,20 +1636,6 @@ _test_hello_on_unknown (char *hello)
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
    mock_server_destroy (mock_server);
-}
-
-void
-test_hello_on_unknown (void)
-{
-   /* Test with pre-OP_MSG to test fix to CDRIVER-3404. */
-   _test_hello_on_unknown ("{ 'ok': 1.0, 'isWritablePrimary': true, "
-                           "'minWireVersion': 0, 'maxWireVersion': 5, "
-                           "'msg': 'isdbgrid'}");
-
-   /* Test with OP_MSG. */
-   _test_hello_on_unknown ("{ 'ok': 1.0, 'isWritablePrimary': true, "
-                           "'minWireVersion': 0, 'maxWireVersion': 8, "
-                           "'msg': 'isdbgrid'}");
 }
 
 
@@ -1944,8 +1874,6 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/command/timeout/pooled",
                                 test_cluster_command_timeout_pooled);
-   TestSuite_AddMockServerTest (
-      suite, "/Cluster/command/notprimary", test_cluster_command_not_primary);
    TestSuite_AddFull (suite,
                       "/Cluster/write_command/disconnect",
                       test_write_command_disconnect,

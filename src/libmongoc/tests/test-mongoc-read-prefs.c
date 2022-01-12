@@ -829,8 +829,9 @@ _test_op_msg_direct_connection (bool is_mongos,
                                         " 'isWritablePrimary': true,"
                                         " 'setName': 'rs0',"
                                         " 'secondary': true,"
-                                        " 'minWireVersion': 0,"
+                                        " 'minWireVersion': %d,"
                                         " 'maxWireVersion': %d}",
+                                        WIRE_VERSION_MIN,
                                         WIRE_VERSION_OP_MSG);
       server = mock_server_new ();
       mock_server_auto_hello (server, hello);

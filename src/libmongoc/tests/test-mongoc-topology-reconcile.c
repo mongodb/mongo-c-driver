@@ -250,10 +250,14 @@ _test_topology_reconcile_sharded (bool pooled)
 
    /* mongos */
    request = mock_server_receives_legacy_hello (mongos, NULL);
-   mock_server_replies_simple (
-      request,
-      "{'ok': 1, 'isWritablePrimary': true, 'minWireVersion': "
-      "2, 'maxWireVersion': 5, 'msg': 'isdbgrid'}");
+   mock_server_replies_simple (request,
+                               tmp_str ("{'ok': 1,"
+                                        " 'isWritablePrimary': true,"
+                                        " 'minWireVersion': %d,"
+                                        " 'maxWireVersion': %d,"
+                                        " 'msg': 'isdbgrid'}",
+                                        WIRE_VERSION_MIN,
+                                        WIRE_VERSION_MAX));
 
    request_destroy (request);
 
@@ -267,10 +271,11 @@ _test_topology_reconcile_sharded (bool pooled)
                           " 'setName': 'rs',"
                           " 'isWritablePrimary': false,"
                           " 'secondary': true,"
-                          " 'minWireVersion': 2,"
-                          " 'maxWireVersion': 5,"
-                          " 'hosts': ['%s', '%s']"
-                          "}",
+                          " 'minWireVersion': %d,"
+                          " 'maxWireVersion': %d,"
+                          " 'hosts': ['%s', '%s']}",
+                          WIRE_VERSION_MIN,
+                          WIRE_VERSION_MAX,
                           mock_server_get_host_and_port (mongos),
                           mock_server_get_host_and_port (secondary));
 

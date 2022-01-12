@@ -171,9 +171,11 @@ test_hello_impl (bool with_ssl)
       reply =
          bson_strdup_printf ("{'ok': 1,"
                              " '" HANDSHAKE_RESPONSE_LEGACY_HELLO "': true,"
-                             " 'minWireVersion': 0,"
-                             " 'maxWireVersion': 1000,"
+                             " 'minWireVersion': %d,"
+                             " 'maxWireVersion': %d,"
                              " 'serverId': %d}",
+                             WIRE_VERSION_MIN,
+                             WIRE_VERSION_MAX,
                              server_id);
 
       mock_server_replies_simple (request, reply);

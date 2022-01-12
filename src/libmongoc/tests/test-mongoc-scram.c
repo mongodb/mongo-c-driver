@@ -205,9 +205,12 @@ _check_mechanism (bool pooled,
 
    server = mock_server_new ();
    mock_server_auto_hello (server,
-                           "{'ok': 1, 'minWireVersion': 3, "
-                           "'maxWireVersion': %d, 'isWritablePrimary': true, "
-                           "'saslSupportedMechs': [%s]}",
+                           "{'ok': 1,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'isWritablePrimary': true,"
+                           " 'saslSupportedMechs': [%s]}",
+                           WIRE_VERSION_MIN,
                            WIRE_VERSION_MAX,
                            server_mechs ? server_mechs : "");
 
