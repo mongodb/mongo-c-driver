@@ -1539,6 +1539,8 @@ mock_server_replies_to_find (request_t *request,
    char *find_reply;
    char *db;
 
+   BSON_ASSERT_PARAM (request);
+
    db = _mongoc_get_db_name (ns);
 
    /* minimal validation, we're not testing query / find cmd here */
