@@ -26,7 +26,7 @@ server_id_for_reads (mongoc_cluster_t *cluster)
    uint32_t id;
 
    server_stream = mongoc_cluster_stream_for_reads (
-      cluster, NULL, NULL, NULL, NOT_AGGR_WITH_WRITE_STAGE, &error);
+      cluster, NULL, NULL, NULL, false, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
 

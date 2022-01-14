@@ -113,7 +113,7 @@ mongoc_topology_description_select (
    const mongoc_topology_description_t *description,
    mongoc_ss_optype_t optype,
    const mongoc_read_prefs_t *read_pref,
-   mongoc_read_mode_t *chosen_read_mode,
+   bool *must_use_primary,
    int64_t local_threshold_ms);
 
 mongoc_server_description_t *
@@ -148,7 +148,7 @@ mongoc_topology_description_suitable_servers (
    mongoc_ss_optype_t optype,
    const mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t *read_pref,
-   mongoc_read_mode_t *chosen_read_mode,
+   bool *must_use_primary,
    size_t local_threshold_ms);
 
 bool

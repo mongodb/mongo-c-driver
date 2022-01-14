@@ -34,8 +34,6 @@ typedef struct _mongoc_read_prefs_t mongoc_read_prefs_t;
 
 
 typedef enum {
-   /** Represents the absence of a read mode preference */
-   MONGOC_READ_UNSET = 0,
    /** Represents $readPreference.mode of 'primary' */
    MONGOC_READ_PRIMARY = (1 << 0),
    /** Represents $readPreference.mode of 'secondary' */

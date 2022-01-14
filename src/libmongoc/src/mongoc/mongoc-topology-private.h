@@ -234,10 +234,9 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
  * @param topology The topology to inspect and/or update.
  * @param optype The operation that is intended to be performed.
  * @param read_prefs The read preferences for the command.
- * @param chosen_read_mode An option output parameter. If server selection might
- * need to override the caller's read preferences' read mode, the actually-used
- * read mode will be written to this pointer. If no overriding takes place, then
- * the pointed-to value remains unchanged.
+ * @param must_use_primary An optional output parameter. Server selection might
+ * need to override the caller's read preferences' read mode to 'primary'.
+ * Whether or not that takes place will be set through this pointer.
  * @param error An output parameter for any error information.
  * @return mongoc_server_description_t* A copy of the topology's server
  * description that matches the request, or NULL if there is no such server.
@@ -251,7 +250,7 @@ mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
                         const mongoc_read_prefs_t *read_prefs,
-                        mongoc_read_mode_t *chosen_read_mode,
+                        bool *must_use_primary,
                         bson_error_t *error);
 
 /**
@@ -263,10 +262,9 @@ mongoc_topology_select (mongoc_topology_t *topology,
  * @param topology The topology to inspect and/or update.
  * @param optype The operation that is intended to be performed.
  * @param read_prefs The read preferences for the command.
- * @param chosen_read_mode An option output parameter. If server selection might
- * need to override the caller's read preferences' read mode, the actually-used
- * read mode will be written to this pointer. If no overriding takes place, then
- * the pointed-to value remains unchanged.
+ * @param must_use_primary An optional output parameter. Server selection might
+ * need to override the caller's read preferences' read mode to 'primary'.
+ * Whether or not that takes place will be set through this pointer.
  * @param error An output parameter for any error information.
  * @return uint32_t A non-zero integer ID of the server description. In case of
  * error, sets `error` and returns zero.
@@ -277,7 +275,7 @@ uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
-                                  mongoc_read_mode_t *chosen_read_mode,
+                                  bool *must_use_primary,
                                   bson_error_t *error);
 
 /**

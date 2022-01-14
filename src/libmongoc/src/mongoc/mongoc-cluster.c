@@ -2707,7 +2707,7 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
                                   mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
-                                  mongoc_read_mode_t *chosen_read_mode,
+                                  bool *must_use_primary,
                                   bson_error_t *error)
 {
    uint32_t server_id;
@@ -2716,14 +2716,14 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
       server_id = cs->server_id;
       if (!server_id) {
          server_id = mongoc_topology_select_server_id (
-            topology, optype, read_prefs, chosen_read_mode, error);
+            topology, optype, read_prefs, must_use_primary, error);
          if (server_id) {
             _mongoc_client_session_pin (cs, server_id);
          }
       }
    } else {
       server_id = mongoc_topology_select_server_id (
-         topology, optype, read_prefs, chosen_read_mode, error);
+         topology, optype, read_prefs, must_use_primary, error);
       /* Transactions Spec: Additionally, any non-transaction operation using a
        * pinned ClientSession MUST unpin the session and the operation MUST
        * perform normal server selection. */
@@ -2764,14 +2764,14 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    mongoc_server_stream_t *server_stream;
    uint32_t server_id;
    mongoc_topology_t *topology = cluster->client->topology;
-   mongoc_read_mode_t chosen_read_mode = MONGOC_READ_UNSET;
+   bool must_use_primary = false;
 
    ENTRY;
 
    BSON_ASSERT (cluster);
 
    server_id = _mongoc_cluster_select_server_id (
-      cs, topology, optype, read_prefs, &chosen_read_mode, error);
+      cs, topology, optype, read_prefs, &must_use_primary, error);
 
    if (!server_id) {
       _mongoc_bson_init_with_transient_txn_error (cs, reply);
@@ -2781,7 +2781,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    if (!mongoc_cluster_check_interval (cluster, server_id)) {
       /* Server Selection Spec: try once more */
       server_id = _mongoc_cluster_select_server_id (
-         cs, topology, optype, read_prefs, &chosen_read_mode, error);
+         cs, topology, optype, read_prefs, &must_use_primary, error);
 
       if (!server_id) {
          _mongoc_bson_init_with_transient_txn_error (cs, reply);
@@ -2793,7 +2793,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    server_stream = _mongoc_cluster_stream_for_server (
       cluster, server_id, true /* reconnect_ok */, cs, reply, error);
    if (server_stream) {
-      server_stream->effective_read_mode = chosen_read_mode;
+      server_stream->must_use_primary = must_use_primary;
    }
 
    RETURN (server_stream);
@@ -2804,7 +2804,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
                                  bson_t *reply,
-                                 aggr_with_write_stage_flag with_write_stage,
+                                 bool has_write_stage,
                                  bson_error_t *error)
 {
    const mongoc_read_prefs_t *prefs_override = read_prefs;
@@ -2814,14 +2814,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    }
 
    return _mongoc_cluster_stream_for_optype (
-      cluster,
-      with_write_stage == NOT_AGGR_WITH_WRITE_STAGE
-         ? MONGOC_SS_READ
-         : MONGOC_SS_AGGREGATE_WITH_WRITE,
-      prefs_override,
-      cs,
-      reply,
-      error);
+      cluster, has_write_stage, prefs_override, cs, reply, error);
 }
 
 mongoc_server_stream_t *
