@@ -655,15 +655,17 @@ _mongoc_topology_description_validate_max_staleness (
 }
 
 static bool
-_check_any_server_less_than_wire_version_v5_0 (const void *sd_,
-                                               void *any_too_old_)
+_check_any_server_less_than_wire_version_13 (const void *sd_,
+                                             void *any_too_old_)
 {
    const mongoc_server_description_t *sd = sd_;
    bool *any_too_old = any_too_old_;
-   if (sd->max_wire_version < WIRE_VERSION_5_0) {
+   if (sd->max_wire_version < 13) {
       *any_too_old = true;
+      return false /* Stop searching */;
    }
-   return true;
+
+   return true /* Keep searching */;
 }
 
 /**
@@ -699,7 +701,7 @@ _calc_effective_read_mode (const mongoc_topology_description_t *td,
        * aggregate-with-write on a secondary server */
       bool any_too_old = false;
       mongoc_set_for_each_const (mc_tpld_servers_const (td),
-                                 _check_any_server_less_than_wire_version_v5_0,
+                                 _check_any_server_less_than_wire_version_13,
                                  &any_too_old);
       if (any_too_old) {
          /* Force the read preference back to reading from a primary server, as
