@@ -22083,14 +22083,6 @@ buildvariants:
   - .debug-compile .asan-clang
   - .test-asan .3.6
   batchtime: 1440
-- name: asan-ubuntu-ubuntu1404
-  display_name: ASAN Tests - MongoDB 3.0 (Ubuntu 14.04)
-  expansions:
-    CC: clang
-  run_on: ubuntu1404-test
-  tasks:
-  - .debug-compile .asan-clang !.client-side-encryption
-  batchtime: 1440
 - name: clang60ubuntu
   display_name: clang 6.0 (Ubuntu 18.04)
   expansions:
