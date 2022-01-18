@@ -343,7 +343,7 @@ enum bson_memory_order {
 
 #if defined(_MSC_VER) || defined(BSON_USE_LEGACY_GCC_ATOMICS)
 /* MSVC expects precise types for their atomic intrinsics. */
-DECL_ATOMIC_INTEGRAL (int8, char, 8);
+DECL_ATOMIC_INTEGRAL (int8, char, 8)
 DECL_ATOMIC_INTEGRAL (int16, short, 16)
 #if !defined(BSON_EMULATE_INT32)
 DECL_ATOMIC_INTEGRAL (int32, long, )
