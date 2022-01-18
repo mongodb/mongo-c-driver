@@ -655,21 +655,30 @@ test_read_prefs_mongos_max_staleness (void)
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 120);
 
+   /* exhaust cursor is required per CDRIVER-3633 so the driver downgrades the
+    * OP_QUERY find command to an OP_QUERY legacy find */
    cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{'a': 1}"), NULL, prefs);
+      collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_msg (
+   request = mock_server_receives_query (
       server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'test',"
-                " 'find': 'test',"
-                " 'filter': {'a': 1},"
-                " '$readPreference': {"
-                "   'mode': 'secondaryPreferred',"
-                "   'maxStalenessSeconds': {'$numberLong': '120'}}}"));
+      "test.test",
+      MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
+      0,
+      0,
+      "{'$query': {'a': 1},"
+      " '$readPreference': {'mode': 'secondaryPreferred',"
+      "                     'maxStalenessSeconds': 120}}",
+      "{}");
 
-   mock_server_replies_to_find (
-      request, MONGOC_QUERY_NONE, 0, 1, "test.test", "{}", true);
+   mock_server_replies_to_find (request,
+                                MONGOC_QUERY_EXHAUST |
+                                   MONGOC_QUERY_SECONDARY_OK,
+                                0,
+                                1,
+                                "test.test",
+                                "{}",
+                                false);
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));
