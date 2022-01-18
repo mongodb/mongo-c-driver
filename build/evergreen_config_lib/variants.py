@@ -566,7 +566,7 @@ all_variants = [
             {'CC': 'clang'},
             batchtime=days(1)),
     # There is no MongoDB < 4.0 with SSL available on Ubuntu post 16.04.
-    # So have a variant for ASAN to test against MongoDB 3.2 through 3.6.
+    # So have a variant for ASAN to test against MongoDB 3.6.
     Variant('asan-ubuntu-ubuntu1604',
             'ASAN Tests (Ubuntu 16.04)',
             'ubuntu1604-test',
