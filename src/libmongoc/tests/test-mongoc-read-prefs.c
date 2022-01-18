@@ -17,61 +17,6 @@ _can_be_command (const char *query)
 
 
 static void
-_test_find_command (const mongoc_uri_t *uri,
-                    mock_server_t *server,
-                    const char *query_in,
-                    mongoc_read_prefs_t *read_prefs,
-                    const char *expected_op_msg)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-   bson_t b = BSON_INITIALIZER;
-   future_t *future;
-   request_t *request;
-
-   client = test_framework_client_new_from_uri (uri, NULL);
-   collection = mongoc_client_get_collection (client, "test", "test");
-
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_NONE,
-                                    0,
-                                    1,
-                                    0,
-                                    tmp_bson (query_in),
-                                    NULL,
-                                    read_prefs);
-
-   future = future_cursor_next (cursor, &doc);
-
-   request = mock_server_receives_msg (
-      server, MONGOC_MSG_NONE, tmp_bson (expected_op_msg));
-
-   mock_server_replies (request,
-                        MONGOC_REPLY_NONE, /* flags */
-                        0,                 /* cursorId */
-                        0,                 /* startingFrom */
-                        1,                 /* numberReturned */
-                        "{'ok': 1,"
-                        " 'cursor': {"
-                        "    'id': 0,"
-                        "    'ns': 'db.collection',"
-                        "    'firstBatch': [{'a': 1}]}}");
-
-   /* mongoc_cursor_next returned true */
-   BSON_ASSERT (future_get_bool (future));
-
-   request_destroy (request);
-   future_destroy (future);
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   bson_destroy (&b);
-}
-
-
-static void
 _test_op_msg (const mongoc_uri_t *uri,
               mock_server_t *server,
               const char *query_in,
@@ -319,11 +264,6 @@ _test_read_prefs_op_msg (read_pref_test_type_t test_type,
 
       _test_command_simple (uri, server, query_in, read_prefs, expected_query);
    }
-
-   _test_find_command (uri, server, query_in, read_prefs, expected_op_msg);
-
-   mongoc_uri_destroy (uri);
-   uri = _get_uri (server, test_type);
 
    _test_op_msg (uri, server, query_in, read_prefs, expected_op_msg);
 
