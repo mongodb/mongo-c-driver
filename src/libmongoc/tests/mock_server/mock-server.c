@@ -987,8 +987,8 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
  * mock_server_receives_bulk_msg --
  *
  *       Pop a client OP_MSG request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request. Pass varargs
- *       list of bson_t pointers, which are matched to the series of
+ *       request_timeout_ms for the client to send a request. Pass
+ *       `msg_pattern`, which is matched to the series of exactly `n_doc`
  *       documents in the request, regardless of section boundaries.
  *
  * Returns:
