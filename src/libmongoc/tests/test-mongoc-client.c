@@ -1219,9 +1219,8 @@ test_command_with_opts_read_prefs (void)
    future = future_client_read_command_with_opts (
       client, "admin", cmd, NULL, NULL /* opts */, NULL, &error);
 
-   /* Server Selection Spec: "For mode 'secondary', drivers MUST set the
-    * secondaryOk wire protocol flag and MUST also use $readPreference".
-    */
+   /* Server Selection Spec: For all read preference modes that are not
+    * 'primary', drivers MUST set '$readPreference'. */
    request = mock_server_receives_msg (
       server,
       MONGOC_MSG_NONE,

@@ -151,11 +151,6 @@ _test_collection_find_live (test_collection_find_t *test_data)
 static request_t *
 _check_find_command (mock_server_t *server, test_collection_find_t *test_data)
 {
-   /* Server Selection Spec: all queries to standalone set secondaryOk.
-    *
-    * Find, getMore And killCursors Commands Spec: "When sending a find command
-    * rather than a legacy OP_QUERY find only the secondaryOk flag is honored".
-    */
    return mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson (test_data->expected_find_command));
 }
@@ -937,7 +932,6 @@ test_getmore_await (void)
       mongoc_cursor_set_max_await_time_ms (cursor, 123);
       future = future_cursor_next (cursor, &doc);
 
-      /* only the secondaryOk bit is still in the query header */
       request = mock_server_receives_msg (
          server,
          MONGOC_MSG_NONE,
@@ -969,7 +963,6 @@ test_getmore_await (void)
          max_time_json = "{'$exists': false}";
       }
 
-      /* only the secondaryOk bit is still in the query header */
       request = mock_server_receives_msg (
          server,
          MONGOC_MSG_NONE,

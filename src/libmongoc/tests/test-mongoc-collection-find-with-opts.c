@@ -751,7 +751,7 @@ test_find_w_server_id_sharded (void)
 
    future = future_cursor_next (cursor, &doc);
 
-   /* does NOT set secondaryOk, since this is a sharded topology */
+   /* Does NOT set '$readPreference', since this is a sharded topology. */
    request = mock_server_receives_msg (
       server,
       MONGOC_MSG_NONE,
@@ -804,7 +804,6 @@ test_find_cmd_w_server_id_sharded (void)
    future = future_cursor_next (cursor, &doc);
 
    /* recognized that wire version is recent enough for readConcern */
-   /* does NOT set secondaryOk, since this is a sharded topology */
    request =
       mock_server_receives_msg (server,
                                 MONGOC_MSG_NONE,
