@@ -493,6 +493,7 @@ run_one_integration_test (json_test_config_t *config, bson_t *test)
    mongoc_client_pool_push (pool, thread_ctx[0].client);
    mongoc_client_pool_push (pool, thread_ctx[1].client);
 
+   /* Capture occasionally emitted "Couldn't end \"endSessions\"" messages. */
    capture_logs (true);
    mongoc_client_pool_destroy (pool);
    mongoc_client_destroy (setup_client);
