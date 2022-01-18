@@ -41,7 +41,9 @@
 
 BSON_BEGIN_DECLS
 
-/* protocol versions this driver can speak */
+/* Range of wire protocol versions this driver supports. Bumping
+ * WIRE_VERSION_MAX must be accompanied by an update to
+ * `_mongoc_wire_version_to_server_version`. */
 #define WIRE_VERSION_MIN 6  /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX 14 /* a.k.a. maxWireVersion */
 
