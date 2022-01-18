@@ -3027,6 +3027,7 @@ test_sample_aggregation (mongoc_database_t *db)
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
+   /* End Aggregation Example 4 */
 
    ASSERT_NO_CAPTURED_LOGS ("sample aggregation examples");
 }
