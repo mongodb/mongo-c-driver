@@ -167,10 +167,6 @@ enum bson_memory_order {
    } while (0)
 
 
-/* Address empty macro argument warnings prior to C99. */
-#define DECL_ATOMIC_INTEGRAL_EMPTY_ARG
-
-
 #define DECL_ATOMIC_INTEGRAL(NamePart, Type, VCIntrinSuffix)                  \
    static BSON_INLINE Type bson_atomic_##NamePart##_fetch_add (               \
       Type volatile *a, Type addend, enum bson_memory_order ord)              \
@@ -265,12 +261,8 @@ enum bson_memory_order {
       case bson_memory_order_release:                                         \
       case bson_memory_order_acq_rel:                                         \
       case bson_memory_order_seq_cst:                                         \
-         DEF_ATOMIC_CMPEXCH_STRONG (VCIntrinSuffix,                           \
-                                    DECL_ATOMIC_EMPTY_MACRO_ARG,              \
-                                    __ATOMIC_SEQ_CST,                         \
-                                    a,                                        \
-                                    actual,                                   \
-                                    new_value);                               \
+         DEF_ATOMIC_CMPEXCH_STRONG (                                          \
+            VCIntrinSuffix, , __ATOMIC_SEQ_CST, a, actual, new_value);        \
          break;                                                               \
       case bson_memory_order_acquire:                                         \
          DEF_ATOMIC_CMPEXCH_STRONG (VCIntrinSuffix,                           \
@@ -313,12 +305,8 @@ enum bson_memory_order {
       case bson_memory_order_release:                                         \
       case bson_memory_order_acq_rel:                                         \
       case bson_memory_order_seq_cst:                                         \
-         DEF_ATOMIC_CMPEXCH_WEAK (VCIntrinSuffix,                             \
-                                  DECL_ATOMIC_EMPTY_MACRO_ARG,                \
-                                  __ATOMIC_SEQ_CST,                           \
-                                  a,                                          \
-                                  actual,                                     \
-                                  new_value);                                 \
+         DEF_ATOMIC_CMPEXCH_WEAK (                                            \
+            VCIntrinSuffix, , __ATOMIC_SEQ_CST, a, actual, new_value);        \
          break;                                                               \
       case bson_memory_order_acquire:                                         \
          DEF_ATOMIC_CMPEXCH_WEAK (VCIntrinSuffix,                             \
@@ -357,9 +345,9 @@ enum bson_memory_order {
 /* MSVC and GCC require built-in types (not typedefs) for their atomic
  * intrinsics. */
 #if defined(_MSC_VER)
-#define DECL_ATOMIC_INTEGRAL_INT8 char
-#define DECL_ATOMIC_INTEGRAL_INT32 long
-#define DECL_ATOMIC_INTEGRAL_INT long
+#define DECL_ATOMIC_INTEGRAL_INT8 char  /* int8_t -> char */
+#define DECL_ATOMIC_INTEGRAL_INT32 long /* int32_t -> long */
+#define DECL_ATOMIC_INTEGRAL_INT long   /* Only long overloads */
 #else
 #define DECL_ATOMIC_INTEGRAL_INT8 signed char
 #define DECL_ATOMIC_INTEGRAL_INT32 int
@@ -368,24 +356,20 @@ enum bson_memory_order {
 DECL_ATOMIC_INTEGRAL (int8, DECL_ATOMIC_INTEGRAL_INT8, 8)
 DECL_ATOMIC_INTEGRAL (int16, short, 16)
 #if !defined(BSON_EMULATE_INT32)
-DECL_ATOMIC_INTEGRAL (int32,
-                      DECL_ATOMIC_INTEGRAL_INT32,
-                      DECL_ATOMIC_EMPTY_MACRO_ARG)
+DECL_ATOMIC_INTEGRAL (int32, DECL_ATOMIC_INTEGRAL_INT32, )
 #endif
 #if !defined(BSON_EMULATE_INT)
-DECL_ATOMIC_INTEGRAL (int,
-                      DECL_ATOMIC_INTEGRAL_INT,
-                      DECL_ATOMIC_EMPTY_MACRO_ARG)
+DECL_ATOMIC_INTEGRAL (int, DECL_ATOMIC_INTEGRAL_INT, )
 #endif
 #else
 /* Other compilers that we support provide generic intrinsics */
 DECL_ATOMIC_STDINT (int8, 8)
 DECL_ATOMIC_STDINT (int16, 16)
 #if !defined(BSON_EMULATE_INT32)
-DECL_ATOMIC_STDINT (int32, DECL_ATOMIC_EMPTY_MACRO_ARG)
+DECL_ATOMIC_STDINT (int32, )
 #endif
 #if !defined(BSON_EMULATE_INT)
-DECL_ATOMIC_INTEGRAL (int, int, DECL_ATOMIC_EMPTY_MACRO_ARG)
+DECL_ATOMIC_INTEGRAL (int, int, )
 #endif
 #endif
 
@@ -627,19 +611,15 @@ bson_atomic_ptr_exchange (void *volatile *ptr,
    /* The older __sync_val_compare_and_swap also takes oldval */
 #if defined(BSON_USE_LEGACY_GCC_ATOMICS)
    DEF_ATOMIC_OP (_InterlockedExchangePointer,
-                  DECL_ATOMIC_EMPTY_MACRO_ARG,
+                  ,
                   __sync_val_compare_and_swap,
                   ord,
                   ptr,
                   *ptr,
                   new_value);
 #else
-   DEF_ATOMIC_OP (_InterlockedExchangePointer,
-                  __atomic_exchange_n,
-                  DECL_ATOMIC_EMPTY_MACRO_ARG,
-                  ord,
-                  ptr,
-                  new_value);
+   DEF_ATOMIC_OP (
+      _InterlockedExchangePointer, __atomic_exchange_n, , ord, ptr, new_value);
 #endif
 }
 
@@ -653,12 +633,8 @@ bson_atomic_ptr_compare_exchange_strong (void *volatile *ptr,
    case bson_memory_order_release:
    case bson_memory_order_acq_rel:
    case bson_memory_order_seq_cst:
-      DEF_ATOMIC_CMPEXCH_STRONG (Pointer,
-                                 DECL_ATOMIC_EMPTY_MACRO_ARG,
-                                 __ATOMIC_SEQ_CST,
-                                 ptr,
-                                 expect,
-                                 new_value);
+      DEF_ATOMIC_CMPEXCH_STRONG (
+         Pointer, , __ATOMIC_SEQ_CST, ptr, expect, new_value);
       return expect;
    case bson_memory_order_relaxed:
       DEF_ATOMIC_CMPEXCH_STRONG (Pointer,
@@ -700,12 +676,8 @@ bson_atomic_ptr_compare_exchange_weak (void *volatile *ptr,
    case bson_memory_order_release:
    case bson_memory_order_acq_rel:
    case bson_memory_order_seq_cst:
-      DEF_ATOMIC_CMPEXCH_WEAK (Pointer,
-                               DECL_ATOMIC_EMPTY_MACRO_ARG,
-                               __ATOMIC_SEQ_CST,
-                               ptr,
-                               expect,
-                               new_value);
+      DEF_ATOMIC_CMPEXCH_WEAK (
+         Pointer, , __ATOMIC_SEQ_CST, ptr, expect, new_value);
       return expect;
    case bson_memory_order_relaxed:
       DEF_ATOMIC_CMPEXCH_WEAK (Pointer,
