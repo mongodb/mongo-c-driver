@@ -4395,19 +4395,10 @@ _test_bulk_collation (bool w, bulkop op)
    } else {
       ASSERT (!future_get_uint32_t (future));
       future_destroy (future);
-      if (w) {
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-            "The selected server does not support collation");
-      } else {
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
-            "Cannot set collation for unacknowledged writes");
-      }
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Cannot set collation for unacknowledged writes");
    }
 
 
@@ -4469,19 +4460,10 @@ _test_bulk_collation_multi (bool w)
    } else {
       ASSERT (!future_get_uint32_t (future));
       future_destroy (future);
-      if (w) {
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-            "The selected server does not support collation");
-      } else {
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
-            "Cannot set collation for unacknowledged writes");
-      }
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Cannot set collation for unacknowledged writes");
    }
 
    bson_destroy (&reply);
