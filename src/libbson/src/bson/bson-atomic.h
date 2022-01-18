@@ -345,9 +345,9 @@ enum bson_memory_order {
 /* MSVC and GCC require built-in types (not typedefs) for their atomic
  * intrinsics. */
 #if defined(_MSC_VER)
-#define DECL_ATOMIC_INTEGRAL_INT8 char  /* int8_t -> char */
-#define DECL_ATOMIC_INTEGRAL_INT32 long /* int32_t -> long */
-#define DECL_ATOMIC_INTEGRAL_INT long   /* Only long overloads */
+#define DECL_ATOMIC_INTEGRAL_INT8 char
+#define DECL_ATOMIC_INTEGRAL_INT32 long
+#define DECL_ATOMIC_INTEGRAL_INT long
 #else
 #define DECL_ATOMIC_INTEGRAL_INT8 signed char
 #define DECL_ATOMIC_INTEGRAL_INT32 int
