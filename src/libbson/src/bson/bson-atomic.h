@@ -342,14 +342,24 @@ enum bson_memory_order {
    DECL_ATOMIC_INTEGRAL (Name, Name##_t, VCSuffix)
 
 #if defined(_MSC_VER) || defined(BSON_USE_LEGACY_GCC_ATOMICS)
-/* MSVC expects precise types for their atomic intrinsics. */
-DECL_ATOMIC_INTEGRAL (int8, char, 8)
+/* MSVC and GCC require built-in types (not typedefs) for their atomic
+ * intrinsics. */
+#if defined(_MSC_VER)
+#define DECL_ATOMIC_INTEGRAL_INT8 char  /* int8_t -> char */
+#define DECL_ATOMIC_INTEGRAL_INT32 long /* int32_t -> long */
+#define DECL_ATOMIC_INTEGRAL_INT long   /* Only long overloads */
+#else
+#define DECL_ATOMIC_INTEGRAL_INT8 signed char
+#define DECL_ATOMIC_INTEGRAL_INT32 int
+#define DECL_ATOMIC_INTEGRAL_INT int
+#endif
+DECL_ATOMIC_INTEGRAL (int8, DECL_ATOMIC_INTEGRAL_INT8, 8)
 DECL_ATOMIC_INTEGRAL (int16, short, 16)
 #if !defined(BSON_EMULATE_INT32)
-DECL_ATOMIC_INTEGRAL (int32, long, )
+DECL_ATOMIC_INTEGRAL (int32, DECL_ATOMIC_INTEGRAL_INT32, )
 #endif
 #if !defined(BSON_EMULATE_INT)
-DECL_ATOMIC_INTEGRAL (int, long, )
+DECL_ATOMIC_INTEGRAL (int, DECL_ATOMIC_INTEGRAL_INT, )
 #endif
 #else
 /* Other compilers that we support provide generic intrinsics */
