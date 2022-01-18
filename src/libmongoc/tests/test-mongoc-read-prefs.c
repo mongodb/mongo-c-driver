@@ -19,9 +19,9 @@ _can_be_command (const char *query)
 static void
 _test_op_msg (const mongoc_uri_t *uri,
               mock_server_t *server,
-              const char *query_in,
+              const char *query_or_cmd,
               mongoc_read_prefs_t *read_prefs,
-              const char *expected_op_msg)
+              const char *expected_find)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -39,12 +39,12 @@ _test_op_msg (const mongoc_uri_t *uri,
                                     0,
                                     1,
                                     0,
-                                    tmp_bson (query_in),
+                                    tmp_bson (query_or_cmd),
                                     NULL,
                                     read_prefs);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_msg (server, 0, tmp_bson (expected_op_msg));
+   request = mock_server_receives_msg (server, 0, tmp_bson (expected_find));
    mock_server_replies_simple (request,
                                "{'ok': 1,"
                                " 'cursor': {"
@@ -69,7 +69,7 @@ _test_command (const mongoc_uri_t *uri,
                mock_server_t *server,
                const char *command,
                mongoc_read_prefs_t *read_prefs,
-               const char *expected_query)
+               const char *expected_cmd)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -95,7 +95,7 @@ _test_command (const mongoc_uri_t *uri,
    future = future_cursor_next (cursor, &doc);
 
    request = mock_server_receives_msg (
-      server, MONGOC_MSG_NONE, tmp_bson (expected_query));
+      server, MONGOC_MSG_NONE, tmp_bson (expected_cmd));
 
    mock_server_replies (request,
                         MONGOC_REPLY_NONE, /* flags */
@@ -120,7 +120,7 @@ _test_command_simple (const mongoc_uri_t *uri,
                       mock_server_t *server,
                       const char *command,
                       mongoc_read_prefs_t *read_prefs,
-                      const char *expected_query)
+                      const char *expected_cmd)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -135,7 +135,7 @@ _test_command_simple (const mongoc_uri_t *uri,
       client, "test", tmp_bson (command), read_prefs, NULL, NULL);
 
    request = mock_server_receives_msg (
-      server, MONGOC_MSG_NONE, tmp_bson (expected_query));
+      server, MONGOC_MSG_NONE, tmp_bson (expected_cmd));
 
    mock_server_replies (request,
                         MONGOC_REPLY_NONE, /* flags */
@@ -249,9 +249,9 @@ _get_uri (mock_server_t *server, read_pref_test_type_t test_type)
 static void
 _test_read_prefs_op_msg (read_pref_test_type_t test_type,
                          mongoc_read_prefs_t *read_prefs,
-                         const char *query_in,
-                         const char *expected_query,
-                         const char *expected_op_msg)
+                         const char *query_or_cmd,
+                         const char *expected_cmd,
+                         const char *expected_find)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -259,13 +259,14 @@ _test_read_prefs_op_msg (read_pref_test_type_t test_type,
    server = _run_server (test_type);
    uri = _get_uri (server, test_type);
 
-   if (_can_be_command (query_in)) {
-      _test_command (uri, server, query_in, read_prefs, expected_query);
+   if (_can_be_command (query_or_cmd)) {
+      _test_command (uri, server, query_or_cmd, read_prefs, expected_cmd);
 
-      _test_command_simple (uri, server, query_in, read_prefs, expected_query);
+      _test_command_simple (
+         uri, server, query_or_cmd, read_prefs, expected_cmd);
    }
 
-   _test_op_msg (uri, server, query_in, read_prefs, expected_op_msg);
+   _test_op_msg (uri, server, query_or_cmd, read_prefs, expected_find);
 
    mock_server_destroy (server);
    mongoc_uri_destroy (uri);
@@ -275,12 +276,12 @@ _test_read_prefs_op_msg (read_pref_test_type_t test_type,
 static void
 _test_read_prefs (read_pref_test_type_t test_type,
                   mongoc_read_prefs_t *read_prefs,
-                  const char *query_in,
-                  const char *expected_query,
-                  const char *expected_op_msg)
+                  const char *query_or_cmd,
+                  const char *expected_cmd,
+                  const char *expected_find)
 {
    _test_read_prefs_op_msg (
-      test_type, read_prefs, query_in, expected_query, expected_op_msg);
+      test_type, read_prefs, query_or_cmd, expected_cmd, expected_find);
 }
 
 
