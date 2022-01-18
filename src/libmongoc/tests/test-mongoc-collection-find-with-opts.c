@@ -24,13 +24,9 @@ typedef struct {
 } test_collection_find_with_opts_t;
 
 
-typedef request_t *(*check_request_fn_t) (
-   mock_server_t *server, test_collection_find_with_opts_t *test_data);
-
-
 /*--------------------------------------------------------------------------
  *
- * _test_collection_op_query_or_find_command --
+ * _test_collection_find_command --
  *
  *       Start a mock server with @max_wire_version, connect a client, and
  *       execute a query with @test_data->filter and @test_data->opts. Use
@@ -41,10 +37,7 @@ typedef request_t *(*check_request_fn_t) (
  */
 
 static void
-_test_collection_op_query_or_find_command (
-   test_collection_find_with_opts_t *test_data,
-   check_request_fn_t check_request_fn,
-   const char *reply_json)
+_test_collection_find_command (test_collection_find_with_opts_t *test_data)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -67,9 +60,15 @@ _test_collection_op_query_or_find_command (
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    future = future_cursor_next (cursor, &doc);
-   request = check_request_fn (server, test_data);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson (test_data->expected_find_command));
    ASSERT (request);
-   mock_server_replies_simple (request, reply_json);
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': 0,"
+                               "    'ns': 'db.collection',"
+                               "    'firstBatch': [{}]}}");
    ASSERT (future_get_bool (future));
 
    request_destroy (request);
@@ -78,34 +77,6 @@ _test_collection_op_query_or_find_command (
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
-}
-
-
-static request_t *
-_check_find_command (mock_server_t *server,
-                     test_collection_find_with_opts_t *test_data)
-{
-   /* Server Selection Spec: all queries to standalone set secondaryOk.
-    *
-    * Find, getMore And killCursors Commands Spec: "When sending a find command
-    * rather than a legacy OP_QUERY find only the secondaryOk flag is honored".
-    */
-   return mock_server_receives_msg (
-      server, MONGOC_MSG_NONE, tmp_bson (test_data->expected_find_command));
-}
-
-
-static void
-_test_collection_find_command (test_collection_find_with_opts_t *test_data)
-
-{
-   _test_collection_op_query_or_find_command (test_data,
-                                              _check_find_command,
-                                              "{'ok': 1,"
-                                              " 'cursor': {"
-                                              "    'id': 0,"
-                                              "    'ns': 'db.collection',"
-                                              "    'firstBatch': [{}]}}");
 }
 
 
