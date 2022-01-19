@@ -181,8 +181,8 @@ _bson_context_init_random (bson_context_t *context)
 
    /** Initialize the rand and sequence counters with our random digest */
    memcpy (context->randomness, digest, sizeof context->randomness);
-   memcpy (&context->seq32, digest + 3, sizeof context->seq32);
-   memcpy (&context->seq64, digest + 7, sizeof context->seq64);
+   memcpy (&context->seq32, digest + 8, sizeof context->seq32);
+   memcpy (&context->seq64, digest + 8, sizeof context->seq64);
    context->seq32 &= ~UINT32_C (0xf);
    context->seq64 &= ~UINT64_C (0xf);
 }
