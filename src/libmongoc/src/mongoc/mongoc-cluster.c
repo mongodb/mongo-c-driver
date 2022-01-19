@@ -2814,7 +2814,13 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    }
 
    return _mongoc_cluster_stream_for_optype (
-      cluster, has_write_stage, prefs_override, cs, reply, error);
+      cluster,
+      /* Narrow down the optype if this is an aggregate op with a write stage */
+      has_write_stage ? MONGOC_SS_AGGREGATE_WITH_WRITE : MONGOC_SS_READ,
+      prefs_override,
+      cs,
+      reply,
+      error);
 }
 
 mongoc_server_stream_t *
