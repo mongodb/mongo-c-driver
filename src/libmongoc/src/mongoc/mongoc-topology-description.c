@@ -660,7 +660,7 @@ _check_any_server_less_than_wire_version_13 (const void *sd_,
 {
    const mongoc_server_description_t *sd = sd_;
    bool *any_too_old = any_too_old_;
-   if (sd->max_wire_version < 13) {
+   if (sd->max_wire_version < WIRE_VERSION_5_0) {
       *any_too_old = true;
       return false /* Stop searching */;
    }
@@ -679,9 +679,9 @@ _check_any_server_less_than_wire_version_13 (const void *sd_,
  * (i.e. '$out' and '$merge').
  */
 static bool
-_force_read_primary (const mongoc_topology_description_t *td,
-                     mongoc_ss_optype_t optype,
-                     mongoc_read_mode_t requested_read_mode)
+_must_use_primary (const mongoc_topology_description_t *td,
+                   mongoc_ss_optype_t optype,
+                   mongoc_read_mode_t requested_read_mode)
 {
    if (requested_read_mode == MONGOC_READ_PRIMARY) {
       /* We never alter from a primary read mode. This early-return is just an
@@ -713,7 +713,7 @@ _force_read_primary (const mongoc_topology_description_t *td,
       return false;
    }
    default:
-      BSON_UNREACHABLE ("Invalid mongoc_ss_optype_t for _force_read_primary()");
+      BSON_UNREACHABLE ("Invalid mongoc_ss_optype_t for _must_use_primary()");
    }
 }
 
@@ -748,7 +748,7 @@ mongoc_topology_description_suitable_servers (
    const mongoc_read_mode_t given_read_mode =
       mongoc_read_prefs_get_mode (read_pref);
    const bool override_use_primary =
-      _force_read_primary (topology, optype, given_read_mode);
+      _must_use_primary (topology, optype, given_read_mode);
 
    data.primary = NULL;
    data.topology_type = topology->type;

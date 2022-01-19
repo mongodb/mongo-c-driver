@@ -664,7 +664,7 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                            cursor->client_session,
                                            &reply,
                                            &cursor->error);
-      /* Also restore the effective read mode that was used on that prior
+      /* Also restore whether primary read preference was forced by server
        * selection */
       server_stream->must_use_primary = cursor->must_use_primary;
    } else {
@@ -677,8 +677,9 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                           &cursor->error);
 
       if (server_stream) {
-         /* Remember the selected server_id and the effective read mode so that
-          * we can re-create an equivalent server_stream at a later time */
+         /* Remember the selected server_id and whether primary read mode was
+          * forced so that we can re-create an equivalent server_stream at a
+          * later time */
          cursor->server_id = server_stream->sd->id;
          cursor->must_use_primary = server_stream->must_use_primary;
       }
