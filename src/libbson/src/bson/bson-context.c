@@ -28,6 +28,7 @@
 #include "bson-context-private.h"
 #include "bson-memory.h"
 #include "common-thread-private.h"
+#include "common-md5-private.h"
 
 #ifdef BSON_HAVE_SYSCALL_TID
 #include <sys/syscall.h>
@@ -43,6 +44,7 @@
  * Globals.
  */
 static bson_context_t gContextDefault;
+static int64_t gRandCounter = INT64_MIN;
 
 static BSON_INLINE uint16_t
 _bson_getpid (void)
@@ -58,32 +60,6 @@ _bson_getpid (void)
 #endif
 
    return pid;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _bson_context_set_oid_seq32 --
- *
- *       32-bit sequence generator, non-thread-safe version.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       @oid is modified.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-_bson_context_set_oid_seq32 (bson_context_t *context, /* IN */
-                             bson_oid_t *oid)         /* OUT */
-{
-   uint32_t seq = context->seq32++;
-
-   seq = BSON_UINT32_TO_BE (seq);
-   memcpy (&oid->bytes[9], ((uint8_t *) &seq) + 1, 3);
 }
 
 
@@ -117,36 +93,6 @@ _bson_context_set_oid_seq32_threadsafe (bson_context_t *context, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * _bson_context_set_oid_seq64 --
- *
- *       64-bit oid sequence generator, non-thread-safe version.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       @oid is modified.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-_bson_context_set_oid_seq64 (bson_context_t *context, /* IN */
-                             bson_oid_t *oid)         /* OUT */
-{
-   uint64_t seq;
-
-   BSON_ASSERT (context);
-   BSON_ASSERT (oid);
-
-   seq = BSON_UINT64_TO_BE (context->seq64++);
-   memcpy (&oid->bytes[4], &seq, sizeof (seq));
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
  * _bson_context_set_oid_seq64_threadsafe --
  *
  *       Thread-safe 64-bit sequence generator.
@@ -171,9 +117,91 @@ _bson_context_set_oid_seq64_threadsafe (bson_context_t *context, /* IN */
    memcpy (&oid->bytes[4], &seq, sizeof (seq));
 }
 
+/*
+ * --------------------------------------------------------------------------
+ *
+ * _bson_context_get_hostname
+ *
+ *       Gets the hostname of the machine, logs a warning on failure. "out"
+ *       must be an array of HOST_NAME_MAX bytes.
+ *
+ * --------------------------------------------------------------------------
+ */
+static void
+_bson_context_get_hostname (char *out)
+{
+   if (gethostname (out, HOST_NAME_MAX) != 0) {
+      if (errno == ENAMETOOLONG) {
+         fprintf (stderr,
+                  "hostname exceeds %d characters, truncating.",
+                  HOST_NAME_MAX);
+      } else {
+         fprintf (stderr, "unable to get hostname: %d", errno);
+      }
+   }
+   out[HOST_NAME_MAX - 1] = '\0';
+}
+
+/*
+ * The seed consists of the following hashed together:
+ * - current time (with microsecond resolution)
+ * - current pid
+ * - current hostname
+ * - The init-call counter
+ */
+struct _init_rand_params {
+   struct timeval time;
+   uint16_t thread_id;
+   char hostname[HOST_NAME_MAX];
+   int64_t rand_call_counter;
+};
+
+/* Arbitrary siphash key base number */
+static const uint64_t SIPHASH_KEY_INIT = UINT64_C (0x1729) << 42;
 
 static void
-_bson_context_init_random (bson_context_t *context, bool init_sequence);
+_bson_context_init_random (bson_context_t *context)
+{
+   /* Generated 32bit seed */
+   uint32_t seed = 0;
+   /* The message digest of the random params */
+   uint8_t digest[16] = {0};
+   /* The randomness parameters */
+   struct _init_rand_params rand_params;
+   bson_md5_t md5;
+
+   /* Init each part of the randomness source: */
+   memset (&rand_params, 0, sizeof rand_params);
+   bson_gettimeofday (&rand_params.time);
+   rand_params.thread_id = _bson_getpid ();
+   context->gethostname (rand_params.hostname);
+   rand_params.rand_call_counter =
+      bson_atomic_int64_fetch_add (&gRandCounter, 1, bson_memory_order_seq_cst);
+
+   /* Hash the param struct */
+   COMMON_PREFIX (_bson_md5_init (&md5));
+   COMMON_PREFIX (_bson_md5_append (
+      &md5, (const uint8_t *) &rand_params, sizeof rand_params));
+   COMMON_PREFIX (_bson_md5_finish (&md5, digest));
+
+   /** Initialize the rand and sequence counters with our random digest */
+   memcpy (context->randomness, digest, sizeof context->randomness);
+   memcpy (&context->seq32, digest + 3, sizeof context->seq32);
+   memcpy (&context->seq64, digest + 7, sizeof context->seq64);
+}
+
+static void
+_bson_context_init (bson_context_t *context, bson_context_flags_t flags)
+{
+   context->flags = (int) flags;
+   context->gethostname = _bson_context_get_hostname;
+
+   context->oid_set_seq32 = _bson_context_set_oid_seq32_threadsafe;
+   context->oid_set_seq64 = _bson_context_set_oid_seq64_threadsafe;
+
+   _bson_context_init_random (context);
+}
+
 
 /*
  *--------------------------------------------------------------------------
@@ -196,16 +224,7 @@ _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid)
    BSON_ASSERT (context);
    BSON_ASSERT (oid);
 
-   if (context->flags & BSON_CONTEXT_DISABLE_PID_CACHE) {
-      uint16_t pid = _bson_getpid ();
-
-      if (pid != context->pid) {
-         context->pid = pid;
-         /* randomize the random bytes, not the sequence. */
-         _bson_context_init_random (context, false);
-      }
-   }
-   memcpy (&oid->bytes[4], &context->rand, sizeof (context->rand));
+   memcpy (&oid->bytes[4], &context->randomness, 5);
 }
 
 /*
@@ -235,105 +254,6 @@ _get_rand (unsigned int *pseed)
    result = rand ();
 #endif
    return result;
-}
-
-
-/*
- * --------------------------------------------------------------------------
- *
- * _bson_context_get_hostname
- *
- *       Gets the hostname of the machine, logs a warning on failure. "out"
- *       must be an array of HOST_NAME_MAX bytes.
- *
- * --------------------------------------------------------------------------
- */
-static void
-_bson_context_get_hostname (char *out)
-{
-   if (gethostname (out, HOST_NAME_MAX) != 0) {
-      if (errno == ENAMETOOLONG) {
-         fprintf (stderr,
-                  "hostname exceeds %d characters, truncating.",
-                  HOST_NAME_MAX);
-      } else {
-         fprintf (stderr, "unable to get hostname: %d", errno);
-      }
-   }
-   out[HOST_NAME_MAX - 1] = '\0';
-}
-
-
-static void
-_bson_context_init_random (bson_context_t *context, bool init_sequence)
-{
-   int64_t rand_bytes;
-   struct timeval tv;
-   unsigned int seed = 0;
-   char hostname[HOST_NAME_MAX];
-   char *ptr;
-   int hostname_chars_left;
-
-   /*
-    * The seed consists of the following xor'd together:
-    * - current time in seconds
-    * - current time in milliseconds
-    * - current pid
-    * - current hostname
-    */
-   bson_gettimeofday (&tv);
-   seed ^= (unsigned int) tv.tv_sec;
-   seed ^= (unsigned int) tv.tv_usec;
-   seed ^= (unsigned int) context->pid;
-
-   context->gethostname (hostname);
-   hostname_chars_left = strlen (hostname);
-   ptr = hostname;
-   while (hostname_chars_left) {
-      uint32_t hostname_chunk = 0;
-      uint32_t to_copy = hostname_chars_left > 4 ? 4 : hostname_chars_left;
-
-      memcpy (&hostname_chunk, ptr, to_copy);
-      seed ^= (unsigned int) hostname_chunk;
-      hostname_chars_left -= to_copy;
-      ptr += to_copy;
-   }
-
-#ifndef BSON_HAVE_RAND_R
-   srand (seed);
-#endif
-
-   /* Generate a seed for the random starting position of our increment
-    * bytes and the five byte random number. */
-   if (init_sequence) {
-      /* We mask off the last nibble so that the last digit of the OID will
-       * start at zero. Just to be nice. */
-      context->seq32 = _get_rand (&seed) & 0x007FFFF0;
-   }
-
-   rand_bytes = _get_rand (&seed);
-   rand_bytes <<= 32;
-   rand_bytes |= _get_rand (&seed);
-
-   /* Copy five random bytes, endianness does not matter. */
-   memcpy (&context->rand, (char *) &rand_bytes, sizeof (context->rand));
-}
-
-static void
-_bson_context_init (bson_context_t *context, bson_context_flags_t flags)
-{
-   context->flags = (int) flags;
-   context->oid_set_seq32 = _bson_context_set_oid_seq32;
-   context->oid_set_seq64 = _bson_context_set_oid_seq64;
-   context->gethostname = _bson_context_get_hostname;
-
-   if ((flags & BSON_CONTEXT_THREAD_SAFE)) {
-      context->oid_set_seq32 = _bson_context_set_oid_seq32_threadsafe;
-      context->oid_set_seq64 = _bson_context_set_oid_seq64_threadsafe;
-   }
-
-   context->pid = _bson_getpid ();
-   _bson_context_init_random (context, true);
 }
 
 

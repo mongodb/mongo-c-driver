@@ -33,8 +33,7 @@ struct _bson_context_t {
    int flags;
    int32_t seq32;
    int64_t seq64;
-   uint8_t rand[5];
-   uint16_t pid;
+   uint8_t randomness[5];
 
    void (*oid_set_seq32) (bson_context_t *context, bson_oid_t *oid);
    void (*oid_set_seq64) (bson_context_t *context, bson_oid_t *oid);
