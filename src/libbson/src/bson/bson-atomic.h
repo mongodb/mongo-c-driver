@@ -722,7 +722,7 @@ bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_memory_order ord)
  * @brief Generate a full-fence memory barrier at the call site.
  */
 static BSON_INLINE void
-bson_atomic_thread_fence ()
+bson_atomic_thread_fence (void)
 {
    BSON_IF_MSVC (MemoryBarrier ();)
    BSON_IF_GNU_LIKE (__sync_synchronize ();)
