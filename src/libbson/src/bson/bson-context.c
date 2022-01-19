@@ -46,17 +46,17 @@
 static bson_context_t gContextDefault;
 static int64_t gRandCounter = INT64_MIN;
 
-static BSON_INLINE uint16_t
+static BSON_INLINE uint64_t
 _bson_getpid (void)
 {
-   uint16_t pid;
+   uint64_t pid;
 #ifdef BSON_OS_WIN32
    DWORD real_pid;
 
    real_pid = GetCurrentProcessId ();
    pid = (real_pid & 0xFFFF) ^ ((real_pid >> 16) & 0xFFFF);
 #else
-   pid = getpid ();
+   pid = (uint64_t) getpid ();
 #endif
 
    return pid;
@@ -83,8 +83,8 @@ static void
 _bson_context_set_oid_seq32_threadsafe (bson_context_t *context, /* IN */
                                         bson_oid_t *oid)         /* OUT */
 {
-   int32_t seq = 1 + bson_atomic_int32_fetch_add (
-                        &context->seq32, 1, bson_memory_order_seq_cst);
+   uint32_t seq = (uint32_t) bson_atomic_int32_fetch_add (
+      &context->seq32, 1, bson_memory_order_seq_cst);
    seq = BSON_UINT32_TO_BE (seq);
    memcpy (&oid->bytes[9], ((uint8_t *) &seq) + 1, 3);
 }
@@ -110,8 +110,8 @@ static void
 _bson_context_set_oid_seq64_threadsafe (bson_context_t *context, /* IN */
                                         bson_oid_t *oid)         /* OUT */
 {
-   int64_t seq = 1 + bson_atomic_int64_fetch_add (
-                        &context->seq64, 1, bson_memory_order_seq_cst);
+   uint64_t seq = (uint64_t) bson_atomic_int64_fetch_add (
+      &context->seq64, 1, bson_memory_order_seq_cst);
 
    seq = BSON_UINT64_TO_BE (seq);
    memcpy (&oid->bytes[4], &seq, sizeof (seq));
@@ -151,19 +151,14 @@ _bson_context_get_hostname (char *out)
  */
 struct _init_rand_params {
    struct timeval time;
-   uint16_t thread_id;
+   uint64_t pid;
    char hostname[HOST_NAME_MAX];
    int64_t rand_call_counter;
 };
 
-/* Arbitrary siphash key base number */
-static const uint64_t SIPHASH_KEY_INIT = UINT64_C (0x1729) << 42;
-
 static void
 _bson_context_init_random (bson_context_t *context)
 {
-   /* Generated 32bit seed */
-   uint32_t seed = 0;
    /* The message digest of the random params */
    uint8_t digest[16] = {0};
    /* The randomness parameters */
@@ -173,7 +168,7 @@ _bson_context_init_random (bson_context_t *context)
    /* Init each part of the randomness source: */
    memset (&rand_params, 0, sizeof rand_params);
    bson_gettimeofday (&rand_params.time);
-   rand_params.thread_id = _bson_getpid ();
+   rand_params.pid = _bson_getpid ();
    context->gethostname (rand_params.hostname);
    rand_params.rand_call_counter =
       bson_atomic_int64_fetch_add (&gRandCounter, 1, bson_memory_order_seq_cst);
@@ -228,36 +223,6 @@ _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid)
 
    memcpy (&oid->bytes[4], &context->randomness, 5);
 }
-
-/*
- *--------------------------------------------------------------------------
- *
- * _get_rand --
- *
- *       Gets a random four byte integer. Callers that will use the "rand"
- *       function must call "srand" prior.
- *
- * Returns:
- *       A random int32_t.
- *
- *--------------------------------------------------------------------------
- */
-static int32_t
-_get_rand (unsigned int *pseed)
-{
-   int32_t result = 0;
-#ifdef BSON_HAVE_ARC4RANDOM_BUF
-   arc4random_buf (&result, sizeof (result));
-#elif defined(BSON_HAVE_RAND_R)
-   result = rand_r (pseed);
-#else
-   /* ms's runtime is multithreaded by default, so no rand_r */
-   /* no rand_r on android either */
-   result = rand ();
-#endif
-   return result;
-}
-
 
 /*
  *--------------------------------------------------------------------------
