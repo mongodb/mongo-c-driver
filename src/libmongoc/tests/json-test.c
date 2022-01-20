@@ -1930,7 +1930,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
    char joined[PATH_MAX];
    char resolved[PATH_MAX];
 
-   snprintf (joined, PATH_MAX, "%s/%s", base, subdir);
+   bson_snprintf (joined, PATH_MAX, "%s/%s", base, subdir);
    ASSERT (realpath (joined, resolved));
 
    if (suite->ctest_run) {
