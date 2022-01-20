@@ -242,6 +242,8 @@ _siphash (const void *in,
    case 1:
       b |= ((uint64_t) ni[0]);
       break;
+   default:
+      BSON_UNREACHABLE ("Invalid remainder during SipHash");
    case 0:
       break;
    }
