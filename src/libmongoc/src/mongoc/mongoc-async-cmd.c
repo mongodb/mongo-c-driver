@@ -1,12 +1,11 @@
 /*
- * Copyright 2014-2022 MongoDB, Inc.
+ * Copyright 2014-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -122,6 +121,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
       return true;
    }
 
+
    duration_usec = bson_get_monotonic_time () - acmd->cmd_started;
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
@@ -139,7 +139,7 @@ void
 _mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode, mongoc_async_cmd_t *acmd, const char *dbname)
 {
    acmd->rpc.header.msg_len = 0; 
-   acmd->rpc.header.request_id = ++acmd->async->request_id; /* in _server_monitor_awaitable_hello_send(), this is postfix++ */
+   acmd->rpc.header.request_id = ++acmd->async->request_id;
    acmd->rpc.header.response_to = 0;
 
    if(MONGOC_OPCODE_QUERY == cmd_opcode) {
@@ -161,7 +161,7 @@ if(MONGOC_OPCODE_MSG == cmd_opcode) {
    acmd->rpc.header.opcode = MONGOC_OPCODE_MSG;    
 
    acmd->rpc.msg.msg_len = 0;
-   acmd->rpc.msg.flags = 0; /* JFW: other flags, like MONGOC_MSG_EXHAUST_ALLOWED, as per _server_monitor_awaitable_hello_send(), fail validation */
+   acmd->rpc.msg.flags = 0;
    acmd->rpc.msg.n_sections = 1;
    acmd->rpc.msg.sections[0].payload_type = 0;
    acmd->rpc.msg.sections[0].payload.bson_document = bson_get_data (&acmd->cmd);
@@ -505,3 +505,40 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
 
    return MONGOC_ASYNC_CMD_IN_PROGRESS;
 }
+/*
+ * Copyright 2014-2022 MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+#include <bson/bson.h>
+
+#include "mongoc-client.h"
+#include "mongoc-async-cmd-private.h"
+#include "mongoc-async-private.h"
+#include "mongoc-error.h"
+#include "mongoc-opcode.h"
+#include "mongoc-rpc-private.h"
+#include "mongoc-flags-private.h"
+#include "mongoc-stream-private.h"
+#include "mongoc-server-description-private.h"
+#include "mongoc-topology-scanner-private.h"
+#include "mongoc-log.h"
+#include "utlist.h"
+
+#ifdef MONGOC_ENABLE_SSL
+#include "mongoc-stream-tls.h"
+#endif
+
