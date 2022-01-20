@@ -212,6 +212,130 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
 }
 
 static bool
+_server_monitor_awaitable_hello_send_msg (
+   mongoc_server_monitor_t *server_monitor, bson_t *cmd, bson_error_t *error)
+{
+   mongoc_rpc_t rpc = {0};
+   mongoc_array_t array_to_write;
+   mongoc_iovec_t *iovec;
+   int niovec;
+
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = server_monitor->request_id++;
+   rpc.header.response_to = 0;
+   rpc.header.opcode = MONGOC_OPCODE_MSG;
+   rpc.msg.flags = 0;
+   rpc.msg.n_sections = 1;
+   rpc.msg.sections[0].payload_type = 0;
+   rpc.msg.sections[0].payload.bson_document = bson_get_data (cmd);
+
+   _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
+   _mongoc_rpc_gather (&rpc, &array_to_write);
+
+   iovec = (mongoc_iovec_t *) array_to_write.data;
+   niovec = array_to_write.len;
+   _mongoc_rpc_swab_to_le (&rpc);
+
+   MONITOR_LOG (server_monitor,
+                "sending with timeout %" PRId64,
+                server_monitor->connect_timeout_ms);
+
+   if (!_mongoc_stream_writev_full (server_monitor->stream,
+                                    iovec,
+                                    niovec,
+                                    server_monitor->connect_timeout_ms,
+                                    error)) {
+      MONITOR_LOG_ERROR (
+         server_monitor, "failed to write awaitable hello: %s", error->message);
+      _mongoc_array_destroy (&array_to_write);
+      return false;
+   }
+   _mongoc_array_destroy (&array_to_write);
+   return true;
+}
+
+
+static bool
+_server_monitor_awaitable_hello_recv_msg (
+   mongoc_server_monitor_t *server_monitor, bson_t *reply, bson_error_t *error)
+{
+   mongoc_rpc_t rpc;
+   mongoc_array_t array_to_write;
+   mongoc_iovec_t *iovec;
+   int niovec;
+   mongoc_buffer_t buffer;
+   uint32_t reply_len;
+   bson_t temp_reply;
+   bool ret = false;
+
+   if (!_mongoc_buffer_append_from_stream (&buffer,
+                                           server_monitor->stream,
+                                           4,
+                                           server_monitor->connect_timeout_ms,
+                                           error)) {
+      GOTO (fail);
+   }
+
+   memcpy (&reply_len, buffer.data, 4);
+   reply_len = BSON_UINT32_FROM_LE (reply_len);
+
+   if (!_mongoc_buffer_append_from_stream (&buffer,
+                                           server_monitor->stream,
+                                           reply_len - buffer.len,
+                                           server_monitor->connect_timeout_ms,
+                                           error)) {
+      GOTO (fail);
+   }
+
+   if (!_mongoc_rpc_scatter (&rpc, buffer.data, buffer.len)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid reply from server.");
+
+      GOTO (fail);
+   }
+
+   if (!_mongoc_rpc_decompress_if_necessary (&rpc, &buffer, error)) {
+      GOTO (fail);
+   }
+   _mongoc_rpc_swab_from_le (&rpc);
+
+   if (!_mongoc_rpc_get_first_document (&rpc, &temp_reply)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid reply from server");
+      GOTO (fail);
+   }
+   bson_copy_to (&temp_reply, reply);
+
+   ret = true;
+fail:
+   if (!ret) {
+      bson_init (reply);
+   }
+   _mongoc_array_destroy (&array_to_write);
+   _mongoc_buffer_destroy (&buffer);
+   return ret;
+}
+
+static bool
+_server_monitor_send_and_recv_hello_opmsg (
+   mongoc_server_monitor_t *server_monitor,
+   bson_t *cmd,
+   bson_t *reply,
+   bson_error_t *error)
+{
+   if (!_server_monitor_awaitable_hello_send_msg (server_monitor, cmd, error)) {
+      return false;
+   }
+
+   return _server_monitor_awaitable_hello_recv_msg (
+      server_monitor, reply, error);
+}
+
+static bool
 _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                        const bson_t *cmd,
                                        bson_t *reply,
@@ -313,7 +437,6 @@ _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
    bson_t cmd;
    const bson_t *hello;
    bool ret;
-
    hello = _mongoc_topology_scanner_get_monitoring_cmd (
       server_monitor->topology->scanner, hello_ok);
    bson_copy_to (hello, &cmd);
@@ -325,50 +448,6 @@ _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
    bson_destroy (&cmd);
    return ret;
 }
-static bool
-_server_monitor_awaitable_hello_send_msg (mongoc_server_monitor_t *server_monitor,
-                                      bson_t *cmd,
-                                      bson_error_t *error)
-{
-   mongoc_rpc_t rpc = {0};
-   mongoc_array_t array_to_write;
-   mongoc_iovec_t *iovec;
-   int niovec;
-
-   rpc.header.msg_len = 0;
-   rpc.header.request_id = server_monitor->request_id++;
-   rpc.header.response_to = 0;
-   rpc.header.opcode = MONGOC_OPCODE_MSG;
-   rpc.msg.flags = 0; 
-   rpc.msg.n_sections = 1;
-   rpc.msg.sections[0].payload_type = 0;
-   rpc.msg.sections[0].payload.bson_document = bson_get_data (cmd);
-
-   _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
-   _mongoc_rpc_gather (&rpc, &array_to_write);
-
-   iovec = (mongoc_iovec_t *) array_to_write.data;
-   niovec = array_to_write.len;
-   _mongoc_rpc_swab_to_le (&rpc);
-
-   MONITOR_LOG (server_monitor,
-                "sending with timeout %" PRId64,
-                server_monitor->connect_timeout_ms);
-
-   if (!_mongoc_stream_writev_full (server_monitor->stream,
-                                    iovec,
-                                    niovec,
-                                    server_monitor->connect_timeout_ms,
-                                    error)) {
-      MONITOR_LOG_ERROR (
-         server_monitor, "failed to write awaitable hello: %s", error->message);
-      _mongoc_array_destroy (&array_to_write);
-      return false;
-   }
-   _mongoc_array_destroy (&array_to_write);
-   return true;
-}
-
 
 static bool
 _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
@@ -812,20 +891,19 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    bson_destroy (hello_response);
 
-   /* If the user has select a versioned API, we'll assume OPCODE_MSG; otherwise,
-   we'll start by trying the legacy OPCODE_QUERY: */
+   /* If the user has select a versioned API, we'll assume OPCODE_MSG;
+   otherwise, we'll use the legacy OPCODE_QUERY: */
    if (NULL != server_monitor->topology->scanner->api) {
-if(!_server_monitor_awaitable_hello_send_msg(server_monitor, &cmd, error)) {
- GOTO (fail);
-}
-}
-else
-{
-   if (!_server_monitor_send_and_recv_opquery (
-          server_monitor, &cmd, hello_response, error)) {
-      GOTO (fail);
+      if (!_server_monitor_send_and_recv_hello_opmsg (
+             server_monitor, &cmd, hello_response, error)) {
+         GOTO (fail);
+      }
+   } else {
+      if (!_server_monitor_send_and_recv_opquery (
+             server_monitor, &cmd, hello_response, error)) {
+         GOTO (fail);
+      }
    }
-}
 
    ret = true;
 fail:
