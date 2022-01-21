@@ -399,7 +399,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */
-   if (mongoc_topology_scanner_uses_server_api (ts)) {
+   if (mongoc_topology_scanner_uses_server_api (ts)) { 
       cmd_opcode_type = MONGOC_OPCODE_MSG;
    }
 

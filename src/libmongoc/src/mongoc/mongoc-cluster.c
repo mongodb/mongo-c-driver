@@ -841,7 +841,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 
    if (!mongoc_cluster_run_command_private (
           cluster, &hello_cmd, &reply, error)) {
-
       if (negotiate_sasl_supported_mechs) {
          if (bson_iter_init_find (&iter, &reply, "ok") &&
              !bson_iter_as_bool (&iter)) {
