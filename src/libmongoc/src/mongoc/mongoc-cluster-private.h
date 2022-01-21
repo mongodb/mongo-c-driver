@@ -228,6 +228,10 @@ bool
 mongoc_topology_scanner_uses_server_api (
    const mongoc_topology_scanner_t *topology_scanner);
 
+bool
+mongoc_client_session_uses_server_api (
+   const mongoc_client_session_t *client_session);
+
 #ifdef MONGOC_ENABLE_CRYPTO
 void
 _mongoc_cluster_init_scram (const mongoc_cluster_t *cluster,

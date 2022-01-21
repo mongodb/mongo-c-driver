@@ -3757,6 +3757,13 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    /* Drop db.sales in case the collection exists. */
    ok = mongoc_collection_drop (sales, &error);
    if (!ok && NULL == strstr (error.message, "ns not found")) {
+
+fprintf(stderr, "JFW: error.domain == %d, error.code == %d\n", error.domain, error.code);
+if (error.domain == MONGOC_ERROR_SERVER && error.code == 26) {
+fprintf(stderr, "JFW: yepses\n");
+}
+
+
       /* Ignore an "ns not found" error on dropping the collection in case the
        * namespace does not exist. */
       ASSERT_OR_PRINT (ok, error);

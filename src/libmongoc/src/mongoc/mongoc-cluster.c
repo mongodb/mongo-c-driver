@@ -545,7 +545,8 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       mongoc_apm_command_started_cleanup (&started_event);
    }
 
-   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+   if (mongoc_cluster_uses_server_api (cluster) ||
+       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
    } else {
       retval = mongoc_cluster_run_command_opquery (
@@ -1362,6 +1363,13 @@ bool
 mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster)
 {
    return mongoc_client_uses_server_api (cluster->client);
+}
+
+bool
+mongoc_client_session_uses_server_api (
+   const mongoc_client_session_t *client_session)
+{
+   return mongoc_client_uses_server_api (client_session->client);
 }
 
 #ifdef MONGOC_ENABLE_CRYPTO
@@ -2282,6 +2290,10 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
    td = mc_tpld_take_ref (topology);
 
+   fprintf (stderr,
+            "_mongoc_cluster_stream_for_server about to call "
+            "_try_get_server_stream()\n"),
+      fflush (stderr);
    ret_server_stream = _try_get_server_stream (
       cluster, td.ptr, server_id, reconnect_ok, err_ptr);
 

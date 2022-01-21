@@ -829,6 +829,7 @@ mongoc_server_description_new_copy (
       /* calls mongoc_server_description_reset */
       int64_t last_rtt_ms = bson_atomic_int64_fetch (
          &description->round_trip_time_msec, bson_memory_order_relaxed);
+
       mongoc_server_description_handle_hello (copy,
                                               &description->last_hello_response,
                                               last_rtt_ms,

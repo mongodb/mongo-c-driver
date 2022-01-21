@@ -252,7 +252,8 @@ _mongoc_topology_scanner_parse_speculative_authentication (
 }
 
 static bson_t *
-_build_handshake_cmd (const bson_t *basis_cmd,
+_build_handshake_cmd (const mongoc_topology_scanner_t *ts,
+                      const bson_t *basis_cmd,
                       const char *appname,
                       const mongoc_uri_t *uri,
                       bool is_loadbalanced)
@@ -293,6 +294,13 @@ _build_handshake_cmd (const bson_t *basis_cmd,
 
    if (is_loadbalanced) {
       BSON_APPEND_BOOL (doc, "loadBalanced", true);
+   }
+
+   /* JFW: question: should we be searching the document we're copying for
+    * this field and using any extant value, or is it always "admin"? */
+   // If we're sending an OPCODE_MSG, we need to add the "db" field:
+   if (mongoc_topology_scanner_uses_server_api (ts)) {
+      bson_append_utf8 (doc, "$db", 3, "admin", 5);
    }
 
    /* Return whether the handshake doc fit the size limit */
@@ -336,7 +344,8 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
    /* Construct a new handshake command to be sent */
    BSON_ASSERT (ts->handshake_cmd == NULL);
    bson_mutex_unlock (&ts->handshake_cmd_mtx);
-   new_cmd = _build_handshake_cmd (mongoc_topology_scanner_uses_server_api (ts)
+   new_cmd = _build_handshake_cmd (ts,
+                                   mongoc_topology_scanner_uses_server_api (ts)
                                       ? &ts->hello_cmd
                                       : &ts->legacy_hello_cmd,
                                    appname,
@@ -388,8 +397,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */
-   if (mongoc_topology_scanner_uses_server_api (
-          ts)) { // _mongoc_topology_scanner_uses_versioned_api(ts)) {
+   if (mongoc_topology_scanner_uses_server_api (ts)) {
       cmd_opcode_type = MONGOC_OPCODE_MSG;
    }
 

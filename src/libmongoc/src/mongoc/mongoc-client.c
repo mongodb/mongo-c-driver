@@ -1969,7 +1969,6 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 
    BSON_ASSERT (client);
    BSON_ASSERT (db_name);
-   BSON_ASSERT (command);
 
    command_name = _mongoc_get_command_name (command);
    cluster = &client->cluster;

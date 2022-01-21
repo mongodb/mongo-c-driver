@@ -1009,7 +1009,7 @@ int32_t document_len;
 
 BSON_ASSERT(0 == reply_msg->sections[0].payload_type);
 
-// As per the Wire Protocol documentation, each sectoin has a 32 bit length field:
+// As per the Wire Protocol documentation, each section has a 32 bit length field:
 memcpy(&document_len, reply_msg->sections[0].payload.bson_document, 4);
 document_len = BSON_UINT32_FROM_LE (document_len);
 
