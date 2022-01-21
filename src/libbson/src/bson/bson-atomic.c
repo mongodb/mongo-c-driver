@@ -48,7 +48,7 @@ bson_memory_barrier (void)
 }
 
 /**
- * Some platforms do not support compiler intrinsics for atomic operations.
+ * Some platforms do not support compiler ics for atomic operations.
  * We emulate that here using a spin lock and regular arithmetic operations
  */
 static int8_t gEmulAtomicLock = 0;
@@ -244,4 +244,17 @@ _bson_emul_atomic_int_compare_exchange_weak (volatile int *p,
    /* We're emulating. We can't do a weak version. */
    return _bson_emul_atomic_int_compare_exchange_strong (
       p, expect_value, new_value, order);
+}
+
+void *
+_bson_emul_atomic_ptr_exchange (void *volatile *p,
+                                void *n,
+                                enum bson_memory_order _unused)
+{
+   void *ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p = n;
+   _unlock_emul_atomic ();
+   return ret;
 }
