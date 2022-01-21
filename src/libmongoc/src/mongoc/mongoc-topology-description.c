@@ -485,7 +485,7 @@ static void
 _mongoc_try_mode_secondary (mongoc_array_t *set, /* OUT */
                             const mongoc_topology_description_t *topology,
                             const mongoc_read_prefs_t *read_pref,
-                            mongoc_read_mode_t *chosen_read_mode,
+                            bool *must_use_primary,
                             size_t local_threshold_ms)
 {
    mongoc_read_prefs_t *secondary;
@@ -497,7 +497,7 @@ _mongoc_try_mode_secondary (mongoc_array_t *set, /* OUT */
                                                  MONGOC_SS_READ,
                                                  topology,
                                                  secondary,
-                                                 chosen_read_mode,
+                                                 must_use_primary,
                                                  local_threshold_ms);
 
    mongoc_read_prefs_destroy (secondary);
@@ -655,15 +655,17 @@ _mongoc_topology_description_validate_max_staleness (
 }
 
 static bool
-_check_any_server_less_than_wire_version_v5_0 (const void *sd_,
-                                               void *any_too_old_)
+_check_any_server_less_than_wire_version_13 (const void *sd_,
+                                             void *any_too_old_)
 {
    const mongoc_server_description_t *sd = sd_;
    bool *any_too_old = any_too_old_;
    if (sd->max_wire_version < WIRE_VERSION_5_0) {
       *any_too_old = true;
+      return false /* Stop searching */;
    }
-   return true;
+
+   return true /* Keep searching */;
 }
 
 /**
@@ -676,33 +678,42 @@ _check_any_server_less_than_wire_version_v5_0 (const void *sd_,
  * secondary server for using aggregate pipelines that contain writing stages
  * (i.e. '$out' and '$merge').
  */
-static mongoc_read_mode_t
-_calc_effective_read_mode (const mongoc_topology_description_t *td,
-                           mongoc_ss_optype_t optype,
-                           mongoc_read_mode_t requested_read_mode)
+static bool
+_must_use_primary (const mongoc_topology_description_t *td,
+                   mongoc_ss_optype_t optype,
+                   mongoc_read_mode_t requested_read_mode)
 {
-   if (requested_read_mode == MONGOC_READ_PRIMARY ||
-       requested_read_mode == MONGOC_READ_PRIMARY_PREFERRED) {
+   if (requested_read_mode == MONGOC_READ_PRIMARY) {
+      /* We never alter from a primary read mode. This early-return is just an
+       * optimization to skip scanning for old servers, as we would end up
+       * returning MONGOC_READ_PRIMARY regardless. */
       return requested_read_mode;
    }
    switch (optype) {
    case MONGOC_SS_WRITE:
-      return MONGOC_READ_UNSET;
+      /* We don't deal with write operations */
+      return false;
    case MONGOC_SS_READ:
-      return requested_read_mode;
+      /* Maintain the requested read mode if it is a regular read operation */
+      return false;
    case MONGOC_SS_AGGREGATE_WITH_WRITE: {
+      /* Check if any of the servers are too old to support the
+       * aggregate-with-write on a secondary server */
       bool any_too_old = false;
       mongoc_set_for_each_const (mc_tpld_servers_const (td),
-                                 _check_any_server_less_than_wire_version_v5_0,
+                                 _check_any_server_less_than_wire_version_13,
                                  &any_too_old);
       if (any_too_old) {
-         return MONGOC_READ_PRIMARY;
+         /* Force the read preference back to reading from a primary server, as
+          * one or more servers in the system may not support the operation */
+         return true;
       }
-      return requested_read_mode;
+      /* We're okay to send an aggr-with-write to a secondary server, so permit
+       * the caller's read mode preference */
+      return false;
    }
    default:
-      BSON_UNREACHABLE (
-         "Invalid mongoc_ss_optype_t for _calc_effective_read_mode()");
+      BSON_UNREACHABLE ("Invalid mongoc_ss_optype_t for _must_use_primary()");
    }
 }
 
@@ -726,7 +737,7 @@ mongoc_topology_description_suitable_servers (
    mongoc_ss_optype_t optype,
    const mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t *read_pref,
-   mongoc_read_mode_t *chosen_read_mode,
+   bool *must_use_primary,
    size_t local_threshold_ms)
 {
    mongoc_suitable_data_t data;
@@ -736,18 +747,32 @@ mongoc_topology_description_suitable_servers (
    int i;
    const mongoc_read_mode_t given_read_mode =
       mongoc_read_prefs_get_mode (read_pref);
+   const bool override_use_primary =
+      _must_use_primary (topology, optype, given_read_mode);
 
    data.primary = NULL;
    data.topology_type = topology->type;
    data.has_secondary = false;
-   data.read_mode =
-      _calc_effective_read_mode (topology, optype, given_read_mode);
    data.candidates_len = 0;
    data.candidates = bson_malloc0 (sizeof (mongoc_server_description_t *) *
                                    td_servers->items_len);
 
-   if (chosen_read_mode) {
-      *chosen_read_mode = data.read_mode;
+   /* The "effective" read mode is the read mode that we should behave for, and
+    * depends on the user's provided read mode, the type of operation that the
+    * user wishes to perform, and the server versions that we are talking to.
+    *
+    * If the operation is a write operation, read mode is irrelevant.
+    *
+    * If the operation is a regular read, we just use the caller's read mode.
+    *
+    * If the operation is an aggregate that contains writing stages, we need to
+    * be more careful about selecting an appropriate server.
+    */
+   data.read_mode =
+      override_use_primary ? MONGOC_READ_PRIMARY : given_read_mode;
+   if (must_use_primary) {
+      /* The caller wants to know if we have overriden their read preference */
+      *must_use_primary = override_use_primary;
    }
 
    /* Single server --
@@ -794,7 +819,7 @@ mongoc_topology_description_suitable_servers (
          if (data.read_mode == MONGOC_READ_SECONDARY_PREFERRED) {
             /* try read_mode SECONDARY */
             _mongoc_try_mode_secondary (
-               set, topology, read_pref, chosen_read_mode, local_threshold_ms);
+               set, topology, read_pref, must_use_primary, local_threshold_ms);
 
             /* otherwise fall back to primary */
             if (!set->len && data.primary) {
@@ -941,7 +966,7 @@ mongoc_topology_description_select (
    const mongoc_topology_description_t *topology,
    mongoc_ss_optype_t optype,
    const mongoc_read_prefs_t *read_pref,
-   mongoc_read_mode_t *chosen_read_mode,
+   bool *must_use_primary,
    int64_t local_threshold_ms)
 {
    mongoc_array_t suitable_servers;
@@ -968,7 +993,7 @@ mongoc_topology_description_select (
                                                  optype,
                                                  topology,
                                                  read_pref,
-                                                 chosen_read_mode,
+                                                 must_use_primary,
                                                  local_threshold_ms);
    if (suitable_servers.len != 0) {
       rand_n = _mongoc_rand_simple ((unsigned *) &topology->rand_seed);

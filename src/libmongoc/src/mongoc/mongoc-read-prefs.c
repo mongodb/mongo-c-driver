@@ -164,6 +164,7 @@ mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
       return false;
    }
 
+
    return true;
 }
 
@@ -211,7 +212,6 @@ _mongoc_read_mode_as_str (mongoc_read_mode_t mode)
       return "secondaryPreferred";
    case MONGOC_READ_NEAREST:
       return "nearest";
-   case MONGOC_READ_UNSET:
    default:
       return "";
    }

@@ -133,15 +133,14 @@ struct _mongoc_cursor_t {
    mongoc_write_concern_t *write_concern;
 
    /** If the cursor was created for an operation that might have overridden the
-    * user's read preferences' read mode, the actually-used read mode will be
-    * stored here. Otherwise, this is zero. This value should be restored to
-    * server_stream objects that are created from this cursor when the stream
-    * was created using the memoized 'server_id' of the cursor. */
-   mongoc_read_mode_t effective_read_mode;
+    * user's read preferences' read mode, then server selection forced the
+    * cursor to use a read preference mode of 'primary' server. Whether this
+    * force occurred is stored here: */
+   bool must_use_primary;
 
    /** Whether this cursor corresponds to an aggregate command that contains a
     * writing-stage */
-   aggr_with_write_stage_flag is_aggr_with_write_stage;
+   bool is_aggr_with_write_stage;
 
    bool explicit_session;
    mongoc_client_session_t *client_session;

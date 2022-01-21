@@ -474,11 +474,11 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       hedge = mongoc_read_prefs_get_hedge (parts->read_prefs);
    }
 
-   if (server_stream->effective_read_mode != MONGOC_READ_UNSET) {
-      /* Server selection may have overriden the read mode used to generate this
+   if (server_stream->must_use_primary) {
+      /* Server selection has overriden the read mode used to generate this
        * server stream. This has effects on the body of the message that we send
        * to the server */
-      mode = server_stream->effective_read_mode;
+      mode = MONGOC_READ_PRIMARY;
    }
 
    /* Server Selection Spec says:
@@ -514,7 +514,6 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
    case MONGOC_READ_PRIMARY_PREFERRED:
    case MONGOC_READ_SECONDARY:
    case MONGOC_READ_NEAREST:
-   case MONGOC_READ_UNSET:
    default:
       parts->assembled.query_flags |= MONGOC_QUERY_SECONDARY_OK;
       add_read_prefs = true;
@@ -828,7 +827,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    const char *cmd_name;
    bool is_get_more;
    const mongoc_read_prefs_t *prefs_ptr;
-   mongoc_read_mode_t mode = MONGOC_READ_UNSET;
+   mongoc_read_mode_t mode = mongoc_read_prefs_get_mode (parts->read_prefs);
    bool ret = false;
 
    ENTRY;
@@ -888,11 +887,11 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    }
 
    mode = mongoc_read_prefs_get_mode (prefs_ptr);
-   if (server_stream->effective_read_mode != MONGOC_READ_UNSET) {
+   if (server_stream->must_use_primary) {
       /* Server selection may have overriden the read mode used to generate this
        * server stream. This has effects on the body of the message that we send
        * to the server */
-      mode = server_stream->effective_read_mode;
+      mode = MONGOC_READ_PRIMARY;
    }
 
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {

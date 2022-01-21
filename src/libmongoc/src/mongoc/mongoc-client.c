@@ -1791,7 +1791,7 @@ retry:
                                           parts->read_prefs,
                                           parts->assembled.session,
                                           NULL,
-                                          NOT_AGGR_WITH_WRITE_STAGE,
+                                          /* Not aggregate-with-write */ false,
                                           &ignored_error);
 
       if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
@@ -1879,8 +1879,13 @@ mongoc_client_command_simple (mongoc_client_t *client,
     * configuration. The generic command method SHOULD allow an optional read
     * preference argument."
     */
-   server_stream = mongoc_cluster_stream_for_reads (
-      cluster, read_prefs, NULL, reply, NOT_AGGR_WITH_WRITE_STAGE, error);
+   server_stream =
+      mongoc_cluster_stream_for_reads (cluster,
+                                       read_prefs,
+                                       NULL,
+                                       reply,
+                                       /* Not aggregate-with-write */ false,
+                                       error);
 
    if (server_stream) {
       ret = _mongoc_client_command_with_stream (
@@ -2039,8 +2044,13 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       server_stream =
          mongoc_cluster_stream_for_writes (cluster, cs, reply_ptr, error);
    } else {
-      server_stream = mongoc_cluster_stream_for_reads (
-         cluster, prefs, cs, reply_ptr, NOT_AGGR_WITH_WRITE_STAGE, error);
+      server_stream =
+         mongoc_cluster_stream_for_reads (cluster,
+                                          prefs,
+                                          cs,
+                                          reply_ptr,
+                                          /* Not aggregate-with-write */ false,
+                                          error);
    }
 
    if (!server_stream) {

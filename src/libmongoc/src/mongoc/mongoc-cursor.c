@@ -251,7 +251,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    cursor->client = client;
    cursor->state = UNPRIMED;
    cursor->client_generation = client->generation;
-   cursor->is_aggr_with_write_stage = NOT_AGGR_WITH_WRITE_STAGE;
+   cursor->is_aggr_with_write_stage = false;
 
    bson_init (&cursor->opts);
    bson_init (&cursor->error_doc);
@@ -664,9 +664,9 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                            cursor->client_session,
                                            &reply,
                                            &cursor->error);
-      /* Also restore the effective read mode that was used on that prior
+      /* Also restore whether primary read preference was forced by server
        * selection */
-      server_stream->effective_read_mode = cursor->effective_read_mode;
+      server_stream->must_use_primary = cursor->must_use_primary;
    } else {
       server_stream =
          mongoc_cluster_stream_for_reads (&cursor->client->cluster,
@@ -677,10 +677,11 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                           &cursor->error);
 
       if (server_stream) {
-         /* Remember the selected server_id and the effective read mode so that
-          * we can re-create an equivalent server_stream at a later time */
+         /* Remember the selected server_id and whether primary read mode was
+          * forced so that we can re-create an equivalent server_stream at a
+          * later time */
          cursor->server_id = server_stream->sd->id;
-         cursor->effective_read_mode = server_stream->effective_read_mode;
+         cursor->must_use_primary = server_stream->must_use_primary;
       }
    }
 
@@ -1094,8 +1095,7 @@ retry:
 
       mongoc_server_stream_cleanup (server_stream);
 
-      BSON_ASSERT (cursor->is_aggr_with_write_stage ==
-                      NOT_AGGR_WITH_WRITE_STAGE &&
+      BSON_ASSERT (!cursor->is_aggr_with_write_stage &&
                    "Cannot attempt a retry on an aggregate operation that "
                    "contains write stages");
       server_stream =
@@ -1103,7 +1103,7 @@ retry:
                                           cursor->read_prefs,
                                           cursor->client_session,
                                           reply,
-                                          NOT_AGGR_WITH_WRITE_STAGE,
+                                          /* Not aggregate-with-write */ false,
                                           &cursor->error);
 
       if (server_stream &&

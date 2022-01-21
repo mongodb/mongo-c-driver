@@ -1005,11 +1005,11 @@ mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
                         const mongoc_read_prefs_t *read_prefs,
-                        mongoc_read_mode_t *chosen_read_mode,
+                        bool *must_use_primary,
                         bson_error_t *error)
 {
    uint32_t server_id = mongoc_topology_select_server_id (
-      topology, optype, read_prefs, chosen_read_mode, error);
+      topology, optype, read_prefs, must_use_primary, error);
 
    if (server_id) {
       /* new copy of the server description */
@@ -1121,7 +1121,7 @@ uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
-                                  mongoc_read_mode_t *chosen_read_mode,
+                                  bool *must_use_primary,
                                   bson_error_t *error)
 {
    static const char *timeout_msg =
@@ -1237,7 +1237,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          }
 
          selected_server = mongoc_topology_description_select (
-            td.ptr, optype, read_prefs, chosen_read_mode, local_threshold_ms);
+            td.ptr, optype, read_prefs, must_use_primary, local_threshold_ms);
 
          if (selected_server) {
             server_id = selected_server->id;
@@ -1283,7 +1283,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
       }
 
       selected_server = mongoc_topology_description_select (
-         td.ptr, optype, read_prefs, chosen_read_mode, local_threshold_ms);
+         td.ptr, optype, read_prefs, must_use_primary, local_threshold_ms);
 
       if (selected_server) {
          server_id = selected_server->id;
@@ -1299,7 +1299,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
        * occurred while we were waiting on the lock. */
       mc_tpld_renew_ref (&td, topology);
       selected_server = mongoc_topology_description_select (
-         td.ptr, optype, read_prefs, chosen_read_mode, local_threshold_ms);
+         td.ptr, optype, read_prefs, must_use_primary, local_threshold_ms);
       if (selected_server) {
          server_id = selected_server->id;
          bson_mutex_unlock (&topology->tpld_modification_mtx);
