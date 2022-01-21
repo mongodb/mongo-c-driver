@@ -470,47 +470,6 @@ test_bson_oid_after_fork (void)
 #endif
 
 
-static char *mock_hostname;
-
-
-static void
-_mock_hostname (char *out)
-{
-   bson_strncpy (out, mock_hostname, 255);
-}
-
-
-#ifndef HOST_NAME_MAX
-#define HOST_NAME_MAX 256
-#endif
-
-
-static void
-test_bson_hostnames (void)
-{
-   bson_context_t *ctx;
-   bson_oid_t oid;
-   char *hostname_tests[] = {
-      "", "h", "host", "host1", "host12", "host123", "placeholder"};
-   int i;
-   char max_len_host[HOST_NAME_MAX] = {0};
-
-   for (i = 0; i < HOST_NAME_MAX - 1; i++) {
-      max_len_host[i] = 'a';
-   }
-   hostname_tests[(sizeof (hostname_tests) / sizeof (char *)) - 1] =
-      max_len_host;
-
-   for (i = 0; i < sizeof (hostname_tests) / sizeof (char *); i++) {
-      mock_hostname = hostname_tests[i];
-      ctx = bson_context_new (BSON_CONTEXT_NONE);
-      ctx->gethostname = _mock_hostname;
-      bson_oid_init (&oid, ctx);
-      bson_context_destroy (ctx);
-   }
-}
-
-
 void
 test_oid_install (TestSuite *suite)
 {
@@ -532,5 +491,4 @@ test_oid_install (TestSuite *suite)
       TestSuite_Add (suite, "/bson/oid/after_fork", test_bson_oid_after_fork);
    }
 #endif
-   TestSuite_Add (suite, "/bson/oid/hostnames", test_bson_hostnames);
 }

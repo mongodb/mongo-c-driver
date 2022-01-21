@@ -44,9 +44,6 @@ struct _bson_context_t {
    uint64_t seq64;
    uint8_t randomness[BSON_OID_RANDOMESS_SIZE];
    uint64_t pid;
-
-   /* this function pointer allows us to mock gethostname for testing. */
-   void (*gethostname) (char *out);
 };
 
 /**

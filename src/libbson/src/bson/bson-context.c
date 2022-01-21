@@ -92,7 +92,7 @@ _bson_context_set_oid_seq64 (bson_context_t *context, /* IN */
  * --------------------------------------------------------------------------
  */
 static void
-_bson_context_get_hostname (char *out)
+_bson_context_get_hostname (char out[HOST_NAME_MAX])
 {
    if (gethostname (out, HOST_NAME_MAX) != 0) {
       if (errno == ENAMETOOLONG) {
@@ -285,7 +285,7 @@ _bson_context_init_random (bson_context_t *context, bool init_seq)
    memset (&rand_params, 0, sizeof rand_params);
    bson_gettimeofday (&rand_params.time);
    rand_params.pid = _bson_getpid ();
-   context->gethostname (rand_params.hostname);
+   _bson_context_get_hostname (rand_params.hostname);
    rand_params.rand_call_counter = bson_atomic_int64_fetch_add (
       &s_rand_call_counter, 1, bson_memory_order_seq_cst);
 
@@ -317,7 +317,6 @@ static void
 _bson_context_init (bson_context_t *context, bson_context_flags_t flags)
 {
    context->flags = (int) flags;
-   context->gethostname = _bson_context_get_hostname;
    _bson_context_init_random (context, true /* Init counters */);
 }
 
