@@ -93,7 +93,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
       }
 
       if (!mongoc_cluster_run_command_private (
-             cluster, &parts.assembled, &reply, error, false)) {
+             cluster, &parts.assembled, &reply)) {
          mongoc_server_stream_cleanup (server_stream);
          bson_destroy (&cmd);
          bson_destroy (&reply);

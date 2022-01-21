@@ -234,7 +234,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       }
 
       if (!mongoc_cluster_run_command_private (
-             cluster, &parts.assembled, &reply, error, false)) {
+             cluster, &parts.assembled, &reply, error)) {
          mongoc_server_stream_cleanup (server_stream);
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
