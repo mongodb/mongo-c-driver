@@ -187,8 +187,7 @@ bool
 mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
                                     mongoc_cmd_t *cmd,
                                     bson_t *reply,
-                                    bson_error_t *error,
-                                    bool force_op_msg);
+                                    bson_error_t *error);
 
 void
 _mongoc_cluster_build_sasl_start (bson_t *cmd,
@@ -217,7 +216,17 @@ _mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri,
                                    bson_error_t *error /* OUT */);
 
 bool
-_mongoc_is_cluster_api_version_specified(const mongoc_cluster_t *cluster);
+mongoc_topology_uses_server_api (const mongoc_topology_t *topology);
+
+bool
+mongoc_client_uses_server_api (const mongoc_client_t *client);
+
+bool
+mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster);
+
+bool
+mongoc_topology_scanner_uses_server_api (
+   const mongoc_topology_scanner_t *topology_scanner);
 
 #ifdef MONGOC_ENABLE_CRYPTO
 void

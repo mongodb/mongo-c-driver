@@ -299,17 +299,13 @@ _build_handshake_cmd (const bson_t *basis_cmd,
    return doc;
 }
 
-bool
-_mongoc_topology_scanner_uses_versioned_api (const mongoc_topology_scanner_t *ts)
-{
- return ts->api;
-}
-
 const bson_t *
 _mongoc_topology_scanner_get_monitoring_cmd (mongoc_topology_scanner_t *ts,
                                              bool hello_ok)
 {
-   return hello_ok || _mongoc_topology_scanner_uses_versioned_api(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd;
+   return hello_ok || mongoc_topology_scanner_uses_server_api (ts)
+             ? &ts->hello_cmd
+             : &ts->legacy_hello_cmd;
 }
 
 void
@@ -340,11 +336,12 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
    /* Construct a new handshake command to be sent */
    BSON_ASSERT (ts->handshake_cmd == NULL);
    bson_mutex_unlock (&ts->handshake_cmd_mtx);
-   new_cmd =
-      _build_handshake_cmd (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd,
-                            appname,
-                            ts->uri,
-                            ts->loadbalanced);
+   new_cmd = _build_handshake_cmd (mongoc_topology_scanner_uses_server_api (ts)
+                                      ? &ts->hello_cmd
+                                      : &ts->legacy_hello_cmd,
+                                   appname,
+                                   ts->uri,
+                                   ts->loadbalanced);
    bson_mutex_lock (&ts->handshake_cmd_mtx);
    if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
       /* Someone else updated the handshake_cmd while we were building ours.
@@ -366,7 +363,9 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
 after_init:
    /* If the doc turned out to be too big */
    if (ts->handshake_state == HANDSHAKE_CMD_TOO_BIG) {
-      bson_t *ret = ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
+      bson_t *ret = mongoc_topology_scanner_uses_server_api (ts)
+                       ? &ts->hello_cmd
+                       : &ts->legacy_hello_cmd;
       bson_copy_to (ret, copy_into);
    } else {
       BSON_ASSERT (ts->handshake_cmd != NULL);
@@ -389,8 +388,9 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */
-   if(_mongoc_topology_scanner_uses_versioned_api(ts)) {
-       cmd_opcode_type = MONGOC_OPCODE_MSG;
+   if (mongoc_topology_scanner_uses_server_api (
+          ts)) { // _mongoc_topology_scanner_uses_versioned_api(ts)) {
+      cmd_opcode_type = MONGOC_OPCODE_MSG;
    }
 
    if (node->last_used != -1 && node->last_failed == -1 && !use_handshake) {

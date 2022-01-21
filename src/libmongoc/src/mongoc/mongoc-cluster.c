@@ -663,8 +663,7 @@ bool
 mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
                                     mongoc_cmd_t *cmd,
                                     bson_t *reply,
-                                    bson_error_t *error,
-                                    bool force_op_msg)
+                                    bson_error_t *error)
 {
    bool retval;
    const mongoc_server_stream_t *server_stream;
@@ -681,7 +680,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
 
    server_stream = cmd->server_stream;
 
-   if (force_op_msg ||
+   if (mongoc_cluster_uses_server_api (cluster) ||
        server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
    } else {
@@ -736,11 +735,7 @@ mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
    }
 
    ret = mongoc_cluster_run_command_private (
-      cluster,
-      &parts->assembled,
-      reply,
-      error,
-      _mongoc_is_cluster_api_version_specified (cluster));
+      cluster, &parts->assembled, reply, error);
    mongoc_cmd_parts_cleanup (parts);
    return ret;
 }
@@ -780,7 +775,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    mongoc_server_description_t *ret_handshake_sd;
    mongoc_server_stream_t *server_stream;
    bool r;
-   bool force_op_msg = true;
    bson_iter_t iter;
    mongoc_ssl_opt_t *ssl_opts = NULL;
    mc_shared_tpld td =
@@ -789,10 +783,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    ENTRY;
 
    BSON_ASSERT (stream);
-
-   /* If the user hasn't specified an API version, we want our initial hello to
-   use the legacy OPCODE_QUERY protocol: */
-   force_op_msg = _mongoc_is_cluster_api_version_specified (cluster);
 
    _mongoc_topology_dup_handshake_cmd (cluster->client->topology,
                                        &handshake_command);
@@ -837,14 +827,14 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    /* Always use OP_QUERY for the handshake, unless the user has specified an
     * API version; the correct hello_cmd has already been selected. For
     * OPCODE_QUERY, we have to set up a few additional fields: */
-   if (!force_op_msg) {
+   if (!mongoc_cluster_uses_server_api (cluster)) {
       hello_cmd.db_name = "admin";
       hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
       hello_cmd.command = &handshake_command;
    }
 
    if (!mongoc_cluster_run_command_private (
-          cluster, &hello_cmd, &reply, error, force_op_msg)) {
+          cluster, &hello_cmd, &reply, error)) {
       if (negotiate_sasl_supported_mechs) {
          if (bson_iter_init_find (&iter, &reply, "ok") &&
              !bson_iter_as_bool (&iter)) {
@@ -1350,9 +1340,28 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
 
 /* True if the client user has requested a specific wire protocol version: */
 bool
-_mongoc_is_cluster_api_version_specified (const mongoc_cluster_t *cluster)
+mongoc_topology_scanner_uses_server_api (
+   const mongoc_topology_scanner_t *topology_scanner)
 {
-   return NULL != cluster->client->topology->scanner->api;
+   return NULL != topology_scanner->api;
+}
+
+bool
+mongoc_topology_uses_server_api (const mongoc_topology_t *topology)
+{
+   return mongoc_topology_scanner_uses_server_api (topology->scanner);
+}
+
+bool
+mongoc_client_uses_server_api (const mongoc_client_t *client)
+{
+   return mongoc_topology_uses_server_api (client->topology);
+}
+
+bool
+mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster)
+{
+   return mongoc_client_uses_server_api (cluster->client);
 }
 
 #ifdef MONGOC_ENABLE_CRYPTO

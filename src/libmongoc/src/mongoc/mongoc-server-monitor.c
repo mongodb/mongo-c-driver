@@ -210,16 +210,24 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
    }
    mc_tpld_drop_ref (&td);
 }
-
 static bool
-_server_monitor_awaitable_hello_send_msg (
-   mongoc_server_monitor_t *server_monitor, bson_t *cmd, bson_error_t *error)
+_server_monitor_send_and_recv_hello_opmsg (
+   mongoc_server_monitor_t *server_monitor,
+   bson_t *cmd,
+   bson_t *reply,
+   bson_error_t *error)
 {
    mongoc_rpc_t rpc = {0};
    mongoc_array_t array_to_write;
    mongoc_iovec_t *iovec;
    int niovec;
 
+   mongoc_buffer_t buffer;
+   uint32_t reply_len;
+   bson_t temp_reply;
+   bool ret = false;
+
+   /* First, let's construct and send our OPCODE_MSG: */
    rpc.header.msg_len = 0;
    rpc.header.request_id = server_monitor->request_id++;
    rpc.header.response_to = 0;
@@ -250,23 +258,10 @@ _server_monitor_awaitable_hello_send_msg (
       _mongoc_array_destroy (&array_to_write);
       return false;
    }
-   _mongoc_array_destroy (&array_to_write);
-   return true;
-}
 
+   /* Done sending! Now, receive the reply: */
 
-static bool
-_server_monitor_awaitable_hello_recv_msg (
-   mongoc_server_monitor_t *server_monitor, bson_t *reply, bson_error_t *error)
-{
-   mongoc_rpc_t rpc;
-   mongoc_array_t array_to_write;
-   mongoc_iovec_t *iovec;
-   int niovec;
-   mongoc_buffer_t buffer;
-   uint32_t reply_len;
-   bson_t temp_reply;
-   bool ret = false;
+   _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
 
    if (!_mongoc_buffer_append_from_stream (&buffer,
                                            server_monitor->stream,
@@ -318,21 +313,6 @@ fail:
    _mongoc_array_destroy (&array_to_write);
    _mongoc_buffer_destroy (&buffer);
    return ret;
-}
-
-static bool
-_server_monitor_send_and_recv_hello_opmsg (
-   mongoc_server_monitor_t *server_monitor,
-   bson_t *cmd,
-   bson_t *reply,
-   bson_error_t *error)
-{
-   if (!_server_monitor_awaitable_hello_send_msg (server_monitor, cmd, error)) {
-      return false;
-   }
-
-   return _server_monitor_awaitable_hello_recv_msg (
-      server_monitor, reply, error);
 }
 
 static bool

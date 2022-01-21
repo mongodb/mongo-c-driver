@@ -559,17 +559,20 @@ request_matches_msg (const request_t *request,
 
       /* make sure the pattern is reasonable, e.g. that we didn't pass a string
        * instead of a bson_t* by mistake */
-if(!bson_validate_with_error(pattern, BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_UTF8,
-                             &bson_error)) {
-   fprintf (
-      stderr, "bson_validate_with_error() at doc %d:\n%d.%d: %s\n", i, bson_error.domain, bson_error.code, bson_error.message); 
-   fflush(stderr);
+      if (!bson_validate_with_error (pattern,
+                                     BSON_VALIDATE_EMPTY_KEYS |
+                                        BSON_VALIDATE_UTF8,
+                                     &bson_error)) {
+         fprintf (stderr,
+                  "bson_validate_with_error() at doc %d:\n%d.%d: %s\n",
+                  i,
+                  bson_error.domain,
+                  bson_error.code,
+                  bson_error.message);
+         fflush (stderr);
 
-   return false;
-}
-
-      BSON_ASSERT (bson_validate (
-         pattern, BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_UTF8, NULL)); 
+         return false;
+      }
 
       if (i > request->docs.len) {
          fprintf (stderr,
@@ -640,9 +643,9 @@ request_matches_msgv (const request_t *request, uint32_t flags, va_list *args)
       }
    }
 
-   r = request_matches_msg (request, flags, (const bson_t **) docs, n_docs); 
+   r = request_matches_msg (request, flags, (const bson_t **) docs, n_docs);
 
-   bson_free (docs); 
+   bson_free (docs);
 
    return r;
 }

@@ -968,7 +968,7 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
    va_list args;
    bool r;
 
-   request = mock_server_receives_request (server); 
+   request = mock_server_receives_request (server);
 
    va_start (args, flags);
    r = request_matches_msgv (request, flags, &args);
@@ -1024,20 +1024,25 @@ mock_server_receives_bulk_msg (mock_server_t *server,
       r = request_matches_msg (request, MONGOC_MSG_NONE, docs, n_docs);
       bson_free ((bson_t **) docs);
    }
-=======
+
 request_t *
-_mock_server_receives_single_msg (mock_server_t *server, uint32_t flags, bson_t *doc)
+_mock_server_receives_single_msg (mock_server_t *server,
+                                  uint32_t flags,
+                                  const bson_t *doc)
 {
    request_t *request;
    va_list args;
    bool r;
 
-   bson_t *docs[] = { doc, NULL };
+   const bson_t *docs[] = {doc, NULL};
 
+   BSON_ASSERT (doc);
+
+   fprintf (stderr, "JFW: OK\n"), fflush (stderr);
    request = mock_server_receives_request (server);
 
    r = request_matches_msg (request, flags, (const bson_t **)docs, 1);
->>>>>>> 9afbe6e46 (DNM: appears to be switching between OPCODE_QUERY and OPCODE_MSG but breaking)
+   // JFW:   r = request_matches_msg (request, flags, docs, 1);
 
    if (!r) {
       request_destroy (request);
@@ -1059,7 +1064,7 @@ _mock_server_receives_single_msg (mock_server_t *server, uint32_t flags, bson_t 
  *       not match.
  *
  * Side effects:
- *       Logs if the current request is not a query (using OP_QUERY) 
+ *       Logs if the current request is not a query (using OP_QUERY)
  *       matching ns, flags, skip, n_return, query_json, and fields_json.
  *
  *--------------------------------------------------------------------------
@@ -1129,7 +1134,8 @@ mock_server_receives_legacy_hello (mock_server_t *server,
       bson_strdup_printf ("{'%s': 1, 'maxAwaitTimeMS': { '$exists': false }}",
                           request->command_name);
 
-   /* request_matches_query() always checks for OPCODE_QUERY, used by legacy hello: */
+   /* request_matches_query() always checks for OPCODE_QUERY, used by legacy
+    * hello: */
    if (!request_matches_query (request,
                                "admin.$cmd",
                                MONGOC_QUERY_SECONDARY_OK,
@@ -1197,16 +1203,34 @@ mock_server_receives_hello (mock_server_t *server)
 request_t *
 mock_server_receives_hello_op_msg (mock_server_t *server)
 {
-/*   bson_t *msg = tmp_bson("{'hello': 1, 'helloOk': true, 'maxAwaitTimeMS': { '$exists': false }}");  */
-   bson_t *msg = tmp_bson("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");  
+   /*   bson_t *msg = tmp_bson("{'hello': 1, 'helloOk': true, 'maxAwaitTimeMS':
+    * { '$exists': false }}");  */
+   bson_t *msg =
+      tmp_bson ("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
 
-   return _mock_server_receives_single_msg(server, 0, msg);
+   return _mock_server_receives_single_msg (server, 0, msg);
 
-/*
-   JFW: against the above inputs this winds up segfaulting, with the wrong number of documents reported by
-   request_matches_msgv()-- :
-   return _mock_server_receives_msg( server, 0, tmp_bson("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}"));
-*/
+   /*
+      bson_t *msg;
+
+      bool result = false;
+      bson_init(msg);
+
+      bson_append_document_begin(msg, tmp_bson("{'hello': 1, 'maxAwaitTimeMS': {
+      '$exists': false }}"), 1;
+
+      result = _mock_server_receives_single_msg(server, 0, msg);
+
+      bson_free(msg);
+
+      return result;
+   */
+   /*
+      JFW: against the above inputs this winds up segfaulting, with the wrong
+      number of documents reported by request_matches_msgv()-- : return
+      _mock_server_receives_msg( server, 0, tmp_bson("{'hello': 1,
+      'maxAwaitTimeMS': { '$exists': false }}"));
+   */
 }
 
 /*--------------------------------------------------------------------------
