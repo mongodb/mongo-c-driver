@@ -29,10 +29,6 @@
 #include "bson-memory.h"
 #include "common-thread-private.h"
 
-#ifdef BSON_HAVE_SYSCALL_TID
-#include <sys/syscall.h>
-#endif
-
 
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX 256
@@ -43,7 +39,6 @@
  * Globals.
  */
 static bson_context_t gContextDefault;
-static int64_t gRandCounter = INT64_MIN;
 
 static BSON_INLINE uint64_t
 _bson_getpid (void)
@@ -85,7 +80,9 @@ _bson_context_set_oid_seq32_threadsafe (bson_context_t *context, /* IN */
    uint32_t seq = (uint32_t) bson_atomic_int32_fetch_add (
       (int32_t *) &context->seq32, 1, bson_memory_order_seq_cst);
    seq = BSON_UINT32_TO_BE (seq);
-   memcpy (&oid->bytes[9], ((uint8_t *) &seq) + 1, 3);
+   memcpy (&oid->bytes[BSON_OID_SEQ32_OFFSET],
+           ((uint8_t *) &seq) + 1,
+           BSON_OID_SEQ32_SIZE);
 }
 
 
@@ -113,7 +110,7 @@ _bson_context_set_oid_seq64_threadsafe (bson_context_t *context, /* IN */
       (int64_t *) &context->seq64, 1, bson_memory_order_seq_cst);
 
    seq = BSON_UINT64_TO_BE (seq);
-   memcpy (&oid->bytes[4], &seq, sizeof (seq));
+   memcpy (&oid->bytes[BSON_OID_SEQ64_OFFSET], &seq, BSON_OID_SEQ64_SIZE);
 }
 
 /*
@@ -142,41 +139,54 @@ _bson_context_get_hostname (char *out)
 }
 
 
-#define ROTL(x, b) (uint64_t) (((x) << (b)) | ((x) >> (64 - (b))))
+/*** ========================================
+ * The below SipHash implementation is based on the original public-domain
+ * reference implementation from Jean-Philippe Aumasson and DJB
+ * (https://github.com/veorq/SipHash).
+ */
 
-#define U32TO8_LE(p, v)            \
-   (p)[0] = (uint8_t) ((v));       \
-   (p)[1] = (uint8_t) ((v) >> 8);  \
-   (p)[2] = (uint8_t) ((v) >> 16); \
-   (p)[3] = (uint8_t) ((v) >> 24);
+/* in-place rotate a 64bit number */
+void
+_rotl64 (uint64_t *p, int nbits)
+{
+   *p = (*p << nbits) | (*p >> (64 - nbits));
+}
 
-#define U64TO8_LE(p, v)               \
-   U32TO8_LE ((p), (uint32_t) ((v))); \
-   U32TO8_LE ((p) + 4, (uint32_t) ((v) >> 32));
+/* Write the little-endian representation of 'val' into 'out' */
+void
+_u64_into_u8x8_le (uint8_t out[8], uint64_t val)
+{
+   val = BSON_UINT64_TO_LE (val);
+   memcpy (out, &val, sizeof val);
+}
 
-#define U8TO64_LE(p)                                            \
-   (((uint64_t) ((p)[0])) | ((uint64_t) ((p)[1]) << 8) |        \
-    ((uint64_t) ((p)[2]) << 16) | ((uint64_t) ((p)[3]) << 24) | \
-    ((uint64_t) ((p)[4]) << 32) | ((uint64_t) ((p)[5]) << 40) | \
-    ((uint64_t) ((p)[6]) << 48) | ((uint64_t) ((p)[7]) << 56))
+/* Read a little-endian representation of a 64bit number from 'in' */
+uint64_t
+_u8x8_le_to_u64 (const uint8_t in[8])
+{
+   uint64_t r;
+   memcpy (&r, in, sizeof r);
+   return BSON_UINT64_FROM_LE (r);
+}
 
+/* Perform one SipHash round */
 void
 _sip_round (uint64_t *v0, uint64_t *v1, uint64_t *v2, uint64_t *v3)
 {
    *v0 += *v1;
-   *v1 = ROTL (*v1, 13);
+   _rotl64 (v1, 13);
    *v1 ^= *v0;
-   *v0 = ROTL (*v0, 32);
+   _rotl64 (v0, 32);
    *v2 += *v3;
-   *v3 = ROTL (*v3, 16);
+   _rotl64 (v3, 16);
    *v3 ^= *v2;
    *v0 += *v3;
-   *v3 = ROTL (*v3, 21);
+   _rotl64 (v3, 21);
    *v3 ^= *v0;
    *v2 += *v1;
-   *v1 = ROTL (*v1, 17);
+   _rotl64 (v1, 17);
    *v1 ^= *v2;
-   *v2 = ROTL (*v2, 32);
+   _rotl64 (v2, 32);
 }
 
 void
@@ -196,8 +206,8 @@ _siphash (const void *in,
    uint64_t v1 = UINT64_C (0x646f72616e646f6d);
    uint64_t v2 = UINT64_C (0x6c7967656e657261);
    uint64_t v3 = UINT64_C (0x7465646279746573);
-   uint64_t k0 = U8TO64_LE (kk);
-   uint64_t k1 = U8TO64_LE (kk + 8);
+   uint64_t k0 = _u8x8_le_to_u64 (kk);
+   uint64_t k1 = _u8x8_le_to_u64 (kk + 8);
    uint64_t m;
    int i;
    const unsigned char *end = ni + inlen - (inlen % sizeof (uint64_t));
@@ -211,7 +221,7 @@ _siphash (const void *in,
    v1 ^= 0xee;
 
    for (; ni != end; ni += 8) {
-      m = U8TO64_LE (ni);
+      m = _u8x8_le_to_u64 (ni);
       v3 ^= m;
 
       for (i = 0; i < C_ROUNDS; ++i)
@@ -261,7 +271,7 @@ _siphash (const void *in,
       _sip_round (&v0, &v1, &v2, &v3);
 
    b = v0 ^ v1 ^ v2 ^ v3;
-   U64TO8_LE (digest_buf, b);
+   _u64_into_u8x8_le (digest_buf, b);
 
    v1 ^= 0xdd;
 
@@ -269,7 +279,7 @@ _siphash (const void *in,
       _sip_round (&v0, &v1, &v2, &v3);
 
    b = v0 ^ v1 ^ v2 ^ v3;
-   U64TO8_LE (digest_buf + 8, b);
+   _u64_into_u8x8_le (digest_buf + 8, b);
 
    memcpy (digest, digest_buf, sizeof digest_buf);
 }
@@ -291,6 +301,12 @@ struct _init_rand_params {
 static void
 _bson_context_init_random (bson_context_t *context, bool init_seq)
 {
+   /* Keep an atomic counter of this function being called. This is used to add
+    * additional input to the random hash, ensuring no two calls in a single
+    * process will receive identical hash inputs, even occurring at the same
+    * microsecond. */
+   static int64_t s_rand_call_counter = INT64_MIN;
+
    /* The message digest of the random params */
    uint64_t digest[2] = {0};
    uint64_t key[2] = {0};
@@ -302,9 +318,11 @@ _bson_context_init_random (bson_context_t *context, bool init_seq)
    bson_gettimeofday (&rand_params.time);
    rand_params.pid = _bson_getpid ();
    context->gethostname (rand_params.hostname);
-   rand_params.rand_call_counter =
-      bson_atomic_int64_fetch_add (&gRandCounter, 1, bson_memory_order_seq_cst);
+   rand_params.rand_call_counter = bson_atomic_int64_fetch_add (
+      &s_rand_call_counter, 1, bson_memory_order_seq_cst);
 
+   /* Generate a SipHash key. We do not care about secrecy or determinism, only
+    * uniqueness. */
    memcpy (key, &rand_params, sizeof key);
    key[1] = ~key[0];
 
@@ -316,7 +334,9 @@ _bson_context_init_random (bson_context_t *context, bool init_seq)
    if (init_seq) {
       memcpy (&context->seq32, digest + 1, sizeof context->seq32);
       memcpy (&context->seq64, digest + 1, sizeof context->seq64);
-      /* Chop off some initial bits for nicer counter behavior */
+      /* Chop off some initial bits for nicer counter behavior. This allows the
+       * low digit to start at a zero, and prevents immediately wrapping the
+       * counter in subsequent calls to set_oid_seq. */
       context->seq32 &= ~UINT32_C (0xf0000f);
       context->seq64 &= ~UINT64_C (0xf0000f);
    }
@@ -369,7 +389,9 @@ _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid)
       }
    }
    /* Copy the stored randomness into the OID */
-   memcpy (&oid->bytes[4], &context->randomness, 5);
+   memcpy (oid->bytes + BSON_OID_RANDOMESS_OFFSET,
+           &context->randomness,
+           BSON_OID_RANDOMESS_SIZE);
 }
 
 /*

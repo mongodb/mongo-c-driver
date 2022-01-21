@@ -28,12 +28,21 @@
 BSON_BEGIN_DECLS
 
 
+enum {
+   BSON_OID_RANDOMESS_OFFSET = 4,
+   BSON_OID_RANDOMESS_SIZE = 5,
+   BSON_OID_SEQ32_OFFSET = 9,
+   BSON_OID_SEQ32_SIZE = 3,
+   BSON_OID_SEQ64_OFFSET = 4,
+   BSON_OID_SEQ64_SIZE = 8
+};
+
 struct _bson_context_t {
    /* flags are defined in bson_context_flags_t */
    int flags;
    uint32_t seq32;
    uint64_t seq64;
-   uint8_t randomness[5];
+   uint8_t randomness[BSON_OID_RANDOMESS_SIZE];
    uint64_t pid;
 
    void (*oid_set_seq32) (bson_context_t *context, bson_oid_t *oid);
