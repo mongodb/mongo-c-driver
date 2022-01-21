@@ -57,25 +57,9 @@ _bson_getpid (void)
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _bson_context_set_oid_seq32_threadsafe --
- *
- *       Thread-safe version of 32-bit sequence generator.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       @oid is modified.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-_bson_context_set_oid_seq32_threadsafe (bson_context_t *context, /* IN */
-                                        bson_oid_t *oid)         /* OUT */
+void
+_bson_context_set_oid_seq32 (bson_context_t *context, /* IN */
+                             bson_oid_t *oid)         /* OUT */
 {
    uint32_t seq = (uint32_t) bson_atomic_int32_fetch_add (
       (int32_t *) &context->seq32, 1, bson_memory_order_seq_cst);
@@ -86,25 +70,9 @@ _bson_context_set_oid_seq32_threadsafe (bson_context_t *context, /* IN */
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _bson_context_set_oid_seq64_threadsafe --
- *
- *       Thread-safe 64-bit sequence generator.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       @oid is modified.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-_bson_context_set_oid_seq64_threadsafe (bson_context_t *context, /* IN */
-                                        bson_oid_t *oid)         /* OUT */
+void
+_bson_context_set_oid_seq64 (bson_context_t *context, /* IN */
+                             bson_oid_t *oid)         /* OUT */
 {
    uint64_t seq = (uint64_t) bson_atomic_int64_fetch_add (
       (int64_t *) &context->seq64, 1, bson_memory_order_seq_cst);
@@ -147,7 +115,7 @@ _bson_context_get_hostname (char *out)
 
 /* in-place rotate a 64bit number */
 void
-_rotl64 (uint64_t *p, int nbits)
+_bson_rotl_u64 (uint64_t *p, int nbits)
 {
    *p = (*p << nbits) | (*p >> (64 - nbits));
 }
@@ -174,19 +142,19 @@ void
 _sip_round (uint64_t *v0, uint64_t *v1, uint64_t *v2, uint64_t *v3)
 {
    *v0 += *v1;
-   _rotl64 (v1, 13);
+   _bson_rotl_u64 (v1, 13);
    *v1 ^= *v0;
-   _rotl64 (v0, 32);
+   _bson_rotl_u64 (v0, 32);
    *v2 += *v3;
-   _rotl64 (v3, 16);
+   _bson_rotl_u64 (v3, 16);
    *v3 ^= *v2;
    *v0 += *v3;
-   _rotl64 (v3, 21);
+   _bson_rotl_u64 (v3, 21);
    *v3 ^= *v0;
    *v2 += *v1;
-   _rotl64 (v1, 17);
+   _bson_rotl_u64 (v1, 17);
    *v1 ^= *v2;
-   _rotl64 (v2, 32);
+   _bson_rotl_u64 (v2, 32);
 }
 
 void
@@ -350,36 +318,17 @@ _bson_context_init (bson_context_t *context, bson_context_flags_t flags)
 {
    context->flags = (int) flags;
    context->gethostname = _bson_context_get_hostname;
-
-   context->oid_set_seq32 = _bson_context_set_oid_seq32_threadsafe;
-   context->oid_set_seq64 = _bson_context_set_oid_seq64_threadsafe;
-
    _bson_context_init_random (context, true /* Init counters */);
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _bson_context_set_oid_rand --
- *
- *       Sets the process specific five byte random sequence in an oid.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       @oid is modified.
- *
- *--------------------------------------------------------------------------
- */
 void
 _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid)
 {
    BSON_ASSERT (context);
    BSON_ASSERT (oid);
 
-   if (context->flags & BSON_CONTEXT_DISABLE_HOST_CACHE) {
+   if (context->flags & BSON_CONTEXT_DISABLE_PID_CACHE) {
       /* User has requested that we check if our PID has changed. This can occur
        * after a call to fork() */
       uint64_t now_pid = _bson_getpid ();
@@ -394,37 +343,6 @@ _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid)
            BSON_OID_RANDOMESS_SIZE);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * bson_context_new --
- *
- *       Initializes a new context with the flags specified.
- *
- *       In most cases, you want to call this with @flags set to
- *       BSON_CONTEXT_NONE.
- *
- *       If you are running on Linux, %BSON_CONTEXT_USE_TASK_ID can result
- *       in a healthy speedup for multi-threaded scenarios.
- *
- *       If you absolutely must have a single context for your application
- *       and use more than one thread, then %BSON_CONTEXT_THREAD_SAFE should
- *       be bitwise-or'd with your flags. This requires synchronization
- *       between threads.
- *
- *       If you expect your pid to change without notice, such as from an
- *       unexpected call to fork(), then specify
- *       %BSON_CONTEXT_DISABLE_PID_CACHE.
- *
- * Returns:
- *       A newly allocated bson_context_t that should be freed with
- *       bson_context_destroy().
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 
 bson_context_t *
 bson_context_new (bson_context_flags_t flags)
@@ -438,23 +356,6 @@ bson_context_new (bson_context_flags_t flags)
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * bson_context_destroy --
- *
- *       Cleans up a bson_context_t and releases any associated resources.
- *       This should be called when you are done using @context.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 void
 bson_context_destroy (bson_context_t *context) /* IN */
 {
@@ -464,31 +365,10 @@ bson_context_destroy (bson_context_t *context) /* IN */
 
 static BSON_ONCE_FUN (_bson_context_init_default)
 {
-   _bson_context_init (
-      &gContextDefault,
-      (BSON_CONTEXT_THREAD_SAFE | BSON_CONTEXT_DISABLE_PID_CACHE));
+   _bson_context_init (&gContextDefault, BSON_CONTEXT_DISABLE_PID_CACHE);
    BSON_ONCE_RETURN;
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * bson_context_get_default --
- *
- *       Fetches the default, thread-safe implementation of #bson_context_t.
- *       If you need faster generation, it is recommended you create your
- *       own #bson_context_t with bson_context_new().
- *
- * Returns:
- *       A shared instance to the default #bson_context_t. This should not
- *       be modified or freed.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 
 bson_context_t *
 bson_context_get_default (void)
