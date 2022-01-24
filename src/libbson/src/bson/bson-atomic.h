@@ -73,6 +73,12 @@ enum bson_memory_order {
 #define BSON_EMULATE_INT
 #endif
 
+/* CDRIVER-4264 Contrary to documentation, VS 2013 targeting x86 does not
+ * correctly/consistently provide _InterlockedPointerExchange. */
+#if defined(_MSC_VER) && _MSC_VER < 1900 && defined(_M_IX86)
+#define BSON_EMULATE_PTR
+#endif
+
 #define DEF_ATOMIC_OP(                                                       \
    MSVC_Intrinsic, GNU_Intrinsic, GNU_Legacy_Intrinsic, Order, ...)          \
    do {                                                                      \
@@ -433,6 +439,11 @@ _bson_emul_atomic_int_compare_exchange_weak (int volatile *val,
                                              int new_value,
                                              enum bson_memory_order);
 
+BSON_EXPORT (void *)
+_bson_emul_atomic_ptr_exchange (void *volatile *val,
+                                void *v,
+                                enum bson_memory_order);
+
 BSON_EXPORT (void)
 bson_thrd_yield (void);
 
@@ -608,8 +619,10 @@ bson_atomic_ptr_exchange (void *volatile *ptr,
                           void *new_value,
                           enum bson_memory_order ord)
 {
+#if defined(BSON_EMULATE_PTR)
+   return _bson_emul_atomic_ptr_exchange (ptr, new_value, ord);
+#elif defined(BSON_USE_LEGACY_GCC_ATOMICS)
    /* The older __sync_val_compare_and_swap also takes oldval */
-#if defined(BSON_USE_LEGACY_GCC_ATOMICS)
    DEF_ATOMIC_OP (_InterlockedExchangePointer,
                   ,
                   __sync_val_compare_and_swap,
@@ -750,6 +763,8 @@ BSON_EXPORT (int32_t) bson_atomic_int_add (volatile int32_t *p, int32_t n);
 BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int64_fetch_add")
 BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 
+
+#undef BSON_EMULATE_PTR
 #undef BSON_EMULATE_INT32
 #undef BSON_EMULATE_INT
 
