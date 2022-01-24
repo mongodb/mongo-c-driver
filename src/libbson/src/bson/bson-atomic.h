@@ -74,7 +74,7 @@ enum bson_memory_order {
 #endif
 
 /* CDRIVER-4264 Contrary to documentation, VS 2013 targeting x86 does not
- * correctly/consistently provide _IntrinsicPointerExchange. */
+ * correctly/consistently provide _InterlockedPointerExchange. */
 #if defined(_MSC_VER) && _MSC_VER < 1900 && defined(_M_IX86)
 #define BSON_EMULATE_PTR
 #endif

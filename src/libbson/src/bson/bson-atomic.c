@@ -48,7 +48,7 @@ bson_memory_barrier (void)
 }
 
 /**
- * Some platforms do not support compiler ics for atomic operations.
+ * Some platforms do not support compiler intrinsics for atomic operations.
  * We emulate that here using a spin lock and regular arithmetic operations
  */
 static int8_t gEmulAtomicLock = 0;
