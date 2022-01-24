@@ -286,6 +286,8 @@ _mongoc_interrupt_flush (mongoc_interrupt_t *interrupt)
    }
    /* Should never be reached. */
    BSON_ASSERT (false);
+
+   return false;
 }
 
 bool
