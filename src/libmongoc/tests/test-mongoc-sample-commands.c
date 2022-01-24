@@ -3754,19 +3754,15 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    ASSERT_OR_PRINT (ok, error);
    db = mongoc_client_get_database (client, "db");
    sales = mongoc_database_get_collection (db, "sales");
-   /* Drop db.sales in case the collection exists. */
+   /* Ignore an "ns not found" error on dropping the db.sales collection in case
+   it exists. */
    ok = mongoc_collection_drop (sales, &error);
    if (!ok && NULL == strstr (error.message, "ns not found")) {
 
-fprintf(stderr, "JFW: error.domain == %d, error.code == %d\n", error.domain, error.code);
-if (error.domain == MONGOC_ERROR_SERVER && error.code == 26) {
-fprintf(stderr, "JFW: yepses\n");
-}
-
-
-      /* Ignore an "ns not found" error on dropping the collection in case the
-       * namespace does not exist. */
-      ASSERT_OR_PRINT (ok, error);
+      fprintf (stderr,
+               "error.domain == %d, error.code == %d\n",
+               error.domain,
+               error.code);
    }
 
    /* Start Versioned API Example 5 */
@@ -3853,8 +3849,9 @@ fprintf(stderr, "JFW: yepses\n");
    ok = mongoc_collection_insert_many (
       sales, (const bson_t **) docs, N_DOCS, NULL /* opts */, &reply, &error);
    /* End Versioned API Example 5 */
+
    ASSERT_OR_PRINT (ok, error);
-   bson_destroy (&reply);
+bson_destroy (&reply); // JFW??
 
    cmd = BCON_NEW ("count", "sales");
    ok = mongoc_database_command_simple (
@@ -3866,6 +3863,7 @@ fprintf(stderr, "JFW: yepses\n");
       "Provided apiStrict:true, but the command count is not in API Version 1");
    ASSERT (!ok);
    bson_destroy (&reply);
+
 #if 0
    /* This block not evaluated, but is inserted into documentation to represent the above reply.
     * Don't delete me! */
@@ -3878,29 +3876,29 @@ fprintf(stderr, "JFW: yepses\n");
    /* End Versioned API Example 6 */
 #endif
 
-   /* Start Versioned API Example 7 */
-   filter = bson_new ();
-   count = mongoc_collection_count_documents (
-      sales, filter, NULL /* opts */, NULL /* read_prefs */, &reply, &error);
-   /* End Versioned API Example 7 */
-   if (N_DOCS != count) {
-      test_error ("expected %d documents, got %" PRId64, N_DOCS, count);
-   }
-   bson_destroy (&reply);
+/* Start Versioned API Example 7 */
+filter = bson_new ();
+count = mongoc_collection_count_documents (
+   sales, filter, NULL /* opts */, NULL /* read_prefs */, &reply, &error);
+/* End Versioned API Example 7 */
+if (N_DOCS != count) {
+   test_error ("expected %d documents, got %" PRId64, N_DOCS, count);
+}
+bson_destroy (&reply);
 
-   /* Start Versioned API Example 8 */
-   BSON_ASSERT (count == N_DOCS);
-   /* End Versioned API Example 8 */
+/* Start Versioned API Example 8 */
+BSON_ASSERT (count == N_DOCS);
+/* End Versioned API Example 8 */
 
-   bson_destroy (filter);
-   bson_destroy (cmd);
-   for (i = 0; i < N_DOCS; i++) {
-      bson_destroy (docs[i]);
-   }
-   mongoc_collection_destroy (sales);
-   mongoc_database_destroy (db);
-   mongoc_server_api_destroy (server_api);
-   mongoc_client_destroy (client);
+bson_destroy (filter);
+bson_destroy (cmd);
+for (i = 0; i < N_DOCS; i++) {
+   bson_destroy (docs[i]);
+}
+mongoc_collection_destroy (sales);
+mongoc_database_destroy (db);
+mongoc_server_api_destroy (server_api);
+mongoc_client_destroy (client);
 }
 
 static void

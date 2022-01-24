@@ -299,6 +299,7 @@ test_large_hello (void *ctx)
                          NULL,
                          "admin",
                          &q,
+                         MONGOC_OPCODE_QUERY,
                          &test_large_hello_helper,
                          NULL,
                          TIMEOUT);

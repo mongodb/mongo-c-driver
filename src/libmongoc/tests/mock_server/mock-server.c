@@ -1031,18 +1031,19 @@ _mock_server_receives_single_msg (mock_server_t *server,
                                   const bson_t *doc)
 {
    request_t *request;
-   va_list args;
    bool r;
 
+/* JFW: unclear to me if this constructs a valid document or not:
    const bson_t *docs[] = {doc, NULL};
+*/
 
    BSON_ASSERT (doc);
 
-   fprintf (stderr, "JFW: OK\n"), fflush (stderr);
    request = mock_server_receives_request (server);
 
    r = request_matches_msg (request, flags, (const bson_t **)docs, 1);
    // JFW:   r = request_matches_msg (request, flags, docs, 1);
+   // JFW:   r = request_matches_msg (request, flags, &doc, 1);
 
    if (!r) {
       request_destroy (request);

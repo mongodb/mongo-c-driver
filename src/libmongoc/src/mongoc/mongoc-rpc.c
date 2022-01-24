@@ -999,23 +999,25 @@ _mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply)
 
 /* Reply to a first OP_MSG with another OP_MSG: */
 bool
-_mongoc_rpc_reply_get_first_msg (mongoc_rpc_msg_t *reply_msg, bson_t *bson_reply)
+_mongoc_rpc_reply_get_first_msg (mongoc_rpc_msg_t *reply_msg,
+                                 bson_t *bson_reply)
 {
-  /* Note that mongo_rpc_reply_t is a union, with a mongo_rpc_msg_t field; see the *.def files
-  and MongoDB Wire Protocol documentation for details. */
+   /* Note that mongo_rpc_reply_t is a union, with a mongo_rpc_msg_t field; see
+   the *.def files and MongoDB Wire Protocol documentation for details. */
 
-bson_t *bt;
-int32_t document_len;
+   int32_t document_len;
 
-BSON_ASSERT(0 == reply_msg->sections[0].payload_type);
+   BSON_ASSERT (0 == reply_msg->sections[0].payload_type);
 
-// As per the Wire Protocol documentation, each section has a 32 bit length field:
-memcpy(&document_len, reply_msg->sections[0].payload.bson_document, 4);
-document_len = BSON_UINT32_FROM_LE (document_len);
+   // As per the Wire Protocol documentation, each section has a 32 bit length
+   // field:
+   memcpy (&document_len, reply_msg->sections[0].payload.bson_document, 4);
+   document_len = BSON_UINT32_FROM_LE (document_len);
 
-   bson_init_static (bson_reply, reply_msg->sections[0].payload.bson_document, document_len);
+   bson_init_static (
+      bson_reply, reply_msg->sections[0].payload.bson_document, document_len);
 
- return true;
+   return true;
 }
 
 bool
@@ -1069,8 +1071,9 @@ _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
 
    /* Find, getMore And killCursors Commands Spec: "When sending a find command
     * rather than a legacy OP_QUERY find, only the secondaryOk flag is honored."
-    * For other cursor-typed commands like aggregate, only secondaryOk can be set.
-    * Clear bits except secondaryOk; leave secondaryOk set only if it is already.
+    * For other cursor-typed commands like aggregate, only secondaryOk can be
+    * set. Clear bits except secondaryOk; leave secondaryOk set only if it is
+    * already.
     */
    rpc->query.flags = cmd->query_flags & MONGOC_QUERY_SECONDARY_OK;
 }
