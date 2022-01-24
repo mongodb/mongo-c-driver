@@ -144,8 +144,11 @@ _mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode,
    acmd->rpc.header.request_id = ++acmd->async->request_id;
    acmd->rpc.header.response_to = 0;
 
+   acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
+
    if (MONGOC_OPCODE_QUERY == cmd_opcode) {
-      acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
+/* JFW: DELETEME: this appears to be needed by both OPCODE_QUERY and OPCODE_MSG:
+       acmd->ns = bson_strdup_printf ("%s.$cmd", dbname); */
 
       acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
       acmd->rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
@@ -168,7 +171,10 @@ _mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode,
          bson_get_data (&acmd->cmd);
    }
 
-   _mongoc_array_init (&acmd->array, sizeof (mongoc_iovec_t));
+/* JFW: DELETEME looks like this is already initialized in
+  mongoc_async_cmd_new(): 
+	_mongoc_array_init (&acmd->array, sizeof (mongoc_iovec_t));
+*/
 
    /* This will always be hello, which are not allowed to be compressed */
    _mongoc_rpc_gather (&acmd->rpc, &acmd->array);
