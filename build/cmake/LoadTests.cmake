@@ -52,18 +52,18 @@ foreach (line IN LISTS lines)
     set (meta "${listing}")
     list (REMOVE_AT meta 0)
     set (test "mongoc${test_name}")
-    if (NOT _MDB_TEST_FIXTURES_AUTO_USE OR NOT (meta MATCHES "uses-live-server"))
+    if (NOT _MDB_DEFAULT_TEST_FIXTURES OR NOT (meta MATCHES "uses-live-server"))
         _register_test ("${test}" "${test_name}")
         set_tests_properties ("${test}" PROPERTIES
             TIMEOUT 15
             LABELS "${meta}"
             )
     else ()
-        foreach (fxt IN LISTS _MDB_TEST_FIXTURES_AUTO_USE)
+        foreach (fxt IN LISTS _MDB_DEFAULT_TEST_FIXTURES)
             set (qualname "${fxt}/${test}")
             _register_test ("${qualname}" "${test_name}")
             set_tests_properties ("${qualname}" PROPERTIES
-                FIXTURES_REQUIRED "${fxt}"
+                FIXTURES_REQUIRED "${fxt};${_MDB_TRANSITIVE_FIXTURES_OF_${fxt}}"
                 RESOURCE_LOCK "${fxt}"
                 ENVIRONMENT "MONGOC_TEST_URI=mongodb://localhost:${_MDB_FIXTURE_${fxt}_PORT}"
                 TIMEOUT 15

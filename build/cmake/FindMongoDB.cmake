@@ -1,8 +1,24 @@
+#[[
+
+Find MongoDB executables on the system, and define utilities for using them.
+
+This attempts to find as many MongoDB executables as possible. It scans ENV{PATH},
+as well as ENV{M_PREFIX} (if you have 'm' installed, all installed versions will
+be found by this module.)
+
+This module defines a global property `MONGODB_FOUND_VERSIONS`, which is a list
+of every unique MongoDB version that it found. For each version 'XYZ' that it
+found, it will define an additional global property 'MONGODB_${XYZ}_PATH' that
+contains the absolute path to the mongod server executable for that version.
+
+]]
+
 if (MongoDB_FIND_COMPONENTS)
     message (SEND_ERROR "FindMongoDB does not take any components")
 endif ()
 
 include (FindPackageHandleStandardArgs)
+include (CMakeParseArguments)
 
 define_property (GLOBAL PROPERTY MONGODB_FOUND_VERSIONS
     BRIEF_DOCS "Versions of MongoDB that have been found"
@@ -14,7 +30,11 @@ set(MONGODB_DEFAULT_TEST_FIXTURE_VERSIONS
     "List of MongoDB server versions against which to generate default test fixtures"
     )
 
-function (_get_mongod_version mongod_exe)
+#[[
+    Attempt to discern the MongoDB version of the given MongoDB server
+    executable, and save that information in a global property for later use.
+]]
+function (_mdb_discover_exe mongod_exe)
     # Create an ident for the filepath, since cache variables need to be cleanly named
     string (MAKE_C_IDENTIFIER "${mongod_exe}" mongod_exe_id)
     # The outupt from the executable will be cached in this variable:
@@ -78,20 +98,23 @@ function (_get_mongod_version mongod_exe)
     set_property (GLOBAL APPEND PROPERTY MONGODB_FOUND_VERSIONS "${version}")
 endfunction ()
 
+#[[ Scan in 'bindir' for any mongod executables with the given 'extension' file extension ]]
 macro (_scan_for_mdb bindir extension)
     set (__bindir "${bindir}")
     set (__ext "${extension}")
     get_filename_component (candidate "${__bindir}/mongod${__ext}" ABSOLUTE)
     if (EXISTS "${candidate}")
-        _get_mongod_version ("${candidate}")
+        _mdb_discover_exe ("${candidate}")
     endif ()
 endmacro ()
 
+#[[ Find them all ]]
 function (_mongodb_find)
     # Check if the user has 'm' installed:
     if (DEFINED ENV{M_PREFIX})
         set (m_prefix "$ENV{M_PREFIX}")
     else ()
+        # It may be in /usr/local, if not overriden
         set (m_prefix "/usr/local")
     endif ()
 
@@ -110,16 +133,20 @@ function (_mongodb_find)
     # Scan for executables
     foreach (bindir IN LISTS paths)
         if (DEFINED ENV{PATHEXT})
+            # Windows defines PATHEXT as part of its executable search algorithm
             foreach (ext IN LISTS ENV{PATHEXT})
                 _scan_for_mdb ("${bindir}" "${ext}")
             endforeach ()
         else ()
+            # Other platforms do not use extensions, so use an empty string
             _scan_for_mdb ("${bindir}" "")
         endif ()
     endforeach ()
 
+    # Print versions of MongoDB that we have found.
     get_property (found GLOBAL PROPERTY MONGODB_FOUND_VERSIONS)
     set (new_found "${found}")
+    # Only print new ones, if we are running another time.
     list (REMOVE_ITEM new_found ~~~ ${_MDB_PREVIOUSLY_FOUND_VERSIONS})
     if (new_found)
         set_property (GLOBAL PROPERTY MONGODB_FOUND_VERSIONS "${new_found}")
@@ -129,11 +156,14 @@ function (_mongodb_find)
             message (STATUS "  - ${version}:")
             message (STATUS "      ${path}")
         endforeach ()
-        set (MongoDB_FOUND TRUE PARENT_SCOPE)
     endif ()
     set (_MDB_PREVIOUSLY_FOUND_VERSIONS "${found}" CACHE INTERNAL "")
+    if (found)
+        set (MongoDB_FOUND TRUE PARENT_SCOPE)
+    endif ()
 endfunction ()
 
+# Do the finding
 _mongodb_find ()
 
 #[[
@@ -141,17 +171,16 @@ _mongodb_find ()
     determined by the MONGODB_FOUND_VERSIONS global property. The generated fixtures
     are named as 'default-<version>' for each '<version>' that was found.
 ]]
-function (mongodb_setup_fixtures)
+function (mongodb_setup_default_fixtures)
     set (versions ${MONGODB_DEFAULT_TEST_FIXTURE_VERSIONS})
     if (versions STREQUAL "ALL")
         get_cmake_property (versions MONGODB_FOUND_VERSIONS)
     endif ()
     foreach (ver IN LISTS versions)
         mongodb_create_fixture (
-            "default-${ver}"
-            AUTOUSE
-            VERSION "${ver}"
+            "mdb/fixture/default/${ver}" VERSION "${ver}"
             SERVER_ARGS --setParameter enableTestCommands=1
+            DEFAULT
             )
     endforeach ()
 endfunction ()
@@ -161,15 +190,15 @@ endfunction ()
     instance for other tests.
 
         mongodb_create_fixture(
-            <name>
-            VERSION <version>
+            <name> VERSION <version>
+            [DEFAULT]
             [PORT_VARIABLE <port-varname>]
             [SERVER_ARGS <args> ...]
         )
 
     <name> and <version> are the only required arguments. VERSION must specify a
     MongoDB server version that has a known path. There must be a
-    MONGODB_<version>_PATH global property that  defines the path to a mongod
+    MONGODB_<version>_PATH global property that defines the path to a mongod
     executable file. These global properties are set by the FindMongoDB.cmake
     module when it is first imported. The list of available versions can be
     found in the MONGODB_FOUND_VERSIONS global property.
@@ -185,10 +214,14 @@ endfunction ()
 
     The fixture <name> can then be associated with tests via the FIXTURES_REQUIRED
     test property.
+
+    If [DEFAULT] is specified, then the fixture will be added to a default list
+    that will be used to populate live-server tests that do not otherwise
+    specify a server test fixture
 ]]
 function (mongodb_create_fixture name)
     cmake_parse_arguments (ARG
-        "AUTOUSE"
+        "DEFAULT"
         "PORT_VARIABLE;VERSION"
         "SERVER_ARGS"
         ${ARGN}
@@ -204,7 +237,7 @@ function (mongodb_create_fixture name)
     get_cmake_property (port "_MDB_UNUSED_PORT")
     math (EXPR next "${port} + 3")
     set_property (GLOBAL PROPERTY _MDB_UNUSED_PORT "${next}")
-    add_test (NAME mdb/fixture/${name}/setup
+    add_test (NAME ${name}/setup
         COMMAND "${CMAKE_COMMAND}"
                 -D "FIXTURE_NAME=${name}"
                 -D "RUNDIR=${PROJECT_BINARY_DIR}"
@@ -214,7 +247,7 @@ function (mongodb_create_fixture name)
                 -D "SERVER_ARGS=${ARG_SERVER_ARGS}"
                 -P ${_MDB_SCRIPT_DIR}/mdb-ctrl.cmake
             )
-    add_test (NAME mdb/fixture/${name}/cleanup
+    add_test (NAME ${name}/cleanup
         COMMAND "${CMAKE_COMMAND}"
                 -D "FIXTURE_NAME=${name}"
                 -D "RUNDIR=${PROJECT_BINARY_DIR}"
@@ -222,46 +255,121 @@ function (mongodb_create_fixture name)
                 -D DO=STOP
                 -P ${_MDB_SCRIPT_DIR}/mdb-ctrl.cmake
             )
-    set_property (TEST mdb/fixture/${name}/setup PROPERTY FIXTURES_SETUP "${name}")
-    set_property (TEST mdb/fixture/${name}/cleanup PROPERTY FIXTURES_CLEANUP "${name}")
+    set_property (TEST ${name}/setup PROPERTY FIXTURES_SETUP "${name}")
+    set_property (TEST ${name}/cleanup PROPERTY FIXTURES_CLEANUP "${name}")
     set_property (
-        TEST mdb/fixture/${name}/setup mdb/fixture/${name}/cleanup
+        TEST ${name}/setup ${name}/cleanup
         PROPERTY TIMEOUT 10)
     if (ARG_PORT_VARIABLE)
-        set ("${ARG_PORT_VARIABLE}" "${port}")
+        set ("${ARG_PORT_VARIABLE}" "${port}" PARENT_SCOPE)
     endif ()
-    set_property (TARGET _mdb-test-meta
-        APPEND PROPERTY _CONTENT
+    set_property (TARGET __mdb-meta
+        APPEND PROPERTY _CTestData_CONTENT
         "# Test fixture '${name}'"
         "set(_fxt [[${name}]])"
-        "list(APPEND _MDB_TEST_FIXTURES [[${name}]])"
-        "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${port})"
+        "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${port})\n"
         )
-    if (ARG_AUTOUSE)
-        set_property (GLOBAL APPEND PROPERTY MDB_TEST_AUTOUSE_FIXTURES "${name}")
-        set_property (TARGET _mdb-test-meta
-            APPEND PROPERTY _CONTENT
-            "list(APPEND _MDB_TEST_FIXTURES_AUTO_USE [[${name}]])"
-            )
+    set_property(TARGET __mdb-meta APPEND PROPERTY _ALL_FIXTURES "${name}")
+    if (ARG_DEFAULT)
+        set_property (TARGET __mdb-meta APPEND PROPERTY _DEFAULT_FIXTURES "${name}")
     endif ()
 endfunction ()
 
-include (CMakeParseArguments)
+function (mongodb_create_replset_fixture name)
+    cmake_parse_arguments (ARG
+        "DEFAULT"
+        "PORT_VARIABLE;VERSION;COUNT;REPLSET_NAME"
+        "SERVER_ARGS"
+        ${ARGN}
+        )
+    if (NOT ARG_COUNT)
+        set (ARG_COUNT 3)
+    endif ()
+    set (children)
+    set(members)
+    set(_id 0)
+    foreach (n RANGE 1 "${ARG_COUNT}")
+        mongodb_create_fixture("${name}/rs${n}"
+            VERSION "${ARG_VERSION}"
+            SERVER_ARGS ${SERVER_ARGS}
+                --replSet "${ARG_REPLSET_NAME}"
+                --setParameter enableTestCommands=1
+            PORT_VARIABLE final_port
+            )
+        list (APPEND children "${name}/rs${n}")
+        list(APPEND members "{_id: ${_id}, host: 'localhost:${final_port}'}")
+        math(EXPR _id "${_id}+1")
+    endforeach()
+    get_cmake_property(mdb_exe MONGODB_${ARG_VERSION}_PATH)
+    get_filename_component(mdb_dir "${mdb_exe}/" DIRECTORY)
+    unset(_msh_path CACHE)
+    find_program(_msh_path
+        NAMES mongosh mongo
+        HINTS "${mdb_dir}"
+        NAMES_PER_DIR)
+    set(init_js "${CMAKE_CURRENT_BINARY_DIR}/_replset-${name}-init.js")
+    string(REPLACE ";" ", " members "${members}")
+    file(WRITE "${init_js}"
+        "var mems = [${members}];
+        rs.initiate({
+            _id: '${ARG_REPLSET_NAME}',
+            members: mems,
+        });
+        var i = 0;
+        for (;;) {
+            if (rs.config().members.length == mems.length)
+                break;
+            sleep(1);
+            ++i;
+            if (i == 10000) {
+                assert(false, 'Members did not connect')
+            }
+        }
+        ")
+    add_test (
+        NAME "${name}"
+        COMMAND "${_msh_path}"
+            --port ${final_port}
+            --norc "${init_js}"
+        )
+    set_tests_properties ("${name}"
+        PROPERTIES FIXTURES_REQUIRED "${children}"
+        FIXTURES_SETUP "${name}"
+        )
+    set_property(TARGET __mdb-meta APPEND PROPERTY _ALL_FIXTURES "${name}")
+    if (ARG_DEFAULT)
+        set_property(TARGET __mdb-meta APPEND PROPERTY _DEFAULT_FIXTURES "${name}")
+    endif ()
+    set_property(TARGET __mdb-meta
+        APPEND PROPERTY _CTestData_CONTENT
+            "# replSet fixture '${name}'"
+            "set(_fxt [[${name}]])"
+            "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${final_port})"
+            "set(\"_MDB_TRANSITIVE_FIXTURES_OF_\${_fxt}\" [[${children}]])\n"
+            )
+endfunction ()
 
 set (_MDB_SCRIPT_DIR "${CMAKE_CURRENT_LIST_DIR}")
-set_property (GLOBAL PROPERTY _MDB_UNUSED_PORT 51231)
-set_property (GLOBAL PROPERTY MDB_TEST_AUTOUSE_FIXTURES "")
+set_property (GLOBAL PROPERTY _MDB_UNUSED_PORT 21231)
 
-if (NOT TARGET _mdb-test-meta)
-    add_custom_target (_mdb-test-meta)
+# The __mdb-meta target is used only for attaching metadata to be used as part of generator expressions
+if (NOT TARGET __mdb-meta)
+    add_custom_target (__mdb-meta)
+    set (lines
+        [[# THIS FILE IS GENERATED. DO NOT EDIT.]]
+        "set(_MDB_ALL_TEST_FIXTURES     [[$<TARGET_PROPERTY:__mdb-meta,_ALL_FIXTURES>]])"
+        "set(_MDB_DEFAULT_TEST_FIXTURES [[$<TARGET_PROPERTY:__mdb-meta,_DEFAULT_FIXTURES>]])"
+        ""
+        "$<JOIN:$<TARGET_PROPERTY:__mdb-meta,_CTestData_CONTENT>,\n>\n"
+        )
+    string (REPLACE ";" "\n" content "${lines}")
     file (GENERATE
         OUTPUT "${PROJECT_BINARY_DIR}/MongoDB-CTestData.cmake"
-        CONTENT "$<JOIN:$<TARGET_PROPERTY:_mdb-test-meta,_CONTENT>,\n>\n")
-    set_property(TARGET _mdb-test-meta
-        PROPERTY _CONTENT
-        [[# THIS FILE IS GENERATED. DO NOT EDIT.]]
-        "set(_MDB_TEST_FIXTURES)"
-        "set(_MDB_TEST_FIXTURES_AUTO_USE)\n"
+        CONTENT "${content}")
+    set_target_properties (__mdb-meta PROPERTIES
+        _ALL_FIXTURES ""
+        _DEFAULT_FIXTURES ""
+        _CTestData_CONTENT ""
         )
     set_property (DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/MongoDB-CTestData.cmake")
 endif ()
