@@ -1033,7 +1033,7 @@ _mock_server_receives_single_msg (mock_server_t *server,
    request_t *request;
    bool r;
 
-/* JFW: unclear to me if this constructs a valid document or not:
+/* JFW: DELETEME unclear to me if this constructs a valid document or not:
    const bson_t *docs[] = {doc, NULL};
 */
 

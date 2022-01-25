@@ -939,6 +939,7 @@ _server_monitor_check_server (
       _server_monitor_heartbeat_started (server_monitor, awaited);
       ret = _server_monitor_setup_connection (
          server_monitor, &hello_response, &start_us, &error);
+fprintf(stderr, "JFW: hello_response: %s\n", bson_as_json(&hello_response, NULL)), fflush(stderr);
       GOTO (exit);
    }
 

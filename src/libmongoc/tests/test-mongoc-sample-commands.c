@@ -3763,6 +3763,10 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
                "error.domain == %d, error.code == %d\n",
                error.domain,
                error.code);
+
+      /* Ignore an "ns not found" error on dropping the collection in case the
+       * namespace does not exist. */
+      ASSERT_OR_PRINT (ok, error);
    }
 
    /* Start Versioned API Example 5 */
@@ -3851,7 +3855,7 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    /* End Versioned API Example 5 */
 
    ASSERT_OR_PRINT (ok, error);
-bson_destroy (&reply); // JFW??
+   bson_destroy (&reply); 
 
    cmd = BCON_NEW ("count", "sales");
    ok = mongoc_database_command_simple (
@@ -3876,29 +3880,29 @@ bson_destroy (&reply); // JFW??
    /* End Versioned API Example 6 */
 #endif
 
-/* Start Versioned API Example 7 */
-filter = bson_new ();
-count = mongoc_collection_count_documents (
-   sales, filter, NULL /* opts */, NULL /* read_prefs */, &reply, &error);
-/* End Versioned API Example 7 */
-if (N_DOCS != count) {
-   test_error ("expected %d documents, got %" PRId64, N_DOCS, count);
-}
-bson_destroy (&reply);
+   /* Start Versioned API Example 7 */
+   filter = bson_new ();
+   count = mongoc_collection_count_documents (
+      sales, filter, NULL /* opts */, NULL /* read_prefs */, &reply, &error);
+   /* End Versioned API Example 7 */
+   if (N_DOCS != count) {
+      test_error ("expected %d documents, got %" PRId64, N_DOCS, count);
+   }
+   bson_destroy (&reply);
 
-/* Start Versioned API Example 8 */
-BSON_ASSERT (count == N_DOCS);
-/* End Versioned API Example 8 */
+   /* Start Versioned API Example 8 */
+   BSON_ASSERT (count == N_DOCS);
+   /* End Versioned API Example 8 */
 
-bson_destroy (filter);
-bson_destroy (cmd);
-for (i = 0; i < N_DOCS; i++) {
-   bson_destroy (docs[i]);
-}
-mongoc_collection_destroy (sales);
-mongoc_database_destroy (db);
-mongoc_server_api_destroy (server_api);
-mongoc_client_destroy (client);
+   bson_destroy (filter);
+   bson_destroy (cmd);
+   for (i = 0; i < N_DOCS; i++) {
+      bson_destroy (docs[i]);
+   }
+   mongoc_collection_destroy (sales);
+   mongoc_database_destroy (db);
+   mongoc_server_api_destroy (server_api);
+   mongoc_client_destroy (client);
 }
 
 static void

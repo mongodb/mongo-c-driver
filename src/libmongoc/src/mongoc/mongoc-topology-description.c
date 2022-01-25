@@ -1333,6 +1333,7 @@ mongoc_topology_description_invalidate_server (
       return;
    }
 
+fprintf(stderr, "JFW: mongoc_topology_description_invalidate_server(): intentionally sending NULL hello reply\n"), fflush(stderr);
    /* send NULL hello reply */
    mongoc_topology_description_handle_hello (
       td, id, NULL, MONGOC_RTT_UNSET, error);

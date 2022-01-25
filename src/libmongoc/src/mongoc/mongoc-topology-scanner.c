@@ -268,6 +268,8 @@ _build_handshake_cmd (const mongoc_topology_scanner_t *ts,
    char buf[16];
    bool subdoc_okay;
 
+   BSON_ASSERT(doc);
+
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
    subdoc_okay =
       _mongoc_handshake_build_doc_with_application (&subdoc, appname);
@@ -296,7 +298,7 @@ _build_handshake_cmd (const mongoc_topology_scanner_t *ts,
       BSON_APPEND_BOOL (doc, "loadBalanced", true);
    }
 
-   /* JFW: question: should we be searching the document we're copying for
+   /* JFW: RESOLVEME question: should we be searching the document we're copying for
     * this field and using any extant value, or is it always "admin"? */
    // If we're sending an OPCODE_MSG, we need to add the "db" field:
    if (mongoc_topology_scanner_uses_server_api (ts)) {

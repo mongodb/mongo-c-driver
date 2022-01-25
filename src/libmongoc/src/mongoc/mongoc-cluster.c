@@ -675,12 +675,15 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
       error = &error_local;
    }
 
+   /* If NULL was passed, we use our local variable as a temporary sink: */
    if (!reply) {
       reply = &reply_local;
    }
 
    server_stream = cmd->server_stream;
 
+/* JFW: BUG?: legacy helloOk should be sent by OPCODE_QUERY no matter what the wire version is,
+ * however: */
    if (mongoc_cluster_uses_server_api (cluster) ||
        server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
@@ -690,6 +693,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
    }
 
    _handle_not_primary_error (cluster, server_stream, reply);
+
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
    }
@@ -803,6 +807,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    }
 
    start = bson_get_monotonic_time ();
+//JFW: maybe this is what's happening? We're sending the wrong kind of stream?
    /* TODO CDRIVER-3654: do not use a mongoc_server_stream here.
     * Instead, use a plain stream. If a network error occurs, check the cluster
     * node's generation (which is the generation of the created connection) to
@@ -824,6 +829,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 
    hello_cmd.server_stream = server_stream;
    hello_cmd.command_name = _mongoc_get_command_name (&handshake_command);
+   hello_cmd.command = &handshake_command;
 
    /* Always use OP_QUERY for the handshake, unless the user has specified an
     * API version; the correct hello_cmd has already been selected. For
@@ -831,11 +837,11 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    if (!mongoc_cluster_uses_server_api (cluster)) {
       hello_cmd.db_name = "admin";
       hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
-      hello_cmd.command = &handshake_command;
    }
 
    if (!mongoc_cluster_run_command_private (
           cluster, &hello_cmd, &reply, error)) {
+
       if (negotiate_sasl_supported_mechs) {
          if (bson_iter_init_find (&iter, &reply, "ok") &&
              !bson_iter_as_bool (&iter)) {
@@ -2259,10 +2265,12 @@ _try_get_server_stream (mongoc_cluster_t *cluster,
                         bson_error_t *error)
 {
    if (cluster->client->topology->single_threaded) {
+fprintf(stderr, "JFW: -> fetch_stream_single\n");
       /* in the single-threaded use case we share topology's streams */
       return _cluster_fetch_stream_single (
          cluster, td, server_id, reconnect_ok, error);
    } else {
+fprintf(stderr, "JFW: -> fetch_stream_pooled\n");
       return _cluster_fetch_stream_pooled (
          cluster, td, server_id, reconnect_ok, error);
    }
@@ -2391,7 +2399,6 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
    server_stream = _mongoc_cluster_stream_for_server (
       cluster, server_id, reconnect_ok, cs, reply, error);
-
 
    if (_in_sharded_txn (cs)) {
       _mongoc_client_session_pin (cs, server_id);
