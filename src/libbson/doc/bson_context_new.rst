@@ -18,11 +18,14 @@ Parameters
 
 The following ``flags`` may be used:
 * ``BSON_CONTEXT_NONE`` meaning creating ObjectIDs with this context is not a thread-safe operation.
-* ``BSON_CONTEXT_THREAD_SAFE`` meaning creating ObjectIDs with this context is a thread-safe operation.
 * ``BSON_CONTEXT_DISABLE_PID_CACHE`` meaning creating ObjectIDs will also check if the process has
 changed by calling ``getpid()`` on every ObjectID generation.
 
-To use multiple flags, xor them together.
+The following flags are deprecated and have no effect:
+
+- ``BSON_CONTEXT_DISABLE_HOST_CACHE``
+- ``BSON_CONTEXT_THREAD_SAFE``
+- ``BSON_CONTEXT_USE_TASK_ID``
 
 Description
 -----------

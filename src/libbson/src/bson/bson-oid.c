@@ -98,9 +98,8 @@ bson_oid_init_sequence (bson_oid_t *oid,         /* OUT */
    }
 
    now = BSON_UINT32_TO_BE (now);
-
    memcpy (&oid->bytes[0], &now, sizeof (now));
-   context->oid_set_seq64 (context, oid);
+   _bson_context_set_oid_seq64 (context, oid);
 }
 
 
@@ -118,9 +117,8 @@ bson_oid_init (bson_oid_t *oid,         /* OUT */
 
    now = BSON_UINT32_TO_BE (now);
    memcpy (&oid->bytes[0], &now, sizeof (now));
-
    _bson_context_set_oid_rand (context, oid);
-   context->oid_set_seq32 (context, oid);
+   _bson_context_set_oid_seq32 (context, oid);
 }
 
 

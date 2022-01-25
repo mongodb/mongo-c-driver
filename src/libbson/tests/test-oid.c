@@ -225,52 +225,6 @@ test_bson_oid_init_sequence (void)
 }
 
 
-static void
-test_bson_oid_init_sequence_thread_safe (void)
-{
-   bson_context_t *context;
-   bson_oid_t oid;
-   bson_oid_t oid2;
-   int i;
-
-   BEGIN_IGNORE_DEPRECATIONS
-   context = bson_context_new (BSON_CONTEXT_THREAD_SAFE);
-   bson_oid_init_sequence (&oid, context);
-   for (i = 0; i < 10000; i++) {
-      bson_oid_init_sequence (&oid2, context);
-      BSON_ASSERT (false == bson_oid_equal (&oid, &oid2));
-      BSON_ASSERT (0 > bson_oid_compare (&oid, &oid2));
-      bson_oid_copy (&oid2, &oid);
-   }
-   bson_context_destroy (context);
-   END_IGNORE_DEPRECATIONS
-}
-
-
-#ifdef BSON_HAVE_SYSCALL_TID
-static void
-test_bson_oid_init_sequence_with_tid (void)
-{
-   bson_context_t *context;
-   bson_oid_t oid;
-   bson_oid_t oid2;
-   int i;
-
-   BEGIN_IGNORE_DEPRECATIONS
-   context = bson_context_new (BSON_CONTEXT_USE_TASK_ID);
-   bson_oid_init_sequence (&oid, context);
-   for (i = 0; i < 10000; i++) {
-      bson_oid_init_sequence (&oid2, context);
-      BSON_ASSERT (false == bson_oid_equal (&oid, &oid2));
-      BSON_ASSERT (0 > bson_oid_compare (&oid, &oid2));
-      bson_oid_copy (&oid2, &oid);
-   }
-   bson_context_destroy (context);
-   END_IGNORE_DEPRECATIONS
-}
-#endif
-
-
 static char *
 get_time_as_string (const bson_oid_t *oid)
 {
@@ -335,10 +289,6 @@ test_bson_oid_init_with_threads (void)
       bson_context_flags_t flags = BSON_CONTEXT_NONE;
       bson_context_t *contexts[N_THREADS];
       bson_thread_t threads[N_THREADS];
-
-#ifdef BSON_HAVE_SYSCALL_TID
-      flags |= BSON_CONTEXT_USE_TASK_ID;
-#endif
 
       for (i = 0; i < N_THREADS; i++) {
          contexts[i] = bson_context_new (flags);
@@ -520,47 +470,6 @@ test_bson_oid_after_fork (void)
 #endif
 
 
-static char *mock_hostname;
-
-
-static void
-_mock_hostname (char *out)
-{
-   bson_strncpy (out, mock_hostname, 255);
-}
-
-
-#ifndef HOST_NAME_MAX
-#define HOST_NAME_MAX 256
-#endif
-
-
-static void
-test_bson_hostnames (void)
-{
-   bson_context_t *ctx;
-   bson_oid_t oid;
-   char *hostname_tests[] = {
-      "", "h", "host", "host1", "host12", "host123", "placeholder"};
-   int i;
-   char max_len_host[HOST_NAME_MAX] = {0};
-
-   for (i = 0; i < HOST_NAME_MAX - 1; i++) {
-      max_len_host[i] = 'a';
-   }
-   hostname_tests[(sizeof (hostname_tests) / sizeof (char *)) - 1] =
-      max_len_host;
-
-   for (i = 0; i < sizeof (hostname_tests) / sizeof (char *); i++) {
-      mock_hostname = hostname_tests[i];
-      ctx = bson_context_new (BSON_CONTEXT_NONE);
-      ctx->gethostname = _mock_hostname;
-      bson_oid_init (&oid, ctx);
-      bson_context_destroy (ctx);
-   }
-}
-
-
 void
 test_oid_install (TestSuite *suite)
 {
@@ -569,14 +478,6 @@ test_oid_install (TestSuite *suite)
       suite, "/bson/oid/init_from_string", test_bson_oid_init_from_string);
    TestSuite_Add (
       suite, "/bson/oid/init_sequence", test_bson_oid_init_sequence);
-   TestSuite_Add (suite,
-                  "/bson/oid/init_sequence_thread_safe",
-                  test_bson_oid_init_sequence_thread_safe);
-#ifdef BSON_HAVE_SYSCALL_TID
-   TestSuite_Add (suite,
-                  "/bson/oid/init_sequence_with_tid",
-                  test_bson_oid_init_sequence_with_tid);
-#endif
    TestSuite_Add (
       suite, "/bson/oid/init_with_threads", test_bson_oid_init_with_threads);
    TestSuite_Add (suite, "/bson/oid/hash", test_bson_oid_hash);
@@ -590,5 +491,4 @@ test_oid_install (TestSuite *suite)
       TestSuite_Add (suite, "/bson/oid/after_fork", test_bson_oid_after_fork);
    }
 #endif
-   TestSuite_Add (suite, "/bson/oid/hostnames", test_bson_hostnames);
 }

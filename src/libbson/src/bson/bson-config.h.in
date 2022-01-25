@@ -106,24 +106,6 @@
 
 
 /*
- * Define to 1 if you have SYS_gettid syscall
- */
-#define BSON_HAVE_SYSCALL_TID @BSON_HAVE_SYSCALL_TID@
-#if BSON_HAVE_SYSCALL_TID != 1
-# undef BSON_HAVE_SYSCALL_TID
-#endif
-
-
-/*
- * Define to 1 if you have arc4random_buf available on your platform.
- */
-#define BSON_HAVE_ARC4RANDOM_BUF @BSON_HAVE_ARC4RANDOM_BUF@
-#if BSON_HAVE_ARC4RANDOM_BUF != 1
-# undef BSON_HAVE_ARC4RANDOM_BUF
-#endif
-
-
-/*
  * Define to 1 if you have rand_r available on your platform.
  */
 #define BSON_HAVE_RAND_R @BSON_HAVE_RAND_R@
