@@ -339,7 +339,7 @@ _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid)
    /* Copy the stored randomness into the OID */
    memcpy (oid->bytes + BSON_OID_RANDOMESS_OFFSET,
            &context->randomness,
-           BSON_OID_RANDOMESS_SIZE);
+           BSON_OID_RANDOMNESS_SIZE);
 }
 
 
