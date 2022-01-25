@@ -25,6 +25,7 @@
 #include "mongoc-buffer-private.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-server-stream-private.h"
+#include "mongoc-cluster-private.h"
 
 
 BSON_BEGIN_DECLS
@@ -130,6 +131,16 @@ struct _mongoc_cursor_t {
    mongoc_read_concern_t *read_concern;
    mongoc_read_prefs_t *read_prefs;
    mongoc_write_concern_t *write_concern;
+
+   /** If the cursor was created for an operation that might have overridden the
+    * user's read preferences' read mode, then server selection forced the
+    * cursor to use a read preference mode of 'primary' server. Whether this
+    * force occurred is stored here: */
+   bool must_use_primary;
+
+   /** Whether this cursor corresponds to an aggregate command that contains a
+    * writing-stage */
+   bool is_aggr_with_write_stage;
 
    bool explicit_session;
    mongoc_client_session_t *client_session;

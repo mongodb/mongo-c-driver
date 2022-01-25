@@ -34,6 +34,9 @@ typedef struct _mongoc_server_stream_t {
    mongoc_server_description_t *sd; /* owned */
    bson_t cluster_time;             /* owned */
    mongoc_stream_t *stream;         /* borrowed */
+   /** If the stream was created in a way that may have overwritten the user's
+    * readPreference, we need to know if server selection forced that change. */
+   bool must_use_primary;
 } mongoc_server_stream_t;
 
 

@@ -34,10 +34,15 @@ typedef struct _mongoc_read_prefs_t mongoc_read_prefs_t;
 
 
 typedef enum {
+   /** Represents $readPreference.mode of 'primary' */
    MONGOC_READ_PRIMARY = (1 << 0),
+   /** Represents $readPreference.mode of 'secondary' */
    MONGOC_READ_SECONDARY = (1 << 1),
+   /** Represents $readPreference.mode of 'primaryPreferred' */
    MONGOC_READ_PRIMARY_PREFERRED = (1 << 2) | MONGOC_READ_PRIMARY,
+   /** Represents $readPreference.mode of 'secondaryPreferred' */
    MONGOC_READ_SECONDARY_PREFERRED = (1 << 2) | MONGOC_READ_SECONDARY,
+   /** Represents $readPreference.mode of 'nearest' */
    MONGOC_READ_NEAREST = (1 << 3) | MONGOC_READ_SECONDARY,
 } mongoc_read_mode_t;
 

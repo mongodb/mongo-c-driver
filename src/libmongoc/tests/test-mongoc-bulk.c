@@ -4099,8 +4099,8 @@ server_id_for_read_mode (mongoc_client_t *client, mongoc_read_mode_t read_mode)
    uint32_t server_id;
 
    prefs = mongoc_read_prefs_new (read_mode);
-   sd =
-      mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs, &error);
+   sd = mongoc_topology_select (
+      client->topology, MONGOC_SS_READ, prefs, NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
    server_id = sd->id;

@@ -861,8 +861,13 @@ mongoc_collection_estimated_document_count (
 
    BSON_ASSERT_PARAM (coll);
 
-   server_stream = mongoc_cluster_stream_for_reads (
-      &coll->client->cluster, read_prefs, NULL, reply, error);
+   server_stream =
+      mongoc_cluster_stream_for_reads (&coll->client->cluster,
+                                       read_prefs,
+                                       NULL,
+                                       reply,
+                                       /* Not aggregate-with-write */ false,
+                                       error);
 
    if (opts && bson_has_field (opts, "sessionId")) {
       bson_set_error (error,

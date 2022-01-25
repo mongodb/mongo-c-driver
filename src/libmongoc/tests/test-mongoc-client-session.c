@@ -190,7 +190,7 @@ _test_session_pool_timeout (bool pooled)
     * trigger discovery
     */
    server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_READ, NULL, &error);
+      client->topology, MONGOC_SS_READ, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
    /*

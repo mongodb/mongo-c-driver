@@ -474,6 +474,13 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       hedge = mongoc_read_prefs_get_hedge (parts->read_prefs);
    }
 
+   if (server_stream->must_use_primary) {
+      /* Server selection has overriden the read mode used to generate this
+       * server stream. This has effects on the body of the message that we send
+       * to the server */
+      mode = MONGOC_READ_PRIMARY;
+   }
+
    /* Server Selection Spec says:
     *
     * For mode 'primary', drivers MUST NOT set the secondaryOk wire protocol
@@ -820,6 +827,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    const char *cmd_name;
    bool is_get_more;
    const mongoc_read_prefs_t *prefs_ptr;
+   mongoc_read_mode_t mode = mongoc_read_prefs_get_mode (parts->read_prefs);
    bool ret = false;
 
    ENTRY;
@@ -878,6 +886,14 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       prefs_ptr = parts->read_prefs;
    }
 
+   mode = mongoc_read_prefs_get_mode (prefs_ptr);
+   if (server_stream->must_use_primary) {
+      /* Server selection may have overriden the read mode used to generate this
+       * server stream. This has effects on the body of the message that we send
+       * to the server */
+      mode = MONGOC_READ_PRIMARY;
+   }
+
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       if (!bson_has_field (parts->body, "$db")) {
          BSON_APPEND_UTF8 (&parts->extra, "$db", parts->assembled.db_name);
@@ -892,7 +908,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                             "Read preference in a transaction must be primary");
             GOTO (done);
          }
-      } else if (!IS_PREF_PRIMARY (prefs_ptr) &&
+      } else if (mode != MONGOC_READ_PRIMARY &&
                  server_type != MONGOC_SERVER_STANDALONE) {
          /* "Type Standalone: clients MUST NOT send the read preference to the
           * server" */

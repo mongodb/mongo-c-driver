@@ -164,6 +164,7 @@ mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
       return false;
    }
 
+
    return true;
 }
 

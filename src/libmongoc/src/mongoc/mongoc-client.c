@@ -1791,6 +1791,7 @@ retry:
                                           parts->read_prefs,
                                           parts->assembled.session,
                                           NULL,
+                                          /* Not aggregate-with-write */ false,
                                           &ignored_error);
 
       if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
@@ -1879,7 +1880,12 @@ mongoc_client_command_simple (mongoc_client_t *client,
     * preference argument."
     */
    server_stream =
-      mongoc_cluster_stream_for_reads (cluster, read_prefs, NULL, reply, error);
+      mongoc_cluster_stream_for_reads (cluster,
+                                       read_prefs,
+                                       NULL,
+                                       reply,
+                                       /* Not aggregate-with-write */ false,
+                                       error);
 
    if (server_stream) {
       ret = _mongoc_client_command_with_stream (
@@ -2039,7 +2045,12 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
          mongoc_cluster_stream_for_writes (cluster, cs, reply_ptr, error);
    } else {
       server_stream =
-         mongoc_cluster_stream_for_reads (cluster, prefs, cs, reply_ptr, error);
+         mongoc_cluster_stream_for_reads (cluster,
+                                          prefs,
+                                          cs,
+                                          reply_ptr,
+                                          /* Not aggregate-with-write */ false,
+                                          error);
    }
 
    if (!server_stream) {
@@ -2586,8 +2597,12 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
    }
 
    /* see if there's a known writable server - do no I/O or retries */
-   selected_server = mongoc_topology_description_select (
-      td.ptr, MONGOC_SS_WRITE, read_prefs, topology->local_threshold_msec);
+   selected_server =
+      mongoc_topology_description_select (td.ptr,
+                                          MONGOC_SS_WRITE,
+                                          read_prefs,
+                                          NULL /* chosen read mode */,
+                                          topology->local_threshold_msec);
 
    if (selected_server) {
       server_id = selected_server->id;
@@ -2850,7 +2865,8 @@ mongoc_client_select_server (mongoc_client_t *client,
       return NULL;
    }
 
-   sd = mongoc_topology_select (client->topology, optype, prefs, error);
+   sd = mongoc_topology_select (
+      client->topology, optype, prefs, NULL /* chosen read mode */, error);
    if (!sd) {
       return NULL;
    }
@@ -2862,7 +2878,8 @@ mongoc_client_select_server (mongoc_client_t *client,
 
    /* check failed, retry once */
    mongoc_server_description_destroy (sd);
-   sd = mongoc_topology_select (client->topology, optype, prefs, error);
+   sd = mongoc_topology_select (
+      client->topology, optype, prefs, NULL /* chosen read mode */, error);
    if (sd) {
       return sd;
    }
@@ -2997,8 +3014,8 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
 
    while (!mongoc_server_session_pool_is_empty (t->session_pool)) {
       prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
-      server_id =
-         mongoc_topology_select_server_id (t, MONGOC_SS_READ, prefs, &error);
+      server_id = mongoc_topology_select_server_id (
+         t, MONGOC_SS_READ, prefs, NULL /* chosen read mode */, &error);
 
       mongoc_read_prefs_destroy (prefs);
       if (!server_id) {

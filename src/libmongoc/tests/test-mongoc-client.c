@@ -2146,7 +2146,7 @@ test_recovering (void *ctx)
         read_mode++) {
       mongoc_read_prefs_set_mode (prefs, read_mode);
       BSON_ASSERT (!mongoc_topology_select (
-         client->topology, MONGOC_SS_READ, prefs, &error));
+         client->topology, MONGOC_SS_READ, prefs, NULL, &error));
    }
 
    mongoc_read_prefs_destroy (prefs);

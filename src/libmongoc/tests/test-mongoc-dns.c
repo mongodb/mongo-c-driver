@@ -441,7 +441,7 @@ test_all_spec_tests (TestSuite *suite)
    install_json_test_suite_with_check (
       suite,
       JSON_DIR,
-      "/initial_dns_seedlist_discovery/sharded",
+      "initial_dns_seedlist_discovery/sharded",
       test_dns,
       /* Topology of load-balancer tests satisfy topology requirements of
        * sharded tests, even though a load balancer is not required. */
