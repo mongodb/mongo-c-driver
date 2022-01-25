@@ -47,8 +47,7 @@ enum bson_memory_order {
 #define MSVC_MEMORDER_SUFFIX(X)
 #endif
 
-#if defined(USE_LEGACY_GCC_ATOMICS) || \
-   (!defined(__clang__) && __GNUC__ == 4)
+#if defined(USE_LEGACY_GCC_ATOMICS) || (!defined(__clang__) && __GNUC__ == 4)
 #define BSON_USE_LEGACY_GCC_ATOMICS
 #else
 #undef BSON_USE_LEGACY_GCC_ATOMICS
@@ -74,7 +73,14 @@ enum bson_memory_order {
 #define BSON_EMULATE_INT
 #endif
 
-#define DEF_ATOMIC_OP(MSVC_Intrinsic, GNU_Intrinsic, GNU_Legacy_Intrinsic, Order, ...) \
+/* CDRIVER-4264 Contrary to documentation, VS 2013 targeting x86 does not
+ * correctly/consistently provide _InterlockedPointerExchange. */
+#if defined(_MSC_VER) && _MSC_VER < 1900 && defined(_M_IX86)
+#define BSON_EMULATE_PTR
+#endif
+
+#define DEF_ATOMIC_OP(                                                       \
+   MSVC_Intrinsic, GNU_Intrinsic, GNU_Legacy_Intrinsic, Order, ...)          \
    do {                                                                      \
       switch (Order) {                                                       \
       case bson_memory_order_acq_rel:                                        \
@@ -127,47 +133,43 @@ enum bson_memory_order {
    } while (0)
 
 
-#define DEF_ATOMIC_CMPEXCH_STRONG(                                          \
-   VCSuffix1, VCSuffix2, GNU_MemOrder, Ptr, ExpectActualVar, NewValue)      \
-   do {                                                                     \
-      BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                        \
-                       _InterlockedCompareExchange, VCSuffix1, VCSuffix2) ( \
-                       Ptr, NewValue, ExpectActualVar);)                    \
-      BSON_IF_GNU_LIKE (                                                    \
-         (void) __atomic_compare_exchange_n (Ptr,                           \
-                                             &ExpectActualVar,              \
-                                             NewValue,                      \
-                                             false, /* Not weak */          \
-                                             GNU_MemOrder,                  \
-                                             GNU_MemOrder);)                \
-      BSON_IF_GNU_LEGACY_ATOMICS (                                          \
-         __typeof__ (ExpectActualVar) _val;                                 \
-         _val = __sync_val_compare_and_swap (Ptr,                           \
-                                             ExpectActualVar,               \
-                                             NewValue);                     \
-         ExpectActualVar = _val;)                                           \
+#define DEF_ATOMIC_CMPEXCH_STRONG(                                            \
+   VCSuffix1, VCSuffix2, GNU_MemOrder, Ptr, ExpectActualVar, NewValue)        \
+   do {                                                                       \
+      BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                          \
+                       _InterlockedCompareExchange, VCSuffix1, VCSuffix2) (   \
+                       Ptr, NewValue, ExpectActualVar);)                      \
+      BSON_IF_GNU_LIKE (                                                      \
+         (void) __atomic_compare_exchange_n (Ptr,                             \
+                                             &ExpectActualVar,                \
+                                             NewValue,                        \
+                                             false, /* Not weak */            \
+                                             GNU_MemOrder,                    \
+                                             GNU_MemOrder);)                  \
+      BSON_IF_GNU_LEGACY_ATOMICS (                                            \
+         __typeof__ (ExpectActualVar) _val;                                   \
+         _val = __sync_val_compare_and_swap (Ptr, ExpectActualVar, NewValue); \
+         ExpectActualVar = _val;)                                             \
    } while (0)
 
 
-#define DEF_ATOMIC_CMPEXCH_WEAK(                                            \
-   VCSuffix1, VCSuffix2, GNU_MemOrder, Ptr, ExpectActualVar, NewValue)      \
-   do {                                                                     \
-      BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                        \
-                       _InterlockedCompareExchange, VCSuffix1, VCSuffix2) ( \
-                       Ptr, NewValue, ExpectActualVar);)                    \
-      BSON_IF_GNU_LIKE (                                                    \
-         (void) __atomic_compare_exchange_n (Ptr,                           \
-                                             &ExpectActualVar,              \
-                                             NewValue,                      \
-                                             true, /* Yes weak */           \
-                                             GNU_MemOrder,                  \
-                                             GNU_MemOrder);)                \
-      BSON_IF_GNU_LEGACY_ATOMICS (                                          \
-         __typeof__ (ExpectActualVar) _val;                                 \
-         _val = __sync_val_compare_and_swap (Ptr,                           \
-                                             ExpectActualVar,               \
-                                             NewValue);                     \
-         ExpectActualVar = _val;)                                           \
+#define DEF_ATOMIC_CMPEXCH_WEAK(                                              \
+   VCSuffix1, VCSuffix2, GNU_MemOrder, Ptr, ExpectActualVar, NewValue)        \
+   do {                                                                       \
+      BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                          \
+                       _InterlockedCompareExchange, VCSuffix1, VCSuffix2) (   \
+                       Ptr, NewValue, ExpectActualVar);)                      \
+      BSON_IF_GNU_LIKE (                                                      \
+         (void) __atomic_compare_exchange_n (Ptr,                             \
+                                             &ExpectActualVar,                \
+                                             NewValue,                        \
+                                             true, /* Yes weak */             \
+                                             GNU_MemOrder,                    \
+                                             GNU_MemOrder);)                  \
+      BSON_IF_GNU_LEGACY_ATOMICS (                                            \
+         __typeof__ (ExpectActualVar) _val;                                   \
+         _val = __sync_val_compare_and_swap (Ptr, ExpectActualVar, NewValue); \
+         ExpectActualVar = _val;)                                             \
    } while (0)
 
 
@@ -217,7 +219,10 @@ enum bson_memory_order {
          default:                                                             \
             BSON_UNREACHABLE ("Invalid bson_memory_order value");             \
       })                                                                      \
-      BSON_IF_GNU_LEGACY_ATOMICS ({ __sync_synchronize (); return *a; })      \
+      BSON_IF_GNU_LEGACY_ATOMICS ({                                           \
+         __sync_synchronize ();                                               \
+         return *a;                                                           \
+      })                                                                      \
    }                                                                          \
                                                                               \
    static BSON_INLINE Type bson_atomic_##NamePart##_exchange (                \
@@ -342,24 +347,34 @@ enum bson_memory_order {
 #define DECL_ATOMIC_STDINT(Name, VCSuffix) \
    DECL_ATOMIC_INTEGRAL (Name, Name##_t, VCSuffix)
 
-#if defined(_MSC_VER) || defined (BSON_USE_LEGACY_GCC_ATOMICS)
-/* MSVC expects precise types for their atomic intrinsics. */
-DECL_ATOMIC_INTEGRAL (int8, char, 8);
-DECL_ATOMIC_INTEGRAL (int16, short, 16)
-#if !defined (BSON_EMULATE_INT32)
-DECL_ATOMIC_INTEGRAL (int32, long, )
+#if defined(_MSC_VER) || defined(BSON_USE_LEGACY_GCC_ATOMICS)
+/* MSVC and GCC require built-in types (not typedefs) for their atomic
+ * intrinsics. */
+#if defined(_MSC_VER)
+#define DECL_ATOMIC_INTEGRAL_INT8 char
+#define DECL_ATOMIC_INTEGRAL_INT32 long
+#define DECL_ATOMIC_INTEGRAL_INT long
+#else
+#define DECL_ATOMIC_INTEGRAL_INT8 signed char
+#define DECL_ATOMIC_INTEGRAL_INT32 int
+#define DECL_ATOMIC_INTEGRAL_INT int
 #endif
-#if !defined (BSON_EMULATE_INT)
-DECL_ATOMIC_INTEGRAL (int, long, )
+DECL_ATOMIC_INTEGRAL (int8, DECL_ATOMIC_INTEGRAL_INT8, 8)
+DECL_ATOMIC_INTEGRAL (int16, short, 16)
+#if !defined(BSON_EMULATE_INT32)
+DECL_ATOMIC_INTEGRAL (int32, DECL_ATOMIC_INTEGRAL_INT32, )
+#endif
+#if !defined(BSON_EMULATE_INT)
+DECL_ATOMIC_INTEGRAL (int, DECL_ATOMIC_INTEGRAL_INT, )
 #endif
 #else
 /* Other compilers that we support provide generic intrinsics */
 DECL_ATOMIC_STDINT (int8, 8)
 DECL_ATOMIC_STDINT (int16, 16)
-#if !defined (BSON_EMULATE_INT32)
+#if !defined(BSON_EMULATE_INT32)
 DECL_ATOMIC_STDINT (int32, )
 #endif
-#if !defined (BSON_EMULATE_INT)
+#if !defined(BSON_EMULATE_INT)
 DECL_ATOMIC_INTEGRAL (int, int, )
 #endif
 #endif
@@ -423,6 +438,11 @@ _bson_emul_atomic_int_compare_exchange_weak (int volatile *val,
                                              int expect_value,
                                              int new_value,
                                              enum bson_memory_order);
+
+BSON_EXPORT (void *)
+_bson_emul_atomic_ptr_exchange (void *volatile *val,
+                                void *v,
+                                enum bson_memory_order);
 
 BSON_EXPORT (void)
 bson_thrd_yield (void);
@@ -599,8 +619,10 @@ bson_atomic_ptr_exchange (void *volatile *ptr,
                           void *new_value,
                           enum bson_memory_order ord)
 {
+#if defined(BSON_EMULATE_PTR)
+   return _bson_emul_atomic_ptr_exchange (ptr, new_value, ord);
+#elif defined(BSON_USE_LEGACY_GCC_ATOMICS)
    /* The older __sync_val_compare_and_swap also takes oldval */
-#if defined(BSON_USE_LEGACY_GCC_ATOMICS)
    DEF_ATOMIC_OP (_InterlockedExchangePointer,
                   ,
                   __sync_val_compare_and_swap,
@@ -609,12 +631,8 @@ bson_atomic_ptr_exchange (void *volatile *ptr,
                   *ptr,
                   new_value);
 #else
-   DEF_ATOMIC_OP (_InterlockedExchangePointer,
-                  __atomic_exchange_n,
-                  ,
-                  ord,
-                  ptr,
-                  new_value);
+   DEF_ATOMIC_OP (
+      _InterlockedExchangePointer, __atomic_exchange_n, , ord, ptr, new_value);
 #endif
 }
 
@@ -722,7 +740,7 @@ bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_memory_order ord)
  * @brief Generate a full-fence memory barrier at the call site.
  */
 static BSON_INLINE void
-bson_atomic_thread_fence ()
+bson_atomic_thread_fence (void)
 {
    BSON_IF_MSVC (MemoryBarrier ();)
    BSON_IF_GNU_LIKE (__sync_synchronize ();)
@@ -745,6 +763,8 @@ BSON_EXPORT (int32_t) bson_atomic_int_add (volatile int32_t *p, int32_t n);
 BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int64_fetch_add")
 BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 
+
+#undef BSON_EMULATE_PTR
 #undef BSON_EMULATE_INT32
 #undef BSON_EMULATE_INT
 
