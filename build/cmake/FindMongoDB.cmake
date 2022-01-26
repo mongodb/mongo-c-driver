@@ -237,29 +237,28 @@ function (mongodb_create_fixture name)
     get_cmake_property (port "_MDB_UNUSED_PORT")
     math (EXPR next "${port} + 3")
     set_property (GLOBAL PROPERTY _MDB_UNUSED_PORT "${next}")
+    set(fxt_dir "${PROJECT_BINARY_DIR}/_test-db/${name}")
     add_test (NAME ${name}/setup
-        COMMAND "${CMAKE_COMMAND}"
-                -D "FIXTURE_NAME=${name}"
-                -D "RUNDIR=${PROJECT_BINARY_DIR}"
-                -D "MDB_EXE=${path}"
-                -D MDB_PORT=${port}
-                -D DO=START
-                -D "SERVER_ARGS=${ARG_SERVER_ARGS}"
-                -P ${_MDB_SCRIPT_DIR}/mdb-ctrl.cmake
+        COMMAND
+            python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+                --mdb-exe "${path}"
+                start
+                    --fixture-dir "${fxt_dir}"
+                    --port "${port}"
+                    --server-args ${ARG_SERVER_ARGS}
             )
     add_test (NAME ${name}/cleanup
-        COMMAND "${CMAKE_COMMAND}"
-                -D "FIXTURE_NAME=${name}"
-                -D "RUNDIR=${PROJECT_BINARY_DIR}"
-                -D "MDB_EXE=${path}"
-                -D DO=STOP
-                -P ${_MDB_SCRIPT_DIR}/mdb-ctrl.cmake
+        COMMAND
+            python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+                --mdb-exe "${path}"
+                stop
+                    --fixture-dir "${fxt_dir}"
             )
     set_property (TEST ${name}/setup PROPERTY FIXTURES_SETUP "${name}")
     set_property (TEST ${name}/cleanup PROPERTY FIXTURES_CLEANUP "${name}")
     set_property (
         TEST ${name}/setup ${name}/cleanup
-        PROPERTY TIMEOUT 10)
+        PROPERTY TIMEOUT 30)
     if (ARG_PORT_VARIABLE)
         set ("${ARG_PORT_VARIABLE}" "${port}" PARENT_SCOPE)
     endif ()
@@ -286,27 +285,20 @@ function (mongodb_create_replset_fixture name)
         set (ARG_COUNT 3)
     endif ()
     set (children)
-    set(members)
-    set(_id 0)
+    get_cmake_property(first_port _MDB_UNUSED_PORT)
+    set(port_args)
     foreach (n RANGE 1 "${ARG_COUNT}")
         mongodb_create_fixture("${name}/rs${n}"
             VERSION "${ARG_VERSION}"
             SERVER_ARGS ${SERVER_ARGS}
                 --replSet "${ARG_REPLSET_NAME}"
                 --setParameter enableTestCommands=1
-            PORT_VARIABLE final_port
+            PORT_VARIABLE node_port
             )
         list (APPEND children "${name}/rs${n}")
-        list(APPEND members "{_id: ${_id}, host: 'localhost:${final_port}'}")
-        math(EXPR _id "${_id}+1")
+        list (APPEND port_args "--node-port=${node_port}")
     endforeach()
     get_cmake_property(mdb_exe MONGODB_${ARG_VERSION}_PATH)
-    get_filename_component(mdb_dir "${mdb_exe}/" DIRECTORY)
-    unset(_msh_path CACHE)
-    find_program(_msh_path
-        NAMES mongosh mongo
-        HINTS "${mdb_dir}"
-        NAMES_PER_DIR)
     set(init_js "${CMAKE_CURRENT_BINARY_DIR}/_replset-${name}-init.js")
     string(REPLACE ";" ", " members "${members}")
     file(WRITE "${init_js}"
@@ -328,9 +320,12 @@ function (mongodb_create_replset_fixture name)
         ")
     add_test (
         NAME "${name}"
-        COMMAND "${_msh_path}"
-            --port ${final_port}
-            --norc "${init_js}"
+        COMMAND
+            python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+                --mdb-exe "${mdb_exe}"
+                init-rs
+                    --replset "${ARG_REPLSET_NAME}"
+                    ${port_args}
         )
     set_tests_properties ("${name}"
         PROPERTIES FIXTURES_REQUIRED "${children}"
@@ -344,7 +339,7 @@ function (mongodb_create_replset_fixture name)
         APPEND PROPERTY _CTestData_CONTENT
             "# replSet fixture '${name}'"
             "set(_fxt [[${name}]])"
-            "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${final_port})"
+            "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${first_port})"
             "set(\"_MDB_TRANSITIVE_FIXTURES_OF_\${_fxt}\" [[${children}]])\n"
             )
 endfunction ()
