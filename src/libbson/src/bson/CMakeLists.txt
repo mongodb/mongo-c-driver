@@ -16,6 +16,7 @@ set (src_libbson_src_bson_DIST_hs
    bson-memory.h
    bson-oid.h
    bson-reader.h
+   bson-cmp.h
    bson-string.h
    bson-types.h
    bson-utf8.h
