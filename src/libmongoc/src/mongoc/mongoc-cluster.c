@@ -2297,6 +2297,10 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
    td = mc_tpld_take_ref (topology);
 
+   fprintf (stderr,
+            "_mongoc_cluster_stream_for_server about to call "
+            "_try_get_server_stream()\n"),
+      fflush (stderr);
    ret_server_stream = _try_get_server_stream (
       cluster, td.ptr, server_id, reconnect_ok, err_ptr);
 

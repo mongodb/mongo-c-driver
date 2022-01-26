@@ -146,9 +146,10 @@ _mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode,
 
    acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
 
-   if (MONGOC_OPCODE_QUERY == cmd_opcode) {
 /* JFW: DELETEME: this appears to be needed by both OPCODE_QUERY and OPCODE_MSG:
        acmd->ns = bson_strdup_printf ("%s.$cmd", dbname); */
+   if (MONGOC_OPCODE_QUERY == cmd_opcode) {
+      acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
 
       acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
       acmd->rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
