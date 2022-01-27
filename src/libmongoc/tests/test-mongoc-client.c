@@ -2184,7 +2184,6 @@ _test_mongoc_client_ipv6 (bool pooled)
    BSON_ASSERT (client->ssl_opts.allow_invalid_hostname);
 #endif
 
-fprintf(stderr, "JFW: pooled == %d\n", pooled), fflush(stderr);
    ASSERT_OR_PRINT (
       mongoc_client_read_command_with_opts (
          client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
@@ -4064,8 +4063,6 @@ test_mongoc_client_get_handshake_establishes_connection_pooled (void)
 
    pool = test_framework_new_default_client_pool ();
    client = mongoc_client_pool_pop (pool);
-
-fprintf(stderr, "JFW: test setup complete, about to call mongoc_client_get_handshake_description():\n"), fflush(stderr);
 
    /* The previously established connection should have a valid server
     * description. */

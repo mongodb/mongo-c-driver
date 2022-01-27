@@ -520,9 +520,6 @@ _mongoc_server_description_set_error (mongoc_server_description_t *sd,
    if (error && error->code) {
       memcpy (&sd->error, error, sizeof (bson_error_t));
    } else {
-/* JFW: I wonder if one clause we /could/ detect here is whether or not we're trying
- * to connect to a server expecting-- and not finding-- sharding: */
-fprintf(stderr, "JFW: setting unknown error calling hello\n"), fflush(stderr);
       bson_set_error (&sd->error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_CONNECT,

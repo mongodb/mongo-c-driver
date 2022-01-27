@@ -121,7 +121,6 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
       return true;
    }
 
-
    duration_usec = bson_get_monotonic_time () - acmd->cmd_started;
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
@@ -144,12 +143,11 @@ _mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode,
    acmd->rpc.header.request_id = ++acmd->async->request_id;
    acmd->rpc.header.response_to = 0;
 
+// JFW: DELETEME: this appears to be needed by both OPCODE_QUERY and OPCODE_MSG:
+// JFW: Evergreen shows this leaking, but we do destroy it in mongoc_async_cmd_destroy(). Never reached?
    acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
 
-/* JFW: DELETEME: this appears to be needed by both OPCODE_QUERY and OPCODE_MSG:
-       acmd->ns = bson_strdup_printf ("%s.$cmd", dbname); */
    if (MONGOC_OPCODE_QUERY == cmd_opcode) {
-      acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
 
       acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
       acmd->rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
@@ -171,11 +169,6 @@ _mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode,
       acmd->rpc.msg.sections[0].payload.bson_document =
          bson_get_data (&acmd->cmd);
    }
-
-/* JFW: DELETEME looks like this is already initialized in
-  mongoc_async_cmd_new(): 
-	_mongoc_array_init (&acmd->array, sizeof (mongoc_iovec_t));
-*/
 
    /* This will always be hello, which are not allowed to be compressed */
    _mongoc_rpc_gather (&acmd->rpc, &acmd->array);

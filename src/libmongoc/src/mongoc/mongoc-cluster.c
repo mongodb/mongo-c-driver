@@ -841,6 +841,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 
    if (!mongoc_cluster_run_command_private (
           cluster, &hello_cmd, &reply, error)) {
+
       if (negotiate_sasl_supported_mechs) {
          if (bson_iter_init_find (&iter, &reply, "ok") &&
              !bson_iter_as_bool (&iter)) {
@@ -2264,12 +2265,10 @@ _try_get_server_stream (mongoc_cluster_t *cluster,
                         bson_error_t *error)
 {
    if (cluster->client->topology->single_threaded) {
-fprintf(stderr, "JFW: -> fetch_stream_single\n");
       /* in the single-threaded use case we share topology's streams */
       return _cluster_fetch_stream_single (
          cluster, td, server_id, reconnect_ok, error);
    } else {
-fprintf(stderr, "JFW: -> fetch_stream_pooled\n");
       return _cluster_fetch_stream_pooled (
          cluster, td, server_id, reconnect_ok, error);
    }
@@ -2297,10 +2296,6 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
    td = mc_tpld_take_ref (topology);
 
-   fprintf (stderr,
-            "_mongoc_cluster_stream_for_server about to call "
-            "_try_get_server_stream()\n"),
-      fflush (stderr);
    ret_server_stream = _try_get_server_stream (
       cluster, td.ptr, server_id, reconnect_ok, err_ptr);
 
