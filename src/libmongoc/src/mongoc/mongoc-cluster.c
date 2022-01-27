@@ -833,29 +833,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    hello_cmd.command_name = _mongoc_get_command_name (&handshake_command);
    hello_cmd.server_stream = server_stream;
 
-/* JFW: 
-  typedef struct _mongoc_cmd_t {
-     const char *db_name; 
-     mongoc_query_flags_t query_flags;
-     const bson_t *command;
-     const char *command_name;
-     const uint8_t *payload;
-     int32_t payload_size;
-     const char *payload_identifier;
-     mongoc_server_stream_t *server_stream;
-     int64_t operation_id;
-     mongoc_client_session_t *session;
-     mongoc_server_api_t *api;
-     bool is_acknowledged;
-     bool is_txn_finish;
-  } mongoc_cmd_t;
-*/
-
-/* JFW: neither of these seem to matter here:
- bson_append_utf8 (&handshake_command, "$db", 3, "admin", 5); // JFW: experiment 
-      hello_cmd.db_name = "admin"; //JFW: experiment
-*/
-
    /* Use OP_QUERY for the handshake, unless the user has specified an
     * API version; the correct hello_cmd has already been selected: */
    if (!mongoc_cluster_uses_server_api (cluster)) {
@@ -975,19 +952,15 @@ _cluster_run_hello (mongoc_cluster_t *cluster,
                            error);
 
    if (!sd) {
-fprintf(stderr, "JFW: !sd\n");
       return NULL;
    }
 
-fprintf(stderr, "JFW: HAVE sd\n");
    if (sd->type == MONGOC_SERVER_UNKNOWN) {
-fprintf(stderr, "JFW: server type UNKNOWN\n");
       memcpy (error, &sd->error, sizeof (bson_error_t));
       mongoc_server_description_destroy (sd);
       return NULL;
    }
 
-fprintf(stderr, "JFW: sd return *OK*\n");
    return sd;
 }
 
@@ -2044,7 +2017,8 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
    node->stream = stream;
    node->connection_address = bson_strdup (connection_address);
 
-fprintf(stderr, "JFW: _mongoc_cluster_node_new(): ->sd field not assigned-to\n"), fflush(stderr);
+   // JFW: Note that the node->sd field is not explicitly initialized 
+   // by parameter in this function.
 
    return node;
 }
@@ -2183,7 +2157,6 @@ _cluster_add_node (mongoc_cluster_t *cluster,
                                       &speculative_auth_response,
                                       error);
    if (!handshake_sd) {
-fprintf(stderr, "JFW: handshake_sd null\n");
       GOTO (error);
    }
 
@@ -2633,15 +2606,11 @@ _mongoc_cluster_create_server_stream (
    const mongoc_server_description_t *handshake_sd,
    mongoc_stream_t *stream)
 {
-/* JFW: does server_stream_new() actualy copy all the fields..? */
    mongoc_server_description_t *const sd =
       mongoc_server_description_new_copy (handshake_sd);
    /* can't just use mongoc_topology_server_by_id(), since we must hold the
     * lock while copying topology->shared_descr.ptr->logical_time below */
-/*JFW:   return mongoc_server_stream_new (td, sd, stream); */
-mongoc_server_stream_t *ss = mongoc_server_stream_new (td, sd, stream);
-fprintf(stderr, "JFW: HERE\n");
-return ss;
+   return mongoc_server_stream_new (td, sd, stream); 
 }
 
 
