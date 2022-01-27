@@ -821,20 +821,54 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    mongoc_server_description_init (&empty_sd, address, server_id);
    server_stream =
       _mongoc_cluster_create_server_stream (td.ptr, &empty_sd, stream);
+
    mongoc_server_description_cleanup (&empty_sd);
 
    /* Set up the shared parts of the mongo_cmd_t, which will later be converted
    to either an op_msg or op_query: */
    memset (&hello_cmd, 0, sizeof (hello_cmd));
 
-   hello_cmd.server_stream = server_stream;
-   hello_cmd.command_name = _mongoc_get_command_name (&handshake_command);
-   hello_cmd.command = &handshake_command;
 
-   /* Always use OP_QUERY for the handshake, unless the user has specified an
-    * API version; the correct hello_cmd has already been selected. For
-    * OPCODE_QUERY, we have to set up a few additional fields: */
+   hello_cmd.command = &handshake_command;
+   hello_cmd.command_name = _mongoc_get_command_name (&handshake_command);
+   hello_cmd.server_stream = server_stream;
+
+/* JFW: 
+  typedef struct _mongoc_cmd_t {
+     const char *db_name; 
+     mongoc_query_flags_t query_flags;
+     const bson_t *command;
+     const char *command_name;
+     const uint8_t *payload;
+     int32_t payload_size;
+     const char *payload_identifier;
+     mongoc_server_stream_t *server_stream;
+     int64_t operation_id;
+     mongoc_client_session_t *session;
+     mongoc_server_api_t *api;
+     bool is_acknowledged;
+     bool is_txn_finish;
+  } mongoc_cmd_t;
+*/
+
+/* JFW: neither of these seem to matter here:
+ bson_append_utf8 (&handshake_command, "$db", 3, "admin", 5); // JFW: experiment 
+      hello_cmd.db_name = "admin"; //JFW: experiment
+*/
+
+   /* Use OP_QUERY for the handshake, unless the user has specified an
+    * API version; the correct hello_cmd has already been selected: */
    if (!mongoc_cluster_uses_server_api (cluster)) {
+      // Complete OP_MSG setup:
+      hello_cmd.db_name = "admin";
+
+/* JFW: there are some tests which check for this-- is QUERY here meant for OP_QUERY or does it also apply
+ * to OP_MSG? */
+      hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
+   }
+  else // i.e. OPCODE_QUERY
+   {
+      // Complete OPCODE_QUERY setup:
       hello_cmd.db_name = "admin";
       hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
    }
@@ -941,15 +975,19 @@ _cluster_run_hello (mongoc_cluster_t *cluster,
                            error);
 
    if (!sd) {
+fprintf(stderr, "JFW: !sd\n");
       return NULL;
    }
 
+fprintf(stderr, "JFW: HAVE sd\n");
    if (sd->type == MONGOC_SERVER_UNKNOWN) {
+fprintf(stderr, "JFW: server type UNKNOWN\n");
       memcpy (error, &sd->error, sizeof (bson_error_t));
       mongoc_server_description_destroy (sd);
       return NULL;
    }
 
+fprintf(stderr, "JFW: sd return *OK*\n");
    return sd;
 }
 
@@ -2006,6 +2044,8 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
    node->stream = stream;
    node->connection_address = bson_strdup (connection_address);
 
+fprintf(stderr, "JFW: _mongoc_cluster_node_new(): ->sd field not assigned-to\n"), fflush(stderr);
+
    return node;
 }
 
@@ -2132,7 +2172,7 @@ _cluster_add_node (mongoc_cluster_t *cluster,
        * generation. */
    }
 
-   /* take critical fields from a fresh hello */
+   /* take critical fields from a fresh hello (except the ->sd field): */
    cluster_node = _mongoc_cluster_node_new (stream, host->host_and_port);
 
    handshake_sd = _cluster_run_hello (cluster,
@@ -2143,6 +2183,7 @@ _cluster_add_node (mongoc_cluster_t *cluster,
                                       &speculative_auth_response,
                                       error);
    if (!handshake_sd) {
+fprintf(stderr, "JFW: handshake_sd null\n");
       GOTO (error);
    }
 
@@ -2592,11 +2633,15 @@ _mongoc_cluster_create_server_stream (
    const mongoc_server_description_t *handshake_sd,
    mongoc_stream_t *stream)
 {
+/* JFW: does server_stream_new() actualy copy all the fields..? */
    mongoc_server_description_t *const sd =
       mongoc_server_description_new_copy (handshake_sd);
    /* can't just use mongoc_topology_server_by_id(), since we must hold the
     * lock while copying topology->shared_descr.ptr->logical_time below */
-   return mongoc_server_stream_new (td, sd, stream);
+/*JFW:   return mongoc_server_stream_new (td, sd, stream); */
+mongoc_server_stream_t *ss = mongoc_server_stream_new (td, sd, stream);
+fprintf(stderr, "JFW: HERE\n");
+return ss;
 }
 
 

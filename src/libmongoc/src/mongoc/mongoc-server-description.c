@@ -45,7 +45,7 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
 {
    BSON_ASSERT (sd);
 
-   bson_destroy (&sd->last_hello_response);
+   bson_destroy (&sd->last_hello_response); 
    bson_destroy (&sd->hosts);
    bson_destroy (&sd->passives);
    bson_destroy (&sd->arbiters);
