@@ -829,24 +829,17 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    memset (&hello_cmd, 0, sizeof (hello_cmd));
 
 
+   hello_cmd.db_name = "admin";
    hello_cmd.command = &handshake_command;
    hello_cmd.command_name = _mongoc_get_command_name (&handshake_command);
    hello_cmd.server_stream = server_stream;
 
+   hello_cmd.is_acknowledged = true;
+
    /* Use OP_QUERY for the handshake, unless the user has specified an
     * API version; the correct hello_cmd has already been selected: */
    if (!mongoc_cluster_uses_server_api (cluster)) {
-      // Complete OP_MSG setup:
-      hello_cmd.db_name = "admin";
-
-/* JFW: there are some tests which check for this-- is QUERY here meant for OP_QUERY or does it also apply
- * to OP_MSG? */
-      hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
-   }
-  else // i.e. OPCODE_QUERY
-   {
       // Complete OPCODE_QUERY setup:
-      hello_cmd.db_name = "admin";
       hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
    }
 
