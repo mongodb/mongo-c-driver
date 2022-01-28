@@ -369,94 +369,7 @@ test_bypass_not_sent (void)
 }
 
 static void
-test_split_opquery_with_options (void)
-{
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_collection_t *coll;
-   bson_t **docs;
-   int i;
-   bson_error_t error;
-   future_t *future;
-   request_t *request;
-   const bson_t *insert;
-   bson_t opts;
-   mongoc_write_concern_t *wc;
-   int n_docs;
-
-   /* Use a reduced maxBsonObjectSize, and wire version for OP_QUERY */
-   const char *hello = "{'ok': 1.0,"
-                       " 'isWritablePrimary': true,"
-                       " 'minWireVersion': 0,"
-                       " 'maxWireVersion': 5,"
-                       " 'maxBsonObjectSize': 100}";
-
-   server = mock_server_new ();
-   mock_server_auto_hello (server, hello);
-   mock_server_run (server);
-
-   /* Create an insert with two batches. Because of the reduced
-    * maxBsonObjectSize, each document must be less than 100 bytes.
-    * Because of the hardcoded allowance (see SERVER-10643), and our current
-    * incorrect batching logic (see CDRIVER-3310) the complete insert
-    * command can be can be 16k + 100 bytes.
-    * After CDRIVER-3310, update this test, since the allowance will not be
-    * taken into consideration for document batching.
-    * So create enough documents to fill up at least one batch.
-    */
-   n_docs = ((BSON_OBJECT_ALLOWANCE) / tmp_bson ("{ '_id': 1 }")->len) +
-            1; /* inexact, but errs towards more than enough documents. */
-   docs = bson_malloc (sizeof (bson_t *) * n_docs);
-   for (i = 0; i < n_docs; i++) {
-      docs[i] = BCON_NEW ("_id", BCON_INT64 (i));
-   }
-
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   coll = mongoc_client_get_collection (client, "db", "coll");
-
-   /* Add a write concern, to ensure that it is taken into account during
-    * splitting. */
-   bson_init (&opts);
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, 100);
-   mongoc_write_concern_append (wc, &opts);
-
-   future = future_collection_insert_many (
-      coll, (const bson_t **) docs, n_docs, &opts, NULL, &error);
-   /* Mock server recieves first insert. */
-   request = mock_server_receives_request (server);
-   BSON_ASSERT (request);
-   insert = request_get_doc (request, 0);
-   /* The total command size is just a hair under BSON_OBJECT_ALLOWANCE (16384)
-    * + 100 */
-   BSON_ASSERT (insert->len == 16482);
-   mock_server_replies_ok_and_destroys (request);
-
-   /* Mock server recieves second insert. */
-   request = mock_server_receives_request (server);
-   BSON_ASSERT (request);
-   insert = request_get_doc (request, 0);
-   /* The size doesn't really matter for the purpose of the test, but check it
-    * anyway. */
-   BSON_ASSERT (insert->len == 10433);
-   mock_server_replies_ok_and_destroys (request);
-   BSON_ASSERT (future_get_bool (future));
-
-   future_destroy (future);
-   for (i = 0; i < n_docs; i++) {
-      bson_destroy (docs[i]);
-   }
-   bson_free (docs);
-   bson_destroy (&opts);
-   mongoc_collection_destroy (coll);
-   mongoc_write_concern_destroy (wc);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-}
-
-static void
-test_opmsg_disconnect_mid_batch_helper (int wire_version)
+test_disconnect_mid_batch (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -468,15 +381,15 @@ test_opmsg_disconnect_mid_batch_helper (int wire_version)
    request_t *request;
    int n_docs;
 
-   /* Use a reduced maxBsonObjectSize, and wire version for OP_QUERY */
-   const char *hello = "{'ok': 1.0,"
-                       " 'isWritablePrimary': true,"
-                       " 'minWireVersion': 0,"
-                       " 'maxWireVersion': %d,"
-                       " 'maxBsonObjectSize': 100}";
-
    server = mock_server_new ();
-   mock_server_auto_hello (server, hello, wire_version);
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'isWritablePrimary': true,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'maxBsonObjectSize': 100}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX);
    mock_server_run (server);
 
    /* create enough documents for two batches. Note, because of our wonky
@@ -510,187 +423,6 @@ test_opmsg_disconnect_mid_batch_helper (int wire_version)
       bson_destroy (docs[i]);
    }
    bson_free (docs);
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-}
-
-static void
-test_opmsg_disconnect_mid_batch (void)
-{
-   test_opmsg_disconnect_mid_batch_helper (WIRE_VERSION_OP_MSG);
-   test_opmsg_disconnect_mid_batch_helper (WIRE_VERSION_OP_MSG - 1);
-}
-
-static void
-test_w0_legacy_insert_many (void)
-{
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_collection_t *coll;
-   bson_t **docs;
-   bson_error_t error;
-   future_t *future;
-   request_t *request;
-   bson_t opts;
-   mongoc_write_concern_t *wc;
-
-   /* wire version will use OP_INSERT for w:0 insert many (since no OP_MSG) */
-   server = mock_server_new ();
-   mock_server_auto_hello (server,
-                           "{'isWritablePrimary': true,"
-                           " 'maxWireVersion': 5}");
-   mock_server_run (server);
-
-   docs = bson_malloc (sizeof (bson_t *) * 2);
-   docs[0] = BCON_NEW ("x", BCON_INT32 (1));
-   docs[1] = BCON_NEW ("x", BCON_INT32 (2));
-
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   coll = mongoc_client_get_collection (client, "db", "coll");
-
-   /* Add unacknowldged write concern */
-   bson_init (&opts);
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, 0);
-   mongoc_write_concern_append (wc, &opts);
-   mongoc_write_concern_destroy (wc);
-
-   future = future_collection_insert_many (
-      coll, (const bson_t **) docs, 2, &opts, NULL, &error);
-   /* Mock server receives one OP_INSERT with two documents */
-   request = mock_server_receives_bulk_insert (server, "db.coll", 0, 2);
-   BSON_ASSERT (request);
-
-   mock_server_replies_ok_and_destroys (request);
-   BSON_ASSERT (future_get_bool (future));
-
-   future_destroy (future);
-   bson_destroy (docs[0]);
-   bson_destroy (docs[1]);
-   bson_free (docs);
-   bson_destroy (&opts);
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-}
-
-static void
-test_w0_legacy_update_one (void)
-{
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_collection_t *coll;
-   bson_error_t error;
-   future_t *future;
-   request_t *request;
-   bson_t opts;
-   mongoc_write_concern_t *wc;
-
-   /* wire version will use OP_UPDATE for w:0 update (since no OP_MSG) */
-   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
-   mock_server_run (server);
-
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   coll = mongoc_client_get_collection (client, "db", "coll");
-
-   /* Add unacknowledged write concern */
-   bson_init (&opts);
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, 0);
-   mongoc_write_concern_append (wc, &opts);
-   mongoc_write_concern_destroy (wc);
-
-   future = future_collection_update_one (coll,
-                                          tmp_bson ("{'x':1}"),
-                                          tmp_bson ("{'$set': {'y':1}}"),
-                                          &opts,
-                                          NULL,
-                                          &error);
-
-   /* Mock server receives OP_UPDATE */
-   request = mock_server_receives_update (
-      server, "db.coll", 0, "{'x':1}", "{'$set': {'y':1}}");
-   BSON_ASSERT (request);
-
-   mock_server_replies_ok_and_destroys (request);
-   BSON_ASSERT (future_get_bool (future));
-
-   future_destroy (future);
-   bson_destroy (&opts);
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-}
-
-static void
-test_w0_legacy_update_and_replace_validation (void)
-{
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_collection_t *coll;
-   bson_error_t error;
-   bool r;
-   bson_t opts;
-   mongoc_write_concern_t *wc;
-
-   /* wire version will use OP_UPDATE for w:0 update (since no OP_MSG) */
-   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
-   mock_server_run (server);
-
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   coll = mongoc_client_get_collection (client, "db", "coll");
-
-   /* Add unacknowledged write concern */
-   bson_init (&opts);
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, 0);
-   mongoc_write_concern_append (wc, &opts);
-   mongoc_write_concern_destroy (wc);
-
-   /* replace_one prohibits top-level, dollar-prefixed keys */
-   memset (&error, 0, sizeof (bson_error_t));
-   r = mongoc_collection_replace_one (coll,
-                                      tmp_bson ("{'x':1}"),
-                                      tmp_bson ("{'$set': {'y':1}}"),
-                                      &opts,
-                                      NULL,
-                                      &error);
-
-   BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid key '$set': replace prohibits $ operators");
-
-   /* update_one requires top-level, dollar-prefixed keys */
-   memset (&error, 0, sizeof (bson_error_t));
-   r = mongoc_collection_update_one (
-      coll, tmp_bson ("{'x':1}"), tmp_bson ("{'y':1}"), &opts, NULL, &error);
-
-   BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "Invalid key 'y': update only works with $ operators and pipelines");
-
-   /* update_many requires top-level, dollar-prefixed keys */
-   memset (&error, 0, sizeof (bson_error_t));
-   r = mongoc_collection_update_many (
-      coll, tmp_bson ("{'x':1}"), tmp_bson ("{'y':1}"), &opts, NULL, &error);
-
-   BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "Invalid key 'y': update only works with $ operators and pipelines");
-
-   bson_destroy (&opts);
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -762,21 +494,10 @@ test_write_command_install (TestSuite *suite)
                       test_bypass_validation,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_4);
-   TestSuite_AddMockServerTest (suite,
-                                "/WriteCommand/split_opquery_with_options",
-                                test_split_opquery_with_options);
+                      TestSuite_CheckLive);
    TestSuite_AddMockServerTest (suite,
                                 "/WriteCommand/insert_disconnect_mid_batch",
-                                test_opmsg_disconnect_mid_batch);
-   TestSuite_AddMockServerTest (
-      suite, "/WriteCommand/w0_legacy_insert_many", test_w0_legacy_insert_many);
-   TestSuite_AddMockServerTest (
-      suite, "/WriteCommand/w0_legacy_update_one", test_w0_legacy_update_one);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/WriteCommand/w0_legacy_update_and_replace_validation",
-      test_w0_legacy_update_and_replace_validation);
+                                test_disconnect_mid_batch);
    TestSuite_AddFull (suite,
                       "/WriteCommand/invalid_wc_server_error",
                       _test_invalid_wc_server_error,

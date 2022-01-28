@@ -41,8 +41,10 @@
 
 BSON_BEGIN_DECLS
 
-/* protocol versions this driver can speak */
-#define WIRE_VERSION_MIN 3  /* a.k.a. minWireVersion */
+/* Range of wire protocol versions this driver supports. Bumping
+ * WIRE_VERSION_MAX must be accompanied by an update to
+ * `_mongoc_wire_version_to_server_version`. */
+#define WIRE_VERSION_MIN 6  /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX 14 /* a.k.a. maxWireVersion */
 
 /* first version that supported "find" and "getMore" commands */
@@ -96,6 +98,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_5_0 13
 /* first version to support snapshot reads */
 #define WIRE_VERSION_SNAPSHOT_READS 13
+/* version corresponding to server 5.1 release */
+#define WIRE_VERSION_5_1 14
 
 struct _mongoc_collection_t;
 

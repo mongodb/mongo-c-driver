@@ -333,18 +333,22 @@ _test_server_selection (bool try_once)
                           " 'isWritablePrimary': false,"
                           " 'secondary': true,"
                           " 'setName': 'rs',"
-                          " 'minWireVersion': 2,"
-                          " 'maxWireVersion': 5,"
+                          " 'minWireVersion': %d,"
+                          " 'maxWireVersion': %d,"
                           " 'hosts': ['%s']}",
+                          WIRE_VERSION_MIN,
+                          WIRE_VERSION_MAX,
                           mock_server_get_host_and_port (server));
 
    primary_response =
       bson_strdup_printf ("{'ok': 1, "
                           " 'isWritablePrimary': true,"
                           " 'setName': 'rs',"
-                          " 'minWireVersion': 2,"
-                          " 'maxWireVersion': 5,"
+                          " 'minWireVersion': %d,"
+                          " 'maxWireVersion': %d,"
                           " 'hosts': ['%s']}",
+                          WIRE_VERSION_MIN,
+                          WIRE_VERSION_MAX,
                           mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -750,8 +754,12 @@ test_cooldown_standalone (void)
                                                 NULL); /* not in cooldown now */
    BSON_ASSERT (request);
    mock_server_replies_simple (request,
-                               "{'ok': 1, 'isWritablePrimary': true, "
-                               "'minWireVersion': 2, 'maxWireVersion': 5 }");
+                               tmp_str ("{'ok': 1,"
+                                        " 'isWritablePrimary': true,"
+                                        " 'minWireVersion': %d,"
+                                        " 'maxWireVersion': %d}",
+                                        WIRE_VERSION_MIN,
+                                        WIRE_VERSION_MAX));
    sd = future_get_mongoc_server_description_ptr (future);
    BSON_ASSERT (sd);
    request_destroy (request);
@@ -793,18 +801,27 @@ test_cooldown_rs (void)
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    secondary_response =
-      bson_strdup_printf ("{'ok': 1, 'isWritablePrimary': false, "
-                          "'minWireVersion': 2, 'maxWireVersion': 5 , "
-                          "'secondary': true, 'setName': 'rs',"
+      bson_strdup_printf ("{'ok': 1,"
+                          " 'isWritablePrimary': false,"
+                          " 'minWireVersion': %d,"
+                          " 'maxWireVersion': %d, "
+                          " 'secondary': true,"
+                          " 'setName': 'rs',"
                           " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
+                          WIRE_VERSION_MIN,
+                          WIRE_VERSION_MAX,
                           mock_server_get_port (servers[0]),
                           mock_server_get_port (servers[1]));
 
-   primary_response = bson_strdup_printf (
-      "{'ok': 1, 'isWritablePrimary': true, 'minWireVersion': 2, "
-      "'maxWireVersion': 5 , 'setName': 'rs',"
-      " 'hosts': ['localhost:%hu']}",
-      mock_server_get_port (servers[1]));
+   primary_response = bson_strdup_printf ("{'ok': 1,"
+                                          " 'isWritablePrimary': true,"
+                                          " 'minWireVersion': %d,"
+                                          " 'maxWireVersion': %d ,"
+                                          " 'setName': 'rs',"
+                                          " 'hosts': ['localhost:%hu']}",
+                                          WIRE_VERSION_MIN,
+                                          WIRE_VERSION_MAX,
+                                          mock_server_get_port (servers[1]));
 
    /* server 0 is a secondary. */
    future = future_topology_select (
@@ -890,7 +907,8 @@ test_cooldown_retry (void)
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
+   mongoc_uri_set_option_as_bool (
+      uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
    client = test_framework_client_new_from_uri (uri, NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
@@ -913,8 +931,12 @@ test_cooldown_retry (void)
    ASSERT_CMPINT64 (duration, <, (int64_t) 10 * 1000 * 1000);
 
    mock_server_replies_simple (request,
-                               "{'ok': 1, 'isWritablePrimary': true, "
-                               "'minWireVersion': 2, 'maxWireVersion': 5 }");
+                               tmp_str ("{'ok': 1,"
+                                        " 'isWritablePrimary': true,"
+                                        " 'minWireVersion': %d,"
+                                        " 'maxWireVersion': %d}",
+                                        WIRE_VERSION_MIN,
+                                        WIRE_VERSION_MAX));
    sd = future_get_mongoc_server_description_ptr (future);
    ASSERT_OR_PRINT (sd, error);
    request_destroy (request);
@@ -961,9 +983,11 @@ _test_select_succeed (bool try_once)
                            "{'ok': 1,"
                            " 'isWritablePrimary': true,"
                            " 'setName': 'rs',"
-                           " 'minWireVersion': 2,"
-                           " 'maxWireVersion': 5,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
                            " 'hosts': ['127.0.0.1:%hu', '127.0.0.1:%hu']}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX,
                            mock_server_get_port (primary),
                            mock_server_get_port (secondary));
 
@@ -1108,9 +1132,11 @@ _test_server_removed_during_handshake (bool pooled)
                            "{'ok': 1,"
                            " 'isWritablePrimary': true,"
                            " 'setName': 'rs',"
-                           " 'minWireVersion': 2,"
-                           " 'maxWireVersion': 5,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
                            " 'hosts': ['%s']}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX,
                            mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -1143,9 +1169,11 @@ _test_server_removed_during_handshake (bool pooled)
                            "{'ok': 1,"
                            " 'isWritablePrimary': true,"
                            " 'setName': 'BAD NAME',"
-                           " 'minWireVersion': 2,"
-                           " 'maxWireVersion': 5,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
                            " 'hosts': ['%s']}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX,
                            mock_server_get_host_and_port (server));
 
    /* pretend to close a connection. does NOT affect server description yet */
@@ -1236,21 +1264,27 @@ test_rtt (void *ctx)
 
    request = mock_server_receives_legacy_hello (server, NULL);
    _mongoc_usleep (1000 * 1000); /* one second */
-   mock_server_replies (request,
-                        MONGOC_REPLY_NONE,
-                        0,
-                        0,
-                        1,
-                        "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+   mock_server_replies (
+      request,
+      MONGOC_REPLY_NONE,
+      0,
+      0,
+      1,
+      tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
+               WIRE_VERSION_MIN,
+               WIRE_VERSION_MAX));
    request_destroy (request);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
-   mock_server_replies (request,
-                        MONGOC_REPLY_NONE,
-                        0,
-                        0,
-                        1,
-                        "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'ping': 1}"));
+   mock_server_replies (
+      request,
+      MONGOC_REPLY_NONE,
+      0,
+      0,
+      1,
+      tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
+               WIRE_VERSION_MIN,
+               WIRE_VERSION_MAX));
    request_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
@@ -1292,9 +1326,11 @@ test_add_and_scan_failure (void)
                            "{'ok': 1,"
                            " 'isWritablePrimary': true,"
                            " 'setName': 'rs',"
-                           " 'minWireVersion': 2,"
-                           " 'maxWireVersion': 5,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
                            " 'hosts': ['%s', 'fake:1']}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX,
                            mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -1304,8 +1340,8 @@ test_add_and_scan_failure (void)
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_NONE, "{'ping': 1}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
@@ -1341,8 +1377,8 @@ receives_command (mock_server_t *server, future_t *future)
    request_t *request;
    bson_error_t error;
 
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_NONE, "{'foo': 1}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'foo': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
@@ -1394,9 +1430,11 @@ _test_hello_retry_single (bool hangup, int n_failures)
    hello = bson_strdup_printf ("{'ok': 1,"
                                " 'isWritablePrimary': true,"
                                " 'setName': 'rs',"
-                               " 'minWireVersion': 2,"
-                               " 'maxWireVersion': 5,"
+                               " 'minWireVersion': %d,"
+                               " 'maxWireVersion': %d,"
                                " 'hosts': ['%s']}",
+                               WIRE_VERSION_MIN,
+                               WIRE_VERSION_MAX,
                                mock_server_get_host_and_port (server));
 
    /* start a {foo: 1} command, handshake normally */
@@ -1490,9 +1528,11 @@ _test_hello_retry_pooled (bool hangup, int n_failures)
    hello = bson_strdup_printf ("{'ok': 1,"
                                " 'isWritablePrimary': true,"
                                " 'setName': 'rs',"
-                               " 'minWireVersion': 2,"
-                               " 'maxWireVersion': 5,"
+                               " 'minWireVersion': %d,"
+                               " 'maxWireVersion': %d,"
                                " 'hosts': ['%s']}",
+                               WIRE_VERSION_MIN,
+                               WIRE_VERSION_MAX,
                                mock_server_get_host_and_port (server));
 
    /* As soon as the client is popped, background monitoring starts. */
@@ -1621,7 +1661,14 @@ test_incompatible_error (void)
    char *msg;
 
    /* incompatible */
-   server = mock_server_with_auto_hello (WIRE_VERSION_MIN - 1);
+   server = mock_server_new ();
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'isWritablePrimary': true,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d}",
+                           WIRE_VERSION_MIN - 1,
+                           WIRE_VERSION_MIN - 1);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
@@ -1636,17 +1683,23 @@ test_incompatible_error (void)
       NULL,
       &error));
 
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_PROTOCOL,
-                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                          "reports wire version 2, but this version of"
-                          " libmongoc requires at least 3 (MongoDB 3.0)");
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_PROTOCOL,
+      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+      tmp_str ("reports wire version %d, but this version of libmongoc "
+               "requires at least %d (MongoDB %s)",
+               WIRE_VERSION_MIN - 1,
+               WIRE_VERSION_MIN,
+               _mongoc_wire_version_to_server_version (WIRE_VERSION_MIN)));
 
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
                            " 'isWritablePrimary': true,"
-                           " 'minWireVersion': 20,"
-                           " 'maxWireVersion': 21}");
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d}",
+                           WIRE_VERSION_MAX + 1,
+                           WIRE_VERSION_MAX + 1);
 
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
@@ -1658,8 +1711,9 @@ test_incompatible_error (void)
       NULL,
       &error));
 
-   msg = bson_strdup_printf ("requires wire version 20, but this version"
-                             " of libmongoc only supports up to %d",
+   msg = bson_strdup_printf ("requires wire version %d, but this version of "
+                             "libmongoc only supports up to %d",
+                             WIRE_VERSION_MAX + 1,
                              WIRE_VERSION_MAX);
 
    ASSERT_ERROR_CONTAINS (error,
@@ -1685,7 +1739,14 @@ test_compatible_null_error_pointer (void)
    bson_error_t error;
 
    /* incompatible */
-   server = mock_server_with_auto_hello (WIRE_VERSION_MIN - 1);
+   server = mock_server_new ();
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'isWritablePrimary': true,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d}",
+                           WIRE_VERSION_MIN - 1,
+                           WIRE_VERSION_MIN - 1);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1743,13 +1804,18 @@ test_cluster_time_updated_during_handshake (void)
    mock_server_run (server);
    mock_server_autoresponds (server, auto_ping, NULL, NULL);
    cluster_time = cluster_time_fmt (1);
-   mock_server_auto_hello (
-      server,
-      "{'ok': 1, 'isWritablePrimary': true, 'setName': 'rs', "
-      "'minWireVersion': 2, 'maxWireVersion': 7, "
-      "'hosts': ['%s'], '$clusterTime': %s}",
-      mock_server_get_host_and_port (server),
-      cluster_time);
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'isWritablePrimary': true,"
+                           " 'setName': 'rs',"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'hosts': ['%s'],"
+                           " '$clusterTime': %s}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX,
+                           mock_server_get_host_and_port (server),
+                           cluster_time);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* set a large heartbeatFrequencyMS so we don't do a background scan in
@@ -1773,13 +1839,18 @@ test_cluster_time_updated_during_handshake (void)
    cluster_time = cluster_time_fmt (2);
 
    /* primary changes clusterTime */
-   mock_server_auto_hello (
-      server,
-      "{'ok': 1, 'isWritablePrimary': true, 'setName': 'rs', "
-      "'minWireVersion': 2, 'maxWireVersion': 7, "
-      "'hosts': ['%s'], '$clusterTime': %s}",
-      mock_server_get_host_and_port (server),
-      cluster_time);
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'isWritablePrimary': true,"
+                           " 'setName': 'rs',"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'hosts': ['%s'],"
+                           " '$clusterTime': %s}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX,
+                           mock_server_get_host_and_port (server),
+                           cluster_time);
 
    /* remove the node from the cluster to trigger a hello handshake. */
    mongoc_cluster_disconnect_node (&client->cluster, 1);
@@ -1844,8 +1915,10 @@ _test_request_scan_on_error (bool pooled,
    mock_server_run (primary);
    mock_server_run (secondary);
 
-   RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary, secondary);
-   RS_RESPONSE_TO_HELLO (secondary, 6, false, false, primary, secondary);
+   RS_RESPONSE_TO_HELLO (
+      primary, WIRE_VERSION_MIN, true, false, primary, secondary);
+   RS_RESPONSE_TO_HELLO (
+      secondary, WIRE_VERSION_MIN, false, false, primary, secondary);
 
    /* set a high heartbeatFrequency. Only the first and requested scans run. */
    uri_str = bson_strdup_printf (
@@ -2002,9 +2075,11 @@ test_last_server_removed_warning (void)
                            "{'ok': 1,"
                            " 'isWritablePrimary': true,"
                            " 'setName': 'rs',"
-                           " 'minWireVersion': 2,"
-                           " 'maxWireVersion': 5,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
                            " 'hosts': ['127.0.0.1:%hu']}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX,
                            mock_server_get_port (server));
 
    capture_logs (true);
@@ -2141,11 +2216,15 @@ test_slow_server_pooled (void)
    mock_server_autoresponds (primary, auto_ping, NULL, NULL);
    mock_server_autoresponds (secondary, auto_ping, NULL, NULL);
 
-   hello_common = bson_strdup_printf (
-      "{'ok': 1, 'setName': 'rs', 'hosts': ['%s', '%s'], 'maxWireVersion': %d",
-      mock_server_get_host_and_port (primary),
-      mock_server_get_host_and_port (secondary),
-      WIRE_VERSION_MAX);
+   hello_common = bson_strdup_printf ("{'ok': 1,"
+                                      " 'setName': 'rs',"
+                                      " 'hosts': ['%s', '%s'],"
+                                      " 'minWireVersion': %d,"
+                                      " 'maxWireVersion': %d",
+                                      mock_server_get_host_and_port (primary),
+                                      mock_server_get_host_and_port (secondary),
+                                      WIRE_VERSION_MIN,
+                                      WIRE_VERSION_MAX);
    hello_primary = bson_strdup_printf (
       "%s, 'isWritablePrimary': true, 'secondary': false }", hello_common);
    hello_secondary = bson_strdup_printf (
@@ -2250,9 +2329,11 @@ _test_hello_versioned_api (bool pooled)
    hello = bson_strdup_printf ("{'ok': 1,"
                                " 'isWritablePrimary': true,"
                                " 'setName': 'rs',"
-                               " 'minWireVersion': 2,"
-                               " 'maxWireVersion': 5,"
+                               " 'minWireVersion': %d,"
+                               " 'maxWireVersion': %d,"
                                " 'hosts': ['%s']}",
+                               WIRE_VERSION_MIN,
+                               WIRE_VERSION_MAX,
                                mock_server_get_host_and_port (server));
 
    /* For client pools, the first handshake happens when the client is popped.
@@ -2269,8 +2350,8 @@ _test_hello_versioned_api (bool pooled)
    request_destroy (request);
 
    if (!pooled) {
-      request = mock_server_receives_command (
-         server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+      request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
@@ -2330,17 +2411,21 @@ _test_hello_ok (bool pooled)
                                " 'isWritablePrimary': true,"
                                " 'helloOk': true,"
                                " 'setName': 'rs',"
-                               " 'minWireVersion': 2,"
-                               " 'maxWireVersion': 5,"
+                               " 'minWireVersion': %d,"
+                               " 'maxWireVersion': %d,"
                                " 'hosts': ['%s']}",
+                               WIRE_VERSION_MIN,
+                               WIRE_VERSION_MAX,
                                mock_server_get_host_and_port (server));
 
    hello_not_ok = bson_strdup_printf ("{'ok': 1,"
                                       " 'isWritablePrimary': true,"
                                       " 'setName': 'rs',"
-                                      " 'minWireVersion': 2,"
-                                      " 'maxWireVersion': 5,"
+                                      " 'minWireVersion': %d,"
+                                      " 'maxWireVersion': %d,"
                                       " 'hosts': ['%s']}",
+                                      WIRE_VERSION_MIN,
+                                      WIRE_VERSION_MAX,
                                       mock_server_get_host_and_port (server));
 
    /* For client pools, the first handshake happens when the client is popped.
@@ -2358,8 +2443,8 @@ _test_hello_ok (bool pooled)
 
    /* For non-pooled clients, handle the ping */
    if (!pooled) {
-      request = mock_server_receives_command (
-         server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+      request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
@@ -2386,8 +2471,8 @@ _test_hello_ok (bool pooled)
 
    /* Once again, handle the ping */
    if (!pooled) {
-      request = mock_server_receives_command (
-         server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+      request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
@@ -2409,8 +2494,8 @@ _test_hello_ok (bool pooled)
 
    /* Once again, handle the ping */
    if (!pooled) {
-      request = mock_server_receives_command (
-         server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+      request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);

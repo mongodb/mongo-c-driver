@@ -319,25 +319,33 @@ test_bulk_error_unordered (void)
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   request =
-      mock_server_receives_command (mock_server,
-                                    "test",
-                                    MONGOC_QUERY_NONE,
-                                    "{'update': 'test',"
-                                    " 'writeConcern': {'$exists': false},"
-                                    " 'ordered': false}",
-                                    NULL);
+   request = mock_server_receives_bulk_msg (
+      mock_server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'update': 'test',"
+                " 'writeConcern': {'$exists': false},"
+                " 'ordered': false}"),
+      tmp_bson ("{'q': {'hello': 'earth'},"
+                " 'u': {'$set': {'hello': 'world'}},"
+                " 'upsert': false,"
+                " 'multi': true}"),
+      1001);
    mock_server_replies_simple (request, "{ 'ok' : 1, 'n' : 5 }");
 
    request_destroy (request);
-   request =
-      mock_server_receives_command (mock_server,
-                                    "test",
-                                    MONGOC_QUERY_NONE,
-                                    "{'update': 'test',"
-                                    " 'writeConcern': {'$exists': false},"
-                                    " 'ordered': false}",
-                                    NULL);
+   request = mock_server_receives_bulk_msg (
+      mock_server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'update': 'test',"
+                " 'writeConcern': {'$exists': false},"
+                " 'ordered': false}"),
+      tmp_bson ("{'q': {'hello': 'earth'},"
+                " 'u': {'$set': {'hello': 'world'}},"
+                " 'upsert': false,"
+                " 'multi': true}"),
+      1001);
 
    request_destroy (request);
    mock_server_destroy (mock_server);
@@ -996,52 +1004,6 @@ test_update_arrayfilters (void *ctx)
 
    mongoc_bulk_operation_destroy (bulk);
    bson_destroy (&opts);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-}
-
-
-static void
-test_update_arrayfilters_unsupported (void *ctx)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   mongoc_bulk_operation_t *bulk;
-   bson_error_t err;
-   bool ret;
-   int i;
-
-   update_with_opts_fn fns[] = {
-      mongoc_bulk_operation_update_one_with_opts,
-      mongoc_bulk_operation_update_many_with_opts,
-   };
-
-   client = test_framework_new_default_client ();
-   collection = get_test_collection (client, "test_update_arrayfilters_err");
-
-   for (i = 0; i < 2; i++) {
-      bulk =
-         mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
-      ret = fns[i](bulk,
-                   tmp_bson ("{'_id': 1}"),
-                   tmp_bson ("{'$set': {'a.$[i].x': 3}}"),
-                   tmp_bson ("{'arrayFilters': [{'i.x': {'$gt': 1}}]}"),
-                   &err);
-
-      /* adding the updateOne/updateMany operation to the bulk succeeds */
-      ASSERT_OR_PRINT (ret, err);
-
-      ret = mongoc_bulk_operation_execute (bulk, NULL, &err) > 0;
-      BSON_ASSERT (!ret);
-      ASSERT_ERROR_CONTAINS (
-         err,
-         MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-         "The selected server does not support array filters");
-
-      mongoc_bulk_operation_destroy (bulk);
-   }
-
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -2799,15 +2761,15 @@ _test_write_concern (bool ordered, bool multi_err)
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       mock_server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{'insert': 'test',"
-      " 'writeConcern': {'w': 2, 'wtimeout': 100},"
-      " 'ordered': %s,"
-      " 'documents': [{'_id': 1}]}",
-      ordered ? "true" : "false");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'insert': 'test',"
+                " 'writeConcern': {'w': 2, 'wtimeout': {'$numberLong': '100'}},"
+                " 'ordered': %s}",
+                ordered ? "true" : "false"),
+      tmp_bson ("{'_id': 1}"));
 
    BSON_ASSERT (request);
    mock_server_replies_simple (
@@ -2816,15 +2778,15 @@ _test_write_concern (bool ordered, bool multi_err)
       " 'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
 
    request_destroy (request);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       mock_server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{'delete': 'test',"
-      " 'writeConcern': {'w': 2, 'wtimeout': 100},"
-      " 'ordered': %s,"
-      " 'deletes': [{'q': {'_id': 2}, 'limit': 0}]}",
-      ordered ? "true" : "false");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'delete': 'test',"
+                " 'writeConcern': {'w': 2, 'wtimeout': {'$numberLong': '100'}},"
+                " 'ordered': %s}",
+                ordered ? "true" : "false"),
+      tmp_bson ("{'q': {'_id': 2}, 'limit': 0}"));
 
    if (multi_err) {
       mock_server_replies_simple (
@@ -2935,12 +2897,14 @@ test_unordered_bulk_writes_with_error (void)
    /* server is "recovering": not primary, not secondary */
    mock_server_auto_hello (server,
                            "{'ok': 1,"
+                           " 'minWireVersion': %d,"
                            " 'maxWireVersion': %d,"
                            " 'maxWriteBatchSize': 1,"
                            " 'isWritablePrimary': true,"
                            " 'secondary': false,"
                            " 'setName': 'rs',"
                            " 'hosts': ['%s']}",
+                           WIRE_VERSION_MIN,
                            WIRE_VERSION_OP_MSG,
                            mock_server_get_host_and_port (server));
 
@@ -3010,8 +2974,11 @@ _test_write_concern_err_api (int32_t error_api_version)
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   request = mock_server_receives_command (
-      mock_server, "test", MONGOC_QUERY_NONE, NULL);
+   request =
+      mock_server_receives_msg (mock_server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test', 'insert': 'test'}"),
+                                tmp_bson ("{'_id': 1}"));
 
    mock_server_replies_simple (
       request,
@@ -3147,13 +3114,14 @@ _test_wtimeout_plus_duplicate_key_err (void)
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
    request =
-      mock_server_receives_command (mock_server,
-                                    "test",
-                                    MONGOC_QUERY_NONE,
-                                    "{'insert': 'test',"
-                                    " 'writeConcern': {'$exists': false},"
-                                    " 'ordered': false,"
-                                    " 'documents': [{'_id': 1}, {'_id': 2}]}");
+      mock_server_receives_msg (mock_server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test',"
+                                          " 'insert': 'test',"
+                                          " 'writeConcern': {'$exists': false},"
+                                          " 'ordered': false}"),
+                                tmp_bson ("{'_id': 1}"),
+                                tmp_bson ("{'_id': 2}"));
 
    BSON_ASSERT (request);
    mock_server_replies (
@@ -3167,14 +3135,14 @@ _test_wtimeout_plus_duplicate_key_err (void)
       " 'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
 
    request_destroy (request);
-   request = mock_server_receives_command (
-      mock_server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{'delete': 'test',"
-      " 'writeConcern': {'$exists': false},"
-      " 'ordered': false,"
-      " 'deletes': [{'q': {'_id': 3}, 'limit': 0}]}");
+   request =
+      mock_server_receives_msg (mock_server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test',"
+                                          " 'delete': 'test',"
+                                          " 'writeConcern': {'$exists': false},"
+                                          " 'ordered': false}"),
+                                tmp_bson ("{'q': {'_id': 3}, 'limit': 0}"));
 
    BSON_ASSERT (request);
    mock_server_replies (request,
@@ -3448,9 +3416,10 @@ _test_numerous (bool ordered)
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
                            " 'isWritablePrimary': true,"
-                           " 'minWireVersion': 0,"
+                           " 'minWireVersion': %d,"
                            " 'maxWireVersion': %d,"
                            " 'maxWriteBatchSize': 3}",
+                           WIRE_VERSION_MIN,
                            WIRE_VERSION_OP_MSG);
 
    mock_server_run (server);
@@ -3478,7 +3447,7 @@ _test_numerous (bool ordered)
                   "{'q': {'_id': 1}, 'u': {}}");
    TEST_NUMEROUS (
       update_one (bulk, doc, tmp_bson ("{'$set': {'x': 1}}"), false),
-                  "{'q': {'_id': 1}, 'u': {'$set': {'x': 1}}}");
+      "{'q': {'_id': 1}, 'u': {'$set': {'x': 1}}}");
    TEST_NUMEROUS (update_many_with_opts (
                      bulk, doc, tmp_bson ("{'$set': {'x': 1}}"), NULL, NULL),
                   "{'q': {'_id': 1}, 'u': {'$set': {'x': 1}}}");
@@ -4163,8 +4132,11 @@ _test_bulk_hint (bool pooled, bool use_primary)
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   request = mock_rs_receives_command (
-      rs, "test", MONGOC_QUERY_NONE, "{'insert': 'test'}");
+   request =
+      mock_rs_receives_msg (rs,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'$db': 'test', 'insert': 'test'}"),
+                            tmp_bson ("{'_id': 1}"));
 
    BSON_ASSERT (request);
    mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
@@ -4297,7 +4269,7 @@ typedef enum {
 } bulkop;
 
 static void
-_test_bulk_collation (int w, int wire_version, bulkop op)
+_test_bulk_collation (bool w, bulkop op)
 {
    mock_server_t *mock_server;
    mongoc_client_t *client;
@@ -4308,10 +4280,11 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    request_t *request;
    future_t *future;
    bson_t *opts;
-   const char *expect;
+   const char *expect_msg;
+   const char *expect_doc;
    bool r;
 
-   mock_server = mock_server_with_auto_hello (wire_version);
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
 
    client = test_framework_client_new_from_uri (
@@ -4319,7 +4292,8 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (
-      collection, tmp_bson ("{'writeConcern': {'w': %d, 'wtimeout': 100}}", w));
+      collection,
+      tmp_bson ("{'writeConcern': {'w': %d, 'wtimeout': 100}}", w ? 1 : 0));
 
    opts = BCON_NEW ("collation",
                     "{",
@@ -4333,38 +4307,39 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    case BULK_REMOVE:
       r = mongoc_bulk_operation_remove_many_with_opts (
          bulk, tmp_bson ("{'_id': 1}"), opts, &error);
-      expect = "{'delete': 'test',"
-               " 'writeConcern': {'w': %d, 'wtimeout': 100},"
-               " 'ordered': true,"
-               " 'deletes': ["
-               "    {'q': {'_id': 1}, 'limit': 0, 'collation': { 'locale': "
-               "'en_US', 'caseFirst': 'lower'}}"
-               " ]"
-               "}";
+      expect_msg = "{'$db': 'test',"
+                   " 'delete': 'test',"
+                   " 'writeConcern': {"
+                   "   'w': %d, 'wtimeout': {'$numberLong': '100'}},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'_id': 1},"
+                   " 'limit': 0,"
+                   " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'}}";
       break;
    case BULK_REMOVE_ONE:
       r = mongoc_bulk_operation_remove_one_with_opts (
          bulk, tmp_bson ("{'_id': 2}"), opts, &error);
-      expect = "{'delete': 'test',"
-               " 'writeConcern': {'w': %d, 'wtimeout': 100},"
-               " 'ordered': true,"
-               " 'deletes': ["
-               "    {'q': {'_id': 2}, 'limit': 1, 'collation': { 'locale': "
-               "'en_US', 'caseFirst': 'lower'}}"
-               " ]"
-               "}";
+      expect_msg = "{'$db': 'test',"
+                   " 'delete': 'test',"
+                   " 'writeConcern': {"
+                   "   'w': %d, 'wtimeout': {'$numberLong': '100'}},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'_id': 2},"
+                   " 'limit': 1,"
+                   " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'}}";
       break;
    case BULK_REPLACE_ONE:
       r = mongoc_bulk_operation_replace_one_with_opts (
          bulk, tmp_bson ("{'_id': 3}"), tmp_bson ("{'_id': 4}"), opts, &error);
-      expect = "{'update': 'test',"
-               " 'writeConcern': {'w': %d, 'wtimeout': 100},"
-               " 'ordered': true,"
-               " 'updates': ["
-               "    {'q': {'_id': 3}, 'u':  {'_id': 4}, 'collation': { "
-               "'locale': 'en_US', 'caseFirst': 'lower'}, 'multi': false}"
-               " ]"
-               "}";
+      expect_msg = "{'$db': 'test',"
+                   " 'update': 'test',"
+                   " 'writeConcern': {"
+                   "   'w': %d, 'wtimeout': {'$numberLong': '100'}},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'_id': 3},"
+                   " 'u': {'_id': 4},"
+                   " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'},"
+                   " 'multi': false}";
       break;
    case BULK_UPDATE:
       r = mongoc_bulk_operation_update_many_with_opts (
@@ -4373,15 +4348,15 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
          tmp_bson ("{'$set': {'_id': 6}}"),
          opts,
          &error);
-      expect =
-         "{'update': 'test',"
-         " 'writeConcern': {'w': %d, 'wtimeout': 100},"
-         " 'ordered': true,"
-         " 'updates': ["
-         "    {'q': {'_id': 5}, 'u':  { '$set': {'_id': 6} }, 'collation': { "
-         "'locale': 'en_US', 'caseFirst': 'lower'}, 'multi': true }"
-         " ]"
-         "}";
+      expect_msg = "{'$db': 'test',"
+                   " 'update': 'test',"
+                   " 'writeConcern': {"
+                   "   'w': %d, 'wtimeout': {'$numberLong': '100'}},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'_id': 5},"
+                   " 'u':  {'$set': {'_id': 6}},"
+                   " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'},"
+                   " 'multi': true }";
       break;
    case BULK_UPDATE_ONE:
       r = mongoc_bulk_operation_update_one_with_opts (
@@ -4390,15 +4365,15 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
          tmp_bson ("{'$set': {'_id': 8}}"),
          opts,
          &error);
-      expect =
-         "{'update': 'test',"
-         " 'writeConcern': {'w': %d, 'wtimeout': 100},"
-         " 'ordered': true,"
-         " 'updates': ["
-         "    {'q': {'_id': 7}, 'u':  { '$set': {'_id': 8} }, 'collation': { "
-         "'locale': 'en_US', 'caseFirst': 'lower'}, 'multi': false}"
-         " ]"
-         "}";
+      expect_msg = "{'$db': 'test',"
+                   " 'update': 'test',"
+                   " 'writeConcern': {"
+                   "   'w': %d, 'wtimeout': {'$numberLong': '100'}},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'_id': 7},"
+                   " 'u':  {'$set': {'_id': 8}},"
+                   " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'},"
+                   " 'multi': false}";
       break;
    default:
       BSON_ASSERT (false);
@@ -4407,9 +4382,11 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    ASSERT_OR_PRINT (r, error);
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   if (wire_version >= WIRE_VERSION_COLLATION && w) {
-      request = mock_server_receives_command (
-         mock_server, "test", MONGOC_QUERY_NONE, expect, w);
+   if (w) {
+      request = mock_server_receives_msg (mock_server,
+                                          MONGOC_MSG_NONE,
+                                          tmp_bson (expect_msg, w ? 1 : 0),
+                                          tmp_bson (expect_doc));
 
       mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
       request_destroy (request);
@@ -4418,19 +4395,10 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    } else {
       ASSERT (!future_get_uint32_t (future));
       future_destroy (future);
-      if (w) {
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-            "The selected server does not support collation");
-      } else {
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
-            "Cannot set collation for unacknowledged writes");
-      }
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Cannot set collation for unacknowledged writes");
    }
 
 
@@ -4443,7 +4411,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
 }
 
 static void
-_test_bulk_collation_multi (int w, int wire_version)
+_test_bulk_collation_multi (bool w)
 {
    mock_server_t *mock_server;
    mongoc_client_t *client;
@@ -4454,14 +4422,15 @@ _test_bulk_collation_multi (int w, int wire_version)
    request_t *request;
    future_t *future;
 
-   mock_server = mock_server_with_auto_hello (wire_version);
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
 
    client = test_framework_client_new_from_uri (
       mock_server_get_uri (mock_server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation_with_opts (
-      collection, tmp_bson ("{'writeConcern': {'w': %d, 'wtimeout': 100}}", w));
+      collection,
+      tmp_bson ("{'writeConcern': {'w': %d, 'wtimeout': 100}}", w ? 1 : 0));
 
    mongoc_bulk_operation_remove_many_with_opts (
       bulk, tmp_bson ("{'_id': 1}"), NULL, &error);
@@ -4474,19 +4443,16 @@ _test_bulk_collation_multi (int w, int wire_version)
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   if (wire_version >= WIRE_VERSION_COLLATION && w) {
-      request = mock_server_receives_command (mock_server,
-                                              "test",
-                                              MONGOC_QUERY_NONE,
-                                              "{'delete': 'test',"
-                                              " 'ordered': true,"
-                                              " 'deletes': ["
-                                              "    {'q': {'_id': 1}},"
-                                              "    {'q': {'_id': 2}, "
-                                              "'collation': { 'locale': "
-                                              "'en_US', 'caseFirst': 'lower'}}"
-                                              " ]"
-                                              "}");
+   if (w) {
+      request = mock_server_receives_msg (
+         mock_server,
+         MONGOC_MSG_NONE,
+         tmp_bson ("{'$db': 'test',"
+                   " 'delete': 'test',"
+                   " 'ordered': true}"),
+         tmp_bson ("{'q': {'_id': 1}}"),
+         tmp_bson ("{'q': {'_id': 2},"
+                   " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'}}"));
       mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
       request_destroy (request);
       ASSERT (future_get_uint32_t (future));
@@ -4494,19 +4460,10 @@ _test_bulk_collation_multi (int w, int wire_version)
    } else {
       ASSERT (!future_get_uint32_t (future));
       future_destroy (future);
-      if (w) {
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-            "The selected server does not support collation");
-      } else {
-         ASSERT_ERROR_CONTAINS (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
-            "Cannot set collation for unacknowledged writes");
-      }
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Cannot set collation for unacknowledged writes");
    }
 
    bson_destroy (&reply);
@@ -4517,67 +4474,35 @@ _test_bulk_collation_multi (int w, int wire_version)
 }
 
 void
-test_bulk_collation_multi_w1_wire5 (void)
+test_bulk_collation_multi_w1 (void)
 {
-   _test_bulk_collation_multi (1, WIRE_VERSION_COLLATION);
+   _test_bulk_collation_multi (true);
 }
 
 void
-test_bulk_collation_multi_w0_wire5 (void)
+test_bulk_collation_multi_w0 (void)
 {
-   _test_bulk_collation_multi (0, WIRE_VERSION_COLLATION);
+   _test_bulk_collation_multi (false);
 }
 
 void
-test_bulk_collation_multi_w1_wire4 (void)
+test_bulk_collation_w1 (void)
 {
-   _test_bulk_collation_multi (1, WIRE_VERSION_COLLATION - 1);
+   _test_bulk_collation (true, BULK_REMOVE);
+   _test_bulk_collation (true, BULK_REMOVE_ONE);
+   _test_bulk_collation (true, BULK_REPLACE_ONE);
+   _test_bulk_collation (true, BULK_UPDATE);
+   _test_bulk_collation (true, BULK_UPDATE_ONE);
 }
 
 void
-test_bulk_collation_multi_w0_wire4 (void)
+test_bulk_collation_w0 (void)
 {
-   _test_bulk_collation_multi (0, WIRE_VERSION_COLLATION - 1);
-}
-
-void
-test_bulk_collation_w1_wire5 (void)
-{
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_REMOVE);
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_REMOVE_ONE);
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_REPLACE_ONE);
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_UPDATE);
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_UPDATE_ONE);
-}
-
-void
-test_bulk_collation_w0_wire5 (void)
-{
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_REMOVE);
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_REMOVE_ONE);
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_REPLACE_ONE);
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_UPDATE);
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_UPDATE_ONE);
-}
-
-void
-test_bulk_collation_w1_wire4 (void)
-{
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION - 1, BULK_REMOVE);
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION - 1, BULK_REMOVE_ONE);
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION - 1, BULK_REPLACE_ONE);
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION - 1, BULK_UPDATE);
-   _test_bulk_collation (1, WIRE_VERSION_COLLATION - 1, BULK_UPDATE_ONE);
-}
-
-void
-test_bulk_collation_w0_wire4 (void)
-{
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION - 1, BULK_REMOVE);
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION - 1, BULK_REMOVE_ONE);
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION - 1, BULK_REPLACE_ONE);
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION - 1, BULK_UPDATE);
-   _test_bulk_collation (0, WIRE_VERSION_COLLATION - 1, BULK_UPDATE_ONE);
+   _test_bulk_collation (false, BULK_REMOVE);
+   _test_bulk_collation (false, BULK_REMOVE_ONE);
+   _test_bulk_collation (false, BULK_REPLACE_ONE);
+   _test_bulk_collation (false, BULK_UPDATE);
+   _test_bulk_collation (false, BULK_UPDATE_ONE);
 }
 
 static void
@@ -4883,13 +4808,7 @@ test_bulk_install (TestSuite *suite)
                       test_update_arrayfilters,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_6);
-   TestSuite_AddFull (suite,
-                      "/BulkOperation/update_arrayfilters/unsupported",
-                      test_update_arrayfilters_unsupported,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_more_than_5);
+                      TestSuite_CheckLive);
    TestSuite_AddLive (
       suite, "/BulkOperation/update/hint/validate", test_update_hint_validate);
    TestSuite_AddLive (
@@ -5035,30 +4954,16 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/invalid_write_concern",
                       test_bulk_invalid_write_concern);
+   TestSuite_AddMockServerTest (
+      suite, "/BulkOperation/opts/collation/w0", test_bulk_collation_w0);
+   TestSuite_AddMockServerTest (
+      suite, "/BulkOperation/opts/collation/w1", test_bulk_collation_w1);
    TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/opts/collation/w0/wire5",
-                                test_bulk_collation_w0_wire5);
+                                "/BulkOperation/opts/collation/multi/w0",
+                                test_bulk_collation_multi_w0);
    TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/opts/collation/w0/wire4",
-                                test_bulk_collation_w0_wire4);
-   TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/opts/collation/w1/wire5",
-                                test_bulk_collation_w1_wire5);
-   TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/opts/collation/w1/wire4",
-                                test_bulk_collation_w1_wire4);
-   TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/opts/collation/multi/w0/wire5",
-                                test_bulk_collation_multi_w0_wire5);
-   TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/opts/collation/multi/w0/wire4",
-                                test_bulk_collation_multi_w0_wire4);
-   TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/opts/collation/multi/w1/wire5",
-                                test_bulk_collation_multi_w1_wire5);
-   TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/opts/collation/multi/w1/wire4",
-                                test_bulk_collation_multi_w1_wire4);
+                                "/BulkOperation/opts/collation/multi/w1",
+                                test_bulk_collation_multi_w1);
    TestSuite_Add (suite,
                   "/BulkOperation/update_one/error_message",
                   test_bulk_update_one_error_message);

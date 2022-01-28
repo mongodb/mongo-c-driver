@@ -15,72 +15,6 @@
 
 
 static void
-test_aggregate_write_concern (void)
-{
-   mongoc_database_t *database;
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   bson_t *with_out_key;
-   bson_t *no_out_key;
-   mongoc_write_concern_t *wc;
-   bson_t opts = BSON_INITIALIZER;
-
-   /* The newest wire version that is still too old to
-      support aggregate with writeConcern and $out/$merge */
-   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
-   mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   database = mongoc_client_get_database (client, "agg");
-
-   /* If we run an aggregate without a terminal stage,
-      then it should be ok for us to have a write concern,
-      even with an old wire version. */
-   no_out_key = BCON_NEW (
-      "pipeline", "[", "{", "$match", "{", "fakeField", "A", "}", "}", "]");
-
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, 100);
-   mongoc_write_concern_append (wc, &opts);
-   cursor = mongoc_database_aggregate (database, no_out_key, &opts, NULL);
-   ASSERT_ERROR_CONTAINS (cursor->error, 0, 0, "");
-   mongoc_cursor_destroy (cursor);
-
-   /* If we run an aggregate with a terminal stage and
-      a write concern, it should not be allowed. */
-   with_out_key = BCON_NEW ("pipeline",
-                            "[",
-                            "{",
-                            "$currentOp",
-                            "{",
-                            "}",
-                            "}",
-                            "{",
-                            "$out",
-                            BCON_UTF8 ("ops"),
-                            "}",
-                            "]");
-
-   cursor = mongoc_database_aggregate (database, with_out_key, &opts, NULL);
-
-   ASSERT_ERROR_CONTAINS (cursor->error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                          "does not support writeConcern with wire version");
-
-
-   bson_destroy (&opts);
-   bson_destroy (with_out_key);
-   bson_destroy (no_out_key);
-   mongoc_write_concern_destroy (wc);
-   mongoc_cursor_destroy (cursor);
-   mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-}
-
-static void
 test_aggregate_inherit_database (void)
 {
    mock_server_t *server;
@@ -247,7 +181,6 @@ test_create_with_write_concern (void *ctx)
    bson_error_t error = {0};
    mongoc_write_concern_t *bad_wc;
    mongoc_write_concern_t *good_wc;
-   bool wire_version_5;
    bson_t *opts = NULL;
    char *dbname;
    char *name;
@@ -261,8 +194,6 @@ test_create_with_write_concern (void *ctx)
 
    bad_wc = mongoc_write_concern_new ();
    good_wc = mongoc_write_concern_new ();
-
-   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    dbname = gen_collection_name ("dbtest");
    database = mongoc_client_get_database (client, dbname);
@@ -307,16 +238,8 @@ test_create_with_write_concern (void *ctx)
       collection =
          mongoc_database_create_collection (database, name, opts, &error);
 
-      if (wire_version_5) {
-         ASSERT (!collection);
-         assert_wc_oob_error (&error);
-      } else { /* if wire_version <= 4, no error */
-         ASSERT_OR_PRINT (collection, error);
-         ASSERT (!error.code);
-         ASSERT (!error.domain);
-         ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
-         mongoc_collection_destroy (collection);
-      }
+      ASSERT (!collection);
+      assert_wc_oob_error (&error);
    }
 
    mongoc_database_destroy (database);
@@ -467,6 +390,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
    /* mock mongos: easiest way to test that read preference is configured */
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
 
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (
@@ -486,8 +410,8 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       /* simple, without read preference */
       future = future_database_command_simple (db, cmd, NULL, NULL, &error);
 
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+      request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
 
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -498,12 +422,12 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       future =
          future_database_command_simple (db, cmd, secondary_pref, NULL, &error);
 
-      request = mock_server_receives_command (
+      request = mock_server_receives_msg (
          server,
-         "db",
-         MONGOC_QUERY_SECONDARY_OK,
-         "{'$query': {'foo': 1},"
-         " '$readPreference': {'mode': 'secondary'}}");
+         MONGOC_MSG_NONE,
+         tmp_bson ("{'$db': 'db',"
+                   " 'foo': 1,"
+                   " '$readPreference': {'mode': 'secondary'}}"));
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT_OR_PRINT (future_get_bool (future), error);
       future_destroy (future);
@@ -513,8 +437,8 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       cursor = mongoc_database_command (
          db, MONGOC_QUERY_NONE, 0, 0, 0, cmd, NULL, NULL);
       future = future_cursor_next (cursor, &reply);
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+      request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
 
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT (future_get_bool (future));
@@ -526,12 +450,12 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       cursor = mongoc_database_command (
          db, MONGOC_QUERY_NONE, 0, 0, 0, cmd, NULL, secondary_pref);
       future = future_cursor_next (cursor, &reply);
-      request = mock_server_receives_command (
+      request = mock_server_receives_msg (
          server,
-         "db",
-         MONGOC_QUERY_SECONDARY_OK,
-         "{'$query': {'foo': 1},"
-         " '$readPreference': {'mode': 'secondary'}}");
+         MONGOC_MSG_NONE,
+         tmp_bson ("{'$db': 'db',"
+                   " 'foo': 1,"
+                   " '$readPreference': {'mode': 'secondary'}}"));
 
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT (future_get_bool (future));
@@ -593,7 +517,6 @@ test_drop (void)
    char *dbname;
    mongoc_write_concern_t *good_wc;
    mongoc_write_concern_t *bad_wc;
-   bool wire_version_5;
    bool r;
 
    opts = bson_new ();
@@ -603,7 +526,6 @@ test_drop (void)
 
    bad_wc = mongoc_write_concern_new ();
    good_wc = mongoc_write_concern_new ();
-   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    dbname = gen_collection_name ("db_drop_test");
    database = mongoc_client_get_database (client, dbname);
@@ -622,46 +544,44 @@ test_drop (void)
 
    mongoc_database_destroy (database);
 
-   if (wire_version_5) {
-      /* invalid writeConcern */
-      bad_wc->wtimeout = -10;
-      database = mongoc_client_get_database (client, dbname);
+   /* invalid writeConcern */
+   bad_wc->wtimeout = -10;
+   database = mongoc_client_get_database (client, dbname);
 
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_database_drop_with_opts (database, opts, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid writeConcern");
+   bad_wc->wtimeout = 0;
+   error.code = 0;
+   error.domain = 0;
+
+   /* valid writeConcern */
+   mongoc_write_concern_set_w (good_wc, 1);
+
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   ASSERT_OR_PRINT (mongoc_database_drop_with_opts (database, opts, &error),
+                    error);
+   BSON_ASSERT (!error.code);
+   BSON_ASSERT (!error.domain);
+
+   /* invalid writeConcern */
+   mongoc_write_concern_set_w (bad_wc, 99);
+   mongoc_database_destroy (database);
+
+   if (!test_framework_is_mongos ()) { /* skip if sharded */
+      database = mongoc_client_get_database (client, dbname);
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
-      ASSERT (!mongoc_database_drop_with_opts (database, opts, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "Invalid writeConcern");
-      bad_wc->wtimeout = 0;
-      error.code = 0;
-      error.domain = 0;
-
-      /* valid writeConcern */
-      mongoc_write_concern_set_w (good_wc, 1);
-
-      bson_reinit (opts);
-      mongoc_write_concern_append (good_wc, opts);
-      ASSERT_OR_PRINT (mongoc_database_drop_with_opts (database, opts, &error),
-                       error);
-      BSON_ASSERT (!error.code);
-      BSON_ASSERT (!error.domain);
-
-      /* invalid writeConcern */
-      mongoc_write_concern_set_w (bad_wc, 99);
+      r = mongoc_database_drop_with_opts (database, opts, &error);
+      ASSERT (!r);
+      assert_wc_oob_error (&error);
       mongoc_database_destroy (database);
-
-      if (!test_framework_is_mongos ()) { /* skip if sharded */
-         database = mongoc_client_get_database (client, dbname);
-         bson_reinit (opts);
-         mongoc_write_concern_append_bad (bad_wc, opts);
-         r = mongoc_database_drop_with_opts (database, opts, &error);
-         ASSERT (!r);
-         assert_wc_oob_error (&error);
-         mongoc_database_destroy (database);
-      }
-   } /* wire_version_5 */
+   }
 
    bson_free (dbname);
    bson_destroy (opts);
@@ -935,7 +855,7 @@ _test_get_collection_info_getmore ()
    request_t *request;
    char **names;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -943,25 +863,24 @@ _test_get_collection_info_getmore ()
    future =
       future_database_get_collection_names_with_opts (database, NULL, NULL);
 
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{'listCollections': 1, 'nameOnly': true}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'listCollections': 1, 'nameOnly': true}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
                                " 'cursor': {"
-                               "    'id': {'$numberLong': '123'},"
-                               "    'ns': 'db.$cmd.listCollections',"
-                               "    'firstBatch': [{'name': 'a'}]}}");
+                               "   'id': {'$numberLong': '123'},"
+                               "   'ns': 'db.$cmd.listCollections',"
+                               "   'firstBatch': [{'name': 'a'}]}}");
    request_destroy (request);
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{'getMore': {'$numberLong': '123'},"
-                                    " 'collection': '$cmd.listCollections'}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'getMore': {'$numberLong': '123'},"
+                " 'collection': '$cmd.listCollections'}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -1148,6 +1067,7 @@ static void
 test_get_collection_names_error (void)
 {
    mongoc_database_t *database;
+   mongoc_uri_t *uri;
    mongoc_client_t *client;
    mock_server_t *server;
    bson_error_t error = {0};
@@ -1161,19 +1081,22 @@ test_get_collection_names_error (void)
    server = mock_server_new ();
    mock_server_auto_hello (server,
                            "{'isWritablePrimary': true,"
-                           " 'maxWireVersion': 3}");
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX);
    mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    database = mongoc_client_get_database (client, "test");
    future =
       future_database_get_collection_names_with_opts (database, NULL, &error);
-   request =
-      mock_server_receives_command (server,
-                                    "test",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{'listCollections': 1, 'nameOnly': true}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test', 'listCollections': 1, 'nameOnly': true}"));
    mock_server_hangs_up (request);
    names = future_get_char_ptr_ptr (future);
    BSON_ASSERT (!names);
@@ -1184,6 +1107,7 @@ test_get_collection_names_error (void)
    future_destroy (future);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
    mock_server_destroy (server);
    bson_destroy (&b);
 }
@@ -1213,9 +1137,6 @@ test_get_default_database (void)
 void
 test_database_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (
-      suite, "/Database/aggregate/writeConcern", test_aggregate_write_concern);
-
    TestSuite_AddMockServerTest (suite,
                                 "/Database/aggregate/inherit/database",
                                 test_aggregate_inherit_database);
@@ -1224,7 +1145,7 @@ test_database_install (TestSuite *suite)
                       test_create_with_write_concern,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_5);
+                      TestSuite_CheckLive);
    TestSuite_AddLive (suite, "/Database/copy", test_copy);
    TestSuite_AddLive (suite, "/Database/has_collection", test_has_collection);
    TestSuite_AddLive (suite, "/Database/command", test_command);

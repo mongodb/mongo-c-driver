@@ -169,16 +169,19 @@ mock_server_with_auto_hello (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
 
-   char *hello = bson_strdup_printf ("{'ok': 1.0,"
-                                     " 'isWritablePrimary': true,"
-                                     " 'minWireVersion': 0,"
-                                     " 'maxWireVersion': %d}",
-                                     max_wire_version);
+   ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
+                    "max_wire_version %" PRId32
+                    " must be greater than or equal to minimum wire version %d",
+                    max_wire_version,
+                    WIRE_VERSION_MIN);
 
-   BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_hello (server, hello);
-
-   bson_free (hello);
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'isWritablePrimary': true,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d}",
+                           WIRE_VERSION_MIN,
+                           max_wire_version);
 
    return server;
 }
@@ -205,36 +208,30 @@ mock_server_t *
 mock_mongos_new (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
-   char *mongos_36_fields = "";
-   char *hello;
 
-   if (max_wire_version >= WIRE_VERSION_OP_MSG) {
-      mongos_36_fields =
-         ","
-         "'$clusterTime': {"
-         "  'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
-         "  'signature': {"
-         "    'hash': {'$binary': {'subType': '0', 'base64': ''}},"
-         "    'keyId': {'$numberLong': '6446735049323708417'}"
-         "  },"
-         "  'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
-         "},"
-         "'logicalSessionTimeoutMinutes': 30";
-   }
+   ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
+                    "max_wire_version %" PRId32
+                    " must be greater than or equal to minimum wire version %d",
+                    max_wire_version,
+                    WIRE_VERSION_MIN);
 
-   hello = bson_strdup_printf ("{'ok': 1.0,"
-                               " 'isWritablePrimary': true,"
-                               " 'msg': 'isdbgrid',"
-                               " 'minWireVersion': 2,"
-                               " 'maxWireVersion': %d"
-                               " %s}",
-                               max_wire_version,
-                               mongos_36_fields);
-
-   BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_hello (server, hello);
-
-   bson_free (hello);
+   mock_server_auto_hello (
+      server,
+      "{'ok': 1.0,"
+      " 'isWritablePrimary': true,"
+      " 'msg': 'isdbgrid',"
+      " 'minWireVersion': %d,"
+      " 'maxWireVersion': %d,"
+      " '$clusterTime': {"
+      "   'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
+      "   'signature': {"
+      "     'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+      "     'keyId': {'$numberLong': '6446735049323708417'}"
+      "   },"
+      "   'operationTime': {'$timestamp': {'t': 1, 'i': 1}}},"
+      " 'logicalSessionTimeoutMinutes': 30}",
+      WIRE_VERSION_MIN,
+      max_wire_version);
 
    return server;
 }
@@ -493,8 +490,8 @@ mock_server_remove_autoresponder (mock_server_t *server, int id)
 
 static bool
 auto_hello_generate_response (request_t *request,
-                                     void *data,
-                                     bson_t *hello_response)
+                              void *data,
+                              bson_t *hello_response)
 {
    const char *response_json = (const char *) data;
    char *quotes_replaced;
@@ -553,7 +550,7 @@ auto_hello (request_t *request, void *data)
       BSON_APPEND_INT32 (&response, "minWireVersion", WIRE_VERSION_MIN);
    }
    if (!bson_iter_init_find (&iter, &response, "maxWireVersion")) {
-      BSON_APPEND_INT32 (&response, "maxWireVersion", WIRE_VERSION_OP_MSG - 1);
+      BSON_APPEND_INT32 (&response, "maxWireVersion", WIRE_VERSION_MAX);
    }
 
    response_json = bson_as_json (&response, 0);
@@ -975,6 +972,58 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
    va_start (args, flags);
    r = request_matches_msgv (request, flags, &args);
    va_end (args);
+
+   if (!r) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_bulk_msg --
+ *
+ *       Pop a client OP_MSG request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request. Pass
+ *       `msg_pattern`, which is matched to the series of exactly `n_doc`
+ *       documents in the request, regardless of section boundaries.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does not
+ *       match.
+ *
+ * Side effects:
+ *       Logs and aborts if the current request is not an OP_MSG matching
+ *       flags and expected pattern and number of documents.
+ *
+ *--------------------------------------------------------------------------
+ */
+request_t *
+mock_server_receives_bulk_msg (mock_server_t *server,
+                               uint32_t flags,
+                               const bson_t *msg_pattern,
+                               const bson_t *doc_pattern,
+                               size_t n_docs)
+{
+   request_t *request;
+   bool r;
+
+   request = mock_server_receives_request (server);
+
+   {
+      const bson_t **docs;
+      size_t i;
+      docs = bson_malloc (n_docs * sizeof (bson_t *));
+      docs[0] = msg_pattern;
+      for (i = 1; i < n_docs; ++i) {
+         docs[i] = doc_pattern;
+      }
+      r = request_matches_msg (request, MONGOC_MSG_NONE, docs, n_docs);
+      bson_free ((bson_t **) docs);
+   }
 
    if (!r) {
       request_destroy (request);
@@ -1538,6 +1587,8 @@ mock_server_replies_to_find (request_t *request,
 {
    char *find_reply;
    char *db;
+
+   BSON_ASSERT_PARAM (request);
 
    db = _mongoc_get_db_name (ns);
 
@@ -2123,8 +2174,12 @@ rs_response_to_hello (
    bson_string_t *hosts;
    bool first;
    mock_server_t *host;
-   const char *session_timeout;
-   char *hello;
+
+   ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
+                    "max_wire_version %" PRId32
+                    " must be greater than or equal to minimum wire version %d",
+                    max_wire_version,
+                    WIRE_VERSION_MIN);
 
    hosts = bson_string_new ("");
 
@@ -2144,32 +2199,24 @@ rs_response_to_hello (
 
    va_end (ap);
 
-   if (max_wire_version >= 6) {
-      session_timeout = ", 'logicalSessionTimeoutMinutes': 30";
-      mock_server_auto_endsessions (server);
-   } else {
-      session_timeout = "";
-   }
+   mock_server_auto_endsessions (server);
 
-   hello = bson_strdup_printf ("{'ok': 1, "
-                               " 'setName': 'rs',"
-                               " 'isWritablePrimary': %s,"
-                               " 'secondary': %s,"
-                               " 'tags': {%s},"
-                               " 'minWireVersion': 3,"
-                               " 'maxWireVersion': %d,"
-                               " 'hosts': [%s]"
-                               " %s"
-                               "}",
-                               primary ? "true" : "false",
-                               primary ? "false" : "true",
-                               has_tags ? "'key': 'value'" : "",
-                               max_wire_version,
-                               hosts->str,
-                               session_timeout);
+   mock_server_auto_hello (server,
+                           "{'ok': 1, "
+                           " 'setName': 'rs',"
+                           " 'isWritablePrimary': %s,"
+                           " 'secondary': %s,"
+                           " 'tags': {%s},"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'hosts': [%s],"
+                           " 'logicalSessionTimeoutMinutes': 30}",
+                           primary ? "true" : "false",
+                           primary ? "false" : "true",
+                           has_tags ? "'key': 'value'" : "",
+                           WIRE_VERSION_MIN,
+                           max_wire_version,
+                           hosts->str);
 
-   mock_server_auto_hello (server, "%s", hello);
-
-   bson_free (hello);
    bson_string_free (hosts, true);
 }

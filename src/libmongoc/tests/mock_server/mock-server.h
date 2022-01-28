@@ -184,6 +184,13 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...);
 #define mock_server_receives_msg(_server, _flags, ...) \
    _mock_server_receives_msg (_server, _flags, __VA_ARGS__, NULL)
 
+request_t *
+mock_server_receives_bulk_msg (mock_server_t *server,
+                               uint32_t flags,
+                               const bson_t *msg_json,
+                               const bson_t *doc_json,
+                               size_t n_docs);
+
 void
 mock_server_hangs_up (request_t *request);
 

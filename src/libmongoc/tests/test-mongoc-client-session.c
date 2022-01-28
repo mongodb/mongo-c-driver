@@ -2892,21 +2892,21 @@ test_session_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_6);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/Session/end/pooled",
                       test_end_sessions_pooled,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_6);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/Session/end/many/single",
                       test_end_sessions_many_single,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_6,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Session/end/many/pooled",
@@ -2914,7 +2914,7 @@ test_session_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_6,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Session/advance_cluster_time",

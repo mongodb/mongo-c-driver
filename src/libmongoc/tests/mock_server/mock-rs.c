@@ -22,7 +22,8 @@
 
 #include "mock-rs.h"
 #include "sync-queue.h"
-#include "../test-libmongoc.h"
+#include "test-libmongoc.h"
+#include "TestSuite.h"
 
 
 struct _mock_rs_t {
@@ -110,35 +111,21 @@ make_uri (mongoc_array_t *servers)
 
 static char *
 hello_json (mock_rs_t *rs,
-               mongoc_server_description_type_t type,
-               const bson_t *tags)
+            mongoc_server_description_type_t type,
+            const bson_t *tags)
 {
    char *server_type;
-   char *mongos_36_fields = "";
    char *tags_json;
    char *hosts_str;
    char *json;
 
    if (type == MONGOC_SERVER_RS_PRIMARY) {
-      server_type = "'isWritablePrimary': true, 'secondary': false, ";
+      server_type = "'isWritablePrimary': true, 'secondary': false,";
    } else if (type == MONGOC_SERVER_RS_SECONDARY) {
-      server_type = "'isWritablePrimary': false, 'secondary': true, ";
+      server_type = "'isWritablePrimary': false, 'secondary': true,";
    } else {
       BSON_ASSERT (type == MONGOC_SERVER_RS_ARBITER);
-      server_type = "'isWritablePrimary': false, 'arbiterOnly': true, ";
-   }
-
-   if (rs->max_wire_version >= WIRE_VERSION_OP_MSG) {
-      mongos_36_fields =
-         "'$clusterTime': {"
-         "  'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
-         "  'signature': {"
-         "    'hash': {'$binary': {'subType': '0', 'base64': ''}},"
-         "    'keyId': {'$numberLong': '6446735049323708417'}"
-         "  },"
-         "  'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
-         "}, "
-         "'logicalSessionTimeoutMinutes': 30, ";
+      server_type = "'isWritablePrimary': false, 'arbiterOnly': true,";
    }
 
    if (bson_empty0 (tags)) {
@@ -149,14 +136,28 @@ hello_json (mock_rs_t *rs,
 
    hosts_str = hosts (&rs->servers);
 
-   json = bson_strdup_printf ("{'ok': 1, %s %s 'tags': %s,"
-                              " 'maxWireVersion': %d, "
-                              "'setName': 'rs', 'hosts': [%s]}",
-                              server_type,
-                              mongos_36_fields,
-                              tags_json,
-                              rs->max_wire_version,
-                              hosts_str);
+   json = bson_strdup_printf (
+      "{'ok': 1,"
+      " %s"
+      " '$clusterTime': {"
+      "   'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
+      "   'signature': {"
+      "     'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+      "     'keyId': {'$numberLong': '6446735049323708417'}"
+      "   },"
+      "   'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
+      " },"
+      "'logicalSessionTimeoutMinutes': 30,"
+      " 'tags': %s,"
+      " 'minWireVersion': %d,"
+      " 'maxWireVersion': %d,"
+      " 'setName': 'rs',"
+      " 'hosts': [%s]}",
+      server_type,
+      tags_json,
+      WIRE_VERSION_MIN,
+      rs->max_wire_version,
+      hosts_str);
 
    bson_free (tags_json);
    bson_free (hosts_str);
@@ -211,6 +212,12 @@ mock_rs_with_auto_hello (int32_t max_wire_version,
 {
    int i;
    mock_rs_t *rs = (mock_rs_t *) bson_malloc0 (sizeof (mock_rs_t));
+
+   ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
+                    "max_wire_version %" PRId32
+                    " must be greater than or equal to minimum wire version %d",
+                    max_wire_version,
+                    WIRE_VERSION_MIN);
 
    rs->max_wire_version = max_wire_version;
    rs->has_primary = has_primary;
@@ -394,9 +401,7 @@ mock_rs_run (mock_rs_t *rs)
 
    bson_free (hello);
 
-   if (rs->max_wire_version >= WIRE_VERSION_OP_MSG) {
-      mock_rs_auto_endsessions (rs);
-   }
+   mock_rs_auto_endsessions (rs);
 }
 
 

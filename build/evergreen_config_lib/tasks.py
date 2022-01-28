@@ -462,9 +462,7 @@ class IntegrationTask(MatrixTask):
     axes = OD([('valgrind', ['valgrind', False]),
                ('sanitizer', ['asan', 'tsan', False]),
                ('coverage', ['coverage', False]),
-               ('version', ['latest', '5.0',
-                            '4.4', '4.2', '4.0',
-                            '3.6', '3.4', '3.2', '3.0']),
+               ('version', ['latest', '5.0', '4.4', '4.2', '4.0', '3.6']),
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
                ('auth', [True, False]),
                ('sasl', ['sasl', 'sspi', False]),
@@ -759,10 +757,6 @@ all_tasks = chain(all_tasks, [
     # Verify that retryWrites=true is ignored with standalone.
     SpecialIntegrationTask('retry-true-latest-server',
                            uri='mongodb://localhost/?retryWrites=true'),
-    # Verify that retryWrites=true is ignored with old server.
-    SpecialIntegrationTask('retry-true-3.4-replica-set',
-                           version='3.4',
-                           topology='replica_set'),
     SpecialIntegrationTask('test-latest-server-hardened',
                            'hardened-compile',
                            tags=['hardened', 'latest']),

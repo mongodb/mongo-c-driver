@@ -721,7 +721,9 @@ _test_heartbeat_events (bool pooled, bool succeeded)
          0,
          0,
          1,
-         "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+         tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
+                  WIRE_VERSION_MIN,
+                  WIRE_VERSION_MAX));
       request_destroy (request);
    } else {
       mock_server_hangs_up (request);
@@ -737,7 +739,9 @@ _test_heartbeat_events (bool pooled, bool succeeded)
          0,
          0,
          1,
-         "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+         tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
+                  WIRE_VERSION_MIN,
+                  WIRE_VERSION_MAX));
       request_destroy (request);
    }
 
@@ -925,12 +929,6 @@ test_no_duplicates (void)
    bson_error_t error;
    future_t *future;
    mongoc_uri_t *uri;
-   char *first_hello_response = "{'ok': 1.0, 'isWritablePrimary': true, "
-                                "'minWireVersion': 0, 'maxWireVersion': 9}";
-   char *second_hello_response = "{'ok': 1.0, 'isWritablePrimary': true, "
-                                 "'minWireVersion': 0, 'maxWireVersion': 9, "
-                                 "'lastWrite': {'lastWriteDate': {'$date': "
-                                 "{'$numberLong': '123'}}, 'opTime': 2}}";
    mongoc_apm_callbacks_t *callbacks;
    duplicates_counter_t duplicates_counter = {0};
    mongoc_server_description_t *sd;
@@ -951,7 +949,13 @@ test_no_duplicates (void)
 
    /* Topology scanning thread starts, and sends a hello. */
    request = mock_server_receives_legacy_hello (server, NULL);
-   mock_server_replies_simple (request, first_hello_response);
+   mock_server_replies_simple (request,
+                               tmp_str ("{'ok': 1.0,"
+                                        " 'isWritablePrimary': true, "
+                                        " 'minWireVersion': %d,"
+                                        " 'maxWireVersion': %d}",
+                                        WIRE_VERSION_MIN,
+                                        WIRE_VERSION_4_4));
    request_destroy (request);
 
    /* Perform a ping, which creates a new connection, which performs the
@@ -963,7 +967,17 @@ test_no_duplicates (void)
                                           NULL /* reply */,
                                           &error);
    request = mock_server_receives_legacy_hello (server, NULL);
-   mock_server_replies_simple (request, second_hello_response);
+   mock_server_replies_simple (
+      request,
+      tmp_str (
+         "{'ok': 1.0,"
+         " 'isWritablePrimary': true,"
+         " 'minWireVersion': %d,"
+         " 'maxWireVersion': %d,"
+         " 'lastWrite': {"
+         "   'lastWriteDate': {'$date': {'$numberLong': '123'}}, 'opTime': 2}}",
+         WIRE_VERSION_MIN,
+         WIRE_VERSION_4_4));
    request_destroy (request);
    request = mock_server_receives_msg (
       server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));

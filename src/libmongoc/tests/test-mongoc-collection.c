@@ -100,7 +100,7 @@ test_aggregate_inherit_collection (void)
    mongoc_write_concern_t *wc2;
    mongoc_write_concern_t *wc;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_MAX_STALENESS);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -123,17 +123,17 @@ test_aggregate_inherit_collection (void)
       collection, MONGOC_QUERY_SECONDARY_OK, pipeline, &opts, NULL);
    future = future_cursor_next (cursor, &doc);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      " { 'aggregate' : 'collection',"
-      "   'pipeline' : [ { '$out' : 'collection2' } ],"
-      "   'cursor' : {  },"
-      "   'readConcern' : { 'level' : 'majority' },"
-      "   'writeConcern' : { 'w' : 2 } }");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [{'$out': 'collection2'}],"
+                " 'cursor': {},"
+                " 'readConcern': {'level': 'majority'},"
+                " 'writeConcern': {'w': 2}}"));
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   mock_server_replies_ok_and_destroys (request);
 
    ASSERT (!future_get_bool (future));
 
@@ -145,8 +145,6 @@ test_aggregate_inherit_collection (void)
    mongoc_read_concern_set_level (rc2, MONGOC_READ_CONCERN_LEVEL_LOCAL);
    mongoc_collection_set_read_concern (collection, rc2);
 
-
-   request_destroy (request);
    future_destroy (future);
    mongoc_cursor_destroy (cursor);
 
@@ -155,21 +153,20 @@ test_aggregate_inherit_collection (void)
       collection, MONGOC_QUERY_SECONDARY_OK, pipeline, NULL, NULL);
    future = future_cursor_next (cursor, &doc);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      " { 'aggregate' : 'collection',"
-      "   'pipeline' : [ { '$out' : 'collection2' } ],"
-      "   'cursor' : {  },"
-      "   'readConcern' : { 'level' : 'local' },"
-      "   'writeConcern' : { 'w' : 3 } }");
+      MONGOC_MSG_NONE,
+      tmp_bson (" {'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [{'$out': 'collection2'}],"
+                " 'cursor': {},"
+                " 'readConcern': {'level': 'local'},"
+                " 'writeConcern': {'w': 3}}"));
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   mock_server_replies_ok_and_destroys (request);
 
    ASSERT (!future_get_bool (future));
 
-   request_destroy (request);
    future_destroy (future);
    mongoc_cursor_destroy (cursor);
 
@@ -178,21 +175,20 @@ test_aggregate_inherit_collection (void)
       collection, MONGOC_QUERY_SECONDARY_OK, pipeline, &opts, NULL);
    future = future_cursor_next (cursor, &doc);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      " { 'aggregate' : 'collection',"
-      "   'pipeline' : [ { '$out' : 'collection2' } ],"
-      "   'cursor' : {  },"
-      "   'readConcern' : { 'level' : 'majority' },"
-      "   'writeConcern' : { 'w' : 2 } }");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [{'$out': 'collection2'}],"
+                " 'cursor': {},"
+                " 'readConcern': {'level': 'majority'},"
+                " 'writeConcern': {'w': 2}}"));
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   mock_server_replies_ok_and_destroys (request);
 
    ASSERT (!future_get_bool (future));
 
-   request_destroy (request);
    future_destroy (future);
    mongoc_cursor_destroy (cursor);
 
@@ -205,20 +201,19 @@ test_aggregate_inherit_collection (void)
       collection, MONGOC_QUERY_SECONDARY_OK, pipeline, NULL, NULL);
    future = future_cursor_next (cursor, &doc);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      " { 'aggregate' : 'collection',"
-      "   'pipeline' : [ { '$in' : 'collection2' } ],"
-      "   'cursor' : {  },"
-      "   'readConcern' : { 'level' : 'local' },"
-      "   'writeConcern' : { '$exists' : false } }");
+      MONGOC_MSG_NONE,
+      tmp_bson (" {'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [{'$in': 'collection2'}],"
+                " 'cursor': {},"
+                " 'readConcern': {'level': 'local'},"
+                " 'writeConcern': {'$exists': false}}"));
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   mock_server_replies_ok_and_destroys (request);
    ASSERT (!future_get_bool (future));
 
-   request_destroy (request);
    future_destroy (future);
    mongoc_cursor_destroy (cursor);
 
@@ -853,30 +848,6 @@ test_insert_bulk_empty (void)
 }
 
 
-static void
-auto_hello (mock_server_t *server,
-            int32_t max_wire_version,
-            int32_t max_message_size,
-            int32_t max_bson_size,
-            int32_t max_batch_size)
-{
-   char *response = bson_strdup_printf ("{'isWritablePrimary': true, "
-                                        " 'maxWireVersion': %d,"
-                                        " 'maxBsonObjectSize': %d,"
-                                        " 'maxMessageSizeBytes': %d,"
-                                        " 'maxWriteBatchSize': %d }",
-                                        max_wire_version,
-                                        max_bson_size,
-                                        max_message_size,
-                                        max_batch_size);
-
-   BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_hello (server, response);
-
-   bson_free (response);
-}
-
-
 char *
 make_string (size_t len)
 {
@@ -938,29 +909,6 @@ destroy_all (bson_t **ptr, int n)
 }
 
 
-/* verify an insert command's "documents" array has keys "0", "1", "2", ... */
-static void
-verify_keys (uint32_t n_documents, const bson_t *insert_command)
-{
-   bson_iter_t iter;
-   uint32_t len;
-   const uint8_t *data;
-   bson_t document;
-   char str[16];
-   const char *key;
-   uint32_t i;
-
-   ASSERT (bson_iter_init_find (&iter, insert_command, "documents"));
-   bson_iter_array (&iter, &len, &data);
-   ASSERT (bson_init_static (&document, data, len));
-
-   for (i = 0; i < n_documents; i++) {
-      bson_uint32_to_string (i, &key, str, sizeof str);
-      ASSERT (bson_has_field (&document, key));
-   }
-}
-
-
 /* CDRIVER-845: "insert" command must have array keys "0", "1", "2", ... */
 static void
 test_insert_command_keys (void)
@@ -991,17 +939,20 @@ test_insert_command_keys (void)
    }
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
-   request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_NONE, "{'insert': 'test'}");
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test', 'insert': 'test'}"),
+                                tmp_bson ("{'_id': 0}"),
+                                tmp_bson ("{'_id': 1}"),
+                                tmp_bson ("{'_id': 2}"));
 
-   verify_keys (3, request_get_doc (request, 0));
-   mock_server_replies_simple (request, "{'ok': 1}");
+   mock_server_replies_ok_and_destroys (request);
 
    ASSERT_OR_PRINT (future_get_uint32_t (future), error);
 
    bson_destroy (&reply);
    future_destroy (future);
-   request_destroy (request);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -1599,7 +1550,6 @@ test_index (void)
    bson_t *opts = NULL;
    mongoc_write_concern_t *bad_wc;
    mongoc_write_concern_t *good_wc;
-   bool wire_version_5;
    bool r;
 
    mongoc_index_opt_init (&opt);
@@ -1611,8 +1561,6 @@ test_index (void)
 
    bad_wc = mongoc_write_concern_new ();
    good_wc = mongoc_write_concern_new ();
-
-   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    database = get_test_database (client);
    ASSERT (database);
@@ -1634,46 +1582,44 @@ test_index (void)
    ASSERT_OR_PRINT (
       mongoc_collection_create_index (collection, &keys, &opt, &error), error);
 
-   if (wire_version_5) {
-      /* invalid writeConcern */
-      bad_wc->wtimeout = -10;
+   /* invalid writeConcern */
+   bad_wc->wtimeout = -10;
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_collection_drop_index_with_opts (
+      collection, "hello_1", opts, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid writeConcern");
+   bad_wc->wtimeout = 0;
+   error.code = 0;
+   error.domain = 0;
+
+   /* valid writeConcern on all configs*/
+   mongoc_write_concern_set_w (good_wc, 1);
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   ASSERT_OR_PRINT (mongoc_collection_drop_index_with_opts (
+                       collection, "hello_1", opts, &error),
+                    error);
+   ASSERT (!error.code);
+   ASSERT (!error.domain);
+
+   /* writeConcern that results in writeConcernError */
+   mongoc_write_concern_set_w (bad_wc, 99);
+
+   if (!test_framework_is_mongos ()) { /* skip if sharded */
+      ASSERT_OR_PRINT (
+         mongoc_collection_create_index (collection, &keys, &opt, &error),
+         error);
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
-      ASSERT (!mongoc_collection_drop_index_with_opts (
-         collection, "hello_1", opts, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "Invalid writeConcern");
-      bad_wc->wtimeout = 0;
-      error.code = 0;
-      error.domain = 0;
-
-      /* valid writeConcern on all configs*/
-      mongoc_write_concern_set_w (good_wc, 1);
-      bson_reinit (opts);
-      mongoc_write_concern_append (good_wc, opts);
-      ASSERT_OR_PRINT (mongoc_collection_drop_index_with_opts (
-                          collection, "hello_1", opts, &error),
-                       error);
-      ASSERT (!error.code);
-      ASSERT (!error.domain);
-
-      /* writeConcern that results in writeConcernError */
-      mongoc_write_concern_set_w (bad_wc, 99);
-
-      if (!test_framework_is_mongos ()) { /* skip if sharded */
-         ASSERT_OR_PRINT (
-            mongoc_collection_create_index (collection, &keys, &opt, &error),
-            error);
-         bson_reinit (opts);
-         mongoc_write_concern_append_bad (bad_wc, opts);
-         r = mongoc_collection_drop_index_with_opts (
-            collection, "hello_1", opts, &error);
-         ASSERT (!r);
-         assert_wc_oob_error (&error);
-      }
-   } /* wire_version_5 */
+      r = mongoc_collection_drop_index_with_opts (
+         collection, "hello_1", opts, &error);
+      ASSERT (!r);
+      assert_wc_oob_error (&error);
+   }
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -1700,7 +1646,6 @@ test_index_w_write_concern (void)
    bson_t reply;
    bson_t *opts = NULL;
    bool result;
-   bool wire_version_5;
    bool is_mongos = test_framework_is_mongos ();
 
    mongoc_index_opt_init (&opt);
@@ -1719,8 +1664,6 @@ test_index_w_write_concern (void)
 
    collection = get_test_collection (client, "test_index");
    ASSERT (collection);
-
-   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    bson_init (&keys);
    bson_append_int32 (&keys, "hello", -1, 1);
@@ -1766,17 +1709,9 @@ test_index_w_write_concern (void)
    mongoc_write_concern_append_bad (bad_wc, opts);
    /* skip this part of the test if sharded cluster */
    if (!is_mongos) {
-      if (wire_version_5) {
-         ASSERT (!mongoc_collection_create_index_with_opts (
-            collection, &keys, &opt, opts, &reply, &error));
-         assert_wc_oob_error (&error);
-      } else { /* if wire version <= 4, no error */
-         result = mongoc_collection_create_index_with_opts (
-            collection, &keys, &opt, opts, &reply, &error);
-         ASSERT_OR_PRINT (result, error);
-         ASSERT (!error.code);
-         ASSERT (!error.domain);
-      }
+      ASSERT (!mongoc_collection_create_index_with_opts (
+         collection, &keys, &opt, opts, &reply, &error));
+      assert_wc_oob_error (&error);
 
       ASSERT (!bson_empty (&reply));
       bson_destroy (&reply);
@@ -2084,6 +2019,7 @@ test_count_read_pref (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -2092,12 +2028,12 @@ test_count_read_pref (void)
    mongoc_collection_set_read_prefs (collection, prefs);
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$query': {'count': 'collection'},"
-      " '$readPreference': {'mode': 'secondary'}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'count': 'collection',"
+                " '$readPreference': {'mode': 'secondary'}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -2124,8 +2060,7 @@ test_count_read_concern (void)
    int64_t count;
    bson_t b;
 
-   /* wire protocol version 4 */
-   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -2138,11 +2073,10 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request =
-      mock_server_receives_command (server,
-                                    "test",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{ 'count' : 'test', 'query' : {  } }");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test', 'count': 'test', 'query': {}}"));
 
    mock_server_replies_simple (request, "{ 'n' : 42, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -2159,12 +2093,13 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request = mock_server_receives_command (server,
-                                           "test",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{ 'count' : 'test', 'query' : {  "
-                                           "}, 'readConcern': {'level': "
-                                           "'majority'}}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'count': 'test',"
+                " 'query': {},"
+                " 'readConcern': {'level': 'majority'}}"));
 
    mock_server_replies_simple (request, "{ 'n' : 43, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -2182,11 +2117,13 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "test",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{ 'count' : 'test', 'query' : {  }, 'readConcern': {'level': 'local'}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'count': 'test',"
+                " 'query': {},"
+                " 'readConcern': {'level': 'local'}}"));
 
    mock_server_replies_simple (request, "{ 'n' : 44, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -2204,12 +2141,13 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request = mock_server_receives_command (server,
-                                           "test",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{ 'count' : 'test', 'query' : {  "
-                                           "}, 'readConcern': {'level': "
-                                           "'futureCompatible'}}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'count': 'test',"
+                " 'query': {},"
+                " 'readConcern': {'level': 'futureCompatible'}}"));
 
    mock_server_replies_simple (request, "{ 'n' : 45, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -2227,12 +2165,13 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request = mock_server_receives_command (server,
-                                           "test",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{ 'count' : 'test', 'query' : {  "
-                                           "}, 'readConcern': { '$exists': "
-                                           "false }}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'count': 'test',"
+                " 'query': {},"
+                " 'readConcern': { '$exists': false }}"));
 
    mock_server_replies_simple (request, "{ 'n' : 46, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -2249,12 +2188,13 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request = mock_server_receives_command (server,
-                                           "test",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{ 'count' : 'test', 'query' : {  "
-                                           "}, 'readConcern': { '$exists': "
-                                           "false }}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'count': 'test',"
+                " 'query': {},"
+                " 'readConcern': { '$exists': false }}"));
 
    mock_server_replies_simple (request, "{ 'n' : 47, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -2270,7 +2210,7 @@ test_count_read_concern (void)
 
 
 static void
-_test_count_read_concern_live (bool supports_read_concern)
+test_count_read_concern_live (void *unused)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -2316,14 +2256,7 @@ _test_count_read_concern_live (bool supports_read_concern)
    count = mongoc_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   if (supports_read_concern) {
-      ASSERT_OR_PRINT (count == 0, error);
-   } else {
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "The selected server does not support readConcern")
-   }
+   ASSERT_OR_PRINT (count == 0, error);
    mongoc_read_concern_destroy (rc);
 
    /* readConcern: { level: majority } should raise error pre 3.2 */
@@ -2335,14 +2268,7 @@ _test_count_read_concern_live (bool supports_read_concern)
    count = mongoc_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   if (supports_read_concern) {
-      ASSERT_OR_PRINT (count == 0, error);
-   } else {
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "The selected server does not support readConcern")
-   }
+   ASSERT_OR_PRINT (count == 0, error);
    mongoc_read_concern_destroy (rc);
 
    mongoc_collection_destroy (collection);
@@ -2371,16 +2297,6 @@ mongod_supports_majority_read_concern (void)
    return test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN");
 }
 
-static void
-test_count_read_concern_live (void *context)
-{
-   if (test_framework_max_wire_version_at_least (WIRE_VERSION_READ_CONCERN)) {
-      _test_count_read_concern_live (true);
-   } else {
-      _test_count_read_concern_live (false);
-   }
-}
-
 
 static void
 test_count_with_opts (void)
@@ -2395,6 +2311,7 @@ test_count_with_opts (void)
    /* use a mongos since we don't send SECONDARY_OK to mongos by default */
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -2408,10 +2325,10 @@ test_count_with_opts (void)
                                                NULL,
                                                &error);
 
-   request = mock_server_receives_command (server,
-                                           "db",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{'count': 'collection', 'opt': 1}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'count': 'collection', 'opt': 1}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -2425,7 +2342,7 @@ test_count_with_opts (void)
 
 
 static void
-test_count_with_collation (int wire)
+test_count_with_collation (void)
 {
    mock_server_t *server;
    mongoc_collection_t *collection;
@@ -2434,7 +2351,7 @@ test_count_with_collation (int wire)
    request_t *request;
    bson_error_t error;
 
-   server = mock_server_with_auto_hello (wire);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -2451,42 +2368,21 @@ test_count_with_collation (int wire)
       NULL,
       &error);
 
-   if (wire == WIRE_VERSION_COLLATION) {
-      request = mock_server_receives_command (
-         server,
-         "db",
-         MONGOC_QUERY_SECONDARY_OK,
-         "{'count': 'collection', 'collation': {'locale': 'en'}}");
-      mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
-      ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
-      request_destroy (request);
-   } else {
-      ASSERT (-1 == future_get_int64_t (future));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "The selected server does not support collation");
-   }
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " 'count': 'collection',"
+                                          " 'collation': {'locale': 'en'}}"));
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
+   request_destroy (request);
 
 
    future_destroy (future);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
-}
-
-
-static void
-test_count_with_collation_ok (void)
-{
-   test_count_with_collation (WIRE_VERSION_COLLATION);
-}
-
-
-static void
-test_count_with_collation_fail (void)
-{
-   test_count_with_collation (WIRE_VERSION_COLLATION - 1);
 }
 
 
@@ -2664,7 +2560,6 @@ test_drop (void)
    mongoc_client_t *client;
    mongoc_write_concern_t *good_wc;
    mongoc_write_concern_t *bad_wc;
-   bool wire_version_5;
    bool r;
    bson_error_t error;
    bson_t *doc;
@@ -2677,8 +2572,6 @@ test_drop (void)
 
    bad_wc = mongoc_write_concern_new ();
    good_wc = mongoc_write_concern_new ();
-
-   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    database = get_test_database (client);
    ASSERT (database);
@@ -2693,46 +2586,44 @@ test_drop (void)
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
-   if (wire_version_5) {
-      /* invalid writeConcern */
-      bad_wc->wtimeout = -10;
+   /* invalid writeConcern */
+   bad_wc->wtimeout = -10;
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (collection, doc, NULL, NULL, &error),
+      error);
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_collection_drop_with_opts (collection, opts, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid writeConcern");
+   bad_wc->wtimeout = 0;
+   error.code = 0;
+   error.domain = 0;
+
+   /* valid writeConcern */
+   mongoc_write_concern_set_w (good_wc, 1);
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   ASSERT_OR_PRINT (mongoc_collection_drop_with_opts (collection, opts, &error),
+                    error);
+   ASSERT (!error.code);
+   ASSERT (!error.domain);
+
+   /* writeConcern that results in writeConcernError */
+   mongoc_write_concern_set_w (bad_wc, 99);
+
+   if (!test_framework_is_mongos ()) { /* skip if sharded */
       ASSERT_OR_PRINT (
          mongoc_collection_insert_one (collection, doc, NULL, NULL, &error),
          error);
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
-      ASSERT (!mongoc_collection_drop_with_opts (collection, opts, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "Invalid writeConcern");
-      bad_wc->wtimeout = 0;
-      error.code = 0;
-      error.domain = 0;
-
-      /* valid writeConcern */
-      mongoc_write_concern_set_w (good_wc, 1);
-      bson_reinit (opts);
-      mongoc_write_concern_append (good_wc, opts);
-      ASSERT_OR_PRINT (
-         mongoc_collection_drop_with_opts (collection, opts, &error), error);
-      ASSERT (!error.code);
-      ASSERT (!error.domain);
-
-      /* writeConcern that results in writeConcernError */
-      mongoc_write_concern_set_w (bad_wc, 99);
-
-      if (!test_framework_is_mongos ()) { /* skip if sharded */
-         ASSERT_OR_PRINT (
-            mongoc_collection_insert_one (collection, doc, NULL, NULL, &error),
-            error);
-         bson_reinit (opts);
-         mongoc_write_concern_append_bad (bad_wc, opts);
-         r = mongoc_collection_drop_with_opts (collection, opts, &error);
-         ASSERT (!r);
-         assert_wc_oob_error (&error);
-      }
-   } /* wire_version_5 */
+      r = mongoc_collection_drop_with_opts (collection, opts, &error);
+      ASSERT (!r);
+      assert_wc_oob_error (&error);
+   }
 
    bson_destroy (doc);
    bson_destroy (opts);
@@ -3076,7 +2967,7 @@ test_aggregate_modern (void *data)
       return;
    }
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -3091,17 +2982,16 @@ test_aggregate_modern (void *data)
    ASSERT (cursor);
    future = future_cursor_next (cursor, &doc);
 
-
-   /* "cursor" argument always sent if wire version >= 1 */
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'aggregate': 'collection',"
-      " 'pipeline': [{'a': 1}],"
-      " 'cursor': %s %s}",
-      context->with_batch_size ? "{'batchSize': 11}" : "{'$empty': true}",
-      context->with_options ? ", 'foo': 1" : "");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [{'a': 1}],"
+                " 'cursor': %s %s}",
+                context->with_batch_size ? "{'batchSize': 11}"
+                                         : "{'$empty': true}",
+                context->with_options ? ", 'foo': 1" : ""));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -3119,22 +3009,22 @@ test_aggregate_modern (void *data)
 
    /* create a second batch to see if batch size is still 11 */
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'getMore': 42,"
-      "'collection': 'collection',"
-      "'batchSize': %s}",
-      context->with_batch_size ? "11" : "{'$exists': false}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'getMore': {'$numberLong': '42'},"
+                "'collection': 'collection',"
+                "'batchSize': %s}",
+                context->with_batch_size ? "{'$numberLong': '11'}"
+                                         : "{'$exists': false}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
-                               "'cursor': {"
-                               "'id': 0,"
-                               "'ns': 'db.collection',"
-                               "'nextBatch': [{'_id': 123}]"
-                               "}}");
+                               " 'cursor': {"
+                               "   'id': 0,"
+                               "   'ns': 'db.collection',"
+                               "   'nextBatch': [{'_id': 123}]}}");
 
    ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
@@ -3178,12 +3068,13 @@ test_aggregate_w_server_id (void)
       collection, MONGOC_QUERY_NONE, tmp_bson (NULL), opts, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_command (rs,
-                                       "db",
-                                       MONGOC_QUERY_SECONDARY_OK,
-                                       "{'aggregate': 'collection',"
-                                       " 'cursor': {},"
-                                       " 'serverId': {'$exists': false}}");
+   request =
+      mock_rs_receives_msg (rs,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'$db': 'db',"
+                                      " 'aggregate': 'collection',"
+                                      " 'cursor': {},"
+                                      " 'serverId': {'$exists': false}}"));
 
    ASSERT (mock_rs_request_is_to_secondary (rs, request));
    mock_rs_replies_simple (request,
@@ -3216,6 +3107,7 @@ test_aggregate_w_server_id_sharded (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -3226,12 +3118,12 @@ test_aggregate_w_server_id_sharded (void)
 
    future = future_cursor_next (cursor, &doc);
 
-   /* does NOT set secondaryOk, since this is a sharded topology */
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_NONE,
-      "{'aggregate': 'collection', 'serverId': {'$exists': false}}");
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " 'aggregate': 'collection',"
+                                          " 'serverId': {'$exists': false}}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -3370,7 +3262,6 @@ test_rename (void)
    mongoc_collection_t *collection;
    mongoc_write_concern_t *bad_wc;
    mongoc_write_concern_t *good_wc;
-   bool wire_version_5;
    bool r;
    bson_error_t error;
    char *dbname;
@@ -3387,8 +3278,6 @@ test_rename (void)
 
    bad_wc = mongoc_write_concern_new ();
    good_wc = mongoc_write_concern_new ();
-
-   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    dbname = gen_collection_name ("dbtest");
    database = mongoc_client_get_database (client, dbname);
@@ -3417,51 +3306,48 @@ test_rename (void)
    ASSERT (found);
    ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
 
-   if (wire_version_5) {
-      /* invalid writeConcern */
-      bad_wc->wtimeout = -10;
+   /* invalid writeConcern */
+   bad_wc->wtimeout = -10;
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_collection_rename_with_opts (
+      collection, dbname, "test_rename.3", false, opts, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid writeConcern");
+   ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
+
+   bad_wc->wtimeout = 0;
+   error.code = 0;
+   error.domain = 0;
+
+   /* valid writeConcern on all configs */
+   mongoc_write_concern_set_w (good_wc, 1);
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   r = mongoc_collection_rename_with_opts (
+      collection, dbname, "test_rename.3", false, opts, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.3");
+
+   ASSERT (!error.code);
+   ASSERT (!error.domain);
+
+   /* writeConcern that results in writeConcernError */
+   mongoc_write_concern_set_w (bad_wc, 99);
+
+   if (!test_framework_is_mongos ()) {
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
-      ASSERT (!mongoc_collection_rename_with_opts (
-         collection, dbname, "test_rename.3", false, opts, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "Invalid writeConcern");
-      ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
-
-      bad_wc->wtimeout = 0;
-      error.code = 0;
-      error.domain = 0;
-
-      /* valid writeConcern on all configs */
-      mongoc_write_concern_set_w (good_wc, 1);
-      bson_reinit (opts);
-      mongoc_write_concern_append (good_wc, opts);
       r = mongoc_collection_rename_with_opts (
-         collection, dbname, "test_rename.3", false, opts, &error);
-      ASSERT_OR_PRINT (r, error);
+         collection, dbname, "test_rename.4", false, opts, &error);
+      ASSERT (!r);
+
+      /* check that collection name has not changed */
       ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.3");
-
-      ASSERT (!error.code);
-      ASSERT (!error.domain);
-
-      /* writeConcern that results in writeConcernError */
-      mongoc_write_concern_set_w (bad_wc, 99);
-
-      if (!test_framework_is_mongos ()) {
-         bson_reinit (opts);
-         mongoc_write_concern_append_bad (bad_wc, opts);
-         r = mongoc_collection_rename_with_opts (
-            collection, dbname, "test_rename.4", false, opts, &error);
-         ASSERT (!r);
-
-         /* check that collection name has not changed */
-         ASSERT_CMPSTR (mongoc_collection_get_name (collection),
-                        "test_rename.3");
-         assert_wc_oob_error (&error);
-      }
-   } /* wire_version_5 */
+      assert_wc_oob_error (&error);
+   }
 
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
 
@@ -3531,18 +3417,19 @@ test_stats_read_pref (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_collection_set_read_prefs (collection, prefs);
    future = future_collection_stats (collection, NULL, &stats, &error);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$query': {'collStats': 'collection'},"
-      " '$readPreference': {'mode': 'secondary'}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'collStats': 'collection',"
+                " '$readPreference': {'mode': 'secondary'}}"));
 
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -3557,7 +3444,7 @@ test_stats_read_pref (void)
 
 
 static void
-test_find_and_modify_write_concern (int wire_version)
+test_find_and_modify_write_concern (void)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -3580,11 +3467,18 @@ test_find_and_modify_write_concern (int wire_version)
    collection =
       mongoc_client_get_collection (client, "test", "test_find_and_modify");
 
-   auto_hello (server,
-               wire_version, /* max_wire_version */
-               48000000,     /* max_message_size */
-               16777216,     /* max_bson_size */
-               1000);        /* max_write_batch_size */
+   mock_server_auto_hello (server,
+                           "{'isWritablePrimary': true, "
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'maxBsonObjectSize': %d,"
+                           " 'maxMessageSizeBytes': %d,"
+                           " 'maxWriteBatchSize': %d}",
+                           WIRE_VERSION_MIN,
+                           WIRE_VERSION_MAX,
+                           16777216,
+                           48000000,
+                           1000);
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 
@@ -3596,26 +3490,15 @@ test_find_and_modify_write_concern (int wire_version)
    future = future_collection_find_and_modify (
       collection, &doc, NULL, update, NULL, false, false, true, &reply, &error);
 
-   if (wire_version >= 4) {
-      request = mock_server_receives_command (
-         server,
-         "test",
-         MONGOC_QUERY_NONE,
-         "{ 'findAndModify' : 'test_find_and_modify', "
-         "'query' : { 'superduper' : 77889 },"
-         "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true,"
-         "'writeConcern' : { 'w' : 42 } }");
-   } else {
-      request = mock_server_receives_command (
-         server,
-         "test",
-         MONGOC_QUERY_NONE,
-         "{ 'findAndModify' : 'test_find_and_modify', "
-         "'query' : { 'superduper' : 77889 },"
-         "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true }");
-   }
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'findAndModify': 'test_find_and_modify',"
+                " 'query': {'superduper': 77889},"
+                " 'update': {'$set': {'superduper': 1234}},"
+                " 'new' : true,"
+                " 'writeConcern': {'w': 42}}"));
 
    mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -3631,18 +3514,6 @@ test_find_and_modify_write_concern (int wire_version)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
    bson_destroy (&doc);
-}
-
-static void
-test_find_and_modify_write_concern_wire_32 (void)
-{
-   test_find_and_modify_write_concern (4);
-}
-
-static void
-test_find_and_modify_write_concern_wire_pre_32 (void)
-{
-   test_find_and_modify_write_concern (3);
 }
 
 static void
@@ -4035,15 +3906,17 @@ test_find_limit (void)
                                     NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_SECONDARY_OK,
-                                         0 /* skip */,
-                                         2 /* n_return */,
-                                         "{}",
-                                         NULL);
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test',"
+                                          " 'find': 'test',"
+                                          " 'filter': {},"
+                                          " 'limit': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (request, "{}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -4057,15 +3930,17 @@ test_find_limit (void)
       NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_SECONDARY_OK,
-                                         0 /* skip */,
-                                         2 /* n_return */,
-                                         "{}",
-                                         NULL);
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'test',"
+                                          " 'find': 'test',"
+                                          " 'filter': {},"
+                                          " 'limit': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (request, "{}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -4107,15 +3982,17 @@ test_find_batch_size (void)
                                     NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_SECONDARY_OK,
-                                         0 /* skip */,
-                                         2 /* n_return */,
-                                         "{}",
-                                         NULL);
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'find': 'test',"
+                " 'filter': {},"
+                " 'batchSize': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (request, "{}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -4129,15 +4006,17 @@ test_find_batch_size (void)
       NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_SECONDARY_OK,
-                                         0 /* skip */,
-                                         2 /* n_return */,
-                                         "{}",
-                                         NULL);
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'find': 'test',"
+                " 'filter': {},"
+                " 'batchSize': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (request, "{}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -4381,8 +4260,10 @@ test_find_indexes_err (void)
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    future = future_collection_find_indexes_with_opts (collection, NULL);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'listIndexes': 'collection'}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'listIndexes': 'collection'}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 0, 'code': 1234567, 'errmsg': 'foo'}");
@@ -4440,7 +4321,7 @@ test_find_read_concern (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -4458,11 +4339,10 @@ test_find_read_concern (void)
                                     NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_command (server,
-                                    "test",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{'find' : 'test', 'filter' : {  } }");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test', 'find': 'test', 'filter': {}}"));
    mock_server_replies_simple (request,
                                "{'ok': 1,"
                                " 'cursor': {"
@@ -4488,16 +4368,13 @@ test_find_read_concern (void)
                                     NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (server,
-                                           "test",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{"
-                                           "  'find' : 'test',"
-                                           "  'filter' : {  },"
-                                           "  'readConcern': {"
-                                           "    'level': 'local'"
-                                           "   }"
-                                           "}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'find': 'test',"
+                " 'filter': {},"
+                " 'readConcern': {'level': 'local'}}"));
    mock_server_replies_simple (request,
                                "{'ok': 1,"
                                " 'cursor': {"
@@ -4524,16 +4401,13 @@ test_find_read_concern (void)
                                     NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (server,
-                                           "test",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{"
-                                           "  'find' : 'test',"
-                                           "  'filter' : {  },"
-                                           "  'readConcern': {"
-                                           "    'level': 'random'"
-                                           "   }"
-                                           "}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'find': 'test',"
+                " 'filter': {},"
+                " 'readConcern': {'level': 'random'}}"));
    mock_server_replies_simple (request,
                                "{'ok': 1,"
                                " 'cursor': {"
@@ -4559,15 +4433,13 @@ test_find_read_concern (void)
                                     NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_command (server,
-                                    "test",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{"
-                                    "  'find' : 'test',"
-                                    "  'filter' : {  },"
-                                    "  'readConcern': { '$exists': false }"
-                                    "}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'find': 'test',"
+                " 'filter': {},"
+                " 'readConcern': {'$exists': false}}"));
    mock_server_replies_simple (request,
                                "{'ok': 1,"
                                " 'cursor': {"
@@ -4594,15 +4466,13 @@ test_find_read_concern (void)
                                     NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_command (server,
-                                    "test",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{"
-                                    "  'find' : 'test',"
-                                    "  'filter' : {  },"
-                                    "  'readConcern': { '$exists': false }"
-                                    "}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'find': 'test',"
+                " 'filter': {},"
+                " 'readConcern': {'$exists': false}}"));
    mock_server_replies_simple (request,
                                "{'ok': 1,"
                                " 'cursor': {"
@@ -4719,6 +4589,7 @@ test_aggregate_secondary_sharded (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -4728,12 +4599,13 @@ test_aggregate_secondary_sharded (void)
 
    ASSERT (cursor);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$query': {'aggregate': 'collection', 'pipeline': []},"
-      " '$readPreference': {'mode': 'secondary'}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [],"
+                " '$readPreference': {'mode': 'secondary'}}"));
 
    mock_server_replies_simple (request,
                                "{ 'ok':1,"
@@ -4767,7 +4639,7 @@ test_aggregate_read_concern (void)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -4780,18 +4652,14 @@ test_aggregate_read_concern (void)
    ASSERT (cursor);
    future = future_cursor_next (cursor, &doc);
 
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{"
-                                    "  'aggregate' : 'collection',"
-                                    "  'pipeline' : [{"
-                                    "      'a' : 1"
-                                    "  }],"
-                                    "  'cursor' : {  },"
-                                    "  'readConcern': { '$exists': false }"
-                                    "}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [{'a': 1}],"
+                " 'cursor': {},"
+                " 'readConcern': {'$exists': false}}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -4820,18 +4688,14 @@ test_aggregate_read_concern (void)
    ASSERT (cursor);
    future = future_cursor_next (cursor, &doc);
 
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{"
-                                    "  'aggregate' : 'collection',"
-                                    "  'pipeline' : [{"
-                                    "      'a' : 1"
-                                    "  }],"
-                                    "  'cursor' : {  },"
-                                    "  'readConcern': { 'level': 'majority'}"
-                                    "}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'aggregate': 'collection',"
+                " 'pipeline': [{'a': 1}],"
+                " 'cursor': {},"
+                " 'readConcern': {'level': 'majority'}}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -4858,7 +4722,7 @@ test_aggregate_read_concern (void)
 
 
 static void
-test_aggregate_with_collation (int wire)
+test_aggregate_with_collation (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -4867,9 +4731,8 @@ test_aggregate_with_collation (int wire)
    request_t *request;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
-   bson_error_t error;
 
-   server = mock_server_with_auto_hello (wire);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -4884,37 +4747,26 @@ test_aggregate_with_collation (int wire)
 
    future = future_cursor_next (cursor, &doc);
 
-   if (wire == WIRE_VERSION_COLLATION) {
-      request =
-         mock_server_receives_command (server,
-                                       "db",
-                                       MONGOC_QUERY_SECONDARY_OK,
-                                       "{'aggregate': 'collection',"
-                                       " 'pipeline': [{'a': 1}],"
-                                       " 'collation': {'locale': 'en'}}");
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " 'aggregate': 'collection',"
+                                          " 'pipeline': [{'a': 1}],"
+                                          " 'collation': {'locale': 'en'}}"));
 
-      mock_server_replies_simple (request,
-                                  "{'ok': 1,"
-                                  " 'cursor': {"
-                                  "    'id': 0,"
-                                  "    'ns': 'db.collection',"
-                                  "    'firstBatch': [{'_id': 123}]"
-                                  "}}");
-      ASSERT (future_get_bool (future));
-      ASSERT_MATCH (doc, "{'_id': 123}");
-      /* cursor is completed */
-      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
-      request_destroy (request);
-   } else {
-      ASSERT (!future_get_bool (future));
-      mongoc_cursor_next (cursor, &doc);
-
-      ASSERT (mongoc_cursor_error (cursor, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "The selected server does not support collation");
-   }
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': 0,"
+                               "    'ns': 'db.collection',"
+                               "    'firstBatch': [{'_id': 123}]"
+                               "}}");
+   ASSERT (future_get_bool (future));
+   ASSERT_MATCH (doc, "{'_id': 123}");
+   /* cursor is completed */
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+   request_destroy (request);
 
    mongoc_cursor_destroy (cursor);
    future_destroy (future);
@@ -4925,20 +4777,7 @@ test_aggregate_with_collation (int wire)
 
 
 static void
-test_aggregate_with_collation_fail (void)
-{
-   test_aggregate_with_collation (WIRE_VERSION_COLLATION - 1);
-}
-
-static void
-test_aggregate_with_collation_ok (void)
-{
-   test_aggregate_with_collation (WIRE_VERSION_COLLATION);
-}
-
-
-static void
-test_index_with_collation (int wire)
+test_index_with_collation (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -4951,8 +4790,7 @@ test_index_with_collation (int wire)
    bson_t reply;
    future_t *future;
 
-   /* wire protocol version 0 */
-   server = mock_server_with_auto_hello (wire);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -4968,33 +4806,18 @@ test_index_with_collation (int wire)
    future = future_collection_create_index_with_opts (
       collection, &keys, &opt, NULL, &reply, &error);
 
-   if (wire == WIRE_VERSION_COLLATION) {
-      request = mock_server_receives_command (
-         server,
-         "db",
-         0,
-         "{ 'createIndexes' : 'collection',"
-         "  'indexes' : ["
-         "    {"
-         "      'key' : {"
-         "        'hello' : 1"
-         "      },"
-         "      'name' : 'hello_1',"
-         "      'collation': {'locale': 'en', 'strength': 2 }"
-         "    }"
-         "  ]"
-         "}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'createIndexes': 'collection',"
+                " 'indexes': [{"
+                "   'key': {'hello' : 1},"
+                "   'name': 'hello_1',"
+                "   'collation': {'locale': 'en', 'strength': 2}}]}"));
 
-      mock_server_replies_simple (request, "{'ok': 1}");
-      ASSERT (future_get_bool (future));
-      request_destroy (request);
-   } else {
-      ASSERT (!future_get_bool (future));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "The selected server does not support collation");
-   }
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT (future_get_bool (future));
 
    bson_destroy (&reply);
    bson_destroy (collation);
@@ -5005,18 +4828,6 @@ test_index_with_collation (int wire)
    mock_server_destroy (server);
 }
 
-
-static void
-test_index_with_collation_fail (void)
-{
-   test_index_with_collation (WIRE_VERSION_COLLATION - 1);
-}
-
-static void
-test_index_with_collation_ok (void)
-{
-   test_index_with_collation (WIRE_VERSION_COLLATION);
-}
 
 static void
 test_insert_duplicate_key (void)
@@ -5348,23 +5159,21 @@ _test_update_and_replace (bool is_replace, bool is_multi)
       coll, tmp_bson ("{'_id':2}"), "{'b': 'TEST'}", 1);
 
    /* Test collation */
-   if (test_framework_max_wire_version_at_least (WIRE_VERSION_COLLATION)) {
-      update = is_replace ? tmp_bson ("{'b': 'test'}")
-                          : tmp_bson ("{'$set': {'b': 'test'}}");
-      ret = fn (coll,
-                tmp_bson ("{'b': 'TEST'}"),
-                update,
-                tmp_bson ("{'collation': {'locale': 'en', 'strength': 2}}"),
-                &reply,
-                &err);
-      ASSERT_OR_PRINT (ret, err);
-      ASSERT_MATCH (&reply,
-                    "{'modifiedCount': 1, 'matchedCount': 1, "
-                    "'upsertedId': {'$exists': false}}");
-      bson_destroy (&reply);
-      _test_docs_in_coll_matches (
-         coll, tmp_bson ("{'_id':2}"), "{'b': 'test'}", 1);
-   }
+   update = is_replace ? tmp_bson ("{'b': 'test'}")
+                       : tmp_bson ("{'$set': {'b': 'test'}}");
+   ret = fn (coll,
+             tmp_bson ("{'b': 'TEST'}"),
+             update,
+             tmp_bson ("{'collation': {'locale': 'en', 'strength': 2}}"),
+             &reply,
+             &err);
+   ASSERT_OR_PRINT (ret, err);
+   ASSERT_MATCH (&reply,
+                 "{'modifiedCount': 1, 'matchedCount': 1, "
+                 "'upsertedId': {'$exists': false}}");
+   bson_destroy (&reply);
+   _test_docs_in_coll_matches (
+      coll, tmp_bson ("{'_id':2}"), "{'b': 'test'}", 1);
 
    /* Test passing write concern through the options */
    ctx.expected_command =
@@ -5848,35 +5657,33 @@ _test_delete_one_or_many (bool is_multi)
 
    /* Test deleting with collation. */
    ctx.expected_command = "{'delete': 'coll'}";
-   if (test_framework_max_wire_version_at_least (WIRE_VERSION_COLLATION)) {
-      ret = mongoc_collection_insert_one (
-         coll, tmp_bson ("{'_id': 1, 'x': 11}"), NULL, NULL, &err);
-      ASSERT_OR_PRINT (ret, err);
+   ret = mongoc_collection_insert_one (
+      coll, tmp_bson ("{'_id': 1, 'x': 11}"), NULL, NULL, &err);
+   ASSERT_OR_PRINT (ret, err);
 
-      ret = mongoc_collection_insert_one (
-         coll, tmp_bson ("{'_id': 2, 'x': 'ping'}"), NULL, NULL, &err);
-      ASSERT_OR_PRINT (ret, err);
+   ret = mongoc_collection_insert_one (
+      coll, tmp_bson ("{'_id': 2, 'x': 'ping'}"), NULL, NULL, &err);
+   ASSERT_OR_PRINT (ret, err);
 
-      ret = mongoc_collection_insert_one (
-         coll, tmp_bson ("{'_id': 3, 'x': 'pINg'}"), NULL, NULL, &err);
-      ASSERT_OR_PRINT (ret, err);
+   ret = mongoc_collection_insert_one (
+      coll, tmp_bson ("{'_id': 3, 'x': 'pINg'}"), NULL, NULL, &err);
+   ASSERT_OR_PRINT (ret, err);
 
-      ret = fn (coll,
-                tmp_bson ("{'x': 'PING'}"),
-                tmp_bson ("{'collation': {'locale': 'en_US', 'strength': 2 }}"),
-                &reply,
-                &err);
+   ret = fn (coll,
+             tmp_bson ("{'x': 'PING'}"),
+             tmp_bson ("{'collation': {'locale': 'en_US', 'strength': 2 }}"),
+             &reply,
+             &err);
 
-      ASSERT_OR_PRINT (ret, err);
-      if (is_multi) {
-         ASSERT_MATCH (&reply, "{'deletedCount': 2}");
-      } else {
-         ASSERT_MATCH (&reply, "{'deletedCount': 1}");
-      }
-      bson_destroy (&reply);
-
-      _test_no_docs_match (coll, "{'_id': 2}");
+   ASSERT_OR_PRINT (ret, err);
+   if (is_multi) {
+      ASSERT_MATCH (&reply, "{'deletedCount': 2}");
+   } else {
+      ASSERT_MATCH (&reply, "{'deletedCount': 1}");
    }
+   bson_destroy (&reply);
+
+   _test_no_docs_match (coll, "{'_id': 2}");
 
    bson_destroy (&opts_with_wc);
    mongoc_apm_callbacks_destroy (callbacks);
@@ -5894,7 +5701,7 @@ typedef future_t *(*future_delete_fn_t) (mongoc_collection_t *,
                                          bson_error_t *);
 
 static void
-_test_delete_collation (int wire, bool is_multi)
+_test_delete_collation (bool is_multi)
 {
    mock_server_t *server;
    mongoc_collection_t *collection;
@@ -5904,9 +5711,8 @@ _test_delete_collation (int wire, bool is_multi)
    bson_error_t error;
    future_delete_fn_t fn =
       is_multi ? future_collection_delete_many : future_collection_delete_one;
-   char *expected_cmd;
 
-   server = mock_server_with_auto_hello (wire);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -5918,26 +5724,17 @@ _test_delete_collation (int wire, bool is_multi)
                 NULL,
                 &error);
 
-   expected_cmd =
-      bson_strdup_printf ("{'delete': 'collection', 'deletes': [{'q': {}, "
-                          "'limit': %d, 'collation': {'locale': 'en'}}]}",
-                          is_multi ? 0 : 1);
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'delete': 'collection'}"),
+      tmp_bson ("{'q': {}, 'limit': %d, 'collation': {'locale': 'en'}}",
+                is_multi ? 0 : 1));
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   request_destroy (request);
 
-   if (wire == WIRE_VERSION_COLLATION) {
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_NONE, expected_cmd);
-      mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
-      ASSERT_OR_PRINT (future_get_bool (future), error);
-      request_destroy (request);
-   } else {
-      ASSERT (!future_get_bool (future));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "The selected server does not support collation");
-   }
-
-   bson_free (expected_cmd);
    future_destroy (future);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -5954,10 +5751,8 @@ test_delete_one_or_many (void)
 static void
 test_delete_collation (void)
 {
-   _test_delete_collation (WIRE_VERSION_COLLATION, true);
-   _test_delete_collation (WIRE_VERSION_COLLATION - 1, true);
-   _test_delete_collation (WIRE_VERSION_COLLATION, false);
-   _test_delete_collation (WIRE_VERSION_COLLATION - 1, false);
+   _test_delete_collation (true);
+   _test_delete_collation (false);
 }
 
 typedef future_t *(*future_update_fn_t) (mongoc_collection_t *,
@@ -5967,9 +5762,7 @@ typedef future_t *(*future_update_fn_t) (mongoc_collection_t *,
                                          bson_t *,
                                          bson_error_t *);
 static void
-_test_update_or_replace_with_collation (int wire,
-                                        bool is_replace,
-                                        bool is_multi)
+_test_update_or_replace_with_collation (bool is_replace, bool is_multi)
 {
    mock_server_t *server;
    mongoc_collection_t *collection;
@@ -5978,7 +5771,6 @@ _test_update_or_replace_with_collation (int wire,
    request_t *request;
    bson_error_t error;
    future_update_fn_t fn;
-   char *expected_cmd;
 
    if (is_replace) {
       BSON_ASSERT (!is_multi);
@@ -5988,7 +5780,7 @@ _test_update_or_replace_with_collation (int wire,
                     : future_collection_update_one;
    }
 
-   server = mock_server_with_auto_hello (wire);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -6001,26 +5793,16 @@ _test_update_or_replace_with_collation (int wire,
                 NULL,
                 &error);
 
-   expected_cmd =
-      bson_strdup_printf ("{'update': 'collection', 'updates': [{'q': {}, 'u': "
-                          "{}, 'collation': {'locale': 'en'} %s }]}",
-                          is_multi ? ", 'multi': true" : "");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'update': 'collection'}"),
+      tmp_bson ("{'q': {}, 'u': {}, 'collation': {'locale': 'en'}%s}",
+                is_multi ? ", 'multi': true" : ""));
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   request_destroy (request);
 
-   if (wire >= WIRE_VERSION_COLLATION) {
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_NONE, expected_cmd);
-      mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
-      ASSERT_OR_PRINT (future_get_bool (future), error);
-      request_destroy (request);
-   } else {
-      ASSERT (!future_get_bool (future));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "The selected server does not support collation");
-   }
-
-   bson_free (expected_cmd);
    future_destroy (future);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -6030,22 +5812,14 @@ _test_update_or_replace_with_collation (int wire,
 static void
 test_update_collation (void)
 {
-   _test_update_or_replace_with_collation (
-      WIRE_VERSION_COLLATION, false, false);
-   _test_update_or_replace_with_collation (WIRE_VERSION_COLLATION, false, true);
-   _test_update_or_replace_with_collation (WIRE_VERSION_COLLATION, true, false);
-
-   _test_update_or_replace_with_collation (
-      WIRE_VERSION_COLLATION - 1, false, false);
-   _test_update_or_replace_with_collation (
-      WIRE_VERSION_COLLATION - 1, false, true);
-   _test_update_or_replace_with_collation (
-      WIRE_VERSION_COLLATION - 1, true, false);
+   _test_update_or_replace_with_collation (false, false);
+   _test_update_or_replace_with_collation (false, true);
+   _test_update_or_replace_with_collation (true, false);
 }
 
 
 static void
-_test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
+_test_update_hint (bool is_replace, bool is_multi, const char *hint)
 {
    mock_server_t *server;
    mongoc_collection_t *collection;
@@ -6063,7 +5837,7 @@ _test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
                     : future_collection_update_one;
    }
 
-   server = mock_server_with_auto_hello (wire);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -6076,26 +5850,17 @@ _test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
                 NULL,
                 &error);
 
-   if (wire >= WIRE_VERSION_HINT_SERVER_SIDE_ERROR) {
-      char *command = bson_strdup_printf ("{'q': {}, 'u': {}, 'hint': %s %s }",
-                                          hint,
-                                          is_multi ? ", 'multi': true" : "");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'update': 'collection'}"),
+      tmp_bson ("{'q': {}, 'u': {}, 'hint': %s %s }",
+                hint,
+                is_multi ? ", 'multi': true" : ""));
 
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_NONE, "{'update': 'collection'}", command);
-
-      bson_free (command);
-      mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
-      ASSERT_OR_PRINT (future_get_bool (future), error);
-      request_destroy (request);
-   } else {
-      ASSERT (!future_get_bool (future));
-      ASSERT_ERROR_CONTAINS (
-         error,
-         MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-         "The selected server does not support hint for update");
-   }
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   request_destroy (request);
 
    future_destroy (future);
    mongoc_collection_destroy (collection);
@@ -6106,33 +5871,13 @@ _test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
 static void
 test_update_hint (void)
 {
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, false, false, "'_id_'");
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, false, true, "'_id_'");
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, true, false, "'_id_'");
+   _test_update_hint (false, false, "'_id_'");
+   _test_update_hint (false, true, "'_id_'");
+   _test_update_hint (true, false, "'_id_'");
 
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, false, false, "'_id_'");
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, false, true, "'_id_'");
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, true, false, "'_id_'");
-
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, false, false, "{'_id': 1}");
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, false, true, "{'_id': 1}");
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, true, false, "{'_id': 1}");
-
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, false, false, "{'_id': 1}");
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, false, true, "{'_id': 1}");
-   _test_update_hint (
-      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, true, false, "{'_id': 1}");
+   _test_update_hint (false, false, "{'_id': 1}");
+   _test_update_hint (false, true, "{'_id': 1}");
+   _test_update_hint (true, false, "{'_id': 1}");
 }
 
 static void
@@ -6372,7 +6117,7 @@ test_collection_install (TestSuite *suite)
                       test_aggregate_w_write_concern,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_5);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/Collection/read_prefs_is_valid",
                       test_read_prefs_is_valid,
@@ -6403,11 +6148,8 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/index", test_index);
    TestSuite_AddLive (
       suite, "/Collection/index_w_write_concern", test_index_w_write_concern);
-   TestSuite_AddMockServerTest (suite,
-                                "/Collection/index/collation/wire4",
-                                test_index_with_collation_fail);
    TestSuite_AddMockServerTest (
-      suite, "/Collection/index/collation/wire5", test_index_with_collation_ok);
+      suite, "/Collection/index/collation", test_index_with_collation);
    TestSuite_AddLive (suite, "/Collection/index_compound", test_index_compound);
    TestSuite_AddFull (suite,
                       "/Collection/index_geo",
@@ -6453,11 +6195,8 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/count/read_pref", test_count_read_pref);
    TestSuite_AddMockServerTest (
       suite, "/Collection/count/read_concern", test_count_read_concern);
-   TestSuite_AddMockServerTest (suite,
-                                "/Collection/count/collation/wire4",
-                                test_count_with_collation_fail);
    TestSuite_AddMockServerTest (
-      suite, "/Collection/count/collation/wire5", test_count_with_collation_ok);
+      suite, "/Collection/count/collation", test_count_with_collation);
    TestSuite_AddFull (suite,
                       "/Collection/count/read_concern_live",
                       test_count_read_concern_live,
@@ -6487,13 +6226,9 @@ test_collection_install (TestSuite *suite)
                       test_aggregate_bypass,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_4);
-   TestSuite_AddMockServerTest (suite,
-                                "/Collection/aggregate/collation/wire4",
-                                test_aggregate_with_collation_fail);
-   TestSuite_AddMockServerTest (suite,
-                                "/Collection/aggregate/collation/wire5",
-                                test_aggregate_with_collation_ok);
+                      TestSuite_CheckLive);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/aggregate/collation", test_aggregate_with_collation);
    TestSuite_AddMockServerTest (
       suite, "/Collection/aggregate_w_server_id", test_aggregate_w_server_id);
    TestSuite_AddMockServerTest (suite,
@@ -6522,16 +6257,12 @@ test_collection_install (TestSuite *suite)
                       test_getmore_read_concern_live,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_4);
+                      TestSuite_CheckLive);
    TestSuite_AddLive (
       suite, "/Collection/find_and_modify", test_find_and_modify);
    TestSuite_AddMockServerTest (suite,
                                 "/Collection/find_and_modify/write_concern",
-                                test_find_and_modify_write_concern_wire_32);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/find_and_modify/write_concern_pre_32",
-      test_find_and_modify_write_concern_wire_pre_32);
+                                test_find_and_modify_write_concern);
    TestSuite_AddFull (suite,
                       "/Collection/large_return",
                       test_large_return,
