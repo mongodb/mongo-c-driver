@@ -982,49 +982,6 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
    return request;
 }
 
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_bulk_msg --
- *
- *       Pop a client OP_MSG request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request. Pass
- *       `msg_pattern`, which is matched to the series of exactly `n_doc`
- *       documents in the request, regardless of section boundaries.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does not
- *       match.
- *
- * Side effects:
- *       Logs and aborts if the current request is not an OP_MSG matching
- *       flags and expected pattern and number of documents.
- *
- *--------------------------------------------------------------------------
- */
-request_t *
-mock_server_receives_bulk_msg (mock_server_t *server,
-                               uint32_t flags,
-                               const bson_t *msg_pattern,
-                               const bson_t *doc_pattern,
-                               size_t n_docs)
-{
-   request_t *request;
-   bool r;
-
-   request = mock_server_receives_request (server);
-
-   {
-      const bson_t **docs;
-      size_t i;
-      docs = bson_malloc (n_docs * sizeof (bson_t *));
-      docs[0] = msg_pattern;
-      for (i = 1; i < n_docs; ++i) {
-         docs[i] = doc_pattern;
-      }
-      r = request_matches_msg (request, MONGOC_MSG_NONE, docs, n_docs);
-      bson_free ((bson_t **) docs);
-   }
-
 request_t *
 _mock_server_receives_single_msg (mock_server_t *server,
                                   uint32_t flags,
@@ -1041,9 +998,9 @@ _mock_server_receives_single_msg (mock_server_t *server,
 
    request = mock_server_receives_request (server);
 
-   r = request_matches_msg (request, flags, (const bson_t **)docs, 1);
-   // JFW:   r = request_matches_msg (request, flags, docs, 1);
-   // JFW:   r = request_matches_msg (request, flags, &doc, 1);
+   // r = request_matches_msg (request, flags, (const bson_t **)docs, 1);
+   // r = request_matches_msg (request, flags, docs, 1);
+   r = request_matches_msg (request, flags, &doc, 1);
 
    if (!r) {
       request_destroy (request);
@@ -1055,48 +1012,7 @@ _mock_server_receives_single_msg (mock_server_t *server,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_query --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not a query (using OP_QUERY)
- *       matching ns, flags, skip, n_return, query_json, and fields_json.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_query (mock_server_t *server,
-                            const char *ns,
-                            mongoc_query_flags_t flags,
-                            uint32_t skip,
-                            int32_t n_return,
-                            const char *query_json,
-                            const char *fields_json)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request &&
-       !request_matches_query (
-          request, ns, flags, skip, n_return, query_json, fields_json, false)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_legacy_hello --
+ * mock_server_receives_hello --
  *
  *       Pop a client non-streaming hello call if one is enqueued,
  *       or wait up to request_timeout_ms for the client to send a request.
@@ -1186,6 +1102,47 @@ mock_server_receives_hello (mock_server_t *server)
 
 /*--------------------------------------------------------------------------
  *
+ * mock_server_receives_query --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not a query matching ns, flags,
+ *       skip, n_return, query_json, and fields_json.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_query (mock_server_t *server,
+                            const char *ns,
+                            mongoc_query_flags_t flags,
+                            uint32_t skip,
+                            int32_t n_return,
+                            const char *query_json,
+                            const char *fields_json)
+{
+   request_t *request;
+
+   request = mock_server_receives_request (server);
+
+   if (request &&
+       !request_matches_query (
+          request, ns, flags, skip, n_return, query_json, fields_json, false)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+/*--------------------------------------------------------------------------
+ *
  * mock_server_receives_hello_op_msg --
  *
  *       Pop a client non-streaming hello call if one is enqueued,
@@ -1212,27 +1169,64 @@ mock_server_receives_hello_op_msg (mock_server_t *server)
    return _mock_server_receives_single_msg (server, 0, msg);
 
    /*
-      bson_t *msg;
-
-      bool result = false;
-      bson_init(msg);
-
-      bson_append_document_begin(msg, tmp_bson("{'hello': 1, 'maxAwaitTimeMS': {
-      '$exists': false }}"), 1;
-
-      result = _mock_server_receives_single_msg(server, 0, msg);
-
-      bson_free(msg);
-
-      return result;
-   */
-   /*
       JFW: against the above inputs this winds up segfaulting, with the wrong
       number of documents reported by request_matches_msgv()-- : return
       _mock_server_receives_msg( server, 0, tmp_bson("{'hello': 1,
       'maxAwaitTimeMS': { '$exists': false }}"));
    */
 }
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_bulk_msg --
+ *
+ *       Pop a client OP_MSG request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request. Pass
+ *       `msg_pattern`, which is matched to the series of exactly `n_doc`
+ *       documents in the request, regardless of section boundaries.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does not
+ *       match.
+ *
+ * Side effects:
+ *       Logs and aborts if the current request is not an OP_MSG matching
+ *       flags and expected pattern and number of documents.
+ *
+ *--------------------------------------------------------------------------
+ */
+request_t *
+mock_server_receives_bulk_msg (mock_server_t *server,
+                               uint32_t flags,
+                               const bson_t *msg_pattern,
+                               const bson_t *doc_pattern,
+                               size_t n_docs)
+{
+   request_t *request;
+   bool r;
+
+   request = mock_server_receives_request (server);
+
+   {
+      const bson_t **docs;
+      size_t i;
+      docs = bson_malloc (n_docs * sizeof (bson_t *));
+      docs[0] = msg_pattern;
+      for (i = 1; i < n_docs; ++i) {
+         docs[i] = doc_pattern;
+      }
+      r = request_matches_msg (request, MONGOC_MSG_NONE, docs, n_docs);
+      bson_free ((bson_t **) docs);
+   }
+
+   if (!r) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
 
 /*--------------------------------------------------------------------------
  *
