@@ -25,3 +25,9 @@
 #define JOINER(x, y) x##_##y
 #define NAME_EVALUATOR(x, y) JOINER (x, y)
 #define COMMON_PREFIX(name) NAME_EVALUATOR (COMMON_PREFIX_, name)
+
+#if defined(COMMON_PREFIX_) && !defined(__INTELLISENSE__)
+#define COMMON_NAME(Name) NAME_EVALUATOR (COMMON_PREFIX_, Name)
+#else
+#define COMMON_NAME(Name) Name
+#endif
