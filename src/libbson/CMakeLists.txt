@@ -214,7 +214,7 @@ target_compile_definitions (bson_shared
    PRIVATE
       BSON_COMPILATION
       JSONSL_PARSE_NAN
-      COMMON_PREFIX_=_bson_common
+      MCOMMON_NAME_PREFIX=_bson_mcommon
 )
 # Several directories in the source and build trees contain headers we would like
 # include via relative reference, but they all end up in the same install path
@@ -283,7 +283,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       PRIVATE
          BSON_COMPILATION
          JSONSL_PARSE_NAN
-         COMMON_PREFIX_=_bson_common
+         MCOMMON_NAME_PREFIX=_bson_mcommon
    )
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (bson_static PUBLIC -fPIC)

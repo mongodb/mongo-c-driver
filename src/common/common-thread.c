@@ -31,7 +31,8 @@ mcommon_thread_join (bson_thread_t thread)
 }
 
 #if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
-bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex)
+bool
+mcommon_mutex_is_locked (bson_mutex_t *mutex)
 {
    return mutex->valid_tid &&
           pthread_equal (pthread_self (), mutex->lock_owner);

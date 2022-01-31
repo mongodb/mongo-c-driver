@@ -125,7 +125,9 @@ mcommon_thread_create (bson_thread_t *thread,
                        void *arg);
 
 #if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
-bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex);
+#define mcommon_mutex_is_locked COMMON_NAME (mutex_is_locked)
+bool
+mcommon_mutex_is_locked (bson_mutex_t *mutex);
 #endif
 
 /**

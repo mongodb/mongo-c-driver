@@ -131,7 +131,7 @@ _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor,
 {
    mongoc_apm_server_heartbeat_started_t event;
    MONGOC_DEBUG_ASSERT (
-      !COMMON_PREFIX (mutex_is_locked) (&server_monitor->topology->apm_mutex));
+      !mcommon_mutex_is_locked (&server_monitor->topology->apm_mutex));
 
    if (!server_monitor->apm_callbacks.server_heartbeat_started) {
       return;

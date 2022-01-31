@@ -777,7 +777,7 @@ target_compile_definitions (mongoc_shared
    PRIVATE
       MONGOC_COMPILATION
       ${KMS_MSG_DEFINITIONS}
-      COMMON_PREFIX_=_mongoc_common
+      MCOMMON_NAME_PREFIX=_mongoc_mcommon
 )
 # Several directories in the source and build trees contain headers we would like
 # include via relative reference, but they all end up in the same install path
@@ -816,7 +816,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       PRIVATE
          MONGOC_COMPILATION
          ${KMS_MSG_DEFINITIONS}
-         COMMON_PREFIX_=_mongoc_common
+         MCOMMON_NAME_PREFIX=_mongoc_mcommon
    )
    # Several directories in the source and build trees contain headers we would like
    # include via relative reference, but they all end up in the same install path
@@ -870,7 +870,7 @@ function (mongoc_add_test test use_shared)
          PUBLIC
             "MONGOC_COMPILATION"
             "BSON_COMPILATION"
-            "COMMON_PREFIX_=_mongoc_common"
+            "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
       )
       if (${use_shared})
          target_link_libraries (${test} mongoc_shared ${LIBRARIES})
