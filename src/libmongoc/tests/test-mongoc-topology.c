@@ -2355,8 +2355,6 @@ request = mock_server_receives_hello_op_msg (server);
       request = mock_server_receives_msg (
          server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
 
-//JFW:      request = mock_server_receives_msg ( server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
-
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);

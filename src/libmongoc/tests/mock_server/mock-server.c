@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-present MongoDB, Inc.
+ * Copyright 2015 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -990,16 +990,10 @@ _mock_server_receives_single_msg (mock_server_t *server,
    request_t *request;
    bool r;
 
-/* JFW: DELETEME unclear to me if this constructs a valid document or not:
-   const bson_t *docs[] = {doc, NULL};
-*/
-
    BSON_ASSERT (doc);
 
    request = mock_server_receives_request (server);
 
-   // r = request_matches_msg (request, flags, (const bson_t **)docs, 1);
-   // r = request_matches_msg (request, flags, docs, 1);
    r = request_matches_msg (request, flags, &doc, 1);
 
    if (!r) {
@@ -1161,19 +1155,10 @@ mock_server_receives_query (mock_server_t *server,
 request_t *
 mock_server_receives_hello_op_msg (mock_server_t *server)
 {
-   /*   bson_t *msg = tmp_bson("{'hello': 1, 'helloOk': true, 'maxAwaitTimeMS':
-    * { '$exists': false }}");  */
    bson_t *msg =
       tmp_bson ("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
 
    return _mock_server_receives_single_msg (server, 0, msg);
-
-   /*
-      JFW: against the above inputs this winds up segfaulting, with the wrong
-      number of documents reported by request_matches_msgv()-- : return
-      _mock_server_receives_msg( server, 0, tmp_bson("{'hello': 1,
-      'maxAwaitTimeMS': { '$exists': false }}"));
-   */
 }
 
 /*--------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-present MongoDB, Inc.
+ * Copyright 2013 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1009,8 +1009,8 @@ _mongoc_rpc_reply_get_first_msg (mongoc_rpc_msg_t *reply_msg,
 
    BSON_ASSERT (0 == reply_msg->sections[0].payload_type);
 
-   // As per the Wire Protocol documentation, each section has a 32 bit length
-   // field:
+   /* As per the Wire Protocol documentation, each section has a 32 bit length
+   field: */
    memcpy (&document_len, reply_msg->sections[0].payload.bson_document, 4);
    document_len = BSON_UINT32_FROM_LE (document_len);
 

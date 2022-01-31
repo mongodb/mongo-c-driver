@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-present MongoDB, Inc.
+ * Copyright 2013 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -682,8 +682,6 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
 
    server_stream = cmd->server_stream;
 
-/* JFW: BUG?: legacy helloOk should be sent by OPCODE_QUERY no matter what the wire version is,
- * however: */
    if (mongoc_cluster_uses_server_api (cluster) ||
        server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
@@ -807,7 +805,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    }
 
    start = bson_get_monotonic_time ();
-//JFW: maybe this is what's happening? We're sending the wrong kind of stream?
    /* TODO CDRIVER-3654: do not use a mongoc_server_stream here.
     * Instead, use a plain stream. If a network error occurs, check the cluster
     * node's generation (which is the generation of the created connection) to
@@ -2010,8 +2007,8 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
    node->stream = stream;
    node->connection_address = bson_strdup (connection_address);
 
-   // JFW: Note that the node->sd field is not explicitly initialized 
-   // by parameter in this function.
+   /* Note that the node->sd field is not explicitly initialized 
+   by parameter in this function. */
 
    return node;
 }

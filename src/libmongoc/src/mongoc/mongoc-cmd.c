@@ -837,7 +837,6 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
    server_type = server_stream->sd->type;
 
-   // JFW: should this be parts->client?
    cs = parts->prohibit_lsid ? NULL : parts->assembled.session;
 
    /* Assembling the command depends on the type of server. If the server has
@@ -896,7 +895,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       mode = MONGOC_READ_PRIMARY;
    }
 
-   if ( mongoc_client_uses_server_api (parts->client) || server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+   if (mongoc_client_uses_server_api (parts->client) ||
+       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       if (!bson_has_field (parts->body, "$db")) {
          BSON_APPEND_UTF8 (&parts->extra, "$db", parts->assembled.db_name);
       }

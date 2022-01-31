@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-present MongoDB, Inc.
+ * Copyright 2014 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -298,10 +298,6 @@ _build_handshake_cmd (const mongoc_topology_scanner_t *ts,
       BSON_APPEND_BOOL (doc, "loadBalanced", true);
    }
 
-   /* JFW: RESOLVEME question: should we be searching the document we're copying for
-    * this field and using any extant value, or is it always "admin"? Also, the check
-    * below doesn't actually detect OPCODE_MSG, just user-selected server API. Should
-    * we just always add it? Is there another way to do this? */
    // If we're sending an OPCODE_MSG, we need to add the "db" field:
    if (mongoc_topology_scanner_uses_server_api (ts)) {
       bson_append_utf8 (doc, "$db", 3, "admin", 5);

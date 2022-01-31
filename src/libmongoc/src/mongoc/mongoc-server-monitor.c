@@ -873,7 +873,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
 
    /* If the user has select a versioned API, we'll assume OPCODE_MSG;
    otherwise, we'll use the legacy OPCODE_QUERY: */
-   if (NULL != server_monitor->topology->scanner->api) {
+   if (mongoc_topology_uses_server_api(server_monitor->topology)) {
       if (!_server_monitor_send_and_recv_hello_opmsg (
              server_monitor, &cmd, hello_response, error)) {
          GOTO (fail);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-present MongoDB, Inc.
+ * Copyright 2014 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@
 #include "mongoc-error.h"
 #include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"
-#include "mongoc-flags-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-scanner-private.h"
@@ -143,12 +142,9 @@ _mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode,
    acmd->rpc.header.request_id = ++acmd->async->request_id;
    acmd->rpc.header.response_to = 0;
 
-// JFW: DELETEME: this appears to be needed by both OPCODE_QUERY and OPCODE_MSG:
-// JFW: Evergreen shows this leaking, but we do destroy it in mongoc_async_cmd_destroy(). Never reached?
    acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
 
    if (MONGOC_OPCODE_QUERY == cmd_opcode) {
-
       acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
       acmd->rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
       acmd->rpc.query.collection = acmd->ns;
@@ -157,7 +153,6 @@ _mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode,
       acmd->rpc.query.query = bson_get_data (&acmd->cmd);
       acmd->rpc.query.fields = NULL;
    }
-
 
    if (MONGOC_OPCODE_MSG == cmd_opcode) {
       acmd->rpc.header.opcode = MONGOC_OPCODE_MSG;
@@ -506,39 +501,3 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
 
    return MONGOC_ASYNC_CMD_IN_PROGRESS;
 }
-/*
- * Copyright 2014-2022 MongoDB, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-
-#include <bson/bson.h>
-
-#include "mongoc-client.h"
-#include "mongoc-async-cmd-private.h"
-#include "mongoc-async-private.h"
-#include "mongoc-error.h"
-#include "mongoc-opcode.h"
-#include "mongoc-rpc-private.h"
-#include "mongoc-flags-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-scanner-private.h"
-#include "mongoc-log.h"
-#include "utlist.h"
-
-#ifdef MONGOC_ENABLE_SSL
-#include "mongoc-stream-tls.h"
-#endif

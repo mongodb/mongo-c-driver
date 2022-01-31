@@ -244,7 +244,6 @@ mongoc_client_connect (bool buffered,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
                        bson_error_t *error);
-
 BSON_END_DECLS
 
 #endif /* MONGOC_CLIENT_PRIVATE_H */
