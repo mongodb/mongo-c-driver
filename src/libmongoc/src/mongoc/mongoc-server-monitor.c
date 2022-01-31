@@ -1170,8 +1170,8 @@ mongoc_server_monitor_run (mongoc_server_monitor_t *server_monitor)
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = false;
       server_monitor->shared.state = MONGOC_THREAD_RUNNING;
-      COMMON_PREFIX (thread_create)
-      (&server_monitor->thread, _server_monitor_thread, server_monitor);
+      mcommon_thread_create (
+         &server_monitor->thread, _server_monitor_thread, server_monitor);
    }
    bson_mutex_unlock (&server_monitor->shared.mutex);
 }
@@ -1183,8 +1183,8 @@ mongoc_server_monitor_run_as_rtt (mongoc_server_monitor_t *server_monitor)
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = true;
       server_monitor->shared.state = MONGOC_THREAD_RUNNING;
-      COMMON_PREFIX (thread_create)
-      (&server_monitor->thread, _server_monitor_rtt_thread, server_monitor);
+      mcommon_thread_create (
+         &server_monitor->thread, _server_monitor_rtt_thread, server_monitor);
    }
    bson_mutex_unlock (&server_monitor->shared.mutex);
 }
@@ -1206,7 +1206,7 @@ mongoc_server_monitor_request_shutdown (mongoc_server_monitor_t *server_monitor)
       server_monitor->shared.state = MONGOC_THREAD_SHUTTING_DOWN;
    }
    if (server_monitor->shared.state == MONGOC_THREAD_JOINABLE) {
-      COMMON_PREFIX (thread_join) (server_monitor->thread);
+      mcommon_thread_join (server_monitor->thread);
       server_monitor->shared.state = MONGOC_THREAD_OFF;
    }
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
@@ -1235,7 +1235,7 @@ mongoc_server_monitor_wait_for_shutdown (
    }
 
    /* Shutdown requested, but thread is not yet off. Wait. */
-   COMMON_PREFIX (thread_join) (server_monitor->thread);
+   mcommon_thread_join (server_monitor->thread);
    bson_mutex_lock (&server_monitor->shared.mutex);
    server_monitor->shared.state = MONGOC_THREAD_OFF;
    bson_mutex_unlock (&server_monitor->shared.mutex);

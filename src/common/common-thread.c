@@ -17,13 +17,15 @@
 #include "common-thread-private.h"
 
 #if defined(BSON_OS_UNIX)
-int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
-                                   BSON_THREAD_FUN_TYPE (func),
-                                   void *arg)
+int
+mcommon_thread_create (bson_thread_t *thread,
+                       BSON_THREAD_FUN_TYPE (func),
+                       void *arg)
 {
    return pthread_create (thread, NULL, func, arg);
 }
-int COMMON_PREFIX (thread_join) (bson_thread_t thread)
+int
+mcommon_thread_join (bson_thread_t thread)
 {
    return pthread_join (thread, NULL);
 }
@@ -37,9 +39,10 @@ bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex)
 #endif
 
 #else
-int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
-                                   BSON_THREAD_FUN_TYPE (func),
-                                   void *arg)
+int
+mcommon_thread_create (bson_thread_t *thread,
+                       BSON_THREAD_FUN_TYPE (func),
+                       void *arg)
 {
    *thread = (HANDLE) _beginthreadex (NULL, 0, func, arg, 0, NULL);
    if (0 == *thread) {
@@ -47,7 +50,8 @@ int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
    }
    return 0;
 }
-int COMMON_PREFIX (thread_join) (bson_thread_t thread)
+int
+mcommon_thread_join (bson_thread_t thread)
 {
    int ret;
 
