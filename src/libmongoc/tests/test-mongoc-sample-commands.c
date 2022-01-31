@@ -2969,9 +2969,6 @@ test_sample_aggregation (mongoc_database_t *db)
    mongoc_collection_destroy (collection);
 
 
-   /* Need MongoDB 3.6 to use unrelated subqueries */
-   if(test_framework_skip_if_max_wire_version_less_than_6 ()){
-
    /* Start Aggregation Example 4 */
    collection = mongoc_database_get_collection (db, "air_alliances");
    pipeline = BCON_NEW ("pipeline", "[",
@@ -3031,8 +3028,6 @@ test_sample_aggregation (mongoc_database_t *db)
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    /* End Aggregation Example 4 */
-
-   }
 
    ASSERT_NO_CAPTURED_LOGS ("sample aggregation examples");
 }
@@ -3438,7 +3433,8 @@ get_client (void)
 
 /* Returns a test client without version API options configured. */
 static mongoc_client_t *
-get_client_for_version_api_example (void) {
+get_client_for_version_api_example (void)
+{
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
@@ -3722,13 +3718,17 @@ _test_sample_versioned_api_example_4 (void)
    mongoc_server_api_destroy (server_api);
 }
 
-static int64_t iso_to_unix (const char* iso_str) {
+static int64_t
+iso_to_unix (const char *iso_str)
+{
    /* TODO (CDRIVER-2945) there is no convenient helper for converting ISO8601
     * strings to Unix timestamps. This is not shown in the example. */
    return 1628330345;
 }
 
-static void _test_sample_versioned_api_example_5_6_7_8 (void) {
+static void
+_test_sample_versioned_api_example_5_6_7_8 (void)
+{
 #define N_DOCS 8
    mongoc_client_t *client;
    mongoc_server_api_t *server_api;
@@ -3763,48 +3763,88 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
    }
 
    /* Start Versioned API Example 5 */
-   docs[0] = BCON_NEW ("_id", BCON_INT32 (1),
-                       "item", "abc",
-                       "price", BCON_INT32 (10),
-                       "quantity", BCON_INT32 (2),
-                       "date", BCON_DATE_TIME (iso_to_unix ("2021-01-01T08:00:00Z")));
-   docs[1] = BCON_NEW ("_id", BCON_INT32 (2),
-                       "item", "jkl",
-                       "price", BCON_INT32 (20),
-                       "quantity", BCON_INT32 (1),
-                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-03T09:00:00Z")));
-   docs[2] = BCON_NEW ("_id", BCON_INT32 (3),
-                       "item", "xyz",
-                       "price", BCON_INT32 (5),
-                       "quantity", BCON_INT32 (5),
-                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-03T09:05:00Z")));
-   docs[3] = BCON_NEW ("_id", BCON_INT32 (4),
-                       "item", "abc",
-                       "price", BCON_INT32 (10),
-                       "quantity", BCON_INT32 (10),
-                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-15T08:00:00Z")));
-   docs[4] = BCON_NEW ("_id", BCON_INT32 (5),
-                       "item", "xyz",
-                       "price", BCON_INT32 (5),
-                       "quantity",BCON_INT32 (10),
-                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-15T09:05:00Z")));
-   docs[5] = BCON_NEW ("_id", BCON_INT32 (6),
-                       "item", "xyz",
-                       "price", BCON_INT32 (5),
-                       "quantity",BCON_INT32 (5),
-                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-15T12:05:10Z")));
-   docs[6] = BCON_NEW ("_id", BCON_INT32 (7),
-                       "item", "xyz",
-                       "price", BCON_INT32 (5),
-                       "quantity",BCON_INT32 (10),
-                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-15T14:12:12Z")));
-   docs[7] = BCON_NEW ("_id", BCON_INT32 (8),
-                       "item", "abc",
-                       "price", BCON_INT32 (10),
-                       "quantity",BCON_INT32 (5),
-                       "date", BCON_DATE_TIME (iso_to_unix ("2021-03-16T20:20:13Z")));
+   docs[0] = BCON_NEW ("_id",
+                       BCON_INT32 (1),
+                       "item",
+                       "abc",
+                       "price",
+                       BCON_INT32 (10),
+                       "quantity",
+                       BCON_INT32 (2),
+                       "date",
+                       BCON_DATE_TIME (iso_to_unix ("2021-01-01T08:00:00Z")));
+   docs[1] = BCON_NEW ("_id",
+                       BCON_INT32 (2),
+                       "item",
+                       "jkl",
+                       "price",
+                       BCON_INT32 (20),
+                       "quantity",
+                       BCON_INT32 (1),
+                       "date",
+                       BCON_DATE_TIME (iso_to_unix ("2021-02-03T09:00:00Z")));
+   docs[2] = BCON_NEW ("_id",
+                       BCON_INT32 (3),
+                       "item",
+                       "xyz",
+                       "price",
+                       BCON_INT32 (5),
+                       "quantity",
+                       BCON_INT32 (5),
+                       "date",
+                       BCON_DATE_TIME (iso_to_unix ("2021-02-03T09:05:00Z")));
+   docs[3] = BCON_NEW ("_id",
+                       BCON_INT32 (4),
+                       "item",
+                       "abc",
+                       "price",
+                       BCON_INT32 (10),
+                       "quantity",
+                       BCON_INT32 (10),
+                       "date",
+                       BCON_DATE_TIME (iso_to_unix ("2021-02-15T08:00:00Z")));
+   docs[4] = BCON_NEW ("_id",
+                       BCON_INT32 (5),
+                       "item",
+                       "xyz",
+                       "price",
+                       BCON_INT32 (5),
+                       "quantity",
+                       BCON_INT32 (10),
+                       "date",
+                       BCON_DATE_TIME (iso_to_unix ("2021-02-15T09:05:00Z")));
+   docs[5] = BCON_NEW ("_id",
+                       BCON_INT32 (6),
+                       "item",
+                       "xyz",
+                       "price",
+                       BCON_INT32 (5),
+                       "quantity",
+                       BCON_INT32 (5),
+                       "date",
+                       BCON_DATE_TIME (iso_to_unix ("2021-02-15T12:05:10Z")));
+   docs[6] = BCON_NEW ("_id",
+                       BCON_INT32 (7),
+                       "item",
+                       "xyz",
+                       "price",
+                       BCON_INT32 (5),
+                       "quantity",
+                       BCON_INT32 (10),
+                       "date",
+                       BCON_DATE_TIME (iso_to_unix ("2021-02-15T14:12:12Z")));
+   docs[7] = BCON_NEW ("_id",
+                       BCON_INT32 (8),
+                       "item",
+                       "abc",
+                       "price",
+                       BCON_INT32 (10),
+                       "quantity",
+                       BCON_INT32 (5),
+                       "date",
+                       BCON_DATE_TIME (iso_to_unix ("2021-03-16T20:20:13Z")));
    ok = mongoc_collection_insert_many (
-      sales, (const bson_t**) docs, N_DOCS, NULL /* opts */, &reply, &error);
+      sales, (const bson_t **) docs, N_DOCS, NULL /* opts */, &reply, &error);
    /* End Versioned API Example 5 */
    ASSERT_OR_PRINT (ok, error);
    bson_destroy (&reply);
@@ -3812,10 +3852,11 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
    cmd = BCON_NEW ("count", "sales");
    ok = mongoc_database_command_simple (
       db, cmd, NULL /* read_prefs */, &reply, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_SERVER,
-                          323,
-                          "Provided apiStrict:true, but the command count is not in API Version 1");
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_SERVER,
+      323,
+      "Provided apiStrict:true, but the command count is not in API Version 1");
    ASSERT (!ok);
    bson_destroy (&reply);
 #if 0

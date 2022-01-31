@@ -51,24 +51,21 @@ typedef uint32_t bson_unichar_t;
 
 
 /**
- * bson_context_flags_t:
- *
- * This enumeration is used to configure a bson_context_t.
- *
- * %BSON_CONTEXT_NONE: Use default options.
- * %BSON_CONTEXT_THREAD_SAFE: Context will be called from multiple threads.
- * %BSON_CONTEXT_DISABLE_HOST_CACHE: Does nothing, is ignored.
- * %BSON_CONTEXT_DISABLE_PID_CACHE: Call getpid() instead of caching the
- *   result of getpid() when initializing the context.
+ * @brief Flags configuring the creation of a bson_context_t
  */
 typedef enum {
+   /** Use default options */
    BSON_CONTEXT_NONE = 0,
+   /* Deprecated: Generating new OIDs from a bson_context_t is always
+      thread-safe */
    BSON_CONTEXT_THREAD_SAFE = (1 << 0),
+   /* Deprecated: Does nothing and is ignored */
    BSON_CONTEXT_DISABLE_HOST_CACHE = (1 << 1),
+   /* Call getpid() instead of remembering the result of getpid() when using the
+      context */
    BSON_CONTEXT_DISABLE_PID_CACHE = (1 << 2),
-#ifdef BSON_HAVE_SYSCALL_TID
+   /* Deprecated: Does nothing */
    BSON_CONTEXT_USE_TASK_ID = (1 << 3),
-#endif
 } bson_context_flags_t;
 
 
@@ -127,16 +124,14 @@ typedef struct _bson_json_opts_t bson_json_opts_t;
  * This structure is meant to fit in two sequential 64-byte cachelines.
  */
 #ifdef BSON_MEMCHECK
-BSON_ALIGNED_BEGIN (128)
-typedef struct _bson_t {
+BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
    uint32_t flags; /* Internal flags for the bson_t. */
    uint32_t len;   /* Length of BSON data. */
    char *canary;   /* For valgrind check */
    uint8_t padding[120 - sizeof (char *)];
 } bson_t BSON_ALIGNED_END (128);
 #else
-BSON_ALIGNED_BEGIN (128)
-typedef struct _bson_t {
+BSON_ALIGNED_BEGIN (128) typedef struct _bson_t {
    uint32_t flags;       /* Internal flags for the bson_t. */
    uint32_t len;         /* Length of BSON data. */
    uint8_t padding[120]; /* Padding for stack allocation. */

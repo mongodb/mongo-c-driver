@@ -11,10 +11,6 @@
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
 
-#ifdef _WIN32
-#define snprintf _snprintf
-#endif
-
 static void
 test_mongoc_uri_new (void)
 {
@@ -1579,7 +1575,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_t *uri;
    bson_error_t err;
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,"
              "ST=New York,C=US@ldaptest.10gen.cc/?"
@@ -1617,7 +1613,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=true&%s=key.pem&%s=ca.pem",
              tls,
@@ -1650,7 +1646,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (
+   bson_snprintf (
       url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=true", tls);
    uri = mongoc_uri_new (url_buffer);
 
@@ -1670,7 +1666,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=true&%s=pa$$word!&%s=encrypted.pem",
              tls,
@@ -1703,7 +1699,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=true&%s=true",
              tls,
@@ -1730,7 +1726,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=foo.pem",
              tlsCertificateKeyFile);
@@ -1740,7 +1736,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=foo.pem",
              tlsCAFile);
@@ -1750,7 +1746,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=true",
              tlsAllowInvalidCertificates);
@@ -1764,7 +1760,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=true",
              tlsAllowInvalidHostnames);
@@ -1778,7 +1774,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=false&%s=foo.pem",
              tls,
@@ -1789,7 +1785,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=false&%s=foo.pem",
              tls,
@@ -1800,7 +1796,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=false&%s=true",
              tls,
@@ -1815,7 +1811,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
    mongoc_uri_destroy (uri);
 
 
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=false&%s=false",
              tls,
@@ -1837,7 +1833,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
 
    /* Mixing options okay so long as they match */
    capture_logs (true);
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=true&%s=true",
              tls,
@@ -1849,7 +1845,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
 
    /* Same option with different values okay, latter overrides */
    capture_logs (true);
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=true&%s=false",
              tls,
@@ -1869,7 +1865,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
 
    /* Mixing options not okay if values differ */
    capture_logs (false);
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb://localhost/?%s=true&%s=false",
              tls,
@@ -1892,7 +1888,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
 
    /* No conflict appears with implicit tls=true via SRV */
    capture_logs (false);
-   snprintf (url_buffer,
+   bson_snprintf (url_buffer,
              sizeof (url_buffer),
              "mongodb+srv://a.b.c/?%s=foo.pem",
              tlsCAFile);

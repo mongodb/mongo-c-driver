@@ -156,9 +156,11 @@ test_topology_scanner_discovery (void)
       bson_strdup_printf ("{'ok': 1, "
                           " 'isWritablePrimary': true,"
                           " 'setName': 'rs',"
-                          " 'minWireVersion': 2,"
-                          " 'maxWireVersion': 5,"
+                          " 'minWireVersion': %d,"
+                          " 'maxWireVersion': %d,"
                           " 'hosts': ['%s', '%s']}",
+                          WIRE_VERSION_MIN,
+                          WIRE_VERSION_MAX,
                           mock_server_get_host_and_port (primary),
                           mock_server_get_host_and_port (secondary));
 
@@ -167,9 +169,11 @@ test_topology_scanner_discovery (void)
                           " 'isWritablePrimary': false,"
                           " 'secondary': true,"
                           " 'setName': 'rs',"
-                          " 'minWireVersion': 2,"
-                          " 'maxWireVersion': 5,"
+                          " 'minWireVersion': %d,"
+                          " 'maxWireVersion': %d,"
                           " 'hosts': ['%s', '%s']}",
+                          WIRE_VERSION_MIN,
+                          WIRE_VERSION_MAX,
                           mock_server_get_host_and_port (primary),
                           mock_server_get_host_and_port (secondary));
 

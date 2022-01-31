@@ -416,9 +416,14 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
  * - loadBalanced: true is added to the handshake
  * - serviceId is set in the server description.
  */
-#define LB_HELLO                                                               \
-   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', 'serviceId': " \
-   "{'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}"
+#define LB_HELLO                                                   \
+   tmp_str ("{'ismaster': true,"                                   \
+            " 'minWireVersion': %d,"                               \
+            " 'maxWireVersion': %d,"                               \
+            " 'msg': 'isdbgrid',"                                  \
+            " 'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}", \
+            WIRE_VERSION_MIN,                                      \
+            WIRE_VERSION_5_0)
 static void
 test_loadbalanced_handshake_sends_loadbalanced (void)
 {
@@ -478,8 +483,13 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
 
 /* Tests that a connection is rejected if the handshake reply does not include a
  * serviceID field. */
-#define NON_LB_HELLO \
-   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid'}"
+#define NON_LB_HELLO                 \
+   tmp_str ("{'ismaster': true,"     \
+            " 'minWireVersion': %d," \
+            " 'maxWireVersion': %d," \
+            " 'msg': 'isdbgrid'}",   \
+            WIRE_VERSION_MIN,        \
+            WIRE_VERSION_5_0)
 static void
 test_loadbalanced_handshake_rejects_non_loadbalanced (void)
 {
@@ -607,13 +617,23 @@ test_pre_handshake_error_does_not_clear_pool (void)
    mock_server_destroy (server);
 }
 
-#define LB_HELLO_A                                                             \
-   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', 'serviceId': " \
-   "{'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}"
+#define LB_HELLO_A                                                 \
+   tmp_str ("{'ismaster': true,"                                   \
+            " 'minWireVersion': %d,"                               \
+            " 'maxWireVersion': %d,"                               \
+            " 'msg': 'isdbgrid',"                                  \
+            " 'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}", \
+            WIRE_VERSION_MIN,                                      \
+            WIRE_VERSION_5_0)
 
-#define LB_HELLO_B                                                             \
-   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', 'serviceId': " \
-   "{'$oid': 'BBBBBBBBBBBBBBBBBBBBBBBB'}}"
+#define LB_HELLO_B                                                 \
+   tmp_str ("{'ismaster': true,"                                   \
+            " 'minWireVersion': %d,"                               \
+            " 'maxWireVersion': %d,"                               \
+            " 'msg': 'isdbgrid',"                                  \
+            " 'serviceId': {'$oid': 'BBBBBBBBBBBBBBBBBBBBBBBB'}}", \
+            WIRE_VERSION_MIN,                                      \
+            WIRE_VERSION_5_0)
 
 /* Test that a post handshake error clears the pool ONLY for connections with
  * the same serviceID. Test that a post handshake error does not mark the server

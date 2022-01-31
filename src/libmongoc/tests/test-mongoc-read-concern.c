@@ -118,7 +118,7 @@ test_read_concern_always_mutable (void)
 
 
 static void
-_test_read_concern_wire_version (bool allow, bool explicit)
+_test_read_concern_wire_version (bool explicit)
 {
    mongoc_read_concern_t *rc;
    bson_t opts = BSON_INITIALIZER;
@@ -134,8 +134,7 @@ _test_read_concern_wire_version (bool allow, bool explicit)
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, "foo");
 
-   server = mock_server_with_auto_hello (allow ? WIRE_VERSION_READ_CONCERN
-                                               : WIRE_VERSION_READ_CONCERN - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -155,25 +154,15 @@ _test_read_concern_wire_version (bool allow, bool explicit)
       collection, MONGOC_QUERY_NONE, tmp_bson (NULL), &opts, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   if (allow) {
-      request =
-         mock_server_receives_command (server,
-                                       "db",
-                                       MONGOC_QUERY_SECONDARY_OK,
-                                       "{'readConcern': {'level': 'foo'}}");
-      mock_server_replies_simple (
-         request, "{'ok': 1, 'cursor': {'id': 0, 'firstBatch': []}}");
-      request_destroy (request);
-      BSON_ASSERT (future_wait (future));
-      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   } else {
-      BSON_ASSERT (!future_get_bool (future));
-      BSON_ASSERT (mongoc_cursor_error (cursor, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "does not support readConcern");
-   }
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
+   mock_server_replies_simple (
+      request, "{'ok': 1, 'cursor': {'id': 0, 'firstBatch': []}}");
+   request_destroy (request);
+   BSON_ASSERT (future_wait (future));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    future_destroy (future);
 
@@ -182,21 +171,12 @@ _test_read_concern_wire_version (bool allow, bool explicit)
     */
    future = future_client_read_command_with_opts (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, &opts, NULL, &error);
-   if (allow) {
-      request =
-         mock_server_receives_command (server,
-                                       "db",
-                                       MONGOC_QUERY_SECONDARY_OK,
-                                       "{'readConcern': {'level': 'foo'}}");
-      mock_server_replies_ok_and_destroys (request);
-      BSON_ASSERT (future_get_bool (future));
-   } else {
-      BSON_ASSERT (!future_get_bool (future));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "does not support readConcern");
-   }
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
+   mock_server_replies_ok_and_destroys (request);
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
 
@@ -211,22 +191,13 @@ _test_read_concern_wire_version (bool allow, bool explicit)
                                                &opts,
                                                NULL,
                                                &error);
-   if (allow) {
-      request =
-         mock_server_receives_command (server,
-                                       "db",
-                                       MONGOC_QUERY_SECONDARY_OK,
-                                       "{'readConcern': {'level': 'foo'}}");
-      mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
-      request_destroy (request);
-      ASSERT_CMPINT64 (future_get_int64_t (future), ==, (int64_t) 1);
-   } else {
-      ASSERT_CMPINT64 (future_get_int64_t (future), ==, (int64_t) -1);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "does not support readConcern");
-   }
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   request_destroy (request);
+   ASSERT_CMPINT64 (future_get_int64_t (future), ==, (int64_t) 1);
 
    future_destroy (future);
    mongoc_cursor_destroy (cursor);
@@ -239,30 +210,16 @@ _test_read_concern_wire_version (bool allow, bool explicit)
 
 
 static void
-test_inherited_read_concern_allowed (void)
+test_inherited_read_concern (void)
 {
-   _test_read_concern_wire_version (true, false);
+   _test_read_concern_wire_version (false);
 }
 
 
 static void
-test_explicit_read_concern_allowed (void)
+test_explicit_read_concern (void)
 {
-   _test_read_concern_wire_version (true, true);
-}
-
-
-static void
-test_inherited_read_concern_prohibited (void)
-{
-   _test_read_concern_wire_version (false, false);
-}
-
-
-static void
-test_explicit_read_concern_prohibited (void)
-{
-   _test_read_concern_wire_version (false, true);
+   _test_read_concern_wire_version (true);
 }
 
 
@@ -279,20 +236,8 @@ test_read_concern_install (TestSuite *suite)
                   "/ReadConcern/always_mutable",
                   "",
                   test_read_concern_always_mutable);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadConcern/allowed/inherited",
-                                "",
-                                test_inherited_read_concern_allowed);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadConcern/allowed/explicit",
-                                "",
-                                test_explicit_read_concern_allowed);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadConcern/prohibited/inherited",
-                                "",
-                                test_inherited_read_concern_prohibited);
-   TestSuite_AddMockServerTest (suite,
-                                "/ReadConcern/prohibited/explicit",
-                                "",
-                                test_explicit_read_concern_prohibited);
+   TestSuite_AddMockServerTest (
+      suite, "/ReadConcern/inherited", "", test_inherited_read_concern);
+   TestSuite_AddMockServerTest (
+      suite, "/ReadConcern/explicit", "", test_explicit_read_concern);
 }

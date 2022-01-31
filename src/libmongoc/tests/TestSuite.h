@@ -675,11 +675,6 @@ struct _TestSuite {
    int silent;
    bson_string_t *mock_server_log_buf;
    FILE *mock_server_log;
-
-   void (*prev_sigabrt) (int);
-   void (*prev_sigint) (int);
-   void (*prev_sigterm) (int);
-   void (*prev_sigsegv) (int);
 };
 
 

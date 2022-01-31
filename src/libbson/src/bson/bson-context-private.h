@@ -28,23 +28,54 @@
 BSON_BEGIN_DECLS
 
 
+enum {
+   BSON_OID_RANDOMESS_OFFSET = 4,
+   BSON_OID_RANDOMNESS_SIZE = 5,
+   BSON_OID_SEQ32_OFFSET = 9,
+   BSON_OID_SEQ32_SIZE = 3,
+   BSON_OID_SEQ64_OFFSET = 4,
+   BSON_OID_SEQ64_SIZE = 8
+};
+
 struct _bson_context_t {
    /* flags are defined in bson_context_flags_t */
    int flags;
-   int32_t seq32;
-   int64_t seq64;
-   uint8_t rand[5];
-   uint16_t pid;
-
-   void (*oid_set_seq32) (bson_context_t *context, bson_oid_t *oid);
-   void (*oid_set_seq64) (bson_context_t *context, bson_oid_t *oid);
-
-   /* this function pointer allows us to mock gethostname for testing. */
-   void (*gethostname) (char *out);
+   uint32_t seq32;
+   uint64_t seq64;
+   uint8_t randomness[BSON_OID_RANDOMNESS_SIZE];
+   uint64_t pid;
 };
 
+/**
+ * @brief Insert the context's randomness data into the given OID
+ *
+ * @param context A context for some random data
+ * @param oid The OID to update.
+ */
 void
 _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid);
+
+/**
+ * @brief Insert the context's sequence counter into the given OID. Increments
+ * the context's sequence counter.
+ *
+ * @param context The context with the counter to get+update
+ * @param oid The OID to modify
+ */
+void
+_bson_context_set_oid_seq32 (bson_context_t *context, bson_oid_t *oid);
+
+/**
+ * @brief Write a 64-bit counter from the given context into the OID. Increments
+ * the context's sequence counter.
+ *
+ * @param context The context with the counter to get+update
+ * @param oid The OID to modify
+ *
+ * @note Only used by the deprecated @ref bson_oid_init_sequence
+ */
+void
+_bson_context_set_oid_seq64 (bson_context_t *context, bson_oid_t *oid);
 
 
 BSON_END_DECLS

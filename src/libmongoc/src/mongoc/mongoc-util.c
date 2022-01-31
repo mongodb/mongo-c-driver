@@ -268,6 +268,50 @@ _mongoc_bson_type_to_str (bson_type_t t)
 }
 
 
+/* Refer to:
+ * https://github.com/mongodb/specifications/blob/master/source/wireversion-featurelist.rst
+ * and:
+ * https://github.com/mongodb/mongo/blob/master/src/mongo/db/wire_version.h#L57
+ */
+const char *
+_mongoc_wire_version_to_server_version (int32_t version)
+{
+   switch (version) {
+   case 1:
+   case 2:
+      return "2.6";
+   case 3:
+      return "3.0";
+   case 4:
+      return "3.2";
+   case 5:
+      return "3.4";
+   case 6:
+      return "3.6";
+   case 7:
+      return "4.0";
+   case 8:
+      return "4.2";
+   case 9:
+      return "4.4";
+   case 10:
+      return "4.7";
+   case 11:
+      return "4.8";
+   case 12:
+      return "4.9";
+   case 13:
+      return "5.0";
+   case 14:
+      return "5.1";
+   case 15:
+      return "5.2";
+   default:
+      return "Unknown";
+   }
+}
+
+
 /* Get "serverId" from opts. Sets *server_id to the serverId from "opts" or 0
  * if absent. On error, fills out *error with domain and code and return false.
  */

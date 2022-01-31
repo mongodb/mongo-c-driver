@@ -85,8 +85,8 @@ _test_command_error (int32_t error_api_version)
 
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, &reply, &error);
-   request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
    mock_server_replies_simple (request,
                                "{'ok': 0, 'code': 42, 'errmsg': 'foo'}");
    ASSERT (!future_get_bool (future));

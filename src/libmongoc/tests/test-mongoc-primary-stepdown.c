@@ -338,7 +338,7 @@ test_not_primary_reset_pool_runner (void *ctx)
 
    /* Only run if version 4.0 */
    test_framework_get_max_wire_version (&max_wire_version);
-   if (max_wire_version != 7) {
+   if (max_wire_version != WIRE_VERSION_4_0) {
       return;
    }
 
@@ -404,11 +404,8 @@ test_shutdown_reset_pool (mongoc_client_t *client)
 static void
 test_shutdown_reset_pool_runner (void *ctx)
 {
-   int64_t max_wire_version;
-
    /* Only run if version >= 4.0 */
-   test_framework_get_max_wire_version (&max_wire_version);
-   if (max_wire_version < 7) {
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_0)) {
       return;
    }
 
@@ -474,11 +471,8 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
 static void
 test_interrupted_shutdown_reset_pool_runner (void *ctx)
 {
-   int64_t max_wire_version;
-
    /* Only run if version >= 4.0 */
-   test_framework_get_max_wire_version (&max_wire_version);
-   if (max_wire_version < 7) {
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_0)) {
       return;
    }
 

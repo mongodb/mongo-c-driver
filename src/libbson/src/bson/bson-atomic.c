@@ -195,8 +195,8 @@ _bson_emul_atomic_int32_compare_exchange_weak (volatile int32_t *p,
 
 int
 _bson_emul_atomic_int_fetch_add (volatile int *p,
-                                   int n,
-                                   enum bson_memory_order _unused)
+                                 int n,
+                                 enum bson_memory_order _unused)
 {
    int ret;
    _lock_emul_atomic ();
@@ -208,8 +208,8 @@ _bson_emul_atomic_int_fetch_add (volatile int *p,
 
 int
 _bson_emul_atomic_int_exchange (volatile int *p,
-                                  int n,
-                                  enum bson_memory_order _unused)
+                                int n,
+                                enum bson_memory_order _unused)
 {
    int ret;
    _lock_emul_atomic ();
@@ -221,9 +221,9 @@ _bson_emul_atomic_int_exchange (volatile int *p,
 
 int
 _bson_emul_atomic_int_compare_exchange_strong (volatile int *p,
-                                                 int expect_value,
-                                                 int new_value,
-                                                 enum bson_memory_order _unused)
+                                               int expect_value,
+                                               int new_value,
+                                               enum bson_memory_order _unused)
 {
    int ret;
    _lock_emul_atomic ();
@@ -237,11 +237,24 @@ _bson_emul_atomic_int_compare_exchange_strong (volatile int *p,
 
 int
 _bson_emul_atomic_int_compare_exchange_weak (volatile int *p,
-                                               int expect_value,
-                                               int new_value,
-                                               enum bson_memory_order order)
+                                             int expect_value,
+                                             int new_value,
+                                             enum bson_memory_order order)
 {
    /* We're emulating. We can't do a weak version. */
    return _bson_emul_atomic_int_compare_exchange_strong (
       p, expect_value, new_value, order);
+}
+
+void *
+_bson_emul_atomic_ptr_exchange (void *volatile *p,
+                                void *n,
+                                enum bson_memory_order _unused)
+{
+   void *ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p = n;
+   _unlock_emul_atomic ();
+   return ret;
 }

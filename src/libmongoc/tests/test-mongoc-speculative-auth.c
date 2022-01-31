@@ -67,8 +67,8 @@ _respond_to_ping (future_t *future, mock_server_t *server, bool expect_ping)
       return;
    }
 
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
 
    ASSERT (request);
 
@@ -145,8 +145,12 @@ _test_mongoc_speculative_auth (bool pooled,
 
    mock_server_autoresponds (server,
                              _auto_hello_without_speculative_auth,
-                             "{'ok': 1, 'isWritablePrimary': true, "
-                             "'minWireVersion': 2, 'maxWireVersion': 5}",
+                             (void *) tmp_str ("{'ok': 1,"
+                                               " 'isWritablePrimary': true,"
+                                               " 'minWireVersion': %d,"
+                                               " 'maxWireVersion': %d}",
+                                               WIRE_VERSION_MIN,
+                                               WIRE_VERSION_MAX),
                              NULL);
 
    mock_server_run (server);
@@ -208,9 +212,9 @@ _test_mongoc_speculative_auth (bool pooled,
                            "isWritablePrimary",
                            BCON_BOOL (true),
                            "minWireVersion",
-                           BCON_INT32 (2),
+                           BCON_INT32 (WIRE_VERSION_MIN),
                            "maxWireVersion",
-                           BCON_INT32 (5));
+                           BCON_INT32 (WIRE_VERSION_MAX));
 
       if (speculative_auth_response) {
          BSON_APPEND_DOCUMENT (
@@ -301,8 +305,8 @@ _post_hello_scram_invalid_auth_response (mock_server_t *srv)
    request_t *request;
    const bson_t *request_doc;
 
-   request =
-      mock_server_receives_command (srv, "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_msg (
+      srv, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin'}"));
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);

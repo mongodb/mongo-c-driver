@@ -142,8 +142,8 @@ test_get_error (void)
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &error);
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, NULL);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'foo': 1}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
    mock_server_replies_simple (request,
                                "{'ok': 0, 'errmsg': 'foo', 'code': 42}");
    ASSERT (!future_get_bool (future));
@@ -658,7 +658,7 @@ _test_query_operation_id (bool pooled)
 
    op_id_test_init (&test);
 
-   server = mock_server_with_auto_hello (4);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -686,7 +686,7 @@ _test_query_operation_id (bool pooled)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SECONDARY_OK,
+                                MONGOC_QUERY_NONE,
                                 123 /* cursor id */,
                                 1,
                                 "db.collection",
@@ -1013,7 +1013,7 @@ test_client_cmd_op_ids (void)
 
 
 static void
-test_killcursors_deprecated (void* unused)
+test_killcursors_deprecated (void *unused)
 {
    cmd_test_t test;
    mongoc_client_t *client;
@@ -1096,7 +1096,7 @@ test_command_failed_reply_mock (void)
     */
    cmd_failed_reply_test_init (&test);
 
-   server = mock_server_with_auto_hello (4);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -1154,7 +1154,7 @@ test_command_failed_reply_hangup (void)
     * error (i.e. the server hangs up) */
    cmd_failed_reply_test_init (&test);
 
-   server = mock_server_with_auto_hello (4);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -1293,14 +1293,23 @@ _test_service_id (bool is_loadbalanced)
          mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
       mock_server_replies_simple (
          request,
-         "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', "
-         "'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}");
+         tmp_str ("{'ismaster': true,"
+                  " 'minWireVersion': %d,"
+                  " 'maxWireVersion': %d,"
+                  " 'msg': 'isdbgrid',"
+                  " 'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}",
+                  WIRE_VERSION_MIN,
+                  WIRE_VERSION_5_0));
    } else {
       request = mock_server_receives_legacy_hello (
          server, "{'loadBalanced': { '$exists': false }}");
-      mock_server_replies_simple (
-         request,
-         "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid'}");
+      mock_server_replies_simple (request,
+                                  tmp_str ("{'ismaster': true,"
+                                           " 'minWireVersion': %d,"
+                                           " 'maxWireVersion': %d,"
+                                           " 'msg': 'isdbgrid'}",
+                                           WIRE_VERSION_MIN,
+                                           WIRE_VERSION_5_0));
    }
    request_destroy (request);
 

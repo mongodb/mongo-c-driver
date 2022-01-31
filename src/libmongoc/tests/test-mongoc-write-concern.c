@@ -427,32 +427,23 @@ test_write_concern_always_mutable (void)
 
 
 static void
-_test_wc_request (future_t *future,
-                  mock_server_t *server,
-                  bson_error_t *error,
-                  bool allow)
+_test_wc_request (future_t *future, mock_server_t *server, bson_error_t *error)
 {
    request_t *request;
 
-   if (allow) {
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_NONE, "{'writeConcern': {'w': 2}}");
-      mock_server_replies_ok_and_destroys (request);
-      BSON_ASSERT (future_get_bool (future));
-   } else {
-      BSON_ASSERT (!future_get_bool (future));
-      ASSERT_ERROR_CONTAINS ((*error),
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "does not support writeConcern");
-   }
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'writeConcern': {'w': 2}}"));
+   mock_server_replies_ok_and_destroys (request);
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
 }
 
 
 static void
-_test_write_concern_wire_version (bool allow)
+test_write_concern (void)
 {
    bson_t *opts;
    mock_server_t *server;
@@ -463,9 +454,7 @@ _test_write_concern_wire_version (bool allow)
    bson_error_t error;
 
    opts = tmp_bson ("{'writeConcern': {'w': 2}}");
-   server =
-      mock_server_with_auto_hello (allow ? WIRE_VERSION_CMD_WRITE_CONCERN
-                                         : WIRE_VERSION_CMD_WRITE_CONCERN - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -479,47 +468,25 @@ _test_write_concern_wire_version (bool allow)
                                          tmp_bson ("[{'$out': 'foo'}]"),
                                          opts,
                                          NULL);
-   if (allow) {
-      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   } else {
-      BSON_ASSERT (mongoc_cursor_error (cursor, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "does not support writeConcern");
-   }
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    /*
     * generic mongoc_client_write_command_with_opts
     */
    future = future_client_write_command_with_opts (
       client, "db", tmp_bson ("{'foo': 1}"), opts, NULL, &error);
-   _test_wc_request (future, server, &error, allow);
+   _test_wc_request (future, server, &error);
 
    /*
     * drop
     */
    future = future_collection_drop_with_opts (collection, opts, &error);
-   _test_wc_request (future, server, &error, allow);
+   _test_wc_request (future, server, &error);
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
-}
-
-
-static void
-test_write_concern_allowed (void)
-{
-   _test_write_concern_wire_version (true);
-}
-
-
-static void
-test_write_concern_prohibited (void)
-{
-   _test_write_concern_wire_version (false);
 }
 
 /* Test that CDRIVER-2902 has been fixed.
@@ -776,10 +743,7 @@ test_write_concern_install (TestSuite *suite)
                   "/WriteConcern/wtimeout_preserved",
                   "",
                   test_write_concern_wtimeout_preserved);
-   TestSuite_AddMockServerTest (
-      suite, "/WriteConcern/allowed", "", test_write_concern_allowed);
-   TestSuite_AddMockServerTest (
-      suite, "/WriteConcern/prohibited", "", test_write_concern_prohibited);
+   TestSuite_AddMockServerTest (suite, "/WriteConcern", "", test_write_concern);
    TestSuite_AddLive (suite,
                       "/WriteConcern/unacknowledged",
                       "",
@@ -790,7 +754,7 @@ test_write_concern_install (TestSuite *suite)
                       test_fam_no_session_no_txn,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_4);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/WriteConcern/inherited_fam_session_no_txn",
                       "uses-live-server",

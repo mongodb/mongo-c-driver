@@ -27,7 +27,7 @@ reset_basic_sd (mongoc_server_description_t *sd)
    bson_t *hello;
 
    hello = BCON_NEW ("minWireVersion",
-                     BCON_INT32 (0),
+                     BCON_INT32 (WIRE_VERSION_MIN),
                      "maxWireVersion",
                      BCON_INT32 (WIRE_VERSION_MAX));
 
@@ -237,7 +237,7 @@ test_server_description_msg_without_isdbgrid (void)
 
    mongoc_server_description_init (&sd, "host:1234", 1);
    hello = BCON_NEW ("minWireVersion",
-                     BCON_INT32 (0),
+                     BCON_INT32 (WIRE_VERSION_MIN),
                      "maxWireVersion",
                      BCON_INT32 (WIRE_VERSION_MAX),
                      "msg",
@@ -249,7 +249,7 @@ test_server_description_msg_without_isdbgrid (void)
    mongoc_server_description_reset (&sd);
    bson_destroy (hello);
    hello = BCON_NEW ("minWireVersion",
-                     BCON_INT32 (0),
+                     BCON_INT32 (WIRE_VERSION_MIN),
                      "maxWireVersion",
                      BCON_INT32 (WIRE_VERSION_MAX),
                      "msg",

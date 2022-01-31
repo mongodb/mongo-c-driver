@@ -1,3 +1,15 @@
+libbson 1.20.1
+==============
+
+Bug fixes:
+
+  * Fix implicit declarations causing build failures on macOS.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ryan Schmidt
+
 libbson 1.20.0
 ==============
 

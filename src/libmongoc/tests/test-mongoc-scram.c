@@ -205,9 +205,12 @@ _check_mechanism (bool pooled,
 
    server = mock_server_new ();
    mock_server_auto_hello (server,
-                           "{'ok': 1, 'minWireVersion': 3, "
-                           "'maxWireVersion': %d, 'isWritablePrimary': true, "
-                           "'saslSupportedMechs': [%s]}",
+                           "{'ok': 1,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'isWritablePrimary': true,"
+                           " 'saslSupportedMechs': [%s]}",
+                           WIRE_VERSION_MIN,
                            WIRE_VERSION_MAX,
                            server_mechs ? server_mechs : "");
 
@@ -640,7 +643,6 @@ test_scram_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,
-                      test_framework_skip_if_max_wire_version_less_than_6,
                       _skip_if_no_sha256,
                       TestSuite_CheckLive);
    TestSuite_AddFull (suite,
@@ -650,7 +652,6 @@ test_scram_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,
-                      test_framework_skip_if_max_wire_version_less_than_6,
                       _skip_if_no_sha256,
                       skip_if_no_icu,
                       TestSuite_CheckLive);
@@ -661,7 +662,6 @@ test_scram_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,
-                      test_framework_skip_if_max_wire_version_less_than_6,
                       _skip_if_no_sha256,
                       skip_if_icu,
                       TestSuite_CheckLive);

@@ -525,11 +525,14 @@ test_mongoc_handshake_too_big (void)
    ASSERT (len == HANDSHAKE_MAX_SIZE);
 
    mock_server_replies_simple (
-      request, "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+      request,
+      tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
+               WIRE_VERSION_MIN,
+               WIRE_VERSION_MAX));
    request_destroy (request);
 
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
 
    mock_server_replies_simple (request, "{'ok': 1}");
    ASSERT (future_get_bool (future));
