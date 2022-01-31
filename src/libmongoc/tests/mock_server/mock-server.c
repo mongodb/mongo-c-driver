@@ -1038,6 +1038,9 @@ mock_server_receives_legacy_hello (mock_server_t *server,
    if (strcasecmp (request->command_name, "hello") &&
        strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO)) {
       request_destroy (request);
+
+      fprintf(stderr, "expected legacy hello (\"%s\"), but got \"%s\"\n", HANDSHAKE_CMD_LEGACY_HELLO, request->command_name);
+
       return NULL;
    }
 
@@ -1045,8 +1048,9 @@ mock_server_receives_legacy_hello (mock_server_t *server,
       bson_strdup_printf ("{'%s': 1, 'maxAwaitTimeMS': { '$exists': false }}",
                           request->command_name);
 
+fprintf(stderr, "JFW: request_matches_query() against \"%s\"; opcode %d\n", request->command_name, request->opcode), fflush(stderr);
    /* request_matches_query() always checks for OPCODE_QUERY, used by legacy
-    * hello: */
+   r * hello: */
    if (!request_matches_query (request,
                                "admin.$cmd",
                                MONGOC_QUERY_SECONDARY_OK,
