@@ -29,5 +29,5 @@
 #if defined(COMMON_PREFIX_) && !defined(__INTELLISENSE__)
 #define COMMON_NAME(Name) NAME_EVALUATOR (COMMON_PREFIX_, Name)
 #else
-#define COMMON_NAME(Name) Name
+#define COMMON_NAME(Name) NAME_EVALUATOR (mcommon_, Name)
 #endif
