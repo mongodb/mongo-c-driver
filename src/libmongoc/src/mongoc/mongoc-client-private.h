@@ -45,7 +45,7 @@ BSON_BEGIN_DECLS
  * WIRE_VERSION_MAX must be accompanied by an update to
  * `_mongoc_wire_version_to_server_version`. */
 #define WIRE_VERSION_MIN 6  /* a.k.a. minWireVersion */
-#define WIRE_VERSION_MAX 14 /* a.k.a. maxWireVersion */
+#define WIRE_VERSION_MAX 15 /* a.k.a. maxWireVersion */
 
 /* first version that supported "find" and "getMore" commands */
 #define WIRE_VERSION_FIND_CMD 4
