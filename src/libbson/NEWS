@@ -1,3 +1,23 @@
+libbson 1.21.0
+==============
+
+Bug Fixes:
+  * Addressed VS 2013 build failures due to missing C99 features.
+
+Improvements:
+  * Addressed -Wstrict-prototype warnings in bson-atomic.h.
+  * Addressed incompatible pointer warnings in bson-atomic.h on GCC 4.8.5.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
+  * Colby Pike
+  * Pau Espin Pedrol
+  * Ryan Schmidt
+
+
+
 libbson 1.20.1
 ==============
 
