@@ -277,7 +277,7 @@ endfunction ()
 function (mongodb_create_replset_fixture name)
     cmake_parse_arguments (ARG
         "DEFAULT"
-        "PORT_VARIABLE;VERSION;COUNT;REPLSET_NAME"
+        "PORT_VARIABLE;VERSION;COUNT;REPLSET_NAME;FIXTURES_VARIABLE"
         "SERVER_ARGS"
         ${ARGN}
         )
@@ -290,7 +290,7 @@ function (mongodb_create_replset_fixture name)
     foreach (n RANGE 1 "${ARG_COUNT}")
         mongodb_create_fixture("${name}/rs${n}"
             VERSION "${ARG_VERSION}"
-            SERVER_ARGS ${SERVER_ARGS}
+            SERVER_ARGS ${ARG_SERVER_ARGS}
                 --replSet "${ARG_REPLSET_NAME}"
                 --setParameter enableTestCommands=1
             PORT_VARIABLE node_port
@@ -342,6 +342,76 @@ function (mongodb_create_replset_fixture name)
             "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${first_port})"
             "set(\"_MDB_TRANSITIVE_FIXTURES_OF_\${_fxt}\" [[${children}]])\n"
             )
+    if (ARG_PORT_VARIABLE)
+        set ("${ARG_PORT_VARIABLE}" ${first_port} PARENT_SCOPE)
+    endif ()
+    if (ARG_FIXTURES_VARIABLE)
+        set ("${ARG_FIXTURES_VARIABLE}" "${children};${name}" PARENT_SCOPE)
+    endif ()
+endfunction ()
+
+function (mongodb_create_sharded_fixture name)
+    cmake_parse_arguments (ARG
+        "DEFAULT"
+        "PORT_VARIABLE;VERSION;COUNT"
+        "SHARD_ARGS;MONGOS_ARGS"
+        ${ARGN}
+        )
+    mongodb_create_replset_fixture (
+        "${name}/data"
+        PORT_VARIABLE data_port
+        REPLSET_NAME "${name}-data"
+        COUNT 2
+        FIXTURES_VARIABLE data_fixtures
+        SERVER_ARGS --shardsvr
+        VERSION "${ARG_VERSION}"
+        )
+    mongodb_create_replset_fixture (
+        "${name}/config"
+        PORT_VARIABLE config_port
+        REPLSET_NAME "${name}-config"
+        COUNT 2
+        FIXTURES_VARIABLE config_fixtures
+        SERVER_ARGS --configsvr
+        VERSION "${ARG_VERSION}"
+        )
+    get_cmake_property(mdb_exe MONGODB_${ARG_VERSION}_PATH)
+    get_cmake_property (mongos_port "_MDB_UNUSED_PORT")
+    math (EXPR next "${mongos_port} + 3")
+    set_property (GLOBAL PROPERTY _MDB_UNUSED_PORT "${next}")
+    add_test (
+        NAME "${name}"
+        COMMAND
+            python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+                --mdb-exe "${mdb_exe}"
+                init-sharding
+                    --configdb "${name}-config/localhost:${config_port}"
+                    --datadb "${name}-data/localhost:${data_port}"
+                    --port "${mongos_port}"
+                    --scratch-dir "${CMAKE_CURRENT_BINARY_DIR}/${name}"
+        )
+    set_tests_properties("${name}" PROPERTIES
+        FIXTURES_SETUP "${name}"
+        FIXTURES_REQUIRED "${config_fixtures};${data_fixtures}"
+        )
+    add_test (
+        NAME "${name}/cleanup"
+        COMMAND python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+            --mdb-exe "${mdb_exe}"
+            stop-sharding --port "${mongos_port}"
+        )
+    set_tests_properties ("${name}/cleanup" PROPERTIES FIXTURES_CLEANUP "${name}")
+    set_property(TARGET __mdb-meta
+        APPEND PROPERTY _CTestData_CONTENT
+            "# replSet fixture '${name}'"
+            "set(_fxt [[${name}]])"
+            "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${mongos_port})"
+            "set(\"_MDB_TRANSITIVE_FIXTURES_OF_\${_fxt}\" [[${config_fixtures};${data_fixtures}]])\n"
+        )
+    set_property(TARGET __mdb-meta APPEND PROPERTY _ALL_FIXTURES "${name}")
+    if (ARG_DEFAULT)
+        set_property(TARGET __mdb-meta APPEND PROPERTY _DEFAULT_FIXTURES "${name}")
+    endif ()
 endfunction ()
 
 set (_MDB_SCRIPT_DIR "${CMAKE_CURRENT_LIST_DIR}")
