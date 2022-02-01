@@ -174,8 +174,6 @@ test_mongoc_handshake_data_append_success (void)
    const char *driver_version = "version abc";
    const char *platform = "./configure -nottoomanyflags";
 
-return; /* JFW: this test crashes after generating OP_MSG */
-
    _reset_handshake ();
    /* Make sure setting the handshake works */
    ASSERT (
@@ -185,7 +183,7 @@ return; /* JFW: this test crashes after generating OP_MSG */
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   pool = mongoc_client_pool_new (uri);
 
    /* Force topology scanner to start */
    client = mongoc_client_pool_pop (pool);
@@ -286,9 +284,6 @@ test_mongoc_handshake_data_append_null_args (void)
    bson_iter_t inner_iter;
    const char *val;
 
-/* JFW: this test crashes, generating OP_MSG */
-return;
-
    _reset_handshake ();
    /* Make sure setting the handshake works */
    ASSERT (mongoc_handshake_data_append (NULL, NULL, NULL));
@@ -297,7 +292,7 @@ return;
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   pool = mongoc_client_pool_new (uri);
 
    /* Force topology scanner to start */
    client = mongoc_client_pool_pop (pool);
@@ -494,9 +489,6 @@ test_mongoc_handshake_too_big (void)
    uint32_t len;
    const uint8_t *dummy;
 
-/* JFW: this test crashes, OP_MSG */
-return;
-
    server = mock_server_new ();
    mock_server_run (server);
 
@@ -509,7 +501,8 @@ return;
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* avoid rare test timeouts */
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 20000);
-   client = test_framework_client_new_from_uri (uri, NULL);
+
+   client = mongoc_client_new_from_uri (uri);
 
    ASSERT (mongoc_client_set_appname (client, "my app"));
 
@@ -665,9 +658,6 @@ test_mongoc_handshake_cannot_send (void)
    char big_string[HANDSHAKE_MAX_SIZE];
    mongoc_handshake_t *md;
 
-/* JFW: test fails, OP_MSG */
-return;
-
    _reset_handshake ();
    capture_logs (true);
 
@@ -684,7 +674,7 @@ return;
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   pool = mongoc_client_pool_new (uri);
 
    /* Pop a client to trigger the topology scanner */
    client = mongoc_client_pool_pop (pool);

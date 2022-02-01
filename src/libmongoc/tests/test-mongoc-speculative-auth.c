@@ -163,7 +163,7 @@ _test_mongoc_speculative_auth (bool pooled,
    }
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      pool = mongoc_client_pool_new (uri);
 
 #ifdef MONGOC_ENABLE_SSL
       if (use_ssl) {

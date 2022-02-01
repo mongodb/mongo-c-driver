@@ -748,8 +748,6 @@ match_json (const bson_t *doc,
    match_ctx_t ctx = {{0}};
    bool matches;
 
-fprintf(stderr, "JFW: doc = %p, filename = %p, funcname = %p, json_pattern = %p\n",
-        (void *)doc, (void *)filename, (void *)funcname, (void *)json_pattern), fflush(stderr);
    va_start (args, json_pattern);
    json_pattern_formatted =
       bson_strdupv_printf (json_pattern ? json_pattern : "{}", args);

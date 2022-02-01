@@ -1048,9 +1048,7 @@ mock_server_receives_legacy_hello (mock_server_t *server,
       bson_strdup_printf ("{'%s': 1, 'maxAwaitTimeMS': { '$exists': false }}",
                           request->command_name);
 
-fprintf(stderr, "JFW: request_matches_query() against \"%s\"; opcode %d\n", request->command_name, request->opcode), fflush(stderr);
-   /* request_matches_query() always checks for OPCODE_QUERY, used by legacy
-   r * hello: */
+   /* request_matches_query() always checks for OPCODE_QUERY, used by legacy hello: */
    if (!request_matches_query (request,
                                "admin.$cmd",
                                MONGOC_QUERY_SECONDARY_OK,

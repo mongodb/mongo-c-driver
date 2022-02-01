@@ -360,7 +360,7 @@ _test_server_selection (bool try_once)
       mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
    }
 
-   client = test_framework_client_new_from_uri (uri, NULL);
+   client = mongoc_client_new_from_uri (uri);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* no primary, selection fails after one try */
@@ -702,7 +702,7 @@ test_cooldown_standalone (void)
    server = mock_server_new ();
    mock_server_run (server);
    client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+      mongoc_client_new_from_uri (mock_server_get_uri (server));
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* first hello fails, selection fails */
@@ -797,7 +797,7 @@ test_cooldown_rs (void)
                                  "&connectTimeoutMS=100",
                                  mock_server_get_port (servers[0]));
 
-   client = test_framework_client_new (uri_str, NULL);
+   client = mongoc_client_new (uri_str);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    secondary_response =
@@ -909,7 +909,7 @@ test_cooldown_retry (void)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (
       uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
-   client = test_framework_client_new_from_uri (uri, NULL);
+   client = mongoc_client_new_from_uri (uri);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    future = future_topology_select (
@@ -1258,7 +1258,7 @@ test_rtt (void *ctx)
    mock_server_run (server);
 
    client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+      mongoc_client_new_from_uri (mock_server_get_uri (server));
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
@@ -1423,7 +1423,7 @@ _test_hello_retry_single (bool hangup, int n_failures)
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
    }
 
-   client = test_framework_client_new_from_uri (uri, NULL);
+   client = mongoc_client_new_from_uri (uri);
    callbacks = heartbeat_callbacks ();
    mongoc_client_set_apm_callbacks (client, callbacks, &checks);
 
@@ -1520,7 +1520,7 @@ _test_hello_retry_pooled (bool hangup, int n_failures)
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
    }
 
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   pool = mongoc_client_pool_new (uri);
    callbacks = heartbeat_callbacks ();
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
    client = mongoc_client_pool_pop (pool);
@@ -2240,7 +2240,7 @@ test_slow_server_pooled (void)
    mongoc_uri_set_option_as_int32 (
       uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 500);
 
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   pool = mongoc_client_pool_new (uri);
    callbacks = heartbeat_callbacks ();
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
 
@@ -2404,10 +2404,10 @@ _test_hello_ok (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      pool = mongoc_client_pool_new (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new_from_uri (uri, NULL);
+      client = mongoc_client_new_from_uri (uri);
    }
 
    hello = bson_strdup_printf ("{'ok': 1,"

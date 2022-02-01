@@ -238,10 +238,10 @@ _test_topology_reconcile_sharded (bool pooled)
    uri = mongoc_uri_new (uri_str);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      pool = mongoc_client_pool_new (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new (uri_str, NULL);
+      client = mongoc_client_new (uri_str);
    }
 
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);

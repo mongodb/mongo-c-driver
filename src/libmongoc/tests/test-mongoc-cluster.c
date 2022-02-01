@@ -348,7 +348,7 @@ _test_write_disconnect (void)
    server = mock_server_new ();
    mock_server_run (server);
    client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+      mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    /*
     * establish connection with an "hello" and "ping"
@@ -409,8 +409,6 @@ _test_write_disconnect (void)
 static void
 test_write_command_disconnect (void *ctx)
 {
-/* JFW: crashes, sends OP_MSG: */
-if(false)
    _test_write_disconnect ();
 }
 
@@ -864,10 +862,10 @@ _test_cluster_time_comparison (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      pool = mongoc_client_pool_new (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new_from_uri (uri, NULL);
+      client = mongoc_client_new_from_uri (uri);
    }
 
    future = future_ping (client, &error);
@@ -940,8 +938,6 @@ _test_cluster_time_comparison (bool pooled)
 static void
 test_cluster_time_comparison_single (void)
 {
-/* JFW: explodes, OP_MSG: */
-if(false)
    _test_cluster_time_comparison (false);
 }
 
@@ -949,8 +945,6 @@ if(false)
 static void
 test_cluster_time_comparison_pooled (void)
 {
-/* JFW: crashes, OP_MSG: */
-if(false)
    _test_cluster_time_comparison (true);
 }
 
@@ -1363,7 +1357,7 @@ _test_cluster_hello_fails (bool hangup)
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    /* increase heartbeatFrequencyMS to prevent background server selection. */
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   pool = mongoc_client_pool_new (uri);
    mongoc_client_pool_set_error_api (pool, 2);
    mongoc_uri_destroy (uri);
    client = mongoc_client_pool_pop (pool);
@@ -1406,8 +1400,6 @@ _test_cluster_hello_fails (bool hangup)
 static void
 test_cluster_hello_fails (void)
 {
-/* JFW: crash, OP_MSG: */
-if(false)
    _test_cluster_hello_fails (false);
 }
 
@@ -1415,8 +1407,6 @@ if(false)
 static void
 test_cluster_hello_hangup (void)
 {
-/* JFW: crash, OP_MSG: */
-if(false)
    _test_cluster_hello_fails (true);
 }
 

@@ -179,7 +179,7 @@ test_topology_scanner_discovery (void)
 
    uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (primary));
-   client = test_framework_client_new (uri_str, NULL);
+   client = mongoc_client_new (uri_str);
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
    future = future_topology_select (
@@ -257,7 +257,7 @@ test_topology_scanner_oscillate (void)
    /* start with server 0 */
    uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (server0));
-   client = test_framework_client_new (uri_str, NULL);
+   client = mongoc_client_new (uri_str);
    scanner = client->topology->scanner;
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
