@@ -45,7 +45,7 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
 {
    BSON_ASSERT (sd);
 
-   bson_destroy (&sd->last_hello_response); 
+   bson_destroy (&sd->last_hello_response);
    bson_destroy (&sd->hosts);
    bson_destroy (&sd->passives);
    bson_destroy (&sd->arbiters);
@@ -829,7 +829,6 @@ mongoc_server_description_new_copy (
       /* calls mongoc_server_description_reset */
       int64_t last_rtt_ms = bson_atomic_int64_fetch (
          &description->round_trip_time_msec, bson_memory_order_relaxed);
-
       mongoc_server_description_handle_hello (copy,
                                               &description->last_hello_response,
                                               last_rtt_ms,
