@@ -176,7 +176,7 @@ _test_mongoc_speculative_auth (bool pooled,
       /* suppress the auth failure logs from pooled clients. */
       capture_logs (true);
    } else {
-      client = test_framework_client_new_from_uri (uri, NULL);
+      client = mongoc_client_new_from_uri (uri);
 
 #ifdef MONGOC_ENABLE_SSL
       if (use_ssl) {
