@@ -254,7 +254,7 @@ _server_monitor_send_and_recv_hello_opmsg (
                                     server_monitor->connect_timeout_ms,
                                     error)) {
       MONITOR_LOG_ERROR (
-         server_monitor, "failed to write awaitable hello: %s", error->message);
+         server_monitor, "failed to write polling hello: %s", error->message);
       _mongoc_array_destroy (&array_to_write);
       return false;
    }
@@ -417,12 +417,12 @@ _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
    bson_t cmd;
    const bson_t *hello;
    bool ret;
+
    hello = _mongoc_topology_scanner_get_monitoring_cmd (
       server_monitor->topology->scanner, hello_ok);
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
-
    ret = _server_monitor_send_and_recv_opquery (
       server_monitor, &cmd, hello_response, error);
    bson_destroy (&cmd);
@@ -594,6 +594,7 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
    bson_t reply_local;
    int64_t expire_at_ms;
    int64_t timeout_ms;
+
    expire_at_ms = _now_ms () + server_monitor->heartbeat_frequency_ms +
                   server_monitor->connect_timeout_ms;
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
@@ -834,6 +835,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
 
    BSON_ASSERT (!server_monitor->stream);
    bson_init (hello_response);
+
    server_monitor->more_to_come = false;
 
    /* Using an initiator isn't really necessary. Users can't set them on

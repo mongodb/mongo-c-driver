@@ -1372,13 +1372,6 @@ mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster)
    return mongoc_client_uses_server_api (cluster->client);
 }
 
-bool
-mongoc_client_session_uses_server_api (
-   const mongoc_client_session_t *client_session)
-{
-   return mongoc_client_uses_server_api (client_session->client);
-}
-
 #ifdef MONGOC_ENABLE_CRYPTO
 void
 _mongoc_cluster_init_scram (const mongoc_cluster_t *cluster,
