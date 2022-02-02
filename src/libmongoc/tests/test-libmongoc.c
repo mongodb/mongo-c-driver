@@ -2334,14 +2334,12 @@ _parse_server_version (const bson_t *buildinfo)
 }
 
 server_version_t
-test_framework_get_server_version (void)
+test_framework_get_server_version_with_client (mongoc_client_t *client)
 {
-   mongoc_client_t *client;
    bson_t reply;
    bson_error_t error;
    server_version_t ret = 0;
 
-   client = test_framework_new_default_client ();
    ASSERT_OR_PRINT (
       mongoc_client_command_simple (
          client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
@@ -2350,6 +2348,21 @@ test_framework_get_server_version (void)
    ret = _parse_server_version (&reply);
 
    bson_destroy (&reply);
+
+   return ret;
+}
+
+server_version_t
+test_framework_get_server_version (void)
+{
+   mongoc_client_t *client;
+   
+   server_version_t ret = 0;
+
+   client = test_framework_new_default_client ();
+
+   ret = test_framework_get_server_version_with_client(client);
+ 
    mongoc_client_destroy (client);
 
    return ret;
