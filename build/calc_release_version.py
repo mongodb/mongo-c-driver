@@ -102,7 +102,7 @@ def check_head_tag():
 
     return None
 
-def get_next_minor ():
+def get_next_minor (prerelease_marker):
     """
     get_next_minor does the following:
     Inspect the branches that fit the convention for a release branch.
@@ -110,11 +110,7 @@ def get_next_minor ():
     Append a pre-release marker. (e.g. 1.22.0 becomes 1.22.0-20220201+gitf6e6a7025d)
     """
     version_loose = LooseVersion('0.0.0')
-    head_commit_short = check_output(['git', 'rev-parse',
-                                                 '--revs-only', '--short=10',
-                                                 'HEAD^{commit}']).strip()
-    prerelease_marker = datetime.date.today().strftime('%Y%m%d') \
-            + '+git' + head_commit_short
+
     version_new = {}
     # Use refs (not branches) to get local branches plus remote branches
     refs = check_output(['git', 'show-ref']).splitlines()
@@ -155,14 +151,6 @@ def main():
            patch version, and append a new pre-release marker
     """
 
-    if NEXT_MINOR:
-        if DEBUG:
-            print('Calculating next minor release')
-        return get_next_minor ()
-
-    head_tag_ver = check_head_tag()
-    if head_tag_ver:
-        return head_tag_ver
 
     version_loose = LooseVersion('0.0.0')
     head_commit_short = check_output(['git', 'rev-parse',
@@ -171,32 +159,21 @@ def main():
     prerelease_marker = datetime.date.today().strftime('%Y%m%d') \
             + '+git' + head_commit_short
 
+    if NEXT_MINOR:
+        if DEBUG:
+            print('Calculating next minor release')
+        return get_next_minor (prerelease_marker)
+
+    head_tag_ver = check_head_tag()
+    if head_tag_ver:
+        return head_tag_ver
+
     active_branch_name = check_output(['git', 'rev-parse',
                                                   '--abbrev-ref', 'HEAD']).strip()
     if DEBUG:
         print('Calculating release version for branch: ' + active_branch_name)
     if active_branch_name == 'master':
-        version_new = {}
-        # Use refs (not branches) to get local branches plus remote branches
-        refs = check_output(['git', 'show-ref']).splitlines()
-        for ref in refs:
-            release_branch_match = RELEASE_BRANCH_RE.match(ref.split()[1])
-            if release_branch_match:
-                # Construct a candidate version from this branch name
-                version_new['major'] = int(release_branch_match.group('vermaj'))
-                version_new['minor'] = int(release_branch_match.group('vermin')) + 1
-                version_new['patch'] = 0
-                version_new['prerelease'] = prerelease_marker
-                new_version_loose = LooseVersion(str(version_new['major']) + '.' +
-                                                 str(version_new['minor']) + '.' +
-                                                 str(version_new['patch']) + '-' +
-                                                 version_new['prerelease'])
-                if new_version_loose > version_loose:
-                    version_loose = new_version_loose
-                    if DEBUG:
-                        print('Found new best version "' + str(version_loose) \
-                                + '" based on branch "' \
-                                + release_branch_match.group('brname') + '"')
+        return get_next_minor (prerelease_marker)
 
     else:
         tags = check_output(['git', 'tag',
