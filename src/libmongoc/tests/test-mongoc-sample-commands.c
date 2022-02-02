@@ -3759,10 +3759,8 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    ok = mongoc_collection_drop (sales, &error);
    if (!ok && NULL == strstr (error.message, "ns not found")) {
 
-      fprintf (stderr,
-               "error.domain == %d, error.code == %d\n",
-               error.domain,
-               error.code);
+      test_error("error.domain == %d, error.code == %d\n",
+               error.domain, error.code);
 
       /* Ignore an "ns not found" error on dropping the collection in case the
        * namespace does not exist. */

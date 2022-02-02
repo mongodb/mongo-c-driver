@@ -153,7 +153,7 @@ test_hello_impl (bool with_ssl)
                             setup_ctx,
                             "admin",
                             &q,
-                            MONGOC_OPCODE_QUERY, /* i.e. legacy hello */
+                            MONGOC_OPCODE_QUERY, /* used by legacy hello */
                             &test_hello_helper,
                             (void *) &results[i],
                             TIMEOUT);

@@ -163,10 +163,11 @@ _test_mongoc_server_api_client_pool_once (void)
       "Cannot set server api after a client has been created");
 
    ASSERT (!mongoc_client_set_server_api (client, api, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_API_FROM_POOL,
-                          "Cannot set server api on a client checked out from a pool");
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_CLIENT,
+      MONGOC_ERROR_CLIENT_API_FROM_POOL,
+      "Cannot set server api on a client checked out from a pool");
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -193,10 +194,10 @@ _test_mongoc_client_uses_server_api (void)
    api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
    ASSERT_OR_PRINT (mongoc_client_set_server_api (client0, api, &error), error);
 
-   /* Check to see that we can distinguish whether or not the API was set via our function
-   under test: */
-   ASSERT(mongoc_client_uses_server_api(client0));
-   ASSERT(!mongoc_client_uses_server_api(client1));
+   /* Check to see that we can distinguish whether or not the API was set via
+   our function under test: */
+   ASSERT (mongoc_client_uses_server_api (client0));
+   ASSERT (!mongoc_client_uses_server_api (client1));
 
    /* Tidy up: */
    mongoc_server_api_destroy (api);
@@ -204,7 +205,7 @@ _test_mongoc_client_uses_server_api (void)
 
    mongoc_client_destroy (client1);
 }
- 
+
 void
 test_client_versioned_api_install (TestSuite *suite)
 {
@@ -220,6 +221,7 @@ test_client_versioned_api_install (TestSuite *suite)
    TestSuite_Add (suite, "/VersionedApi/copy", _test_mongoc_server_api_copy);
    TestSuite_Add (
       suite, "/VersionedApi/setters", _test_mongoc_server_api_setters);
-   TestSuite_Add (
-      suite, "VersionedApi/private/client_uses_server_api", _test_mongoc_client_uses_server_api);
+   TestSuite_Add (suite,
+                  "VersionedApi/private/client_uses_server_api",
+                  _test_mongoc_client_uses_server_api);
 }

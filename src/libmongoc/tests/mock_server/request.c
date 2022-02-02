@@ -22,9 +22,6 @@
 #include "../test-conveniences.h"
 #include "../TestSuite.h"
 
-#include "../bsonutil/bson-val.h"
-
-
 static bool
 is_command_ns (const char *ns);
 
@@ -519,7 +516,7 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
  *
  * request_matches_msg --
  *
- *       Test that client OP_MSGs match a pattern. The OP_MSGs consists
+ *       Test that a client OP_MSG matches a pattern. The OP_MSG consists
  *       of at least one document (the command body) and optional sequence
  *       of additional documents (e.g., documents in a bulk insert). The
  *       documents in the actual client message are compared pairwise to
@@ -563,13 +560,12 @@ request_matches_msg (const request_t *request,
                                      BSON_VALIDATE_EMPTY_KEYS |
                                         BSON_VALIDATE_UTF8,
                                      &bson_error)) {
-         fprintf (stderr,
+	test_error(
                   "bson_validate_with_error() at doc %d:\n%d.%d: %s\n",
                   i,
                   bson_error.domain,
                   bson_error.code,
                   bson_error.message);
-         fflush (stderr);
 
          return false;
       }
