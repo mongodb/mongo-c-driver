@@ -134,13 +134,13 @@ main (void)
    closure.pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < NTHREADS; i++) {
-      r = COMMON_PREFIX (thread_create) (
+      r = mcommon_thread_create (
          &threads[i], gssapi_kerberos_worker, (void *) &closure);
       BSON_ASSERT (r == 0);
    }
 
    for (i = 0; i < NTHREADS; i++) {
-      COMMON_PREFIX (thread_join) (threads[i]);
+      mcommon_thread_join (threads[i]);
    }
 
    bson_mutex_lock (&closure.mutex);

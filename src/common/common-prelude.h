@@ -19,9 +19,10 @@
 #error "Only <mongoc/mongoc.h> or <bson/bson.h> can be included directly."
 #endif
 
-#ifndef COMMON_PREFIX_
-#define COMMON_PREFIX_
+#define COMMON_NAME_1(a, b) a##_##b
+
+#if defined(MCOMMON_NAME_PREFIX) && !defined(__INTELLISENSE__)
+#define COMMON_NAME(Name) COMMON_NAME_1 (MCOMMON_NAME_PREFIX, Name)
+#else
+#define COMMON_NAME(Name) COMMON_NAME_1 (mcommon, Name)
 #endif
-#define JOINER(x, y) x##_##y
-#define NAME_EVALUATOR(x, y) JOINER (x, y)
-#define COMMON_PREFIX(name) NAME_EVALUATOR (COMMON_PREFIX_, name)

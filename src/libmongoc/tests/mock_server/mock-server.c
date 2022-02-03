@@ -388,7 +388,7 @@ mock_server_run (mock_server_t *server)
       bound_port);
    server->uri = mongoc_uri_new (server->uri_str);
 
-   r = COMMON_PREFIX (thread_create) (
+   r = mcommon_thread_create (
       &server->main_thread, main_thread, (void *) server);
    BSON_ASSERT (r == 0);
    while (!server->running) {
@@ -1682,7 +1682,7 @@ mock_server_destroy (mock_server_t *server)
    }
 
    bson_mutex_unlock (&server->mutex);
-   COMMON_PREFIX (thread_join) (server->main_thread);
+   mcommon_thread_join (server->main_thread);
 
    _mongoc_array_destroy (&server->worker_threads);
 
@@ -1808,7 +1808,7 @@ static BSON_THREAD_FUN (main_thread, data)
          closure->port = port;
 
          bson_mutex_lock (&server->mutex);
-         r = COMMON_PREFIX (thread_create) (&thread, worker_thread, closure);
+         r = mcommon_thread_create (&thread, worker_thread, closure);
          BSON_ASSERT (r == 0);
          _mongoc_array_append_val (&server->worker_threads, thread);
          bson_mutex_unlock (&server->mutex);
@@ -1822,8 +1822,8 @@ static BSON_THREAD_FUN (main_thread, data)
    bson_mutex_unlock (&server->mutex);
 
    for (i = 0; i < worker_threads.len; i++) {
-      COMMON_PREFIX (thread_join)
-      (_mongoc_array_index (&worker_threads, bson_thread_t, i));
+      mcommon_thread_join (
+         _mongoc_array_index (&worker_threads, bson_thread_t, i));
    }
 
    _mongoc_array_destroy (&worker_threads);

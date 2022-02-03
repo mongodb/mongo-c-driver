@@ -1175,8 +1175,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
 
    str = bson_strdup_printf ("%c%s%c%s", '\0', username, '\0', password);
    len = strlen (username) + strlen (password) + 2;
-   buflen = COMMON_PREFIX (
-      bson_b64_ntop ((const uint8_t *) str, len, buf, sizeof buf));
+   buflen = mcommon_b64_ntop ((const uint8_t *) str, len, buf, sizeof buf);
    bson_free (str);
 
    if (buflen == -1) {

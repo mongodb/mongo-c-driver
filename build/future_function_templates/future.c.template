@@ -56,9 +56,9 @@ void
 future_start (future_t *future,
               BSON_THREAD_FUN_TYPE (start_routine))
 {
-   int r = COMMON_PREFIX (thread_create) (&future->thread,
-                               start_routine,
-                               (void *) future);
+   int r = mcommon_thread_create (&future->thread,
+                                  start_routine,
+                                  (void *) future);
 
    BSON_ASSERT (!r);
 }
@@ -97,7 +97,7 @@ future_wait_max (future_t *future, int64_t timeout_ms)
       future->awaited = true;
 
       /* free memory */
-      COMMON_PREFIX (thread_join) (future->thread);
+      mcommon_thread_join (future->thread);
    }
 
    return resolved;

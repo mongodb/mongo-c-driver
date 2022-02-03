@@ -451,8 +451,8 @@ test_client_pool_max_pool_size_exceeded (void)
    bson_mutex_init (&args->mutex);
    mongoc_cond_init (&args->cond);
 
-   COMMON_PREFIX (thread_create) (&thread1, worker, args);
-   COMMON_PREFIX (thread_create) (&thread2, worker, args);
+   mcommon_thread_create (&thread1, worker, args);
+   mcommon_thread_create (&thread2, worker, args);
 
    bson_mutex_lock (&args->mutex);
    while (args->nleft > 0) {
@@ -462,8 +462,8 @@ test_client_pool_max_pool_size_exceeded (void)
    }
    bson_mutex_unlock (&args->mutex);
 
-   COMMON_PREFIX (thread_join) (thread1);
-   COMMON_PREFIX (thread_join) (thread2);
+   mcommon_thread_join (thread1);
+   mcommon_thread_join (thread2);
 
    mongoc_uri_destroy (uri);
    mongoc_client_pool_destroy (pool);

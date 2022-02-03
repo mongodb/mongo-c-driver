@@ -141,7 +141,7 @@ static void
 start_thread (json_test_worker_thread_t *wt)
 {
    wt->shutdown_requested = false;
-   COMMON_PREFIX (thread_create) (&wt->thread, json_test_worker_thread_run, wt);
+   mcommon_thread_create (&wt->thread, json_test_worker_thread_run, wt);
 }
 
 static void
@@ -160,7 +160,7 @@ wait_for_thread (json_test_worker_thread_t *wt)
    wt->shutdown_requested = true;
    mongoc_cond_broadcast (&wt->cond);
    bson_mutex_unlock (&wt->mutex);
-   COMMON_PREFIX (thread_join) (wt->thread);
+   mcommon_thread_join (wt->thread);
 }
 
 void

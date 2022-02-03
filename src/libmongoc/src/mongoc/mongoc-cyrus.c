@@ -343,11 +343,10 @@ _mongoc_cyrus_start (mongoc_cyrus_t *sasl,
    }
 
    *outbuflen = 0;
-   outbuf_capacity =
-      COMMON_PREFIX (bson_b64_ntop_calculate_target_size (raw_len));
+   outbuf_capacity = mcommon_b64_ntop_calculate_target_size (raw_len);
    *outbuf = bson_malloc (outbuf_capacity);
 
-   b64_ret = COMMON_PREFIX (bson_b64_ntop) (
+   b64_ret = mcommon_b64_ntop (
       (uint8_t *) raw, raw_len, (char *) *outbuf, outbuf_capacity);
    if (b64_ret == -1) {
       bson_set_error (error,
@@ -411,11 +410,10 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    }
 
    decoded_len = 0;
-   decoded_capacity =
-      COMMON_PREFIX (bson_b64_pton_calculate_target_size) (inbuflen);
+   decoded_capacity = mcommon_b64_pton_calculate_target_size (inbuflen);
    decoded = bson_malloc (decoded_capacity);
-   b64_ret = COMMON_PREFIX (bson_b64_pton) (
-      (char *) inbuf, (uint8_t *) decoded, decoded_capacity);
+   b64_ret =
+      mcommon_b64_pton ((char *) inbuf, (uint8_t *) decoded, decoded_capacity);
    if (b64_ret == -1) {
       bson_set_error (error,
                       MONGOC_ERROR_SASL,
@@ -442,9 +440,9 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    }
 
    *outbuflen = 0;
-   outbuf_capacity = COMMON_PREFIX (bson_b64_ntop_calculate_target_size (rawlen));
+   outbuf_capacity = mcommon_b64_ntop_calculate_target_size (rawlen);
    *outbuf = bson_malloc0 (outbuf_capacity);
-   b64_ret = COMMON_PREFIX (bson_b64_ntop) (
+   b64_ret = mcommon_b64_ntop (
       (const uint8_t *) raw, rawlen, (char *) *outbuf, outbuf_capacity);
    if (b64_ret == -1) {
       bson_set_error (error,
