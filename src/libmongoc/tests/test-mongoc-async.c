@@ -299,7 +299,7 @@ test_large_hello (void *ctx)
                          NULL,
                          "admin",
                          &q,
-                         MONGOC_OPCODE_QUERY,
+                         MONGOC_OPCODE_QUERY, /* used by legacy hello */
                          &test_large_hello_helper,
                          NULL,
                          TIMEOUT);
