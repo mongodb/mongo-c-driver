@@ -1,6 +1,6 @@
 # remirepo/fedora spec file for mongo-c-driver
 #
-# Copyright (c) 2015-2021 Remi Collet
+# Copyright (c) 2015-2022 Remi Collet
 # License: CC-BY-SA
 # http://creativecommons.org/licenses/by-sa/4.0/
 #
@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.20.0
+%global up_version   1.21.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -236,6 +236,15 @@ exit $ret
 
 
 %changelog
+* Wed Feb  2 2022 Remi Collet <remi@remirepo.net> - 1.21.0-1
+- update to 1.21.0
+
+* Thu Jan 20 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.20.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
+
+* Thu Jan  6 2022 Remi Collet <remi@remirepo.net> - 1.20.1-1
+- update to 1.20.1
+
 * Thu Nov 18 2021 Remi Collet <remi@remirepo.net> - 1.20.0-1
 - update to 1.20.0
 
