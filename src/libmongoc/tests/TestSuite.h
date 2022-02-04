@@ -274,9 +274,9 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    ASSERT_CMPINT_HELPER (a, eq, b, PRIu32, uint32_t)
 #define ASSERT_CMPUINT64(a, eq, b) \
    ASSERT_CMPINT_HELPER (a, eq, b, PRIu64, uint64_t)
-#define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zd", size_t)
+#define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zu", size_t)
 #define ASSERT_CMPSSIZE_T(a, eq, b) \
-   ASSERT_CMPINT_HELPER (a, eq, b, "zx", ssize_t)
+   ASSERT_CMPINT_HELPER (a, eq, b, "zd", ssize_t)
 #define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "f", double)
 #define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "p", void *)
 
