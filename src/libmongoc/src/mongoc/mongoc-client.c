@@ -3165,3 +3165,10 @@ mongoc_client_get_handshake_description (mongoc_client_t *client,
    mongoc_server_stream_cleanup (server_stream);
    return sd;
 }
+
+bool
+mongoc_client_uses_server_api (const mongoc_client_t *client)
+{
+   return mongoc_topology_uses_server_api (client->topology);
+}
+

@@ -244,6 +244,13 @@ mongoc_client_connect (bool buffered,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
                        bson_error_t *error);
+
+
+/* Returns true if a versioned server API has been selected,
+otherwise returns false: */
+bool
+mongoc_client_uses_server_api (const mongoc_client_t *client);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_CLIENT_PRIVATE_H */

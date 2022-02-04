@@ -1346,26 +1346,6 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
 #endif
 }
 
-/* True if the client user has requested a specific wire protocol version: */
-bool
-mongoc_topology_scanner_uses_server_api (
-   const mongoc_topology_scanner_t *topology_scanner)
-{
-   return NULL != topology_scanner->api;
-}
-
-bool
-mongoc_topology_uses_server_api (const mongoc_topology_t *topology)
-{
-   return mongoc_topology_scanner_uses_server_api (topology->scanner);
-}
-
-bool
-mongoc_client_uses_server_api (const mongoc_client_t *client)
-{
-   return mongoc_topology_uses_server_api (client->topology);
-}
-
 bool
 mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster)
 {

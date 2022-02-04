@@ -1507,3 +1507,12 @@ _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
    BSON_ASSERT (ts->handshake_cmd == NULL);
    ts->loadbalanced = true;
 }
+
+/* True if the client user has requested a specific wire protocol version: */
+bool
+mongoc_topology_scanner_uses_server_api (
+   const mongoc_topology_scanner_t *topology_scanner)
+{
+   return NULL != topology_scanner->api;
+}
+
