@@ -21,7 +21,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        # TODO: CDRIVER-3573 do not hardcode the version.
         if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
            # This is a GitHub PR or patch build, probably branched from master
            echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
