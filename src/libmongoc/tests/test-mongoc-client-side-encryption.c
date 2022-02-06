@@ -1057,13 +1057,13 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
       kms_providers_invalid,
       tmp_bson (
          "{'azure': {'tenantId': '%s', 'clientId': '%s', 'clientSecret': '%s', "
-         "'identityPlatformEndpoint': 'example.com:443'}}",
+         "'identityPlatformEndpoint': 'doesnotexist.invalid:443'}}",
          mongoc_test_azure_tenant_id,
          mongoc_test_azure_client_id,
          mongoc_test_azure_client_secret));
    bson_concat (kms_providers_invalid,
                 tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
-                          "'endpoint': 'example.com'}}",
+                          "'endpoint': 'doesnotexist.invalid'}}",
                           mongoc_test_gcp_email,
                           mongoc_test_gcp_privatekey));
    bson_concat (
@@ -1319,8 +1319,10 @@ test_custom_endpoint (void *unused)
       keyvault_client, &client_encryption, &client_encryption_invalid);
    res = mongoc_client_encryption_create_datakey (
       client_encryption_invalid, "azure", datakey_opts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
    BSON_ASSERT (!res);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1354,8 +1356,10 @@ test_custom_endpoint (void *unused)
       keyvault_client, &client_encryption, &client_encryption_invalid);
    res = mongoc_client_encryption_create_datakey (
       client_encryption_invalid, "gcp", datakey_opts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
    BSON_ASSERT (!res);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
