@@ -1372,7 +1372,7 @@ test_custom_endpoint (void *unused)
                          "keyName",
                          "key-name-csfle",
                          "endpoint",
-                         "example.com:443");
+                         "doesnotexist.invalid:443");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
