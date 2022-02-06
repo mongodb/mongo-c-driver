@@ -1271,7 +1271,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Case 6: Custom endpoint to example.com. */
+   /* Case 6: Custom endpoint to doesnotexist.invalid. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
@@ -1280,15 +1280,17 @@ test_custom_endpoint (void *unused)
                          "arn:aws:kms:us-east-1:579766882180:key/"
                          "89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
                          "endpoint",
-                         "example.com");
+                         "doesnotexist.invalid");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
                                                         masterkey);
    memset (&error, 0, sizeof (bson_error_t));
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
    BSON_ASSERT (!res);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
