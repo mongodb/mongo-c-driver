@@ -298,12 +298,10 @@ _build_handshake_cmd (const mongoc_topology_scanner_t *ts,
       BSON_APPEND_BOOL (doc, "loadBalanced", true);
    }
 
-/* JFW: DNM: maybe bad to append $db to topology scanner?
    // If we're sending an OPCODE_MSG, we need to add the "db" field:
    if (mongoc_topology_scanner_uses_server_api (ts)) {
       bson_append_utf8 (doc, "$db", 3, "admin", 5);
    }
-*/
 
    /* Return whether the handshake doc fit the size limit */
    return doc;
