@@ -222,6 +222,11 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    acmd->connect_started = bson_get_monotonic_time ();
    bson_copy_to (cmd, &acmd->cmd);
 
+   if (MONGOC_OPCODE_MSG == cmd_opcode) {
+      // If we're sending an OPCODE_MSG, we need to add the "db" field:
+      bson_append_utf8 (&acmd->cmd, "$db", 3, "admin", 5);
+   }
+
    _mongoc_array_init (&acmd->array, sizeof (mongoc_iovec_t));
    _mongoc_buffer_init (&acmd->buffer, NULL, 0, NULL, NULL);
 

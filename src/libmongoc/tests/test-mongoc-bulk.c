@@ -385,7 +385,8 @@ test_insert (bool ordered)
    mongoc_cursor_t *cursor;
    const bson_t *inserted_doc;
 
-   client = test_framework_new_default_client ();
+   client = test_framework_client_new_no_server_api();
+//   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_insert");

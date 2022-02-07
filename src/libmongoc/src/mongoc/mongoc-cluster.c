@@ -839,6 +839,10 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       // Complete OPCODE_QUERY setup:
       hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
    }
+   else {
+	/* We're using OP_MSG, and require some additional doctoring: */
+        bson_append_utf8 (&handshake_command, "$db", 3, "admin", 5);	
+   }
 
    if (!mongoc_cluster_run_command_private (
           cluster, &hello_cmd, &reply, error)) {

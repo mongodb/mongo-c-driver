@@ -1712,6 +1712,37 @@ test_framework_new_default_client ()
    return client;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_new_client_no_server_api --
+ *
+ *       Get a client connected to the test MongoDB topology, with no server
+ *       API version set.
+ *
+ * Returns:
+ *       A client you must mongoc_client_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_t *
+test_framework_client_new_no_server_api()
+{
+   mongoc_uri_t *uri = test_framework_get_uri();
+   mongoc_client_t *client = mongoc_client_new_from_uri (uri);
+
+   BSON_ASSERT (client);
+   test_framework_set_ssl_opts (client);
+
+   bson_free (uri);
+
+   return client;
+}
+
+
 mongoc_server_api_t *
 test_framework_get_default_server_api (void)
 {
