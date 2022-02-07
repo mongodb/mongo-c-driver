@@ -1057,13 +1057,13 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
       kms_providers_invalid,
       tmp_bson (
          "{'azure': {'tenantId': '%s', 'clientId': '%s', 'clientSecret': '%s', "
-         "'identityPlatformEndpoint': 'example.com:443'}}",
+         "'identityPlatformEndpoint': 'doesnotexist.invalid:443'}}",
          mongoc_test_azure_tenant_id,
          mongoc_test_azure_client_id,
          mongoc_test_azure_client_secret));
    bson_concat (kms_providers_invalid,
                 tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
-                          "'endpoint': 'example.com'}}",
+                          "'endpoint': 'doesnotexist.invalid'}}",
                           mongoc_test_gcp_email,
                           mongoc_test_gcp_privatekey));
    bson_concat (
@@ -1271,7 +1271,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Case 6: Custom endpoint to example.com. */
+   /* Case 6: Custom endpoint to doesnotexist.invalid. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
@@ -1280,15 +1280,17 @@ test_custom_endpoint (void *unused)
                          "arn:aws:kms:us-east-1:579766882180:key/"
                          "89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
                          "endpoint",
-                         "example.com");
+                         "doesnotexist.invalid");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
                                                         masterkey);
    memset (&error, 0, sizeof (bson_error_t));
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
    BSON_ASSERT (!res);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
@@ -1317,8 +1319,10 @@ test_custom_endpoint (void *unused)
       keyvault_client, &client_encryption, &client_encryption_invalid);
    res = mongoc_client_encryption_create_datakey (
       client_encryption_invalid, "azure", datakey_opts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
    BSON_ASSERT (!res);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1352,8 +1356,10 @@ test_custom_endpoint (void *unused)
       keyvault_client, &client_encryption, &client_encryption_invalid);
    res = mongoc_client_encryption_create_datakey (
       client_encryption_invalid, "gcp", datakey_opts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
    BSON_ASSERT (!res);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1370,7 +1376,7 @@ test_custom_endpoint (void *unused)
                          "keyName",
                          "key-name-csfle",
                          "endpoint",
-                         "example.com:443");
+                         "doesnotexist.invalid:443");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
