@@ -1738,7 +1738,7 @@ test_framework_client_new_no_server_api()
    BSON_ASSERT (client);
    test_framework_set_ssl_opts (client);
 
-   bson_free (uri);
+   mongoc_uri_destroy (uri);
 
    return client;
 }
