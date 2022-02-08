@@ -190,7 +190,7 @@ test_client_cmd_w_write_concern (void *ctx)
    bson_error_t error;
 
    opts = bson_new ();
-   client = test_framework_new_default_client ();
+   client = test_framework_client_new_no_server_api ();
    mongoc_client_set_error_api (client, 2);
 
    good_wc = mongoc_write_concern_new ();
