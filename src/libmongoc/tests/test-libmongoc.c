@@ -1716,7 +1716,7 @@ test_framework_new_default_client ()
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_new_client_no_server_api --
+ * test_framework_client_new_no_server_api --
  *
  *       Get a client connected to the test MongoDB topology, with no server
  *       API version set.
