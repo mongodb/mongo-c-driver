@@ -2344,11 +2344,14 @@ _test_hello_versioned_api (bool pooled)
                                WIRE_VERSION_MAX,
                                mock_server_get_host_and_port (server));
 
-request = mock_server_receives_hello_op_msg (server);
+   request = mock_server_receives_hello_op_msg (server);
+
    BSON_ASSERT (request);
    BSON_ASSERT (bson_has_field (request_get_doc (request, 0), "apiVersion"));
    BSON_ASSERT (bson_has_field (request_get_doc (request, 0), "helloOk"));
+
    mock_server_replies_simple (request, hello_reply); 
+
    request_destroy (request);
 
    if (!pooled) {

@@ -1782,7 +1782,11 @@ run_json_general_test (const json_test_config_t *config)
          set_uri_opts_from_bson (uri, &client_opts);
       }
 
-      client = test_framework_client_new_from_uri (uri, NULL);
+/*JFW:  
+ Causes mysterious failures w/ versioned API:
+    client = test_framework_client_new_from_uri (uri, NULL); 
+*/
+      client = mongoc_client_new_from_uri (uri);
       mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
       test_framework_set_ssl_opts (client);
       /* reconnect right away, if a fail point causes a disconnect */

@@ -1700,6 +1700,7 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
             "Expected error, but change stream did not return an error");
       }
 
+/* JFW: the below assertion fails mysteriously when the versioned client: */
       expected_err_code = bson_lookup_int32 (test, "result.error.code");
       ASSERT_CMPINT64 (expected_err_code, ==, (int32_t) error.code);
 
@@ -2748,5 +2749,5 @@ test_change_stream_install (TestSuite *suite)
       suite, "/change_streams/prose_test_18", prose_test_18);
 
    install_json_test_suite (
-      suite, JSON_DIR, "change_streams/legacy", &test_change_stream_spec_cb);
+      suite, JSON_DIR, "/change_streams/legacy", &test_change_stream_spec_cb);
 }

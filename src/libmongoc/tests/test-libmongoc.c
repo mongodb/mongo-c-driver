@@ -1157,7 +1157,8 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
       bson_free (compressors);
    }
 
-   client = test_framework_client_new_from_uri (uri, NULL);
+   client = test_framework_client_new_from_uri (uri, NULL); 
+
 #ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client);
 #endif
