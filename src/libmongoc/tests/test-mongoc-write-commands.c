@@ -31,7 +31,7 @@ test_split_insert (void)
    int i;
    bool r;
 
-   client = test_framework_new_default_client ();
+   client = test_framework_client_new_no_server_api ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_split_insert");
