@@ -230,7 +230,7 @@ static void
 test_change_stream_live_single_server (void *test_ctx)
 {
    /* Temporarily skip on arm64 until mongod tested against is updated */
-   mongoc_client_t *client = test_framework_client_new_no_server_api ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll;
    bson_error_t error;
    mongoc_change_stream_t *stream;

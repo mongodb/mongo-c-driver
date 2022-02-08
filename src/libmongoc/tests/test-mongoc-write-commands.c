@@ -457,7 +457,7 @@ _test_invalid_wc_server_error (void *unused)
    bson_t reply;
    bson_error_t error;
 
-   client = test_framework_new_default_client ();
+   client = test_framework_client_new_no_server_api ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = get_test_collection (client, "server_wc_error");
 
