@@ -177,7 +177,7 @@ test_bypass_validation (void *context)
    int r;
    int i;
 
-   client = test_framework_new_default_client ();
+   client = test_framework_client_new_no_server_api ();
    BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
