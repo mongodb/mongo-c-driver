@@ -544,7 +544,7 @@ _mongoc_stream_tls_openssl_check_closed (mongoc_stream_t *stream) /* IN */
 
 
 static bool
-_mongoc_stream_tls_openssl_cert_verify_failed (SSL *ssl, bson_error_t *error)
+_mongoc_stream_tls_openssl_set_verify_cert_error (SSL *ssl, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (ssl);
    BSON_ASSERT_PARAM (error);
@@ -606,7 +606,7 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
       }
 
       /* Try to relay certificate failure reason from OpenSSL library if any. */
-      if (_mongoc_stream_tls_openssl_cert_verify_failed (ssl, error)) {
+      if (_mongoc_stream_tls_openssl_set_verify_cert_error (ssl, error)) {
          RETURN (false);
       }
 
@@ -635,7 +635,7 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
    *events = 0;
 
    /* Try to relay certificate failure reason from OpenSSL library if any. */
-   if (_mongoc_stream_tls_openssl_cert_verify_failed (ssl, error)) {
+   if (_mongoc_stream_tls_openssl_set_verify_cert_error (ssl, error)) {
       RETURN (false);
    }
 
