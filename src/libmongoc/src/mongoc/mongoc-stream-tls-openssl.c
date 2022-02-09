@@ -640,17 +640,13 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
    }
 
    /* Otherwise, try to relay error info from OpenSSL. */
-   {
-      const unsigned long code = ERR_get_error ();
-
-      if (error != 0) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "TLS handshake failed: %s",
-                         ERR_error_string (code, NULL));
-         RETURN (false);
-      }
+   if (ERR_peek_error () != 0) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed: %s",
+                      ERR_error_string (ERR_get_error (), NULL));
+      RETURN (false);
    }
 
    /* Otherwise, use simple error info. */
