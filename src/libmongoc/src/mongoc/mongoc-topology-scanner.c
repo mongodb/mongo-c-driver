@@ -280,6 +280,10 @@ _build_handshake_cmd (const mongoc_topology_scanner_t *ts,
       return NULL;
    }
 
+   if (mongoc_topology_scanner_uses_server_api(ts)) {
+      bson_append_utf8(doc, "serverApi", -1, "1", -1);
+   }
+
    BSON_APPEND_ARRAY_BEGIN (doc, "compression", &subdoc);
    if (uri) {
       compressors = mongoc_uri_get_compressors (uri);
