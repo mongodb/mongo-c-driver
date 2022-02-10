@@ -1700,7 +1700,6 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
             "Expected error, but change stream did not return an error");
       }
 
-/* JFW: the below assertion fails mysteriously when the versioned client: */
       expected_err_code = bson_lookup_int32 (test, "result.error.code");
       ASSERT_CMPINT64 (expected_err_code, ==, (int32_t) error.code);
 
@@ -2580,6 +2579,7 @@ prose_test_18 (void)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
+
 
 
 void

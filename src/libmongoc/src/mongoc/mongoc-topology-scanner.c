@@ -106,16 +106,15 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
 static void
 _add_hello (mongoc_topology_scanner_t *ts)
 {
-   mongoc_server_api_t *api = ts->api;
-
    BSON_APPEND_INT32 (&ts->hello_cmd, "hello", 1);
    BSON_APPEND_BOOL (&ts->hello_cmd, "helloOk", true);
 
    BSON_APPEND_INT32 (&ts->legacy_hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
    BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
 
-   if (api) {
-      _mongoc_cmd_append_server_api (&ts->hello_cmd, api);
+   /* Append appropriate "apiVersion" if selected: */
+   if (mongoc_topology_scanner_uses_server_api(ts)) {
+      _mongoc_cmd_append_server_api (&ts->hello_cmd, ts->api);
    }
 }
 
@@ -278,10 +277,6 @@ _build_handshake_cmd (const mongoc_topology_scanner_t *ts,
    if (!subdoc_okay) {
       bson_destroy (doc);
       return NULL;
-   }
-
-   if (mongoc_topology_scanner_uses_server_api(ts)) {
-      bson_append_utf8(doc, "serverApi", -1, "1", -1);
    }
 
    BSON_APPEND_ARRAY_BEGIN (doc, "compression", &subdoc);
