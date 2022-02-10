@@ -223,7 +223,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    bson_copy_to (cmd, &acmd->cmd);
 
    if (MONGOC_OPCODE_MSG == cmd_opcode) {
-      // If we're sending an OPCODE_MSG, we need to add the "db" field:
+      /* If we're sending an OPCODE_MSG, we need to add the "db" field: */
       bson_append_utf8 (&acmd->cmd, "$db", 3, "admin", 5);
    }
 
