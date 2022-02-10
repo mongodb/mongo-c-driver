@@ -664,9 +664,11 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                            cursor->client_session,
                                            &reply,
                                            &cursor->error);
-      /* Also restore whether primary read preference was forced by server
-       * selection */
-      server_stream->must_use_primary = cursor->must_use_primary;
+      if (server_stream) {
+         /* Also restore whether primary read preference was forced by server
+          * selection */
+         server_stream->must_use_primary = cursor->must_use_primary;
+      }
    } else {
       server_stream =
          mongoc_cluster_stream_for_reads (&cursor->client->cluster,
