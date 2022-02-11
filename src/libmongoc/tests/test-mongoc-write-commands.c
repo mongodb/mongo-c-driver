@@ -301,7 +301,7 @@ test_bypass_not_sent (void)
    char *collname;
    char *dbname;
 
-   client = test_framework_client_new_no_server_api ();
+   client = test_framework_new_default_client();
 
    /* set up command monitoring for started commands */
    callbacks = mongoc_apm_callbacks_new ();
