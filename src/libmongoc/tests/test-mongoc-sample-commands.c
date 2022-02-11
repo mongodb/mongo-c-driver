@@ -3754,17 +3754,14 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    ASSERT_OR_PRINT (ok, error);
    db = mongoc_client_get_database (client, "db");
    sales = mongoc_database_get_collection (db, "sales");
+   ok = mongoc_collection_drop (sales, &error);
    /* Ignore an "ns not found" error on dropping the db.sales collection in case
    it exists. */
-   ok = mongoc_collection_drop (sales, &error);
    if (!ok && NULL == strstr (error.message, "ns not found")) {
-
-      test_error("error.domain == %d, error.code == %d\n",
-               error.domain, error.code);
-
-      /* Ignore an "ns not found" error on dropping the collection in case the
-       * namespace does not exist. */
-      ASSERT_OR_PRINT (ok, error);
+      ASSERT_WITH_MSG (ok,
+                       "error.domain == %d, error.code == %d\n",
+                       error.domain,
+                       error.code);
    }
 
    /* Start Versioned API Example 5 */
@@ -3853,7 +3850,7 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    /* End Versioned API Example 5 */
 
    ASSERT_OR_PRINT (ok, error);
-   bson_destroy (&reply); 
+   bson_destroy (&reply);
 
    cmd = BCON_NEW ("count", "sales");
    ok = mongoc_database_command_simple (

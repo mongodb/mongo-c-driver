@@ -844,7 +844,6 @@ _test_heartbeat_fails_dns (bool pooled)
       pool_set_heartbeat_event_callbacks (pool, &context);
       client = mongoc_client_pool_pop (pool);
    } else {
-      /* This does not appear to fail with a legacy hello error: */
       client = test_framework_client_new_from_uri (uri, NULL);
       client_set_heartbeat_event_callbacks (client, &context);
    }

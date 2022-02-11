@@ -1933,8 +1933,8 @@ test_cluster_install (TestSuite *suite)
                                 test_cluster_command_error);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/hello_on_unknown/mock", test_hello_on_unknown);
-/* JFW: these tests exhibit some mysterious behavior after the new feature
-changes-- need further investigation:
+/* These tests exhibit some mysterious behavior after the new feature
+changes-- see: "https://jira.mongodb.org/browse/CDRIVER-4293".
    TestSuite_AddLive (suite,
                       "/Cluster/cmd_on_unknown_serverid/pooled",
                       test_cmd_on_unknown_serverid_pooled);

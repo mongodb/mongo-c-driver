@@ -938,7 +938,6 @@ mock_server_receives_bulk_msg (mock_server_t *server,
 }
 
 
-
 /*--------------------------------------------------------------------------
  *
  * mock_server_receives_command --
@@ -1091,7 +1090,10 @@ mock_server_receives_legacy_hello (mock_server_t *server,
        strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO)) {
       request_destroy (request);
 
-      fprintf(stderr, "expected legacy hello (\"%s\"), but got \"%s\"\n", HANDSHAKE_CMD_LEGACY_HELLO, request->command_name);
+      fprintf (stderr,
+               "expected legacy hello (\"%s\"), but got \"%s\"\n",
+               HANDSHAKE_CMD_LEGACY_HELLO,
+               request->command_name);
 
       return NULL;
    }
@@ -1100,7 +1102,8 @@ mock_server_receives_legacy_hello (mock_server_t *server,
       bson_strdup_printf ("{'%s': 1, 'maxAwaitTimeMS': { '$exists': false }}",
                           request->command_name);
 
-   /* request_matches_query() always checks for OPCODE_QUERY, used by legacy hello: */
+   /* request_matches_query() always checks for OPCODE_QUERY, used by legacy
+    * hello: */
    if (!request_matches_query (request,
                                "admin.$cmd",
                                MONGOC_QUERY_SECONDARY_OK,
@@ -1209,10 +1212,10 @@ mock_server_receives_query (mock_server_t *server,
 request_t *
 mock_server_receives_hello_op_msg (mock_server_t *server)
 {
-   bson_t *msg =
-      tmp_bson ("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
-
-   return _mock_server_receives_single_msg (server, 0, msg);
+   return _mock_server_receives_single_msg (
+      server,
+      0,
+      tmp_bson ("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}"));
 }
 
 

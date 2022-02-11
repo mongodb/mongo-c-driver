@@ -556,19 +556,17 @@ request_matches_msg (const request_t *request,
 
       /* make sure the pattern is reasonable, e.g. that we didn't pass a string
        * instead of a bson_t* by mistake */
-      if (!bson_validate_with_error (pattern,
-                                     BSON_VALIDATE_EMPTY_KEYS |
-                                        BSON_VALIDATE_UTF8,
-                                     &bson_error)) {
-	test_error(
-                  "bson_validate_with_error() at doc %d:\n%d.%d: %s\n",
-                  i,
-                  bson_error.domain,
-                  bson_error.code,
-                  bson_error.message);
-
-         return false;
-      }
+      ASSERT_WITH_MSG (bson_validate_with_error (pattern,
+                                                 BSON_VALIDATE_EMPTY_KEYS |
+                                                    BSON_VALIDATE_UTF8,
+                                                 &bson_error),
+                       "invalid argument at position %d (note: must be "
+                       "bson_t*, not char*):\ndomain: %" PRIu32
+                       ", code: %" PRIu32 ", message: %s\n",
+                       i,
+                       bson_error.domain,
+                       bson_error.code,
+                       bson_error.message);
 
       if (i > request->docs.len) {
          fprintf (stderr,
