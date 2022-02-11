@@ -1184,6 +1184,11 @@ _mongoc_cmd_append_server_api (bson_t *command_body,
 
    string_version = mongoc_server_api_version_to_string (api->version);
 
+   /* Invalid API version: */
+   if (NULL == string_version) {
+	BSON_ASSERT(false);
+   }
+
    bson_append_utf8 (command_body, "apiVersion", -1, string_version, -1);
 
    if (api->strict.is_set) {
