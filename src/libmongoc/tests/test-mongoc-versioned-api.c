@@ -186,9 +186,9 @@ _test_mongoc_client_uses_server_api (void)
    client0 = mongoc_client_new ("mongodb://localhost");
    client1 = mongoc_client_new ("mongodb://localhost");
 
-   /* Neither client should have an API set: */
-   BSON_ASSERT (!client0->api);
-   BSON_ASSERT (!client1->api);
+   /* Ensure that neither client has an API set: */
+   ASSERT (!mongoc_client_uses_server_api (client0));
+   ASSERT (!mongoc_client_uses_server_api (client1));
 
    /* Set the API on one and only one client: */
    api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
@@ -201,8 +201,8 @@ _test_mongoc_client_uses_server_api (void)
 
    /* Tidy up: */
    mongoc_server_api_destroy (api);
-   mongoc_client_destroy (client0);
 
+   mongoc_client_destroy (client0);
    mongoc_client_destroy (client1);
 }
 

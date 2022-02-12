@@ -868,7 +868,6 @@ request_assert_no_duplicate_keys (request_t *request)
 }
 
 
-/* Note that mock-rs.c has another, similar function of the same name: */
 request_t *
 mock_server_receives_request (mock_server_t *server)
 {
