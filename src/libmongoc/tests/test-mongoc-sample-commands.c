@@ -3755,13 +3755,11 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    db = mongoc_client_get_database (client, "db");
    sales = mongoc_database_get_collection (db, "sales");
    ok = mongoc_collection_drop (sales, &error);
-   /* Ignore an "ns not found" error on dropping the db.sales collection in case
-   it exists. */
+   /* Drop db.sales in case the collection exists. */
    if (!ok && NULL == strstr (error.message, "ns not found")) {
-      ASSERT_WITH_MSG (ok,
-                       "error.domain == %d, error.code == %d\n",
-                       error.domain,
-                       error.code);
+      /* Ignore an "ns not found" error on dropping the collection in case the
+       * namespace does not exist. */
+      ASSERT_OR_PRINT (ok, error);
    }
 
    /* Start Versioned API Example 5 */

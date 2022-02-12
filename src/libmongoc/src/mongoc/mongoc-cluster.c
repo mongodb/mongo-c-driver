@@ -838,15 +838,13 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    if (!mongoc_cluster_uses_server_api (cluster)) {
       // Complete OPCODE_QUERY setup:
       hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
-   }
-   else {
-	/* We're using OP_MSG, and require some additional doctoring: */
-        bson_append_utf8 (&handshake_command, "$db", 3, "admin", 5);	
+   } else {
+      /* We're using OP_MSG, and require some additional doctoring: */
+      bson_append_utf8 (&handshake_command, "$db", 3, "admin", 5);
    }
 
    if (!mongoc_cluster_run_command_private (
           cluster, &hello_cmd, &reply, error)) {
-
       if (negotiate_sasl_supported_mechs) {
          if (bson_iter_init_find (&iter, &reply, "ok") &&
              !bson_iter_as_bool (&iter)) {
@@ -1984,7 +1982,7 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
    node->stream = stream;
    node->connection_address = bson_strdup (connection_address);
 
-   /* Note that the node->sd field is not explicitly initialized 
+   /* Note that the node->sd field is not explicitly initialized
    by parameter in this function. */
 
    return node;
@@ -2577,7 +2575,7 @@ _mongoc_cluster_create_server_stream (
       mongoc_server_description_new_copy (handshake_sd);
    /* can't just use mongoc_topology_server_by_id(), since we must hold the
     * lock while copying topology->shared_descr.ptr->logical_time below */
-   return mongoc_server_stream_new (td, sd, stream); 
+   return mongoc_server_stream_new (td, sd, stream);
 }
 
 
