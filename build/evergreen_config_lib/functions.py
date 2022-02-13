@@ -27,11 +27,9 @@ all_functions = OD([
                 ('directory', 'mongoc'),
             ]))]),
         shell_mongoc(r'''
-        # TODO: CDRIVER-3573 do not hardcode the version.
         if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
            # This is a GitHub PR or patch build, probably branched from master
-           VERSION_CURRENT="1.18.0"
-           echo $VERSION_CURRENT > "VERSION_CURRENT"
+           echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
            VERSION=$VERSION_CURRENT-${version_id}
         else
            VERSION=latest

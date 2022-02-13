@@ -10,9 +10,8 @@ mkdir abi-compliance/dumps
 # build the current changes
 export SKIP_MOCK_TESTS=ON
 export EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/changes-install -DCMAKE_C_FLAGS=-g -Og"
-# TODO CDRIVER-3573: calculate this dynamically once calc_release_version.py works with non-master non-release branches
-echo "1.17.0-pre" > VERSION_CURRENT
-echo "1.16.2" > VERSION_RELEASED
+echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+echo $(python ./build/calc_release_version.py --next-minor -p) > VERSION_RELEASED
 sh .evergreen/compile.sh
 make install
 
