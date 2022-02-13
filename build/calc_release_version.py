@@ -138,7 +138,7 @@ def main():
     """
     The algorithm is roughly:
 
-        - Is the --next_minor flag passed? If "yes", then return the next minor
+        - Is the --next-minor flag passed? If "yes", then return the next minor
            release with a pre-release marker.
         - Is the current HEAD associated with a tag that looks like a release
            version?
