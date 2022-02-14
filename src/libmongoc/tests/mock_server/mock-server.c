@@ -1084,6 +1084,10 @@ mock_server_receives_any_hello (mock_server_t *server)
 
  request = mock_server_receives_request(server);
 
+ if(NULL == request) {
+     return NULL;
+ }
+
  /* We check the opcode separately because request_matches_msg() and friends like
  to abort the program when checks fail: */
  if(MONGOC_OPCODE_MSG == request->opcode) {
