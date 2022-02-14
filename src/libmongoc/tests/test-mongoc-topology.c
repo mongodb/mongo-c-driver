@@ -360,14 +360,12 @@ _test_server_selection (bool try_once)
       mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
    }
 
-//JFW:   client = mongoc_client_new_from_uri (uri);
    client = test_framework_client_new_from_uri (uri, NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* no primary, selection fails after one try */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, secondary_response);
@@ -376,7 +374,6 @@ _test_server_selection (bool try_once)
    /* the selection timeout is 100 ms, and we can't rescan until a half second
     * passes, so selection fails without another hello call */
    mock_server_set_request_timeout_msec (server, 600);
-//JFW:   BSON_ASSERT (!mock_server_receives_legacy_hello (server, NULL));
    BSON_ASSERT (!mock_server_receives_any_hello (server));
    mock_server_set_request_timeout_msec (server, get_future_timeout_ms ());
 
@@ -400,7 +397,6 @@ _test_server_selection (bool try_once)
    /* second selection, now we try hello again */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
 
@@ -705,15 +701,13 @@ test_cooldown_standalone (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-/*JFW:   client =
-      mongoc_client_new_from_uri (mock_server_get_uri (server)); */
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* first hello fails, selection fails */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
@@ -740,10 +734,7 @@ test_cooldown_standalone (void)
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
    mock_server_set_request_timeout_msec (server, 100);
-/*JFW:   BSON_ASSERT (
-      !mock_server_receives_legacy_hello (server, NULL)); */
-   BSON_ASSERT (
-      !mock_server_receives_any_hello (server)); /* no hello call */
+   BSON_ASSERT (!mock_server_receives_any_hello (server)); /* no hello call */
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
@@ -758,8 +749,6 @@ test_cooldown_standalone (void)
    /* cooldown ends, now we try hello again, this time succeeding */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
-/*JFW:   request = mock_server_receives_legacy_hello (server,
-                                                NULL); not in cooldown now */
    request = mock_server_receives_any_hello (server); /* not in cooldown now */
    BSON_ASSERT (request);
    mock_server_replies_simple (request,
@@ -806,7 +795,6 @@ test_cooldown_rs (void)
                                  "&connectTimeoutMS=100",
                                  mock_server_get_port (servers[0]));
 
-//JFW:   client = mongoc_client_new (uri_str);
    client = test_framework_client_new (uri_str, NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
@@ -837,14 +825,12 @@ test_cooldown_rs (void)
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
-//JFW:   request = mock_server_receives_legacy_hello (servers[0], NULL);
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
    /* server 0 told us about server 1. we check it immediately but it's down. */
-//JFW:   request = mock_server_receives_legacy_hello (servers[1], NULL);
    request = mock_server_receives_any_hello (servers[1]);
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
@@ -860,15 +846,13 @@ test_cooldown_rs (void)
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
-//JFW:   request = mock_server_receives_legacy_hello (servers[0], NULL);
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
    mock_server_set_request_timeout_msec (servers[1], 100);
-/*JFW: BSON_ASSERT (!mock_server_receives_legacy_hello (servers[1], NULL)); no hello call */
-   BSON_ASSERT (!mock_server_receives_any_hello(servers[1]));
+   BSON_ASSERT (!mock_server_receives_any_hello (servers[1]));
    mock_server_set_request_timeout_msec (servers[1], get_future_timeout_ms ());
 
    /* still no primary */
@@ -881,7 +865,6 @@ test_cooldown_rs (void)
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
-//JFW:   request = mock_server_receives_legacy_hello (servers[1], NULL);
    request = mock_server_receives_any_hello (servers[1]);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, primary_response);
@@ -923,7 +906,6 @@ test_cooldown_retry (void)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (
       uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
-//JFW:   client = mongoc_client_new_from_uri (uri);
    client = test_framework_client_new_from_uri (uri, NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
@@ -931,7 +913,6 @@ test_cooldown_retry (void)
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
    /* first hello fails */
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
@@ -939,7 +920,6 @@ test_cooldown_retry (void)
 
    /* after cooldown passes, driver sends another hello */
    start = bson_get_monotonic_time ();
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    duration = bson_get_monotonic_time () - start;
@@ -1274,13 +1254,11 @@ test_rtt (void *ctx)
    server = mock_server_new ();
    mock_server_run (server);
 
-/*JFW:   client =
-      mongoc_client_new_from_uri (mock_server_get_uri (server)); */
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    _mongoc_usleep (1000 * 1000); /* one second */
    mock_server_replies (
@@ -1442,7 +1420,6 @@ _test_hello_retry_single (bool hangup, int n_failures)
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
    }
 
-//JFW:   client = mongoc_client_new_from_uri (uri);
    client = test_framework_client_new_from_uri (uri, NULL);
    callbacks = heartbeat_callbacks ();
    mongoc_client_set_apm_callbacks (client, callbacks, &checks);
@@ -1459,7 +1436,6 @@ _test_hello_retry_single (bool hangup, int n_failures)
 
    /* start a {foo: 1} command, handshake normally */
    future = future_command (client, &error);
-//JFW   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, hello);
    request_destroy (request);
@@ -1470,7 +1446,6 @@ _test_hello_retry_single (bool hangup, int n_failures)
 
    /* start a {foo: 1} command, server check fails and retries immediately */
    future = future_command (client, &error);
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    t = bson_get_monotonic_time ();
    if (hangup) {
@@ -1480,7 +1455,6 @@ _test_hello_retry_single (bool hangup, int n_failures)
    request_destroy (request);
 
    /* retry immediately (for testing, "immediately" means less than 250ms */
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    ASSERT_CMPINT64 (bson_get_monotonic_time () - t, <, (int64_t) 250 * 1000);
 
@@ -2358,14 +2332,14 @@ _test_hello_versioned_api (bool pooled)
    }
 
    hello_reply = bson_strdup_printf ("{'ok': 1,"
-                               " 'isWritablePrimary': true,"
-                               " 'setName': 'rs',"
-                               " 'minWireVersion': %d,"
-                               " 'maxWireVersion': %d,"
-                               " 'hosts': ['%s']}",
-                               WIRE_VERSION_MIN,
-                               WIRE_VERSION_MAX,
-                               mock_server_get_host_and_port (server));
+                                     " 'isWritablePrimary': true,"
+                                     " 'setName': 'rs',"
+                                     " 'minWireVersion': %d,"
+                                     " 'maxWireVersion': %d,"
+                                     " 'hosts': ['%s']}",
+                                     WIRE_VERSION_MIN,
+                                     WIRE_VERSION_MAX,
+                                     mock_server_get_host_and_port (server));
 
    request = mock_server_receives_hello_op_msg (server);
 
@@ -2373,7 +2347,7 @@ _test_hello_versioned_api (bool pooled)
    BSON_ASSERT (bson_has_field (request_get_doc (request, 0), "apiVersion"));
    BSON_ASSERT (bson_has_field (request_get_doc (request, 0), "helloOk"));
 
-   mock_server_replies_simple (request, hello_reply); 
+   mock_server_replies_simple (request, hello_reply);
 
    request_destroy (request);
 

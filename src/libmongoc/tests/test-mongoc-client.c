@@ -190,7 +190,7 @@ test_client_cmd_w_write_concern (void *ctx)
    bson_error_t error;
 
    opts = bson_new ();
-   client = test_framework_new_default_client();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, 2);
 
    good_wc = mongoc_write_concern_new ();
@@ -2254,14 +2254,14 @@ test_mongoc_client_mismatched_me (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
-   client = test_framework_client_new_from_uri(uri, NULL);
+   client = test_framework_client_new_from_uri (uri, NULL);
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
    /* any operation should fail with server selection error */
    future = future_client_command_simple (
       client, "admin", tmp_bson ("{'ping': 1}"), prefs, NULL, &error);
 
-   request = mock_server_receives_any_hello(server);
+   request = mock_server_receives_any_hello (server);
 
    reply = bson_strdup_printf ("{'ok': 1,"
                                " 'setName': 'rs',"
@@ -2772,12 +2772,10 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
    mongoc_uri_set_option_as_int32 (uri, "socketCheckIntervalMS", 50);
- //JFW:  client = mongoc_client_new_from_uri (uri);
    client = test_framework_client_new_from_uri (uri, NULL);
 
    /* first selection succeeds */
    future = future_client_select_server (client, true, NULL, &error);
-//JFW   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, hello);
    request_destroy (request);
@@ -2799,7 +2797,6 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
    request_destroy (request);
 
    /* mongoc_client_select_server retries once */
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    if (retry_succeeds) {
       mock_server_replies_simple (request, hello);
@@ -2858,13 +2855,11 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
                                WIRE_VERSION_MAX);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "socketCheckIntervalMS", 50);
-//JFW:   client = mongoc_client_new_from_uri (uri);
    client = test_framework_client_new_from_uri (uri, NULL);
 
    /* first time succeeds */
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, &error);
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, hello);
    request_destroy (request);
@@ -2890,7 +2885,6 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
    request_destroy (request);
 
    /* mongoc_client_select_server retries once */
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    if (retry_succeeds) {
       mock_server_replies_simple (request, hello);
@@ -3286,12 +3280,10 @@ _test_client_sends_handshake (bool pooled)
       /* Pop a client to trigger the topology scanner */
       client = mongoc_client_pool_pop (pool);
    } else {
-//JFW:      client = mongoc_client_new_from_uri (uri);
       client = test_framework_client_new_from_uri (uri, NULL);
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
 
    /* Make sure the hello request has a "client" field: */
@@ -3306,7 +3298,6 @@ _test_client_sends_handshake (bool pooled)
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    _assert_hello_valid (request, false);
 
@@ -3320,14 +3311,12 @@ _test_client_sends_handshake (bool pooled)
 
    /* Now wait for the client to send another hello command, but this
     * time the server hangs up */
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    _assert_hello_valid (request, false);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* Client retries once (CDRIVER-2075) */
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    _assert_hello_valid (request, true);
    mock_server_hangs_up (request);
@@ -3346,7 +3335,6 @@ _test_client_sends_handshake (bool pooled)
 
    /* Now the client should try to reconnect. They think the server's down
     * so now they SHOULD send hello */
-//JFW:   request = mock_server_receives_legacy_hello (server, NULL);
    request = mock_server_receives_any_hello (server);
    _assert_hello_valid (request, true);
 
@@ -3415,7 +3403,7 @@ test_client_appname (bool pooled, bool use_uri)
       }
       client = mongoc_client_pool_pop (pool);
    } else {
-         client = mongoc_client_new_from_uri (uri);
+      client = mongoc_client_new_from_uri (uri);
       if (!use_uri) {
          ASSERT (mongoc_client_set_appname (client, "testapp"));
       }
@@ -3425,7 +3413,7 @@ test_client_appname (bool pooled, bool use_uri)
    request = mock_server_receives_legacy_hello (server,
                                                 "{'client': {"
                                                 "    'application': {"
-                                                "       'name': 'testapp'}}}"); 
+                                                "       'name': 'testapp'}}}");
 
    mock_server_replies_simple (request, server_reply);
    if (!pooled) {
