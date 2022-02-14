@@ -123,6 +123,7 @@ _test_topology_reconcile_rs (bool pooled)
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
+//JFW:      client = test_framework_client_new (uri_str, NULL);
       client = test_framework_client_new (uri_str, NULL);
    }
 
@@ -237,11 +238,13 @@ _test_topology_reconcile_sharded (bool pooled)
 
    uri = mongoc_uri_new (uri_str);
 
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+   if (pooled) { 
+//JFW:      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new (uri_str);
+//JFW:      client = mongoc_client_new (uri_str);
+      client = test_framework_client_new (uri_str, NULL);
    }
 
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
@@ -249,7 +252,8 @@ _test_topology_reconcile_sharded (bool pooled)
       client->topology, MONGOC_SS_READ, primary_read_prefs, &error);
 
    /* mongos */
-   request = mock_server_receives_legacy_hello (mongos, NULL);
+//JFW:   request = mock_server_receives_legacy_hello (mongos, NULL);
+   request = mock_server_receives_any_hello (mongos);
    mock_server_replies_simple (request,
                                tmp_str ("{'ok': 1,"
                                         " 'isWritablePrimary': true,"
@@ -265,7 +269,8 @@ _test_topology_reconcile_sharded (bool pooled)
    _mongoc_usleep (1000 * 1000);
 
    /* replica set secondary - topology removes it */
-   request = mock_server_receives_legacy_hello (secondary, NULL);
+//JFW:   request = mock_server_receives_legacy_hello (secondary, NULL);
+   request = mock_server_receives_any_hello (secondary);
    secondary_response =
       bson_strdup_printf ("{'ok': 1, "
                           " 'setName': 'rs',"
