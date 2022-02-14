@@ -129,6 +129,9 @@ mock_server_receives_command (mock_server_t *server,
                               const char *command_json,
                               ...);
 
+request_t *        
+mock_server_receives_any_hello (mock_server_t *server);
+
 request_t *
 mock_server_receives_legacy_hello (mock_server_t *server,
                                    const char *match_json);

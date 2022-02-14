@@ -1056,10 +1056,9 @@ _mock_server_receives_single_msg (mock_server_t *server,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_hello --
+ * mock_server_receives_hello_any --
  *
- *       Pop a client non-streaming hello call if one is enqueued,
- *       or wait up to request_timeout_ms for the client to send a request.
+ * Check for either an OP_MSG hello or an OP_QUERY legacy hello, in that order.
  *
  * Returns:
  *       A request you must request_destroy, or NULL if the current
@@ -1072,14 +1071,64 @@ _mock_server_receives_single_msg (mock_server_t *server,
  *--------------------------------------------------------------------------
  */
 
+/* JFW: move this fwd decl */
 request_t *
-mock_server_receives_legacy_hello (mock_server_t *server,
-                                   const char *match_json)
-{
-   request_t *request;
-   char *formatted_command_json;
+mock_server_matches_legacy_hello (request_t *request, const char *match_json);
 
-   request = mock_server_receives_request (server);
+request_t *
+mock_server_receives_any_hello (mock_server_t *server)
+{
+ request_t *request;
+ bson_t *hello_doc;
+ bool success = false;
+
+ request = mock_server_receives_request(server);
+
+ /* We check the opcode separately because request_matches_msg() and friends like
+ to abort the program when checks fail: */
+ if(MONGOC_OPCODE_MSG == request->opcode) {
+/* JFW: add check to see if serverApi is selected and avoid hardcoding apiVersion below */
+     hello_doc = tmp_bson ("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
+
+     if(request_matches_msg(request, 
+			0, /* flags */
+                        (const bson_t **)&hello_doc,
+                        1 /* number of documents */)) {
+
+	return request;
+     }
+ }
+
+ if(mock_server_matches_legacy_hello(request, NULL)) {
+     return request;
+ }
+
+ /* No match: */
+ request_destroy (request);
+ 
+ return NULL;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_matches_legacy_hello --
+ *
+ * Checks to see if a given request matches legacy hello.
+ *
+ * Returns:
+ *       A request you must request_destroy (the same one passed in), or 
+ *       NULL if the current request is not a hello command.
+ *
+ * Side effects:
+ *       Logs if the current request is not a legacy hello command ("isMaster")
+ *       using OP_QUERY.
+ *
+ *--------------------------------------------------------------------------
+ */
+request_t *
+mock_server_matches_legacy_hello (request_t *request, const char *match_json)
+{
+   char *formatted_command_json = NULL;
 
    if (!request) {
       return NULL;
@@ -1118,6 +1167,32 @@ mock_server_receives_legacy_hello (mock_server_t *server,
    bson_free (formatted_command_json);
 
    return request;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_legacy_hello --
+ *
+ *       Pop a client non-streaming hello call if one is enqueued,
+ *       or wait up to request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the current
+ *       request is not a hello command.
+ *
+ * Side effects:
+ *       Logs if the current request is not a legacy hello command ("isMaster")
+ *       using OP_QUERY.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_legacy_hello (mock_server_t *server,
+                                   const char *match_json)
+{
+   return mock_server_matches_legacy_hello(
+           mock_server_receives_request(server), match_json);
 }
 
 
