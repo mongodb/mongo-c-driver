@@ -3397,20 +3397,23 @@ test_client_appname (bool pooled, bool use_uri)
    }
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       if (!use_uri) {
          ASSERT (mongoc_client_pool_set_appname (pool, "testapp"));
       }
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       if (!use_uri) {
          ASSERT (mongoc_client_set_appname (client, "testapp"));
       }
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-   request = mock_server_receives_legacy_hello (server,
+   request = mock_server_receives_any_hello_with_match (server,
+                                                "{'client': {"
+                                                "    'application': {"
+                                                "       'name': 'testapp'}}}",
                                                 "{'client': {"
                                                 "    'application': {"
                                                 "       'name': 'testapp'}}}");
