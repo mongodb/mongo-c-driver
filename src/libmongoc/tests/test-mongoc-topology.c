@@ -2407,7 +2407,7 @@ _test_hello_ok (bool pooled)
       pool = mongoc_client_pool_new (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri(uri, NULL);
    }
 
    hello = bson_strdup_printf ("{'ok': 1,"
@@ -2438,8 +2438,9 @@ _test_hello_ok (bool pooled)
          client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    }
 
-   request = mock_server_receives_legacy_hello (
-      server, "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
+   request = mock_server_receives_any_hello_with_match (
+      server, NULL, "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
+
    BSON_ASSERT (request);
    mock_server_replies_simple (request, hello);
    request_destroy (request);
@@ -2460,14 +2461,17 @@ _test_hello_ok (bool pooled)
    }
 
    /* Hang up to ensure that the next check runs legacy hello again */
-   request = mock_server_receives_hello (server);
+   request = mock_server_receives_any_hello_with_match (server, "{}", "{}");
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* The previous failure will trigger another handshake using legacy hello */
-   request = mock_server_receives_legacy_hello (
-      server, "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
+   request = mock_server_receives_any_hello_with_match (
+      server,  
+      "{'" HANDSHAKE_CMD_HELLO "': 1, 'helloOk': true}",
+      "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
+
    BSON_ASSERT (request);
    mock_server_replies_simple (request, hello_not_ok);
    request_destroy (request);
@@ -2488,9 +2492,10 @@ _test_hello_ok (bool pooled)
    }
 
    /* Since we never responded with helloOk: true, we're expecting another
-    * legacy hello. */
-   request = mock_server_receives_legacy_hello (
-      server, "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
+    * hello. */
+   request = mock_server_receives_any_hello_with_match(
+      server,   "{'" HANDSHAKE_CMD_HELLO "': 1, 'helloOk': true}", "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
+
    BSON_ASSERT (request);
    mock_server_replies_simple (request, hello_not_ok);
    request_destroy (request);

@@ -1071,39 +1071,40 @@ _mock_server_receives_single_msg (mock_server_t *server,
  *--------------------------------------------------------------------------
  */
 
-/* JFW: move this fwd decl */
 request_t *
 mock_server_matches_legacy_hello (request_t *request, const char *match_json);
 
 request_t *
-mock_server_receives_any_hello (mock_server_t *server)
+mock_server_matches_any_hello_with_json (request_t *request, const char *match_json_op_msg, const char *match_json_op_query)
 {
- request_t *request;
  bson_t *hello_doc;
+ const char *hello_str = "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}";
+ 
  bool success = false;
 
- request = mock_server_receives_request(server);
-
- if(NULL == request) {
+ if(!request) {
      return NULL;
  }
 
  /* We check the opcode separately because request_matches_msg() and friends like
  to abort the program when checks fail: */
  if(MONGOC_OPCODE_MSG == request->opcode) {
-/* JFW: add check to see if serverApi is selected and avoid hardcoding apiVersion below */
-     hello_doc = tmp_bson ("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
 
+     if(NULL != match_json_op_msg)
+      hello_doc = tmp_bson(match_json_op_msg);
+     else
+      hello_doc = tmp_bson(hello_str);
+ 
      if(request_matches_msg(request, 
 			0, /* flags */
-                        (const bson_t **)&hello_doc,
+                        (const bson_t **)&hello_doc, 
                         1 /* number of documents */)) {
 
 	return request;
      }
  }
 
- if(mock_server_matches_legacy_hello(request, NULL)) {
+ if(mock_server_matches_legacy_hello(request, match_json_op_query ? match_json_op_query : NULL)) {
      return request;
  }
 
@@ -1111,6 +1112,12 @@ mock_server_receives_any_hello (mock_server_t *server)
  request_destroy (request);
  
  return NULL;
+}
+
+request_t *
+mock_server_receives_any_hello (mock_server_t *server)
+{
+ return mock_server_receives_any_hello_with_match(server, NULL, NULL);
 }
 
 /*--------------------------------------------------------------------------
@@ -1227,6 +1234,36 @@ mock_server_receives_hello (mock_server_t *server)
       "admin",
       MONGOC_QUERY_SECONDARY_OK,
       "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_any_hello_with_match --
+ *
+ *       Pop a client non-streaming hello call if one is enqueued,
+ *       or wait up to request_timeout_ms for the client to send a request;
+ *       matches the provided match_json document's fields to it.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the current
+ *       request is not a hello command.
+ *
+ * Side effects:
+ *       Logs if the current request is a hello command using OP_QUERY.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_any_hello_with_match (mock_server_t *server, const char *match_json_op_msg, const char *match_json_op_query)
+{ 
+ request_t *request = mock_server_receives_request(server);
+
+ if(NULL == request) {
+     return NULL;
+ }
+
+ return mock_server_matches_any_hello_with_json(request, match_json_op_msg, match_json_op_query);
 }
 
 /*--------------------------------------------------------------------------
