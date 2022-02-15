@@ -4091,7 +4091,7 @@ test_mongoc_client_resends_handshake_on_network_error (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_appname (client, "foo");
 
    /* Send a "ping" command. */
@@ -4099,8 +4099,10 @@ test_mongoc_client_resends_handshake_on_network_error (void)
       client, "db", ping, NULL /* read_prefs */, NULL /* reply */, &error);
    /* The first command on the new connection is handshake. It uses the legacy
     * hello and includes the client.application.name. */
-   request = mock_server_receives_legacy_hello (
+   request = mock_server_receives_any_hello_with_match (
       server,
+      "{'" HANDSHAKE_CMD_HELLO
+      "': 1, 'client': {'application': {'name': 'foo'}}}",
       "{'" HANDSHAKE_CMD_LEGACY_HELLO
       "': 1, 'client': {'application': {'name': 'foo'}}}");
    mock_server_replies_simple (
@@ -4124,8 +4126,10 @@ test_mongoc_client_resends_handshake_on_network_error (void)
    future = future_client_command_simple (
       client, "db", ping, NULL /* read_prefs */, NULL /* reply */, &error);
    /* Expect the new connection to send the full handshake. */
-   request = mock_server_receives_legacy_hello (
+   request = mock_server_receives_any_hello_with_match (
       server,
+      "{'" HANDSHAKE_CMD_HELLO
+      "': 1, 'client': {'application': {'name': 'foo'}}}",
       "{'" HANDSHAKE_CMD_LEGACY_HELLO
       "': 1, 'client': {'application': {'name': 'foo'}}}");
    mock_server_replies_simple (
