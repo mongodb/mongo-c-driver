@@ -39,13 +39,13 @@ mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t *crypto,
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
-EVP_MD_CTX *
+static EVP_MD_CTX *
 EVP_MD_CTX_new (void)
 {
    return bson_malloc0 (sizeof (EVP_MD_CTX));
 }
 
-void
+static void
 EVP_MD_CTX_free (EVP_MD_CTX *ctx)
 {
    EVP_MD_CTX_cleanup (ctx);
