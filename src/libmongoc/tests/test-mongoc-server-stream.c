@@ -116,12 +116,12 @@ test_server_stream_ties_server_description_pooled (void *unused)
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    client_one = mongoc_client_pool_pop (pool);
    client_two = mongoc_client_pool_pop (pool);
 
-   /* Respond to the monitoring legacy hello with server one hello. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   /* Respond to the monitoring hello with server one hello. */
+   request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, HELLO_SERVER_ONE);
    request_destroy (request);
 
@@ -133,7 +133,7 @@ test_server_stream_ties_server_description_pooled (void *unused)
                                           NULL /* reply */,
                                           &error);
    /* The first command on a pooled client creates a new connection. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, HELLO_SERVER_ONE);
    request_destroy (request);
    request = mock_server_receives_msg (
@@ -150,7 +150,7 @@ test_server_stream_ties_server_description_pooled (void *unused)
                                           NULL /* reply */,
                                           &error);
    /* The first command on a pooled client creates a new connection. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, HELLO_SERVER_TWO);
    request_destroy (request);
    request = mock_server_receives_msg (
@@ -201,7 +201,7 @@ test_server_stream_ties_server_description_single (void *unused)
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    /* Create a connection on client. */
    future = future_client_command_simple (client,
@@ -211,7 +211,7 @@ test_server_stream_ties_server_description_single (void *unused)
                                           NULL /* reply */,
                                           &error);
    /* The first command on a client creates a new connection. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, HELLO_SERVER_TWO);
    request_destroy (request);
    request = mock_server_receives_msg (
@@ -247,9 +247,9 @@ test_server_stream_ties_server_description_single (void *unused)
    ASSERT_MATCH (mongoc_server_description_hello_response (sd),
                  tmp_str ("{'maxWireVersion': %d}", WIRE_VERSION_MIN));
    mongoc_server_description_destroy (sd);
-   
-   /* Expect client to continue to use maxWireVersion=WIRE_VERSION_DELETE_HINT for
-    * wire version checks. Expect no error when using delete with hint and
+
+   /* Expect client to continue to use maxWireVersion=WIRE_VERSION_DELETE_HINT
+    * for wire version checks. Expect no error when using delete with hint and
     * unacknowledged write concern. */
    run_delete_with_hint_and_wc0 (false, client, server);
 

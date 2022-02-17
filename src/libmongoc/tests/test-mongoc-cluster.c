@@ -348,14 +348,14 @@ _test_write_disconnect (void)
    server = mock_server_new ();
    mock_server_run (server);
    client =
-      mongoc_client_new_from_uri (mock_server_get_uri (server));
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    /*
     * establish connection with an "hello" and "ping"
     */
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    hello = bson_strdup_printf ("{'ok': 1.0,"
                                " 'isWritablePrimary': true,"
                                " 'minWireVersion': %d,"
@@ -862,21 +862,21 @@ _test_cluster_time_comparison (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
    }
 
    future = future_ping (client, &error);
 
    /* timestamp is 1 */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    replies_with_cluster_time (request, 1, 1, hello);
 
    if (pooled) {
       /* a pooled client handshakes its own connection */
-      request = mock_server_receives_legacy_hello (server, NULL);
+      request = mock_server_receives_any_hello (server);
       replies_with_cluster_time (request, 1, 1, hello);
    }
 
@@ -902,11 +902,15 @@ _test_cluster_time_comparison (bool pooled)
 
    if (pooled) {
       /* wait for next heartbeat, it should contain newest cluster time */
-      request =
-         mock_server_receives_legacy_hello (server,
-                                            "{'$clusterTime': "
-                                            "{'clusterTime': {'$timestamp': "
-                                            "{'t': 2, 'i': 2}}}}");
+      request = mock_server_receives_any_hello_with_match (
+         server,
+         "{'$clusterTime': "
+         "{'clusterTime': {'$timestamp': "
+         "{'t': 2, 'i': 2}}}}",
+
+         "{'$clusterTime': "
+         "{'clusterTime': {'$timestamp': "
+         "{'t': 2, 'i': 2}}}}");
 
       replies_with_cluster_time (request, 2, 1, hello);
 
@@ -916,11 +920,15 @@ _test_cluster_time_comparison (bool pooled)
       /* trigger next heartbeat, it should contain newest cluster time */
       _mongoc_usleep (750 * 1000); /* 750 ms */
       future = future_ping (client, &error);
-      request =
-         mock_server_receives_legacy_hello (server,
-                                            "{'$clusterTime': "
-                                            "{'clusterTime': {'$timestamp': "
-                                            "{'t': 2, 'i': 2}}}}");
+      request = mock_server_receives_any_hello_with_match (
+         server,
+         "{'$clusterTime': "
+         "{'clusterTime': {'$timestamp': "
+         "{'t': 2, 'i': 2}}}}",
+
+         "{'$clusterTime': "
+         "{'clusterTime': {'$timestamp': "
+         "{'t': 2, 'i': 2}}}}");
 
       replies_with_cluster_time (request, 2, 1, hello);
       request = receives_with_cluster_time (server, 2, 2, ping);
@@ -1928,20 +1936,19 @@ test_cluster_install (TestSuite *suite)
       suite, "/Cluster/hello_fails", test_cluster_hello_fails);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/hello_hangup", test_cluster_hello_hangup);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cluster/command_error/op_msg",
-                                test_cluster_command_error);
+   TestSuite_AddMockServerTest (
+      suite, "/Cluster/command_error/op_msg", test_cluster_command_error);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/hello_on_unknown/mock", test_hello_on_unknown);
-/* These tests exhibit some mysterious behavior after the new feature
-changes-- see: "https://jira.mongodb.org/browse/CDRIVER-4293".
-   TestSuite_AddLive (suite,
-                      "/Cluster/cmd_on_unknown_serverid/pooled",
-                      test_cmd_on_unknown_serverid_pooled);
-   TestSuite_AddLive (suite,
-                      "/Cluster/cmd_on_unknown_serverid/single",
-                      test_cmd_on_unknown_serverid_single);
-*/
+   /* These tests exhibit some mysterious behavior after the new feature
+   changes-- see: "https://jira.mongodb.org/browse/CDRIVER-4293".
+      TestSuite_AddLive (suite,
+                         "/Cluster/cmd_on_unknown_serverid/pooled",
+                         test_cmd_on_unknown_serverid_pooled);
+      TestSuite_AddLive (suite,
+                         "/Cluster/cmd_on_unknown_serverid/single",
+                         test_cmd_on_unknown_serverid_single);
+   */
    TestSuite_AddLive (suite,
                       "/Cluster/stream_invalidation/single",
                       test_cluster_stream_invalidation_single);

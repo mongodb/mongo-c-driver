@@ -1054,11 +1054,55 @@ _mock_server_receives_single_msg (mock_server_t *server,
    return request;
 }
 
+
+request_t *
+mock_server_matches_legacy_hello (request_t *request, const char *match_json);
+
+request_t *
+mock_server_matches_any_hello_with_json (request_t *request,
+                                         const char *match_json_op_msg,
+                                         const char *match_json_op_query)
+{
+   if (!request) {
+      return NULL;
+   }
+
+   /* We check the opcode separately because request_matches_msg() and friends
+   like to abort the program when checks fail: */
+   if (MONGOC_OPCODE_MSG == request->opcode) {
+      bson_t *hello_doc = NULL;
+      const char *hello_str =
+         "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}";
+
+      if (NULL != match_json_op_msg)
+         hello_doc = tmp_bson (match_json_op_msg);
+      else
+         hello_doc = tmp_bson (hello_str);
+
+      if (request_matches_msg (request,
+                               0, /* flags */
+                               (const bson_t **) &hello_doc,
+                               1 /* number of documents */)) {
+         return request;
+      }
+   }
+
+   if (mock_server_matches_legacy_hello (
+          request, match_json_op_query ? match_json_op_query : NULL)) {
+      return request;
+   }
+
+   /* No match: */
+   request_destroy (request);
+
+   return NULL;
+}
+
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_hello_any --
+ * mock_server_receives_any_hello--
  *
- * Check for either an OP_MSG hello or an OP_QUERY legacy hello, in that order.
+ * Check first for an OP_MSG hello or an OP_QUERY with hello or legacy hello.
  *
  * Returns:
  *       A request you must request_destroy, or NULL if the current
@@ -1070,69 +1114,25 @@ _mock_server_receives_single_msg (mock_server_t *server,
  *
  *--------------------------------------------------------------------------
  */
-
-request_t *
-mock_server_matches_legacy_hello (request_t *request, const char *match_json);
-
-request_t *
-mock_server_matches_any_hello_with_json (request_t *request, const char *match_json_op_msg, const char *match_json_op_query)
-{
- bson_t *hello_doc;
- const char *hello_str = "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}";
- 
- bool success = false;
-
- if(!request) {
-     return NULL;
- }
-
- /* We check the opcode separately because request_matches_msg() and friends like
- to abort the program when checks fail: */
- if(MONGOC_OPCODE_MSG == request->opcode) {
-
-     if(NULL != match_json_op_msg)
-      hello_doc = tmp_bson(match_json_op_msg);
-     else
-      hello_doc = tmp_bson(hello_str);
- 
-     if(request_matches_msg(request, 
-			0, /* flags */
-                        (const bson_t **)&hello_doc, 
-                        1 /* number of documents */)) {
-
-	return request;
-     }
- }
-
- if(mock_server_matches_legacy_hello(request, match_json_op_query ? match_json_op_query : NULL)) {
-     return request;
- }
-
- /* No match: */
- request_destroy (request);
- 
- return NULL;
-}
-
 request_t *
 mock_server_receives_any_hello (mock_server_t *server)
 {
- return mock_server_receives_any_hello_with_match(server, NULL, NULL);
+   return mock_server_receives_any_hello_with_match (server, NULL, NULL);
 }
 
 /*--------------------------------------------------------------------------
  *
  * mock_server_matches_legacy_hello --
  *
- * Checks to see if a given request matches legacy hello.
+ * Checks to see if a given request matches OP_QUERY hello or legacy hello.
  *
  * Returns:
- *       A request you must request_destroy (the same one passed in), or 
+ *       A request you must request_destroy (the same one passed in), or
  *       NULL if the current request is not a hello command.
  *
  * Side effects:
- *       Logs if the current request is not a legacy hello command ("isMaster")
- *       using OP_QUERY.
+ *       Logs if the current request is not hello command or legacy hello
+ *       command ("isMaster") using OP_QUERY.
  *
  *--------------------------------------------------------------------------
  */
@@ -1150,7 +1150,7 @@ mock_server_matches_legacy_hello (request_t *request, const char *match_json)
       request_destroy (request);
 
       fprintf (stderr,
-               "expected legacy hello (\"%s\"), but got \"%s\"\n",
+               "expected hello or legacy hello (\"%s\"), but got \"%s\"\n",
                HANDSHAKE_CMD_LEGACY_HELLO,
                request->command_name);
 
@@ -1202,8 +1202,8 @@ request_t *
 mock_server_receives_legacy_hello (mock_server_t *server,
                                    const char *match_json)
 {
-   return mock_server_matches_legacy_hello(
-           mock_server_receives_request(server), match_json);
+   return mock_server_matches_legacy_hello (
+      mock_server_receives_request (server), match_json);
 }
 
 
@@ -1227,8 +1227,6 @@ mock_server_receives_legacy_hello (mock_server_t *server,
 request_t *
 mock_server_receives_hello (mock_server_t *server)
 {
-   /* Note that mock_server_receives_command() expects JSON documents, not BSON
-   documents, unlike _mock_server_receives_msg(): */
    return mock_server_receives_command (
       server,
       "admin",
@@ -1242,7 +1240,10 @@ mock_server_receives_hello (mock_server_t *server)
  *
  *       Pop a client non-streaming hello call if one is enqueued,
  *       or wait up to request_timeout_ms for the client to send a request;
- *       matches the provided match_json document's fields to it.
+ *       if non-NULL values are provided for either or both of the optional
+ *       match_json_op_msg or match_json_op_query parameters, the reply is
+ *       matched to those, as per request_matches_msg() or 
+ *       mock-server_matches_legacy_hello().
  *
  * Returns:
  *       A request you must request_destroy, or NULL if the current
@@ -1255,15 +1256,18 @@ mock_server_receives_hello (mock_server_t *server)
  */
 
 request_t *
-mock_server_receives_any_hello_with_match (mock_server_t *server, const char *match_json_op_msg, const char *match_json_op_query)
-{ 
- request_t *request = mock_server_receives_request(server);
+mock_server_receives_any_hello_with_match (mock_server_t *server,
+                                           const char *match_json_op_msg,
+                                           const char *match_json_op_query)
+{
+   request_t *request = mock_server_receives_request (server);
 
- if(NULL == request) {
-     return NULL;
- }
+   if (NULL == request) {
+      return NULL;
+   }
 
- return mock_server_matches_any_hello_with_json(request, match_json_op_msg, match_json_op_query);
+   return mock_server_matches_any_hello_with_json (
+      request, match_json_op_msg, match_json_op_query);
 }
 
 /*--------------------------------------------------------------------------

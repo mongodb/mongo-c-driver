@@ -42,7 +42,9 @@ typedef enum {
    TF_FAST_HEARTBEAT = 1 << 0,
    TF_FAST_MIN_HEARTBEAT = 1 << 1,
    TF_AUTO_RESPOND_POLLING_HELLO = 1 << 2,
-   TF_NO_MONGODB_API_VERSION = 1 << 3, /* if set, do not pick up the MONGODB_API_VERSION environment variable */
+   TF_NO_MONGODB_API_VERSION =
+      1 << 3, /* if set, do not pick up the MONGODB_API_VERSION environment
+                 variable */
 } tf_flags_t;
 
 typedef struct {
@@ -228,12 +230,11 @@ tf_new (tf_flags_t flags)
                                                  _heartbeat_succeeded);
    mongoc_apm_set_server_heartbeat_failed_cb (callbacks, _heartbeat_failed);
 
-   if(flags & TF_NO_MONGODB_API_VERSION) {
-   	   tf->pool = mongoc_client_pool_new(mock_server_get_uri (tf->server) );
-   }
-   else {
-	   tf->pool = test_framework_client_pool_new_from_uri (
-      			mock_server_get_uri (tf->server), NULL);
+   if (flags & TF_NO_MONGODB_API_VERSION) {
+      tf->pool = mongoc_client_pool_new (mock_server_get_uri (tf->server));
+   } else {
+      tf->pool = test_framework_client_pool_new_from_uri (
+         mock_server_get_uri (tf->server), NULL);
    }
 
    mongoc_client_pool_set_apm_callbacks (tf->pool, callbacks, tf);

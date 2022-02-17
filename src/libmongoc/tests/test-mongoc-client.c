@@ -3410,13 +3410,14 @@ test_client_appname (bool pooled, bool use_uri)
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-   request = mock_server_receives_any_hello_with_match (server,
-                                                "{'client': {"
-                                                "    'application': {"
-                                                "       'name': 'testapp'}}}",
-                                                "{'client': {"
-                                                "    'application': {"
-                                                "       'name': 'testapp'}}}");
+   request =
+      mock_server_receives_any_hello_with_match (server,
+                                                 "{'client': {"
+                                                 "    'application': {"
+                                                 "       'name': 'testapp'}}}",
+                                                 "{'client': {"
+                                                 "    'application': {"
+                                                 "       'name': 'testapp'}}}");
 
    mock_server_replies_simple (request, server_reply);
    if (!pooled) {
@@ -4094,7 +4095,8 @@ test_mongoc_client_resends_handshake_on_network_error (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_appname (client, "foo");
 
    /* Send a "ping" command. */

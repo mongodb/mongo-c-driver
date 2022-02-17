@@ -502,14 +502,14 @@ test_mongoc_handshake_too_big (void)
    /* avoid rare test timeouts */
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 20000);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    ASSERT (mongoc_client_set_appname (client, "my app"));
 
    /* Send a ping, mock server deals with it */
    future = future_client_command_simple (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
 
    /* Make sure the hello request has a handshake field, and it's not huge */
    ASSERT (request);

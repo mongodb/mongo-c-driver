@@ -179,14 +179,14 @@ test_topology_scanner_discovery (void)
 
    uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (primary));
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str, NULL);
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, secondary_pref, &error);
 
    /* a single scan discovers *and* checks the secondary */
-   request = mock_server_receives_legacy_hello (primary, NULL);
+   request = mock_server_receives_any_hello (primary);
    mock_server_replies_simple (request, primary_response);
    request_destroy (request);
 
@@ -194,7 +194,7 @@ test_topology_scanner_discovery (void)
    _mongoc_usleep (250 * 1000);
 
    /* a check of the secondary is scheduled in this scan */
-   request = mock_server_receives_legacy_hello (secondary, NULL);
+   request = mock_server_receives_any_hello (secondary);
    mock_server_replies_simple (request, secondary_response);
 
    /* scan completes */
@@ -257,7 +257,7 @@ test_topology_scanner_oscillate (void)
    /* start with server 0 */
    uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (server0));
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str, NULL);
    scanner = client->topology->scanner;
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
@@ -266,14 +266,14 @@ test_topology_scanner_oscillate (void)
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
    /* a single scan discovers servers 0 and 1 */
-   request = mock_server_receives_legacy_hello (server0, NULL);
+   request = mock_server_receives_any_hello (server0);
    mock_server_replies_simple (request, server0_response);
    request_destroy (request);
 
    /* let client process that response */
    _mongoc_usleep (250 * 1000);
 
-   request = mock_server_receives_legacy_hello (server1, NULL);
+   request = mock_server_receives_any_hello (server1);
    mock_server_replies_simple (request, server1_response);
 
    /* we don't schedule another check of server0 */

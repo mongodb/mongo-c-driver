@@ -163,7 +163,7 @@ _test_mongoc_speculative_auth (bool pooled,
    }
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
 #ifdef MONGOC_ENABLE_SSL
       if (use_ssl) {
@@ -176,7 +176,7 @@ _test_mongoc_speculative_auth (bool pooled,
       /* suppress the auth failure logs from pooled clients. */
       capture_logs (true);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
 
 #ifdef MONGOC_ENABLE_SSL
       if (use_ssl) {
@@ -193,7 +193,7 @@ _test_mongoc_speculative_auth (bool pooled,
       bson_t *response;
       char *str;
 
-      request = mock_server_receives_legacy_hello (server, NULL);
+      request = mock_server_receives_any_hello (server);
       ASSERT (request);
       request_doc = request_get_doc (request, 0);
       ASSERT (request_doc);

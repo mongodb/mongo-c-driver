@@ -2581,7 +2581,6 @@ prose_test_18 (void)
 }
 
 
-
 void
 test_change_stream_install (TestSuite *suite)
 {

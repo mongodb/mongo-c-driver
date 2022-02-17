@@ -213,7 +213,7 @@ test_framework_set_debug_stream (mongoc_client_t *client,
 typedef int64_t server_version_t;
 
 server_version_t
-test_framework_get_server_version_with_client(mongoc_client_t *client);
+test_framework_get_server_version_with_client (mongoc_client_t *client);
 server_version_t
 test_framework_get_server_version (void);
 server_version_t

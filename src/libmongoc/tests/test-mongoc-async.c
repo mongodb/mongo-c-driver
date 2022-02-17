@@ -358,7 +358,7 @@ test_hello_delay (void)
                          NULL, /* setup ctx. */
                          "admin",
                          &hello_cmd,
-			 MONGOC_OPCODE_QUERY, /* used by legacy hello */
+                         MONGOC_OPCODE_QUERY, /* used by legacy hello */
                          &test_hello_delay_callback,
                          &stream_with_result,
                          TIMEOUT);

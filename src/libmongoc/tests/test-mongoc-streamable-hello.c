@@ -31,7 +31,7 @@ _force_scan (mongoc_client_t *client, mock_server_t *server, const char *hello)
    client->topology->stale = true;
    future =
       future_client_select_server (client, true /* for writes */, NULL, &error);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, hello);
    sd = future_get_mongoc_server_description_ptr (future);
    BSON_ASSERT (sd);
@@ -52,7 +52,7 @@ test_topology_version_update (void)
    mock_server_run (server);
 
    client =
-      mongoc_client_new_from_uri (mock_server_get_uri (server));
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    /* Override minHeartbeatFrequencyMS so test does not wait for 500ms when a
     * scan is needed. */
    client->topology->min_heartbeat_frequency_msec = 1;

@@ -40,7 +40,7 @@ ping ()
    int ret = EXIT_FAILURE;
 
    uri = bson_strdup_printf ("mongodb://localhost/?tls=true&tlsCAFile=%s",
-                            ca_file);
+                             ca_file);
    ASSERT ((client = mongoc_client_new (uri)));
 
    bson_init (&ping);

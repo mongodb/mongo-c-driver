@@ -1157,7 +1157,7 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
       bson_free (compressors);
    }
 
-   client = test_framework_client_new_from_uri (uri, NULL); 
+   client = test_framework_client_new_from_uri (uri, NULL);
 
 #ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client);
@@ -1730,9 +1730,9 @@ test_framework_new_default_client ()
  *--------------------------------------------------------------------------
  */
 mongoc_client_t *
-test_framework_client_new_no_server_api()
+test_framework_client_new_no_server_api ()
 {
-   mongoc_uri_t *uri = test_framework_get_uri();
+   mongoc_uri_t *uri = test_framework_get_uri ();
    mongoc_client_t *client = mongoc_client_new_from_uri (uri);
 
    BSON_ASSERT (client);
@@ -2388,13 +2388,13 @@ server_version_t
 test_framework_get_server_version (void)
 {
    mongoc_client_t *client;
-   
+
    server_version_t ret = 0;
 
    client = test_framework_new_default_client ();
 
-   ret = test_framework_get_server_version_with_client(client);
- 
+   ret = test_framework_get_server_version_with_client (client);
+
    mongoc_client_destroy (client);
 
    return ret;

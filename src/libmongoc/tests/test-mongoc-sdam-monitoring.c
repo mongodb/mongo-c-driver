@@ -699,11 +699,11 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    start = bson_get_monotonic_time ();
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       pool_set_heartbeat_event_callbacks (pool, &context);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       client_set_heartbeat_event_callbacks (client, &context);
    }
 
@@ -712,7 +712,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
    /* topology scanner calls hello once */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
 
    if (succeeded) {
       mock_server_replies (
@@ -732,7 +732,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
 
    /* pooled client opens new socket, handshakes it by calling hello again */
    if (pooled && succeeded) {
-      request = mock_server_receives_legacy_hello (server, NULL);
+      request = mock_server_receives_any_hello (server);
       mock_server_replies (
          request,
          MONGOC_REPLY_NONE,
@@ -840,7 +840,7 @@ _test_heartbeat_fails_dns (bool pooled)
    uri = mongoc_uri_new (
       "mongodb://doesntexist.foobar/?serverSelectionTimeoutMS=3000");
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       pool_set_heartbeat_event_callbacks (pool, &context);
       client = mongoc_client_pool_pop (pool);
    } else {

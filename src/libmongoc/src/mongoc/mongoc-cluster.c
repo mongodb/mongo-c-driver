@@ -836,7 +836,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    /* Use OP_QUERY for the handshake, unless the user has specified an
     * API version; the correct hello_cmd has already been selected: */
    if (!mongoc_cluster_uses_server_api (cluster)) {
-      // Complete OPCODE_QUERY setup:
+      /* Complete OPCODE_QUERY setup: */
       hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
    } else {
       /* We're using OP_MSG, and require some additional doctoring: */
@@ -1982,8 +1982,8 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
    node->stream = stream;
    node->connection_address = bson_strdup (connection_address);
 
-   /* Note that the node->sd field is not explicitly initialized
-   by parameter in this function. */
+   /* Note that the node->sd field is set to NULL by bson_malloc(),
+   rather than being explicitly initialized. */
 
    return node;
 }
@@ -2111,7 +2111,7 @@ _cluster_add_node (mongoc_cluster_t *cluster,
        * generation. */
    }
 
-   /* take critical fields from a fresh hello (except the ->sd field): */
+   /* take critical fields from a fresh hello */
    cluster_node = _mongoc_cluster_node_new (stream, host->host_and_port);
 
    handshake_sd = _cluster_run_hello (cluster,

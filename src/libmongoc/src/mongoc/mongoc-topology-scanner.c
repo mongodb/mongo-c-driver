@@ -112,7 +112,7 @@ _add_hello (mongoc_topology_scanner_t *ts)
    BSON_APPEND_INT32 (&ts->legacy_hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
    BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
 
-   /* Append appropriate "apiVersion" if selected: */
+   /* Append appropriate server API fields (such as "serverApi") if selected: */
    if (mongoc_topology_scanner_uses_server_api(ts)) {
       _mongoc_cmd_append_server_api (&ts->hello_cmd, ts->api);
    }
@@ -1502,7 +1502,6 @@ _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
    ts->loadbalanced = true;
 }
 
-/* True if the client user has requested a specific wire protocol version: */
 bool
 mongoc_topology_scanner_uses_server_api (
    const mongoc_topology_scanner_t *topology_scanner)
