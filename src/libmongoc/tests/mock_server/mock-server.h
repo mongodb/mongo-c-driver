@@ -130,9 +130,11 @@ mock_server_receives_command (mock_server_t *server,
                               ...);
 
 request_t *
-mock_server_matches_any_hello_with_json (request_t *request, const char *match_json_op_msg, const char *match_json_op_query);
+mock_server_matches_any_hello_with_json (request_t *request,
+                                         const char *match_json_op_msg,
+                                         const char *match_json_op_query);
 
-request_t *        
+request_t *
 mock_server_receives_any_hello (mock_server_t *server);
 
 request_t *
@@ -146,7 +148,9 @@ request_t *
 mock_server_receives_hello_op_msg (mock_server_t *server);
 
 request_t *
-mock_server_receives_any_hello_with_match (mock_server_t *server, const char *match_json_op_msg, const char *match_json_op_query);
+mock_server_receives_any_hello_with_match (mock_server_t *server,
+                                           const char *match_json_op_msg,
+                                           const char *match_json_op_query);
 
 request_t *
 mock_server_receives_query (mock_server_t *server,
@@ -249,14 +253,13 @@ mock_server_destroy (mock_server_t *server);
 
 void
 rs_response_to_hello (mock_server_t *server,
-                         int max_wire_version,
-                         bool primary,
-                         int has_tags,
-                         ...);
+                      int max_wire_version,
+                      bool primary,
+                      int has_tags,
+                      ...);
 
-#define RS_RESPONSE_TO_HELLO(                     \
-   server, max_wire_version, primary, has_tags, ...) \
-   rs_response_to_hello (                         \
+#define RS_RESPONSE_TO_HELLO(server, max_wire_version, primary, has_tags, ...) \
+   rs_response_to_hello (                                                      \
       server, max_wire_version, primary, has_tags, __VA_ARGS__, NULL)
 
 #endif /* MOCK_SERVER_H */

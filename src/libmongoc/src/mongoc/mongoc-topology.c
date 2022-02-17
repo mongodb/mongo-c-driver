@@ -2037,4 +2037,3 @@ mongoc_topology_uses_server_api (const mongoc_topology_t *topology)
 {
    return mongoc_topology_scanner_uses_server_api (topology->scanner);
 }
-

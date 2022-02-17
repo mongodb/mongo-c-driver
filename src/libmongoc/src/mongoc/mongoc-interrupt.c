@@ -122,9 +122,8 @@ _mongoc_interrupt_new (uint32_t timeout_ms)
                                 (struct sockaddr *) &server_addr,
                                 sock_len,
                                 0);
-   if (ret == -1 &&
-       !MONGOC_ERRNO_IS_AGAIN (
-          mongoc_socket_errno (interrupt->impl.socket_pair.read))) {
+   if (ret == -1 && !MONGOC_ERRNO_IS_AGAIN (mongoc_socket_errno (
+                       interrupt->impl.socket_pair.read))) {
       _log_errno ("connect failed",
                   mongoc_socket_errno (interrupt->impl.socket_pair.read));
       GOTO (fail);

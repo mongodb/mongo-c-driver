@@ -997,7 +997,7 @@ _mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply)
    return false;
 }
 
-/* Get the first BSON document from an OP_MSG reply: */ 
+/* Get the first BSON document from an OP_MSG reply: */
 bool
 _mongoc_rpc_reply_get_first_msg (mongoc_rpc_msg_t *reply_msg,
                                  bson_t *bson_reply)

@@ -875,10 +875,10 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
 
    /* If the user has select a versioned API, we'll assume OPCODE_MSG;
    otherwise, we'll use the legacy OPCODE_QUERY: */
-   if (mongoc_topology_uses_server_api(server_monitor->topology)) {
+   if (mongoc_topology_uses_server_api (server_monitor->topology)) {
       /* OPCODE_MSG requires a "db" parameter: */
       bson_append_utf8 (&cmd, "$db", 3, "admin", 5);
- 
+
       if (!_server_monitor_send_and_recv_hello_opmsg (
              server_monitor, &cmd, hello_response, error)) {
          GOTO (fail);

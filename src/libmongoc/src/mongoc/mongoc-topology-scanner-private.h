@@ -56,7 +56,8 @@ typedef struct mongoc_topology_scanner_node {
    int64_t last_used;
    /* last_failed is set upon a network error trying to check a server.
     * last_failed is used to enforce cooldownMS.
-    * last_failed is not set upon a network error during an application operation on @stream. */
+    * last_failed is not set upon a network error during an application
+    * operation on @stream. */
    int64_t last_failed;
    bool has_auth;
    bool hello_ok;

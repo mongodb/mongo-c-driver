@@ -113,7 +113,7 @@ _add_hello (mongoc_topology_scanner_t *ts)
    BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
 
    /* Append appropriate server API fields (such as "serverApi") if selected: */
-   if (mongoc_topology_scanner_uses_server_api(ts)) {
+   if (mongoc_topology_scanner_uses_server_api (ts)) {
       _mongoc_cmd_append_server_api (&ts->hello_cmd, ts->api);
    }
 }
@@ -267,7 +267,7 @@ _build_handshake_cmd (const mongoc_topology_scanner_t *ts,
    char buf[16];
    bool subdoc_okay;
 
-   BSON_ASSERT(doc);
+   BSON_ASSERT (doc);
 
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
    subdoc_okay =
@@ -391,7 +391,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */
-   if (mongoc_topology_scanner_uses_server_api (ts)) { 
+   if (mongoc_topology_scanner_uses_server_api (ts)) {
       cmd_opcode_type = MONGOC_OPCODE_MSG;
    }
 
@@ -1508,4 +1508,3 @@ mongoc_topology_scanner_uses_server_api (
 {
    return NULL != topology_scanner->api;
 }
-
