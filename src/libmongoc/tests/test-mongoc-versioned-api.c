@@ -72,7 +72,9 @@ _test_mongoc_server_api_client (void)
    mongoc_server_api_t *api;
    bson_error_t error;
 
-   client = test_framework_client_new_no_server_api ();
+   /* We use mongoc_client_new() both to avoid having a server API set
+    * and also to avoid connecting to a server: */
+   client = mongoc_client_new ("mongodb://localhost");
    BSON_ASSERT (!client->api);
 
    api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
@@ -183,8 +185,12 @@ _test_mongoc_client_uses_server_api (void)
    mongoc_server_api_t *api;
    bson_error_t error;
 
-   client0 = test_framework_client_new_no_server_api ();
-   client1 = test_framework_client_new_no_server_api ();
+   /* We go through mongoc_client_new() rather than
+    * test_mongoc_client_uses_no_server_api() because we want no API to be set
+    * (directly, or through the environment) and /also/ no
+    * attempt to connect to a server: */
+   client0 = mongoc_client_new ("mongodb://localhost");
+   client1 = mongoc_client_new ("mongodb://localhost");
 
    /* Ensure that neither client has an API set: */
    ASSERT (!mongoc_client_uses_server_api (client0));
