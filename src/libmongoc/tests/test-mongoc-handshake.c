@@ -183,12 +183,12 @@ test_mongoc_handshake_data_append_success (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
    /* Force topology scanner to start */
    client = mongoc_client_pool_pop (pool);
 
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
@@ -292,12 +292,12 @@ test_mongoc_handshake_data_append_null_args (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
    /* Force topology scanner to start */
    client = mongoc_client_pool_pop (pool);
 
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
@@ -674,11 +674,11 @@ test_mongoc_handshake_cannot_send (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
    /* Pop a client to trigger the topology scanner */
    client = mongoc_client_pool_pop (pool);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
 
    /* Make sure the hello request DOESN'T have a handshake field: */
    ASSERT (request);
@@ -690,14 +690,14 @@ test_mongoc_handshake_cannot_send (void)
    request_destroy (request);
 
    /* Cause failure on client side */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    ASSERT (request);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* Make sure the hello request still DOESN'T have a handshake field
     * on subsequent heartbeats. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);

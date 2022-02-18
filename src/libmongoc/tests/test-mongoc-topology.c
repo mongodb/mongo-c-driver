@@ -2324,13 +2324,6 @@ _test_hello_versioned_api (bool pooled)
       client = test_framework_client_new_from_uri (uri, api);
    }
 
-   /* For client pools, the first handshake happens when the client is popped.
-    * For non-pooled clients, we send a ping command to trigger a handshake. */
-   if (!pooled) {
-      future = future_client_command_simple (
-         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-   }
-
    hello_reply = bson_strdup_printf ("{'ok': 1,"
                                      " 'isWritablePrimary': true,"
                                      " 'setName': 'rs',"
@@ -2340,6 +2333,13 @@ _test_hello_versioned_api (bool pooled)
                                      WIRE_VERSION_MIN,
                                      WIRE_VERSION_MAX,
                                      mock_server_get_host_and_port (server));
+
+   /* For client pools, the first handshake happens when the client is popped.
+    * For non-pooled clients, we send a ping command to trigger a handshake. */
+   if (!pooled) {
+      future = future_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   }
 
    request = mock_server_receives_hello_op_msg (server);
 

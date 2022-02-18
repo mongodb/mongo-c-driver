@@ -268,7 +268,7 @@ _server_monitor_send_and_recv_hello_opmsg (
                                            4,
                                            server_monitor->connect_timeout_ms,
                                            error)) {
-      GOTO (fail);
+      goto fail;
    }
 
    memcpy (&reply_len, buffer.data, 4);
@@ -279,7 +279,7 @@ _server_monitor_send_and_recv_hello_opmsg (
                                            reply_len - buffer.len,
                                            server_monitor->connect_timeout_ms,
                                            error)) {
-      GOTO (fail);
+      goto fail;
    }
 
    if (!_mongoc_rpc_scatter (&rpc, buffer.data, buffer.len)) {
@@ -288,11 +288,11 @@ _server_monitor_send_and_recv_hello_opmsg (
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Invalid reply from server.");
 
-      GOTO (fail);
+      goto fail;
    }
 
    if (!_mongoc_rpc_decompress_if_necessary (&rpc, &buffer, error)) {
-      GOTO (fail);
+      goto fail;
    }
    _mongoc_rpc_swab_from_le (&rpc);
 
@@ -301,7 +301,7 @@ _server_monitor_send_and_recv_hello_opmsg (
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Invalid reply from server");
-      GOTO (fail);
+      goto fail;
    }
    bson_copy_to (&temp_reply, reply);
 
@@ -353,7 +353,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                     niovec,
                                     server_monitor->connect_timeout_ms,
                                     error)) {
-      GOTO (fail);
+      goto fail;
    }
 
    if (!_mongoc_buffer_append_from_stream (&buffer,
@@ -361,7 +361,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                            4,
                                            server_monitor->connect_timeout_ms,
                                            error)) {
-      GOTO (fail);
+      goto fail;
    }
 
    memcpy (&reply_len, buffer.data, 4);
@@ -372,7 +372,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                            reply_len - buffer.len,
                                            server_monitor->connect_timeout_ms,
                                            error)) {
-      GOTO (fail);
+      goto fail;
    }
 
    if (!_mongoc_rpc_scatter (&rpc, buffer.data, buffer.len)) {
@@ -381,11 +381,11 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Invalid reply from server.");
 
-      GOTO (fail);
+      goto fail;
    }
 
    if (!_mongoc_rpc_decompress_if_necessary (&rpc, &buffer, error)) {
-      GOTO (fail);
+      goto fail;
    }
    _mongoc_rpc_swab_from_le (&rpc);
 
@@ -394,7 +394,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Invalid reply from server");
-      GOTO (fail);
+      goto fail;
    }
    bson_copy_to (&temp_reply, reply);
 

@@ -1242,7 +1242,7 @@ mock_server_receives_hello (mock_server_t *server)
  *       or wait up to request_timeout_ms for the client to send a request;
  *       if non-NULL values are provided for either or both of the optional
  *       match_json_op_msg or match_json_op_query parameters, the reply is
- *       matched to those, as per request_matches_msg() or 
+ *       matched to those, as per request_matches_msg() or
  *       mock-server_matches_legacy_hello().
  *
  * Returns:
@@ -1250,7 +1250,8 @@ mock_server_receives_hello (mock_server_t *server)
  *       request is not a hello command.
  *
  * Side effects:
- *       Logs if the current request is a hello command using OP_QUERY.
+ *       Logs if the current request uses OP_QUERY but is not hello or legacy
+ *hello.
  *
  *--------------------------------------------------------------------------
  */
@@ -1323,7 +1324,7 @@ mock_server_receives_query (mock_server_t *server,
  *       request is not a hello command.
  *
  * Side effects:
- *       Logs if the current request is a hello command using OP_MSG.
+ *       None. (See also request_matches_msg()).
  *
  *--------------------------------------------------------------------------
  */
