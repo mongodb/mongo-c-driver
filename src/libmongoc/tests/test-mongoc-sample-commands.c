@@ -3754,8 +3754,8 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    ASSERT_OR_PRINT (ok, error);
    db = mongoc_client_get_database (client, "db");
    sales = mongoc_database_get_collection (db, "sales");
-   ok = mongoc_collection_drop (sales, &error);
    /* Drop db.sales in case the collection exists. */
+   ok = mongoc_collection_drop (sales, &error);
    if (!ok && NULL == strstr (error.message, "ns not found")) {
       /* Ignore an "ns not found" error on dropping the collection in case the
        * namespace does not exist. */
@@ -3846,7 +3846,6 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    ok = mongoc_collection_insert_many (
       sales, (const bson_t **) docs, N_DOCS, NULL /* opts */, &reply, &error);
    /* End Versioned API Example 5 */
-
    ASSERT_OR_PRINT (ok, error);
    bson_destroy (&reply);
 
@@ -3860,7 +3859,6 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
       "Provided apiStrict:true, but the command count is not in API Version 1");
    ASSERT (!ok);
    bson_destroy (&reply);
-
 #if 0
    /* This block not evaluated, but is inserted into documentation to represent the above reply.
     * Don't delete me! */
