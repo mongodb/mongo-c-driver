@@ -247,7 +247,7 @@ mongoc_client_connect (bool buffered,
 
 
 /* Returns true if a versioned server API has been selected,
-otherwise returns false: */
+ * otherwise returns false. */
 bool
 mongoc_client_uses_server_api (const mongoc_client_t *client);
 

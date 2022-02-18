@@ -112,7 +112,7 @@ _add_hello (mongoc_topology_scanner_t *ts)
    BSON_APPEND_INT32 (&ts->legacy_hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
    BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
 
-   /* Append appropriate server API fields (such as "serverApi") if selected: */
+   /* Append appropriate server API metadata (such as "serverApi") if selected: */
    if (mongoc_topology_scanner_uses_server_api (ts)) {
       _mongoc_cmd_append_server_api (&ts->hello_cmd, ts->api);
    }
@@ -251,8 +251,7 @@ _mongoc_topology_scanner_parse_speculative_authentication (
 }
 
 static bson_t *
-_build_handshake_cmd (const mongoc_topology_scanner_t *ts,
-                      const bson_t *basis_cmd,
+_build_handshake_cmd (const bson_t *basis_cmd,
                       const char *appname,
                       const mongoc_uri_t *uri,
                       bool is_loadbalanced)
@@ -338,8 +337,7 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
    /* Construct a new handshake command to be sent */
    BSON_ASSERT (ts->handshake_cmd == NULL);
    bson_mutex_unlock (&ts->handshake_cmd_mtx);
-   new_cmd = _build_handshake_cmd (ts,
-                                   mongoc_topology_scanner_uses_server_api (ts)
+   new_cmd = _build_handshake_cmd (mongoc_topology_scanner_uses_server_api (ts)
                                       ? &ts->hello_cmd
                                       : &ts->legacy_hello_cmd,
                                    appname,

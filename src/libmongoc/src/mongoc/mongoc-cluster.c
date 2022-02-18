@@ -1982,7 +1982,7 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
    node->stream = stream;
    node->connection_address = bson_strdup (connection_address);
 
-   /* Note that the node->sd field is set to NULL by bson_malloc(),
+   /* Note that the node->sd field is set to NULL by bson_malloc0(),
    rather than being explicitly initialized. */
 
    return node;

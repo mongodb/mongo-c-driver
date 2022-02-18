@@ -228,6 +228,6 @@ test_client_versioned_api_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/VersionedApi/setters", _test_mongoc_server_api_setters);
    TestSuite_Add (suite,
-                  "VersionedApi/private/client_uses_server_api",
+                  "/VersionedApi/private/client_uses_server_api",
                   _test_mongoc_client_uses_server_api);
 }

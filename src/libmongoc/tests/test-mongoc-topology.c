@@ -2404,7 +2404,7 @@ _test_hello_ok (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri, NULL);

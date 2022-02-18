@@ -941,14 +941,14 @@ test_no_duplicates (void)
     * from interfering. */
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    mongoc_apm_set_server_changed_cb (callbacks, duplicates_server_changed);
    mongoc_apm_set_topology_changed_cb (callbacks, duplicates_topology_changed);
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &duplicates_counter);
    client = mongoc_client_pool_pop (pool);
 
    /* Topology scanning thread starts, and sends a hello. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request,
                                tmp_str ("{'ok': 1.0,"
                                         " 'isWritablePrimary': true, "
@@ -966,7 +966,7 @@ test_no_duplicates (void)
                                           NULL /* read prefs */,
                                           NULL /* reply */,
                                           &error);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (
       request,
       tmp_str (

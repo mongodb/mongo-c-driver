@@ -1365,7 +1365,7 @@ _test_cluster_hello_fails (bool hangup)
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    /* increase heartbeatFrequencyMS to prevent background server selection. */
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    mongoc_client_pool_set_error_api (pool, 2);
    mongoc_uri_destroy (uri);
    client = mongoc_client_pool_pop (pool);
@@ -1380,7 +1380,7 @@ _test_cluster_hello_fails (bool hangup)
       client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    /* the client adds a cluster node, creating a stream to the server, and then
     * sends a hello request. */
-   request = mock_server_receives_legacy_hello (mock_server, NULL);
+   request = mock_server_receives_any_hello (mock_server);
    /* CDRIVER-2576: the server replies with an error, so
     * _mongoc_stream_run_hello returns NULL, which
     * _mongoc_cluster_run_hello must check. */
