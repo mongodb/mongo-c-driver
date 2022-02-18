@@ -1158,6 +1158,7 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
    }
 
    client = test_framework_client_new_from_uri (uri, NULL);
+
 #ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client);
 #endif
@@ -1711,6 +1712,37 @@ test_framework_new_default_client ()
 
    return client;
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_client_new_no_server_api --
+ *
+ *       Get a client connected to the test MongoDB topology, with no server
+ *       API version set.
+ *
+ * Returns:
+ *       A client you must mongoc_client_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_t *
+test_framework_client_new_no_server_api ()
+{
+   mongoc_uri_t *uri = test_framework_get_uri ();
+   mongoc_client_t *client = mongoc_client_new_from_uri (uri);
+
+   BSON_ASSERT (client);
+   test_framework_set_ssl_opts (client);
+
+   mongoc_uri_destroy (uri);
+
+   return client;
+}
+
 
 mongoc_server_api_t *
 test_framework_get_default_server_api (void)
@@ -2334,14 +2366,12 @@ _parse_server_version (const bson_t *buildinfo)
 }
 
 server_version_t
-test_framework_get_server_version (void)
+test_framework_get_server_version_with_client (mongoc_client_t *client)
 {
-   mongoc_client_t *client;
    bson_t reply;
    bson_error_t error;
    server_version_t ret = 0;
 
-   client = test_framework_new_default_client ();
    ASSERT_OR_PRINT (
       mongoc_client_command_simple (
          client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
@@ -2350,6 +2380,21 @@ test_framework_get_server_version (void)
    ret = _parse_server_version (&reply);
 
    bson_destroy (&reply);
+
+   return ret;
+}
+
+server_version_t
+test_framework_get_server_version (void)
+{
+   mongoc_client_t *client;
+
+   server_version_t ret = 0;
+
+   client = test_framework_new_default_client ();
+
+   ret = test_framework_get_server_version_with_client (client);
+
    mongoc_client_destroy (client);
 
    return ret;

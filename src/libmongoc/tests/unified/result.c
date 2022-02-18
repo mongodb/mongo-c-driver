@@ -16,6 +16,7 @@
 
 #include "result.h"
 
+#include "bson/bson.h"
 #include "bsonutil/bson-parser.h"
 #include "bsonutil/bson-match.h"
 #include "mongoc-error-private.h"

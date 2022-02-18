@@ -56,7 +56,8 @@ typedef struct mongoc_topology_scanner_node {
    int64_t last_used;
    /* last_failed is set upon a network error trying to check a server.
     * last_failed is used to enforce cooldownMS.
-    * last_failed is not set upon a network error during an application operation on @stream. */
+    * last_failed is not set upon a network error during an application
+    * operation on @stream. */
    int64_t last_failed;
    bool has_auth;
    bool hello_ok;
@@ -279,6 +280,12 @@ _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
 /* for testing. */
 mongoc_stream_t *
 _mongoc_topology_scanner_tcp_initiate (mongoc_async_cmd_t *acmd);
+
+/* Returns true if versioned server API has been selected, otherwise
+ * false. */
+bool
+mongoc_topology_scanner_uses_server_api (
+   const mongoc_topology_scanner_t *topology_scanner);
 
 BSON_END_DECLS
 

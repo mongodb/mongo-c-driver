@@ -72,6 +72,8 @@ _test_mongoc_server_api_client (void)
    mongoc_server_api_t *api;
    bson_error_t error;
 
+   /* We use mongoc_client_new() both to avoid having a server API set
+    * and also to avoid connecting to a server: */
    client = mongoc_client_new ("mongodb://localhost");
    BSON_ASSERT (!client->api);
 
@@ -163,15 +165,51 @@ _test_mongoc_server_api_client_pool_once (void)
       "Cannot set server api after a client has been created");
 
    ASSERT (!mongoc_client_set_server_api (client, api, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_API_FROM_POOL,
-                          "Cannot set server api on a client checked out from a pool");
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_CLIENT,
+      MONGOC_ERROR_CLIENT_API_FROM_POOL,
+      "Cannot set server api on a client checked out from a pool");
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
    mongoc_server_api_destroy (api);
    mongoc_uri_destroy (uri);
+}
+
+static void
+_test_mongoc_client_uses_server_api (void)
+{
+   mongoc_client_t *client0; /* versioned */
+   mongoc_client_t *client1; /* not versioned */
+   mongoc_server_api_t *api;
+   bson_error_t error;
+
+   /* We go through mongoc_client_new() rather than
+    * test_mongoc_client_uses_no_server_api() because we want no API to be set
+    * (directly, or through the environment) and /also/ no
+    * attempt to connect to a server: */
+   client0 = mongoc_client_new ("mongodb://localhost");
+   client1 = mongoc_client_new ("mongodb://localhost");
+
+   /* Ensure that neither client has an API set: */
+   ASSERT (!mongoc_client_uses_server_api (client0));
+   ASSERT (!mongoc_client_uses_server_api (client1));
+
+   /* Set the API on one and only one client: */
+   api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
+   ASSERT_OR_PRINT (mongoc_client_set_server_api (client0, api, &error), error);
+
+   /* Check to see that we can distinguish whether or not the API was set via
+   our function under test: */
+   ASSERT (mongoc_client_uses_server_api (client0));
+   ASSERT (!mongoc_client_uses_server_api (client1));
+
+   /* Tidy up: */
+   mongoc_server_api_destroy (api);
+
+   mongoc_client_destroy (client0);
+   mongoc_client_destroy (client1);
 }
 
 void
@@ -189,4 +227,7 @@ test_client_versioned_api_install (TestSuite *suite)
    TestSuite_Add (suite, "/VersionedApi/copy", _test_mongoc_server_api_copy);
    TestSuite_Add (
       suite, "/VersionedApi/setters", _test_mongoc_server_api_setters);
+   TestSuite_Add (suite,
+                  "/VersionedApi/private/client_uses_server_api",
+                  _test_mongoc_client_uses_server_api);
 }

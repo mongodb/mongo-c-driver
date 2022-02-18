@@ -2748,5 +2748,5 @@ test_change_stream_install (TestSuite *suite)
       suite, "/change_streams/prose_test_18", prose_test_18);
 
    install_json_test_suite (
-      suite, JSON_DIR, "change_streams/legacy", &test_change_stream_spec_cb);
+      suite, JSON_DIR, "/change_streams/legacy", &test_change_stream_spec_cb);
 }

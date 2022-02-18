@@ -2261,7 +2261,8 @@ test_mongoc_client_mismatched_me (void)
    future = future_client_command_simple (
       client, "admin", tmp_bson ("{'ping': 1}"), prefs, NULL, &error);
 
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
+
    reply = bson_strdup_printf ("{'ok': 1,"
                                " 'setName': 'rs',"
                                " 'isWritablePrimary': false,"
@@ -2775,7 +2776,7 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
 
    /* first selection succeeds */
    future = future_client_select_server (client, true, NULL, &error);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, hello);
    request_destroy (request);
    sd = future_get_mongoc_server_description_ptr (future);
@@ -2796,7 +2797,7 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
    request_destroy (request);
 
    /* mongoc_client_select_server retries once */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    if (retry_succeeds) {
       mock_server_replies_simple (request, hello);
       sd = future_get_mongoc_server_description_ptr (future);
@@ -2859,7 +2860,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
    /* first time succeeds */
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, &error);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, hello);
    request_destroy (request);
 
@@ -2884,7 +2885,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
    request_destroy (request);
 
    /* mongoc_client_select_server retries once */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    if (retry_succeeds) {
       mock_server_replies_simple (request, hello);
       request_destroy (request);
@@ -3215,7 +3216,7 @@ test_mongoc_handshake_pool (void)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    ASSERT (mongoc_uri_set_appname (uri, BSON_FUNC));
 
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   pool = mongoc_client_pool_new (uri);
 
    client1 = mongoc_client_pool_pop (pool);
    request1 = mock_server_receives_legacy_hello (server, NULL);
@@ -3274,7 +3275,7 @@ _test_client_sends_handshake (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      pool = mongoc_client_pool_new (uri);
 
       /* Pop a client to trigger the topology scanner */
       client = mongoc_client_pool_pop (pool);
@@ -3283,7 +3284,7 @@ _test_client_sends_handshake (bool pooled)
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
 
    /* Make sure the hello request has a "client" field: */
    _assert_hello_valid (request, true);
@@ -3297,7 +3298,7 @@ _test_client_sends_handshake (bool pooled)
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    _assert_hello_valid (request, false);
 
    mock_server_replies_simple (request, server_reply);
@@ -3310,13 +3311,13 @@ _test_client_sends_handshake (bool pooled)
 
    /* Now wait for the client to send another hello command, but this
     * time the server hangs up */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    _assert_hello_valid (request, false);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* Client retries once (CDRIVER-2075) */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    _assert_hello_valid (request, true);
    mock_server_hangs_up (request);
    request_destroy (request);
@@ -3334,7 +3335,7 @@ _test_client_sends_handshake (bool pooled)
 
    /* Now the client should try to reconnect. They think the server's down
     * so now they SHOULD send hello */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    _assert_hello_valid (request, true);
 
    mock_server_replies_simple (request, server_reply);
@@ -3409,10 +3410,14 @@ test_client_appname (bool pooled, bool use_uri)
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-   request = mock_server_receives_legacy_hello (server,
-                                                "{'client': {"
-                                                "    'application': {"
-                                                "       'name': 'testapp'}}}");
+   request =
+      mock_server_receives_any_hello_with_match (server,
+                                                 "{'client': {"
+                                                 "    'application': {"
+                                                 "       'name': 'testapp'}}}",
+                                                 "{'client': {"
+                                                 "    'application': {"
+                                                 "       'name': 'testapp'}}}");
 
    mock_server_replies_simple (request, server_reply);
    if (!pooled) {
@@ -4090,7 +4095,8 @@ test_mongoc_client_resends_handshake_on_network_error (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_appname (client, "foo");
 
    /* Send a "ping" command. */
@@ -4098,8 +4104,10 @@ test_mongoc_client_resends_handshake_on_network_error (void)
       client, "db", ping, NULL /* read_prefs */, NULL /* reply */, &error);
    /* The first command on the new connection is handshake. It uses the legacy
     * hello and includes the client.application.name. */
-   request = mock_server_receives_legacy_hello (
+   request = mock_server_receives_any_hello_with_match (
       server,
+      "{'" HANDSHAKE_CMD_HELLO
+      "': 1, 'client': {'application': {'name': 'foo'}}}",
       "{'" HANDSHAKE_CMD_LEGACY_HELLO
       "': 1, 'client': {'application': {'name': 'foo'}}}");
    mock_server_replies_simple (
@@ -4123,8 +4131,10 @@ test_mongoc_client_resends_handshake_on_network_error (void)
    future = future_client_command_simple (
       client, "db", ping, NULL /* read_prefs */, NULL /* reply */, &error);
    /* Expect the new connection to send the full handshake. */
-   request = mock_server_receives_legacy_hello (
+   request = mock_server_receives_any_hello_with_match (
       server,
+      "{'" HANDSHAKE_CMD_HELLO
+      "': 1, 'client': {'application': {'name': 'foo'}}}",
       "{'" HANDSHAKE_CMD_LEGACY_HELLO
       "': 1, 'client': {'application': {'name': 'foo'}}}");
    mock_server_replies_simple (
