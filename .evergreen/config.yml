@@ -22022,11 +22022,11 @@ buildvariants:
   - .debug-compile !.sspi .nossl
   - .4.0 .openssl !.nosasl .server
   batchtime: 1440
-- name: zseries-rhel72
+- name: zseries-rhel83
   display_name: '*zSeries'
   expansions:
     CC: gcc
-  run_on: rhel72-zseries-test
+  run_on: rhel83-zseries-small
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
