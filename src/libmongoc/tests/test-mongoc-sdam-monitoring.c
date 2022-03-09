@@ -1055,7 +1055,8 @@ test_sdam_monitoring_install (TestSuite *suite)
       test_heartbeat_fails_dns_pooled,
       NULL,
       NULL,
-      test_framework_skip_if_offline);
+      test_framework_skip_if_offline,
+      test_framework_skip_if_rhel8_zseries);
    TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/no_duplicates",

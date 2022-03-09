@@ -520,9 +520,9 @@ all_variants = [
              '.4.0 .openssl !.nosasl .server'],
             {'CC': 'gcc'},
             batchtime=days(1)),
-    Variant('zseries-rhel72',
+    Variant('zseries-rhel83',
             '*zSeries',
-            'rhel72-zseries-test',
+            'rhel83-zseries-small',
             ['release-compile',
         #      '.compression', --> TODO: waiting on ticket CDRIVER-3258
              'debug-compile-nosasl-nossl',
