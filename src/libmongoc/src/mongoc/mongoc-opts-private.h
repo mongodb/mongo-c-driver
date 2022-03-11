@@ -31,6 +31,7 @@ typedef struct _mongoc_update_opts_t {
    bson_t collation;
    bson_value_t hint;
    bool upsert;
+   bson_t let;
 } mongoc_update_opts_t;
 
 typedef struct _mongoc_insert_one_opts_t {
@@ -50,6 +51,7 @@ typedef struct _mongoc_delete_opts_t {
    mongoc_crud_opts_t crud;
    bson_t collation;
    bson_value_t hint;
+   bson_t let;
 } mongoc_delete_opts_t;
 
 typedef struct _mongoc_delete_one_opts_t {
@@ -84,6 +86,7 @@ typedef struct _mongoc_bulk_opts_t {
    bool write_concern_owned;
    bool ordered;
    mongoc_client_session_t *client_session;
+   bson_t let;
    bson_t extra;
 } mongoc_bulk_opts_t;
 
@@ -194,6 +197,7 @@ typedef struct _mongoc_find_and_modify_appended_opts_t {
    bool write_concern_owned;
    mongoc_client_session_t *client_session;
    bson_value_t hint;
+   bson_t let;
    bson_t extra;
 } mongoc_find_and_modify_appended_opts_t;
 
