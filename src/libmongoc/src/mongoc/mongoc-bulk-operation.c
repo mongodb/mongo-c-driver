@@ -54,6 +54,8 @@ mongoc_bulk_operation_new (bool ordered)
    bulk->flags.ordered = ordered;
    bulk->server_id = 0;
 
+   bson_init (&bulk->let);
+
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
    _mongoc_write_result_init (&bulk->result);
 
@@ -102,6 +104,7 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 
       bson_free (bulk->database);
       bson_free (bulk->collection);
+      bson_destroy (&bulk->let);
       mongoc_write_concern_destroy (bulk->write_concern);
       _mongoc_array_destroy (&bulk->commands);
 
@@ -949,4 +952,21 @@ mongoc_bulk_operation_set_bypass_document_validation (
    BSON_ASSERT (bulk);
 
    bulk->flags.bypass_document_validation = bypass;
+}
+
+
+void
+mongoc_bulk_operation_set_let (mongoc_bulk_operation_t *bulk, const bson_t *let)
+{
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (let);
+
+   /* This method cannot be called after appending operations, as the CRUD spec
+    * states the option should apply to all commands (excluding insert). Since
+    * commands are initialized as operations are added, allowing "let" to be
+    * changed at any time could violate that contract. */
+   BSON_ASSERT (bulk->commands.len == 0);
+
+   bson_destroy (&bulk->let);
+   bson_copy_to (let, &bulk->let);
 }
