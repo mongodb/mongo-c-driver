@@ -21,7 +21,7 @@ Parameters
 
 ``extra`` is a :symbol:`bson_t` containing any of the following optional fields:
 
-* ``mongocryptdURI`` set to a URI to connect to the mongocryptd process (default is "mongodb://localhost:27027").
+* ``mongocryptdURI`` set to a URI to connect to the mongocryptd process (default is "mongodb://localhost:27020").
 * ``mongocryptdBypassSpawn`` set to true to prevent the driver from spawning the mongocryptd process (default behavior is to spawn).
 * ``mongocryptdSpawnPath`` set to a path (with trailing slash) to search for mongocryptd (defaults to empty string and uses default system paths).
 * ``mongocryptdSpawnArgs`` set to an array of string arguments to pass to ``mongocryptd`` when spawning (defaults to ``[ "--idleShutdownTimeoutSecs=60" ]``).
