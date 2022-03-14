@@ -1,3 +1,17 @@
+libmongoc 1.21.1
+================
+
+Bug Fixes:
+  * Use static decls for OpenSSL 1.1 polyfills 
+  * Prevent possible crash in _mongoc_cursor_fetch_stream
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Jeremy Mikola
+  * Remi Collet
+
+
+
 libmongoc 1.21.0
 ================
 
