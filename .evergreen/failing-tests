@@ -1,0 +1,19 @@
+# This file lists known failing tests that for some reason or another cannot be
+# fixed and rather should be skipped in Evergreen builds.  Note that listing a
+# test in this file will result in the test being skipped on all platforms,
+# build variants, tasks, etc.
+#
+# The format of this file is as follows:
+# - one test per line, with an optional comment (total lines in file < 1,000)
+# - comments begin with a hash (#) character and continue to the end of the line
+# - lines starting with the comment character and blank lines are ignored
+# - specify test names as they are known to the test runner (e.g., /some/test)
+# - specify sub-tests of spec tests by an additional slash (/) and the quoted description
+#   (e.g., /some/spec/test/"sub-test 1")
+# - placing a comment at the end of a line will cause the test runner to ouptut
+#   the comment text as the skip reason when the test is skipped
+#
+# Example entries:
+# /skip/entire/test # this will be output by the runner as the skip reason
+# /skip/part/of/spec/test/"sub-test description" # this will also be output
+

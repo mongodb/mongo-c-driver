@@ -35,7 +35,7 @@ case "$OS" in
       if [ "$VALGRIND" = "on" ]; then
          DIR=$(dirname $0)
          . $DIR/valgrind.sh
-         run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
+         run_valgrind ./src/libmongoc/test-libmongoc --no-fork --skip-failing .evergreen/failing-tests --skip-flaky .evergreen/flaky-tests $TEST_ARGS
       else
          ./.libs/test-libbson "--no-fork $TEST_ARGS"
       fi

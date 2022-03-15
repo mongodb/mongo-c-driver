@@ -103,11 +103,13 @@ esac
 if [ "$RELEASE" ]; then
    BUILD_CONFIG="RelWithDebInfo"
    TEST_PATH="./src/libmongoc/RelWithDebInfo/test-libmongoc.exe"
+   FAILING_FLAKY_TEST_OPTS="--skip-failing ../.evergreen/failing-tests --skip-flaky ../.evergreen/flaky-tests"
    export PATH=$PATH:`pwd`/src/libbson/RelWithDebInfo:`pwd`/src/libmongoc/RelWithDebInfo:`pwd`/install-dir/bin
 else
    CONFIGURE_FLAGS="${CONFIGURE_FLAGS} -DENABLE_DEBUG_ASSERTIONS=ON"
    BUILD_CONFIG="Debug"
    TEST_PATH="./src/libmongoc/Debug/test-libmongoc.exe"
+   FAILING_FLAKY_TEST_OPTS="--skip-failing .evergreen/failing-tests --skip-flaky .evergreen/flaky-tests"
    export PATH=$PATH:`pwd`/src/libbson/Debug:`pwd`/src/libmongoc/Debug:`pwd`/install-dir/bin
 fi
 
@@ -136,4 +138,4 @@ fi
 
 export MONGOC_TEST_SERVER_LOG=stdout
 
-"$TEST_PATH" --no-fork -d -F test-results.json
+"$TEST_PATH" --no-fork -d -F test-results.json $FAILING_FLAKY_TEST_OPTS
