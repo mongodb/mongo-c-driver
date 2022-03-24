@@ -1843,19 +1843,17 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fPIC"
         export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export CFLAGS="-fPIC"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
         export SASL="AUTO"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1875,19 +1873,17 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fPIC"
         export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export CFLAGS="-fPIC"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
         export SASL="AUTO"
         export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1907,19 +1903,17 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fPIC"
         export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="DARWIN"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export CFLAGS="-fPIC"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
         export SASL="AUTO"
         export SSL="DARWIN"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1939,19 +1933,17 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fPIC"
         export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="WINDOWS"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export CFLAGS="-fPIC"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
         export SASL="AUTO"
         export SSL="WINDOWS"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1969,10 +1961,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
         export CHECK_LOG="ON"
         export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF"
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"

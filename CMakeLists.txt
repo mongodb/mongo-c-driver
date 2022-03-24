@@ -83,8 +83,11 @@ include(MongoC-Warnings)
 
 # Enable CCache, if possible
 include (CCache)
+
 # Link with LLD, if possible
-include (LLDLinker)
+if (NOT MSVC)
+   include (LLDLinker)
+endif ()
 
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
 
