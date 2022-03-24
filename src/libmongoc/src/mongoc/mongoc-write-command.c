@@ -290,6 +290,7 @@ void
 _mongoc_write_command_init_update (mongoc_write_command_t *command, /* IN */
                                    const bson_t *selector,          /* IN */
                                    const bson_t *update,            /* IN */
+                                   const bson_t *cmd_opts,          /* IN */
                                    const bson_t *opts,              /* IN */
                                    mongoc_bulk_write_flags_t flags, /* IN */
                                    int64_t operation_id)            /* IN */
@@ -301,7 +302,7 @@ _mongoc_write_command_init_update (mongoc_write_command_t *command, /* IN */
    BSON_ASSERT (update);
 
    _mongoc_write_command_init_bulk (
-      command, MONGOC_WRITE_COMMAND_UPDATE, flags, operation_id, NULL);
+      command, MONGOC_WRITE_COMMAND_UPDATE, flags, operation_id, cmd_opts);
    _mongoc_write_command_update_append (command, selector, update, opts);
 
    EXIT;
@@ -312,6 +313,7 @@ void
 _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
                                        const bson_t *selector,
                                        const bson_t *update,
+                                       const bson_t *cmd_opts,
                                        const bson_t *opts,
                                        int64_t operation_id)
 {
@@ -322,7 +324,7 @@ _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
    BSON_ASSERT (command);
 
    _mongoc_write_command_init_bulk (
-      command, MONGOC_WRITE_COMMAND_UPDATE, flags, operation_id, NULL);
+      command, MONGOC_WRITE_COMMAND_UPDATE, flags, operation_id, cmd_opts);
    _mongoc_write_command_update_append (command, selector, update, opts);
 
    EXIT;

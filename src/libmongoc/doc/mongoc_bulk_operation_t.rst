@@ -50,6 +50,7 @@ After adding all of the write operations to the ``mongoc_bulk_operation_t``, cal
     mongoc_bulk_operation_set_bypass_document_validation
     mongoc_bulk_operation_set_client_session
     mongoc_bulk_operation_set_hint
+    mongoc_bulk_operation_set_let
     mongoc_bulk_operation_update
     mongoc_bulk_operation_update_many_with_opts
     mongoc_bulk_operation_update_one

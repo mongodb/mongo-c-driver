@@ -33,6 +33,7 @@ struct _mongoc_bulk_operation_t {
    mongoc_client_session_t *session;
    mongoc_write_concern_t *write_concern;
    mongoc_bulk_write_flags_t flags;
+   bson_t let;
    uint32_t server_id;
    mongoc_array_t commands;
    mongoc_write_result_t result;

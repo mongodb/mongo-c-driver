@@ -4679,6 +4679,237 @@ test_bulk_bypass_document_validation (void)
 }
 
 
+static void
+_test_bulk_let (bulkop op)
+{
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   request_t *request;
+   future_t *future;
+   const char *expect_msg;
+   const char *expect_doc;
+   bool r;
+
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
+   mock_server_run (mock_server);
+
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson ("{'let': {'id': 1}}"));
+
+   switch (op) {
+   case BULK_REMOVE:
+      r = mongoc_bulk_operation_remove_many_with_opts (
+         bulk, tmp_bson ("{'$expr': {'$eq': ['$_id', '$$id']}}"), NULL, &error);
+      expect_msg = "{'$db': 'test',"
+                   " 'delete': 'test',"
+                   " 'let': {'id': 1},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'$expr': {'$eq': ['$_id', '$$id']}}, 'limit': 0}";
+      break;
+   case BULK_REMOVE_ONE:
+      r = mongoc_bulk_operation_remove_one_with_opts (
+         bulk, tmp_bson ("{'$expr': {'$eq': ['$_id', '$$id']}}"), NULL, &error);
+      expect_msg = "{'$db': 'test',"
+                   " 'delete': 'test',"
+                   " 'let': {'id': 1},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'$expr': {'$eq': ['$_id', '$$id']}}, 'limit': 1}";
+      break;
+   case BULK_REPLACE_ONE:
+      r = mongoc_bulk_operation_replace_one_with_opts (
+         bulk,
+         tmp_bson ("{'$expr': {'$eq': ['$_id', '$$id']}}"),
+         tmp_bson ("{'x': 'foo'}"),
+         NULL,
+         &error);
+      expect_msg = "{'$db': 'test',"
+                   " 'update': 'test',"
+                   " 'let': {'id': 1},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'$expr': {'$eq': ['$_id', '$$id']}},"
+                   " 'u': {'x': 'foo'},"
+                   " 'multi': false}";
+      break;
+   case BULK_UPDATE:
+      r = mongoc_bulk_operation_update_many_with_opts (
+         bulk,
+         tmp_bson ("{'$expr': {'$eq': ['$_id', '$$id']}}"),
+         tmp_bson ("{'$set': {'x': 'foo'}}"),
+         NULL,
+         &error);
+      expect_msg = "{'$db': 'test',"
+                   " 'update': 'test',"
+                   " 'let': {'id': 1},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'$expr': {'$eq': ['$_id', '$$id']}},"
+                   " 'u': {'$set': {'x': 'foo'}},"
+                   " 'multi': true}";
+      break;
+   case BULK_UPDATE_ONE:
+      r = mongoc_bulk_operation_update_one_with_opts (
+         bulk,
+         tmp_bson ("{'$expr': {'$eq': ['$_id', '$$id']}}"),
+         tmp_bson ("{'$set': {'x': 'foo'}}"),
+         NULL,
+         &error);
+      expect_msg = "{'$db': 'test',"
+                   " 'update': 'test',"
+                   " 'let': {'id': 1},"
+                   " 'ordered': true}";
+      expect_doc = "{'q': {'$expr': {'$eq': ['$_id', '$$id']}},"
+                   " 'u': {'$set': {'x': 'foo'}},"
+                   " 'multi': false}";
+      break;
+   default:
+      BSON_ASSERT (false);
+   }
+
+   ASSERT_OR_PRINT (r, error);
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   request = mock_server_receives_msg (mock_server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson (expect_msg),
+                                       tmp_bson (expect_doc));
+
+   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   request_destroy (request);
+   ASSERT (future_get_uint32_t (future));
+   future_destroy (future);
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (mock_server);
+}
+
+
+static void
+test_bulk_let (void)
+{
+   _test_bulk_let (BULK_REMOVE);
+   _test_bulk_let (BULK_REMOVE_ONE);
+   _test_bulk_let (BULK_REPLACE_ONE);
+   _test_bulk_let (BULK_UPDATE);
+   _test_bulk_let (BULK_UPDATE_ONE);
+}
+
+
+static void
+test_bulk_let_multi (void)
+{
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   request_t *request;
+   future_t *future;
+
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
+   mock_server_run (mock_server);
+
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson ("{'let': {'id': 1}}"));
+
+   mongoc_bulk_operation_insert_with_opts (
+      bulk, tmp_bson ("{'_id': 1}"), NULL, &error);
+
+   mongoc_bulk_operation_remove_many_with_opts (
+      bulk, tmp_bson ("{'$expr': {'$eq': ['$_id', '$$id']}}"), NULL, &error);
+
+   mongoc_bulk_operation_remove_many_with_opts (
+      bulk, tmp_bson ("{'_id': 2}"), NULL, &error);
+
+   mongoc_bulk_operation_replace_one_with_opts (
+      bulk,
+      tmp_bson ("{'$expr': {'$eq': ['$_id', '$$id']}}"),
+      tmp_bson ("{'x': 'foo'}"),
+      NULL,
+      &error);
+
+   mongoc_bulk_operation_update_many_with_opts (
+      bulk,
+      tmp_bson ("{'$expr': {'$eq': ['$_id', '$$id']}}"),
+      tmp_bson ("{'$set': {'x': 'foo'}}"),
+      NULL,
+      &error);
+
+   mongoc_bulk_operation_update_one_with_opts (
+      bulk,
+      tmp_bson ("{'$expr': {'$eq': ['$_id', '$$id']}}"),
+      tmp_bson ("{'$set': {'x': 'foo'}}"),
+      NULL,
+      &error);
+
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   request = mock_server_receives_msg (mock_server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'test',"
+                                                 " 'insert': 'test',"
+                                                 " 'let': {'$exists': false},"
+                                                 " 'ordered': true}"),
+                                       tmp_bson ("{'_id': 1}"));
+   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   request_destroy (request);
+
+   request = mock_server_receives_msg (
+      mock_server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'delete': 'test',"
+                " 'let': {'id': 1},"
+                " 'ordered': true}"),
+      tmp_bson ("{'q': {'$expr': {'$eq': ['$_id', '$$id']}}, 'limit': 0}"),
+      tmp_bson ("{'q': {'_id': 2}, 'limit': 0}"));
+   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   request_destroy (request);
+
+   request = mock_server_receives_msg (
+      mock_server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test',"
+                " 'update': 'test',"
+                " 'let': {'id': 1},"
+                " 'ordered': true}"),
+      tmp_bson ("{'q': {'$expr': {'$eq': ['$_id', '$$id']}},"
+                " 'u': {'x': 'foo'},"
+                " 'multi': false}"),
+      tmp_bson ("{'q': {'$expr': {'$eq': ['$_id', '$$id']}},"
+                " 'u': {'$set': {'x': 'foo'}},"
+                " 'multi': true}"),
+      tmp_bson ("{'q': {'$expr': {'$eq': ['$_id', '$$id']}},"
+                " 'u': {'$set': {'x': 'foo'}},"
+                " 'multi': false}"));
+   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   request_destroy (request);
+
+   ASSERT (future_get_uint32_t (future));
+   future_destroy (future);
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (mock_server);
+}
+
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -4971,4 +5202,8 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite, "/BulkOperation/no_client", test_bulk_no_client);
    TestSuite_AddLive (
       suite, "/BulkOperation/bypass", test_bulk_bypass_document_validation);
+   TestSuite_AddMockServerTest (
+      suite, "/BulkOperation/opts/let", test_bulk_let);
+   TestSuite_AddMockServerTest (
+      suite, "/BulkOperation/opts/let/multi", test_bulk_let_multi);
 }
