@@ -97,7 +97,7 @@ test_bson_cmp_less (void)
    BSON_ASSERT (!bson_cmp_less_ss (1, -1));
    BSON_ASSERT (!bson_cmp_less_ss (1, 1));
 
-   BSON_ASSERT (!bson_cmp_less_uu (0u, 0));
+   BSON_ASSERT (!bson_cmp_less_uu (0u, 0u));
    BSON_ASSERT (bson_cmp_less_uu (0u, 1u));
    BSON_ASSERT (!bson_cmp_less_uu (1u, 0u));
    BSON_ASSERT (!bson_cmp_less_uu (1u, 1u));
@@ -130,7 +130,7 @@ test_bson_cmp_greater (void)
    BSON_ASSERT (bson_cmp_greater_ss (1, -1));
    BSON_ASSERT (!bson_cmp_greater_ss (1, 1));
 
-   BSON_ASSERT (!bson_cmp_greater_uu (0u, 0));
+   BSON_ASSERT (!bson_cmp_greater_uu (0u, 0u));
    BSON_ASSERT (!bson_cmp_greater_uu (0u, 1u));
    BSON_ASSERT (bson_cmp_greater_uu (1u, 0u));
    BSON_ASSERT (!bson_cmp_greater_uu (1u, 1u));
@@ -163,7 +163,7 @@ test_bson_cmp_less_equal (void)
    BSON_ASSERT (!bson_cmp_less_equal_ss (1, -1));
    BSON_ASSERT (bson_cmp_less_equal_ss (1, 1));
 
-   BSON_ASSERT (bson_cmp_less_equal_uu (0u, 0));
+   BSON_ASSERT (bson_cmp_less_equal_uu (0u, 0u));
    BSON_ASSERT (bson_cmp_less_equal_uu (0u, 1u));
    BSON_ASSERT (!bson_cmp_less_equal_uu (1u, 0u));
    BSON_ASSERT (bson_cmp_less_equal_uu (1u, 1u));
@@ -196,7 +196,7 @@ test_bson_cmp_greater_equal (void)
    BSON_ASSERT (bson_cmp_greater_equal_ss (1, -1));
    BSON_ASSERT (bson_cmp_greater_equal_ss (1, 1));
 
-   BSON_ASSERT (bson_cmp_greater_equal_uu (0u, 0));
+   BSON_ASSERT (bson_cmp_greater_equal_uu (0u, 0u));
    BSON_ASSERT (!bson_cmp_greater_equal_uu (0u, 1u));
    BSON_ASSERT (bson_cmp_greater_equal_uu (1u, 0u));
    BSON_ASSERT (bson_cmp_greater_equal_uu (1u, 1u));
