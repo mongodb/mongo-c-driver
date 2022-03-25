@@ -1747,7 +1747,6 @@ test_compatible_null_error_pointer (void)
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   mc_tpld_unsafe_get_const (client->topology);
 
    /* trigger connection, fails due to incompatibility */
    ASSERT (!mongoc_client_command_simple (
