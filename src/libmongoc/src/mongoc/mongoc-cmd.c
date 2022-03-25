@@ -827,7 +827,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    const char *cmd_name;
    bool is_get_more;
    const mongoc_read_prefs_t *prefs_ptr;
-   mongoc_read_mode_t mode = mongoc_read_prefs_get_mode (parts->read_prefs);
+   mongoc_read_mode_t mode;
    bool ret = false;
 
    ENTRY;
