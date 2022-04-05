@@ -38,6 +38,7 @@ set (src_DIST
    ${src_zlib_DIST}
    ${src_common_DIST}
    ${src_kms_message_DIST}
+   ${MLIB_SOURCES}
    PARENT_SCOPE
 )
 

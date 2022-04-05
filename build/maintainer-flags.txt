@@ -1,5 +1,4 @@
 -Wall
--Wdeclaration-after-statement
 -Wempty-body
 -Wformat
 -Wformat-nonliteral
@@ -16,4 +15,4 @@
 -Wundef
 -Wuninitialized
 -Wexpansion-to-defined
--pedantic
+

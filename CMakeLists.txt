@@ -245,6 +245,8 @@ cmake_policy (SET CMP0042 NEW)
 add_definitions (-D_DEFAULT_SOURCE)
 list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_DEFAULT_SOURCE)
 
+include (src/mlib/mlib.cmake)
+
 add_subdirectory (src/common)
 
 if (NOT USING_SYSTEM_BSON)
