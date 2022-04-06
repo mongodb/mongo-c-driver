@@ -4,7 +4,6 @@
 -Wformat-nonliteral
 -Wformat-security
 -Winit-self
--Winline
 -Wmissing-include-dirs
 -Wno-strict-aliasing
 -Wno-uninitialized
