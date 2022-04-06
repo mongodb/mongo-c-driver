@@ -1023,7 +1023,8 @@ _process_skip_file (const char *filename, mongoc_array_t *skips)
       if (comment_char) {
          test_name_end = comment_char;
          comment_text = comment_char;
-         while (comment_text[0] == '#' || comment_text[0] == ' ') {
+         while (comment_text[0] == '#' || comment_text[0] == ' ' ||
+                comment_text[0] == '\t') {
             if (++comment_text >= (buffer + buflen))
                break;
          }
