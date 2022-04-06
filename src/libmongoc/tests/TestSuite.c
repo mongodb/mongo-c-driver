@@ -1197,12 +1197,9 @@ TestSuite_Destroy (TestSuite *suite)
    for (i = 0; i < suite->failing_flaky_skips.len; i++) {
       TestSkip *val =
          _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, i);
-      if (val->test_name)
-         bson_free (val->test_name);
-      if (val->subtest_desc)
-         bson_free (val->subtest_desc);
-      if (val->reason)
-         bson_free (val->reason);
+      bson_free (val->test_name);
+      bson_free (val->subtest_desc);
+      bson_free (val->reason);
       bson_free (val);
    }
 
