@@ -1066,7 +1066,12 @@ _process_skip_file (const char *filename, mongoc_array_t *skips)
 
       lines_read++;
    }
-
+   if (lines_read == max_lines) {
+      test_error ("Skip file: %s exceeded maximum lines: %d. Increase "
+                  "max_lines in _process_skip_file",
+                  filename,
+                  max_lines);
+   }
    fclose (skip_file);
 }
 
