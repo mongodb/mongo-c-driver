@@ -11,4 +11,4 @@ set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
 %CMAKE_MAKE_PROGRAM%
 
 set MONGOC_TEST_SKIP_LIVE=on
-.\src\libmongoc\test-libmongoc.exe --no-fork -d -F test-results.json --skip-failing .evergreen\failing-tests --skip-flaky .evergreen\flaky-tests
+.\src\libmongoc\test-libmongoc.exe --no-fork -d -F test-results.json --skip-tests .evergreen\skip-tests.txt

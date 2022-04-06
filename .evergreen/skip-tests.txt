@@ -1,7 +1,7 @@
-# This file lists known flaky tests that for some reason or another cannot be
-# fixed and rather should be skipped in Evergreen builds.  Note that listing a
-# test in this file will result in the test being skipped on all platforms,
-# build variants, tasks, etc.
+# This file lists known failing or flaky tests that for some reason or another
+# cannot be fixed and rather should be skipped in Evergreen builds.  Note that
+# listing a test in this file will result in the test being skipped on all
+# platforms, build variants, tasks, etc.
 #
 # The format of this file is as follows:
 # - one test per line, with an optional comment (total lines in file < 1,000)
@@ -10,7 +10,7 @@
 # - specify test names as they are known to the test runner (e.g., /some/test)
 # - specify sub-tests of spec tests by an additional slash (/) and the quoted description
 #   (e.g., /some/spec/test/"sub-test 1")
-# - placing a comment at the end of a line will cause the test runner to ouptut
+# - placing a comment at the end of a line will cause the test runner to output
 #   the comment text as the skip reason when the test is skipped
 #
 # Example entries:
@@ -71,3 +71,19 @@
 /unified/entity-client-cmap-events # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /unified/entity-client-storeEventsAsEntities # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /unified/entity-find-cursor # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+
+/transactions/legacy/mongos-recovery-token/"commitTransaction retry fails on new mongos" # fails with server selection timeout (CDRIVER-4268)
+/crud/unified/aggregate-out-readConcern/"readConcern available with out stage" # server error on sharded: "PlanExecutor error" (CDRIVER-4161)
+/client_side_encryption/azureKMS/"Insert a document with auto encryption using Azure KMS provider" # failing on RHEL 7.0 / RHEL 7.1 (CDRIVER-3814)
+
+/transactions/legacy/pin-mongos/"unpin after transient error within a transaction and commit" # server selection timeout (on ASAN Tests Ubuntu 18.04 build variant)
+/Samples # strange "heartbeat failed" error
+/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns # this initially seemed like a zSeries w/ RHEL8 issue, but it also appeared on arm64 w/ Ubuntu 18.04
+/crud/unified/bulkWrite-deleteOne-let/"BulkWrite deleteOne with let option unsupported (server-side error)" # error: expected error, but no error
+/crud/unified/bulkWrite-replaceOne-let/"BulkWrite replaceOne with let option unsupported (server-side error)" # error: expected error, but no error
+/crud/unified/bulkWrite-updateMany-let/"BulkWrite updateMany with let option unsupported (server-side error)" # error: expected error, but no error
+/crud/unified/bulkWrite-updateOne-let/"BulkWrite updateOne with let option unsupported (server-side error)" # error: expected error, but no error
+/sessions/unified/snapshot-sessions/"countDocuments operation with snapshot" # error: checking expectResult:  { "$numberInt" : "2" }
+/load_balancers/non-lb-connection-establishment/"operations against non-load balanced clusters fail if URI contains loadBalanced=true" # error: expected error to contain "Driver attempted to initialize in load balancing mode, but the server does not support this mode", but got: "BSON field 'hello.loadBalanced' is an unknown field."
+/change_streams/legacy/change-streams-errors # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000'] (on ASAN Tests Ubuntu 18.04 build variant)
+

@@ -188,8 +188,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          }
          val = bson_strdup (argv[++i]);
          _mongoc_array_append_val (&suite->match_patterns, val);
-      } else if ((0 == strcmp ("--skip-failing", argv[i])) ||
-                 (0 == strcmp ("--skip-flaky", argv[i]))) {
+      } else if (0 == strcmp ("--skip-tests", argv[i])) {
          if (argc - 1 == i) {
             test_error ("%s requires an argument.", argv[i]);
          }
@@ -734,8 +733,7 @@ TestSuite_PrintHelp (TestSuite *suite) /* IN */
       "    -s, --silent          Suppress all output.\n"
       "    -F FILENAME           Write test results (JSON) to FILENAME.\n"
       "    -d                    Print debug output (useful if a test hangs).\n"
-      "    --skip-failing FILENAME      Skip known failing tests.\n"
-      "    --skip-flaky FILENAME        Skip known flaky tests.\n"
+      "    --skip-tests FILE     Skip known failing or flaky tests.\n"
       "    -t, --trace           Enable mongoc tracing (useful to debug "
       "tests).\n"
       "\n",

@@ -693,7 +693,7 @@ functions:
         cat dir.txt
         echo $(cat dir.txt)
         export RUN_MONGOHOUSE_TESTS=true
-        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-failing .evergreen/failing-tests --skip-flaky .evergreen/flaky-tests
+        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/skip-tests.txt
         unset RUN_MONGOHOUSE_TESTS
   test versioned api:
   - command: shell.exec
