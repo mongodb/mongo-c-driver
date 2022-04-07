@@ -27,3 +27,12 @@ function (targets_use_mlib)
         target_link_libraries("${t}" PRIVATE $<BUILD_INTERFACE:mongo::mlib>)
     endforeach ()
 endfunction ()
+
+add_executable (mlib.test.comdat-link
+    "${MLIB_SRC_DIR}/linkcheck-1.test.c"
+    "${MLIB_SRC_DIR}/linkcheck-2.test.c"
+    "${MLIB_SRC_DIR}/linkcheck.test.c"
+    )
+
+add_test (mlib.test.comdat-link mlib.test.comdat-link)
+targets_use_mlib (mlib.test.comdat-link)

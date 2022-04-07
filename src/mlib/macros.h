@@ -29,7 +29,7 @@
 #ifdef __INTELLISENSE__
     // Give a pretty definition for intellisense readers
     #define mlib_inline_def inline
-#elif _WIN32
+#elif defined(_WIN32)
     // On MSVC/Windows, inline functions are implicitly in COMDAT, even in C
     #define mlib_inline_def extern mlib_inline
 #else
