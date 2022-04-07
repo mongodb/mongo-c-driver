@@ -761,6 +761,7 @@ endif ()
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
+targets_use_mlib (mongoc_shared)
 target_include_directories (mongoc_shared BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
@@ -798,7 +799,8 @@ set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BAS
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   target_link_libraries (mongoc_static ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
+   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
+   targets_use_mlib (mongoc_static)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
       message ("Adding -fPIC to compilation of mongoc_static components")
@@ -859,32 +861,32 @@ endif ()
 function (mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable (${test} ${ARGN})
-      if (NOT MSVC)
-         # We've tests that test our deprecated api. MSVC 2013 will complain about invalid flag
-         set_source_files_properties (${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
-      else ()
-         target_link_libraries (${test} DbgHelp.dll)
-      endif ()
-      target_include_directories (${test} PRIVATE ${PROJECT_SOURCE_DIR}/tests)
+      target_link_libraries (${test}
+         PRIVATE
+            $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
+            $<$<PLATFORM_ID:Windows>:shlwapi>
+            $<$<BOOL:${use_shared}>:mongoc_shared>
+            $<$<NOT:$<BOOL:${use_shared}>>:mongoc_static>
+            ${LIBRARIES}
+            ${RESOLV_LIBRARIES}
+            )
+      # We have tests that test our deprecated api.
+      target_compile_options (${test}
+         PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
+         )
+      target_include_directories (${test}
+         PRIVATE
+            ${PROJECT_SOURCE_DIR}/tests
+            ${MONGOC_INTERNAL_INCLUDE_DIRS}
+            $<$<BOOL:${use_shared}>:${BSON_INCLUDE_DIRS}>
+            $<$<NOT:$<BOOL:${use_shared}>>:${BSON_STATIC_INCLUDE_DIRS}>
+            )
       target_compile_definitions (${test}
          PUBLIC
             "MONGOC_COMPILATION"
             "BSON_COMPILATION"
             "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
-      )
-      if (${use_shared})
-         target_link_libraries (${test} mongoc_shared ${LIBRARIES})
-         target_include_directories (${test} PRIVATE ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
-      else ()
-         target_link_libraries (${test} mongoc_static ${LIBRARIES})
-         target_include_directories (${test} PRIVATE ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
-      endif ()
-      target_link_libraries (${test} ${RESOLV_LIBRARIES})
-      if (WIN32)
-         target_link_libraries (${test} shlwapi)
-      else ()
-         target_link_libraries (${test})
-      endif ()
+         )
    endif ()
 endfunction ()
 
@@ -1056,6 +1058,7 @@ endif ()
 mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
+targets_use_mlib (test-libmongoc)
 
 if (ENABLE_TESTS)
    # "make test" doesn't compile tests, so we create "make check" which compiles
