@@ -2,6 +2,7 @@
 #define MLIB_STR_H
 
 #include "./user-check.h"
+#include "./macros.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -141,7 +142,7 @@ typedef struct mstr_mut {
  * @note The @ref mstr_mut::mstr member MUST eventually be given to
  * @ref mstr_free().
  */
-static inline mstr_mut
+mlib_inline_def mstr_mut
 mstr_new (size_t len)
 {
 #ifndef __clang_analyzer__
@@ -160,7 +161,7 @@ mstr_new (size_t len)
  * @param len The length of the character array, in code units
  * @return mstr_view A non-owning string.
  */
-static inline mstr_view
+mlib_inline_def mstr_view
 mstrv_view_data (const char *s, size_t len)
 {
    return (mstr_view){.data = s, .len = len};
@@ -173,7 +174,7 @@ mstrv_view_data (const char *s, size_t len)
  * @param s A pointer to a null-terminated character array
  * @return mstr_view A view of the pointed-to string
  */
-static inline mstr_view
+mlib_inline_def mstr_view
 mstrv_view_cstr (const char *s)
 {
    return mstrv_view_data (s, strlen (s));
@@ -189,7 +190,7 @@ mstrv_view_cstr (const char *s)
  *
  * @note The resulting string will be null-terminated.
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_copy_data (const char *s, size_t len)
 {
    mstr_mut r = mstr_new (len);
@@ -203,7 +204,7 @@ mstr_copy_data (const char *s, size_t len)
  * @param s A pointer to a null-terminated character array
  * @return mstr A new string copied from the pointed-to string
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_copy_cstr (const char *s)
 {
    return mstr_copy_data (s, strlen (s));
@@ -215,7 +216,7 @@ mstr_copy_cstr (const char *s)
  * @param s A string view to copy from
  * @return mstr A new string copied from the given view
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_copy (mstr_view s)
 {
    return mstr_copy_data (s.data, s.len);
@@ -226,7 +227,7 @@ mstr_copy (mstr_view s)
  *
  * @param s The string to free
  */
-static inline void
+mlib_inline_def void
 mstr_free (mstr s)
 {
    free ((char *) s.data);
@@ -239,7 +240,7 @@ mstr_free (mstr s)
  * @param s The @ref mstr_mut to update
  * @param new_len The new length of the string
  */
-static inline void
+mlib_inline_def void
 mstrm_resize (mstr_mut *s, size_t new_len)
 {
    if (new_len <= s->len) {
@@ -283,7 +284,7 @@ mstrm_resize (mstr_mut *s, size_t new_len)
  * mstr_assign(&s, convert_to_uppercase(s.view));
  * ```
  */
-static inline void
+mlib_inline_def void
 mstr_assign (mstr *s, mstr from)
 {
    mstr_free (*s);
@@ -299,7 +300,7 @@ mstr_assign (mstr *s, mstr from)
  * @return int The zero-based index of the first instance of `needle` in
  * `given`, or -1 if no substring is found.
  */
-static inline int
+mlib_inline_def int
 mstr_find (mstr_view given, mstr_view needle)
 {
    const char *const scan_end = given.data + given.len;
@@ -335,7 +336,7 @@ mstr_find (mstr_view given, mstr_view needle)
  * @return int The zero-based index of the last instance of `needle` in
  * `given`, or -1 if no substring is found.
  */
-static inline int
+mlib_inline_def int
 mstr_rfind (mstr_view given, mstr_view needle)
 {
    if (needle.len > given.len) {
@@ -371,7 +372,7 @@ mstr_rfind (mstr_view given, mstr_view needle)
  * @param insert The string to insert at `at`.
  * @return mstr A new string that is the result of the splice
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
 {
    assert (at <= s.len);
@@ -395,7 +396,7 @@ mstr_splice (mstr_view s, size_t at, size_t del_count, mstr_view insert)
 /**
  * @brief Append the given suffix to the given string
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_append (mstr_view s, mstr_view suffix)
 {
    return mstr_splice (s, s.len, 0, suffix);
@@ -404,7 +405,7 @@ mstr_append (mstr_view s, mstr_view suffix)
 /**
  * @brief Prepend the given prefix to the given string
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_prepend (mstr_view s, mstr_view prefix)
 {
    return mstr_splice (s, 0, 0, prefix);
@@ -418,7 +419,7 @@ mstr_prepend (mstr_view s, mstr_view prefix)
  * @param infix The string to insert into `s`
  * @return mstr A new string with `infix` inserted
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_insert (mstr_view s, size_t at, mstr_view infix)
 {
    return mstr_splice (s, at, 0, infix);
@@ -432,7 +433,7 @@ mstr_insert (mstr_view s, size_t at, mstr_view infix)
  * @param count The number of characters to remove
  * @return mstr A new string with the deletion result.
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_erase (mstr_view s, size_t at, size_t count)
 {
    return mstr_splice (s, at, count, mstrv_view_cstr (""));
@@ -441,7 +442,7 @@ mstr_erase (mstr_view s, size_t at, size_t count)
 /**
  * @brief Erase `len` characters from the beginning of the string
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_remove_prefix (mstr_view s, size_t len)
 {
    return mstr_erase (s, 0, len);
@@ -450,7 +451,7 @@ mstr_remove_prefix (mstr_view s, size_t len)
 /**
  * @brief Erase `len` characters from the end of the string
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_remove_suffix (mstr_view s, size_t len)
 {
    return mstr_erase (s, s.len - len, len);
@@ -465,7 +466,7 @@ mstr_remove_suffix (mstr_view s, size_t len)
  * remaining length.
  * @return mstr A new string that is a substring of `s`
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_substr (mstr_view s, size_t at, size_t len)
 {
    assert (at <= s.len);
@@ -487,7 +488,7 @@ mstr_substr (mstr_view s, size_t at, size_t len)
  * remaining length.
  * @return mstr_view A view of `s`.
  */
-static inline mstr_view
+mlib_inline_def mstr_view
 mstrv_subview (mstr_view s, size_t at, size_t len)
 {
    assert (at <= s.len);
@@ -502,7 +503,7 @@ mstrv_subview (mstr_view s, size_t at, size_t len)
  * @brief Obtain a view of another string by removing `len` characters from the
  * front
  */
-static inline mstr_view
+mlib_inline_def mstr_view
 mstrv_remove_prefix (mstr_view s, size_t len)
 {
    return mstrv_subview (s, len, s.len);
@@ -512,7 +513,7 @@ mstrv_remove_prefix (mstr_view s, size_t len)
  * @brief Obtain a view of another string by removing `len` characters from the
  * end.
  */
-static inline mstr_view
+mlib_inline_def mstr_view
 mstrv_remove_suffix (mstr_view s, size_t len)
 {
    return mstrv_subview (s, 0, s.len - len);
@@ -525,7 +526,7 @@ mstrv_remove_suffix (mstr_view s, size_t len)
  * @param new_len The new length of the string
  * @return mstr A new string copied from the beginning of `s`
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_trunc (mstr_view s, size_t new_len)
 {
    assert (new_len <= s.len);
@@ -543,7 +544,7 @@ mstr_trunc (mstr_view s, size_t new_len)
  *
  * @note If `find` is empty, returns a copy of `string`
  */
-static inline mstr
+mlib_inline_def mstr
 mstr_replace (const mstr_view string,
               const mstr_view find,
               const mstr_view subst)
@@ -578,7 +579,7 @@ mstr_replace (const mstr_view string,
 /**
  * @brief Determine whether two strings are equivalent.
  */
-static inline bool
+mlib_inline_def bool
 mstr_eq (mstr_view left, mstr_view right)
 {
    if (left.len != right.len) {
@@ -588,7 +589,7 @@ mstr_eq (mstr_view left, mstr_view right)
 }
 
 /// Determine whether the given character is an printable ASCII codepoint
-static inline bool
+mlib_inline_def bool
 mstr_is_printable (char c)
 {
    return (c >= ' ' && c <= '~');
@@ -596,7 +597,7 @@ mstr_is_printable (char c)
 
 /// Write the given string to `out`, rendering non-printable characters as hex
 /// escapes
-static inline void
+mlib_inline_def void
 _mstr_write_str_repr_ (FILE *out, mstr_view s)
 {
    for (char const *it = s.data; it != s.data + s.len; ++it) {
@@ -608,7 +609,7 @@ _mstr_write_str_repr_ (FILE *out, mstr_view s)
    }
 }
 
-static inline void
+mlib_inline_def void
 _mstr_assert_fail_ (mstr_view left,
                     const char *predicate,
                     mstr_view right,
@@ -623,7 +624,7 @@ _mstr_assert_fail_ (mstr_view left,
    abort ();
 }
 
-static inline void
+mlib_inline_def void
 _mstr_assert_ (mstr_view left,
                mstr_view right,
                bool (*pred) (mstr_view left, mstr_view right),
@@ -660,7 +661,7 @@ _mstr_assert_ (mstr_view left,
  * @return true If `given` contains at least one occurrence of `needle`
  * @return false Otherwise
  */
-static inline bool
+mlib_inline_def bool
 mstr_contains (mstr_view given, mstr_view needle)
 {
    return mstr_find (given, needle) >= 0;
@@ -669,7 +670,7 @@ mstr_contains (mstr_view given, mstr_view needle)
 /**
  * @brief Determine whether `given` starts with `prefix`
  */
-static inline bool
+mlib_inline_def bool
 mstr_starts_with (mstr_view given, mstr_view prefix)
 {
    given = mstrv_subview (given, 0, prefix.len);
@@ -679,7 +680,7 @@ mstr_starts_with (mstr_view given, mstr_view prefix)
 /**
  * @brief Determine whether `given` ends with `suffix`
  */
-static inline bool
+mlib_inline_def bool
 mstr_ends_with (mstr_view given, mstr_view suffix)
 {
    if (suffix.len > given.len) {
@@ -690,70 +691,70 @@ mstr_ends_with (mstr_view given, mstr_view suffix)
 }
 
 /// Compound in-place version of @ref mstr_splice
-static inline void
+mlib_inline_def void
 mstr_inplace_splice (mstr *s, size_t at, size_t del_count, mstr_view insert)
 {
    mstr_assign (s, mstr_splice (s->view, at, del_count, insert));
 }
 
 /// Compound in-place version of @ref mstr_append
-static inline void
+mlib_inline_def void
 mstr_inplace_append (mstr *s, mstr_view suffix)
 {
    mstr_assign (s, mstr_append (s->view, suffix));
 }
 
 /// Compound in-place version of @ref mstr_prepend
-static inline void
+mlib_inline_def void
 mstr_inplace_prepend (mstr *s, mstr_view prefix)
 {
    mstr_assign (s, mstr_prepend (s->view, prefix));
 }
 
 /// Compound in-place version of @ref mstr_insert
-static inline void
+mlib_inline_def void
 mstr_inplace_insert (mstr *s, size_t at, mstr_view infix)
 {
    mstr_assign (s, mstr_insert (s->view, at, infix));
 }
 
 /// Compound in-place version of @ref mstr_erase
-static inline void
+mlib_inline_def void
 mstr_inplace_erase (mstr *s, size_t at, size_t count)
 {
    mstr_assign (s, mstr_erase (s->view, at, count));
 }
 
 /// Compound in-place version of @ref mstr_remove_prefix
-static inline void
+mlib_inline_def void
 mstr_inplace_remove_prefix (mstr *s, size_t len)
 {
    mstr_assign (s, mstr_remove_prefix (s->view, len));
 }
 
 /// Compound in-place version of @ref mstr_remove_suffix
-static inline void
+mlib_inline_def void
 mstr_inplace_remove_suffix (mstr *s, size_t len)
 {
    mstr_assign (s, mstr_remove_suffix (s->view, len));
 }
 
 /// Compound in-place version of @ref mstr_substr
-static inline void
+mlib_inline_def void
 mstr_inplace_substr (mstr *s, size_t at, size_t count)
 {
    mstr_assign (s, mstr_substr (s->view, at, count));
 }
 
 /// Compound in-place version of @ref mstr_trunc
-static inline void
+mlib_inline_def void
 mstr_inplace_trunc (mstr *s, size_t new_len)
 {
    mstr_assign (s, mstr_trunc (s->view, new_len));
 }
 
 /// Compound in-place version of @ref mstr_replace
-static inline void
+mlib_inline_def void
 mstr_inplace_replace (mstr *s, mstr_view find, mstr_view subst)
 {
    mstr_assign (s, mstr_replace (s->view, find, subst));
@@ -777,7 +778,7 @@ typedef struct mstr_widen_result {
  *
  * @note The returned @ref mstr_widen_result::wstring must be given to free()
  */
-static inline mstr_widen_result
+mlib_inline_def mstr_widen_result
 mstr_win32_widen (mstr_view str)
 {
    int length = MultiByteToWideChar (
@@ -810,7 +811,7 @@ typedef struct mstr_narrow_result {
  * @note The returned @ref mstr_narrow_result::string must be freed with
  * mstr_free()
  */
-static inline mstr_narrow_result
+mlib_inline_def mstr_narrow_result
 mstr_win32_narrow (const wchar_t *wstring)
 {
    int length = WideCharToMultiByte (CP_UTF8,
@@ -855,7 +856,7 @@ struct _mstr_split_iter_ {
 };
 
 /// Hidden function to advance a string-split iterator
-static inline void
+mlib_inline_def void
 _mstr_split_iter_next_ (struct _mstr_split_iter_ *iter)
 {
    if (iter->once == 1) {
@@ -888,7 +889,7 @@ _mstr_split_iter_next_ (struct _mstr_split_iter_ *iter)
 }
 
 /// init a new split iterator
-static inline struct _mstr_split_iter_
+mlib_inline_def struct _mstr_split_iter_
 _mstr_split_iter_begin_ (mstr_view str, mstr_view split)
 {
    struct _mstr_split_iter_ iter = {.remaining = str, .splitter = split};
@@ -897,7 +898,7 @@ _mstr_split_iter_begin_ (mstr_view str, mstr_view split)
 }
 
 /// Check whether we are done iterating
-static inline bool
+mlib_inline_def bool
 _mstr_split_iter_done_ (struct _mstr_split_iter_ *iter)
 {
    return iter->state == 2;

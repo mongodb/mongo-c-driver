@@ -48,7 +48,7 @@ typedef void (*mlib_init_once_fn_t) (void);
 /**
  * An indirection layer for mlib_once on Windows platforms. Do not use directly.
  */
-static inline BOOL WINAPI
+mlib_inline_def BOOL WINAPI
 _mlib_win32_once_callthru (PINIT_ONCE once, PVOID param, PVOID *ctx)
 {
    (void) once;
@@ -73,7 +73,7 @@ _mlib_win32_once_callthru (PINIT_ONCE once, PVOID param, PVOID *ctx)
  * @param fn A callback to execute if the flag is not in the "finished" state
  * @return true on success, false otherwise
  */
-static inline bool
+mlib_inline_def bool
 mlib_call_once (mlib_once_flag *flag, mlib_init_once_fn_t fn)
 {
 #ifdef _WIN32
