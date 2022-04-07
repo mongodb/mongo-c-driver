@@ -181,6 +181,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/bson/bcon.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-atomic.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-clock.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-cmp.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-compat.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-context.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-decimal128.h
