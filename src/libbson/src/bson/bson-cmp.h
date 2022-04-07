@@ -146,8 +146,7 @@ BSON_CMP_SET (greater_equal,
    static BSON_INLINE bool BSON_CONCAT3 (bson_in_range_, Type, _unsigned) ( \
       uint64_t value)                                                       \
    {                                                                        \
-      return bson_cmp_greater_equal_uu (value, 0u) &&                       \
-             bson_cmp_less_equal_uu (value, max);                           \
+      return bson_cmp_less_equal_uu (value, max);                           \
    }
 
 BSON_IN_RANGE_SET_SIGNED (signed_char, SCHAR_MIN, SCHAR_MAX)
