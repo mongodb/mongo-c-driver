@@ -726,6 +726,7 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
                                     &server_stream->sd->host,
                                     server_stream->sd->id,
                                     &server_stream->sd->service_id,
+                                    server_stream->sd->server_connection_id,
                                     NULL,
                                     client->apm_context);
 
@@ -808,6 +809,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                                       &stream->sd->host,
                                       stream->sd->id,
                                       &stream->sd->service_id,
+                                      stream->sd->server_connection_id,
                                       false,
                                       client->apm_context);
 
@@ -854,6 +856,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
                                    &stream->sd->host,
                                    stream->sd->id,
                                    &stream->sd->service_id,
+                                   stream->sd->server_connection_id,
                                    false,
                                    client->apm_context);
 

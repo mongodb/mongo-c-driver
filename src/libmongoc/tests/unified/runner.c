@@ -618,7 +618,7 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.5"};
+   const char *supported_version_strs[] = {"1.6"};
    int i;
 
    for (i = 0; i < sizeof (supported_version_strs) /
@@ -1009,6 +1009,7 @@ test_check_event (test_t *test,
    char *expected_database_name = NULL;
    bson_t *expected_reply = NULL;
    bool *expected_has_service_id = NULL;
+   bool *expected_has_server_connection_id = NULL;
 
    if (bson_count_keys (expected) != 1) {
       test_set_error (error,
@@ -1042,6 +1043,8 @@ test_check_event (test_t *test,
    bson_parser_utf8_optional (bp, "databaseName", &expected_database_name);
    bson_parser_doc_optional (bp, "reply", &expected_reply);
    bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
+   bson_parser_bool_optional (
+      bp, "hasServerConnectionId", &expected_has_server_connection_id);
    if (!bson_parser_parse (bp, &expected_bson, error)) {
       goto done;
    }
@@ -1109,9 +1112,25 @@ test_check_event (test_t *test,
       if (*expected_has_service_id && !has_service_id) {
          test_error ("expected serviceId, but got none");
       }
-      
+
       if (!*expected_has_service_id && has_service_id) {
          test_error ("expected no serviceId, but got %s", oid_str);
+      }
+   }
+
+   if (expected_has_server_connection_id) {
+      bool has_server_connection_id = false;
+
+      has_server_connection_id =
+         actual->server_connection_id != MONGOC_NO_SERVER_CONNECTION_ID;
+
+      if (*expected_has_server_connection_id && !has_server_connection_id) {
+         test_error ("expected server connectionId, but got none");
+      }
+
+      if (!*expected_has_server_connection_id && has_server_connection_id) {
+         test_error ("expected no server connectionId, but got %d",
+                     actual->server_connection_id);
       }
    }
 
