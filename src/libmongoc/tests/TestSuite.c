@@ -592,7 +592,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    for (i = 0; i < suite->failing_flaky_skips.len; i++) {
       TestSkip *skip =
          _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, i);
-      if (0 == strcmp (name, skip->test_name)) {
+      if (0 == strcmp (name, skip->test_name) && skip->subtest_desc == NULL) {
          if (suite->ctest_run) {
             /* Write a marker that tells CTest that we are skipping this test */
             test_msg ("@@ctest-skipped@@");
