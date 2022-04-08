@@ -288,10 +288,10 @@ mkfifo pipe || true
 if [ -e pipe ]; then
    set +o xtrace
    tee error.log < pipe &
-   run_valgrind ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json 2>pipe
+   run_valgrind ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt 2>pipe
    rm pipe
 else
-   run_valgrind ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json
+   run_valgrind ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt
 fi
 
 # Check if the error.log exists, and is more than 0 byte

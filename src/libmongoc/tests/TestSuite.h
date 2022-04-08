@@ -648,6 +648,7 @@ typedef int (*CheckFunc) (void);
 typedef struct _Test Test;
 typedef struct _TestSuite TestSuite;
 typedef struct _TestFnCtx TestFnCtx;
+typedef struct _TestSkip TestSkip;
 
 
 struct _Test {
@@ -674,12 +675,20 @@ struct _TestSuite {
    int silent;
    bson_string_t *mock_server_log_buf;
    FILE *mock_server_log;
+   mongoc_array_t failing_flaky_skips;
 };
 
 
 struct _TestFnCtx {
    TestFunc test_fn;
    TestFuncDtor dtor;
+};
+
+
+struct _TestSkip {
+   char *test_name;
+   char *subtest_desc;
+   char *reason;
 };
 
 
@@ -749,6 +758,8 @@ int
 test_suite_valgrind (void);
 void
 test_suite_mock_server_log (const char *msg, ...);
+void
+_process_skip_file (const char *, mongoc_array_t *);
 
 bool
 TestSuite_NoFork (TestSuite *suite);

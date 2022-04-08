@@ -18,7 +18,7 @@ export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
 echo "COMPRESSORS='${COMPRESSORS}' CC='${CC}' AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${MONGOC_TEST_URI}"
 
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-TEST_ARGS="-d -F test-results.json"
+TEST_ARGS="-d -F test-results.json --skip-tests .evergreen/skip-tests.txt"
 
 if [ "$COMPRESSORS" != "nocompressors" ]; then
    export MONGOC_TEST_COMPRESSORS="$COMPRESSORS"
