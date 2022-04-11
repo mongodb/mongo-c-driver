@@ -19,71 +19,70 @@
 
 /Topology/slow_server/pooled # CDRIVER-4257
 
-/mongohouse/aggregate
-/mongohouse/estimatedDocumentCount
-/mongohouse/find
-/mongohouse/getMore
-/mongohouse/listCollections
-/mongohouse/listDatabases
-/mongohouse/runCommand
+/mongohouse/aggregate # CDRIVER-4333
+/mongohouse/estimatedDocumentCount # CDRIVER-4333
+/mongohouse/find # CDRIVER-4333
+/mongohouse/getMore # CDRIVER-4333
+/mongohouse/listCollections # CDRIVER-4333
+/mongohouse/listDatabases # CDRIVER-4333
+/mongohouse/runCommand # CDRIVER-4333
 
-/versioned_api/crud-api-version-1-strict/"estimatedDocumentCount appends declared API version" # error: expected success, but got error: stage $collStats is not allowed with 'apiStrict: true' in API Version 1 (observed on rhel62 variant)
-/versioned_api/crud-api-version-1-strict/"find and getMore append API version" # error: expected result, but got error: Cannot pass in API parameter field apiVersion
-/versioned_api/crud-api-version-1/"find and getMore append API version" # error: expected result, but got error: Cannot pass in API parameter field apiVersion
-/versioned_api/transaction-handling/"All commands in a transaction declare an API version" # API parameters are only allowed in the first command of a multi-document transaction
-/versioned_api/test-commands-deprecation-errors # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/command_monitoring/unified/redacted-commands # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/versioned_api/test-commands-strict-mode # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/Topology/request_scan_on_error # precondition failed: checks_cmp (&checks, "n_succeeded", '=', 2), and other times fails with a socket timeout
-/streamable/topology_version/update # _force_scan(): precondition failed: sd
-/Client/fetch_stream/retry/fail # looks like the mock server hangs up prematurely
-/Stepdown/not_primary_keep # Assert Failure: 673 == 674
-/Topology/multiple_selection_errors # [No suitable servers found (`serverSelectionTryOnce` set): [Failed to resolve 'doesntexist'] [Failed to resolve 'example.com']] does not contain [calling hello on 'example.com:2']
-/Topology/server_removed/single # error domain 1 doesn't match expected 2
-/change_stream/live/track_resume_token # Condition 'bson_compare (resume_token, &doc2_rt) == 0' failed
-/change_stream/resumable_error # getMore: not found
-/Client/mongos_seeds_reconnect/single # looks like the mock server hangs up prematurely
-/Client/mongos_seeds_connect/pooled # looks like the mock server hangs up prematurely
-/Client/exhaust_cursor/err/server/2nd_batch/pooled # looks like the mock server hangs up prematurely
-/BulkOperation/split # Assert Failure: count of split_1512376901_50824 is 97759, not 100010
-/client_side_encryption/datakey_and_double_encryption # TLS handshake failed: Failed OCSP verification
-/client_side_encryption/corpus # TLS handshake failed: Failed OCSP verification
-/client_side_encryption/custom_endpoint # mongoc: OCSP response failed verification: error:27069065:OCSP routines:OCSP_basic_verify:certificate verify error
-/client_side_encryption/kms_tls/wrong_host # [TLS handshake failed: Failed certificate verification] does not contain [IP address mismatch]
-/client_side_encryption/kms_tls_options # [TLS handshake failed: Failed certificate verification] does not contain [IP address mismatch]
-/ClientPool/pop_timeout # precondition failed: duration_usec / 1000 >= 1990
-/Client/get_handshake_hello_response/pooled # Assert Failure: "Unknown" != "PossiblePrimary"
+/versioned_api/crud-api-version-1-strict/"estimatedDocumentCount appends declared API version" # (CDRIVER-4334) error: expected success, but got error: stage $collStats is not allowed with 'apiStrict: true' in API Version 1 (observed on rhel62 variant)
+/versioned_api/crud-api-version-1-strict/"find and getMore append API version" # (CDRIVER-4334) error: expected result, but got error: Cannot pass in API parameter field apiVersion
+/versioned_api/crud-api-version-1/"find and getMore append API version" # (CDRIVER-4334) error: expected result, but got error: Cannot pass in API parameter field apiVersion
+/versioned_api/transaction-handling/"All commands in a transaction declare an API version" # (CDRIVER-4335) API parameters are only allowed in the first command of a multi-document transaction
+/versioned_api/test-commands-deprecation-errors # (CDRIVER-4336) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/versioned_api/test-commands-strict-mode # (CDRIVER-4336) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/versioned_api/runcommand-helper-no-api-version-declared # (CDRIVER-4336) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/command_monitoring/unified/redacted-commands # (CDRIVER-4337) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/Topology/request_scan_on_error # (CDRIVER-4338) precondition failed: checks_cmp (&checks, "n_succeeded", '=', 2), and other times fails with a socket timeout
+/streamable/topology_version/update # (CDRIVER-4339) _force_scan(): precondition failed: sd
+/Stepdown/not_primary_keep # (CDRIVER-4341) Assert Failure: 673 == 674
+/Topology/multiple_selection_errors # (CDRIVER-4342) [No suitable servers found (`serverSelectionTryOnce` set): [Failed to resolve 'doesntexist'] [Failed to resolve 'example.com']] does not contain [calling hello on 'example.com:2']
+/Topology/server_removed/single # (CDRIVER-4343) error domain 1 doesn't match expected 2
+/change_stream/live/track_resume_token # (CDRIVER-4344) Condition 'bson_compare (resume_token, &doc2_rt) == 0' failed
+/change_stream/resumable_error # (CDRIVER-4345) getMore: not found
+/BulkOperation/split # (CDRIVER-4346) Assert Failure: count of split_1512376901_50824 is 97759, not 100010
+/client_side_encryption/datakey_and_double_encryption # (CDRIVER-4347) TLS handshake failed: Failed OCSP verification
+/client_side_encryption/corpus # (CDRIVER-4347) TLS handshake failed: Failed OCSP verification
+/client_side_encryption/custom_endpoint # (CDRIVER-4347) mongoc: OCSP response failed verification: error:27069065:OCSP routines:OCSP_basic_verify:certificate verify error
+/client_side_encryption/kms_tls/wrong_host # (CDRIVER-4347) [TLS handshake failed: Failed certificate verification] does not contain [IP address mismatch]
+/client_side_encryption/kms_tls_options # (CDRIVER-4347) [TLS handshake failed: Failed certificate verification] does not contain [IP address mismatch]
+/ClientPool/pop_timeout # (CDRIVER-4348) precondition failed: duration_usec / 1000 >= 1990
+/Client/get_handshake_hello_response/pooled # (CDRIVER-4349) Assert Failure: "Unknown" != "PossiblePrimary"
 
 # These all look like they could be related to CDRIVER-4111
-/Client/command/read_prefs/pooled # request_matches_msg(): precondition failed: request
-/inheritance/find/readPrefs # request_matches_msg(): precondition failed: request
-/BulkOperation/error/unordered # request_matches_msg(): precondition failed: request
-/command_monitoring/get_error # request_matches_msg(): precondition failed: request
-/change_streams/legacy/change-streams # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/change_streams/legacy/change-streams-resume-allowlist # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/change_streams/legacy/change-streams-resume-errorLabels # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/Collection/find_with_opts/newoption # request_matches_msg(): precondition failed: request
-/Client/rs_seeds_connect/pooled # hang up! monitor: [127.0.0.1:59723] command or network error occurred: Failed to read 4 bytes: socket error or timeout
-/inheritance/replace_one/writeConcern # request_matches_msg(): precondition failed: request
-/Collection/find_with_opts/newoption # request_matches_msg(): precondition failed: request
-/versioned_api/runcommand-helper-no-api-version-declared # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/unified/assertNumberConnectionsCheckedOut # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/unified/entity-client-cmap-events # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/unified/entity-client-storeEventsAsEntities # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/unified/entity-find-cursor # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/Client/fetch_stream/retry/fail # (CDRIVER-4340) looks like the mock server hangs up prematurely
+/Client/command/read_prefs/pooled # (CDRIVER-4340) request_matches_msg(): precondition failed: request
+/Client/mongos_seeds_reconnect/single # (CDRIVER-4340) looks like the mock server hangs up prematurely
+/Client/mongos_seeds_connect/pooled # (CDRIVER-4340) looks like the mock server hangs up prematurely
+/Client/exhaust_cursor/err/server/2nd_batch/pooled # (CDRIVER-4340) looks like the mock server hangs up prematurely
+/Client/rs_seeds_connect/pooled # (CDRIVER-4340) hang up! monitor: [127.0.0.1:59723] command or network error occurred: Failed to read 4 bytes: socket error or timeout
+/inheritance/find/readPrefs # (CDRIVER-4350) request_matches_msg(): precondition failed: request
+/BulkOperation/error/unordered # (CDRIVER-4350) request_matches_msg(): precondition failed: request
+/command_monitoring/get_error # (CDRIVER-4350) request_matches_msg(): precondition failed: request
+/change_streams/legacy/change-streams # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/change_streams/legacy/change-streams-resume-allowlist # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/change_streams/legacy/change-streams-resume-errorLabels # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/Collection/find_with_opts/newoption # (CDRIVER-4350) request_matches_msg(): precondition failed: request
+/inheritance/replace_one/writeConcern # (CDRIVER-4350) request_matches_msg(): precondition failed: request
+/Collection/find_with_opts/newoption # (CDRIVER-4350) request_matches_msg(): precondition failed: request
+/unified/assertNumberConnectionsCheckedOut # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/unified/entity-client-cmap-events # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/unified/entity-client-storeEventsAsEntities # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/unified/entity-find-cursor # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
+/change_streams/legacy/change-streams-errors # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000'] (on ASAN Tests Ubuntu 18.04 build variant)
 
 /transactions/legacy/mongos-recovery-token/"commitTransaction retry fails on new mongos" # fails with server selection timeout (CDRIVER-4268)
 /crud/unified/aggregate-out-readConcern/"readConcern available with out stage" # server error on sharded: "PlanExecutor error" (CDRIVER-4161)
 /client_side_encryption/azureKMS/"Insert a document with auto encryption using Azure KMS provider" # failing on RHEL 7.0 / RHEL 7.1 (CDRIVER-3814)
-
-/transactions/legacy/pin-mongos/"unpin after transient error within a transaction and commit" # server selection timeout (on ASAN Tests Ubuntu 18.04 build variant)
-/Samples # strange "heartbeat failed" error
-/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns # this initially seemed like a zSeries w/ RHEL8 issue, but it also appeared on arm64 w/ Ubuntu 18.04
-/crud/unified/bulkWrite-deleteOne-let/"BulkWrite deleteOne with let option unsupported (server-side error)" # error: expected error, but no error
-/crud/unified/bulkWrite-replaceOne-let/"BulkWrite replaceOne with let option unsupported (server-side error)" # error: expected error, but no error
-/crud/unified/bulkWrite-updateMany-let/"BulkWrite updateMany with let option unsupported (server-side error)" # error: expected error, but no error
-/crud/unified/bulkWrite-updateOne-let/"BulkWrite updateOne with let option unsupported (server-side error)" # error: expected error, but no error
-/sessions/unified/snapshot-sessions/"countDocuments operation with snapshot" # error: checking expectResult:  { "$numberInt" : "2" }
-/load_balancers/non-lb-connection-establishment/"operations against non-load balanced clusters fail if URI contains loadBalanced=true" # error: expected error to contain "Driver attempted to initialize in load balancing mode, but the server does not support this mode", but got: "BSON field 'hello.loadBalanced' is an unknown field."
-/change_streams/legacy/change-streams-errors # Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000'] (on ASAN Tests Ubuntu 18.04 build variant)
+/transactions/legacy/pin-mongos/"unpin after transient error within a transaction and commit" # (CDRIVER-4351) server selection timeout (on ASAN Tests Ubuntu 18.04 build variant)
+/Samples # (CDRIVER-4352) strange "heartbeat failed" error
+/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns # (CDRIVER-4353) this initially seemed like a zSeries w/ RHEL8 issue, but it also appeared on arm64 w/ Ubuntu 18.04
+/crud/unified/bulkWrite-deleteOne-let/"BulkWrite deleteOne with let option unsupported (server-side error)" # (CDRIVER-4354) error: expected error, but no error
+/crud/unified/bulkWrite-replaceOne-let/"BulkWrite replaceOne with let option unsupported (server-side error)" # (CDRIVER-4354) error: expected error, but no error
+/crud/unified/bulkWrite-updateMany-let/"BulkWrite updateMany with let option unsupported (server-side error)" # (CDRIVER-4354) error: expected error, but no error
+/crud/unified/bulkWrite-updateOne-let/"BulkWrite updateOne with let option unsupported (server-side error)" # (CDRIVER-4354) error: expected error, but no error
+/sessions/unified/snapshot-sessions/"countDocuments operation with snapshot" # (CDRIVER-4355) error: checking expectResult:  { "$numberInt" : "2" }
+/load_balancers/non-lb-connection-establishment/"operations against non-load balanced clusters fail if URI contains loadBalanced=true" # (CDRIVER-4356) error: expected error to contain "Driver attempted to initialize in load balancing mode, but the server does not support this mode", but got: "BSON field 'hello.loadBalanced' is an unknown field."
 
