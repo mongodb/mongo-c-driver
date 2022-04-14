@@ -1181,6 +1181,31 @@ _parse_extra (const bson_t *extra,
             GOTO (fail);
          }
       }
+
+      if (bson_iter_init_find (&iter, extra, "csflePath")) {
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                            "Expected a string for 'csflePath'");
+            GOTO (fail);
+         }
+         uint32_t len;
+         const char *ptr = bson_iter_utf8 (&iter, &len);
+         mstr_assign (&topology->csfle_override_path,
+                      mstr_copy_data (ptr, len));
+      }
+
+      if (bson_iter_init_find (&iter, extra, "csfleRequired")) {
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                            "Expected a bool for 'csfleRequired'");
+            GOTO (fail);
+         }
+         topology->csfle_required = bson_iter_bool (&iter);
+      }
    }
 
 
@@ -1281,8 +1306,13 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       GOTO (fail);
    }
 
-   client->topology->crypt = _mongoc_crypt_new (
-      opts->kms_providers, opts->schema_map, opts->tls_opts, error);
+   client->topology->crypt =
+      _mongoc_crypt_new (opts->kms_providers,
+                         opts->schema_map,
+                         opts->tls_opts,
+                         client->topology->csfle_override_path.view,
+                         client->topology->csfle_required,
+                         error);
    if (!client->topology->crypt) {
       GOTO (fail);
    }
@@ -1425,8 +1455,12 @@ _mongoc_cse_client_pool_enable_auto_encryption (
       GOTO (fail);
    }
 
-   topology->crypt = _mongoc_crypt_new (
-      opts->kms_providers, opts->schema_map, opts->tls_opts, error);
+   topology->crypt = _mongoc_crypt_new (opts->kms_providers,
+                                        opts->schema_map,
+                                        opts->tls_opts,
+                                        topology->csfle_override_path.view,
+                                        topology->csfle_required,
+                                        error);
    if (!topology->crypt) {
       GOTO (fail);
    }
@@ -1514,8 +1548,12 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    mongoc_collection_set_write_concern (client_encryption->keyvault_coll, wc);
 
    client_encryption->kms_providers = bson_copy (opts->kms_providers);
-   client_encryption->crypt = _mongoc_crypt_new (
-      opts->kms_providers, NULL /* schema_map */, opts->tls_opts, error);
+   client_encryption->crypt = _mongoc_crypt_new (opts->kms_providers,
+                                                 NULL /* schema_map */,
+                                                 opts->tls_opts,
+                                                 MSTRV_NULL /* No csfle path */,
+                                                 false /* csfle not requried */,
+                                                 error);
    if (!client_encryption->crypt) {
       goto fail;
    }

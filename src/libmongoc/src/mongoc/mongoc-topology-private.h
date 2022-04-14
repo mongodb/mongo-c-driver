@@ -30,6 +30,8 @@
 #include "mongoc-ts-pool-private.h"
 #include "mongoc-shared-private.h"
 
+#include <mlib/str.h>
+
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
 #define MONGOC_TOPOLOGY_COOLDOWN_MS 5000
@@ -186,6 +188,11 @@ typedef struct _mongoc_topology_t {
    char *mongocryptd_spawn_path;
    bson_t *mongocryptd_spawn_args;
 #endif
+
+   // Corresponds to extraOptions.csflePath
+   mstr csfle_override_path;
+   // Corresponds to extraOptions.csfleRequired
+   bool csfle_required;
 
    /* For background monitoring. */
    mongoc_set_t *server_monitors;

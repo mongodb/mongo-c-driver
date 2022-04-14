@@ -25,6 +25,8 @@
 
 #include "mongoc.h"
 
+#include <mlib/str.h>
+
 /* For interacting with libmongocrypt */
 typedef struct __mongoc_crypt_t _mongoc_crypt_t;
 
@@ -37,6 +39,8 @@ _mongoc_crypt_t *
 _mongoc_crypt_new (const bson_t *kms_providers,
                    const bson_t *schema_map,
                    const bson_t *tls_opts,
+                   mstr_view csfle_override_path,
+                   bool csfle_required,
                    bson_error_t *error);
 
 void
