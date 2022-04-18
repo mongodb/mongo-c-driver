@@ -814,7 +814,7 @@ check_run_on_requirements (test_runner_t *test_runner,
    *reason = NULL;
    if (!requirements_satisfied) {
       (*reason) =
-         tmp_str ("runOnRequirements not satified:\n%s", fail_reasons->str);
+         tmp_str ("runOnRequirements not satisfied:\n%s", fail_reasons->str);
    }
    bson_string_free (fail_reasons, true);
    return requirements_satisfied;
