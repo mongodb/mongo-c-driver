@@ -693,7 +693,7 @@ functions:
         cat dir.txt
         echo $(cat dir.txt)
         export RUN_MONGOHOUSE_TESTS=true
-        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d
+        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/skip-tests.txt
         unset RUN_MONGOHOUSE_TESTS
   test versioned api:
   - command: shell.exec
@@ -1040,24 +1040,6 @@ tasks:
       script: |-
         set -o errexit
         export CFLAGS="-std=c99"
-        export DEBUG="ON"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
-  - func: upload build
-- name: debug-compile-c89
-  tags:
-  - c89
-  - debug-compile
-  - special
-  - stdflags
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        export CFLAGS="-std=c89 -pedantic"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -21546,7 +21528,7 @@ buildvariants:
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
-  - .debug-compile .stdflags !.c89
+  - .debug-compile .stdflags
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
@@ -21559,7 +21541,7 @@ buildvariants:
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
-  - .debug-compile .stdflags !.c89
+  - .debug-compile .stdflags
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
@@ -21590,7 +21572,7 @@ buildvariants:
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
-  - .debug-compile .stdflags !.c89
+  - .debug-compile .stdflags
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
@@ -21607,7 +21589,7 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
-  - .debug-compile .stdflags !.c89
+  - .debug-compile .stdflags
   - .debug-compile !.sspi .nossl .nosasl
   - .latest .nossl .nosasl
   - .5.0 .nossl .nosasl
@@ -21625,7 +21607,7 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
-  - .debug-compile .stdflags !.c89
+  - .debug-compile .stdflags
   - .debug-compile !.sspi .nossl .nosasl
   - .3.6 .nossl .nosasl
 - name: clang38ubuntu
@@ -21641,7 +21623,7 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
-  - .debug-compile .stdflags !.c89
+  - .debug-compile .stdflags
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl

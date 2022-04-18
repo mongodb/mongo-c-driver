@@ -913,6 +913,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-basic.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-extract.c
+   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-cmp.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-corpus.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-error.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-version.c
