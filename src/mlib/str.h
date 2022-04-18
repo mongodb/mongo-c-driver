@@ -762,6 +762,7 @@ mstr_inplace_replace (mstr *s, mstr_view find, mstr_view subst)
 
 #ifdef _WIN32
 #include "./windows-lean.h"
+
 /**
  * @brief The result type of mstr_win32_widen
  */
@@ -814,8 +815,11 @@ typedef struct mstr_narrow_result {
 mlib_inline_def mstr_narrow_result
 mstr_win32_narrow (const wchar_t *wstring)
 {
+   // Some older versions of MinGW fail to include the WC_ERR_INVALID_CHARS
+   // flag, so we will specify it manually:
+   DWORD wcflags = 0x08; // WC_ERR_INVALID_CHARS
    int length = WideCharToMultiByte (CP_UTF8,
-                                     WC_ERR_INVALID_CHARS,
+                                     wcflags,
                                      wstring,
                                      -1 /* wstring is null-terminated */,
                                      NULL,
@@ -827,14 +831,8 @@ mstr_win32_narrow (const wchar_t *wstring)
                                   .error = GetLastError ()};
    }
    mstr_mut ret = mstr_new ((size_t) length);
-   int got_len = WideCharToMultiByte (CP_UTF8,
-                                      WC_ERR_INVALID_CHARS,
-                                      wstring,
-                                      -1,
-                                      ret.data,
-                                      (int) ret.len,
-                                      NULL,
-                                      NULL);
+   int got_len = WideCharToMultiByte (
+      CP_UTF8, wcflags, wstring, -1, ret.data, (int) ret.len, NULL, NULL);
    assert (length == got_len);
    return (mstr_narrow_result){.string = ret.mstr, .error = 0};
 }
