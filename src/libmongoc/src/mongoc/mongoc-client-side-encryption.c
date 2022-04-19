@@ -888,6 +888,18 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
 }
 #else
 
+/**
+ * @brief Exit the calling process *immediately* without running any per-process
+ * cleanup handlers.
+ *
+ * @param status The exist status for the process.
+ */
+static void
+fast_exit (int status)
+{
+   _exit (status);
+}
+
 /*--------------------------------------------------------------------------
  *
  * _do_spawn --
@@ -928,6 +940,13 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    int fd;
    char *to_exec;
 
+   // String allocation must be done up-front, as allocation is not fork-safe.
+   if (path) {
+      to_exec = bson_strdup_printf ("%s%s", path, args[0]);
+   } else {
+      to_exec = bson_strdup (args[0]);
+   }
+
    /* Fork. The child will terminate immediately (after fork-exec'ing
     * mongocryptd). This orphans mongocryptd, and allows parent to wait on
     * child. */
@@ -939,6 +958,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                       "failed to fork (errno=%d) '%s'",
                       errno,
                       strerror (errno));
+      bson_free (to_exec);
       return false;
    } else if (pid > 0) {
       int child_status;
@@ -952,9 +972,11 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                          "failed to wait for child (errno=%d) '%s'",
                          errno,
                          strerror (errno));
+         bson_free (to_exec);
          return false;
       }
       /* parent is done at this point, return. */
+      bson_free (to_exec);
       return true;
    }
 
@@ -967,7 +989,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    /* Start a new session for the child, so it is not bound to the current
     * session (e.g. terminal session). */
    if (setsid () < 0) {
-      exit (EXIT_FAILURE);
+      fast_exit (EXIT_FAILURE);
    }
 
    /* Fork again. Child terminates so mongocryptd gets orphaned and immedately
@@ -975,10 +997,10 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    signal (SIGHUP, SIG_IGN);
    pid = fork ();
    if (pid < 0) {
-      exit (EXIT_FAILURE);
+      fast_exit (EXIT_FAILURE);
    } else if (pid > 0) {
       /* Child terminates immediately. */
-      exit (EXIT_SUCCESS);
+      fast_exit (EXIT_SUCCESS);
    }
 
    /* If we later decide to change the working directory for the pid file path,
@@ -992,7 +1014,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    /* Close and reopen stdin. */
    fd = open ("/dev/null", O_RDONLY);
    if (fd < 0) {
-      exit (EXIT_FAILURE);
+      fast_exit (EXIT_FAILURE);
    }
    dup2 (fd, STDIN_FILENO);
    close (fd);
@@ -1000,29 +1022,24 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    /* Close and reopen stdout. */
    fd = open ("/dev/null", O_WRONLY);
    if (fd < 0) {
-      exit (EXIT_FAILURE);
+      fast_exit (EXIT_FAILURE);
    }
    if (dup2 (fd, STDOUT_FILENO) < 0 || close (fd) < 0) {
-      exit (EXIT_FAILURE);
+      fast_exit (EXIT_FAILURE);
    }
 
    /* Close and reopen stderr. */
    fd = open ("/dev/null", O_RDWR);
    if (fd < 0) {
-      exit (EXIT_FAILURE);
+      fast_exit (EXIT_FAILURE);
    }
    if (dup2 (fd, STDERR_FILENO) < 0 || close (fd) < 0) {
-      exit (EXIT_FAILURE);
+      fast_exit (EXIT_FAILURE);
    }
 
-   if (path) {
-      to_exec = bson_strdup_printf ("%s%s", path, args[0]);
-   } else {
-      to_exec = bson_strdup (args[0]);
-   }
    if (execvp (to_exec, args) < 0) {
       /* Need to exit. */
-      exit (EXIT_FAILURE);
+      fast_exit (EXIT_FAILURE);
    }
 
    /* Will never execute. */
