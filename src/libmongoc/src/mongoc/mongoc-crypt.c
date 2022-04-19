@@ -910,7 +910,7 @@ _mongoc_crypt_t *
 _mongoc_crypt_new (const bson_t *kms_providers,
                    const bson_t *schema_map,
                    const bson_t *tls_opts,
-                   mstr_view csfle_override_path,
+                   const char *csfle_override_path,
                    bool csfle_required,
                    bson_error_t *error)
 {
@@ -952,9 +952,9 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       goto fail;
    }
 
-   if (csfle_override_path.data != NULL) {
+   if (csfle_override_path != NULL) {
       mongocrypt_setopt_set_csfle_lib_path_override (crypt->handle,
-                                                     csfle_override_path.data);
+                                                     csfle_override_path);
       if (!_crypt_check_error (crypt->handle, error, false)) {
          goto fail;
       }
@@ -966,9 +966,8 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    }
 
    if (csfle_required) {
-      mstr_view s = mstrv_view_cstr (
-         mongocrypt_csfle_version_string (crypt->handle, NULL));
-      if (s.len == 0) {
+      const char *s = mongocrypt_csfle_version_string (crypt->handle, NULL);
+      if (!s || strlen (s) == 0) {
          // empty/null version string indicates that csfle was not loaded by
          // libmongocrypt
          bson_set_error (error,
@@ -981,7 +980,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       mongoc_log (MONGOC_LOG_LEVEL_DEBUG,
                   MONGOC_LOG_DOMAIN,
                   "csfle version '%s' was found and loaded",
-                  s.data);
+                  s);
    }
 
    success = true;

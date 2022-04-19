@@ -1192,8 +1192,8 @@ _parse_extra (const bson_t *extra,
          }
          uint32_t len;
          const char *ptr = bson_iter_utf8 (&iter, &len);
-         mstr_assign (&topology->csfle_override_path,
-                      mstr_copy_data (ptr, len));
+         bson_free (topology->csfle_override_path);
+         topology->csfle_override_path = bson_strdup (ptr);
       }
 
       if (bson_iter_init_find (&iter, extra, "csfleRequired")) {
@@ -1310,7 +1310,7 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       _mongoc_crypt_new (opts->kms_providers,
                          opts->schema_map,
                          opts->tls_opts,
-                         client->topology->csfle_override_path.view,
+                         client->topology->csfle_override_path,
                          client->topology->csfle_required,
                          error);
    if (!client->topology->crypt) {
@@ -1458,7 +1458,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (
    topology->crypt = _mongoc_crypt_new (opts->kms_providers,
                                         opts->schema_map,
                                         opts->tls_opts,
-                                        topology->csfle_override_path.view,
+                                        topology->csfle_override_path,
                                         topology->csfle_required,
                                         error);
    if (!topology->crypt) {
@@ -1551,7 +1551,7 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    client_encryption->crypt = _mongoc_crypt_new (opts->kms_providers,
                                                  NULL /* schema_map */,
                                                  opts->tls_opts,
-                                                 MSTRV_NULL /* No csfle path */,
+                                                 NULL /* No csfle path */,
                                                  false /* csfle not requried */,
                                                  error);
    if (!client_encryption->crypt) {
