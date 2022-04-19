@@ -856,6 +856,27 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
    )
 endif ()
 
+find_package (Python3 COMPONENTS Interpreter)
+if (TARGET Python3::Interpreter)
+   get_filename_component(csfle_dest "${CMAKE_CURRENT_BINARY_DIR}/_csfle/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
+   add_custom_command (
+      OUTPUT "${csfle_dest}"
+      COMMAND
+         Python3::Interpreter -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
+            --component csfle
+            --version 5.3.1
+            --edition enterprise
+            --out "${CMAKE_CURRENT_BINARY_DIR}/_csfle"
+            --only "**/mongo_csfle_v1.*"
+            --strip-path-components 1
+      COMMENT "Downloading csfle"
+      )
+   add_custom_target(get-csfle ALL DEPENDS "${csfle_dest}")
+   set_property (TARGET get-csfle PROPERTY CSFLE_PATH "${csfle_dest}")
+else ()
+   message (STATUS "Note: No Python3 found - Not downloading csfle library for testing")
+endif ()
+
 function (mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable (${test} ${ARGN})
@@ -1058,6 +1079,9 @@ mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 
+if (TARGET get-csfle AND TARGET test-libmongoc)
+   target_compile_definitions (test-libmongoc PRIVATE "TESTING_CSFLE_OVERRIDE_PATH=\"$<TARGET_PROPERTY:get-csfle,CSFLE_PATH>\"")
+endif ()
 
 if (ENABLE_TESTS)
    # "make test" doesn't compile tests, so we create "make check" which compiles

@@ -1887,6 +1887,9 @@ _reset (mongoc_client_pool_t **pool,
    *opts = mongoc_auto_encryption_opts_new ();
    extra = BCON_NEW ("mongocryptdBypassSpawn", BCON_BOOL (true));
    mongoc_auto_encryption_opts_set_extra (*opts, extra);
+#ifdef TESTING_CSFLE_OVERRIDE_PATH
+   BSON_APPEND_UTF8 (extra, "csflePath", TESTING_CSFLE_OVERRIDE_PATH);
+#endif
    mongoc_auto_encryption_opts_set_keyvault_namespace (*opts, "db", "keyvault");
    kms_providers = _make_kms_providers (false /* aws */, true /* local */);
    mongoc_auto_encryption_opts_set_kms_providers (*opts, kms_providers);
