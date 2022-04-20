@@ -578,7 +578,7 @@ def main():
     dl_grp.add_argument(
         '--edition',
         '-E',
-        help='The edition of the product to download (Default is "targeted"). '
+        help='The edition of the product to download (Default is "enterprise"). '
         'Use "--list" to list available editions.')
     dl_grp.add_argument(
         '--out',
@@ -644,7 +644,7 @@ def main():
 
     target = args.target or infer_target()
     arch = args.arch or infer_arch()
-    edition = args.edition or 'targeted'
+    edition = args.edition or 'enterprise'
     out = args.out or Path.cwd()
     out = out.absolute()
     result = _dl_component(db,
