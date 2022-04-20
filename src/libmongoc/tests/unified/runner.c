@@ -1748,4 +1748,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "change_streams/unified");
 
    run_unified_tests (suite, JSON_DIR, "load_balancers");
+
+   run_unified_tests (suite, JSON_DIR, "client_side_encryption/unified");
 }
