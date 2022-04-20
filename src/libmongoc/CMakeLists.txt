@@ -857,7 +857,7 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
 endif ()
 
 find_package (Python3 COMPONENTS Interpreter)
-if (TARGET Python3::Interpreter)
+if (ENABLE_TESTS AND TARGET Python3::Interpreter)
    get_filename_component(csfle_dest "${CMAKE_CURRENT_BINARY_DIR}/_csfle/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
    add_custom_command (
       OUTPUT "${csfle_dest}"
