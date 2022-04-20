@@ -54,8 +54,6 @@ option (ENABLE_DEBUG_ASSERTIONS "Turn on runtime debug assertions" OFF)
 
 project (mongo-c-driver C)
 
-set (CMAKE_C_STANDARD 99)
-
 # Optionally enable C++ to do some C++-specific tests
 include (CheckLanguage)
 check_language (CXX)
