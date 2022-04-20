@@ -23,6 +23,9 @@
 #include "utlist.h"
 #include "util.h"
 
+#include "common-b64-private.h"
+#include "mongoc-client-side-encryption-private.h"
+
 /* TODO: use public API to reduce min heartbeat once CDRIVER-3130 is resolved.
  */
 #include "mongoc-client-private.h"
@@ -424,6 +427,506 @@ done:
    }
    return entity;
 }
+
+static char *
+_entity_client_encryption_getenv (const char *name, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (name);
+
+   char *const res = _mongoc_getenv (name);
+
+   if (!res) {
+      test_set_error (
+         error, "expected environment variable '%s' to be set", name);
+   }
+
+   return res;
+}
+
+static bool
+_append_kms_provider_value_or_getenv (bson_t *bson,
+                                      const char *key,
+                                      const char *value,
+                                      const char *env_name,
+                                      bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (env_name);
+
+   /* Prefer explicit value if available. */
+   if (value) {
+      BSON_ASSERT (BSON_APPEND_UTF8 (bson, key, value));
+      return true;
+   }
+
+   /* Fallback to environment variable. */
+   {
+      char *const env_var = _entity_client_encryption_getenv (env_name, error);
+
+      if (env_var) {
+         BSON_ASSERT (BSON_APPEND_UTF8 (bson, key, env_var));
+         bson_free (env_var);
+         return true;
+      }
+   }
+
+   test_set_error (
+      error, "missing required environment variable '%s'", env_name);
+
+   return false;
+}
+
+static bool
+_validate_string_or_placeholder (const bson_iter_t *iter, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (iter);
+
+   /* Holds a UTF-8 string. */
+   if (BSON_ITER_HOLDS_UTF8 (iter)) {
+      return true;
+   }
+
+   /* Must be `{'$$placeholder': {}}` otherwise. */
+   if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      bson_val_t *const bson_val = bson_val_from_iter (iter);
+
+      BSON_ASSERT (bson_val);
+
+      bson_val_t *const expected = bson_val_from_json ("{'$$placeholder': {}}");
+
+      const bool is_match = bson_match (expected, bson_val, false, error);
+
+      bson_val_destroy (bson_val);
+      bson_val_destroy (expected);
+
+      if (is_match) {
+         return true;
+      }
+   }
+
+   test_set_error (error, "expected string or placeholder value");
+
+   return false;
+}
+
+static bool
+_parse_kms_provider_aws (bson_t *kms_providers,
+                         bson_t *tls_opts,
+                         const char *provider,
+                         bson_t *kms_doc,
+                         bson_error_t *error)
+{
+   bson_t child;
+   bson_iter_t iter;
+
+   BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
+
+   BSON_FOREACH (kms_doc, iter)
+   {
+      if (!_validate_string_or_placeholder (&iter, error)) {
+         return false;
+      }
+
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
+      if (strcmp (key, "accessKeyId") == 0) {
+         if (!_append_kms_provider_value_or_getenv (
+                &child, key, value, "MONGOC_TEST_AWS_ACCESS_KEY_ID", error)) {
+            return false;
+         }
+      } else if (strcmp (key, "secretAccessKey") == 0) {
+         if (!_append_kms_provider_value_or_getenv (
+                &child,
+                key,
+                value,
+                "MONGOC_TEST_AWS_SECRET_ACCESS_KEY",
+                error)) {
+            return false;
+         }
+      } else {
+         test_set_error (error, "unexpected field '%s'", key);
+         return false;
+      }
+   }
+
+   BSON_ASSERT (bson_append_document_end (kms_providers, &child));
+
+   return true;
+}
+
+static bool
+_parse_kms_provider_azure (bson_t *kms_providers,
+                           bson_t *tls_opts,
+                           const char *provider,
+                           bson_t *kms_doc,
+                           bson_error_t *error)
+{
+   bson_t child;
+   bson_iter_t iter;
+
+   BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
+
+   BSON_FOREACH (kms_doc, iter)
+   {
+      if (!_validate_string_or_placeholder (&iter, error)) {
+         return false;
+      }
+
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
+      if (strcmp (key, "tenantId") == 0) {
+         if (!_append_kms_provider_value_or_getenv (
+                &child, key, value, "MONGOC_TEST_AZURE_TENANT_ID", error)) {
+            return false;
+         }
+      } else if (strcmp (key, "clientId") == 0) {
+         if (!_append_kms_provider_value_or_getenv (
+                &child, key, value, "MONGOC_TEST_AZURE_CLIENT_ID", error)) {
+            return false;
+         }
+      } else if (strcmp (key, "clientSecret") == 0) {
+         if (!_append_kms_provider_value_or_getenv (
+                &child, key, value, "MONGOC_TEST_AZURE_CLIENT_SECRET", error)) {
+            return false;
+         }
+      } else {
+         test_set_error (error, "unexpected field '%s'", value);
+         return false;
+      }
+   }
+
+   BSON_ASSERT (bson_append_document_end (kms_providers, &child));
+
+   return true;
+}
+
+static bool
+_parse_kms_provider_gcp (bson_t *kms_providers,
+                         bson_t *tls_opts,
+                         const char *provider,
+                         bson_t *kms_doc,
+                         bson_error_t *error)
+{
+   bson_t child;
+   bson_iter_t iter;
+
+   BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
+
+   BSON_FOREACH (kms_doc, iter)
+   {
+      if (!_validate_string_or_placeholder (&iter, error)) {
+         return false;
+      }
+
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
+      if (strcmp (key, "email") == 0) {
+         if (!_append_kms_provider_value_or_getenv (
+                &child, key, value, "MONGOC_TEST_GCP_EMAIL", error)) {
+            return false;
+         }
+      } else if (strcmp (key, "privateKey") == 0) {
+         if (!_append_kms_provider_value_or_getenv (
+                &child, key, value, "MONGOC_TEST_GCP_PRIVATEKEY", error)) {
+            return false;
+         }
+      } else if (strcmp (key, "endpoint") == 0) {
+         if (value) {
+            BSON_APPEND_UTF8 (&child, key, value);
+         }
+      } else {
+         test_set_error (error, "unexpected field '%s'", value);
+         return false;
+      }
+   }
+
+   BSON_ASSERT (bson_append_document_end (kms_providers, &child));
+
+   return true;
+}
+
+static bool
+_parse_kms_provider_kmip (bson_t *kms_providers,
+                          bson_t *tls_opts,
+                          const char *provider,
+                          bson_t *kms_doc,
+                          bson_error_t *error)
+{
+   bson_t child;
+   bson_iter_t iter;
+
+   BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
+
+   BSON_FOREACH (kms_doc, iter)
+   {
+      if (!_validate_string_or_placeholder (&iter, error)) {
+         return false;
+      }
+
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
+      if (strcmp (key, "endpoint") == 0) {
+         if (value) {
+            BSON_APPEND_UTF8 (&child, key, value);
+         } else {
+            /* Expect KMIP test server running on port 5698. */
+            BSON_APPEND_UTF8 (&child, key, "localhost:5698");
+         }
+
+         /* Configure tlsOptions to enable KMIP TLS connections. */
+         BSON_APPEND_DOCUMENT_BEGIN (tls_opts, provider, &child);
+         if (!_append_kms_provider_value_or_getenv (
+                &child,
+                "tlsCAFile",
+                NULL,
+                "MONGOC_TEST_CSFLE_TLS_CA_FILE",
+                error)) {
+            return false;
+         }
+         if (!_append_kms_provider_value_or_getenv (
+                &child,
+                "tlsCertificateKeyFile",
+                NULL,
+                "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE",
+                error)) {
+            return false;
+         }
+         bson_append_document_end (tls_opts, &child);
+      } else {
+         test_set_error (error, "unexpected field '%s'", value);
+         return false;
+      }
+   }
+
+   BSON_ASSERT (bson_append_document_end (kms_providers, &child));
+
+   return true;
+}
+
+static bool
+_parse_kms_provider_local (bson_t *kms_providers,
+                           bson_t *tls_opts,
+                           const char *provider,
+                           bson_t *kms_doc,
+                           bson_error_t *error)
+{
+   bson_t child;
+   bson_iter_t iter;
+
+   BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
+
+   BSON_FOREACH (kms_doc, iter)
+   {
+      if (!_validate_string_or_placeholder (&iter, error)) {
+         return false;
+      }
+
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
+      if (strcmp (key, "key") == 0) {
+         if (value) {
+            BSON_APPEND_UTF8 (&child, key, value);
+         } else {
+            /* LOCAL_MASTERKEY in base64 encoding as defined in Client Side
+             * Encryption Tests spec. */
+            const char key[] =
+               "Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6N"
+               "mdWMDFBMUN3YkQ5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZG"
+               "JkTXVyZG9uSjFk";
+            uint8_t data[96];
+            BSON_ASSERT (mcommon_b64_pton (key, data, sizeof (data)) == 96);
+            BSON_APPEND_BINARY (&child, "key", BSON_SUBTYPE_BINARY, data, 96);
+         }
+      } else {
+         test_set_error (error, "unexpected field '%s'", value);
+         return false;
+      }
+   }
+
+   BSON_ASSERT (bson_append_document_end (kms_providers, &child));
+
+   return true;
+}
+
+static bool
+_parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts,
+                              bson_t *kms_from_file,
+                              bson_error_t *error)
+{
+   /* Map provider to corresponding KMS parser. */
+   typedef struct _prov_map_t {
+      const char *provider;
+      bool (*parse) (bson_t *kms_providers,
+                     bson_t *tls_opts,
+                     const char *provider,
+                     bson_t *kms_doc,
+                     bson_error_t *error);
+   } prov_map_t;
+
+   const prov_map_t prov_map[] = {
+      {.provider = "aws", .parse = _parse_kms_provider_aws},
+      {.provider = "azure", .parse = _parse_kms_provider_azure},
+      {.provider = "gcp", .parse = _parse_kms_provider_gcp},
+      {.provider = "kmip", .parse = _parse_kms_provider_kmip},
+      {.provider = "local", .parse = _parse_kms_provider_local}};
+
+   const size_t prov_map_size = sizeof (prov_map) / sizeof (prov_map[0]);
+
+   bool ret = false;
+   bson_t kms_providers = BSON_INITIALIZER;
+   bson_t tls_opts = BSON_INITIALIZER;
+   bson_iter_t iter;
+
+   BSON_FOREACH (kms_from_file, iter)
+   {
+      const char *const provider = bson_iter_key (&iter);
+      bson_t kms_doc;
+      bool found = false;
+
+      if (!bson_init_from_value (&kms_doc, bson_iter_value (&iter))) {
+         test_set_error (
+            error, "kmsProviders field '%s' is not a valid document", provider);
+         goto done;
+      }
+
+      for (size_t i = 0u; i < prov_map_size; ++i) {
+         if (strcmp (provider, prov_map[i].provider) == 0) {
+            found = prov_map[i].parse (
+               &kms_providers, &tls_opts, provider, &kms_doc, error);
+            goto parsed;
+         }
+      }
+
+      test_set_error (error, "unexpected KMS provider '%s'", provider);
+
+   parsed:
+      bson_destroy (&kms_doc);
+
+      if (!found) {
+         goto done;
+      }
+   }
+
+   mongoc_client_encryption_opts_set_kms_providers (ce_opts, &kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (ce_opts, &tls_opts);
+
+   ret = true;
+
+done:
+   bson_destroy (&kms_providers);
+   bson_destroy (&tls_opts);
+
+   return ret;
+}
+
+entity_t *
+entity_client_encryption_new (entity_map_t *entity_map,
+                              bson_t *bson,
+                              bson_error_t *error)
+{
+   entity_t *const entity = entity_new ("clientEncryption");
+   bson_parser_t *const parser = bson_parser_new ();
+   mongoc_client_encryption_opts_t *const ce_opts =
+      mongoc_client_encryption_opts_new ();
+
+   bson_t *ce_opts_bson = NULL;
+
+   bson_parser_utf8 (parser, "id", &entity->id);
+   bson_parser_doc (parser, "clientEncryptionOpts", &ce_opts_bson);
+
+   if (!bson_parser_parse (parser, bson, error)) {
+      goto done;
+   }
+
+   {
+      bson_parser_t *const ce_opts_parser = bson_parser_new ();
+
+      bool ce_opts_success = false;
+      char *client_id = NULL;
+      char *kv_ns = NULL;
+      bson_t *kms = NULL;
+
+      bson_parser_utf8 (ce_opts_parser, "keyVaultClient", &client_id);
+      bson_parser_utf8 (ce_opts_parser, "keyVaultNamespace", &kv_ns);
+      bson_parser_doc (ce_opts_parser, "kmsProviders", &kms);
+
+      if (!bson_parser_parse (ce_opts_parser, ce_opts_bson, error)) {
+         goto ce_opts_done;
+      }
+
+      {
+         entity_t *const client_entity =
+            entity_map_get (entity_map, client_id, error);
+
+         if (!client_entity) {
+            goto ce_opts_done;
+         }
+
+         mongoc_client_t *const client =
+            (mongoc_client_t *) client_entity->value;
+
+         BSON_ASSERT (client);
+
+         mongoc_client_encryption_opts_set_keyvault_client (ce_opts, client);
+      }
+
+      {
+         char *const dot = strchr (kv_ns, '.');
+
+         if (!dot) {
+            test_set_error (
+               error, "keyVaultNamespace does not have required dot separator");
+            goto ce_opts_done;
+         }
+
+         *dot = '\0'; /* e.g. "keyvault.datakeys" -> "keyvault\0datakeys". */
+         const char *db = kv_ns;     /* "keyvault" (due to null terminator) */
+         const char *coll = dot + 1; /* "datakeys" */
+
+         if (strchr (coll, '.') != NULL) {
+            test_set_error (
+               error, "keyVaultNamespace contains more than one dot separator");
+            goto ce_opts_done;
+         }
+
+         mongoc_client_encryption_opts_set_keyvault_namespace (
+            ce_opts, db, coll);
+      }
+
+      if (!_parse_and_set_kms_providers (ce_opts, kms, error)) {
+         goto ce_opts_done;
+      }
+
+      ce_opts_success = true;
+
+   ce_opts_done:
+      bson_parser_destroy_with_parsed_fields (ce_opts_parser);
+
+      if (!ce_opts_success) {
+         goto done;
+      }
+   }
+
+   entity->value = mongoc_client_encryption_new (ce_opts, error);
+
+done:
+   mongoc_client_encryption_opts_destroy (ce_opts);
+   bson_destroy (ce_opts_bson);
+   bson_parser_destroy (parser);
+
+   if (!entity->value) {
+      entity_destroy (entity);
+      return NULL;
+   }
+
+   return entity;
+}
+
 typedef struct {
    mongoc_read_concern_t *rc;
    mongoc_write_concern_t *wc;
@@ -828,6 +1331,8 @@ entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
 
    if (0 == strcmp (entity_type, "client")) {
       entity = entity_client_new (entity_map, &entity_bson, error);
+   } else if (0 == strcmp (entity_type, "clientEncryption")) {
+      entity = entity_client_encryption_new (entity_map, &entity_bson, error);
    } else if (0 == strcmp (entity_type, "database")) {
       entity = entity_database_new (entity_map, &entity_bson, error);
    } else if (0 == strcmp (entity_type, "collection")) {
@@ -883,6 +1388,11 @@ entity_destroy (entity_t *entity)
 
       client = (mongoc_client_t *) entity->value;
       mongoc_client_destroy (client);
+   } else if (0 == strcmp ("clientEncryption", entity->type)) {
+      mongoc_client_encryption_t *ce = NULL;
+
+      ce = (mongoc_client_encryption_t *) entity->value;
+      mongoc_client_encryption_destroy (ce);
    } else if (0 == strcmp ("database", entity->type)) {
       mongoc_database_t *db = NULL;
 
@@ -998,6 +1508,19 @@ entity_map_get_client (entity_map_t *entity_map,
       return NULL;
    }
    return (mongoc_client_t *) entity->value;
+}
+
+mongoc_client_encryption_t *
+entity_map_get_client_encryption (entity_map_t *entity_map,
+                                  const char *id,
+                                  bson_error_t *error)
+{
+   entity_t *entity =
+      _entity_map_get_by_type (entity_map, id, "clientEncryption", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (mongoc_client_encryption_t *) entity->value;
 }
 
 mongoc_database_t *
