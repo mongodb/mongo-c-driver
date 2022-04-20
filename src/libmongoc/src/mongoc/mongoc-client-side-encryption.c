@@ -1329,6 +1329,7 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
                          opts->tls_opts,
                          client->topology->csfle_override_path,
                          client->topology->csfle_required,
+                         opts->bypass_auto_encryption,
                          error);
    if (!client->topology->crypt) {
       GOTO (fail);
@@ -1477,6 +1478,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (
                                         opts->tls_opts,
                                         topology->csfle_override_path,
                                         topology->csfle_required,
+                                        opts->bypass_auto_encryption,
                                         error);
    if (!topology->crypt) {
       GOTO (fail);
@@ -1565,12 +1567,14 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    mongoc_collection_set_write_concern (client_encryption->keyvault_coll, wc);
 
    client_encryption->kms_providers = bson_copy (opts->kms_providers);
-   client_encryption->crypt = _mongoc_crypt_new (opts->kms_providers,
-                                                 NULL /* schema_map */,
-                                                 opts->tls_opts,
-                                                 NULL /* No csfle path */,
-                                                 false /* csfle not requried */,
-                                                 error);
+   client_encryption->crypt =
+      _mongoc_crypt_new (opts->kms_providers,
+                         NULL /* schema_map */,
+                         opts->tls_opts,
+                         NULL /* No csfle path */,
+                         false /* csfle not requried */,
+                         true, /* bypassAutoEncryption (We are explicit) */
+                         error);
    if (!client_encryption->crypt) {
       goto fail;
    }

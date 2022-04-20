@@ -912,6 +912,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    const bson_t *tls_opts,
                    const char *csfle_override_path,
                    bool csfle_required,
+                   bool bypass_auto_encryption,
                    bson_error_t *error)
 {
    _mongoc_crypt_t *crypt;
@@ -947,16 +948,18 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       }
    }
 
-   mongocrypt_setopt_append_csfle_search_path (crypt->handle, "$SYSTEM");
-   if (!_crypt_check_error (crypt->handle, error, false)) {
-      goto fail;
-   }
-
-   if (csfle_override_path != NULL) {
-      mongocrypt_setopt_set_csfle_lib_path_override (crypt->handle,
-                                                     csfle_override_path);
+   if (!bypass_auto_encryption) {
+      mongocrypt_setopt_append_csfle_search_path (crypt->handle, "$SYSTEM");
       if (!_crypt_check_error (crypt->handle, error, false)) {
          goto fail;
+      }
+
+      if (csfle_override_path != NULL) {
+         mongocrypt_setopt_set_csfle_lib_path_override (crypt->handle,
+                                                        csfle_override_path);
+         if (!_crypt_check_error (crypt->handle, error, false)) {
+            goto fail;
+         }
       }
    }
 
