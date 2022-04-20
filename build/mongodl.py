@@ -525,7 +525,7 @@ def _expand_zip(ar, dest, pattern, strip_components, test):
 def _maybe_extract_member(out, relpath, pattern, strip, is_dir, opener,
                           modebits, test):
     """
-    Try to extract an archive member according to the given argumetns.
+    Try to extract an archive member according to the given arguments.
 
     :return: Zero if the file was excluded by filters, one otherwise.
     """
@@ -562,7 +562,7 @@ def main():
     grp.add_argument('--list',
                      action='store_true',
                      help='List available components, targets, editions, and '
-                     'architectures. Donwload arguments will act as filters.')
+                     'architectures. Download arguments will act as filters.')
     dl_grp = parser.add_argument_group(
         'Download arguments',
         description='Select what to download and extract. '
@@ -609,11 +609,11 @@ def main():
         default=0,
         type=int,
         help=
-        'Stip the given number of path components from archive members before '
+        'Strip the given number of path components from archive members before '
         'extracting into the destination. The relative path of the archive '
         'member will be used to form the destination path. For example, a '
         'member named [bin/mongod.exe] will be extracted to [<out>/bin/mongod.exe]. '
-        'Using --stip-components=1 will remove the first path component, extracting '
+        'Using --strip-components=1 will remove the first path component, extracting '
         'such an item to [<out>/mongod.exe]. If the path has fewer than N components, '
         'that archive member will be ignored.')
     dl_grp.add_argument(
