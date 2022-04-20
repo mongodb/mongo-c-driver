@@ -32,29 +32,12 @@ set_local_dist (src_DIST_local
    cpp-check.cpp
 )
 
-set (src_mlib_DIST
-   src/mlib/mlib.cmake
-   src/mlib/error.h
-   src/mlib/linkcheck.test.c
-   src/mlib/linkcheck-1.test.c
-   src/mlib/linkcheck-2.test.c
-   src/mlib/macros.h
-   src/mlib/path.h
-   src/mlib/path.test.c
-   src/mlib/str.h
-   src/mlib/str.test.c
-   src/mlib/thread.h
-   src/mlib/user-check.h
-   src/mlib/windows-lean.h
-   )
-
 set (src_DIST
    ${src_DIST_local}
    ${src_tools_DIST}
    ${src_zlib_DIST}
    ${src_common_DIST}
    ${src_kms_message_DIST}
-   ${src_mlib_DIST}
    PARENT_SCOPE
 )
 
