@@ -260,16 +260,17 @@ def _print_list(db, version, target, arch, edition, component):
                  edition=edition,
                  component=component),
         )
-        found_any = False
         for version, target, arch, edition, comp_key, comp_data in matching:
-            found_any = True
-            print('Download: {}\n'
-                  ' Version: {}\n'
-                  '  Target: {}\n'
-                  '    Arch: {}\n'
-                  ' Edition: {}\n'
-                  '    Info: {}\n'.format(comp_key, version, target, arch,
-                                          edition, comp_data))
+            print('Download: {}\n\n'
+                  ' Version: {}\n\n'
+                  '  Target: {}\n\n'
+                  '    Arch: {}\n\n'
+                  ' Edition: {}\n\n'
+                  '    Info: {}\n\n'.format(comp_key, version, target, arch,
+                                            edition, comp_data))
+        print(f'(Omit filter arguments for a list of available filters)')
+        return
+
     arches, targets, editions, versions, components = next(
         iter(
             db.execute(r'''
