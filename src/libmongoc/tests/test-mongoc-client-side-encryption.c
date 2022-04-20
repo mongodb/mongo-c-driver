@@ -3187,7 +3187,7 @@ test_client_side_encryption_install (TestSuite *suite)
    install_json_test_suite_with_check (
       suite,
       JSON_DIR,
-      "client_side_encryption",
+      "client_side_encryption/legacy",
       test_client_side_encryption_cb,
       test_framework_skip_if_no_client_side_encryption);
    /* Prose tests from the spec. */
