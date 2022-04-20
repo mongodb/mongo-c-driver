@@ -69,9 +69,9 @@ DISTRO_ID_TO_TARGET = {
 
 
 def infer_target():
-    if os.name == 'nt':
+    if sys.platform == 'win32':
         return 'windows'
-    if os.name == 'darwin':
+    if sys.platform == 'darwin':
         return 'macos'
     # Now the tricky bit
     if Path('/etc/os-release').is_file():
@@ -116,10 +116,10 @@ def _infer_target_os_rel():
 
 
 def caches_root():
-    if os.name == 'nt':
+    if sys.platform == 'win32':
         return Path(os.environ['LocalAppData'])
-    if os.name == 'darwin':
-        return Path('~/Library/Caches')
+    if sys.platform == 'darwin':
+        return Path('~/Library/Caches').expanduser()
     xdg_cache = os.getenv('XDG_CACHE_HOME')
     if xdg_cache:
         return Path(xdg_cache)
