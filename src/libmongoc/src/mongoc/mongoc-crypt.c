@@ -969,8 +969,9 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    }
 
    if (csfle_required) {
-      const char *s = mongocrypt_csfle_version_string (crypt->handle, NULL);
-      if (!s || strlen (s) == 0) {
+      uint32_t len = 0;
+      const char *s = mongocrypt_csfle_version_string (crypt->handle, &len);
+      if (!s || len == 0) {
          // empty/null version string indicates that csfle was not loaded by
          // libmongocrypt
          bson_set_error (error,

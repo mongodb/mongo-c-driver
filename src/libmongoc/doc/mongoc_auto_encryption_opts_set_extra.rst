@@ -26,31 +26,30 @@ Parameters
 * ``mongocryptdSpawnPath`` set to a path (with trailing slash) to search for mongocryptd (defaults to empty string and uses default system paths).
 * ``mongocryptdSpawnArgs`` set to an array of string arguments to pass to ``mongocryptd`` when spawning (defaults to ``[ "--idleShutdownTimeoutSecs=60" ]``).
 * ``csflePath`` - Set a filepath string referring to a ``csfle`` dynamic library
-  file. Default is undefined.
+  file. Unset by default.
 
-  * If not specified (the default), ``libmongocrypt`` will attempt to load
-    ``csfle`` using the host system's default dynamic-library-search system.
-  * If used, should be the path to the ``csfle`` dynamic library file itself,
-    not just the directory that contains it.
+  * If not set (the default), ``libmongocrypt`` will attempt to load ``csfle``
+    using the host system's default dynamic-library-search system.
+  * If set, the given path should identify the ``csfle`` dynamic library file
+    itself, not the directory that contains it.
   * If the given path is a relative path and the first path component is
     ``$ORIGIN``, the ``$ORIGIN`` component will be replaced with the absolute
     path to the directory containing the ``libmongocrypt`` library in use by the
     application.
 
-    .. note:: No other ``RPATH``/``RUNPATH``-style substitutions are availbale.
+    .. note:: No other ``RPATH``/``RUNPATH``-style substitutions are available.
 
-  * If the given path is a relative path, the path will be resolves relative to
+  * If the given path is a relative path, the path will be resolved relative to
     the working directory of the operating system process.
-  * If this option is specified and ``libmongocrypt`` fails to load ``csfle``
-    from that filepath, ``libmongocrypt`` will fail to initialize with a
-    hard-error, and will not attempt to search for ``csfle`` in any other
-    locations.
+  * If this option is set and ``libmongocrypt`` fails to load ``csfle`` from the
+    given filepath, ``libmongocrypt`` will fail to initialize and will not
+    attempt to search for ``csfle`` in any other locations.
 
 * ``csfleRequired`` - If set to ``true``, and ``libmongocrypt`` fails to load a
-  ``csfle`` dynamic library, generate a hard-error and do not attempt to spawn
-  ``mongocryptd``.
+  ``csfle`` dynamic library, initialization of auto-encryption will fail
+  immediately and will not attempt to spawn ``mongocryptd``.
 
-  If set to ``false`` (the default), ``csflePath`` is not specified, *and*
+  If set to ``false`` (the default), ``csflePath`` is not set, *and*
   ``libmongocrypt`` fails to load ``csfle``, then ``libmongocrypt`` will proceed
   without ``csfle`` and fall back to using ``mongocryptd``.
 

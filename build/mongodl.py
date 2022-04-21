@@ -76,8 +76,8 @@ def infer_target():
     # Now the tricky bit
     if Path('/etc/os-release').is_file():
         return _infer_target_os_rel()
-    raise RuntimeError("Don't know yet how to find the default download "
-                       "'--target' for this system. Please contribute!")
+    raise RuntimeError("We don't know how to find the default '--target'"
+                       " option for this system. Please contribute!")
 
 
 def _infer_target_os_rel():
@@ -395,7 +395,9 @@ def _dl_component(db, out_dir, version, target, arch, edition, component,
 
 
 def pathjoin(items):
-    'Return a path formed by joining the given path components'
+    """
+    Return a path formed by joining the given path components
+    """
     return PurePath('/'.join(items))
 
 

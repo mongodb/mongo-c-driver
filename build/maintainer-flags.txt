@@ -14,4 +14,4 @@
 -Wundef
 -Wuninitialized
 -Wexpansion-to-defined
-
+-pedantic

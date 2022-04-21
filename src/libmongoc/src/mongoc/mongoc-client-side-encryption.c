@@ -1207,8 +1207,8 @@ _parse_extra (const bson_t *extra,
                             "Expected a string for 'csflePath'");
             GOTO (fail);
          }
-         uint32_t len;
-         const char *ptr = bson_iter_utf8 (&iter, &len);
+         size_t len;
+         const char *ptr = bson_iter_utf8_unsafe (&iter, &len);
          bson_free (topology->csfle_override_path);
          topology->csfle_override_path = bson_strdup (ptr);
       }
@@ -1221,7 +1221,7 @@ _parse_extra (const bson_t *extra,
                             "Expected a bool for 'csfleRequired'");
             GOTO (fail);
          }
-         topology->csfle_required = bson_iter_bool (&iter);
+         topology->csfle_required = bson_iter_bool_unsafe (&iter);
       }
    }
 
