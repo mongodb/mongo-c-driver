@@ -856,9 +856,21 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
    )
 endif ()
 
-find_package (Python3 COMPONENTS Interpreter)
-if (ENABLE_TESTS AND TARGET Python3::Interpreter)
-   get_filename_component(csfle_dest "${CMAKE_CURRENT_BINARY_DIR}/_csfle/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
+cmake_dependent_option (
+   MONGOC_TEST_USE_CSFLE "If TRUE, download and use a csfle dynamic library for client-side-encryption testing. Otherwise will rely on mongocryptd"
+   TRUE ENABLE_TESTS FALSE
+)
+
+if (MONGOC_TEST_USE_CSFLE)
+   find_package (Python3 COMPONENTS Interpreter)
+   if (NOT TARGET Python3::Interpreter)
+      message (SEND_ERROR
+         "MONGOC_TEST_USE_CSFLE is enabled, but we were unable to find a Python 3 interpreter to use mongodl.py. "
+         "Install a Python 3 or set MONGOC_TEST_USE_CSFLE to FALSE"
+      )
+   endif ()
+
+   get_filename_component (csfle_dest "${CMAKE_CURRENT_BINARY_DIR}/_csfle/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
    add_custom_command (
       OUTPUT "${csfle_dest}"
       COMMAND
@@ -870,11 +882,9 @@ if (ENABLE_TESTS AND TARGET Python3::Interpreter)
             --only "**/mongo_csfle_v1.*"
             --strip-path-components 1
       COMMENT "Downloading csfle"
-      )
-   add_custom_target(get-csfle ALL DEPENDS "${csfle_dest}")
+   )
+   add_custom_target (get-csfle ALL DEPENDS "${csfle_dest}")
    set_property (TARGET get-csfle PROPERTY CSFLE_PATH "${csfle_dest}")
-else ()
-   message (STATUS "Note: No Python3 found - Not downloading csfle library for testing")
 endif ()
 
 function (mongoc_add_test test use_shared)
@@ -888,24 +898,24 @@ function (mongoc_add_test test use_shared)
             $<$<NOT:$<BOOL:${use_shared}>>:mongoc_static>
             ${LIBRARIES}
             ${RESOLV_LIBRARIES}
-            )
+         )
       # We have tests that test our deprecated api.
       target_compile_options (${test}
          PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
-         )
+      )
       target_include_directories (${test}
          PRIVATE
             ${PROJECT_SOURCE_DIR}/tests
             ${MONGOC_INTERNAL_INCLUDE_DIRS}
             $<$<BOOL:${use_shared}>:${BSON_INCLUDE_DIRS}>
             $<$<NOT:$<BOOL:${use_shared}>>:${BSON_STATIC_INCLUDE_DIRS}>
-            )
+      )
       target_compile_definitions (${test}
          PUBLIC
             "MONGOC_COMPILATION"
             "BSON_COMPILATION"
             "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
-         )
+      )
    endif ()
 endfunction ()
 
