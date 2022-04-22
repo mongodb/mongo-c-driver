@@ -123,6 +123,9 @@
         "autoEncryptOpts": {
           "kmsProviders": {
             "aws": {}
+          },
+          "extra": {
+            "__csfleDisabled": true
           }
         }
       },
