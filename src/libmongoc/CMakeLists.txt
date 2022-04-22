@@ -862,8 +862,9 @@ cmake_dependent_option (
 )
 
 if (MONGOC_TEST_USE_CSFLE)
-   find_package (Python3 COMPONENTS Interpreter)
-   if (NOT TARGET Python3::Interpreter)
+   find_program (_PYTHON3_EXE NAMES python3 py python)
+   mark_as_advanced(_PYTHON3_EXE)
+   if (NOT _PYTHON3_EXE)
       message (SEND_ERROR
          "MONGOC_TEST_USE_CSFLE is enabled, but we were unable to find a Python 3 interpreter to use mongodl.py. "
          "Install a Python 3 or set MONGOC_TEST_USE_CSFLE to FALSE"
@@ -874,7 +875,7 @@ if (MONGOC_TEST_USE_CSFLE)
    add_custom_command (
       OUTPUT "${csfle_dest}"
       COMMAND
-         Python3::Interpreter -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
+         "${_PYTHON3_EXE}" -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
             --component csfle
             --version 5.3.1
             --edition enterprise
