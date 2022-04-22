@@ -899,7 +899,7 @@ function (mongoc_add_test test use_shared)
             $<$<NOT:$<BOOL:${use_shared}>>:mongoc_static>
             ${LIBRARIES}
             ${RESOLV_LIBRARIES}
-         )
+      )
       # We have tests that test our deprecated api.
       target_compile_options (${test}
          PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
