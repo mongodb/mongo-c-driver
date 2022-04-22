@@ -970,7 +970,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    }
 
    if (csfle_required) {
-      BSON_ASSERT (!csfle_disabld &&
+      BSON_ASSERT (!csfle_disabled &&
                    "Both csfleRequired and __csfleDisabled were set 'true'");
       uint32_t len = 0;
       const char *s = mongocrypt_csfle_version_string (crypt->handle, &len);
