@@ -2031,3 +2031,9 @@ mc_tpld_modify_drop (mc_tpld_modification mod)
    bson_mutex_unlock (&mod.topology->tpld_modification_mtx);
    mongoc_topology_description_destroy (mod.new_td);
 }
+
+bool
+mongoc_topology_uses_server_api (const mongoc_topology_t *topology)
+{
+   return mongoc_topology_scanner_uses_server_api (topology->scanner);
+}

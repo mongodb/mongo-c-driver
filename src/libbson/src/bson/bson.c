@@ -2693,10 +2693,9 @@ _bson_as_json_visit_binary (const bson_iter_t *iter,
    size_t b64_len;
    char *b64;
 
-   b64_len = COMMON_PREFIX (bson_b64_ntop_calculate_target_size (v_binary_len));
+   b64_len = mcommon_b64_ntop_calculate_target_size (v_binary_len);
    b64 = bson_malloc0 (b64_len);
-   BSON_ASSERT (
-      COMMON_PREFIX (bson_b64_ntop (v_binary, v_binary_len, b64, b64_len) != -1));
+   BSON_ASSERT (mcommon_b64_ntop (v_binary, v_binary_len, b64, b64_len) != -1);
 
    if (state->mode == BSON_JSON_MODE_CANONICAL ||
        state->mode == BSON_JSON_MODE_RELAXED) {

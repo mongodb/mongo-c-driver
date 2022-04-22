@@ -1924,6 +1924,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
    char test_paths[MAX_NUM_TESTS][MAX_TEST_NAME_LENGTH];
    int num_tests;
    int i;
+   int j;
    bson_t *test;
    char *skip_json;
    char *ext;
@@ -1955,6 +1956,46 @@ _install_json_test_suite_with_check (TestSuite *suite,
       ext[0] = '\0';
 
       test = _skip_if_unsupported (skip_json, test);
+      for (j = 0; j < suite->failing_flaky_skips.len; j++) {
+         TestSkip *skip =
+            _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, j);
+         if (0 == strcmp (skip_json, skip->test_name)) {
+            /* Modify the test file to give applicable entries a skipReason */
+            bson_t *modified = bson_new ();
+            bson_t modified_tests;
+            bson_iter_t iter;
+
+            bson_copy_to_excluding_noinit (test, modified, "tests", NULL);
+            BSON_APPEND_ARRAY_BEGIN (modified, "tests", &modified_tests);
+            BSON_ASSERT (bson_iter_init_find (&iter, test, "tests"));
+            for (bson_iter_recurse (&iter, &iter); bson_iter_next (&iter);) {
+               bson_iter_t desc_iter;
+               uint32_t desc_len;
+               const char *desc;
+               bson_t original_test;
+               bson_t modified_test;
+
+               bson_iter_bson (&iter, &original_test);
+               bson_iter_init_find (&desc_iter, &original_test, "description");
+               desc = bson_iter_utf8 (&desc_iter, &desc_len);
+
+               BSON_APPEND_DOCUMENT_BEGIN (
+                  &modified_tests, bson_iter_key (&iter), &modified_test);
+               bson_concat (&modified_test, &original_test);
+               if (!skip->subtest_desc ||
+                   0 == strcmp (skip->subtest_desc, desc)) {
+                  BSON_APPEND_UTF8 (&modified_test,
+                                    "skipReason",
+                                    skip->reason != NULL ? skip->reason
+                                                         : "(null)");
+               }
+               bson_append_document_end (&modified_tests, &modified_test);
+            }
+            bson_append_array_end (modified, &modified_tests);
+            bson_destroy (test);
+            test = modified;
+         }
+      }
       /* list of "check" functions that decide whether to skip the test */
       va_start (ap, callback);
       _V_TestSuite_AddFull (suite,

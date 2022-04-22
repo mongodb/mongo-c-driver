@@ -1057,13 +1057,13 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
       kms_providers_invalid,
       tmp_bson (
          "{'azure': {'tenantId': '%s', 'clientId': '%s', 'clientSecret': '%s', "
-         "'identityPlatformEndpoint': 'example.com:443'}}",
+         "'identityPlatformEndpoint': 'doesnotexist.invalid:443'}}",
          mongoc_test_azure_tenant_id,
          mongoc_test_azure_client_id,
          mongoc_test_azure_client_secret));
    bson_concat (kms_providers_invalid,
                 tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
-                          "'endpoint': 'example.com'}}",
+                          "'endpoint': 'doesnotexist.invalid'}}",
                           mongoc_test_gcp_email,
                           mongoc_test_gcp_privatekey));
    bson_concat (
@@ -1265,13 +1265,13 @@ test_custom_endpoint (void *unused)
       client_encryption, "aws", datakey_opts, &keyid, &error);
    BSON_ASSERT (!res);
    ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "us-east-1");
+      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "");
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Case 6: Custom endpoint to example.com. */
+   /* Case 6: Custom endpoint to doesnotexist.invalid. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
@@ -1280,15 +1280,17 @@ test_custom_endpoint (void *unused)
                          "arn:aws:kms:us-east-1:579766882180:key/"
                          "89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
                          "endpoint",
-                         "example.com");
+                         "doesnotexist.invalid");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
                                                         masterkey);
    memset (&error, 0, sizeof (bson_error_t));
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
    BSON_ASSERT (!res);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
@@ -1317,8 +1319,10 @@ test_custom_endpoint (void *unused)
       keyvault_client, &client_encryption, &client_encryption_invalid);
    res = mongoc_client_encryption_create_datakey (
       client_encryption_invalid, "azure", datakey_opts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
    BSON_ASSERT (!res);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1352,8 +1356,10 @@ test_custom_endpoint (void *unused)
       keyvault_client, &client_encryption, &client_encryption_invalid);
    res = mongoc_client_encryption_create_datakey (
       client_encryption_invalid, "gcp", datakey_opts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
    BSON_ASSERT (!res);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1370,7 +1376,7 @@ test_custom_endpoint (void *unused)
                          "keyName",
                          "key-name-csfle",
                          "endpoint",
-                         "example.com:443");
+                         "doesnotexist.invalid:443");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
@@ -2193,14 +2199,14 @@ _test_multi_threaded (bool external_key_vault)
    client1 = mongoc_client_pool_pop (pool);
    client2 = mongoc_client_pool_pop (pool);
 
-   r = COMMON_PREFIX (thread_create) (threads, _worker_thread, client1);
+   r = mcommon_thread_create (threads, _worker_thread, client1);
    BSON_ASSERT (r == 0);
 
-   r = COMMON_PREFIX (thread_create) (threads + 1, _worker_thread, client2);
+   r = mcommon_thread_create (threads + 1, _worker_thread, client2);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = COMMON_PREFIX (thread_join) (threads[i]);
+      r = mcommon_thread_join (threads[i]);
       BSON_ASSERT (r == 0);
    }
 
@@ -2410,6 +2416,8 @@ static mongoc_client_encryption_t *
 _make_kms_certificate_client_encryption (mongoc_client_t *client,
                                          bson_error_t *error)
 {
+   mongoc_client_encryption_t *client_encryption;
+
    mongoc_client_encryption_opts_t *client_encryption_opts =
       mongoc_client_encryption_opts_new ();
 
@@ -2443,7 +2451,7 @@ _make_kms_certificate_client_encryption (mongoc_client_t *client,
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
                                                       client);
 
-   mongoc_client_encryption_t *client_encryption =
+   client_encryption =
       mongoc_client_encryption_new (client_encryption_opts, error);
    ASSERT_OR_PRINT (client_encryption, (*error));
 
@@ -2504,7 +2512,11 @@ test_kms_tls_cert_valid (void *unused)
 static void
 test_kms_tls_cert_expired (void *unused)
 {
+   bool ret;
+
    bson_error_t error;
+
+   bson_value_t keyid;
 
    mongoc_client_t *client = test_framework_new_default_client ();
 
@@ -2521,8 +2533,7 @@ test_kms_tls_cert_expired (void *unused)
                 "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', "
                 "'endpoint': '127.0.0.1:8000' }"));
 
-   bson_value_t keyid;
-   bool ret = mongoc_client_encryption_create_datakey (
+   ret = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", opts, &keyid, &error);
 
    BSON_ASSERT (!ret);
@@ -2546,7 +2557,11 @@ test_kms_tls_cert_expired (void *unused)
 static void
 test_kms_tls_cert_wrong_host (void *unused)
 {
+   bool ret;
+
    bson_error_t error;
+
+   bson_value_t keyid;
 
    mongoc_client_t *client = test_framework_new_default_client ();
 
@@ -2563,8 +2578,7 @@ test_kms_tls_cert_wrong_host (void *unused)
                 "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', "
                 "'endpoint': '127.0.0.1:8001' }"));
 
-   bson_value_t keyid;
-   bool ret = mongoc_client_encryption_create_datakey (
+   ret = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", opts, &keyid, &error);
 
    BSON_ASSERT (!ret);

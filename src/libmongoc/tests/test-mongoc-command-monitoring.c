@@ -1266,7 +1266,7 @@ _test_service_id (bool is_loadbalanced)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (
       uri, MONGOC_URI_LOADBALANCED, is_loadbalanced);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    if (is_loadbalanced) {
       context.has_service_id = true;
@@ -1289,8 +1289,8 @@ _test_service_id (bool is_loadbalanced)
                                           &error);
 
    if (is_loadbalanced) {
-      request =
-         mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      request = mock_server_receives_any_hello_with_match (
+         server, "{'loadBalanced': true}", "{'loadBalanced': true}");
       mock_server_replies_simple (
          request,
          tmp_str ("{'ismaster': true,"
@@ -1301,8 +1301,10 @@ _test_service_id (bool is_loadbalanced)
                   WIRE_VERSION_MIN,
                   WIRE_VERSION_5_0));
    } else {
-      request = mock_server_receives_legacy_hello (
-         server, "{'loadBalanced': { '$exists': false }}");
+      request = mock_server_receives_any_hello_with_match (
+         server,
+         "{'loadBalanced': { '$exists': false }}",
+         "{'loadBalanced': { '$exists': false }}");
       mock_server_replies_simple (request,
                                   tmp_str ("{'ismaster': true,"
                                            " 'minWireVersion': %d,"

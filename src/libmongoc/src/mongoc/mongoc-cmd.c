@@ -827,7 +827,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    const char *cmd_name;
    bool is_get_more;
    const mongoc_read_prefs_t *prefs_ptr;
-   mongoc_read_mode_t mode = mongoc_read_prefs_get_mode (parts->read_prefs);
+   mongoc_read_mode_t mode;
    bool ret = false;
 
    ENTRY;
@@ -836,6 +836,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    BSON_ASSERT (server_stream);
 
    server_type = server_stream->sd->type;
+
    cs = parts->prohibit_lsid ? NULL : parts->assembled.session;
 
    /* Assembling the command depends on the type of server. If the server has
@@ -894,7 +895,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       mode = MONGOC_READ_PRIMARY;
    }
 
-   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+   if (mongoc_client_uses_server_api (parts->client) ||
+       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       if (!bson_has_field (parts->body, "$db")) {
          BSON_APPEND_UTF8 (&parts->extra, "$db", parts->assembled.db_name);
       }
@@ -992,7 +994,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       }
 
       /* Add versioned server api, if it is set. */
-      if (parts->client->api) {
+      if (mongoc_client_uses_server_api (parts->client)) {
          _mongoc_cmd_append_server_api (&parts->assembled_body,
                                         parts->client->api);
       }
@@ -1181,6 +1183,8 @@ _mongoc_cmd_append_server_api (bson_t *command_body,
    BSON_ASSERT (api);
 
    string_version = mongoc_server_api_version_to_string (api->version);
+
+   BSON_ASSERT (string_version);
 
    bson_append_utf8 (command_body, "apiVersion", -1, string_version, -1);
 

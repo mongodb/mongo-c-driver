@@ -151,6 +151,11 @@ hint_option = ('hint', {
     'help': 'A document or string that specifies the index to use to support the query predicate.'
 })
 
+let_option = ('let', {
+    'type': 'document',
+    'help': 'A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language.'
+})
+
 opts_structs = OrderedDict([
     ('mongoc_crud_opts_t', Shared([
         write_concern_option,
@@ -164,6 +169,7 @@ opts_structs = OrderedDict([
         collation_option,
         hint_option,
         upsert_option,
+        let_option,
     ])),
 
     ('mongoc_insert_one_opts_t', Struct([
@@ -181,6 +187,7 @@ opts_structs = OrderedDict([
         ('crud', {'type': 'mongoc_crud_opts_t'}),
         collation_option,
         hint_option,
+        let_option,
     ])),
 
     ('mongoc_delete_one_opts_t', Struct([
@@ -209,6 +216,7 @@ opts_structs = OrderedDict([
         write_concern_option,
         ordered_option,
         session_option,
+        let_option,
     ], allow_extra=False, ordered='true')),
 
     ('mongoc_bulk_insert_opts_t', Struct([
@@ -321,13 +329,14 @@ opts_structs = OrderedDict([
         collation_option,
         server_option,
         ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`', 'check_set': True}),
-        ('let', {'type': 'document', 'help': 'A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language'})
+        let_option,
     ])),
 
     ('mongoc_find_and_modify_appended_opts_t', Struct([
         write_concern_option,
         session_option,
-        hint_option
+        hint_option,
+        let_option,
     ], opts_name='extra'))
 ])
 

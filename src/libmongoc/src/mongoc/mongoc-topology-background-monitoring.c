@@ -163,8 +163,8 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
       /* Start SRV polling thread. */
       if (mongoc_topology_should_rescan_srv (topology)) {
          topology->is_srv_polling = true;
-         COMMON_PREFIX (thread_create)
-         (&topology->srv_polling_thread, srv_polling_run, topology);
+         mcommon_thread_create (
+            &topology->srv_polling_thread, srv_polling_run, topology);
       }
    }
 
@@ -348,7 +348,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
 
    /* Wait for SRV polling thread. */
    if (topology->is_srv_polling) {
-      COMMON_PREFIX (thread_join) (topology->srv_polling_thread);
+      mcommon_thread_join (topology->srv_polling_thread);
    }
 
    /* Signal clients that are waiting on server selection to stop immediately,

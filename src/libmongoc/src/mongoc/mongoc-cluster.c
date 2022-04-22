@@ -545,7 +545,8 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       mongoc_apm_command_started_cleanup (&started_event);
    }
 
-   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+   if (mongoc_cluster_uses_server_api (cluster) ||
+       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
    } else {
       retval = mongoc_cluster_run_command_opquery (
@@ -674,17 +675,23 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
       error = &error_local;
    }
 
+   /* If NULL was passed, we use our local variable as a temporary sink: */
    if (!reply) {
       reply = &reply_local;
    }
+
    server_stream = cmd->server_stream;
-   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+
+   if (mongoc_cluster_uses_server_api (cluster) ||
+       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
    } else {
       retval =
          mongoc_cluster_run_command_opquery (cluster, cmd, -1, reply, error);
    }
+
    _handle_not_primary_error (cluster, server_stream, reply);
+
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
    }
@@ -762,7 +769,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
                    bson_t *speculative_auth_response /* OUT */,
                    bson_error_t *error)
 {
-   bson_t command; /* Initialized by dup_handshake below */
+   bson_t handshake_command; /* Initialized by dup_handshake below */
    mongoc_cmd_t hello_cmd;
    bson_t reply;
    int64_t start;
@@ -780,7 +787,8 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 
    BSON_ASSERT (stream);
 
-   _mongoc_topology_dup_handshake_cmd (cluster->client->topology, &command);
+   _mongoc_topology_dup_handshake_cmd (cluster->client->topology,
+                                       &handshake_command);
 
    if (cluster->requires_auth && speculative_auth_response) {
 #ifdef MONGOC_ENABLE_SSL
@@ -788,11 +796,12 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 #endif
 
       _mongoc_topology_scanner_add_speculative_authentication (
-         &command, cluster->uri, ssl_opts, scram_cache, scram);
+         &handshake_command, cluster->uri, ssl_opts, scram_cache, scram);
    }
 
    if (negotiate_sasl_supported_mechs) {
-      _mongoc_handshake_append_sasl_supported_mechs (cluster->uri, &command);
+      _mongoc_handshake_append_sasl_supported_mechs (cluster->uri,
+                                                     &handshake_command);
    }
 
    start = bson_get_monotonic_time ();
@@ -801,7 +810,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
     * node's generation (which is the generation of the created connection) to
     * determine if the error should be handled.
     * The current behavior may double invalidate.
-    * If a network error occurs in  mongoc_cluster_run_command_private below,
+    * If a network error occurs in mongoc_cluster_run_command_private below,
     * that invalidates (thinking the error is a post-handshake network error).
     * Then _mongoc_cluster_stream_for_server also handles the error, and
     * invalidates again.
@@ -809,17 +818,30 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    mongoc_server_description_init (&empty_sd, address, server_id);
    server_stream =
       _mongoc_cluster_create_server_stream (td.ptr, &empty_sd, stream);
+
    mongoc_server_description_cleanup (&empty_sd);
 
-   /* Always use OP_QUERY for the handshake, regardless of whether the last
-    * known hello indicates the server supports a newer wire protocol.
-    */
+   /* Set up the shared parts of the mongo_cmd_t, which will later be converted
+   to either an op_msg or op_query: */
    memset (&hello_cmd, 0, sizeof (hello_cmd));
+
+
    hello_cmd.db_name = "admin";
-   hello_cmd.command = &command;
-   hello_cmd.command_name = _mongoc_get_command_name (&command);
-   hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
+   hello_cmd.command = &handshake_command;
+   hello_cmd.command_name = _mongoc_get_command_name (&handshake_command);
    hello_cmd.server_stream = server_stream;
+
+   hello_cmd.is_acknowledged = true;
+
+   /* Use OP_QUERY for the handshake, unless the user has specified an
+    * API version; the correct hello_cmd has already been selected: */
+   if (!mongoc_cluster_uses_server_api (cluster)) {
+      /* Complete OPCODE_QUERY setup: */
+      hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
+   } else {
+      /* We're using OP_MSG, and require some additional doctoring: */
+      bson_append_utf8 (&handshake_command, "$db", 3, "admin", 5);
+   }
 
    if (!mongoc_cluster_run_command_private (
           cluster, &hello_cmd, &reply, error)) {
@@ -870,7 +892,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    mongoc_server_stream_cleanup (server_stream);
 
 done:
-   bson_destroy (&command);
+   bson_destroy (&handshake_command);
    bson_destroy (&reply);
    mc_tpld_drop_ref (&td);
 
@@ -1175,8 +1197,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
 
    str = bson_strdup_printf ("%c%s%c%s", '\0', username, '\0', password);
    len = strlen (username) + strlen (password) + 2;
-   buflen = COMMON_PREFIX (
-      bson_b64_ntop ((const uint8_t *) str, len, buf, sizeof buf));
+   buflen = mcommon_b64_ntop ((const uint8_t *) str, len, buf, sizeof buf);
    bson_free (str);
 
    if (buflen == -1) {
@@ -1325,6 +1346,12 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
 
    return ret;
 #endif
+}
+
+bool
+mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster)
+{
+   return mongoc_client_uses_server_api (cluster->client);
 }
 
 #ifdef MONGOC_ENABLE_CRYPTO
@@ -1955,6 +1982,9 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
    node->stream = stream;
    node->connection_address = bson_strdup (connection_address);
 
+   /* Note that the node->sd field is set to NULL by bson_malloc0(),
+   rather than being explicitly initialized. */
+
    return node;
 }
 
@@ -2346,7 +2376,6 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
    server_stream = _mongoc_cluster_stream_for_server (
       cluster, server_id, reconnect_ok, cs, reply, error);
-
 
    if (_in_sharded_txn (cs)) {
       _mongoc_client_session_pin (cs, server_id);

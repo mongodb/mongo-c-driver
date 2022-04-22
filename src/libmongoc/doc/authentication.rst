@@ -94,7 +94,11 @@ GSSAPI (Kerberos) Authentication
 
 .. note::
 
-  Kerberos support requires compiling the driver against ``cyrus-sasl`` on UNIX-like environments. On Windows, configure the driver to build against the Windows Native SSPI.
+  On UNIX-like environments, Kerberos support requires compiling the driver against ``cyrus-sasl``.
+
+  On Windows, Kerberos support requires compiling the driver against Windows Native SSPI or ``cyrus-sasl``. The default configuration of the driver will use Windows Native SSPI.
+
+  To modify the default configuration, use the cmake option ``ENABLE_SASL``.
 
 ``GSSAPI`` (Kerberos) authentication is available in the Enterprise Edition of MongoDB. To authenticate using ``GSSAPI``, the MongoDB C driver must be installed with SASL support.
 

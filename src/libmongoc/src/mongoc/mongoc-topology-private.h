@@ -608,4 +608,10 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
                              int32_t max_hosts,
                              size_t *hl_array_size);
 
+
+/* Returns true if a versioned server API has been selected, otherwise returns
+ * false. */
+bool
+mongoc_topology_uses_server_api (const mongoc_topology_t *topology);
+
 #endif

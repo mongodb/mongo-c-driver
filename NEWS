@@ -1,3 +1,42 @@
+libmongoc 1.21.1
+================
+
+Bug Fixes:
+  * Use static decls for OpenSSL 1.1 polyfills 
+  * Prevent possible crash in _mongoc_cursor_fetch_stream
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Jeremy Mikola
+  * Remi Collet
+
+
+
+libmongoc 1.21.0
+================
+
+Bug Fixes:
+  * Addressed VS 2013 build failures due to missing C99 features.
+
+Features:
+ * Support conditional $merge and $out aggregation on secondaries.
+ * Bump minimum wire protocol version from 3 (MongoDB 3.0) to 6 (MongoDB 3.6).
+ * Bump maximum wire protocol version from 14 (MongoDB 5.1) to 15 (MongODB 5.2).
+
+Improvements:
+ * Update algorithm used for generation of OID values to reduce collisions.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Colby Pike
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * David CARLIER
+  * Jeremy Mikola
+
+
+
 libmongoc 1.20.1
 ================
 

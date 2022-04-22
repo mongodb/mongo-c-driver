@@ -18,7 +18,7 @@ export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
 echo "COMPRESSORS='${COMPRESSORS}' CC='${CC}' AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${MONGOC_TEST_URI}"
 
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-TEST_ARGS="-d -F test-results.json"
+TEST_ARGS="-d -F test-results.json --skip-tests .evergreen/skip-tests.txt"
 
 if [ "$COMPRESSORS" != "nocompressors" ]; then
    export MONGOC_TEST_COMPRESSORS="$COMPRESSORS"
@@ -93,7 +93,7 @@ export MONGOC_TEST_MONITORING_VERBOSE=on
 if [ "$CLIENT_SIDE_ENCRYPTION" = "on" ]; then
    echo "Waiting for mock KMS servers to start..."
    wait_for_kms_server() {
-      for i in $(seq 60); do
+      for i in $(seq 300); do
          # Exit code 7: "Failed to connect to host".
          if curl -s "localhost:$1"; test $? -ne 7; then
             return 0

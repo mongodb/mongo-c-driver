@@ -131,7 +131,7 @@ _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor,
 {
    mongoc_apm_server_heartbeat_started_t event;
    MONGOC_DEBUG_ASSERT (
-      !COMMON_PREFIX (mutex_is_locked) (&server_monitor->topology->apm_mutex));
+      !mcommon_mutex_is_locked (&server_monitor->topology->apm_mutex));
 
    if (!server_monitor->apm_callbacks.server_heartbeat_started) {
       return;
@@ -210,6 +210,110 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
    }
    mc_tpld_drop_ref (&td);
 }
+static bool
+_server_monitor_send_and_recv_hello_opmsg (
+   mongoc_server_monitor_t *server_monitor,
+   bson_t *cmd,
+   bson_t *reply,
+   bson_error_t *error)
+{
+   mongoc_rpc_t rpc = {0};
+   mongoc_array_t array_to_write;
+   mongoc_iovec_t *iovec;
+   int niovec;
+
+   mongoc_buffer_t buffer;
+   uint32_t reply_len;
+   bson_t temp_reply;
+   bool ret = false;
+
+   /* First, let's construct and send our OPCODE_MSG: */
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = server_monitor->request_id++;
+   rpc.header.response_to = 0;
+   rpc.header.opcode = MONGOC_OPCODE_MSG;
+   rpc.msg.flags = 0;
+   rpc.msg.n_sections = 1;
+   rpc.msg.sections[0].payload_type = 0;
+   rpc.msg.sections[0].payload.bson_document = bson_get_data (cmd);
+
+   _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
+   _mongoc_rpc_gather (&rpc, &array_to_write);
+
+   iovec = (mongoc_iovec_t *) array_to_write.data;
+   niovec = array_to_write.len;
+   _mongoc_rpc_swab_to_le (&rpc);
+
+   MONITOR_LOG (server_monitor,
+                "sending with timeout %" PRId64,
+                server_monitor->connect_timeout_ms);
+
+   if (!_mongoc_stream_writev_full (server_monitor->stream,
+                                    iovec,
+                                    niovec,
+                                    server_monitor->connect_timeout_ms,
+                                    error)) {
+      MONITOR_LOG_ERROR (
+         server_monitor, "failed to write polling hello: %s", error->message);
+      _mongoc_array_destroy (&array_to_write);
+      return false;
+   }
+
+   /* Done sending! Now, receive the reply: */
+
+   _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
+
+   if (!_mongoc_buffer_append_from_stream (&buffer,
+                                           server_monitor->stream,
+                                           4,
+                                           server_monitor->connect_timeout_ms,
+                                           error)) {
+      goto fail;
+   }
+
+   memcpy (&reply_len, buffer.data, 4);
+   reply_len = BSON_UINT32_FROM_LE (reply_len);
+
+   if (!_mongoc_buffer_append_from_stream (&buffer,
+                                           server_monitor->stream,
+                                           reply_len - buffer.len,
+                                           server_monitor->connect_timeout_ms,
+                                           error)) {
+      goto fail;
+   }
+
+   if (!_mongoc_rpc_scatter (&rpc, buffer.data, buffer.len)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid reply from server.");
+
+      goto fail;
+   }
+
+   if (!_mongoc_rpc_decompress_if_necessary (&rpc, &buffer, error)) {
+      goto fail;
+   }
+   _mongoc_rpc_swab_from_le (&rpc);
+
+   if (!_mongoc_rpc_get_first_document (&rpc, &temp_reply)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid reply from server");
+      goto fail;
+   }
+   bson_copy_to (&temp_reply, reply);
+
+   ret = true;
+fail:
+   if (!ret) {
+      bson_init (reply);
+   }
+   _mongoc_array_destroy (&array_to_write);
+   _mongoc_buffer_destroy (&buffer);
+   return ret;
+}
 
 static bool
 _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
@@ -249,7 +353,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                     niovec,
                                     server_monitor->connect_timeout_ms,
                                     error)) {
-      GOTO (fail);
+      goto fail;
    }
 
    if (!_mongoc_buffer_append_from_stream (&buffer,
@@ -257,7 +361,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                            4,
                                            server_monitor->connect_timeout_ms,
                                            error)) {
-      GOTO (fail);
+      goto fail;
    }
 
    memcpy (&reply_len, buffer.data, 4);
@@ -268,7 +372,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                            reply_len - buffer.len,
                                            server_monitor->connect_timeout_ms,
                                            error)) {
-      GOTO (fail);
+      goto fail;
    }
 
    if (!_mongoc_rpc_scatter (&rpc, buffer.data, buffer.len)) {
@@ -277,11 +381,11 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Invalid reply from server.");
 
-      GOTO (fail);
+      goto fail;
    }
 
    if (!_mongoc_rpc_decompress_if_necessary (&rpc, &buffer, error)) {
-      GOTO (fail);
+      goto fail;
    }
    _mongoc_rpc_swab_from_le (&rpc);
 
@@ -290,7 +394,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Invalid reply from server");
-      GOTO (fail);
+      goto fail;
    }
    bson_copy_to (&temp_reply, reply);
 
@@ -768,9 +872,22 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    _mongoc_topology_dup_handshake_cmd (server_monitor->topology, &cmd);
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    bson_destroy (hello_response);
-   if (!_server_monitor_send_and_recv_opquery (
-          server_monitor, &cmd, hello_response, error)) {
-      GOTO (fail);
+
+   /* If the user has select a versioned API, we'll assume OPCODE_MSG;
+   otherwise, we'll use the legacy OPCODE_QUERY: */
+   if (mongoc_topology_uses_server_api (server_monitor->topology)) {
+      /* OPCODE_MSG requires a "db" parameter: */
+      bson_append_utf8 (&cmd, "$db", 3, "admin", 5);
+
+      if (!_server_monitor_send_and_recv_hello_opmsg (
+             server_monitor, &cmd, hello_response, error)) {
+         GOTO (fail);
+      }
+   } else {
+      if (!_server_monitor_send_and_recv_opquery (
+             server_monitor, &cmd, hello_response, error)) {
+         GOTO (fail);
+      }
    }
 
    ret = true;
@@ -1170,8 +1287,8 @@ mongoc_server_monitor_run (mongoc_server_monitor_t *server_monitor)
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = false;
       server_monitor->shared.state = MONGOC_THREAD_RUNNING;
-      COMMON_PREFIX (thread_create)
-      (&server_monitor->thread, _server_monitor_thread, server_monitor);
+      mcommon_thread_create (
+         &server_monitor->thread, _server_monitor_thread, server_monitor);
    }
    bson_mutex_unlock (&server_monitor->shared.mutex);
 }
@@ -1183,8 +1300,8 @@ mongoc_server_monitor_run_as_rtt (mongoc_server_monitor_t *server_monitor)
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = true;
       server_monitor->shared.state = MONGOC_THREAD_RUNNING;
-      COMMON_PREFIX (thread_create)
-      (&server_monitor->thread, _server_monitor_rtt_thread, server_monitor);
+      mcommon_thread_create (
+         &server_monitor->thread, _server_monitor_rtt_thread, server_monitor);
    }
    bson_mutex_unlock (&server_monitor->shared.mutex);
 }
@@ -1206,7 +1323,7 @@ mongoc_server_monitor_request_shutdown (mongoc_server_monitor_t *server_monitor)
       server_monitor->shared.state = MONGOC_THREAD_SHUTTING_DOWN;
    }
    if (server_monitor->shared.state == MONGOC_THREAD_JOINABLE) {
-      COMMON_PREFIX (thread_join) (server_monitor->thread);
+      mcommon_thread_join (server_monitor->thread);
       server_monitor->shared.state = MONGOC_THREAD_OFF;
    }
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
@@ -1235,7 +1352,7 @@ mongoc_server_monitor_wait_for_shutdown (
    }
 
    /* Shutdown requested, but thread is not yet off. Wait. */
-   COMMON_PREFIX (thread_join) (server_monitor->thread);
+   mcommon_thread_join (server_monitor->thread);
    bson_mutex_lock (&server_monitor->shared.mutex);
    server_monitor->shared.state = MONGOC_THREAD_OFF;
    bson_mutex_unlock (&server_monitor->shared.mutex);

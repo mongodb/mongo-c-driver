@@ -109,6 +109,8 @@ test_framework_get_default_server_api (void);
 mongoc_client_t *
 test_framework_new_default_client (void);
 mongoc_client_t *
+test_framework_client_new_no_server_api (void);
+mongoc_client_t *
 test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api);
 mongoc_client_t *
 test_framework_client_new_from_uri (const mongoc_uri_t *uri,
@@ -175,6 +177,8 @@ test_framework_skip_if_not_single (void);
 int
 test_framework_skip_if_offline (void);
 int
+test_framework_skip_if_rhel8_zseries (void);
+int
 test_framework_skip_if_slow (void);
 int
 test_framework_skip_if_slow_or_live (void);
@@ -210,6 +214,8 @@ test_framework_set_debug_stream (mongoc_client_t *client,
 
 typedef int64_t server_version_t;
 
+server_version_t
+test_framework_get_server_version_with_client (mongoc_client_t *client);
 server_version_t
 test_framework_get_server_version (void);
 server_version_t

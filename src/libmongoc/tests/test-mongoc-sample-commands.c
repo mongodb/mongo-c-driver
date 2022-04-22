@@ -2481,7 +2481,7 @@ typedef struct {
 } change_stream_ctx_t;
 
 
-static 
+static
 BSON_THREAD_FUN (insert_docs, p)
 {
    change_stream_ctx_t *ctx = (change_stream_ctx_t *) p;
@@ -2529,7 +2529,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
          client, db->name, "inventory");
       ctx.done = false;
 
-      r = COMMON_PREFIX (thread_create) (&thread, insert_docs, (void *) &ctx);
+      r = mcommon_thread_create (&thread, insert_docs, (void *) &ctx);
       ASSERT_OR_PRINT_ERRNO (r == 0, r);
 
       capture_logs (true);
@@ -2539,7 +2539,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
       bson_mutex_lock (&ctx.lock);
       ctx.done = true;
       bson_mutex_unlock (&ctx.lock);
-      COMMON_PREFIX (thread_join) (thread);
+      mcommon_thread_join (thread);
 
       mongoc_collection_destroy (ctx.collection);
       mongoc_client_destroy (client);
@@ -2630,7 +2630,7 @@ test_example_change_stream (mongoc_database_t *db)
 
    mongoc_change_stream_destroy (stream);
    /* End Changestream Example 4 */
-   
+
    bson_destroy (&opts);
    bson_destroy (pipeline);
    mongoc_collection_destroy (collection);

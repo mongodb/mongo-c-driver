@@ -98,17 +98,16 @@ class CompileWithClientSideEncryption(CompileTask):
         # First, compile and install without CSE.
         # Then, compile and install libmongocrypt.
         compile_with_cse = CompileTask(*args,
-                                       CFLAGS="-fPIC",
                                        COMPILE_LIBMONGOCRYPT="ON",
-                                       EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON",
+                                       EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON",
                                        **kwargs).to_dict()
         extra_script = "rm CMakeCache.txt\n" + \
                        compile_with_cse["commands"][0]["params"]["script"]
 
         # Skip running mock server tests, because those were already run in the non-CSE build.
-        super(CompileWithClientSideEncryption, self).__init__(*args, CFLAGS="-fPIC",
+        super(CompileWithClientSideEncryption, self).__init__(*args,
                                                               extra_script=extra_script,
-                                                              EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF",
+                                                              EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF",
                                                               SKIP_MOCK_TESTS="ON",
                                                               **kwargs)
         self.add_tags('client-side-encryption', 'special')
@@ -128,10 +127,10 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
 
         # Skip running mock server tests, because those were already run in the non-CSE build.
         super(CompileWithClientSideEncryptionAsan, self).__init__(*args,
-                                                                  CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK",
+                                                                  CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK",
                                                                   extra_script=extra_script,
                                                                   CHECK_LOG="ON",
-                                                                  EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
+                                                                  EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
                                                                   PATH='/usr/lib/llvm-3.8/bin:$PATH',
                                                                   SKIP_MOCK_TESTS="ON",
                                                                   **kwargs)
@@ -195,9 +194,6 @@ all_tasks = [
     SpecialTask('debug-compile-c99',
                 tags=['debug-compile', 'c99', 'stdflags'],
                 CFLAGS='-std=c99'),
-    SpecialTask('debug-compile-c89',
-                tags=['debug-compile', 'c89', 'stdflags'],
-                CFLAGS='-std=c89 -pedantic'),
     SpecialTask('debug-compile-valgrind',
                 tags=['debug-compile', 'valgrind'],
                 SASL='OFF',

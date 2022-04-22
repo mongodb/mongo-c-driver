@@ -130,6 +130,157 @@ typedef SSIZE_T ssize_t;
 #endif
 #endif
 
+/* Derive the maximum representable value of signed integer type T using the
+ * formula 2^(N - 1) - 1 where N is the number of bits in type T. This assumes
+ * T is represented using two's complement. */
+#define BSON_NUMERIC_LIMITS_MAX_SIGNED(T) \
+   ((T) ((((size_t) 0x01u) << (sizeof (T) * (size_t) CHAR_BIT - 1u)) - 1u))
+
+/* Derive the minimum representable value of signed integer type T as one less
+ * than the negation of its maximum representable value. This assumes T is
+ * represented using two's complement. */
+#define BSON_NUMERIC_LIMITS_MIN_SIGNED(T, max) ((T) ((-(max)) - 1))
+
+/* Derive the maximum representable value of unsigned integer type T by flipping
+ * all its bits to 1. */
+#define BSON_NUMERIC_LIMITS_MAX_UNSIGNED(T) ((T) (~((T) 0)))
+
+/* Define numeric limit constants if not already available for C90
+ * compatibility. These can be removed once C99 is declared the minimum
+ * supported C standard. */
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L
+
+#ifndef SCHAR_MAX
+#define SCHAR_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (signed char)
+#endif
+
+#ifndef SHRT_MAX
+#define SHRT_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (short)
+#endif
+
+#ifndef INT_MAX
+#define INT_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (int)
+#endif
+
+#ifndef LONG_MAX
+#define LONG_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (long)
+#endif
+
+#ifndef LLONG_MAX
+#define LLONG_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (long long)
+#endif
+
+#ifndef UCHAR_MAX
+#define UCHAR_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (unsigned char)
+#endif
+
+#ifndef USHRT_MAX
+#define USHRT_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (unsigned short)
+#endif
+
+#ifndef UINT_MAX
+#define UINT_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (unsigned int)
+#endif
+
+#ifndef ULONG_MAX
+#define ULONG_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (unsigned long)
+#endif
+
+#ifndef ULLONG_MAX
+#define ULLONG_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (unsigned long long)
+#endif
+
+#ifndef INT8_MAX
+#define INT8_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (int8_t)
+#endif
+
+#ifndef INT16_MAX
+#define INT16_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (int16_t)
+#endif
+
+#ifndef INT32_MAX
+#define INT32_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (int32_t)
+#endif
+
+#ifndef INT64_MAX
+#define INT64_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (int64_t)
+#endif
+
+#ifndef UINT8_MAX
+#define UINT8_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (uint8_t)
+#endif
+
+#ifndef UINT16_MAX
+#define UINT16_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (uint16_t)
+#endif
+
+#ifndef UINT32_MAX
+#define UINT32_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (uint32_t)
+#endif
+
+#ifndef UINT64_MAX
+#define UINT64_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (uint64_t)
+#endif
+
+#ifndef SIZE_MAX
+#define SIZE_MAX BSON_NUMERIC_LIMITS_MAX_UNSIGNED (size_t)
+#endif
+
+#ifndef PTRDIFF_MAX
+#define PTRDIFF_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (ptrdiff_t)
+#endif
+
+#ifndef SCHAR_MIN
+#define SCHAR_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (signed char, SCHAR_MAX)
+#endif
+
+#ifndef SHRT_MIN
+#define SHRT_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (short, SHRT_MAX)
+#endif
+
+#ifndef INT_MIN
+#define INT_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (int, INT_MAX)
+#endif
+
+#ifndef LONG_MIN
+#define LONG_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (long, LONG_MAX)
+#endif
+
+#ifndef LLONG_MIN
+#define LLONG_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (long long, LLONG_MAX)
+#endif
+
+#ifndef INT8_MIN
+#define INT8_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (int8_t, INT8_MAX)
+#endif
+
+#ifndef INT16_MIN
+#define INT16_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (int16_t, INT16_MAX)
+#endif
+
+#ifndef INT32_MIN
+#define INT32_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (int32_t, INT32_MAX)
+#endif
+
+#ifndef INT64_MIN
+#define INT64_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (int64_t, INT64_MAX)
+#endif
+
+#ifndef PTRDIFF_MIN
+#define PTRDIFF_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (ptrdiff_t, PTRDIFF_MAX)
+#endif
+
+#endif /* !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L */
+
+
+#ifndef SSIZE_MAX
+#define SSIZE_MAX BSON_NUMERIC_LIMITS_MAX_SIGNED (ssize_t)
+#endif
+
+#ifndef SSIZE_MIN
+#define SSIZE_MIN BSON_NUMERIC_LIMITS_MIN_SIGNED (ssize_t, SSIZE_MAX)
+#endif
+
 #if defined(__MINGW32__) && !defined(INIT_ONCE_STATIC_INIT)
 #define INIT_ONCE_STATIC_INIT RTL_RUN_ONCE_INIT
 typedef RTL_RUN_ONCE INIT_ONCE;

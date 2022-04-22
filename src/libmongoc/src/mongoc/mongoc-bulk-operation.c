@@ -54,6 +54,8 @@ mongoc_bulk_operation_new (bool ordered)
    bulk->flags.ordered = ordered;
    bulk->server_id = 0;
 
+   bson_init (&bulk->let);
+
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
    _mongoc_write_result_init (&bulk->result);
 
@@ -102,6 +104,7 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 
       bson_free (bulk->database);
       bson_free (bulk->collection);
+      bson_destroy (&bulk->let);
       mongoc_write_concern_destroy (bulk->write_concern);
       _mongoc_array_destroy (&bulk->commands);
 
@@ -135,7 +138,7 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
    } while (0)
 
 
-bool
+static bool
 _mongoc_bulk_operation_remove_with_opts (
    mongoc_bulk_operation_t *bulk,
    const bson_t *selector,
@@ -145,6 +148,7 @@ _mongoc_bulk_operation_remove_with_opts (
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
+   bson_t cmd_opts = BSON_INITIALIZER;
    bson_t opts;
    bool has_collation;
    bool ret = false;
@@ -193,8 +197,12 @@ _mongoc_bulk_operation_remove_with_opts (
       }
    }
 
+   if (!bson_empty (&bulk->let)) {
+      bson_append_document (&cmd_opts, "let", 3, &bulk->let);
+   }
+
    _mongoc_write_command_init_delete (
-      &command, selector, NULL, &opts, bulk->flags, bulk->operation_id);
+      &command, selector, &cmd_opts, &opts, bulk->flags, bulk->operation_id);
 
    command.flags.has_collation = has_collation;
    command.flags.has_delete_hint = has_delete_hint;
@@ -204,6 +212,7 @@ _mongoc_bulk_operation_remove_with_opts (
    ret = true;
 
 done:
+   bson_destroy (&cmd_opts);
    bson_destroy (&opts);
    RETURN (ret);
 }
@@ -408,6 +417,7 @@ _mongoc_bulk_operation_update_append (
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
+   bson_t cmd_opts = BSON_INITIALIZER;
    bson_t opts;
    bool has_collation;
    bool has_array_filters;
@@ -445,13 +455,21 @@ _mongoc_bulk_operation_update_append (
          last->flags.has_update_hint |= has_update_hint;
          last->flags.has_multi_write |= update_opts->multi;
          _mongoc_write_command_update_append (last, selector, document, &opts);
-         bson_destroy (&opts);
-         return;
+         GOTO (done);
       }
    }
 
-   _mongoc_write_command_init_update (
-      &command, selector, document, &opts, bulk->flags, bulk->operation_id);
+   if (!bson_empty (&bulk->let)) {
+      bson_append_document (&cmd_opts, "let", 3, &bulk->let);
+   }
+
+   _mongoc_write_command_init_update (&command,
+                                      selector,
+                                      document,
+                                      &cmd_opts,
+                                      &opts,
+                                      bulk->flags,
+                                      bulk->operation_id);
 
    command.flags.has_array_filters = has_array_filters;
    command.flags.has_collation = has_collation;
@@ -459,6 +477,9 @@ _mongoc_bulk_operation_update_append (
    command.flags.has_multi_write = update_opts->multi;
 
    _mongoc_array_append_val (&bulk->commands, command);
+
+done:
+   bson_destroy (&cmd_opts);
    bson_destroy (&opts);
 }
 
@@ -949,4 +970,21 @@ mongoc_bulk_operation_set_bypass_document_validation (
    BSON_ASSERT (bulk);
 
    bulk->flags.bypass_document_validation = bypass;
+}
+
+
+void
+mongoc_bulk_operation_set_let (mongoc_bulk_operation_t *bulk, const bson_t *let)
+{
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (let);
+
+   /* This method cannot be called after appending operations, as the CRUD spec
+    * states the option should apply to all commands (excluding insert). Since
+    * commands are initialized as operations are added, allowing "let" to be
+    * changed at any time could violate that contract. */
+   BSON_ASSERT (bulk->commands.len == 0);
+
+   bson_destroy (&bulk->let);
+   bson_copy_to (let, &bulk->let);
 }

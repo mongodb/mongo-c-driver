@@ -544,12 +544,14 @@ _mongoc_stream_tls_openssl_check_closed (mongoc_stream_t *stream) /* IN */
 
 
 static bool
-_mongoc_stream_tls_openssl_cert_verify_failed (SSL *ssl, bson_error_t *error)
+_mongoc_stream_tls_openssl_set_verify_cert_error (SSL *ssl, bson_error_t *error)
 {
+   long verify_result;
+
    BSON_ASSERT_PARAM (ssl);
    BSON_ASSERT_PARAM (error);
 
-   const long verify_result = SSL_get_verify_result (ssl);
+   verify_result = SSL_get_verify_result (ssl);
 
    if (verify_result == X509_V_OK) {
       return false;
@@ -605,13 +607,16 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
          RETURN (true);
       }
 
-      if (!_mongoc_stream_tls_openssl_cert_verify_failed (ssl, error)) {
-         bson_set_error (
-            error,
-            MONGOC_ERROR_STREAM,
-            MONGOC_ERROR_STREAM_SOCKET,
-            "TLS handshake failed: Failed certificate verification");
+      /* Try to relay certificate failure reason from OpenSSL library if any. */
+      if (_mongoc_stream_tls_openssl_set_verify_cert_error (ssl, error)) {
+         RETURN (false);
       }
+
+      /* Otherwise, use simple error message. */
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed: Failed certificate verification");
 
       RETURN (false);
    }
@@ -631,12 +636,47 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
 
    *events = 0;
 
-   if (!_mongoc_stream_tls_openssl_cert_verify_failed (ssl, error)) {
+   /* Try to relay certificate failure reason from OpenSSL library if any. */
+   if (_mongoc_stream_tls_openssl_set_verify_cert_error (ssl, error)) {
+      RETURN (false);
+   }
+
+   /* Otherwise, try to relay error info from OpenSSL. */
+   if (ERR_peek_error () != 0) {
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "TLS handshake failed: %s",
                       ERR_error_string (ERR_get_error (), NULL));
+      RETURN (false);
+   }
+
+   /* Otherwise, use simple error info. */
+   {
+#ifdef _WIN32
+      LPTSTR msg = NULL;
+      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                        FORMAT_MESSAGE_FROM_SYSTEM |
+                        FORMAT_MESSAGE_ARGUMENT_ARRAY,
+                     NULL,
+                     errno, /* WSAETIMEDOUT */
+                     LANG_NEUTRAL,
+                     (LPTSTR) &msg,
+                     0,
+                     NULL);
+#else
+      const char *msg = strerror (errno); /* ETIMEDOUT */
+#endif
+
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed: %s",
+                      msg);
+
+#ifdef _WIN32
+      LocalFree (msg);
+#endif
    }
 
    RETURN (false);

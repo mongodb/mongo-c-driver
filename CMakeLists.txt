@@ -83,8 +83,11 @@ include(MongoC-Warnings)
 
 # Enable CCache, if possible
 include (CCache)
+
 # Link with LLD, if possible
-include (LLDLinker)
+if (NOT MSVC)
+   include (LLDLinker)
+endif ()
 
 find_package (MongoDB)
 mongodb_setup_default_fixtures ()

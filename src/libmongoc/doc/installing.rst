@@ -39,7 +39,7 @@ On Fedora, a mongo-c-driver package is available in the default repositories and
 
   $ dnf install mongo-c-driver
 
-On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check which version is available, see `https://apps.fedoraproject.org/packages/mongo-c-driver <https://apps.fedoraproject.org/packages/mongo-c-driver>`_. The package can be installed with:
+On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check which version is available, see `https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver/ <https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver/>`_. The package can be installed with:
 
 .. code-block:: none
 
@@ -322,7 +322,7 @@ The second approach simply invokes the uninstall program referenced in the first
 Dealing with Build Failures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If your attempt to build the C driver fails, please see the `README <https://github.com/mongodb/mongo-c-driver#how-to-ask-for-help>` for instructions on requesting assistance.
+If your attempt to build the C driver fails, please see the `README <https://github.com/mongodb/mongo-c-driver#how-to-ask-for-help>`_ for instructions on requesting assistance.
 
 Additional Options for Integrators
 ----------------------------------

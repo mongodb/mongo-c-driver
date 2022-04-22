@@ -866,7 +866,7 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
 
    if (bs == BSON_JSON_LF_BINARY) {
       data->binary.has_binary = true;
-      binary_len = COMMON_PREFIX (bson_b64_pton (val_w_null, NULL, 0));
+      binary_len = mcommon_b64_pton (val_w_null, NULL, 0);
       if (binary_len < 0) {
          _bson_json_read_set_error (
             reader,
@@ -875,9 +875,9 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
       }
 
       _bson_json_buf_ensure (&bson->bson_type_buf[0], (size_t) binary_len + 1);
-      if (COMMON_PREFIX (bson_b64_pton (val_w_null,
-                                        bson->bson_type_buf[0].buf,
-                                        (size_t) binary_len + 1) < 0)) {
+      if (mcommon_b64_pton (val_w_null,
+                            bson->bson_type_buf[0].buf,
+                            (size_t) binary_len + 1) < 0) {
          _bson_json_read_set_error (
             reader,
             "Invalid input string \"%s\", looking for base64-encoded binary",

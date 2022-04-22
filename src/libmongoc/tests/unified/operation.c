@@ -580,6 +580,7 @@ operation_bulk_write (test_t *test,
    bson_parser_t *parser = NULL;
    bool *ordered = NULL;
    bson_t *requests = NULL;
+   bson_t *let = NULL;
    bson_t *opts = NULL;
    bson_iter_t iter;
    mongoc_bulk_operation_t *bulk_op = NULL;
@@ -589,6 +590,7 @@ operation_bulk_write (test_t *test,
    parser = bson_parser_new ();
    bson_parser_array (parser, "requests", &requests);
    bson_parser_bool_optional (parser, "ordered", &ordered);
+   bson_parser_doc_optional (parser, "let", &let);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
    }
@@ -601,6 +603,9 @@ operation_bulk_write (test_t *test,
    opts = bson_new ();
    if (ordered) {
       BSON_APPEND_BOOL (opts, "ordered", *ordered);
+   }
+   if (!bson_empty0 (let)) {
+      BSON_APPEND_DOCUMENT (opts, "let", let);
    }
    if (op->session) {
       if (!mongoc_client_session_append (op->session, opts, error)) {

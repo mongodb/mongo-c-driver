@@ -43,6 +43,8 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
+#define SKIP_LINE_BUFFER_SIZE 1024
+
 static bson_once_t once = BSON_ONCE_INIT;
 static bson_mutex_t gTestMutex;
 static TestSuite *gTestSuite;
@@ -128,6 +130,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    suite->silent = false;
    suite->ctest_run = NULL;
    _mongoc_array_init (&suite->match_patterns, sizeof (char *));
+   _mongoc_array_init (&suite->failing_flaky_skips, sizeof (TestSkip *));
 
    for (i = 1; i < argc; i++) {
       if (0 == strcmp ("-d", argv[i])) {
@@ -185,6 +188,12 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          }
          val = bson_strdup (argv[++i]);
          _mongoc_array_append_val (&suite->match_patterns, val);
+      } else if (0 == strcmp ("--skip-tests", argv[i])) {
+         if (argc - 1 == i) {
+            test_error ("%s requires an argument.", argv[i]);
+         }
+         filename = argv[++i];
+         _process_skip_file (filename, &suite->failing_flaky_skips);
       } else {
          test_error ("Unknown option: %s\n"
                      "Try using the --help option.",
@@ -590,6 +599,33 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
       test_msg ("Begin %s, seed %u", name, test->seed);
    }
 
+   for (i = 0; i < suite->failing_flaky_skips.len; i++) {
+      TestSkip *skip =
+         _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, i);
+      if (0 == strcmp (name, skip->test_name) && skip->subtest_desc == NULL) {
+         if (suite->ctest_run) {
+            /* Write a marker that tells CTest that we are skipping this test */
+            test_msg ("@@ctest-skipped@@");
+         }
+         if (!suite->silent) {
+            bson_string_append_printf (
+               buf,
+               "    { \"status\": \"skip\", \"test_file\": \"%s\","
+               " \"reason\": \"%s\" }%s",
+               test->name,
+               skip->reason,
+               ((*count) == 1) ? "" : ",");
+            test_msg ("%s", buf->str);
+            if (suite->outfile) {
+               fprintf (suite->outfile, "%s", buf->str);
+               fflush (suite->outfile);
+            }
+         }
+
+         goto done;
+      }
+   }
+
    for (i = 0; i < test->num_checks; i++) {
       if (!test->checks[i]()) {
          if (suite->ctest_run) {
@@ -707,6 +743,7 @@ TestSuite_PrintHelp (TestSuite *suite) /* IN */
       "    -s, --silent          Suppress all output.\n"
       "    -F FILENAME           Write test results (JSON) to FILENAME.\n"
       "    -d                    Print debug output (useful if a test hangs).\n"
+      "    --skip-tests FILE     Skip known failing or flaky tests.\n"
       "    -t, --trace           Enable mongoc tracing (useful to debug "
       "tests).\n"
       "\n",
@@ -944,6 +981,110 @@ test_matches (TestSuite *suite, Test *test)
    return false;
 }
 
+void
+_process_skip_file (const char *filename, mongoc_array_t *skips)
+{
+   const int max_lines = 1000;
+   int lines_read = 0;
+   char buffer[SKIP_LINE_BUFFER_SIZE];
+   size_t buflen;
+   FILE *skip_file;
+   char *fgets_ret;
+   TestSkip *skip;
+   char *test_name_end;
+   size_t comment_len;
+   char *comment_char;
+   char *comment_text;
+   size_t subtest_len;
+   size_t new_buflen;
+   char *subtest_start;
+   char *subtest_end;
+
+#ifdef _WIN32
+   if (0 != fopen_s (&skip_file, filename, "r")) {
+      skip_file = NULL;
+   }
+#else
+   skip_file = fopen (filename, "r");
+#endif
+   if (!skip_file) {
+      test_error ("Failed to open skip file: %s: errno: %d", filename, errno);
+   }
+
+   while (lines_read < max_lines) {
+      fgets_ret = fgets (buffer, sizeof (buffer), skip_file);
+      buflen = strlen (buffer);
+
+      if (buflen == 0 || !fgets_ret) {
+         break; /* error or EOF */
+      }
+
+      if (buffer[0] == '#' || buffer[0] == ' ' || buffer[0] == '\n') {
+         continue; /* Comment line or blank line */
+      }
+
+      skip = (TestSkip *) calloc (1, sizeof *skip);
+      if (buffer[buflen - 1] == '\n')
+         buflen--;
+      test_name_end = buffer + buflen;
+
+      /* First get the comment, starting at '#' to EOL */
+      comment_len = 0;
+      comment_char = strchr (buffer, '#');
+      if (comment_char) {
+         test_name_end = comment_char;
+         comment_text = comment_char;
+         while (comment_text[0] == '#' || comment_text[0] == ' ' ||
+                comment_text[0] == '\t') {
+            if (++comment_text >= (buffer + buflen))
+               break;
+         }
+         skip->reason =
+            bson_strndup (comment_text, buflen - (comment_text - buffer));
+         comment_len = buflen - (comment_char - buffer);
+      } else {
+         skip->reason = NULL;
+      }
+
+      /* Next get the subtest name, from first '"' until last '"' */
+      new_buflen = buflen - comment_len;
+      subtest_start = strstr (buffer, "/\"");
+      if (subtest_start && (!comment_char || (subtest_start < comment_char))) {
+         test_name_end = subtest_start;
+         subtest_start++;
+         /* find the second '"' that marks end of subtest name */
+         subtest_end = subtest_start + 1;
+         while (subtest_end[0] != '\0' && subtest_end[0] != '"' &&
+                (subtest_end < buffer + new_buflen)) {
+            subtest_end++;
+         }
+         /* 'subtest_start + 1' to trim leading and trailing '"' */
+         subtest_len = subtest_end - (subtest_start + 1);
+         skip->subtest_desc = bson_strndup (subtest_start + 1, subtest_len);
+      } else {
+         skip->subtest_desc = NULL;
+      }
+
+      /* Next get the test name */
+      while (test_name_end[-1] == ' ' && test_name_end > buffer) {
+         /* trailing space might be between test name and '#' */
+         test_name_end--;
+      }
+      skip->test_name = bson_strndup (buffer, test_name_end - buffer);
+
+      _mongoc_array_append_val (skips, skip);
+
+      lines_read++;
+   }
+   if (lines_read == max_lines) {
+      test_error ("Skip file: %s exceeded maximum lines: %d. Increase "
+                  "max_lines in _process_skip_file",
+                  filename,
+                  max_lines);
+   }
+   fclose (skip_file);
+}
+
 static int
 TestSuite_RunAll (TestSuite *suite /* IN */)
 {
@@ -1068,6 +1209,17 @@ TestSuite_Destroy (TestSuite *suite)
    }
 
    _mongoc_array_destroy (&suite->match_patterns);
+
+   for (i = 0; i < suite->failing_flaky_skips.len; i++) {
+      TestSkip *val =
+         _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, i);
+      bson_free (val->test_name);
+      bson_free (val->subtest_desc);
+      bson_free (val->reason);
+      bson_free (val);
+   }
+
+   _mongoc_array_destroy (&suite->failing_flaky_skips);
 }
 
 

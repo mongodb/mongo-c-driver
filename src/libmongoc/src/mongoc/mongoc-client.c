@@ -3130,7 +3130,7 @@ mongoc_client_set_server_api (mongoc_client_t *client,
       return false;
    }
 
-   if (client->api) {
+   if (mongoc_client_uses_server_api (client)) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_API_ALREADY_SET,
@@ -3165,4 +3165,10 @@ mongoc_client_get_handshake_description (mongoc_client_t *client,
    sd = mongoc_server_description_new_copy (server_stream->sd);
    mongoc_server_stream_cleanup (server_stream);
    return sd;
+}
+
+bool
+mongoc_client_uses_server_api (const mongoc_client_t *client)
+{
+   return mongoc_topology_uses_server_api (client->topology);
 }

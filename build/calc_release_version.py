@@ -34,6 +34,8 @@ if DEBUG:
 
 # This option indicates we are to determine the previous release version
 PREVIOUS = len(sys.argv) > 1 and '-p' in sys.argv
+# This options indicates to output the next minor release version
+NEXT_MINOR = len(sys.argv) > 1 and '--next-minor' in sys.argv
 
 PREVIOUS_TAG_RE = re.compile('(?P<ver>(?P<vermaj>[0-9]+)\\.(?P<vermin>[0-9]+)'
                              '\\.(?P<verpatch>[0-9]+))')
@@ -100,26 +102,55 @@ def check_head_tag():
 
     return None
 
+def get_next_minor (prerelease_marker):
+    """
+    get_next_minor does the following:
+    Inspect the branches that fit the convention for a release branch.
+    Choose the latest increment the minor version. Append .0 to form the new version (e.g., r1.21 becomes 1.22.0)
+    Append a pre-release marker. (e.g. 1.22.0 becomes 1.22.0-20220201+gitf6e6a7025d)
+    """
+    version_loose = LooseVersion('0.0.0')
+
+    version_new = {}
+    # Use refs (not branches) to get local branches plus remote branches
+    refs = check_output(['git', 'show-ref']).splitlines()
+    for ref in refs:
+        release_branch_match = RELEASE_BRANCH_RE.match(ref.split()[1])
+        if release_branch_match:
+            # Construct a candidate version from this branch name
+            version_new['major'] = int(release_branch_match.group('vermaj'))
+            version_new['minor'] = int(release_branch_match.group('vermin')) + 1
+            version_new['patch'] = 0
+            version_new['prerelease'] = prerelease_marker
+            new_version_loose = LooseVersion(str(version_new['major']) + '.' +
+                                                str(version_new['minor']) + '.' +
+                                                str(version_new['patch']) + '-' +
+                                                version_new['prerelease'])
+            if new_version_loose > version_loose:
+                version_loose = new_version_loose
+                if DEBUG:
+                    print('Found new best version "' + str(version_loose) \
+                            + '" based on branch "' \
+                            + release_branch_match.group('brname') + '"')
+    return str(version_loose)
+
 def main():
     """
     The algorithm is roughly:
 
-        1. Is the current HEAD associated with a tag that looks like a release
+        - Is the --next-minor flag passed? If "yes", then return the next minor
+           release with a pre-release marker.
+        - Is the current HEAD associated with a tag that looks like a release
            version?
-        2. If "yes" then use that as the version
-        3. If "no" then is the current branch master?
-        4. If "yes" the current branch is master, then inspect the branches that
-           fit the convention for a release branch and choose the latest;
-           increment the minor version, append .0 to form the new version (e.g.,
-           releases/v3.3 becomes 3.4.0), and append a pre-release marker
-        5. If "no" the current branch is not master, then determine the most
+        - If "yes" then use that as the version
+        - If "no" then is the current branch master?
+        - If "yes" the current branch is master, then return the next minor
+           release with a pre-release marker.
+        - If "no" the current branch is not master, then determine the most
            recent tag in history; strip any pre-release marker, increment the
            patch version, and append a new pre-release marker
     """
 
-    head_tag_ver = check_head_tag()
-    if head_tag_ver:
-        return head_tag_ver
 
     version_loose = LooseVersion('0.0.0')
     head_commit_short = check_output(['git', 'rev-parse',
@@ -128,32 +159,21 @@ def main():
     prerelease_marker = datetime.date.today().strftime('%Y%m%d') \
             + '+git' + head_commit_short
 
+    if NEXT_MINOR:
+        if DEBUG:
+            print('Calculating next minor release')
+        return get_next_minor (prerelease_marker)
+
+    head_tag_ver = check_head_tag()
+    if head_tag_ver:
+        return head_tag_ver
+
     active_branch_name = check_output(['git', 'rev-parse',
                                                   '--abbrev-ref', 'HEAD']).strip()
     if DEBUG:
         print('Calculating release version for branch: ' + active_branch_name)
     if active_branch_name == 'master':
-        version_new = {}
-        # Use refs (not branches) to get local branches plus remote branches
-        refs = check_output(['git', 'show-ref']).splitlines()
-        for ref in refs:
-            release_branch_match = RELEASE_BRANCH_RE.match(ref.split()[1])
-            if release_branch_match:
-                # Construct a candidate version from this branch name
-                version_new['major'] = int(release_branch_match.group('vermaj'))
-                version_new['minor'] = int(release_branch_match.group('vermin')) + 1
-                version_new['patch'] = 0
-                version_new['prerelease'] = prerelease_marker
-                new_version_loose = LooseVersion(str(version_new['major']) + '.' +
-                                                 str(version_new['minor']) + '.' +
-                                                 str(version_new['patch']) + '-' +
-                                                 version_new['prerelease'])
-                if new_version_loose > version_loose:
-                    version_loose = new_version_loose
-                    if DEBUG:
-                        print('Found new best version "' + str(version_loose) \
-                                + '" based on branch "' \
-                                + release_branch_match.group('brname') + '"')
+        return get_next_minor (prerelease_marker)
 
     else:
         tags = check_output(['git', 'tag',

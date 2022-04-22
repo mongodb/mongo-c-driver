@@ -7,7 +7,7 @@ DNS=${DNS:-nodns}
 echo "CC='${CC}' VALGRIND=${VALGRIND}"
 
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-TEST_ARGS="-d -F test-results.json"
+TEST_ARGS="-d -F test-results.json --skip-tests .evergreen/skip-tests.txt"
 
 # AddressSanitizer configuration
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"

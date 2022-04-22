@@ -84,6 +84,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
                       void *setup_ctx,
                       const char *dbname,
                       const bson_t *cmd,
+                      const mongoc_opcode_t cmd_opcode,
                       mongoc_async_cmd_cb_t cb,
                       void *cb_data,
                       int64_t timeout_msec);

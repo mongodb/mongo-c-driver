@@ -188,7 +188,7 @@ test_mongoc_handshake_data_append_success (void)
    /* Force topology scanner to start */
    client = mongoc_client_pool_pop (pool);
 
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
@@ -297,7 +297,7 @@ test_mongoc_handshake_data_append_null_args (void)
    /* Force topology scanner to start */
    client = mongoc_client_pool_pop (pool);
 
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
@@ -501,6 +501,7 @@ test_mongoc_handshake_too_big (void)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* avoid rare test timeouts */
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 20000);
+
    client = test_framework_client_new_from_uri (uri, NULL);
 
    ASSERT (mongoc_client_set_appname (client, "my app"));
@@ -508,7 +509,7 @@ test_mongoc_handshake_too_big (void)
    /* Send a ping, mock server deals with it */
    future = future_client_command_simple (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
 
    /* Make sure the hello request has a handshake field, and it's not huge */
    ASSERT (request);
@@ -677,7 +678,7 @@ test_mongoc_handshake_cannot_send (void)
 
    /* Pop a client to trigger the topology scanner */
    client = mongoc_client_pool_pop (pool);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
 
    /* Make sure the hello request DOESN'T have a handshake field: */
    ASSERT (request);
@@ -689,14 +690,14 @@ test_mongoc_handshake_cannot_send (void)
    request_destroy (request);
 
    /* Cause failure on client side */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    ASSERT (request);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* Make sure the hello request still DOESN'T have a handshake field
     * on subsequent heartbeats. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_any_hello (server);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
@@ -922,11 +923,11 @@ test_mongoc_handshake_race_condition (void)
       _reset_handshake ();
 
       for (j = 0; j < 4; ++j) {
-         BSON_ASSERT (!COMMON_PREFIX (thread_create) (
+         BSON_ASSERT (!mcommon_thread_create (
             &threads[j], &handshake_append_worker, NULL));
       }
       for (j = 0; j < 4; ++j) {
-         COMMON_PREFIX (thread_join) (threads[j]);
+         mcommon_thread_join (threads[j]);
       }
    }
 

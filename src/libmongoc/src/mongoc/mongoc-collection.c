@@ -2070,6 +2070,7 @@ mongoc_collection_update (mongoc_collection_t *collection,
       &command,
       selector,
       update,
+      NULL, /* cmd_opts */
       &opts,
       write_flags,
       ++collection->client->cluster.operation_id);
@@ -2110,6 +2111,7 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    mongoc_server_stream_t *server_stream = NULL;
+   bson_t cmd_opts = BSON_INITIALIZER;
    bool reply_initialized = false;
    bool ret = false;
 
@@ -2118,6 +2120,10 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
    BSON_ASSERT_PARAM (collection);
    BSON_ASSERT_PARAM (selector);
    BSON_ASSERT_PARAM (update);
+
+   if (!bson_empty (&update_opts->let)) {
+      bson_append_document (&cmd_opts, "let", 3, &update_opts->let);
+   }
 
    if (update_opts->upsert) {
       bson_append_bool (extra, "upsert", 6, true);
@@ -2144,6 +2150,7 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       &command,
       selector,
       update,
+      &cmd_opts,
       extra,
       ++collection->client->cluster.operation_id);
 
@@ -2231,6 +2238,7 @@ done:
    _mongoc_write_result_destroy (&result);
    mongoc_server_stream_cleanup (server_stream);
    _mongoc_write_command_destroy (&command);
+   bson_destroy (&cmd_opts);
 
    if (!reply_initialized) {
       _mongoc_bson_init_if_set (reply);
@@ -2556,13 +2564,14 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
                             bool multi,
                             const bson_t *selector,
                             mongoc_delete_opts_t *delete_opts,
-                            const bson_t *cmd_opts,
-                            bson_t *opts,
+                            const bson_t *extra,
                             bson_t *reply,
                             bson_error_t *error)
 {
    mongoc_write_command_t command;
    mongoc_write_result_t result;
+   bson_t cmd_opts = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
    bool ret;
 
    ENTRY;
@@ -2571,22 +2580,34 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
    BSON_ASSERT_PARAM (selector);
    BSON_ASSERT (bson_empty0 (reply));
 
+   /* TODO: This function has historically used `extra` for top-level, command
+    * options. That is inconsistent with the update function, which uses `extra`
+    * for statement-level options. We will keep the original behavior for BC
+    * reasons, but this should ultimately be addressed by CDRIVER-4306. */
+   if (!bson_empty0 (extra)) {
+      bson_concat (&cmd_opts, extra);
+   }
+
+   if (!bson_empty (&delete_opts->let)) {
+      bson_append_document (&cmd_opts, "let", 3, &delete_opts->let);
+   }
+
    _mongoc_write_result_init (&result);
-   bson_append_int32 (opts, "limit", 5, multi ? 0 : 1);
+   bson_append_int32 (&opts, "limit", 5, multi ? 0 : 1);
 
    if (!bson_empty (&delete_opts->collation)) {
-      bson_append_document (opts, "collation", 9, &delete_opts->collation);
+      bson_append_document (&opts, "collation", 9, &delete_opts->collation);
    }
 
    if (delete_opts->hint.value_type) {
-      bson_append_value (opts, "hint", 4, &delete_opts->hint);
+      bson_append_value (&opts, "hint", 4, &delete_opts->hint);
    }
 
    _mongoc_write_command_init_delete_idl (
       &command,
       selector,
-      cmd_opts,
-      opts,
+      &cmd_opts,
+      &opts,
       ++collection->client->cluster.operation_id);
 
    command.flags.has_multi_write = multi;
@@ -2612,6 +2633,8 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
+   bson_destroy (&cmd_opts);
+   bson_destroy (&opts);
 
    RETURN (ret);
 }
@@ -2625,7 +2648,6 @@ mongoc_collection_delete_one (mongoc_collection_t *collection,
                               bson_error_t *error)
 {
    mongoc_delete_one_opts_t delete_one_opts;
-   bson_t limit = BSON_INITIALIZER;
    bool ret = false;
 
    ENTRY;
@@ -2644,13 +2666,11 @@ mongoc_collection_delete_one (mongoc_collection_t *collection,
                                      selector,
                                      &delete_one_opts.delete,
                                      &delete_one_opts.extra,
-                                     &limit,
                                      reply,
                                      error);
 
 done:
    _mongoc_delete_one_opts_cleanup (&delete_one_opts);
-   bson_destroy (&limit);
 
    RETURN (ret);
 }
@@ -2663,7 +2683,6 @@ mongoc_collection_delete_many (mongoc_collection_t *collection,
                                bson_error_t *error)
 {
    mongoc_delete_many_opts_t delete_many_opts;
-   bson_t limit = BSON_INITIALIZER;
    bool ret = false;
 
    ENTRY;
@@ -2682,13 +2701,11 @@ mongoc_collection_delete_many (mongoc_collection_t *collection,
                                      selector,
                                      &delete_many_opts.delete,
                                      &delete_many_opts.extra,
-                                     &limit,
                                      reply,
                                      error);
 
 done:
    _mongoc_delete_many_opts_cleanup (&delete_many_opts);
-   bson_destroy (&limit);
 
    RETURN (ret);
 }
@@ -3211,6 +3228,7 @@ mongoc_collection_create_bulk_operation_with_opts (
                                       write_flags,
                                       wc);
 
+   mongoc_bulk_operation_set_let (bulk, &bulk_opts.let);
    bulk->session = bulk_opts.client_session;
    if (err.domain) {
       /* _mongoc_bulk_opts_parse failed, above */
@@ -3394,6 +3412,10 @@ mongoc_collection_find_and_modify_with_opts (
       }
 
       bson_append_value (&parts.extra, "hint", 4, &appended_opts.hint);
+   }
+
+   if (!bson_empty (&appended_opts.let)) {
+      bson_append_document (&parts.extra, "let", 3, &appended_opts.let);
    }
 
    /* Append any remaining unparsed options set via

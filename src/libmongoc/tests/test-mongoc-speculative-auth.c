@@ -193,7 +193,7 @@ _test_mongoc_speculative_auth (bool pooled,
       bson_t *response;
       char *str;
 
-      request = mock_server_receives_legacy_hello (server, NULL);
+      request = mock_server_receives_any_hello (server);
       ASSERT (request);
       request_doc = request_get_doc (request, 0);
       ASSERT (request_doc);

@@ -443,7 +443,7 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
    mock_server_auto_endsessions (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    future = future_client_command_simple (client,
                                           "admin",
@@ -451,8 +451,8 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
                                           NULL /* read prefs */,
                                           NULL /* reply */,
                                           &error);
-   request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   request = mock_server_receives_any_hello_with_match (
+      server, "{'loadBalanced': true}", "{'loadBalanced': true}");
    mock_server_replies_simple (request, LB_HELLO);
    request_destroy (request);
 
@@ -505,7 +505,7 @@ test_loadbalanced_handshake_rejects_non_loadbalanced (void)
    mock_server_auto_endsessions (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    future = future_client_command_simple (client,
                                           "admin",
@@ -513,8 +513,8 @@ test_loadbalanced_handshake_rejects_non_loadbalanced (void)
                                           NULL /* read prefs */,
                                           NULL /* reply */,
                                           &error);
-   request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   request = mock_server_receives_any_hello_with_match (
+      server, "{'loadBalanced': true}", "{'loadBalanced': true}");
    mock_server_replies_simple (request, NON_LB_HELLO);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));

@@ -307,14 +307,14 @@ ssl_test (mongoc_ssl_opt_t *client,
    bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = COMMON_PREFIX (thread_create) (threads, &ssl_test_server, &data);
+   r = mcommon_thread_create (threads, &ssl_test_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = COMMON_PREFIX (thread_create) (threads + 1, &ssl_test_client, &data);
+   r = mcommon_thread_create (threads + 1, &ssl_test_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = COMMON_PREFIX (thread_join) (threads[i]);
+      r = mcommon_thread_join (threads[i]);
       BSON_ASSERT (r == 0);
    }
 
