@@ -1228,7 +1228,8 @@ _parse_extra (const bson_t *extra,
        * testing purposes. */
       if (bson_iter_init_find (&iter, extra, "__csfleDisabled")) {
          BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) &&
-                      "__csfleDisabled is for testing purposes only");
+                      "__csfleDisabled should be a boolean and should only be "
+                      "used for testing purposes.");
          topology->csfle_disabled = bson_iter_bool_unsafe (&iter);
       }
    }
