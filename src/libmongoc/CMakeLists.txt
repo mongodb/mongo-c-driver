@@ -863,7 +863,7 @@ cmake_dependent_option (
 
 if (MONGOC_TEST_USE_CSFLE)
    find_program (_PYTHON3_EXE NAMES python3 py python)
-   mark_as_advanced(_PYTHON3_EXE)
+   mark_as_advanced (_PYTHON3_EXE)
    if (NOT _PYTHON3_EXE)
       message (SEND_ERROR
          "MONGOC_TEST_USE_CSFLE is enabled, but we were unable to find a Python 3 interpreter to use mongodl.py. "

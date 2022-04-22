@@ -42,7 +42,10 @@ DISTRO_VERSION_MAP = {
 
 DISTRO_ID_TO_TARGET = {
     'ubuntu': {
+        '22.*': 'ubuntu2204',
         '20.*': 'ubuntu2004',
+        '18.*': 'ubuntu1804',
+        '16.*': 'ubuntu1604',
     },
     'debian': {
         '9': 'debian92',
