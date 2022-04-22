@@ -50,9 +50,9 @@ DISTRO_ID_TO_TARGET = {
         '11': 'debian11',
     },
     'rhel': {
-        '6': 'rhel62',
-        '7': 'rhel73',
-        '8': 'rhel81',
+        '6': 'rhel60',
+        '7': 'rhel70',
+        '8': 'rhel80',
     },
     'sles': {
         '10.*': 'suse10',
@@ -532,7 +532,7 @@ def _maybe_extract_member(out, relpath, pattern, strip, is_dir, opener,
     :return: Zero if the file was excluded by filters, one otherwise.
     """
     relpath = PurePath(relpath)
-    print('  │ {:┄<65} │'.format(str(relpath) + ' '), end='')
+    print('  | {:-<65} |'.format(str(relpath) + ' '), end='')
     if len(relpath.parts) <= strip:
         # Not enough path components
         print(' (Excluded by --strip-components)')
