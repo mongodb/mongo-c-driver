@@ -879,7 +879,7 @@ if (MONGOC_TEST_USE_CSFLE)
             --component csfle
             --version 5.3.1
             --edition enterprise
-            --out "${CMAKE_CURRENT_BINARY_DIR}/_csfle"
+            --out "$<TARGET_FILE_DIR:test-libmongoc>"
             --only "**/mongo_csfle_v1.*"
             --strip-path-components 1
       COMMENT "Downloading csfle"
@@ -1091,7 +1091,7 @@ mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongo
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 
 if (TARGET get-csfle AND TARGET test-libmongoc)
-   target_compile_definitions (test-libmongoc PRIVATE "TESTING_CSFLE_OVERRIDE_PATH=\"$<TARGET_PROPERTY:get-csfle,CSFLE_PATH>\"")
+   target_compile_definitions (test-libmongoc PRIVATE "TESTING_CSFLE_OVERRIDE_PATH=\"$ORIGIN/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}\"")
 endif ()
 
 if (ENABLE_TESTS)
