@@ -2325,13 +2325,13 @@ test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
    /* Create a MongoClient with encryption enabled */
    client_encrypted = test_framework_new_default_client ();
    extra = BCON_NEW ("mongocryptdBypassSpawn",
-                BCON_BOOL (true),
-                "mongocryptdSpawnArgs",
-                "[",
-                "--pidfilepath=bypass-spawning-mongocryptd.pid",
-                "--port=27021",
-                "]",
-                "mongocryptdURI",
+                     BCON_BOOL (true),
+                     "mongocryptdSpawnArgs",
+                     "[",
+                     "--pidfilepath=bypass-spawning-mongocryptd.pid",
+                     "--port=27021",
+                     "]",
+                     "mongocryptdURI",
                      "mongodb://localhost:27021/?serverSelectionTimeoutMS=1000",
                      "__csfleDisabled",
                      BCON_BOOL (true));
