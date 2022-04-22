@@ -123,6 +123,14 @@ mongoc_client_encryption_create_datakey (
    bson_error_t *error);
 
 MONGOC_EXPORT (bool)
+mongoc_client_encryption_create_key (
+   mongoc_client_encryption_t *client_encryption,
+   const char *kms_provider,
+   mongoc_client_encryption_datakey_opts_t *opts,
+   bson_value_t *keyid,
+   bson_error_t *error);
+
+MONGOC_EXPORT (bool)
 mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
                                   const bson_value_t *value,
                                   mongoc_client_encryption_encrypt_opts_t *opts,
