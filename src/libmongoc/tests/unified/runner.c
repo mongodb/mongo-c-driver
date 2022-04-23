@@ -1119,9 +1119,7 @@ test_check_event (test_t *test,
    }
 
    if (expected_has_server_connection_id) {
-      bool has_server_connection_id = false;
-
-      has_server_connection_id =
+      const bool has_server_connection_id =
          actual->server_connection_id != MONGOC_NO_SERVER_CONNECTION_ID;
 
       if (*expected_has_server_connection_id && !has_server_connection_id) {
