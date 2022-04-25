@@ -775,6 +775,7 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
    X509 *peer = NULL, *issuer = NULL;
    STACK_OF (X509) *cert_chain = NULL;
    const unsigned char *resp_data = NULL;
+   unsigned char *mutable_resp_data = NULL;
    int cert_status, reason, len, status;
    OCSP_CERTID *id = NULL;
    ASN1_GENERALIZEDTIME *produced_at = NULL, *this_update = NULL,
@@ -817,7 +818,8 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
    }
 
    /* Get the stapled OCSP response returned by the server */
-   len = SSL_get_tlsext_status_ocsp_resp (ssl, &resp_data);
+   len = SSL_get_tlsext_status_ocsp_resp (ssl, &mutable_resp_data);
+   resp_data = mutable_resp_data;
    stapled_response = !!resp_data;
    if (stapled_response) {
       /* obtain an OCSP_RESPONSE object from the OCSP response */
