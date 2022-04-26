@@ -431,11 +431,11 @@ done:
 static char *
 _entity_client_encryption_getenv (const char *name, bson_error_t *error)
 {
+   char *res = NULL;
+
    BSON_ASSERT_PARAM (name);
 
-   char *const res = _mongoc_getenv (name);
-
-   if (!res) {
+   if (!(res = _mongoc_getenv (name))) {
       test_set_error (
          error, "expected environment variable '%s' to be set", name);
    }
@@ -489,12 +489,13 @@ _validate_string_or_placeholder (const bson_iter_t *iter, bson_error_t *error)
    /* Must be `{'$$placeholder': {}}` otherwise. */
    if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
       bson_val_t *const bson_val = bson_val_from_iter (iter);
+      bson_val_t *const expected = bson_val_from_json ("{'$$placeholder': {}}");
+      bool is_match = false;
 
       BSON_ASSERT (bson_val);
+      BSON_ASSERT (expected);
 
-      bson_val_t *const expected = bson_val_from_json ("{'$$placeholder': {}}");
-
-      const bool is_match = bson_match (expected, bson_val, false, error);
+      is_match = bson_match (expected, bson_val, false, error);
 
       bson_val_destroy (bson_val);
       bson_val_destroy (expected);
@@ -523,12 +524,12 @@ _parse_kms_provider_aws (bson_t *kms_providers,
 
    BSON_FOREACH (kms_doc, iter)
    {
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
       if (!_validate_string_or_placeholder (&iter, error)) {
          return false;
       }
-
-      const char *const key = bson_iter_key (&iter);
-      const char *const value = bson_iter_utf8 (&iter, NULL);
 
       if (strcmp (key, "accessKeyId") == 0) {
          if (!_append_kms_provider_value_or_getenv (
@@ -569,12 +570,12 @@ _parse_kms_provider_azure (bson_t *kms_providers,
 
    BSON_FOREACH (kms_doc, iter)
    {
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
       if (!_validate_string_or_placeholder (&iter, error)) {
          return false;
       }
-
-      const char *const key = bson_iter_key (&iter);
-      const char *const value = bson_iter_utf8 (&iter, NULL);
 
       if (strcmp (key, "tenantId") == 0) {
          if (!_append_kms_provider_value_or_getenv (
@@ -616,12 +617,12 @@ _parse_kms_provider_gcp (bson_t *kms_providers,
 
    BSON_FOREACH (kms_doc, iter)
    {
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
       if (!_validate_string_or_placeholder (&iter, error)) {
          return false;
       }
-
-      const char *const key = bson_iter_key (&iter);
-      const char *const value = bson_iter_utf8 (&iter, NULL);
 
       if (strcmp (key, "email") == 0) {
          if (!_append_kms_provider_value_or_getenv (
@@ -662,12 +663,12 @@ _parse_kms_provider_kmip (bson_t *kms_providers,
 
    BSON_FOREACH (kms_doc, iter)
    {
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
       if (!_validate_string_or_placeholder (&iter, error)) {
          return false;
       }
-
-      const char *const key = bson_iter_key (&iter);
-      const char *const value = bson_iter_utf8 (&iter, NULL);
 
       if (strcmp (key, "endpoint") == 0) {
          if (value) {
@@ -721,12 +722,12 @@ _parse_kms_provider_local (bson_t *kms_providers,
 
    BSON_FOREACH (kms_doc, iter)
    {
+      const char *const key = bson_iter_key (&iter);
+      const char *const value = bson_iter_utf8 (&iter, NULL);
+
       if (!_validate_string_or_placeholder (&iter, error)) {
          return false;
       }
-
-      const char *const key = bson_iter_key (&iter);
-      const char *const value = bson_iter_utf8 (&iter, NULL);
 
       if (strcmp (key, "key") == 0) {
          if (value) {
@@ -786,6 +787,7 @@ _parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts,
    {
       const char *const provider = bson_iter_key (&iter);
       bson_t kms_doc;
+      size_t i = 0u;
       bool found = false;
 
       if (!bson_init_from_value (&kms_doc, bson_iter_value (&iter))) {
@@ -794,7 +796,7 @@ _parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts,
          goto done;
       }
 
-      for (size_t i = 0u; i < prov_map_size; ++i) {
+      for (i = 0u; i < prov_map_size; ++i) {
          if (strcmp (provider, prov_map[i].provider) == 0) {
             found = prov_map[i].parse (
                &kms_providers, &tls_opts, provider, &kms_doc, error);
@@ -862,21 +864,22 @@ entity_client_encryption_new (entity_map_t *entity_map,
       {
          entity_t *const client_entity =
             entity_map_get (entity_map, client_id, error);
+         mongoc_client_t *client = NULL;
 
          if (!client_entity) {
             goto ce_opts_done;
          }
 
-         mongoc_client_t *const client =
-            (mongoc_client_t *) client_entity->value;
-
-         BSON_ASSERT (client);
+         BSON_ASSERT (client =
+            (mongoc_client_t *) client_entity->value));
 
          mongoc_client_encryption_opts_set_keyvault_client (ce_opts, client);
       }
 
       {
          char *const dot = strchr (kv_ns, '.');
+         const char *db = NULL;
+         const char *coll = NULL;
 
          if (!dot) {
             test_set_error (
@@ -884,9 +887,9 @@ entity_client_encryption_new (entity_map_t *entity_map,
             goto ce_opts_done;
          }
 
-         *dot = '\0'; /* e.g. "keyvault.datakeys" -> "keyvault\0datakeys". */
-         const char *db = kv_ns;     /* "keyvault" (due to null terminator) */
-         const char *coll = dot + 1; /* "datakeys" */
+         *dot = '\0';    /* e.g. "keyvault.datakeys" -> "keyvault\0datakeys". */
+         db = kv_ns;     /* "keyvault" (due to null terminator) */
+         coll = dot + 1; /* "datakeys" */
 
          if (strchr (coll, '.') != NULL) {
             test_set_error (
