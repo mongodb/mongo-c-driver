@@ -870,8 +870,7 @@ entity_client_encryption_new (entity_map_t *entity_map,
             goto ce_opts_done;
          }
 
-         BSON_ASSERT (client =
-            (mongoc_client_t *) client_entity->value));
+         BSON_ASSERT ((client = (mongoc_client_t *) client_entity->value));
 
          mongoc_client_encryption_opts_set_keyvault_client (ce_opts, client);
       }
