@@ -735,12 +735,14 @@ _parse_kms_provider_local (bson_t *kms_providers,
          } else {
             /* LOCAL_MASTERKEY in base64 encoding as defined in Client Side
              * Encryption Tests spec. */
-            const char key[] =
+            const char local_masterkey[] =
                "Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6N"
                "mdWMDFBMUN3YkQ5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZG"
                "JkTXVyZG9uSjFk";
             uint8_t data[96];
-            BSON_ASSERT (mcommon_b64_pton (key, data, sizeof (data)) == 96);
+            BSON_ASSERT (mcommon_b64_pton (local_masterkey,
+                                           data,
+                                           sizeof (local_masterkey)) == 96);
             BSON_APPEND_BINARY (&child, "key", BSON_SUBTYPE_BINARY, data, 96);
          }
       } else {
