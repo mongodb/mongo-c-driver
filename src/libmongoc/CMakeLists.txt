@@ -871,7 +871,7 @@ if (MONGOC_TEST_USE_CSFLE)
       )
    endif ()
 
-   get_filename_component (csfle_dest "${CMAKE_SOURCE_DIR}/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
+   get_filename_component (csfle_dest "${CMAKE_CURRENT_BINARY_DIR}/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
    add_custom_command (
       OUTPUT "${csfle_dest}"
       COMMAND
@@ -879,10 +879,11 @@ if (MONGOC_TEST_USE_CSFLE)
             --component csfle
             --version 5.3.1
             --edition enterprise
-            --out "${CMAKE_SOURCE_DIR}"
+            --out "${CMAKE_CURRENT_BINARY_DIR}"
             --only "**/mongo_csfle_v1.*"
             --strip-path-components 1
       COMMENT "Downloading csfle"
+      VERBATIM
    )
    add_custom_target (get-csfle ALL DEPENDS "${csfle_dest}")
    set_property (TARGET get-csfle PROPERTY CSFLE_PATH "${csfle_dest}")
