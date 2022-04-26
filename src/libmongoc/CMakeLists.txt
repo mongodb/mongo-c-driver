@@ -871,7 +871,7 @@ if (MONGOC_TEST_USE_CSFLE)
       )
    endif ()
 
-   get_filename_component (csfle_dest "${CMAKE_CURRENT_BINARY_DIR}/_csfle/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
+   get_filename_component (csfle_dest "${CMAKE_SOURCE_DIR}/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
    add_custom_command (
       OUTPUT "${csfle_dest}"
       COMMAND
@@ -879,7 +879,7 @@ if (MONGOC_TEST_USE_CSFLE)
             --component csfle
             --version 5.3.1
             --edition enterprise
-            --out "${CMAKE_CURRENT_BINARY_DIR}"
+            --out "${CMAKE_SOURCE_DIR}"
             --only "**/mongo_csfle_v1.*"
             --strip-path-components 1
       COMMENT "Downloading csfle"
@@ -1091,7 +1091,7 @@ mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongo
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 
 if (TARGET get-csfle AND TARGET test-libmongoc)
-   target_compile_definitions (test-libmongoc PRIVATE "TESTING_CSFLE_OVERRIDE_PATH=\"./src/libmongoc/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}\"")
+   target_compile_definitions (test-libmongoc PRIVATE "TESTING_CSFLE_OVERRIDE_PATH=\"./mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}\"")
 endif ()
 
 if (ENABLE_TESTS)
