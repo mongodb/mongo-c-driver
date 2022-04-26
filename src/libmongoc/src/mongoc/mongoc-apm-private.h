@@ -56,6 +56,7 @@ struct _mongoc_apm_command_started_t {
    const mongoc_host_list_t *host;
    uint32_t server_id;
    bson_oid_t service_id;
+   int32_t server_connection_id;
    void *context;
 };
 
@@ -69,6 +70,7 @@ struct _mongoc_apm_command_succeeded_t {
    const mongoc_host_list_t *host;
    uint32_t server_id;
    bson_oid_t service_id;
+   int32_t server_connection_id;
    void *context;
 };
 
@@ -83,6 +85,7 @@ struct _mongoc_apm_command_failed_t {
    const mongoc_host_list_t *host;
    uint32_t server_id;
    bson_oid_t service_id;
+   int32_t server_connection_id;
    void *context;
 };
 
@@ -159,6 +162,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  const mongoc_host_list_t *host,
                                  uint32_t server_id,
                                  const bson_oid_t *service_id,
+                                 int32_t server_connection_id,
                                  bool *is_redacted, /* out */
                                  void *context);
 
@@ -182,6 +186,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    const mongoc_host_list_t *host,
                                    uint32_t server_id,
                                    const bson_oid_t *service_id,
+                                   int32_t server_connection_id,
                                    bool force_redaction,
                                    void *context);
 
@@ -199,6 +204,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 const mongoc_host_list_t *host,
                                 uint32_t server_id,
                                 const bson_oid_t *service_id,
+                                int32_t server_connection_id,
                                 bool force_redaction,
                                 void *context);
 

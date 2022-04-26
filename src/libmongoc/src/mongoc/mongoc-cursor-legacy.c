@@ -63,6 +63,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor,
                                     &server_stream->sd->host,
                                     server_stream->sd->id,
                                     &server_stream->sd->service_id,
+                                    server_stream->sd->server_connection_id,
                                     NULL,
                                     client->apm_context);
 

@@ -575,18 +575,19 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       if (!cmd->is_acknowledged) {
          bson_append_int32 (&fake_reply, "ok", 2, 1);
       }
-      mongoc_apm_command_succeeded_init (&succeeded_event,
-                                         bson_get_monotonic_time () - started,
-                                         cmd->is_acknowledged ? reply
-                                                              : &fake_reply,
-                                         cmd->command_name,
-                                         request_id,
-                                         cmd->operation_id,
-                                         &server_stream->sd->host,
-                                         server_id,
-                                         &server_stream->sd->service_id,
-                                         is_redacted,
-                                         cluster->client->apm_context);
+      mongoc_apm_command_succeeded_init (
+         &succeeded_event,
+         bson_get_monotonic_time () - started,
+         cmd->is_acknowledged ? reply : &fake_reply,
+         cmd->command_name,
+         request_id,
+         cmd->operation_id,
+         &server_stream->sd->host,
+         server_id,
+         &server_stream->sd->service_id,
+         server_stream->sd->server_connection_id,
+         is_redacted,
+         cluster->client->apm_context);
 
       callbacks->succeeded (&succeeded_event);
       mongoc_apm_command_succeeded_cleanup (&succeeded_event);
@@ -603,6 +604,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       &server_stream->sd->host,
                                       server_id,
                                       &server_stream->sd->service_id,
+                                      server_stream->sd->server_connection_id,
                                       is_redacted,
                                       cluster->client->apm_context);
 

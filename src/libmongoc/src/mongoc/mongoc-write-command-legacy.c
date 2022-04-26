@@ -56,6 +56,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
       &stream->sd->host,
       stream->sd->id,
       &stream->sd->service_id,
+      stream->sd->server_connection_id,
       NULL,
       client->apm_context);
 
@@ -107,6 +108,7 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t *client,
       &stream->sd->host,
       stream->sd->id,
       &stream->sd->service_id,
+      stream->sd->server_connection_id,
       false,
       client->apm_context);
 
