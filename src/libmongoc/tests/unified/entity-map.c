@@ -347,7 +347,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
       }
    } else if (use_multiple_mongoses != NULL) {
       if (!test_framework_uri_apply_multi_mongos (
-               uri, *use_multiple_mongoses, error)) {
+             uri, *use_multiple_mongoses, error)) {
          goto done;
       }
    }
@@ -390,7 +390,8 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
          } else if (0 == strcmp (event_type, "commandSucceededEvent")) {
             mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
          } else if (is_unsupported_event_type (event_type)) {
-            MONGOC_DEBUG ("Skipping observing unsupported event type: %s", event_type);
+            MONGOC_DEBUG ("Skipping observing unsupported event type: %s",
+                          event_type);
             continue;
          } else {
             test_set_error (error, "Unexpected event type: %s", event_type);

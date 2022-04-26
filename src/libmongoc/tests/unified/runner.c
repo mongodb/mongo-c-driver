@@ -379,7 +379,8 @@ test_runner_new (void)
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
    uri = test_framework_get_uri ();
-   /* In load balanced mode, the internal client must use the SINGLE_LB_MONGOS_URI. */
+   /* In load balanced mode, the internal client must use the
+    * SINGLE_LB_MONGOS_URI. */
    if (!test_framework_is_loadbalanced ()) {
       /* Always use multiple mongoses if speaking to a mongos.
        * Some test operations require communicating with all known mongos */
@@ -1104,12 +1105,13 @@ test_check_event (test_t *test,
       bool has_service_id = false;
 
       bson_oid_to_string (&actual->service_id, oid_str);
-      has_service_id = 0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
+      has_service_id =
+         0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
 
       if (*expected_has_service_id && !has_service_id) {
          test_error ("expected serviceId, but got none");
       }
-      
+
       if (!*expected_has_service_id && has_service_id) {
          test_error ("expected no serviceId, but got %s", oid_str);
       }
