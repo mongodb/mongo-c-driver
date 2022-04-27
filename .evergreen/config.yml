@@ -1056,7 +1056,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-DBSON_MEMCHECK"
         export DEBUG="ON"
         export SASL="OFF"
         export SSL="OPENSSL"
@@ -1111,7 +1110,7 @@ tasks:
       script: |-
         set -o errexit
         export CC="clang-3.8"
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
@@ -1155,7 +1154,7 @@ tasks:
       script: |-
         set -o errexit
         export CC="clang-3.8"
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
@@ -1178,7 +1177,7 @@ tasks:
       script: |-
         set -o errexit
         export CC="clang-3.8"
-        export CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
@@ -1943,7 +1942,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF"
@@ -1953,7 +1952,7 @@ tasks:
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
@@ -14282,7 +14281,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+        VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL sh .evergreen/compile.sh
   - func: run auth tests
     vars:
       valgrind: 'true'

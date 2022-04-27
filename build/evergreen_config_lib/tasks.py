@@ -116,7 +116,7 @@ class CompileWithClientSideEncryption(CompileTask):
 class CompileWithClientSideEncryptionAsan(CompileTask):
     def __init__(self, *args, **kwargs):
         compile_with_cse = CompileTask(*args,
-                                       CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK",
+                                       CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer",
                                        COMPILE_LIBMONGOCRYPT="ON",
                                        CHECK_LOG="ON",
                                        EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF",
@@ -127,7 +127,7 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
 
         # Skip running mock server tests, because those were already run in the non-CSE build.
         super(CompileWithClientSideEncryptionAsan, self).__init__(*args,
-                                                                  CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK",
+                                                                  CFLAGS="-fsanitize=address -fno-omit-frame-pointer",
                                                                   extra_script=extra_script,
                                                                   CHECK_LOG="ON",
                                                                   EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
@@ -198,8 +198,7 @@ all_tasks = [
                 tags=['debug-compile', 'valgrind'],
                 SASL='OFF',
                 SSL='OPENSSL',
-                VALGRIND='ON',
-                CFLAGS='-DBSON_MEMCHECK'),
+                VALGRIND='ON'),
     SpecialTask('debug-compile-coverage',
                 tags=['debug-compile', 'coverage'],
                 COVERAGE='ON',
@@ -211,8 +210,7 @@ all_tasks = [
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
                 CC='clang-3.8',
-                CFLAGS='-fsanitize=address -fno-omit-frame-pointer'
-                       ' -DBSON_MEMCHECK',
+                CFLAGS='-fsanitize=address -fno-omit-frame-pointer',
                 CHECK_LOG='ON',
                 EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF',
                 PATH='/usr/lib/llvm-3.8/bin:$PATH'),
@@ -227,8 +225,7 @@ all_tasks = [
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
                 CC='clang-3.8',
-                CFLAGS='-fsanitize=address -fno-omit-frame-pointer'
-                       ' -DBSON_MEMCHECK',
+                CFLAGS='-fsanitize=address -fno-omit-frame-pointer',
                 CHECK_LOG='ON',
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                 PATH='/usr/lib/llvm-3.8/bin:$PATH',
@@ -236,8 +233,7 @@ all_tasks = [
     SpecialTask('debug-compile-ubsan',
                 compression='zlib',
                 CC='clang-3.8',
-                CFLAGS='-fsanitize=undefined -fno-omit-frame-pointer'
-                       ' -DBSON_MEMCHECK',
+                CFLAGS='-fsanitize=undefined -fno-omit-frame-pointer',
                 CHECK_LOG='ON',
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                 PATH='/usr/lib/llvm-3.8/bin:$PATH'),
@@ -843,7 +839,7 @@ all_tasks = chain(all_tasks, [
         commands=[
             shell_mongoc("""
                 VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO \
-                  SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+                  SSL=OPENSSL sh .evergreen/compile.sh
                 """),
             func('run auth tests', valgrind='true')]),
     PostCompileTask(

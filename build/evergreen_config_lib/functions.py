@@ -494,7 +494,7 @@ all_functions = OD([
         echo $(cat dir.txt)
 
         export RUN_MONGOHOUSE_TESTS=true
-        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d
+        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/skip-tests.txt
         unset RUN_MONGOHOUSE_TESTS
 
         '''),
