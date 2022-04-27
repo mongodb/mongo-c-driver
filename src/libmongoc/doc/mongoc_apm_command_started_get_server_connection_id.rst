@@ -8,11 +8,14 @@ Synopsis
 
 .. code-block:: c
 
-  void *
+  int32_t
   mongoc_apm_command_started_get_server_connection_id (
      const mongoc_apm_command_started_t *event);
 
-Returns this event's context.
+Returns the server connection ID for the command. The server connection ID is
+distinct from the server ID (:symbol:`mongoc_apm_command_started_get_server_id`)
+and is returned by the hello or legacy hello response as "connectionId" from the
+server on 4.2+.
 
 Parameters
 ----------
@@ -22,7 +25,7 @@ Parameters
 Returns
 -------
 
-The pointer passed with :symbol:`mongoc_client_set_apm_callbacks` or :symbol:`mongoc_client_pool_set_apm_callbacks`.
+The server connection ID as a positive integer or -1 if it is not available.
 
 .. seealso::
 
