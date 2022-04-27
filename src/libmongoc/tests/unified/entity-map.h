@@ -30,6 +30,7 @@ typedef struct _event_t {
    bson_t *command;
    bson_t *reply;
    bson_oid_t service_id;
+   int32_t server_connection_id;
    struct _event_t *next;
 } event_t;
 

@@ -203,6 +203,8 @@ command_started (const mongoc_apm_command_started_t *started)
                      &event->service_id);
    }
 
+   event->server_connection_id = started->server_connection_id;
+
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
       return;
@@ -228,6 +230,8 @@ command_failed (const mongoc_apm_command_failed_t *failed)
                      &event->service_id);
    }
 
+   event->server_connection_id = failed->server_connection_id;
+
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
       return;
@@ -252,6 +256,8 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
       bson_oid_copy (mongoc_apm_command_succeeded_get_service_id (succeeded),
                      &event->service_id);
    }
+
+   event->server_connection_id = succeeded->server_connection_id;
 
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
