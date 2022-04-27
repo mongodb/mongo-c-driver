@@ -1,6 +1,11 @@
 {
   "description": "kmsProviders-unconfigured_kms",
   "schemaVersion": "1.8",
+  "runOnRequirements": [
+    {
+      "csfle": true
+    }
+  ],
   "createEntities": [
     {
       "client": {

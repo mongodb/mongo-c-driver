@@ -774,6 +774,35 @@ check_run_on_requirement (test_runner_t *test_runner,
          return false;
       }
 
+#if defined(MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
+      if (0 == strcmp (key, "csfle")) {
+         const bool csfle_required = bson_iter_bool (&req_iter);
+
+         if (csfle_required) {
+            continue;
+         }
+
+         *fail_reason =
+            bson_strdup_printf ("CSFLE is not allowed but libmongoc was built "
+                                "with MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
+
+         return false;
+#else
+      if (0 == strcmp (key, "csfle")) {
+         const bool csfle_required = bson_iter_bool (&req_iter);
+
+         if (!csfle_required) {
+            continue;
+         }
+
+         *fail_reason = bson_strdup_printf (
+            "CSFLE is required but libmongoc was built "
+            "without MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
+
+         return false;
+#endif /* !defined(MONGOC_CLIENT_SIDE_ENCRYPTION) */
+      }
+
       test_error ("Unexpected runOnRequirement field: %s", key);
    }
    return true;
