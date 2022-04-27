@@ -437,7 +437,7 @@ _entity_client_encryption_getenv (const char *name, bson_error_t *error)
 
    if (!(res = _mongoc_getenv (name))) {
       test_set_error (
-         error, "expected environment variable '%s' to be set", name);
+         error, "missing required environment variable '%s'", name);
    }
 
    return res;
@@ -469,9 +469,6 @@ _append_kms_provider_value_or_getenv (bson_t *bson,
          return true;
       }
    }
-
-   test_set_error (
-      error, "missing required environment variable '%s'", env_name);
 
    return false;
 }
