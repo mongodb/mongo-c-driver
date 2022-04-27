@@ -696,6 +696,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_shared_ptr_reset_null (&topology->_shared_descr_._sptr_);
    mongoc_topology_scanner_destroy (topology->scanner);
    mongoc_server_session_pool_free (topology->session_pool);
+   bson_free (topology->csfle_override_path);
 
    mongoc_cond_destroy (&topology->cond_client);
    bson_mutex_destroy (&topology->tpld_modification_mtx);

@@ -798,7 +798,7 @@ set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BAS
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   target_link_libraries (mongoc_static ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
+   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
       message ("Adding -fPIC to compilation of mongoc_static components")
@@ -856,35 +856,67 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
    )
 endif ()
 
+cmake_dependent_option (
+   MONGOC_TEST_USE_CSFLE "If TRUE, download and use a csfle dynamic library for client-side-encryption testing. Otherwise will rely on mongocryptd"
+   TRUE ENABLE_TESTS FALSE
+)
+
+if (MONGOC_TEST_USE_CSFLE)
+   find_program (_PYTHON3_EXE NAMES python3 py python)
+   mark_as_advanced (_PYTHON3_EXE)
+   if (NOT _PYTHON3_EXE)
+      message (SEND_ERROR
+         "MONGOC_TEST_USE_CSFLE is enabled, but we were unable to find a Python 3 interpreter to use mongodl.py. "
+         "Install a Python 3 or set MONGOC_TEST_USE_CSFLE to FALSE"
+      )
+   endif ()
+
+   get_filename_component (csfle_dest "${CMAKE_CURRENT_BINARY_DIR}/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
+   add_custom_command (
+      OUTPUT "${csfle_dest}"
+      COMMAND
+         "${_PYTHON3_EXE}" -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
+            --component csfle
+            --version 5.3.1
+            --edition enterprise
+            --out "${CMAKE_CURRENT_BINARY_DIR}"
+            --only "**/mongo_csfle_v1.*"
+            --strip-path-components 1
+      COMMENT "Downloading csfle"
+      VERBATIM
+   )
+   add_custom_target (get-csfle ALL DEPENDS "${csfle_dest}")
+endif ()
+
 function (mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable (${test} ${ARGN})
-      if (NOT MSVC)
-         # We've tests that test our deprecated api. MSVC 2013 will complain about invalid flag
-         set_source_files_properties (${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
-      else ()
-         target_link_libraries (${test} DbgHelp.dll)
-      endif ()
-      target_include_directories (${test} PRIVATE ${PROJECT_SOURCE_DIR}/tests)
+      target_link_libraries (${test}
+         PRIVATE
+            $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
+            $<$<PLATFORM_ID:Windows>:shlwapi>
+            $<$<BOOL:${use_shared}>:mongoc_shared>
+            $<$<NOT:$<BOOL:${use_shared}>>:mongoc_static>
+            ${LIBRARIES}
+            ${RESOLV_LIBRARIES}
+      )
+      # We have tests that test our deprecated api.
+      target_compile_options (${test}
+         PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
+      )
+      target_include_directories (${test}
+         PRIVATE
+            ${PROJECT_SOURCE_DIR}/tests
+            ${MONGOC_INTERNAL_INCLUDE_DIRS}
+            $<$<BOOL:${use_shared}>:${BSON_INCLUDE_DIRS}>
+            $<$<NOT:$<BOOL:${use_shared}>>:${BSON_STATIC_INCLUDE_DIRS}>
+      )
       target_compile_definitions (${test}
          PUBLIC
             "MONGOC_COMPILATION"
             "BSON_COMPILATION"
             "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
       )
-      if (${use_shared})
-         target_link_libraries (${test} mongoc_shared ${LIBRARIES})
-         target_include_directories (${test} PRIVATE ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
-      else ()
-         target_link_libraries (${test} mongoc_static ${LIBRARIES})
-         target_include_directories (${test} PRIVATE ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
-      endif ()
-      target_link_libraries (${test} ${RESOLV_LIBRARIES})
-      if (WIN32)
-         target_link_libraries (${test} shlwapi)
-      else ()
-         target_link_libraries (${test})
-      endif ()
    endif ()
 endfunction ()
 
@@ -1057,6 +1089,10 @@ endif ()
 mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
+
+if (TARGET get-csfle AND TARGET test-libmongoc)
+   target_compile_definitions (test-libmongoc PRIVATE "TESTING_CSFLE_OVERRIDE_PATH=\"./mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}\"")
+endif ()
 
 if (ENABLE_TESTS)
    # "make test" doesn't compile tests, so we create "make check" which compiles

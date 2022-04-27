@@ -1264,8 +1264,7 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
    BSON_ASSERT (!res);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "");
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
@@ -1887,6 +1886,11 @@ _reset (mongoc_client_pool_t **pool,
    *opts = mongoc_auto_encryption_opts_new ();
    extra = BCON_NEW ("mongocryptdBypassSpawn", BCON_BOOL (true));
    mongoc_auto_encryption_opts_set_extra (*opts, extra);
+   char *env_csflePath = test_framework_getenv ("MONGOC_TEST_CSFLE_PATH");
+   if (env_csflePath) {
+      BSON_APPEND_UTF8 (extra, "csflePath", env_csflePath);
+      bson_free (env_csflePath);
+   }
    mongoc_auto_encryption_opts_set_keyvault_namespace (*opts, "db", "keyvault");
    kms_providers = _make_kms_providers (false /* aws */, true /* local */);
    mongoc_auto_encryption_opts_set_kms_providers (*opts, kms_providers);

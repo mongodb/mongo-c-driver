@@ -78,6 +78,7 @@ set (CMAKE_MODULE_PATH
 
 include (InstallRequiredSystemLibraries)
 include (GNUInstallDirs)
+include (CMakeDependentOption)
 
 include(MongoC-Warnings)
 

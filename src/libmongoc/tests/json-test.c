@@ -1603,6 +1603,12 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       BSON_APPEND_BOOL (&extra, "mongocryptdBypassSpawn", true);
    }
 
+   char *env_csflePath = test_framework_getenv ("MONGOC_TEST_CSFLE_PATH");
+   if (env_csflePath) {
+      BSON_APPEND_UTF8 (&extra, "csflePath", env_csflePath);
+      bson_free (env_csflePath);
+   }
+
    mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, &extra);
    bson_destroy (&extra);
 

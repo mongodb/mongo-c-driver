@@ -86,3 +86,5 @@
 /sessions/unified/snapshot-sessions/"countDocuments operation with snapshot" # (CDRIVER-4355) error: checking expectResult:  { "$numberInt" : "2" }
 /load_balancers/non-lb-connection-establishment/"operations against non-load balanced clusters fail if URI contains loadBalanced=true" # (CDRIVER-4356) error: expected error to contain "Driver attempted to initialize in load balancing mode, but the server does not support this mode", but got: "BSON field 'hello.loadBalanced' is an unknown field."
 
+/client_side_encryption/explain  # Failure with diverging behavior between csfle and mongocryptd
+/client_side_encryption/bypass_spawning_mongocryptd/mongocryptdBypassSpawn  # Fails if csfle is visible

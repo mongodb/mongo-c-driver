@@ -888,6 +888,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
 }
 #else
 
+
 /*--------------------------------------------------------------------------
  *
  * _do_spawn --
@@ -928,6 +929,13 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    int fd;
    char *to_exec;
 
+   // String allocation must be done up-front, as allocation is not fork-safe.
+   if (path) {
+      to_exec = bson_strdup_printf ("%s%s", path, args[0]);
+   } else {
+      to_exec = bson_strdup (args[0]);
+   }
+
    /* Fork. The child will terminate immediately (after fork-exec'ing
     * mongocryptd). This orphans mongocryptd, and allows parent to wait on
     * child. */
@@ -939,6 +947,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                       "failed to fork (errno=%d) '%s'",
                       errno,
                       strerror (errno));
+      bson_free (to_exec);
       return false;
    } else if (pid > 0) {
       int child_status;
@@ -952,9 +961,11 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                          "failed to wait for child (errno=%d) '%s'",
                          errno,
                          strerror (errno));
+         bson_free (to_exec);
          return false;
       }
       /* parent is done at this point, return. */
+      bson_free (to_exec);
       return true;
    }
 
@@ -967,7 +978,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    /* Start a new session for the child, so it is not bound to the current
     * session (e.g. terminal session). */
    if (setsid () < 0) {
-      exit (EXIT_FAILURE);
+      _exit (EXIT_FAILURE);
    }
 
    /* Fork again. Child terminates so mongocryptd gets orphaned and immedately
@@ -975,10 +986,10 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    signal (SIGHUP, SIG_IGN);
    pid = fork ();
    if (pid < 0) {
-      exit (EXIT_FAILURE);
+      _exit (EXIT_FAILURE);
    } else if (pid > 0) {
       /* Child terminates immediately. */
-      exit (EXIT_SUCCESS);
+      _exit (EXIT_SUCCESS);
    }
 
    /* If we later decide to change the working directory for the pid file path,
@@ -992,7 +1003,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    /* Close and reopen stdin. */
    fd = open ("/dev/null", O_RDONLY);
    if (fd < 0) {
-      exit (EXIT_FAILURE);
+      _exit (EXIT_FAILURE);
    }
    dup2 (fd, STDIN_FILENO);
    close (fd);
@@ -1000,29 +1011,24 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    /* Close and reopen stdout. */
    fd = open ("/dev/null", O_WRONLY);
    if (fd < 0) {
-      exit (EXIT_FAILURE);
+      _exit (EXIT_FAILURE);
    }
    if (dup2 (fd, STDOUT_FILENO) < 0 || close (fd) < 0) {
-      exit (EXIT_FAILURE);
+      _exit (EXIT_FAILURE);
    }
 
    /* Close and reopen stderr. */
    fd = open ("/dev/null", O_RDWR);
    if (fd < 0) {
-      exit (EXIT_FAILURE);
+      _exit (EXIT_FAILURE);
    }
    if (dup2 (fd, STDERR_FILENO) < 0 || close (fd) < 0) {
-      exit (EXIT_FAILURE);
+      _exit (EXIT_FAILURE);
    }
 
-   if (path) {
-      to_exec = bson_strdup_printf ("%s%s", path, args[0]);
-   } else {
-      to_exec = bson_strdup (args[0]);
-   }
    if (execvp (to_exec, args) < 0) {
       /* Need to exit. */
-      exit (EXIT_FAILURE);
+      _exit (EXIT_FAILURE);
    }
 
    /* Will never execute. */
@@ -1181,6 +1187,31 @@ _parse_extra (const bson_t *extra,
             GOTO (fail);
          }
       }
+
+      if (bson_iter_init_find (&iter, extra, "csflePath")) {
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                            "Expected a string for 'csflePath'");
+            GOTO (fail);
+         }
+         size_t len;
+         const char *ptr = bson_iter_utf8_unsafe (&iter, &len);
+         bson_free (topology->csfle_override_path);
+         topology->csfle_override_path = bson_strdup (ptr);
+      }
+
+      if (bson_iter_init_find (&iter, extra, "csfleRequired")) {
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                            "Expected a bool for 'csfleRequired'");
+            GOTO (fail);
+         }
+         topology->csfle_required = bson_iter_bool_unsafe (&iter);
+      }
    }
 
 
@@ -1281,8 +1312,14 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       GOTO (fail);
    }
 
-   client->topology->crypt = _mongoc_crypt_new (
-      opts->kms_providers, opts->schema_map, opts->tls_opts, error);
+   client->topology->crypt =
+      _mongoc_crypt_new (opts->kms_providers,
+                         opts->schema_map,
+                         opts->tls_opts,
+                         client->topology->csfle_override_path,
+                         client->topology->csfle_required,
+                         opts->bypass_auto_encryption,
+                         error);
    if (!client->topology->crypt) {
       GOTO (fail);
    }
@@ -1425,8 +1462,13 @@ _mongoc_cse_client_pool_enable_auto_encryption (
       GOTO (fail);
    }
 
-   topology->crypt = _mongoc_crypt_new (
-      opts->kms_providers, opts->schema_map, opts->tls_opts, error);
+   topology->crypt = _mongoc_crypt_new (opts->kms_providers,
+                                        opts->schema_map,
+                                        opts->tls_opts,
+                                        topology->csfle_override_path,
+                                        topology->csfle_required,
+                                        opts->bypass_auto_encryption,
+                                        error);
    if (!topology->crypt) {
       GOTO (fail);
    }
@@ -1514,8 +1556,14 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    mongoc_collection_set_write_concern (client_encryption->keyvault_coll, wc);
 
    client_encryption->kms_providers = bson_copy (opts->kms_providers);
-   client_encryption->crypt = _mongoc_crypt_new (
-      opts->kms_providers, NULL /* schema_map */, opts->tls_opts, error);
+   client_encryption->crypt =
+      _mongoc_crypt_new (opts->kms_providers,
+                         NULL /* schema_map */,
+                         opts->tls_opts,
+                         NULL /* No csfle path */,
+                         false /* csfle not requried */,
+                         true, /* bypassAutoEncryption (We are explicit) */
+                         error);
    if (!client_encryption->crypt) {
       goto fail;
    }
