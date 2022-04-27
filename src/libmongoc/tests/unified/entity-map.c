@@ -486,10 +486,11 @@ _validate_string_or_placeholder (const bson_iter_t *iter, bson_error_t *error)
       return true;
    }
 
-   /* Must be `{'$$placeholder': {}}` otherwise. */
+   /* Otherwise, must be a document with a single '$$placeholder' field. */
    if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
       bson_val_t *const bson_val = bson_val_from_iter (iter);
-      bson_val_t *const expected = bson_val_from_json ("{'$$placeholder': {}}");
+      bson_val_t *const expected =
+         bson_val_from_json ("{'$$placeholder': { '$exists': true }}");
       bool is_match = false;
 
       BSON_ASSERT (bson_val);
