@@ -16,6 +16,8 @@ Synopsis
 
 This function queries the MongoDB server for a list of known databases.
 
+.. include:: includes/retryable-read.txt
+
 Parameters
 ----------
 
@@ -27,7 +29,7 @@ Parameters
 
 .. include:: includes/generic-opts.txt
 
-.. include:: includes/retryable-read.txt
+For a list of all options, see `the MongoDB Manual entry on the listDatabases command <https://www.mongodb.com/docs/manual/reference/command/listDatabases/>`_.
 
 Errors
 ------

@@ -27,6 +27,8 @@ Parameters
 
 .. include:: includes/generic-opts.txt
 
+For a list of all options, see `the MongoDB Manual entry on the listIndexes command <https://www.mongodb.com/docs/manual/reference/command/listIndexes/>`_.
+
 Errors
 ------
 

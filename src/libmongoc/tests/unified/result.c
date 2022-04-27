@@ -368,10 +368,10 @@ result_check (result_t *result,
                              result->value,
                              result->array_of_root_docs,
                              error)) {
-         test_set_error (error,
-                         "expectResult mismatch:\nExpected: %s\nActual: %s\n",
-                         bson_val_to_json (expect_result),
-                         bson_val_to_json (result->value));
+         test_diagnostics_error_info (
+            "expectResult mismatch:\nExpected: %s\nActual: %s\n",
+            bson_val_to_json (expect_result),
+            bson_val_to_json (result->value));
          goto done;
       }
    }
@@ -534,8 +534,10 @@ result_check (result_t *result,
             goto done;
          }
 
-         /* TODO: expectError.expectResult is not used for cursor-bearing
+         /* Note: expectError.expectResult is not used for cursor-bearing
           * operations, so array_of_root_docs should always be false */
+         BSON_ASSERT (!result->array_of_root_docs);
+
          if (!bson_match (error_expect_result,
                           result->value,
                           result->array_of_root_docs,
