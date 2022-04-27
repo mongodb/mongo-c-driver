@@ -677,24 +677,27 @@ _parse_kms_provider_kmip (bson_t *kms_providers,
          }
 
          /* Configure tlsOptions to enable KMIP TLS connections. */
-         BSON_APPEND_DOCUMENT_BEGIN (tls_opts, provider, &child);
-         if (!_append_kms_provider_value_or_getenv (
-                &child,
-                "tlsCAFile",
-                NULL,
-                "MONGOC_TEST_CSFLE_TLS_CA_FILE",
-                error)) {
-            return false;
+         {
+            bson_t tls_child;
+            BSON_APPEND_DOCUMENT_BEGIN (tls_opts, provider, &tls_child);
+            if (!_append_kms_provider_value_or_getenv (
+                   &tls_child,
+                   "tlsCAFile",
+                   NULL,
+                   "MONGOC_TEST_CSFLE_TLS_CA_FILE",
+                   error)) {
+               return false;
+            }
+            if (!_append_kms_provider_value_or_getenv (
+                   &tls_child,
+                   "tlsCertificateKeyFile",
+                   NULL,
+                   "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE",
+                   error)) {
+               return false;
+            }
+            bson_append_document_end (tls_opts, &tls_child);
          }
-         if (!_append_kms_provider_value_or_getenv (
-                &child,
-                "tlsCertificateKeyFile",
-                NULL,
-                "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE",
-                error)) {
-            return false;
-         }
-         bson_append_document_end (tls_opts, &child);
       } else {
          test_set_error (error, "unexpected field '%s'", value);
          return false;
