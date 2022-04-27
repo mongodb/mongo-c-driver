@@ -111,6 +111,7 @@ if [ "$CLIENT_SIDE_ENCRYPTION" = "on" ]; then
    wait_for_kms_server 5698
    echo "Waiting for mock KMS servers to start... done."
    export MONGOC_TEST_CSFLE_PATH="$(find . -wholename '*src/libmongoc/mongo_csfle_v1.*' -and -regex '.*\(.dll\|.dylib\|.so\)' | head -n1)"
+   echo "Setting env csflePath: [$MONGOC_TEST_CSFLE_PATH]"
 fi
 
 if [ "$LOADBALANCED" != "noloadbalanced" ]; then

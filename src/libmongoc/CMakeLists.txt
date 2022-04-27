@@ -886,7 +886,6 @@ if (MONGOC_TEST_USE_CSFLE)
       VERBATIM
    )
    add_custom_target (get-csfle ALL DEPENDS "${csfle_dest}")
-   set_property (TARGET get-csfle PROPERTY CSFLE_PATH "${csfle_dest}")
 endif ()
 
 function (mongoc_add_test test use_shared)
