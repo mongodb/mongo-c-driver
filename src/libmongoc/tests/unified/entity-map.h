@@ -105,6 +105,11 @@ entity_map_get_client (entity_map_t *entity_map,
                        const char *id,
                        bson_error_t *error);
 
+mongoc_client_encryption_t *
+entity_map_get_client_encryption (entity_map_t *entity_map,
+                                  const char *id,
+                                  bson_error_t *error);
+
 mongoc_database_t *
 entity_map_get_database (entity_map_t *entity_map,
                          const char *id,

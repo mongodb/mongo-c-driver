@@ -363,8 +363,9 @@ result_check (result_t *result,
       }
       if (!entity_map_match (em, expect_result, result->value, false, error)) {
          test_set_error (error,
-                         "checking expectResult: %s",
-                         bson_val_to_json (expect_result));
+                         "expectResult mismatch:\nExpected: %s\nActual: %s\n",
+                         bson_val_to_json (expect_result),
+                         bson_val_to_json (result->value));
          goto done;
       }
    }
@@ -529,8 +530,9 @@ result_check (result_t *result,
 
          if (!bson_match (error_expect_result, result->value, true, error)) {
             test_diagnostics_error_info (
-               "checking error.expectResult: %s",
-               bson_val_to_json (error_expect_result));
+               "error.expectResult mismatch:\nExpected: %s\nActual: %s\n",
+               bson_val_to_json (error_expect_result),
+               bson_val_to_json (result->value));
             goto done;
          }
       }
