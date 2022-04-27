@@ -43,9 +43,9 @@ result_new (void)
 
 static void
 _result_init (result_t *result,
-              bson_val_t *value,
-              bson_t *reply,
-              bson_error_t *error)
+              const bson_val_t *value,
+              const bson_t *reply,
+              const bson_error_t *error)
 {
    bson_string_t *str;
 
@@ -125,7 +125,9 @@ rewrite_upserted_ids (bson_t *mongoc_upserted_ids)
 }
 
 void
-result_from_bulk_write (result_t *result, bson_t *reply, bson_error_t *error)
+result_from_bulk_write (result_t *result,
+                        const bson_t *reply,
+                        const bson_error_t *error)
 {
    bson_t *write_result;
    bson_t *upserted_ids = NULL;
@@ -167,7 +169,9 @@ result_from_bulk_write (result_t *result, bson_t *reply, bson_error_t *error)
 }
 
 void
-result_from_insert_one (result_t *result, bson_t *reply, bson_error_t *error)
+result_from_insert_one (result_t *result,
+                        const bson_t *reply,
+                        const bson_error_t *error)
 {
    bson_t *write_result;
    bson_val_t *val;
@@ -186,7 +190,9 @@ result_from_insert_one (result_t *result, bson_t *reply, bson_error_t *error)
 }
 
 void
-result_from_insert_many (result_t *result, bson_t *reply, bson_error_t *error)
+result_from_insert_many (result_t *result,
+                         const bson_t *reply,
+                         const bson_error_t *error)
 {
    bson_t *write_result;
    bson_val_t *val;
@@ -217,8 +223,8 @@ result_from_insert_many (result_t *result, bson_t *reply, bson_error_t *error)
 
 void
 result_from_update_or_replace (result_t *result,
-                               bson_t *reply,
-                               bson_error_t *error)
+                               const bson_t *reply,
+                               const bson_error_t *error)
 {
    bson_t *write_result;
    bson_val_t *val;
@@ -247,7 +253,9 @@ result_from_update_or_replace (result_t *result,
 }
 
 void
-result_from_delete (result_t *result, bson_t *reply, bson_error_t *error)
+result_from_delete (result_t *result,
+                    const bson_t *reply,
+                    const bson_error_t *error)
 {
    bson_t *write_result;
    bson_val_t *val;
@@ -266,7 +274,9 @@ result_from_delete (result_t *result, bson_t *reply, bson_error_t *error)
 }
 
 void
-result_from_distinct (result_t *result, bson_t *reply, bson_error_t *error)
+result_from_distinct (result_t *result,
+                      const bson_t *reply,
+                      const bson_error_t *error)
 {
    bson_val_t *val = NULL;
    bson_iter_t iter;
@@ -311,9 +321,9 @@ result_from_cursor (result_t *result, mongoc_cursor_t *cursor)
 
 void
 result_from_val_and_reply (result_t *result,
-                           bson_val_t *val,
-                           bson_t *reply,
-                           bson_error_t *error)
+                           const bson_val_t *val,
+                           const bson_t *reply,
+                           const bson_error_t *error)
 {
    _result_init (result, val, reply, error);
 }
