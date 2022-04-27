@@ -1212,15 +1212,6 @@ _parse_extra (const bson_t *extra,
          }
          topology->csfle_required = bson_iter_bool_unsafe (&iter);
       }
-
-      /** The __csfleDisabled option is a private API option only used for
-       * testing purposes. */
-      if (bson_iter_init_find (&iter, extra, "__csfleDisabled")) {
-         BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) &&
-                      "__csfleDisabled should be a boolean and should only be "
-                      "used for testing purposes.");
-         topology->csfle_disabled = bson_iter_bool_unsafe (&iter);
-      }
    }
 
 
@@ -1327,7 +1318,6 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
                          opts->tls_opts,
                          client->topology->csfle_override_path,
                          client->topology->csfle_required,
-                         client->topology->csfle_disabled,
                          opts->bypass_auto_encryption,
                          error);
    if (!client->topology->crypt) {
@@ -1477,7 +1467,6 @@ _mongoc_cse_client_pool_enable_auto_encryption (
                                         opts->tls_opts,
                                         topology->csfle_override_path,
                                         topology->csfle_required,
-                                        topology->csfle_disabled,
                                         opts->bypass_auto_encryption,
                                         error);
    if (!topology->crypt) {
@@ -1573,7 +1562,6 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                          opts->tls_opts,
                          NULL /* No csfle path */,
                          false /* csfle not requried */,
-                         false /* csfle not disabled */,
                          true, /* bypassAutoEncryption (We are explicit) */
                          error);
    if (!client_encryption->crypt) {

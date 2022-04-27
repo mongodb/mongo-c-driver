@@ -1264,8 +1264,7 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
    BSON_ASSERT (!res);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "");
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
@@ -2326,17 +2325,16 @@ test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
 
    /* Create a MongoClient with encryption enabled */
    client_encrypted = test_framework_new_default_client ();
-   extra = BCON_NEW ("mongocryptdBypassSpawn",
-                     BCON_BOOL (true),
-                     "mongocryptdSpawnArgs",
-                     "[",
-                     "--pidfilepath=bypass-spawning-mongocryptd.pid",
-                     "--port=27021",
-                     "]",
-                     "mongocryptdURI",
-                     "mongodb://localhost:27021/?serverSelectionTimeoutMS=1000",
-                     "__csfleDisabled",
-                     BCON_BOOL (true));
+   extra =
+      BCON_NEW ("mongocryptdBypassSpawn",
+                BCON_BOOL (true),
+                "mongocryptdSpawnArgs",
+                "[",
+                "--pidfilepath=bypass-spawning-mongocryptd.pid",
+                "--port=27021",
+                "]",
+                "mongocryptdURI",
+                "mongodb://localhost:27021/?serverSelectionTimeoutMS=1000");
    mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra);
    mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts,
                                                schema_map);

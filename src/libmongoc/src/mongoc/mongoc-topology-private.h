@@ -191,9 +191,6 @@ typedef struct _mongoc_topology_t {
    char *csfle_override_path;
    // Corresponds to extraOptions.csfleRequired
    bool csfle_required;
-   // Corresponds to a private extraOptions.__csfleDisabled - For mongocryptd
-   // testing only
-   bool csfle_disabled;
 
    /* For background monitoring. */
    mongoc_set_t *server_monitors;
