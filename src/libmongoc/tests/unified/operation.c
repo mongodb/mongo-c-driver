@@ -587,6 +587,7 @@ operation_bulk_write (test_t *test,
    bool *ordered = NULL;
    bson_t *requests = NULL;
    bson_t *let = NULL;
+   bson_val_t *comment = NULL;
    bson_t *opts = NULL;
    bson_iter_t iter;
    mongoc_bulk_operation_t *bulk_op = NULL;
@@ -597,6 +598,8 @@ operation_bulk_write (test_t *test,
    bson_parser_array (parser, "requests", &requests);
    bson_parser_bool_optional (parser, "ordered", &ordered);
    bson_parser_doc_optional (parser, "let", &let);
+   bson_parser_any_optional (parser, "comment", &comment);
+
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
    }
@@ -612,6 +615,9 @@ operation_bulk_write (test_t *test,
    }
    if (!bson_empty0 (let)) {
       BSON_APPEND_DOCUMENT (opts, "let", let);
+   }
+   if (comment) {
+      BSON_APPEND_VALUE (opts, "comment", bson_val_to_value (comment));
    }
    if (op->session) {
       if (!mongoc_client_session_append (op->session, opts, error)) {
@@ -1347,23 +1353,25 @@ operation_insert_one (test_t *test,
    bson_parser_t *parser = NULL;
    bson_error_t op_error = {0};
    bson_t op_reply = BSON_INITIALIZER;
-   bson_t *opts = bson_new ();
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
+   bson_parser_allow_extra (parser, true);
    bson_parser_doc (parser, "document", &document);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
    }
 
-   coll = entity_map_get_collection (test->entity_map, op->object, error);
-   if (!coll) {
-      goto done;
-   }
-
+   opts = bson_copy (bson_parser_get_extra (parser));
    if (op->session) {
       if (!mongoc_client_session_append (op->session, opts, error)) {
          goto done;
       }
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
    }
 
    bson_destroy (&op_reply);

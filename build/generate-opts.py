@@ -156,11 +156,24 @@ let_option = ('let', {
     'help': 'A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language.'
 })
 
+comment_option_since_4_4 = ('comment', {
+    'type': 'bson_value_t',
+    'convert': '_mongoc_convert_bson_value_t',
+    'help': 'A :symbol:`bson_value_t` specifying the comment to attach to this command. The comment will appear in log messages, profiler output, and currentOp output. Requires MongoDB 4.4 or later.'
+})
+
+comment_option_string_pre_4_4 = ('comment', {
+    'type': 'bson_value_t',
+    'convert': '_mongoc_convert_bson_value_t',
+    'help': 'A :symbol:`bson_value_t` specifying the comment to attach to this command. The comment will appear in log messages, profiler output, and currentOp output. Only string values are supported prior to MongoDB 4.4.'
+})
+
 opts_structs = OrderedDict([
     ('mongoc_crud_opts_t', Shared([
         write_concern_option,
         session_option,
         validate_option,
+        comment_option_since_4_4,
     ])),
 
     ('mongoc_update_opts_t', Shared([
@@ -217,6 +230,7 @@ opts_structs = OrderedDict([
         ordered_option,
         session_option,
         let_option,
+        comment_option_since_4_4,
     ], allow_extra=False, ordered='true')),
 
     ('mongoc_bulk_insert_opts_t', Struct([
@@ -279,6 +293,7 @@ opts_structs = OrderedDict([
         ('startAtOperationTime', {'type': 'timestamp', 'help': 'A ``Timestamp``. The change stream only provides changes that occurred at or after the specified timestamp. Any command run against the server will return an operation time that can be used here. This option is mutually exclusive with ``resumeAfter`` and ``startAfter``.'}),
         ('maxAwaitTimeMS', {'type': 'int64_t', 'convert': '_mongoc_convert_int64_positive', 'help': 'An ``int64`` representing the maximum amount of time a call to :symbol:`mongoc_change_stream_next` will block waiting for data'}),
         ('fullDocument', {'type': 'utf8', 'help': 'A UTF-8 string. Set this option to "updateLookup" to direct the change stream cursor to lookup the most current majority-committed version of the document associated to an update change stream event.'}),
+        comment_option_string_pre_4_4,
     ], fullDocument="default")),
 
     ('mongoc_create_index_opts_t', Struct([
@@ -330,6 +345,7 @@ opts_structs = OrderedDict([
         server_option,
         ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`', 'check_set': True}),
         let_option,
+        comment_option_string_pre_4_4,
     ])),
 
     ('mongoc_find_and_modify_appended_opts_t', Struct([
@@ -337,6 +353,7 @@ opts_structs = OrderedDict([
         session_option,
         hint_option,
         let_option,
+        comment_option_since_4_4,
     ], opts_name='extra'))
 ])
 
