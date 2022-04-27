@@ -634,7 +634,7 @@ _parse_kms_provider_gcp (bson_t *kms_providers,
          }
       } else if (strcmp (key, "endpoint") == 0) {
          if (value) {
-            BSON_APPEND_UTF8 (&child, key, value);
+            BSON_ASSERT (BSON_APPEND_UTF8 (&child, key, value));
          }
       } else {
          test_set_error (error, "unexpected field '%s'", value);
@@ -670,16 +670,17 @@ _parse_kms_provider_kmip (bson_t *kms_providers,
 
       if (strcmp (key, "endpoint") == 0) {
          if (value) {
-            BSON_APPEND_UTF8 (&child, key, value);
+            BSON_ASSERT (BSON_APPEND_UTF8 (&child, key, value));
          } else {
             /* Expect KMIP test server running on port 5698. */
-            BSON_APPEND_UTF8 (&child, key, "localhost:5698");
+            BSON_ASSERT (BSON_APPEND_UTF8 (&child, key, "localhost:5698"));
          }
 
          /* Configure tlsOptions to enable KMIP TLS connections. */
          {
             bson_t tls_child;
-            BSON_APPEND_DOCUMENT_BEGIN (tls_opts, provider, &tls_child);
+            BSON_ASSERT (
+               BSON_APPEND_DOCUMENT_BEGIN (tls_opts, provider, &tls_child));
             if (!_append_kms_provider_value_or_getenv (
                    &tls_child,
                    "tlsCAFile",
@@ -696,7 +697,7 @@ _parse_kms_provider_kmip (bson_t *kms_providers,
                    error)) {
                return false;
             }
-            bson_append_document_end (tls_opts, &tls_child);
+            BSON_ASSERT (bson_append_document_end (tls_opts, &tls_child));
          }
       } else {
          test_set_error (error, "unexpected field '%s'", value);
@@ -732,7 +733,7 @@ _parse_kms_provider_local (bson_t *kms_providers,
 
       if (strcmp (key, "key") == 0) {
          if (value) {
-            BSON_APPEND_UTF8 (&child, key, value);
+            BSON_ASSERT (BSON_APPEND_UTF8 (&child, key, value));
          } else {
             /* LOCAL_MASTERKEY in base64 encoding as defined in Client Side
              * Encryption Tests spec. */
