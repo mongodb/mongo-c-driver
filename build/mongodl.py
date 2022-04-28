@@ -70,8 +70,8 @@ DISTRO_ID_TO_TARGET = {
         '15.*': 'suse15',
     },
     'amzn': {
-        '2018': 'amzn64',
-        '2': 'amzn64',
+        '2018.*': 'amzn64',
+        '2': 'amazon2',
     },
 }
 
