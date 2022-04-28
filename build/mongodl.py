@@ -97,6 +97,9 @@ def _infer_target_os_rel():
         content)
     os_id = mat.group(2)
     if os_id == 'arch':
+        # There are no Archlinux-specific MongoDB downloads, so we'll just use
+        # the build for RHEL8, which is reasonably compatible with other modern
+        # distributions (including Arch).
         return 'rhel80'
     ver_id_re = re.compile(r'VERSION_ID=("?)(.*?)\1')
     mat = ver_id_re.search(content)
@@ -223,6 +226,12 @@ def _import_json_data(db, json_file):
 
 
 def _mkdir(dirpath):
+    """
+    Ensure a directory at ``dirpath``, and all parent directories thereof.
+
+    Cannot using Path.mkdir(parents, exist_ok) on some Python versions that
+    we need to support.
+    """
     if dirpath.is_dir():
         return
     par = dirpath.parent
