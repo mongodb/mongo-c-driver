@@ -32,6 +32,7 @@ DISTRO_ID_MAP = {
     'opensuse-leap': 'sles',
     'opensuse': 'sles',
     'redhat': 'rhel',
+    'rocky': 'rhel',
 }
 
 DISTRO_VERSION_MAP = {
@@ -46,6 +47,7 @@ DISTRO_ID_TO_TARGET = {
         '20.*': 'ubuntu2004',
         '18.*': 'ubuntu1804',
         '16.*': 'ubuntu1604',
+        '14.*': 'ubuntu1404',
     },
     'debian': {
         '9': 'debian92',
@@ -54,8 +56,11 @@ DISTRO_ID_TO_TARGET = {
     },
     'rhel': {
         '6': 'rhel60',
+        '6.*': 'rhel60',
         '7': 'rhel70',
+        '7.*': 'rhel70',
         '8': 'rhel80',
+        '8.*': 'rhel80',
     },
     'sles': {
         '10.*': 'suse10',
@@ -65,8 +70,8 @@ DISTRO_ID_TO_TARGET = {
         '15.*': 'suse15',
     },
     'amzn': {
-        '2018': 'amzn64',
-        '2': 'amzn64',
+        '2018.*': 'amzn64',
+        '2': 'amazon2',
     },
 }
 
@@ -84,12 +89,18 @@ def infer_target():
 
 
 def _infer_target_os_rel():
-    content = Path('/etc/os-release').read_text()
+    with Path('/etc/os-release').open('r', encoding='utf-8') as f:
+        content = f.read()
     id_re = re.compile(r'\bID=("?)(.*)\1')
     mat = id_re.search(content)
     assert mat, 'Unable to detect ID from [/etc/os-release] content:\n{}'.format(
         content)
     os_id = mat.group(2)
+    if os_id == 'arch':
+        # There are no Archlinux-specific MongoDB downloads, so we'll just use
+        # the build for RHEL8, which is reasonably compatible with other modern
+        # distributions (including Arch).
+        return 'rhel80'
     ver_id_re = re.compile(r'VERSION_ID=("?)(.*?)\1')
     mat = ver_id_re.search(content)
     assert mat, 'Unable to detect VERSION_ID from [/etc/os-release] content:\n{}'.format(
@@ -122,11 +133,11 @@ def caches_root():
     if sys.platform == 'win32':
         return Path(os.environ['LocalAppData'])
     if sys.platform == 'darwin':
-        return Path('~/Library/Caches').expanduser()
+        return Path(os.environ['HOME'] + '/Library/Caches')
     xdg_cache = os.getenv('XDG_CACHE_HOME')
     if xdg_cache:
         return Path(xdg_cache)
-    return Path('~/.cache').expanduser()
+    return Path(os.environ['HOME'] + '/.cache')
 
 
 def cache_dir():
@@ -214,9 +225,27 @@ def _import_json_data(db, json_file):
                 )
 
 
+def _mkdir(dirpath):
+    """
+    Ensure a directory at ``dirpath``, and all parent directories thereof.
+
+    Cannot using Path.mkdir(parents, exist_ok) on some Python versions that
+    we need to support.
+    """
+    if dirpath.is_dir():
+        return
+    par = dirpath.parent
+    if par != dirpath:
+        _mkdir(par)
+    try:
+        dirpath.mkdir()
+    except FileExistsError:
+        pass
+
+
 def get_dl_db():
     caches = cache_dir()
-    caches.mkdir(exist_ok=True, parents=True)
+    _mkdir(caches)
     db = sqlite3.connect(str(caches / 'downloads.db'), isolation_level=None)
     db.executescript(r'''
         CREATE TABLE IF NOT EXISTS meta (
@@ -271,7 +300,7 @@ def _print_list(db, version, target, arch, edition, component):
                   ' Edition: {}\n\n'
                   '    Info: {}\n\n'.format(comp_key, version, target, arch,
                                             edition, comp_data))
-        print(f'(Omit filter arguments for a list of available filters)')
+        print('(Omit filter arguments for a list of available filters)')
         return
 
     arches, targets, editions, versions, components = next(
@@ -344,7 +373,7 @@ def _download_file(db, url):
         return DLRes(False, dest)
     else:
         print('Downloading [{}] ...'.format(url))
-        dest.parent.mkdir(exist_ok=True, parents=True)
+        _mkdir(dest.parent)
         got_etag = resp.getheader("ETag")
         got_modtime = resp.getheader('Last-Modified')
         with dest.open('wb') as of:
@@ -551,10 +580,10 @@ def _maybe_extract_member(out, relpath, pattern, strip, is_dir, opener,
         # We are running in test-only mode: Do not do anything
         return 1
     if is_dir:
-        dest.mkdir(exist_ok=True, parents=True)
+        _mkdir(dest)
         return 1
     with opener() as infile:
-        dest.parent.mkdir(exist_ok=True, parents=True)
+        _mkdir(dest.parent)
         with dest.open('wb') as outfile:
             shutil.copyfileobj(infile, outfile)
         os.chmod(str(dest), modebits)
