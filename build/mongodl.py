@@ -32,6 +32,7 @@ DISTRO_ID_MAP = {
     'opensuse-leap': 'sles',
     'opensuse': 'sles',
     'redhat': 'rhel',
+    'rocky': 'rhel',
 }
 
 DISTRO_VERSION_MAP = {
@@ -54,8 +55,11 @@ DISTRO_ID_TO_TARGET = {
     },
     'rhel': {
         '6': 'rhel60',
+        '6.*': 'rhel60',
         '7': 'rhel70',
+        '7.*': 'rhel70',
         '8': 'rhel80',
+        '8.*': 'rhel80',
     },
     'sles': {
         '10.*': 'suse10',
@@ -271,7 +275,7 @@ def _print_list(db, version, target, arch, edition, component):
                   ' Edition: {}\n\n'
                   '    Info: {}\n\n'.format(comp_key, version, target, arch,
                                             edition, comp_data))
-        print(f'(Omit filter arguments for a list of available filters)')
+        print('(Omit filter arguments for a list of available filters)')
         return
 
     arches, targets, editions, versions, components = next(
