@@ -199,6 +199,11 @@ if [ "darwin" = "$OS" -a "arm64" = "$MARCH" ]; then
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
+if ! python3 build/mongodl.py --test -C csfle -V 5.3.1 -o . > /dev/null; then
+   echo "No csfle detected for this platform. Disabling MONGOC_TEST_USE_CSFLE."
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CSFLE=OFF"
+fi
+
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS $EXTRA_CONFIGURE_FLAGS"
 export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_SKIP_LIVE=on
