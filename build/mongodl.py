@@ -47,6 +47,7 @@ DISTRO_ID_TO_TARGET = {
         '20.*': 'ubuntu2004',
         '18.*': 'ubuntu1804',
         '16.*': 'ubuntu1604',
+        '14.*': 'ubuntu1404',
     },
     'debian': {
         '9': 'debian92',
@@ -88,7 +89,8 @@ def infer_target():
 
 
 def _infer_target_os_rel():
-    content = Path('/etc/os-release').read_text()
+    with Path('/etc/os-release').open('r', encoding='utf-8') as f:
+        content = f.read()
     id_re = re.compile(r'\bID=("?)(.*)\1')
     mat = id_re.search(content)
     assert mat, 'Unable to detect ID from [/etc/os-release] content:\n{}'.format(
