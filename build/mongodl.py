@@ -223,6 +223,8 @@ def _import_json_data(db, json_file):
 
 
 def _mkdir(dirpath):
+    if dirpath.is_dir():
+        return
     par = dirpath.parent
     if par != dirpath:
         _mkdir(par)
