@@ -94,6 +94,8 @@ def _infer_target_os_rel():
     assert mat, 'Unable to detect ID from [/etc/os-release] content:\n{}'.format(
         content)
     os_id = mat.group(2)
+    if os_id == 'arch':
+        return 'rhel80'
     ver_id_re = re.compile(r'VERSION_ID=("?)(.*?)\1')
     mat = ver_id_re.search(content)
     assert mat, 'Unable to detect VERSION_ID from [/etc/os-release] content:\n{}'.format(
