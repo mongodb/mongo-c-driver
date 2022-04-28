@@ -126,11 +126,11 @@ def caches_root():
     if sys.platform == 'win32':
         return Path(os.environ['LocalAppData'])
     if sys.platform == 'darwin':
-        return Path('~/Library/Caches').expanduser()
+        return Path(os.environ['HOME'] + '/Library/Caches')
     xdg_cache = os.getenv('XDG_CACHE_HOME')
     if xdg_cache:
         return Path(xdg_cache)
-    return Path('~/.cache').expanduser()
+    return Path(os.environ['HOME'] + '/.cache')
 
 
 def cache_dir():
@@ -218,9 +218,19 @@ def _import_json_data(db, json_file):
                 )
 
 
+def _mkdir(dirpath):
+    par = dirpath.parent
+    if par != dirpath:
+        _mkdir(par)
+    try:
+        dirpath.mkdir()
+    except FileExistsError:
+        pass
+
+
 def get_dl_db():
     caches = cache_dir()
-    caches.mkdir(exist_ok=True, parents=True)
+    _mkdir(caches)
     db = sqlite3.connect(str(caches / 'downloads.db'), isolation_level=None)
     db.executescript(r'''
         CREATE TABLE IF NOT EXISTS meta (
@@ -348,7 +358,7 @@ def _download_file(db, url):
         return DLRes(False, dest)
     else:
         print('Downloading [{}] ...'.format(url))
-        dest.parent.mkdir(exist_ok=True, parents=True)
+        _mkdir(dest.parent)
         got_etag = resp.getheader("ETag")
         got_modtime = resp.getheader('Last-Modified')
         with dest.open('wb') as of:
@@ -555,10 +565,10 @@ def _maybe_extract_member(out, relpath, pattern, strip, is_dir, opener,
         # We are running in test-only mode: Do not do anything
         return 1
     if is_dir:
-        dest.mkdir(exist_ok=True, parents=True)
+        _mkdir(dest)
         return 1
     with opener() as infile:
-        dest.parent.mkdir(exist_ok=True, parents=True)
+        _mkdir(dest.parent)
         with dest.open('wb') as outfile:
             shutil.copyfileobj(infile, outfile)
         os.chmod(str(dest), modebits)
