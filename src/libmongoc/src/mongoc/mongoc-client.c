@@ -2360,6 +2360,7 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
                                     &server_stream->sd->host,
                                     server_stream->sd->id,
                                     &server_stream->sd->service_id,
+                                    server_stream->sd->server_connection_id,
                                     NULL,
                                     client->apm_context);
 
@@ -2408,6 +2409,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (
                                       &server_stream->sd->host,
                                       server_stream->sd->id,
                                       &server_stream->sd->service_id,
+                                      server_stream->sd->server_connection_id,
                                       false,
                                       client->apm_context);
 
@@ -2452,6 +2454,7 @@ _mongoc_client_monitor_op_killcursors_failed (
                                    &server_stream->sd->host,
                                    server_stream->sd->id,
                                    &server_stream->sd->service_id,
+                                   server_stream->sd->server_connection_id,
                                    false,
                                    client->apm_context);
 

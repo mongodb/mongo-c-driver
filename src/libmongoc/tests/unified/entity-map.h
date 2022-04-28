@@ -30,6 +30,7 @@ typedef struct _event_t {
    bson_t *command;
    bson_t *reply;
    bson_oid_t service_id;
+   int32_t server_connection_id;
    struct _event_t *next;
 } event_t;
 
@@ -103,6 +104,11 @@ mongoc_client_t *
 entity_map_get_client (entity_map_t *entity_map,
                        const char *id,
                        bson_error_t *error);
+
+mongoc_client_encryption_t *
+entity_map_get_client_encryption (entity_map_t *entity_map,
+                                  const char *id,
+                                  bson_error_t *error);
 
 mongoc_database_t *
 entity_map_get_database (entity_map_t *entity_map,

@@ -60,6 +60,20 @@ is_special_match (const bson_t *bson)
    return true;
 }
 
+/* implements $$placeholder */
+static bool
+special_placeholder (bson_matcher_t *matcher,
+                     const bson_t *assertion,
+                     const bson_val_t *actual,
+                     void *ctx,
+                     const char *path,
+                     bson_error_t *error)
+{
+   /* Nothing to do (not an operator, just a reserved key value). The meaning
+    * and corresponding behavior of $$placeholder depends on context. */
+   return true;
+}
+
 /* implements $$exists */
 static bool
 special_exists (bson_matcher_t *matcher,
@@ -300,6 +314,8 @@ bson_matcher_new ()
 {
    bson_matcher_t *matcher = bson_malloc0 (sizeof (bson_matcher_t));
    /* Add default special functions. */
+   bson_matcher_add_special (
+      matcher, "$$placeholder", special_placeholder, NULL);
    bson_matcher_add_special (matcher, "$$exists", special_exists, NULL);
    bson_matcher_add_special (matcher, "$$type", special_type, NULL);
    bson_matcher_add_special (
