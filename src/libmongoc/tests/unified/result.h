@@ -78,6 +78,9 @@ result_to_string (result_t *result);
 bson_val_t *
 result_get_val (result_t *result);
 
+bson_t *
+rewrite_bulk_write_result (const bson_t *bulk_write_result);
+
 bool
 result_check (result_t *result,
               entity_map_t *em,

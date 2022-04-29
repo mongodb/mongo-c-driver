@@ -124,48 +124,54 @@ rewrite_upserted_ids (bson_t *mongoc_upserted_ids)
    return upserted_ids;
 }
 
+bson_t *
+rewrite_bulk_write_result (const bson_t *bulk_write_result)
+{
+   bson_t *const res = bson_new ();
+   if (!bson_empty0 (bulk_write_result)) {
+      BCON_APPEND (
+         res,
+         "insertedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nInserted")),
+         "deletedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nRemoved")),
+         "matchedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nMatched")),
+         "modifiedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nModified")),
+         "upsertedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nUpserted")));
+
+      if (bson_has_field (bulk_write_result, "upserted")) {
+         bson_t *const upserted_ids =
+            bson_lookup_bson (bulk_write_result, "upserted");
+         bson_t *const rewritten_upserted_ids =
+            rewrite_upserted_ids (upserted_ids);
+         BSON_APPEND_DOCUMENT (res, "upsertedIds", rewritten_upserted_ids);
+         bson_destroy (upserted_ids);
+         bson_destroy (rewritten_upserted_ids);
+      } else {
+         /* upsertedIds is a required field in BulkWriteResult, so append an
+          * empty document even if no documents were upserted. */
+         bson_t empty = BSON_INITIALIZER;
+         BSON_APPEND_DOCUMENT (res, "upsertedIds", &empty);
+      }
+   }
+   return res;
+}
+
 void
 result_from_bulk_write (result_t *result,
                         const bson_t *reply,
                         const bson_error_t *error)
 {
-   bson_t *write_result;
-   bson_t *upserted_ids = NULL;
-   bson_t *rewritten_upserted_ids = NULL;
-   bson_val_t *val;
+   bson_t *const write_result = rewrite_bulk_write_result (reply);
+   bson_val_t *const val = bson_val_from_bson (write_result);
 
-   write_result = bson_new ();
-   if (!bson_empty (reply)) {
-      BCON_APPEND (write_result,
-                   "insertedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nInserted")),
-                   "deletedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nRemoved")),
-                   "matchedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nMatched")),
-                   "modifiedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nModified")),
-                   "upsertedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nUpserted")));
-
-      if (bson_has_field (reply, "upserted")) {
-         upserted_ids = bson_lookup_bson (reply, "upserted");
-         rewritten_upserted_ids = rewrite_upserted_ids (upserted_ids);
-         BSON_APPEND_DOCUMENT (
-            write_result, "upsertedIds", rewritten_upserted_ids);
-      } else {
-         /* upsertedIds is a required field in BulkWriteResult, so append an
-          * empty document even if no documents were upserted. */
-         upserted_ids = bson_new ();
-         BSON_APPEND_DOCUMENT (write_result, "upsertedIds", upserted_ids);
-      }
-   }
-   val = bson_val_from_bson (write_result);
    _result_init (result, val, reply, error);
+
    bson_val_destroy (val);
    bson_destroy (write_result);
-   bson_destroy (upserted_ids);
-   bson_destroy (rewritten_upserted_ids);
 }
 
 void
