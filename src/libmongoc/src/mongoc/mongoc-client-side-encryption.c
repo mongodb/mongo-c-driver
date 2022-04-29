@@ -427,6 +427,47 @@ mongoc_client_encryption_encrypt_opts_set_algorithm (
    opts->algorithm = bson_strdup (algorithm);
 }
 
+/*--------------------------------------------------------------------------
+ * RewrapManyDataKeyResult.
+ *--------------------------------------------------------------------------
+ */
+struct _mongoc_client_encryption_rewrap_many_datakey_result_t {
+   bson_t bulk_write_result;
+};
+
+mongoc_client_encryption_rewrap_many_datakey_result_t *
+mongoc_client_encryption_rewrap_many_datakey_result_new (void)
+{
+   mongoc_client_encryption_rewrap_many_datakey_result_t *const res =
+      bson_malloc0 (
+         sizeof (mongoc_client_encryption_rewrap_many_datakey_result_t));
+
+   bson_init (&res->bulk_write_result);
+
+   return res;
+}
+
+void
+mongoc_client_encryption_rewrap_many_datakey_result_destroy (
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result)
+{
+   if (result) {
+      bson_destroy (&result->bulk_write_result);
+      bson_free (result);
+   }
+}
+
+const bson_t *
+mongoc_client_encryption_rewrap_many_datakey_result_get_bulk_write_result (
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result)
+{
+   if (!result) {
+      return NULL;
+   }
+
+   return &result->bulk_write_result;
+}
+
 #ifndef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
 static bool
@@ -508,6 +549,22 @@ mongoc_client_encryption_create_datakey (
 {
    return mongoc_client_encryption_create_key (
       client_encryption, kms_provider, opts, keyid, error);
+}
+
+
+bool
+mongoc_client_encryption_rewrap_many_datakey (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *filter,
+   const char *kms_provider,
+   mongoc_client_encryption_datakey_opts_t *opts,
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result,
+   bson_error_t *error)
+{
+   if (result) {
+      bson_reinit (&result->bulk_write_result);
+   }
+   return _disabled_error (error);
 }
 
 
@@ -1717,6 +1774,171 @@ mongoc_client_encryption_create_datakey (
 {
    return mongoc_client_encryption_create_key (
       client_encryption, kms_provider, opts, keyid, error);
+}
+
+bool
+mongoc_client_encryption_rewrap_many_datakey (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *filter,
+   const char *provider,
+   const bson_t *master_key,
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result,
+   bson_error_t *error)
+{
+   bson_t keys = BSON_INITIALIZER;
+   bson_t local_result = BSON_INITIALIZER;
+   bson_t *const bulk_write_result =
+      result ? &result->bulk_write_result : &local_result;
+   bool ret = false;
+
+   ENTRY;
+
+   bson_reinit (bulk_write_result);
+
+   if (!_mongoc_crypt_rewrap_many_datakey (client_encryption->crypt,
+                                           client_encryption->keyvault_coll,
+                                           filter,
+                                           provider,
+                                           master_key,
+                                           &keys,
+                                           error)) {
+      GOTO (fail);
+   }
+
+   /* No keys rewrapped, no key documents to update. */
+   if (bson_empty (&keys)) {
+      bson_destroy (&keys);
+      bson_destroy (&local_result);
+      return true;
+   }
+
+   {
+      /* Bulk update must use ordered=true. */
+      bson_t *const opts = BCON_NEW ("ordered", BCON_BOOL (true));
+
+      mongoc_bulk_operation_t *const bulk =
+         mongoc_collection_create_bulk_operation_with_opts (
+            client_encryption->keyvault_coll, opts);
+
+      bson_iter_t iter;
+
+      if (!bulk) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "failed to create bulk operation");
+         GOTO (fail);
+      }
+
+      if (!bson_iter_init_find (&iter, &keys, "v")) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "result did not contain expected field 'v'");
+         GOTO (fail);
+      }
+
+      if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "result did not return an array as expected");
+         GOTO (fail);
+      }
+
+      BSON_ASSERT (bson_iter_recurse (&iter, &iter));
+
+      while (bson_iter_next (&iter)) {
+         const uint8_t *data = NULL;
+         uint32_t len = 0u;
+         bson_t key;
+         bson_iter_t key_iter;
+         bson_subtype_t subtype;
+         bson_t selector = BSON_INITIALIZER;
+         bson_t document = BSON_INITIALIZER;
+
+         bson_iter_document (&iter, &len, &data);
+
+         if (!data || !bson_init_static (&key, data, len)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "element is not a valid BSON document");
+            GOTO (fail);
+         }
+
+         /* Find _id and use as selector. */
+         {
+            if (!bson_iter_init_find (&key_iter, &key, "_id")) {
+               bson_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                               "could not find _id in key document");
+               GOTO (fail);
+            }
+
+            bson_iter_binary (&key_iter, &subtype, &len, &data);
+
+            if (!data || subtype != BSON_SUBTYPE_UUID) {
+               bson_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                               "expected _id in key document to be a UUID");
+               GOTO (fail);
+            }
+
+            BSON_ASSERT (bson_append_iter (&selector, "_id", 3, &key_iter));
+         }
+
+         /* Find and include potentially updated fields. */
+         {
+            bson_t child;
+
+            BSON_ASSERT (
+               BSON_APPEND_DOCUMENT_BEGIN (&document, "$set", &child));
+            {
+               if (bson_iter_init_find (&key_iter, &key, "masterKey")) {
+                  BSON_ASSERT (
+                     bson_append_iter (&child, "masterKey", -1, &key_iter));
+               }
+
+               if (bson_iter_init_find (&key_iter, &key, "keyMaterial")) {
+                  BSON_ASSERT (
+                     bson_append_iter (&child, "keyMaterial", -1, &key_iter));
+               }
+            }
+            BSON_ASSERT (bson_append_document_end (&document, &child));
+         }
+
+         /* Update updateDate field. */
+         BCON_APPEND (&document,
+                      "$currentDate",
+                      "{",
+                      "updateDate",
+                      BCON_BOOL (true),
+                      "}");
+
+         if (!mongoc_bulk_operation_update_one_with_opts (
+                bulk, &selector, &document, NULL, error)) {
+            GOTO (fail);
+         }
+
+         bson_destroy (&key);
+         bson_destroy (&selector);
+      }
+
+      if (!mongoc_bulk_operation_execute (bulk, bulk_write_result, error)) {
+         GOTO (fail);
+      }
+   }
+
+   ret = true;
+
+fail:
+   bson_destroy (&keys);
+   bson_destroy (&local_result);
+
+   RETURN (ret);
 }
 
 bool
