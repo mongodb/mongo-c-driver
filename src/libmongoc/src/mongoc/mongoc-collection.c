@@ -3228,7 +3228,10 @@ mongoc_collection_create_bulk_operation_with_opts (
                                       write_flags,
                                       wc);
 
-   mongoc_bulk_operation_set_let (bulk, &bulk_opts.let);
+   if (!bson_empty (&bulk_opts.let)) {
+      mongoc_bulk_operation_set_let (bulk, &bulk_opts.let);
+   }
+
    bulk->session = bulk_opts.client_session;
    if (err.domain) {
       /* _mongoc_bulk_opts_parse failed, above */
