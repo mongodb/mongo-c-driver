@@ -1110,7 +1110,7 @@ test_check_event (test_t *test,
       actual_val = bson_val_from_bson (actual->command);
 
       if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, true, error)) {
+             test->entity_map, expected_val, actual_val, false, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;
@@ -1141,7 +1141,7 @@ test_check_event (test_t *test,
       bson_val_t *expected_val = bson_val_from_bson (expected_reply);
       bson_val_t *actual_val = bson_val_from_bson (actual->reply);
       if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, true, error)) {
+             test->entity_map, expected_val, actual_val, false, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;

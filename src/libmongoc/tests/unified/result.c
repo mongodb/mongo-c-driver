@@ -33,6 +33,7 @@ struct _result_t {
       For a read operation, reply is an optional server reply. */
    bson_t *reply;
    char *str;
+   bool array_of_root_docs;
 };
 
 result_t *
@@ -305,6 +306,7 @@ result_from_cursor (result_t *result, mongoc_cursor_t *cursor)
    val = bson_val_from_array (documents);
 
    _result_init (result, val, (bson_t *) reply, &error);
+   result->array_of_root_docs = true;
    bson_destroy (documents);
    bson_val_destroy (val);
 }
@@ -361,7 +363,11 @@ result_check (result_t *result,
             error, "expected result, but got error: %s", result->error.message);
          goto done;
       }
-      if (!entity_map_match (em, expect_result, result->value, false, error)) {
+      if (!entity_map_match (em,
+                             expect_result,
+                             result->value,
+                             result->array_of_root_docs,
+                             error)) {
          test_set_error (error,
                          "expectResult mismatch:\nExpected: %s\nActual: %s\n",
                          bson_val_to_json (expect_result),
@@ -528,7 +534,12 @@ result_check (result_t *result,
             goto done;
          }
 
-         if (!bson_match (error_expect_result, result->value, true, error)) {
+         /* TODO: expectError.expectResult is not used for cursor-bearing
+          * operations, so array_of_root_docs should always be false */
+         if (!bson_match (error_expect_result,
+                          result->value,
+                          result->array_of_root_docs,
+                          error)) {
             test_diagnostics_error_info (
                "error.expectResult mismatch:\nExpected: %s\nActual: %s\n",
                bson_val_to_json (error_expect_result),

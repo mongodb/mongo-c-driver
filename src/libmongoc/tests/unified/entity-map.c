@@ -1819,7 +1819,7 @@ bool
 entity_map_match (entity_map_t *em,
                   const bson_val_t *expected,
                   const bson_val_t *actual,
-                  bool allow_extra,
+                  bool array_of_root_docs,
                   bson_error_t *error)
 {
    bson_matcher_t *matcher;
@@ -1830,7 +1830,8 @@ entity_map_match (entity_map_t *em,
       matcher, "$$sessionLsid", special_session_lsid, em);
    bson_matcher_add_special (
       matcher, "$$matchesEntity", special_matches_entity, em);
-   ret = bson_matcher_match (matcher, expected, actual, "", allow_extra, error);
+   ret = bson_matcher_match (
+      matcher, expected, actual, "", array_of_root_docs, error);
    bson_matcher_destroy (matcher);
    return ret;
 }
