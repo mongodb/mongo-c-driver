@@ -17,13 +17,9 @@
 #ifndef KMS_MESSAGE_KMS_REQUEST_STR_H
 #define KMS_MESSAGE_KMS_REQUEST_STR_H
 
+#include "bson-compat.h"
 #include "kms_message/kms_message.h"
 #include "kms_crypto.h"
-
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
 
 typedef struct {
    char *str;

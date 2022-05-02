@@ -17,11 +17,10 @@
 #ifndef KMS_REQUEST_OPT_PRIVATE_H
 #define KMS_REQUEST_OPT_PRIVATE_H
 
+#include "bson-compat.h"
 #include "kms_message/kms_message_defines.h"
 #include "kms_message/kms_request_opt.h"
 #include "kms_crypto.h"
-
-#include <stdbool.h>
 
 struct _kms_request_opt_t {
    bool connection_close;

@@ -17,10 +17,8 @@
 #ifndef KMS_REQUEST_OPT_H
 #define KMS_REQUEST_OPT_H
 
+#include "bson-compat.h"
 #include "kms_message_defines.h"
-
-#include <stdbool.h>
-#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {

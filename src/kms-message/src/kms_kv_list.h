@@ -17,12 +17,9 @@
 #ifndef KMS_KV_LIST_H
 #define KMS_KV_LIST_H
 
+#include "bson-compat.h"
 #include "kms_message/kms_message.h"
 #include "kms_request_str.h"
-
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
 
 /* key-value pair */
 typedef struct {

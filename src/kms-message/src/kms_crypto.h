@@ -17,8 +17,7 @@
 #ifndef KMS_MESSAGE_KMS_CRYPTO_H
 #define KMS_MESSAGE_KMS_CRYPTO_H
 
-#include <stdbool.h>
-#include <stdlib.h>
+#include "bson-compat.h"
 
 typedef struct {
    bool (*sha256) (void *ctx,

@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
+#include "bson-compat.h"
 #include "hexlify.h"
 #include "kms_crypto.h"
 #include "kms_message/kms_message.h"
 #include "kms_message_private.h"
 #include "kms_request_str.h"
 #include "kms_port.h"
-
-#include <stdio.h>
-#include <ctype.h>
-#include <stdbool.h>
-#include <stdlib.h>
 
 bool rfc_3986_tab[256] = {0};
 bool kms_initialized = false;

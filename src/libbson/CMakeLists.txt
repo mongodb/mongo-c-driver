@@ -98,6 +98,9 @@ else ()
 endif ()
 
 CHECK_INCLUDE_FILE (stdbool.h BSON_HAVE_STDBOOL_H)
+if (NOT BSON_HAVE_STDBOOL_H)
+   set (BSON_HAVE_STDBOOL_H 0)
+endif ()
 
 if (MSVC)
    set (BSON_HAVE_CLOCK_GETTIME 0)

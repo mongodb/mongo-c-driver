@@ -21,12 +21,8 @@
 #define BSON_CMP_H
 
 
-#include "bson-compat.h" /* ssize_t */
+#include "bson-compat.h" /* limits, ssize_t, stdbool, stdint */
 #include "bson-macros.h" /* BSON_CONCAT */
-
-#include <limits.h>
-#include <stdbool.h>
-#include <stdint.h>
 
 
 BSON_BEGIN_DECLS
