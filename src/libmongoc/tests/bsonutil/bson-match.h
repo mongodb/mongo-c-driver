@@ -24,7 +24,7 @@
 bool
 bson_match (const bson_val_t *expected,
             const bson_val_t *actual,
-            bool allow_extra,
+            bool array_of_root_docs,
             bson_error_t *error);
 
 /* A bson_matcher_t may be used to extend the default matching behavior. */
@@ -58,7 +58,7 @@ bson_matcher_match (bson_matcher_t *matcher,
                     const bson_val_t *expected,
                     const bson_val_t *actual,
                     const char *path,
-                    bool allow_extra,
+                    bool array_of_root_docs,
                     bson_error_t *error);
 
 void
