@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+
+# Execute the given argument list as a command. If exits zero, prints "true",
+# otherwise "false". This script itself will always exit zero
+
+"$@" 1>/dev/null
+
+if test $? = 0; then
+    printf "true"
+else
+    printf "false"
+fi

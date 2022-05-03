@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+
+# Run a boolean test
+# Usage:
+#   __test is-file <filepath>
+#   __test is-dir <dirpath>
+#   __test exists <filepath>
+#   __test have-command <command-name>
+
+set -eu
+
+command="$(echo "$1" | sed s/-/_/g)"
+shift
+
+is_file() {
+    test -f "$1"
+}
+
+is_dir() {
+    test -d "$1"
+}
+
+exists() {
+    test -e "$1"
+}
+
+have_command() {
+    if type "$1" 2>&1 >/dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+"$command" "$@"
+exit $?

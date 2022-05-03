@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+
+# Install the named packages using the platform's package manager.
+# Usage: __install [pkgs...]
+
+set -eu
+
+if __is_debian_based; then
+    apt-get -y update
+    env DEBIAN_FRONTEND=noninteractive \
+        apt-get -y install -- "$@"
+elif __is_redhat_based || __is_amazonlinux; then
+    if test -f /usr/bin/dnf; then
+        dnf install -y -- "$@"
+    elif test -f /usr/bin/yum; then
+        yum install -y -- "$@"
+        # 'yum' happily ignores missing packages. Use 'rpm -q' to check that
+        # everything we requested actually got installed.
+        if ! rpm -q -- "$@"; then
+            echo "__install: Failing because one or more packages requested are not available"
+            exit 1
+        fi
+    else
+        echo "No package managed here?" 1>&2
+        exit 1
+    fi
+elif __is_suse; then
+    zypper --non-interactive install "$@"
+elif __is_archlinux; then
+    pacman -Sy --noconfirm -- "$@"
+elif __is_alpine; then
+    apk add -- "$@"
+else
+    echo "We don't know how to manage packages on here" 1>&2
+    exit 1
+fi

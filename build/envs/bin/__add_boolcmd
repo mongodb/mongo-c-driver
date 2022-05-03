@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+# Generate an executable file that points to a boolean command
+# Usage: __add_boolcmd <cmd-name> {true,false}
+if __test have-command which; then
+    b=$(which "$2")
+else
+    b=$(type -P "$2")
+fi
+ln -f -s "$b" "/usr/local/bin/$1"

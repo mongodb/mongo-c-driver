@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+# Write the given string to the named file
+# Usage: __write <filepath> <content>
+
+set -eu
+
+pardir="$(dirname "$1")"
+mkdir -p "$pardir"
+
+printf "%s" "$2" > "$1"
