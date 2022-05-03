@@ -21430,6 +21430,17 @@ tasks:
       AUTH: noauth
       LOADBALANCED: loadbalanced
       SSL: nossl
+- name: earthly-build-default
+  display_name:
+  tags:
+    - earthly-build
+  exec_timeout_secs: 3600
+  commands:
+    - command: shell.exec
+      params:
+        working_dir: mongoc
+        add_expansions_to_env: true
+        script: bash ./build/earthly.sh +build
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'
@@ -22155,3 +22166,48 @@ buildvariants:
   run_on: macos-1100-arm64
   tasks:
   - debug-compile-sasl-darwinssl
+
+- name: ubu22-earthly
+  display_name: Ubuntu 22.04
+  expansions:
+    EARTHLY_BUILD_ARGS: env=u22
+  run_on: &docker-distros
+    - ubuntu2004
+    - ubuntu1804
+    - ubuntu1804-medium
+    - debian10
+    - debian11
+    - archlinux
+    - amazon2
+  tasks:
+    - .earthly-build
+
+- name: u20-earthly
+  display_name: Ubuntu 20.04
+  expansions:
+    EARTHLY_BUILD_ARGS: env=u20
+  run_on: *docker-distros
+  tasks:
+    - .earthly-build
+
+- name: rl8-earthly
+  display_name: Rocky Linux 8
+  expansions:
+    EARTHLY_BUILD_ARGS: env=rl8,snappy=OFF,zstd=OFF
+  run_on: *docker-distros
+  tasks:
+    - .earthly-build
+
+- name: c7-earthly
+  display_name: CentOS 7
+  expansions:
+    EARTHLY_BUILD_ARGS: env=c7,zstd=OFF,snappy=OFF
+  run_on: *docker-distros
+  tasks: [.earthly-build]
+
+- name: suse-earthly
+  display_name: OpenSUSE
+  expansions:
+    EARTHLY_BUILD_ARGS: env=suse,snappy=OFF,zstd=OFF
+  run_on: *docker-distros
+  tasks: [.earthly-build]

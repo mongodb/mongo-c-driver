@@ -13,8 +13,7 @@ case "$arch" in
     x86_64)
         arch=amd64
         ;;
-    aarch64)
-    arm64)
+    aarch64|arm64)
         arch=arm64
         ;;
     *)
