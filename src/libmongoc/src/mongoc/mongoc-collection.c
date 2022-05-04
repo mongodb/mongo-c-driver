@@ -39,6 +39,7 @@
 #include "mongoc-opts-private.h"
 #include "mongoc-write-command-private.h"
 #include "mongoc-error-private.h"
+#include "mongoc-database-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -1094,10 +1095,10 @@ mongoc_collection_drop (mongoc_collection_t *collection, /* IN */
 }
 
 
-bool
-mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
-                                  const bson_t *opts,
-                                  bson_error_t *error)
+static bool
+drop_with_opts (mongoc_collection_t *collection,
+                const bson_t *opts,
+                bson_error_t *error)
 {
    bool ret;
    bson_t cmd;
@@ -1123,6 +1124,132 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
    bson_destroy (&cmd);
 
    return ret;
+}
+
+static bool
+drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
+                                     const bson_t *opts,
+                                     const bson_t *encryptedFields,
+                                     bson_error_t *error)
+{
+   char *escName = NULL;
+   char *eccName = NULL;
+   char *ecocName = NULL;
+   mongoc_collection_t *escCollection = NULL;
+   mongoc_collection_t *eccCollection = NULL;
+   mongoc_collection_t *ecocCollection = NULL;
+   bool ok = false;
+   const char *name = mongoc_collection_get_name (collection);
+
+   /* Drop data collection. */
+   if (!drop_with_opts (collection, opts, error)) {
+      goto fail;
+   }
+
+   /* Drop ESC collection. */
+   escName = _mongoc_get_encryptedField_state_collection (
+      encryptedFields, name, "esc", error);
+   if (!escName) {
+      goto fail;
+   }
+
+   escCollection = mongoc_client_get_collection (
+      collection->client, collection->db, escName);
+   if (!drop_with_opts (escCollection, NULL /* opts */, error)) {
+      goto fail;
+   }
+
+   /* Drop ECC collection. */
+   eccName = _mongoc_get_encryptedField_state_collection (
+      encryptedFields, name, "ecc", error);
+   if (!eccName) {
+      goto fail;
+   }
+
+   eccCollection = mongoc_client_get_collection (
+      collection->client, collection->db, eccName);
+   if (!drop_with_opts (eccCollection, NULL /* opts */, error)) {
+      goto fail;
+   }
+
+   /* Drop ECOC collection. */
+   ecocName = _mongoc_get_encryptedField_state_collection (
+      encryptedFields, name, "ecoc", error);
+   if (!ecocName) {
+      goto fail;
+   }
+
+   ecocCollection = mongoc_client_get_collection (
+      collection->client, collection->db, ecocName);
+   if (!drop_with_opts (ecocCollection, NULL /* opts */, error)) {
+      goto fail;
+   }
+
+   ok = true;
+fail:
+   mongoc_collection_destroy (ecocCollection);
+   bson_free (ecocName);
+   mongoc_collection_destroy (eccCollection);
+   bson_free (eccName);
+   mongoc_collection_destroy (escCollection);
+   bson_free (escName);
+   return ok;
+}
+
+bool
+mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
+                                  const bson_t *opts,
+                                  bson_error_t *error)
+{
+   bson_iter_t iter;
+   bson_t encryptedFields = BSON_INITIALIZER;
+
+   if (opts && bson_iter_init_find (&iter, opts, "encryptedFields")) {
+      if (!_mongoc_iter_document_as_bson (&iter, &encryptedFields, error)) {
+         return false;
+      }
+   }
+
+   if (bson_empty (&encryptedFields)) {
+      if (!_mongoc_get_encryptedFields_from_map (
+             collection->client,
+             collection->db,
+             mongoc_collection_get_name (collection),
+             &encryptedFields,
+             error)) {
+         return false;
+      }
+   }
+
+   if (bson_empty (&encryptedFields) &&
+       collection->client->topology->encrypted_fields_map != NULL) {
+      if (!_mongoc_get_encryptedFields_from_server (
+             collection->client,
+             collection->db,
+             mongoc_collection_get_name (collection),
+             &encryptedFields,
+             error)) {
+         return false;
+      }
+   }
+
+   if (!bson_empty (&encryptedFields)) {
+      bson_t opts_without_encryptedFields = BSON_INITIALIZER;
+
+      if (opts) {
+         bson_copy_to_excluding_noinit (
+            opts, &opts_without_encryptedFields, "encryptedFields", NULL);
+      }
+
+      bool ret = drop_with_opts_with_encryptedFields (
+         collection, &opts_without_encryptedFields, &encryptedFields, error);
+
+      bson_destroy (&opts_without_encryptedFields);
+      bson_destroy (&encryptedFields);
+      return ret;
+   }
+
+   return drop_with_opts (collection, opts, error);
 }
 
 

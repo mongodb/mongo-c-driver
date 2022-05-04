@@ -191,6 +191,8 @@ typedef struct _mongoc_topology_t {
    char *csfle_override_path;
    // Corresponds to extraOptions.csfleRequired
    bool csfle_required;
+   // Corresponds to AutoEncryptionOpts.encryptedFieldsMap.
+   bson_t *encrypted_fields_map;
 
    /* For background monitoring. */
    mongoc_set_t *server_monitors;
