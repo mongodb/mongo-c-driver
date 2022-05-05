@@ -291,7 +291,7 @@ test-asan:
 
 test:
     ARG --required env
-    FROM build --env=$env
+    FROM +build --env=$env --skip_tests=ON
     DO +TEST_WITH_CSE \
         --AUTH=noauth \
         --SSL=openssl \
