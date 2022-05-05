@@ -604,7 +604,11 @@ class IntegrationTask(MatrixTask):
 
         if self.cse:
             require(self.version == 'latest' or parse_version(self.version) >= parse_version("4.2"))
-            require(self.topology == 'server')
+            if self.version == 'latest' or parse_version(self.version) >= parse_version("6.0"):
+                # FLE 2.0 Client-Side Encryption tasks on 6.0 require a non-standalone topology.
+                require(self.topology == 'server' or self.topology == 'replica_set')
+            else:
+                require(self.topology == 'server')
             if self.sanitizer != "asan":
                 # limit to SASL=AUTO to reduce redundant tasks.
                 require(self.sasl)
