@@ -370,18 +370,26 @@ test_bson_size_limits_and_batch_splitting (void *unused)
          client, "db", cmd, NULL /* read prefs */, NULL /* reply */, &error),
       error);
 
+   mongoc_collection_destroy (coll);
    /* Drop and create the key vault collection, keyvault.datakeys. */
-   mongoc_collection_destroy (coll);
-   coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
-   (void) mongoc_collection_drop (coll, NULL);
-   datakey = get_bson_from_json_file (
-      "./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (
-         coll, datakey, NULL /* opts */, NULL /* reply */, &error),
-      error);
+   {
+      mongoc_write_concern_t *wc;
 
-   mongoc_collection_destroy (coll);
+      coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
+      (void) mongoc_collection_drop (coll, NULL);
+      datakey = get_bson_from_json_file (
+         "./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
+      wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_wmajority (wc, 1000);
+      mongoc_collection_set_write_concern (coll, wc);
+      ASSERT_OR_PRINT (
+         mongoc_collection_insert_one (
+            coll, datakey, NULL /* opts */, NULL /* reply */, &error),
+         error);
+      mongoc_write_concern_destroy (wc);
+      mongoc_collection_destroy (coll);
+   }
+
    mongoc_client_destroy (client);
 
    client = test_framework_client_new_from_uri (uri, NULL);
@@ -1914,6 +1922,7 @@ _reset (mongoc_client_pool_t **pool,
       mongoc_collection_t *coll;
       bson_t *datakey;
       bson_error_t error;
+      mongoc_write_concern_t *wc;
 
       uri = test_framework_get_uri ();
       *pool = test_framework_client_pool_new_from_uri (uri, NULL);
@@ -1927,6 +1936,9 @@ _reset (mongoc_client_pool_t **pool,
       coll = mongoc_client_get_collection (
          *singled_threaded_client, "db", "keyvault");
       (void) mongoc_collection_drop (coll, NULL);
+      wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_wmajority (wc, 1000);
+      mongoc_collection_set_write_concern (coll, wc);
       datakey = get_bson_from_json_file (
          "./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
       BSON_ASSERT (datakey);
@@ -1936,6 +1948,7 @@ _reset (mongoc_client_pool_t **pool,
          error);
 
       bson_destroy (datakey);
+      mongoc_write_concern_destroy (wc);
       mongoc_collection_destroy (coll);
    }
    bson_destroy (schema);
@@ -2162,6 +2175,7 @@ _test_multi_threaded (bool external_key_vault)
    bson_t *kms_providers;
    int r;
    int i;
+   mongoc_write_concern_t *wc;
 
    uri = test_framework_get_uri ();
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
@@ -2176,6 +2190,9 @@ _test_multi_threaded (bool external_key_vault)
    datakey = get_bson_from_json_file (
       "./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
    BSON_ASSERT (datakey);
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_collection_set_write_concern (coll, wc);
    ASSERT_OR_PRINT (
       mongoc_collection_insert_one (
          coll, datakey, NULL /* opts */, NULL /* reply */, &error),
@@ -2214,6 +2231,7 @@ _test_multi_threaded (bool external_key_vault)
       BSON_ASSERT (r == 0);
    }
 
+   mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
    mongoc_client_pool_push (pool, client1);
