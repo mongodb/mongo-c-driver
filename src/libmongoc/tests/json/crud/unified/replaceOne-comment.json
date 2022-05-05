@@ -1,5 +1,5 @@
 {
-  "description": "BulkWrite replaceOne-let",
+  "description": "replaceOne-comment",
   "schemaVersion": "1.0",
   "createEntities": [
     {
@@ -31,46 +31,99 @@
       "databaseName": "crud-tests",
       "documents": [
         {
-          "_id": 1
-        },
-        {
-          "_id": 2
+          "_id": 1,
+          "x": 11
         }
       ]
     }
   ],
   "tests": [
     {
-      "description": "BulkWrite replaceOne with let option",
+      "description": "ReplaceOne with string comment",
       "runOnRequirements": [
         {
-          "minServerVersion": "5.0"
+          "minServerVersion": "4.4"
         }
       ],
       "operations": [
         {
+          "name": "replaceOne",
           "object": "collection0",
-          "name": "bulkWrite",
           "arguments": {
-            "requests": [
-              {
-                "replaceOne": {
-                  "filter": {
-                    "$expr": {
-                      "$eq": [
-                        "$_id",
-                        "$$id"
-                      ]
+            "filter": {
+              "_id": 1
+            },
+            "replacement": {
+              "x": 22
+            },
+            "comment": "comment"
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "update": "coll0",
+                  "updates": [
+                    {
+                      "q": {
+                        "_id": 1
+                      },
+                      "u": {
+                        "x": 22
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
+                      },
+                      "upsert": {
+                        "$$unsetOrMatches": false
+                      }
                     }
-                  },
-                  "replacement": {
-                    "x": 3
-                  }
+                  ],
+                  "comment": "comment"
                 }
               }
-            ],
-            "let": {
-              "id": 1
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll0",
+          "databaseName": "crud-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "ReplaceOne with document comment",
+      "runOnRequirements": [
+        {
+          "minServerVersion": "4.4"
+        }
+      ],
+      "operations": [
+        {
+          "name": "replaceOne",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "replacement": {
+              "x": 22
+            },
+            "comment": {
+              "key": "value"
             }
           }
         }
@@ -86,15 +139,10 @@
                   "updates": [
                     {
                       "q": {
-                        "$expr": {
-                          "$eq": [
-                            "$_id",
-                            "$$id"
-                          ]
-                        }
+                        "_id": 1
                       },
                       "u": {
-                        "x": 3
+                        "x": 22
                       },
                       "multi": {
                         "$$unsetOrMatches": false
@@ -104,8 +152,8 @@
                       }
                     }
                   ],
-                  "let": {
-                    "id": 1
+                  "comment": {
+                    "key": "value"
                   }
                 }
               }
@@ -120,51 +168,34 @@
           "documents": [
             {
               "_id": 1,
-              "x": 3
-            },
-            {
-              "_id": 2
+              "x": 22
             }
           ]
         }
       ]
     },
     {
-      "description": "BulkWrite replaceOne with let option unsupported (server-side error)",
+      "description": "ReplaceOne with comment - pre 4.4",
       "runOnRequirements": [
         {
-          "minServerVersion": "4.2",
-          "maxServerVersion": "4.9"
+          "minServerVersion": "3.4.0",
+          "maxServerVersion": "4.2.99"
         }
       ],
       "operations": [
         {
+          "name": "replaceOne",
           "object": "collection0",
-          "name": "bulkWrite",
           "arguments": {
-            "requests": [
-              {
-                "replaceOne": {
-                  "filter": {
-                    "$expr": {
-                      "$eq": [
-                        "$_id",
-                        "$$id"
-                      ]
-                    }
-                  },
-                  "replacement": {
-                    "x": 3
-                  }
-                }
-              }
-            ],
-            "let": {
-              "id": 1
-            }
+            "filter": {
+              "_id": 1
+            },
+            "replacement": {
+              "x": 22
+            },
+            "comment": "comment"
           },
           "expectError": {
-            "errorContains": "'update.let' is an unknown field",
             "isClientError": false
           }
         }
@@ -180,15 +211,10 @@
                   "updates": [
                     {
                       "q": {
-                        "$expr": {
-                          "$eq": [
-                            "$_id",
-                            "$$id"
-                          ]
-                        }
+                        "_id": 1
                       },
                       "u": {
-                        "x": 3
+                        "x": 22
                       },
                       "multi": {
                         "$$unsetOrMatches": false
@@ -198,9 +224,7 @@
                       }
                     }
                   ],
-                  "let": {
-                    "id": 1
-                  }
+                  "comment": "comment"
                 }
               }
             }
@@ -213,10 +237,8 @@
           "databaseName": "crud-tests",
           "documents": [
             {
-              "_id": 1
-            },
-            {
-              "_id": 2
+              "_id": 1,
+              "x": 11
             }
           ]
         }

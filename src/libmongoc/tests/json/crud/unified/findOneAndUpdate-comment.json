@@ -1,5 +1,5 @@
 {
-  "description": "updateOne-let",
+  "description": "findOneAndUpdate-comment",
   "schemaVersion": "1.0",
   "createEntities": [
     {
@@ -41,41 +41,31 @@
   ],
   "tests": [
     {
-      "description": "UpdateOne with let option",
+      "description": "findOneAndUpdate with string comment",
       "runOnRequirements": [
         {
-          "minServerVersion": "5.0"
+          "minServerVersion": "4.4"
         }
       ],
       "operations": [
         {
-          "name": "updateOne",
+          "name": "findOneAndUpdate",
           "object": "collection0",
           "arguments": {
             "filter": {
-              "$expr": {
-                "$eq": [
-                  "$_id",
-                  "$$id"
-                ]
-              }
+              "_id": 1
             },
             "update": [
               {
                 "$set": {
-                  "x": "$$x"
+                  "x": 5
                 }
               }
             ],
-            "let": {
-              "id": 1,
-              "x": "foo"
-            }
+            "comment": "comment"
           },
           "expectResult": {
-            "matchedCount": 1,
-            "modifiedCount": 1,
-            "upsertedCount": 0
+            "_id": 1
           }
         }
       ],
@@ -86,69 +76,35 @@
             {
               "commandStartedEvent": {
                 "command": {
-                  "update": "coll0",
-                  "updates": [
+                  "findAndModify": "coll0",
+                  "query": {
+                    "_id": 1
+                  },
+                  "update": [
                     {
-                      "q": {
-                        "$expr": {
-                          "$eq": [
-                            "$_id",
-                            "$$id"
-                          ]
-                        }
-                      },
-                      "u": [
-                        {
-                          "$set": {
-                            "x": "$$x"
-                          }
-                        }
-                      ],
-                      "multi": {
-                        "$$unsetOrMatches": false
-                      },
-                      "upsert": {
-                        "$$unsetOrMatches": false
+                      "$set": {
+                        "x": 5
                       }
                     }
                   ],
-                  "let": {
-                    "id": 1,
-                    "x": "foo"
-                  }
+                  "comment": "comment"
                 }
               }
-            }
-          ]
-        }
-      ],
-      "outcome": [
-        {
-          "collectionName": "coll0",
-          "databaseName": "crud-tests",
-          "documents": [
-            {
-              "_id": 1,
-              "x": "foo"
-            },
-            {
-              "_id": 2
             }
           ]
         }
       ]
     },
     {
-      "description": "UpdateOne with let option unsupported (server-side error)",
+      "description": "findOneAndUpdate with document comment",
       "runOnRequirements": [
         {
-          "minServerVersion": "4.2.0",
-          "maxServerVersion": "4.4.99"
+          "minServerVersion": "4.4"
         }
       ],
       "operations": [
         {
-          "name": "updateOne",
+          "name": "findOneAndUpdate",
           "object": "collection0",
           "arguments": {
             "filter": {
@@ -157,16 +113,73 @@
             "update": [
               {
                 "$set": {
-                  "x": "$$x"
+                  "x": 5
                 }
               }
             ],
-            "let": {
-              "x": "foo"
+            "comment": {
+              "key": "value"
             }
           },
+          "expectResult": {
+            "_id": 1
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "findAndModify": "coll0",
+                  "query": {
+                    "_id": 1
+                  },
+                  "update": [
+                    {
+                      "$set": {
+                        "x": 5
+                      }
+                    }
+                  ],
+                  "comment": {
+                    "key": "value"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "findOneAndUpdate with comment - pre 4.4",
+      "runOnRequirements": [
+        {
+          "minServerVersion": "4.2.0",
+          "maxServerVersion": "4.2.99"
+        }
+      ],
+      "operations": [
+        {
+          "name": "findOneAndUpdate",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "update": [
+              {
+                "$set": {
+                  "x": 5
+                }
+              }
+            ],
+            "comment": "comment"
+          },
           "expectError": {
-            "errorContains": "'update.let' is an unknown field",
             "isClientError": false
           }
         }
@@ -178,30 +191,18 @@
             {
               "commandStartedEvent": {
                 "command": {
-                  "update": "coll0",
-                  "updates": [
+                  "findAndModify": "coll0",
+                  "query": {
+                    "_id": 1
+                  },
+                  "update": [
                     {
-                      "q": {
-                        "_id": 1
-                      },
-                      "u": [
-                        {
-                          "$set": {
-                            "x": "$$x"
-                          }
-                        }
-                      ],
-                      "multi": {
-                        "$$unsetOrMatches": false
-                      },
-                      "upsert": {
-                        "$$unsetOrMatches": false
+                      "$set": {
+                        "x": 5
                       }
                     }
                   ],
-                  "let": {
-                    "x": "foo"
-                  }
+                  "comment": "comment"
                 }
               }
             }
