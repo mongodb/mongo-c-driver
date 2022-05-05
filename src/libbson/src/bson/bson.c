@@ -65,6 +65,7 @@ typedef struct {
    bson_json_mode_t mode;
    int32_t max_len;
    bool max_len_reached;
+   const bson_json_opts_t *opts;
 } bson_json_state_t;
 
 
@@ -84,8 +85,7 @@ _bson_as_json_visit_document (const bson_iter_t *iter,
 static char *
 _bson_as_json_visit_all (const bson_t *bson,
                          size_t *length,
-                         bson_json_mode_t mode,
-                         int32_t max_len);
+                         const bson_json_opts_t *opts);
 
 /*
  * Globals.
@@ -2510,6 +2510,24 @@ bson_equal (const bson_t *bson, const bson_t *other)
 }
 
 
+static void
+_bson_json_newline_indent (const bson_json_state_t *state)
+{
+   if (!state->opts->level_indent) {
+      return;
+   }
+   bson_string_append (state->str, "\n");
+   if (state->opts->subsequent_indent) {
+      bson_string_append (state->str, state->opts->subsequent_indent);
+   }
+   if (state->opts->level_indent) {
+      for (int i = 0; i < state->depth + 1; ++i) {
+         bson_string_append (state->str, state->opts->level_indent);
+      }
+   }
+}
+
+
 static bool
 _bson_as_json_visit_utf8 (const bson_iter_t *iter,
                           const char *key,
@@ -2909,6 +2927,8 @@ _bson_as_json_visit_before (const bson_iter_t *iter,
       bson_string_append (state->str, ", ");
    }
 
+   _bson_json_newline_indent (state);
+
    if (state->keys) {
       escaped = bson_utf8_escape_for_json (key, -1);
       if (escaped) {
@@ -2946,6 +2966,8 @@ _bson_as_json_visit_after (const bson_iter_t *iter, const char *key, void *data)
 
       return true;
    }
+
+   _bson_json_newline_indent (state);
 
    return false;
 }
@@ -3043,7 +3065,7 @@ _bson_as_json_visit_codewscope (const bson_iter_t *iter,
       max_scope_len = BSON_MAX (0, state->max_len - state->str->len);
    }
 
-   scope = _bson_as_json_visit_all (v_scope, NULL, state->mode, max_scope_len);
+   scope = _bson_as_json_visit_all (v_scope, NULL, state->opts);
 
    if (!scope) {
       return true;
@@ -3090,10 +3112,16 @@ _bson_as_json_visit_document (const bson_iter_t *iter,
       return false;
    }
 
+   if (bson_empty (v_document)) {
+      bson_string_append (child_state.str, "{  }");
+      return false;
+   }
+
    if (bson_iter_init (&child, v_document)) {
       child_state.str = bson_string_new ("{ ");
       child_state.depth = state->depth + 1;
       child_state.mode = state->mode;
+      child_state.opts = state->opts;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
       if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
          child_state.max_len = BSON_MAX (0, state->max_len - state->str->len);
@@ -3114,7 +3142,10 @@ _bson_as_json_visit_document (const bson_iter_t *iter,
          return !child_state.max_len_reached;
       }
 
-      bson_string_append (child_state.str, " }");
+      child_state.depth -= 1;
+      _bson_json_newline_indent (&child_state);
+      bson_string_append (child_state.str,
+                          state->opts->level_indent ? "}" : " }");
       bson_string_append (state->str, child_state.str->str);
       bson_string_free (child_state.str, true);
    }
@@ -3142,6 +3173,7 @@ _bson_as_json_visit_array (const bson_iter_t *iter,
       child_state.str = bson_string_new ("[ ");
       child_state.depth = state->depth + 1;
       child_state.mode = state->mode;
+      child_state.opts = state->opts;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
       if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
          child_state.max_len = BSON_MAX (0, state->max_len - state->str->len);
@@ -3162,7 +3194,10 @@ _bson_as_json_visit_array (const bson_iter_t *iter,
          return !child_state.max_len_reached;
       }
 
-      bson_string_append (child_state.str, " ]");
+      child_state.depth -= 1;
+      _bson_json_newline_indent (&child_state);
+      bson_string_append (child_state.str,
+                          state->opts->level_indent ? "]" : " ]");
       bson_string_append (state->str, child_state.str->str);
       bson_string_free (child_state.str, true);
    }
@@ -3174,8 +3209,7 @@ _bson_as_json_visit_array (const bson_iter_t *iter,
 static char *
 _bson_as_json_visit_all (const bson_t *bson,
                          size_t *length,
-                         bson_json_mode_t mode,
-                         int32_t max_len)
+                         const bson_json_opts_t *opts)
 {
    bson_json_state_t state;
    bson_iter_t iter;
@@ -3202,11 +3236,16 @@ _bson_as_json_visit_all (const bson_t *bson,
 
    state.count = 0;
    state.keys = true;
-   state.str = bson_string_new ("{ ");
+   if (state.opts->initial_indent) {
+      state.str = bson_string_new (state.opts->initial_indent);
+      bson_string_append_c (state.str, '{');
+   } else {
+      state.str = bson_string_new ("{ ");
+   }
    state.depth = 0;
    state.err_offset = &err_offset;
-   state.mode = mode;
-   state.max_len = max_len;
+   state.opts = opts;
+   state.max_len = opts->max_len;
    state.max_len_reached = false;
 
    if ((bson_iter_visit_all (&iter, &bson_as_json_visitors, &state) ||
@@ -3222,11 +3261,16 @@ _bson_as_json_visit_all (const bson_t *bson,
       return NULL;
    }
 
-   /* Append closing space and } separately, in case we hit the max in between. */
+   /* Append closing space and } separately, in case we hit the max in between.
+    */
    remaining = state.max_len - state.str->len;
-   if (state.max_len == BSON_MAX_LEN_UNLIMITED ||
-       remaining > 1) {
-      bson_string_append (state.str, " }");
+   if (state.max_len == BSON_MAX_LEN_UNLIMITED || remaining > 1) {
+      if (state.opts->level_indent && state.opts->subsequent_indent) {
+         bson_string_append_printf (
+            state.str, "\n%s}", state.opts->subsequent_indent);
+      } else {
+         bson_string_append (state.str, " }");
+      }
    } else if (remaining == 1) {
       bson_string_append (state.str, " ");
    }
@@ -3244,7 +3288,7 @@ bson_as_json_with_opts (const bson_t *bson,
                         size_t *length,
                         const bson_json_opts_t *opts)
 {
-   return _bson_as_json_visit_all (bson, length, opts->mode, opts->max_len);
+   return _bson_as_json_visit_all (bson, length, opts);
 }
 
 
@@ -3286,7 +3330,7 @@ bson_array_as_json (const bson_t *bson, size_t *length)
 
    if (length) {
       *length = 0;
-    }
+   }
 
    if (bson_empty0 (bson)) {
       if (length) {
