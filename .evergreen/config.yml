@@ -22178,7 +22178,6 @@ buildvariants:
     - ubuntu2004
     - debian10
     - debian11
-    - archlinux
     - amazon2
   tasks:
     - .earthly-build
