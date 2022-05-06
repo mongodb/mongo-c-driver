@@ -14,7 +14,7 @@ else
     b=$(type -P "$2")
 fi
 
-if test "$b" = true || test "$b" = false; then
+if test "$2" = true || test "$2" = false; then
     ln -f -s "$b" "/usr/local/bin/$1"
 else
     echo "Second argument to __add_boolcmd must be 'true' or 'false' (Got '$b')"
