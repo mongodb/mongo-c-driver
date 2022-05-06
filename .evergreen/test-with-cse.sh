@@ -14,7 +14,6 @@ if test -n "${CLIENT_SIDE_ENCRYPTION:-}"; then
   export MONGOC_TEST_GCP_PRIVATEKEY="$(jq -r .gcp.privateKey secrets.json)"
   export MONGOC_TEST_CSFLE_TLS_CA_FILE=../drivers-evergreen-tools/.evergreen/x509gen/ca.pem
   export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE=../drivers-evergreen-tools/.evergreen/x509gen/client.pem
-  set -ex
 fi
 
 bash .evergreen/integration-tests.sh
