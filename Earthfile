@@ -162,10 +162,15 @@ BUILD:
         .evergreen/ \
         COPYING NEWS README.rst CONTRIBUTING.md THIRD_PARTY_NOTICES \
         CMakeLists.txt \
+        src/ \
+        orchestration_configs/ \
         .
 
     # The version that we are building
     ARG build_version=1.20.0-dev
+
+    # Only build contents that are committed to git
+    ARG --required git_reset
 
     # Whether we build with client-side-encryption
     ARG --required client_side_encryption
@@ -181,16 +186,14 @@ BUILD:
     # Enable parallelism for Make invocations
     ENV MAKEFLAGS=-j8
 
+    IF $git_reset
+        RUN git clean -fdx && git checkout .
+    END
+
     ENV _base_configure_flags="-DBUILD_VERSION=$build_version -DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=$client_side_encryption -DENABLE_EXTRA_ALIGNMENT=OFF"
 
     # Build libmongocrypt if we are using client-side encryption
     IF test "$client_side_encryption" = "ON"
-        COPY --dir \
-            src/common/ \
-            src/libbson/ \
-            src/tools/ \
-            src/CMakeLists.txt \
-            src/
         DO +COMPILE_SH --env_vars=SKIP_MOCK_TESTS=ON --conf_flags "$_base_configure_flags -DENABLE_MONGOC=OFF"
         ENV COMPILE_LIBMONGOCRYPT=ON
         RUN rm CMakeCache.txt
@@ -227,13 +230,13 @@ BUILD:
     ARG --required valgrind
     ENV VALGRIND=$valgrind
 
-    COPY --dir src/ orchestration_configs/ .
     DO +COMPILE_SH --conf_flags "$_base_configure_flags"
 
 build:
     ARG --required env
     FROM "+${env}-env"
     # Reasonable default arguments for the build:
+    ARG --required git_reset
     ARG client_side_encryption=ON
     ARG debug=ON
     ARG check_log=ON
@@ -248,6 +251,7 @@ build:
     WORKDIR /s
     DO +BUILD \
         --client_side_encryption=$client_side_encryption \
+        --git_reset=$git_reset \
         --debug=$debug \
         --check_log=$check_log \
         --valgrind=OFF \
