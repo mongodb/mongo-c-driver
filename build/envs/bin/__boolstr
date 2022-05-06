@@ -1,7 +1,13 @@
 #!/usr/bin/env sh
 
 # Execute the given argument list as a command. If exits zero, prints "true",
-# otherwise "false". This script itself will always exit zero
+# otherwise "false". stdout from the subcommand will be supressed. stderr will
+# be forwarded. This script itself will always exit zero.
+
+# The intent is that this script's output can be stored in a variable which can
+# later be used as a "true" or "false" command in conditions.
+
+# Usage: __boolstr [cmd...]
 
 "$@" 1>/dev/null
 

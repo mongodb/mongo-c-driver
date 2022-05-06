@@ -1,35 +1,107 @@
 #!/usr/bin/env sh
 
-# Run a boolean test
+# Run a boolean test. This implements simple tests that are useful as
+# conditionals to shell scripts, providing more explicit forms of the 'test'
+# executable, or tests that 'test' does not provide
+
 # Usage:
 #   __test is-file <filepath>
 #   __test is-dir <dirpath>
 #   __test exists <filepath>
 #   __test have-command <command-name>
+#   __test [test...] {and|or} [test...] ...
+#   __test not [test...]
 
-set -eu
+set -u  # We do not use -e here, as we want to inspect return codes
 
-command="$(echo "$1" | sed s/-/_/g)"
-shift
+negate=false
+
+_more() {
+    local op prev
+    prev=$1
+    op="${2:-}"
+    if $negate; then
+        if test $prev = 0; then
+            prev=1
+        else
+            prev=0
+        fi
+    fi
+    negate=false
+    case "$op" in
+        '')
+            return $prev
+            ;;
+        and)
+            if test $prev != 0; then
+                return $prev
+            fi
+            shift
+            shift
+            __impl "$@"
+            ;;
+        or)
+            if test $prev == 0; then
+                return 0
+            fi
+            shift shift
+            __impl "$@"
+            ;;
+        *)
+            echo "Unknown test operator '$op'" 1>&2
+            return 9
+            ;;
+    esac
+}
 
 is_file() {
     test -f "$1"
+    r=$?
+    shift
+    _more $r "$@"
 }
 
 is_dir() {
     test -d "$1"
+    r=$?
+    shift
+    _more $r "$@"
 }
 
 exists() {
     test -e "$1"
+    r=$?
+    shift
+    _more $r "$@"
 }
 
 have_command() {
+    local r
     if type "$1" 2>&1 >/dev/null; then
-        return 0
+        r=0
+    else
+        r=1
     fi
-    return 1
+    shift
+    _more $r "$@"
 }
 
-"$command" "$@"
-exit $?
+not() {
+    negate=true
+    __impl "$@"
+}
+
+__impl() {
+    # Convert hyphens to underscores
+    command="$(echo "$1" | sed s/-/_/g)"
+    # Check that the given test command exists
+    if ! type "$command" 2>&1 >/dev/null; then
+        echo "Unknown test '$1'" 1>&2
+        return 8
+    fi
+    # Run it:
+    shift
+    "$command" "$@"
+}
+
+__impl "$@"

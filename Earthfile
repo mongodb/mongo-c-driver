@@ -23,15 +23,15 @@ SETUP:
         RUN __install \
             build-essential pkg-config libssl-dev clang ccache python3-pip jq \
             libsnappy-dev "libsnmp*"  git jq
-        IF __is_ubuntu && test $__env_major_version -gt 14
+        IF __is_ubuntu && test 1 = $(( $__env_major_version > 14 ))
             RUN __install python3-virtualenv virtualenv libzstd-dev
         END
     ELSE IF __is_redhat_based
         RUN __install gcc gcc-c++ openssl-devel pkgconfig curl git make
-        IF test $__env_major_version -gte 8
+        IF test 1 = $(( $__env_major_version >= 8 ))
             RUN __install snappy libzstd-devel python3-virtualenv
         END
-        IF test $__env_major_version -gte 7
+        IF test 1 = $(( $__env_major_version >= 7 ))
             RUN __install jq clang python3 python3-pip
         END
     ELSE IF __is_amazonlinux
@@ -105,8 +105,8 @@ rl8-env:
     FROM envs+rockylinux --version=8
     DO +SETUP
 
-archlinux-env:
-    FROM envs+archlinux
+arch-env:
+    FROM envs+arch
     DO +SETUP
 
 amzn2-env:
@@ -119,10 +119,10 @@ suse-env:
 
 TEST_WITH_CSE:
     # Run the client-side encryption tests with the appropriate daemon processes
-    # The arguments correspond to the environment variables that control the tests.
     # NOTE: Requires a 'secrets.json' file for key management secrets
     COMMAND
     GIT CLONE https://github.com/mongodb-labs/drivers-evergreen-tools drivers-evergreen-tools
+    # The arguments correspond to the environment variables that control the tests.
     ARG --required MONGODB_VERSION
     ARG --required TOPOLOGY
     ARG IPV4_ONLY
@@ -154,16 +154,15 @@ COMPILE_SH:
 BUILD:
     COMMAND
 
-    # Copy enough to build libbson+libmongocrypt first
     COPY --dir \
         .git/ \
         build/ \
         generate_uninstall/ \
         .evergreen/ \
-        COPYING NEWS README.rst CONTRIBUTING.md THIRD_PARTY_NOTICES \
-        CMakeLists.txt \
         src/ \
         orchestration_configs/ \
+        CMakeLists.txt \
+        COPYING NEWS README.rst CONTRIBUTING.md THIRD_PARTY_NOTICES \
         .
 
     # The version that we are building
@@ -295,7 +294,8 @@ test-asan:
 
 test:
     ARG --required env
-    FROM +build --env=$env --skip_tests=ON
+    ARG --required git_reset
+    FROM +build --env=$env --skip_tests=ON --git_reset=$git_reset
     DO +TEST_WITH_CSE \
         --AUTH=noauth \
         --SSL=openssl \
@@ -305,17 +305,17 @@ test:
 build-all:
     ARG skip_tests=OFF
     ARG --required git_reset
-    BUILD +build --git_reset=$git_reset --env=u22 --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=u20 --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=u18 --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=u16 --zstd=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=u14 --zstd=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=rl8 --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=c7 --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=c6 --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=amzn2 --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=archlinux --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=suse --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=deb10 --zstd=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=deb9.2 --zstd=OFF --skip_tests=$skip_tests
-    BUILD +build --git_reset=$git_reset --env=deb8.1 --zstd=OFF --skip_tests=$skip_tests
+    BUILD +build --env=u22      --git_reset=$git_reset --skip_tests=$skip_tests
+    BUILD +build --env=u20      --git_reset=$git_reset --skip_tests=$skip_tests
+    BUILD +build --env=u18      --git_reset=$git_reset --skip_tests=$skip_tests
+    BUILD +build --env=u16      --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF
+    BUILD +build --env=u14      --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF
+    BUILD +build --env=rl8      --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF --snappy=OFF
+    BUILD +build --env=c7       --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF --snappy=OFF
+    BUILD +build --env=c6       --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF --snappy=OFF
+    BUILD +build --env=amzn2    --git_reset=$git_reset --skip_tests=$skip_tests            --snappy=OFF
+    BUILD +build --env=arch     --git_reset=$git_reset --skip_tests=$skip_tests            --snappy=OFF
+    BUILD +build --env=suse     --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF --snappy=OFF
+    BUILD +build --env=deb10    --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF
+    BUILD +build --env=deb9.2   --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF
+    BUILD +build --env=deb8.1   --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF

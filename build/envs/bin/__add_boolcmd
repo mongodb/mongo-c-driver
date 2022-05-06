@@ -1,10 +1,21 @@
 #!/usr/bin/env sh
 
-# Generate an executable file that points to a boolean command
+set -eu
+
+# Generate an executable file that points to a boolean command 'true' or 'false'
 # Usage: __add_boolcmd <cmd-name> {true,false}
+
+# This allows a boolean to be stored as a "command" that can be executed, but
+# persists outside of the current environment variables
+
 if __test have-command which; then
     b=$(which "$2")
 else
     b=$(type -P "$2")
 fi
-ln -f -s "$b" "/usr/local/bin/$1"
+
+if test "$b" = true || test "$b" = false; then
+    ln -f -s "$b" "/usr/local/bin/$1"
+else
+    echo "Second argument to __add_boolcmd must be 'true' or 'false' (Got '$b')"
+fi
