@@ -2520,7 +2520,8 @@ _bson_json_newline_indent (const bson_json_state_t *state)
       bson_string_append (state->str, state->opts->subsequent_indent);
    }
    if (state->opts->level_indent) {
-      for (int i = 0; i < state->depth + 1; ++i) {
+      int i = 0;
+      for (i = 0; i < state->depth + 1; ++i) {
          bson_string_append (state->str, state->opts->level_indent);
       }
    }
