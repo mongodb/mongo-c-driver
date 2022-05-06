@@ -23,6 +23,7 @@ test-results.json
 VERSION_CURRENT
 VERSION_RELEASED
 *.pyc
+secrets.json
 
 # Windows things
 *.sdf
