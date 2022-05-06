@@ -19,6 +19,9 @@ GET_CMAKE:
 
 SETUP:
     COMMAND
+    ARG --required from
+    ARG --required version
+    FROM envs+$from --version=$version
     IF __is_debian_based
         RUN __install \
             build-essential pkg-config libssl-dev clang ccache python3-pip jq \
@@ -29,10 +32,10 @@ SETUP:
     ELSE IF __is_redhat_based
         RUN __install gcc gcc-c++ openssl-devel pkgconfig curl git make
         IF test 1 = $(( $__env_major_version >= 8 ))
-            RUN __install snappy libzstd-devel python3-virtualenv
+            RUN __install snappy libzstd-devel python3-virtualenv jq
         END
         IF test 1 = $(( $__env_major_version >= 7 ))
-            RUN __install jq clang python3 python3-pip
+            RUN __install clang python3 python3-pip
         END
     ELSE IF __is_amazonlinux
         RUN __install \
@@ -49,73 +52,55 @@ SETUP:
     DO +GIT_CONFIG
     DO +GET_CMAKE
 
-ubuntu-env:
-    # Generate an Ubuntu environment of the given version
-    ARG --required version
-    FROM envs+ubuntu --version=$version
-    DO +SETUP
-
 u14-env:
     # Ubuntu 14.04
-    FROM +ubuntu-env --version=14.04
+    DO +SETUP --from=ubuntu --version=14.04
 
 u16-env:
     # Ubuntu 16.04
-    FROM +ubuntu-env --version=16.04
+    DO +SETUP --from=ubuntu --version=16.04
 
 u18-env:
     # Ubuntu 18.04
-    FROM +ubuntu-env --version=18.04
+    DO +SETUP --from=ubuntu --version=18.04
 
 u20-env:
     # Ubuntu 20.04
-    FROM +ubuntu-env --version=20.04
+    DO +SETUP --from=ubuntu --version=20.04
 
 u22-env:
     # Ubuntu 22.04
-    FROM +ubuntu-env --version=22.04
-
-debian-env:
-    # Generate a Debian environment of the given version
-    ARG --required version
-    FROM envs+debian --version=$version
-    DO +SETUP
+    DO +SETUP --from=ubuntu --version=22.04
 
 deb9.2-env:
-    FROM +debian-env --version=9.2
+    DO +SETUP --from=debian --version=9.2
 
 deb8.1-env:
-    FROM +debian-env --version=8.1
+    DO +SETUP --from=debian --version=8.1
 
 deb10-env:
-    FROM +debian-env --version=10.0
+    DO +SETUP --from=debian --version=10.0
 
 c6-env:
     # CentOS 6 (Equivalent to RHEL 6)
-    FROM envs+centos --version=6
-    DO +SETUP
+    DO +SETUP --from=centos --version=6
 
 c7-env:
     # CentOS 7 (Equivalent to RHEL 7)
-    FROM envs+centos --version=7
-    DO +SETUP
+    DO +SETUP --from=centos --version=7
 
 rl8-env:
     # Rocky Linux 8 (Equivalent to RHEL 8)
-    FROM envs+rockylinux --version=8
-    DO +SETUP
+    DO +SETUP --from=rockylinux --version=8
 
 arch-env:
-    FROM envs+arch
-    DO +SETUP
+    DO +SETUP --from=arch --version=latest
 
 amzn2-env:
-    FROM envs+amazonlinux --version=2
-    DO +SETUP
+    DO +SETUP --from=amazonlinux --version=2
 
 suse-env:
-    FROM envs+common-base --from=opensuse/leap --version=42
-    DO +SETUP
+    DO +SETUP --from=suse --version=42
 
 TEST_WITH_CSE:
     # Run the client-side encryption tests with the appropriate daemon processes
