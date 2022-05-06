@@ -4,7 +4,8 @@ LOCALLY
 # This files defines common base environments with little utilities to be used
 # to create more complete environments.
 
-common-base:
+COMMON_SETUP:
+    COMMAND
     ARG --required from
     ARG --required version
     FROM $from:$version
@@ -62,23 +63,23 @@ common-base:
 
 debian:
     ARG --required version
-    FROM +common-base --from=debian --version=$version
+    DO +COMMON_SETUP --from=debian --version=$version
 
 ubuntu:
     ARG --required version
-    FROM +common-base --from=ubuntu --version=$version
+    DO +COMMON_SETUP --from=ubuntu --version=$version
 
 centos:
     ARG --required version
-    FROM +common-base --from=centos --version=$version
+    DO +COMMON_SETUP --from=centos --version=$version
 
 rockylinux:
     ARG --required version
-    FROM +common-base --from=rockylinux --version=$version
+    DO +COMMON_SETUP --from=rockylinux --version=$version
 
 amazonlinux:
     ARG --required version
-    FROM +common-base --from=amazonlinux --version=$version
+    DO +COMMON_SETUP --from=amazonlinux --version=$version
 
 archlinux:
-    FROM +common-base --from=archlinux --version=latest
+    DO +COMMON_SETUP --from=archlinux --version=latest
