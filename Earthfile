@@ -304,17 +304,18 @@ test:
 
 build-all:
     ARG skip_tests=OFF
-    BUILD +build --env=u22 --skip_tests=$skip_tests
-    BUILD +build --env=u20 --skip_tests=$skip_tests
-    BUILD +build --env=u18 --skip_tests=$skip_tests
-    BUILD +build --env=u16 --zstd=OFF --skip_tests=$skip_tests
-    BUILD +build --env=u14 --zstd=OFF --skip_tests=$skip_tests
-    BUILD +build --env=rl8 --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --env=c7 --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --env=c6 --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --env=amzn2 --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --env=archlinux --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --env=suse --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
-    BUILD +build --env=deb10 --zstd=OFF --skip_tests=$skip_tests
-    BUILD +build --env=deb9.2 --zstd=OFF --skip_tests=$skip_tests
-    BUILD +build --env=deb8.1 --zstd=OFF --skip_tests=$skip_tests
+    ARG --required git_reset
+    BUILD +build --git_reset=$git_reset --env=u22 --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=u20 --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=u18 --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=u16 --zstd=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=u14 --zstd=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=rl8 --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=c7 --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=c6 --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=amzn2 --snappy=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=archlinux --snappy=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=suse --zstd=OFF --snappy=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=deb10 --zstd=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=deb9.2 --zstd=OFF --skip_tests=$skip_tests
+    BUILD +build --git_reset=$git_reset --env=deb8.1 --zstd=OFF --skip_tests=$skip_tests
