@@ -22173,12 +22173,9 @@ buildvariants:
   expansions:
     earthly_build_argv: --git_reset=false --env=u22
   run_on: &docker-distros
-    - ubuntu2004
     - ubuntu1804
-    - rhel80
-    - rhel80-medium
-    - rhel80-small
     - ubuntu1804-medium
+    - ubuntu2004
     - debian10
     - debian11
     - archlinux
@@ -22205,7 +22202,7 @@ buildvariants:
 - name: c7-earthly
   display_name: CentOS 7
   expansions:
-    earthly_build_argv: --git_reset=false --env=c7 --snappy=OFF --zstd=off
+    earthly_build_argv: --git_reset=false --env=c7 --snappy=OFF --zstd=OFF
   run_on: *docker-distros
   tasks: [.earthly-build]
 
