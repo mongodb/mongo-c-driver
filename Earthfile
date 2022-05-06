@@ -102,27 +102,6 @@ amzn2-env:
 suse-env:
     DO +SETUP --from=suse --version=42
 
-TEST_WITH_CSE:
-    # Run the client-side encryption tests with the appropriate daemon processes
-    # NOTE: Requires a 'secrets.json' file for key management secrets
-    COMMAND
-    GIT CLONE https://github.com/mongodb-labs/drivers-evergreen-tools drivers-evergreen-tools
-    # The arguments correspond to the environment variables that control the tests.
-    ARG --required MONGODB_VERSION
-    ARG --required TOPOLOGY
-    ARG IPV4_ONLY
-    ARG AUTH
-    ARG AUTHSOURCE
-    ARG SSL
-    ARG ORCHESTRATION_FILE
-    ARG OCSP
-    ARG REQUIRE_API_VERSION
-    # Run the tests:
-    ENV CLIENT_SIDE_ENCRYPTION=ON
-    COPY .evergreen/test-with-cse.sh .
-    COPY secrets.json .
-    RUN --no-cache bash -x test-with-cse.sh
-
 COMPILE_SH:
     COMMAND
     COPY --dir .evergreen/ .
@@ -251,45 +230,72 @@ build:
 debug-compile-asan-clang-openssl:
     ARG --required env
     # Build with ASan and Clang, no tests:
-    FROM +build \
-        --env=$env \
+    FROM "+${env}-env"
+    WORKDIR /s
+    ARG --required git_reset
+    DO +BUILD \
+        --client_side_encryption=OFF \
+        --debug=ON \
+        --check_log=ON \
+        --snappy=OFF \
+        --zstd=OFF \
         --cc=clang \
+        --zlib=BUNDLED \
+        --valgrind=OFF \
+        --skip_tests=ON \
+        --sasl=OFF \
         --ssl=OPENSSL \
-        --cflags="-fsanitize=address -fno-omit-frame-pointer" \
-        --skip_tests=ON \
-        --zstd=OFF
+        --arch=native \
+        --git_reset=$git_reset
 
-test-asan:
-    # Obtain the build:
+evg-tools:
+    GIT CLONE https://github.com/mongodb-labs/drivers-evergreen-tools drivers-evergreen-tools
+    SAVE ARTIFACT drivers-evergreen-tools
+
+TEST:
+    # Run the client-side encryption tests with the appropriate daemon processes
+    # NOTE: Requires a 'secrets.json' file for key management secrets
+    COMMAND
+    COPY --dir +evg-tools/drivers-evergreen-tools .
+    # The arguments correspond to the environment variables that control the tests.
+    ARG --required MONGODB_VERSION
+    ARG --required TOPOLOGY
+    ARG IPV4_ONLY
+    ARG AUTH
+    ARG AUTHSOURCE
+    ARG SSL
+    ARG ORCHESTRATION_FILE
+    ARG OCSP
+    ARG REQUIRE_API_VERSION
+    ARG LOADBALANCED
+    ARG ASAN
+    ARG CLIENT_SIDE_ENCRYPTION=ON
+    # Run the tests:
+    COPY .evergreen/test-with-cse.sh .
+    COPY --if-exists secrets.json .
+    RUN --no-cache bash -x test-with-cse.sh
+
+full-test:
     ARG --required env
-    FROM +build \
-        --env=$env \
-        --skip_tests=ON \
-        --cflags="-fsanitize=address -fno-omit-frame-pointer"
-    # Test arguments
+    ARG --required git_reset
+    ARG skip_unit_tests=OFF
+    FROM +build --env=$env --skip_tests=$skip_unit_tests --git_reset=$git_reset
     ARG mdb_version=5.0
-    ARG topology=sharded_cluster
-    ARG ssl=nossl
+    ARG topology=server
+    ARG ssl=openssl
     ARG auth=noauth
-    DO +TEST_WITH_CSE \
+    DO +TEST \
         --MONGODB_VERSION=$mdb_version \
         --TOPOLOGY=$topology \
         --SSL=$ssl \
-        --AUTH=$auth
-
-test:
-    ARG --required env
-    ARG --required git_reset
-    FROM +build --env=$env --skip_tests=ON --git_reset=$git_reset
-    DO +TEST_WITH_CSE \
-        --AUTH=noauth \
-        --SSL=openssl \
-        --TOPOLOGY=server \
-        --MONGODB_VERSION=5.0
+        --AUTH=$auth \
+        --ASAN=on
 
 build-all:
-    ARG skip_tests=OFF
+    # Note: At time of writing, Earthly has no parallelization limits, so this
+    #       will start a lot of simultaneous work!
     ARG --required git_reset
+    ARG skip_tests=OFF
     BUILD +build --env=u22      --git_reset=$git_reset --skip_tests=$skip_tests
     BUILD +build --env=u20      --git_reset=$git_reset --skip_tests=$skip_tests
     BUILD +build --env=u18      --git_reset=$git_reset --skip_tests=$skip_tests
