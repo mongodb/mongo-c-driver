@@ -1,5 +1,5 @@
 {
-  "description": "updateMany-let",
+  "description": "deleteOne-comment",
   "schemaVersion": "1.0",
   "createEntities": [
     {
@@ -46,45 +46,24 @@
   ],
   "tests": [
     {
-      "description": "updateMany with let option",
+      "description": "deleteOne with string comment",
       "runOnRequirements": [
         {
-          "minServerVersion": "5.0"
+          "minServerVersion": "4.4"
         }
       ],
       "operations": [
         {
-          "name": "updateMany",
+          "name": "deleteOne",
           "object": "collection0",
           "arguments": {
             "filter": {
-              "$expr": {
-                "$eq": [
-                  "$name",
-                  "$$name"
-                ]
-              }
+              "_id": 1
             },
-            "update": [
-              {
-                "$set": {
-                  "x": "$$x",
-                  "y": "$$y"
-                }
-              }
-            ],
-            "let": {
-              "name": "name",
-              "x": "foo",
-              "y": {
-                "$literal": "bar"
-              }
-            }
+            "comment": "comment"
           },
           "expectResult": {
-            "matchedCount": 2,
-            "modifiedCount": 2,
-            "upsertedCount": 0
+            "deletedCount": 1
           }
         }
       ],
@@ -95,37 +74,81 @@
             {
               "commandStartedEvent": {
                 "command": {
-                  "update": "coll0",
-                  "updates": [
+                  "delete": "coll0",
+                  "deletes": [
                     {
                       "q": {
-                        "$expr": {
-                          "$eq": [
-                            "$name",
-                            "$$name"
-                          ]
-                        }
+                        "_id": 1
                       },
-                      "u": [
-                        {
-                          "$set": {
-                            "x": "$$x",
-                            "y": "$$y"
-                          }
-                        }
-                      ],
-                      "multi": true,
-                      "upsert": {
-                        "$$unsetOrMatches": false
-                      }
+                      "limit": 1
                     }
                   ],
-                  "let": {
-                    "name": "name",
-                    "x": "foo",
-                    "y": {
-                      "$literal": "bar"
+                  "comment": "comment"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll0",
+          "databaseName": "crud-tests",
+          "documents": [
+            {
+              "_id": 2,
+              "name": "name"
+            },
+            {
+              "_id": 3,
+              "name": "name"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "deleteOne with document comment",
+      "runOnRequirements": [
+        {
+          "minServerVersion": "4.4"
+        }
+      ],
+      "operations": [
+        {
+          "name": "deleteOne",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "comment": {
+              "key": "value"
+            }
+          },
+          "expectResult": {
+            "deletedCount": 1
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "delete": "coll0",
+                  "deletes": [
+                    {
+                      "q": {
+                        "_id": 1
+                      },
+                      "limit": 1
                     }
+                  ],
+                  "comment": {
+                    "key": "value"
                   }
                 }
               }
@@ -139,53 +162,36 @@
           "databaseName": "crud-tests",
           "documents": [
             {
-              "_id": 1
-            },
-            {
               "_id": 2,
-              "name": "name",
-              "x": "foo",
-              "y": "bar"
+              "name": "name"
             },
             {
               "_id": 3,
-              "name": "name",
-              "x": "foo",
-              "y": "bar"
+              "name": "name"
             }
           ]
         }
       ]
     },
     {
-      "description": "updateMany with let option unsupported (server-side error)",
+      "description": "deleteOne with comment - pre 4.4",
       "runOnRequirements": [
         {
-          "minServerVersion": "4.2.0",
-          "maxServerVersion": "4.4.99"
+          "minServerVersion": "3.4.0",
+          "maxServerVersion": "4.2.99"
         }
       ],
       "operations": [
         {
-          "name": "updateMany",
+          "name": "deleteOne",
           "object": "collection0",
           "arguments": {
             "filter": {
               "_id": 1
             },
-            "update": [
-              {
-                "$set": {
-                  "x": "$$x"
-                }
-              }
-            ],
-            "let": {
-              "x": "foo"
-            }
+            "comment": "comment"
           },
           "expectError": {
-            "errorContains": "'update.let' is an unknown field",
             "isClientError": false
           }
         }
@@ -197,28 +203,16 @@
             {
               "commandStartedEvent": {
                 "command": {
-                  "update": "coll0",
-                  "updates": [
+                  "delete": "coll0",
+                  "deletes": [
                     {
                       "q": {
                         "_id": 1
                       },
-                      "u": [
-                        {
-                          "$set": {
-                            "x": "$$x"
-                          }
-                        }
-                      ],
-                      "multi": true,
-                      "upsert": {
-                        "$$unsetOrMatches": false
-                      }
+                      "limit": 1
                     }
                   ],
-                  "let": {
-                    "x": "foo"
-                  }
+                  "comment": "comment"
                 }
               }
             }

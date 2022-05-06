@@ -253,6 +253,12 @@ operation_drop_collection (test_t *test,
    coll = mongoc_database_get_collection (db, collection);
    mongoc_collection_drop_with_opts (coll, opts, &op_error);
 
+   /* Ignore "ns not found" errors. This assumes that the client under test is
+    * using MONGOC_ERROR_API_VERSION_2. */
+   if (op_error.domain == MONGOC_ERROR_SERVER && op_error.code == 26) {
+      memset (&op_error, 0, sizeof (bson_error_t));
+   }
+
    result_from_val_and_reply (result, NULL, NULL, &op_error);
 
    ret = true;
@@ -694,9 +700,9 @@ done:
 
 static bool
 operation_create_find_cursor (test_t *test,
-                             operation_t *op,
-                             result_t *result,
-                             bson_error_t *error)
+                              operation_t *op,
+                              result_t *result,
+                              bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -1555,7 +1561,8 @@ operation_iterate_until_document_or_error (test_t *test,
          }
       }
    } else {
-      findcursor = entity_map_get_findcursor (test->entity_map, op->object, error);
+      findcursor =
+         entity_map_get_findcursor (test->entity_map, op->object, error);
       if (!findcursor) {
          goto done;
       }
