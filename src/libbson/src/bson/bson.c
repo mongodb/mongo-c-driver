@@ -62,7 +62,6 @@ typedef struct {
    ssize_t *err_offset;
    uint32_t depth;
    bson_string_t *str;
-   bson_json_mode_t mode;
    int32_t max_len;
    bool max_len_reached;
    const bson_json_opts_t *opts;
@@ -2560,7 +2559,7 @@ _bson_as_json_visit_int32 (const bson_iter_t *iter,
 {
    bson_json_state_t *state = data;
 
-   if (state->mode == BSON_JSON_MODE_CANONICAL) {
+   if (state->opts->mode == BSON_JSON_MODE_CANONICAL) {
       bson_string_append_printf (
          state->str, "{ \"$numberInt\" : \"%" PRId32 "\" }", v_int32);
    } else {
@@ -2579,7 +2578,7 @@ _bson_as_json_visit_int64 (const bson_iter_t *iter,
 {
    bson_json_state_t *state = data;
 
-   if (state->mode == BSON_JSON_MODE_CANONICAL) {
+   if (state->opts->mode == BSON_JSON_MODE_CANONICAL) {
       bson_string_append_printf (
          state->str, "{ \"$numberLong\" : \"%" PRId64 "\" }", v_int64);
    } else {
@@ -2622,8 +2621,8 @@ _bson_as_json_visit_double (const bson_iter_t *iter,
    /* Determine if legacy (i.e. unwrapped) output should be used. Relaxed mode
     * will use this for nan and inf values, which we check manually since old
     * platforms may not have isinf or isnan. */
-   legacy = state->mode == BSON_JSON_MODE_LEGACY ||
-            (state->mode == BSON_JSON_MODE_RELAXED &&
+   legacy = state->opts->mode == BSON_JSON_MODE_LEGACY ||
+            (state->opts->mode == BSON_JSON_MODE_RELAXED &&
              !(v_double != v_double || v_double * 0 != 0));
 
    if (!legacy) {
@@ -2715,8 +2714,8 @@ _bson_as_json_visit_binary (const bson_iter_t *iter,
    b64 = bson_malloc0 (b64_len);
    BSON_ASSERT (mcommon_b64_ntop (v_binary, v_binary_len, b64, b64_len) != -1);
 
-   if (state->mode == BSON_JSON_MODE_CANONICAL ||
-       state->mode == BSON_JSON_MODE_RELAXED) {
+   if (state->opts->mode == BSON_JSON_MODE_CANONICAL ||
+       state->opts->mode == BSON_JSON_MODE_RELAXED) {
       bson_string_append (state->str, "{ \"$binary\" : { \"base64\" : \"");
       bson_string_append (state->str, b64);
       bson_string_append (state->str, "\", \"subType\" : \"");
@@ -2758,12 +2757,12 @@ _bson_as_json_visit_date_time (const bson_iter_t *iter,
 {
    bson_json_state_t *state = data;
 
-   if (state->mode == BSON_JSON_MODE_CANONICAL ||
-       (state->mode == BSON_JSON_MODE_RELAXED && msec_since_epoch < 0)) {
+   if (state->opts->mode == BSON_JSON_MODE_CANONICAL ||
+       (state->opts->mode == BSON_JSON_MODE_RELAXED && msec_since_epoch < 0)) {
       bson_string_append (state->str, "{ \"$date\" : { \"$numberLong\" : \"");
       bson_string_append_printf (state->str, "%" PRId64, msec_since_epoch);
       bson_string_append (state->str, "\" } }");
-   } else if (state->mode == BSON_JSON_MODE_RELAXED) {
+   } else if (state->opts->mode == BSON_JSON_MODE_RELAXED) {
       bson_string_append (state->str, "{ \"$date\" : \"");
       _bson_iso8601_date_format (msec_since_epoch, state->str);
       bson_string_append (state->str, "\" }");
@@ -2792,8 +2791,8 @@ _bson_as_json_visit_regex (const bson_iter_t *iter,
       return true;
    }
 
-   if (state->mode == BSON_JSON_MODE_CANONICAL ||
-       state->mode == BSON_JSON_MODE_RELAXED) {
+   if (state->opts->mode == BSON_JSON_MODE_CANONICAL ||
+       state->opts->mode == BSON_JSON_MODE_RELAXED) {
       bson_string_append (state->str,
                           "{ \"$regularExpression\" : { \"pattern\" : \"");
       bson_string_append (state->str, escaped);
@@ -2850,8 +2849,8 @@ _bson_as_json_visit_dbpointer (const bson_iter_t *iter,
       return true;
    }
 
-   if (state->mode == BSON_JSON_MODE_CANONICAL ||
-       state->mode == BSON_JSON_MODE_RELAXED) {
+   if (state->opts->mode == BSON_JSON_MODE_CANONICAL ||
+       state->opts->mode == BSON_JSON_MODE_RELAXED) {
       bson_string_append (state->str, "{ \"$dbPointer\" : { \"$ref\" : \"");
       bson_string_append (state->str, escaped);
       bson_string_append (state->str, "\"");
@@ -3019,8 +3018,8 @@ _bson_as_json_visit_symbol (const bson_iter_t *iter,
       return true;
    }
 
-   if (state->mode == BSON_JSON_MODE_CANONICAL ||
-       state->mode == BSON_JSON_MODE_RELAXED) {
+   if (state->opts->mode == BSON_JSON_MODE_CANONICAL ||
+       state->opts->mode == BSON_JSON_MODE_RELAXED) {
       bson_string_append (state->str, "{ \"$symbol\" : \"");
       bson_string_append (state->str, escaped);
       bson_string_append (state->str, "\" }");
@@ -3113,14 +3112,10 @@ _bson_as_json_visit_document (const bson_iter_t *iter,
    }
 
    if (bson_empty (v_document)) {
-      bson_string_append (child_state.str, "{  }");
-      return false;
-   }
-
-   if (bson_iter_init (&child, v_document)) {
+      child_state.str = bson_string_new ("{}");
+   } else if (bson_iter_init (&child, v_document)) {
       child_state.str = bson_string_new ("{ ");
       child_state.depth = state->depth + 1;
-      child_state.mode = state->mode;
       child_state.opts = state->opts;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
       if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
@@ -3146,6 +3141,8 @@ _bson_as_json_visit_document (const bson_iter_t *iter,
       _bson_json_newline_indent (&child_state);
       bson_string_append (child_state.str,
                           state->opts->level_indent ? "}" : " }");
+   }
+   if (child_state.str) {
       bson_string_append (state->str, child_state.str->str);
       bson_string_free (child_state.str, true);
    }
@@ -3172,7 +3169,6 @@ _bson_as_json_visit_array (const bson_iter_t *iter,
    if (bson_iter_init (&child, v_array)) {
       child_state.str = bson_string_new ("[ ");
       child_state.depth = state->depth + 1;
-      child_state.mode = state->mode;
       child_state.opts = state->opts;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
       if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
@@ -3236,6 +3232,7 @@ _bson_as_json_visit_all (const bson_t *bson,
 
    state.count = 0;
    state.keys = true;
+   state.opts = opts;
    if (state.opts->initial_indent) {
       state.str = bson_string_new (state.opts->initial_indent);
       bson_string_append_c (state.str, '{');
@@ -3244,7 +3241,6 @@ _bson_as_json_visit_all (const bson_t *bson,
    }
    state.depth = 0;
    state.err_offset = &err_offset;
-   state.opts = opts;
    state.max_len = opts->max_len;
    state.max_len_reached = false;
 
@@ -3349,9 +3345,12 @@ bson_array_as_json (const bson_t *bson, size_t *length)
    state.str = bson_string_new ("[ ");
    state.depth = 0;
    state.err_offset = &err_offset;
-   state.mode = BSON_JSON_MODE_LEGACY;
    state.max_len = BSON_MAX_LEN_UNLIMITED;
    state.max_len_reached = false;
+   bson_json_opts_t opts = {0};
+   opts.mode = BSON_JSON_MODE_LEGACY;
+   opts.max_len = BSON_MAX_LEN_UNLIMITED;
+   state.opts = &opts;
 
    if ((bson_iter_visit_all (&iter, &bson_as_json_visitors, &state) ||
         err_offset != -1) &&
