@@ -1121,16 +1121,8 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
                                  "}",
                                  "]");
 
-      if (!mongoc_database_write_command_with_opts (database,
-                                                    create_indexes,
-                                                    NULL /* opts */,
-                                                    NULL /* reply */,
-                                                    error)) {
-         bson_destroy (create_indexes);
-         bson_free (index_name);
-         bson_destroy (keys);
-         goto fail;
-      }
+      ok = mongoc_database_write_command_with_opts (
+         database, create_indexes, NULL /* opts */, NULL /* reply */, error);
       bson_destroy (create_indexes);
       bson_free (index_name);
       bson_destroy (keys);
