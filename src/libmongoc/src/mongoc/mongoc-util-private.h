@@ -234,6 +234,13 @@ _mongoc_rand_uint64_t (uint64_t min, uint64_t max, uint64_t (*rand) (void));
 size_t
 _mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void));
 
+/* _mongoc_iter_document_as_bson attempts to read the document from @iter into
+ * @bson. */
+bool
+_mongoc_iter_document_as_bson (const bson_iter_t *iter,
+                               bson_t *bson,
+                               bson_error_t *error);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_UTIL_PRIVATE_H */

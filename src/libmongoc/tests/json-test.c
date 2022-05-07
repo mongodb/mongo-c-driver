@@ -1596,6 +1596,16 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_init (&extra);
    }
 
+   if (bson_iter_init_find (&iter, &opts, "encryptedFieldsMap")) {
+      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+      bson_t efm;
+
+      bson_iter_bson (&iter, &efm);
+      mongoc_auto_encryption_opts_set_encrypted_fields_map (
+         auto_encryption_opts, &efm);
+      bson_destroy (&efm);
+   }
+
    if (test_framework_getenv_bool ("MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN") &&
        !bson_iter_init_find (&iter, &extra, "mongocryptdBypassSpawn")) {
       /* forking is disallowed in test runner, bypass spawning mongocryptd and

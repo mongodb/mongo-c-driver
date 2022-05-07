@@ -2916,6 +2916,33 @@ tasks:
       AUTH: noauth
       SSL: nossl
       VALGRIND: 'off'
+- name: test-asan-latest-replica-set-auth-nosasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-asan-latest-replica-set-auth-nosasl-openssl
   tags:
   - latest
@@ -5973,6 +6000,35 @@ tasks:
       AUTH: noauth
       SSL: nossl
       VALGRIND: 'off'
+- name: test-latest-replica-set-auth-sasl-openssl-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - latest
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-openssl
   tags:
   - auth
@@ -5997,6 +6053,35 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-auth-sasl-openssl-static-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - latest
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-openssl-static
   tags:
@@ -6023,6 +6108,35 @@ tasks:
       AUTH: auth
       SSL: openssl-static
       VALGRIND: 'off'
+- name: test-latest-replica-set-auth-sasl-darwinssl-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - darwinssl
+  - latest
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-darwinssl
   tags:
   - auth
@@ -6047,6 +6161,35 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-auth-sasl-winssl-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - latest
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
       VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-winssl
   tags:
@@ -6173,6 +6316,35 @@ tasks:
       AUTH: auth
       SSL: winssl
       VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-sasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - noauth
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-openssl
   tags:
   - latest
@@ -6197,6 +6369,35 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-sasl-openssl-static-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-openssl-static
   tags:
@@ -6223,6 +6424,35 @@ tasks:
       AUTH: noauth
       SSL: openssl-static
       VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-sasl-darwinssl-cse
+  tags:
+  - client-side-encryption
+  - darwinssl
+  - latest
+  - noauth
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-darwinssl
   tags:
   - darwinssl
@@ -6247,6 +6477,35 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-sasl-winssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - noauth
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
       VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-winssl
   tags:

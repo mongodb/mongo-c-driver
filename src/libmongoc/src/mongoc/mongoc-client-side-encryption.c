@@ -42,6 +42,7 @@ struct _mongoc_auto_encryption_opts_t {
    bson_t *kms_providers;
    bson_t *tls_opts;
    bson_t *schema_map;
+   bson_t *encrypted_fields_map;
    bool bypass_auto_encryption;
    bson_t *extra;
 };
@@ -61,6 +62,7 @@ mongoc_auto_encryption_opts_destroy (mongoc_auto_encryption_opts_t *opts)
    bson_destroy (opts->extra);
    bson_destroy (opts->kms_providers);
    bson_destroy (opts->schema_map);
+   bson_destroy (opts->encrypted_fields_map);
    bson_free (opts->keyvault_db);
    bson_free (opts->keyvault_coll);
    bson_destroy (opts->tls_opts);
@@ -152,6 +154,20 @@ mongoc_auto_encryption_opts_set_schema_map (mongoc_auto_encryption_opts_t *opts,
    opts->schema_map = NULL;
    if (schema_map) {
       opts->schema_map = bson_copy (schema_map);
+   }
+}
+
+void
+mongoc_auto_encryption_opts_set_encrypted_fields_map (
+   mongoc_auto_encryption_opts_t *opts, const bson_t *encrypted_fields_map)
+{
+   if (!opts) {
+      return;
+   }
+   bson_destroy (opts->encrypted_fields_map);
+   opts->encrypted_fields_map = NULL;
+   if (encrypted_fields_map) {
+      opts->encrypted_fields_map = bson_copy (encrypted_fields_map);
    }
 }
 
@@ -1381,6 +1397,11 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       client->topology->keyvault_client = opts->keyvault_client;
    }
 
+   if (opts->encrypted_fields_map) {
+      client->topology->encrypted_fields_map =
+         bson_copy (opts->encrypted_fields_map);
+   }
+
    ret = true;
 fail:
    mongoc_uri_destroy (mongocryptd_uri);
@@ -1500,6 +1521,10 @@ _mongoc_cse_client_pool_enable_auto_encryption (
    topology->keyvault_coll = bson_strdup (opts->keyvault_coll);
    if (opts->keyvault_client_pool) {
       topology->keyvault_client_pool = opts->keyvault_client_pool;
+   }
+
+   if (opts->encrypted_fields_map) {
+      topology->encrypted_fields_map = bson_copy (opts->encrypted_fields_map);
    }
 
    setup_okay = true;
