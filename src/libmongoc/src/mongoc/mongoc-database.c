@@ -1036,6 +1036,36 @@ _mongoc_get_encryptedField_state_collection (
       "enxcol_.%s.%s", data_collection, state_collection_suffix);
 }
 
+static bool
+create_encField_state_collection (mongoc_database_t *database,
+                                  const bson_t *encryptedFields,
+                                  const char *data_collection,
+                                  const char *state_collection_suffix,
+                                  bson_error_t *error)
+{
+   char *state_collection = NULL;
+   mongoc_collection_t *collection = NULL;
+   bool ok = false;
+
+   state_collection = _mongoc_get_encryptedField_state_collection (
+      encryptedFields, data_collection, state_collection_suffix, error);
+   if (!state_collection) {
+      goto fail;
+   }
+
+   collection =
+      create_collection (database, state_collection, NULL /* opts */, error);
+   if (collection == NULL) {
+      goto fail;
+   }
+
+   ok = true;
+fail:
+   bson_free (state_collection);
+   mongoc_collection_destroy (collection);
+   return ok;
+}
+
 static mongoc_collection_t *
 create_collection_with_encryptedFields (mongoc_database_t *database,
                                         const char *name,
@@ -1043,52 +1073,18 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
                                         const bson_t *encryptedFields,
                                         bson_error_t *error)
 {
-   char *escName = NULL;
-   char *eccName = NULL;
-   char *ecocName = NULL;
-   mongoc_collection_t *escCollection = NULL;
-   mongoc_collection_t *eccCollection = NULL;
-   mongoc_collection_t *ecocCollection = NULL;
    mongoc_collection_t *dataCollection = NULL;
    bool ok = false;
    bson_t *cc_opts = NULL;
-
-   /* Create ESC collection. */
-   escName = _mongoc_get_encryptedField_state_collection (
-      encryptedFields, name, "esc", error);
-   if (!escName) {
-      goto fail;
-   }
-
-   escCollection =
-      create_collection (database, escName, NULL /* opts */, error);
-   if (!escCollection) {
-      goto fail;
-   }
-
-   /* Create ECC collection. */
-   eccName = _mongoc_get_encryptedField_state_collection (
-      encryptedFields, name, "ecc", error);
-   if (!eccName) {
-      goto fail;
-   }
-
-   eccCollection =
-      create_collection (database, eccName, NULL /* opts */, error);
-   if (!eccCollection) {
-      goto fail;
-   }
-
-   /* Create ECOC collection. */
-   ecocName = _mongoc_get_encryptedField_state_collection (
-      encryptedFields, name, "ecoc", error);
-   if (!ecocName) {
-      goto fail;
-   }
-
-   ecocCollection =
-      create_collection (database, ecocName, NULL /* opts */, error);
-   if (!ecocCollection) {
+   bool state_collections_ok =
+      create_encField_state_collection (
+         database, encryptedFields, name, "esc", error) &&
+      create_encField_state_collection (
+         database, encryptedFields, name, "ecc", error) &&
+      create_encField_state_collection (
+         database, encryptedFields, name, "ecoc", error);
+   if (!state_collections_ok) {
+      // Failed to create one or more state collections
       goto fail;
    }
 
@@ -1143,12 +1139,6 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
    ok = true;
 fail:
    bson_destroy (cc_opts);
-   mongoc_collection_destroy (ecocCollection);
-   bson_free (ecocName);
-   mongoc_collection_destroy (eccCollection);
-   bson_free (eccName);
-   mongoc_collection_destroy (escCollection);
-   bson_free (escName);
    if (ok) {
       return dataCollection;
    } else {
