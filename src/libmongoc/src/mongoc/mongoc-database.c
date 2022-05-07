@@ -855,9 +855,9 @@ mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
 
 static mongoc_collection_t *
 create_collection (mongoc_database_t *database,
-                                   const char *name,
-                                   const bson_t *opts,
-                                   bson_error_t *error)
+                   const char *name,
+                   const bson_t *opts,
+                   bson_error_t *error)
 {
    mongoc_collection_t *collection = NULL;
    bson_iter_t iter;
@@ -1052,7 +1052,7 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
    mongoc_collection_t *dataCollection = NULL;
    bool ok = false;
    bson_t *cc_opts = NULL;
-   
+
    /* Create ESC collection. */
    escName = _mongoc_get_encryptedField_state_collection (
       encryptedFields, name, "esc", error);
@@ -1060,7 +1060,8 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
       goto fail;
    }
 
-   escCollection = create_collection (database, escName, NULL /* opts */, error);
+   escCollection =
+      create_collection (database, escName, NULL /* opts */, error);
    if (!escCollection) {
       goto fail;
    }
@@ -1072,7 +1073,8 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
       goto fail;
    }
 
-   eccCollection = create_collection (database, eccName, NULL /* opts */, error);
+   eccCollection =
+      create_collection (database, eccName, NULL /* opts */, error);
    if (!eccCollection) {
       goto fail;
    }
@@ -1084,7 +1086,8 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
       goto fail;
    }
 
-   ecocCollection = create_collection (database, ecocName, NULL /* opts */, error);
+   ecocCollection =
+      create_collection (database, ecocName, NULL /* opts */, error);
    if (!ecocCollection) {
       goto fail;
    }
@@ -1093,9 +1096,9 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
    cc_opts = bson_copy (opts);
    if (!BSON_APPEND_DOCUMENT (cc_opts, "encryptedFields", encryptedFields)) {
       bson_set_error (error,
-                        MONGOC_ERROR_COMMAND,
-                        MONGOC_ERROR_COMMAND_INVALID_ARG,
-                        "unable to append encryptedFields");
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "unable to append encryptedFields");
       goto fail;
    }
    dataCollection = create_collection (database, name, cc_opts, error);
@@ -1169,7 +1172,7 @@ _mongoc_get_encryptedFields_from_map (mongoc_client_t *client,
       return true;
    }
 
-   char* ns = bson_strdup_printf ("%s.%s", dbName, collName);
+   char *ns = bson_strdup_printf ("%s.%s", dbName, collName);
    bson_iter_t iter;
    if (!bson_iter_init_find (&iter, efMap, ns)) {
       bson_free (ns);
@@ -1271,8 +1274,12 @@ mongoc_database_create_collection (mongoc_database_t *database,
             opts, &opts_without_encryptedFields, "encryptedFields", NULL);
       }
 
-      mongoc_collection_t *ret = create_collection_with_encryptedFields (
-         database, name, &opts_without_encryptedFields, &encryptedFields, error);
+      mongoc_collection_t *ret =
+         create_collection_with_encryptedFields (database,
+                                                 name,
+                                                 &opts_without_encryptedFields,
+                                                 &encryptedFields,
+                                                 error);
 
       bson_destroy (&opts_without_encryptedFields);
       bson_destroy (&encryptedFields);

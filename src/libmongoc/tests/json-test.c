@@ -1601,7 +1601,8 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_t efm;
 
       bson_iter_bson (&iter, &efm);
-      mongoc_auto_encryption_opts_set_encrypted_fields_map (auto_encryption_opts, &efm);
+      mongoc_auto_encryption_opts_set_encrypted_fields_map (
+         auto_encryption_opts, &efm);
       bson_destroy (&efm);
    }
 
