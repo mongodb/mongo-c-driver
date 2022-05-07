@@ -1162,14 +1162,13 @@ _mongoc_get_encryptedFields_from_map (mongoc_client_t *client,
       bson_free (ns);
       return true;
    }
+   bson_free (ns);
 
    if (!_mongoc_iter_document_as_bson (&iter, encryptedFields, error)) {
       /* The efMap entry should always be a document. */
-      bson_free (ns);
       return false;
    }
 
-   bson_free (ns);
    return true;
 }
 
