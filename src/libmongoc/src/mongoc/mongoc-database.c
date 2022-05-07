@@ -1151,17 +1151,20 @@ _mongoc_get_encryptedFields_from_map (mongoc_client_t *client,
    bson_init (encryptedFields);
 
    if (bson_empty0 (efMap)) {
+      /* Unset or empty efMap will have no encrypted fields */
       return true;
    }
 
    char *ns = bson_strdup_printf ("%s.%s", dbName, collName);
    bson_iter_t iter;
    if (!bson_iter_init_find (&iter, efMap, ns)) {
+      /* No efMap entry for this database+collection. */
       bson_free (ns);
       return true;
    }
 
    if (!_mongoc_iter_document_as_bson (&iter, encryptedFields, error)) {
+      /* The efMap entry should always be a document. */
       bson_free (ns);
       return false;
    }
