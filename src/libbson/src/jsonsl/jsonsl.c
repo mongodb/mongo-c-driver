@@ -457,12 +457,16 @@ jsonsl_feed(jsonsl_t jsn, const jsonsl_char_t *bytes, size_t nbytes)
                 } else if (state->special_flags & JSONSL_SPECIALf_NULL ||
                            state->special_flags & JSONSL_SPECIALf_NAN) {
                    /* previous char was "n", are we parsing null or nan? */
-                   if (CUR_CHAR != 'u') {
+                   bool not_u = CUR_CHAR != 'u';
+                   bool not_a = tolower (CUR_CHAR) != 'a';
+                   if (not_u) {
                       state->special_flags &= ~JSONSL_SPECIALf_NULL;
                    }
-
-                   if (tolower(CUR_CHAR) != 'a') {
+                   if (not_a) {
                       state->special_flags &= ~JSONSL_SPECIALf_NAN;
+                   }
+                   if (not_u && not_a) {
+                      VERIFY_SPECIAL ("null", 4);
                    }
 #endif
                 }
