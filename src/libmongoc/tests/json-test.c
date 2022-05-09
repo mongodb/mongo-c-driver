@@ -1056,8 +1056,6 @@ insert_data (const char *db_name,
    mongoc_client_t *client;
    mongoc_database_t *db;
    mongoc_collection_t *collection;
-   mongoc_collection_t *tmp_collection;
-   bson_error_t error;
    bson_t documents;
    bson_iter_t iter;
    bson_t *majority = tmp_bson ("{'writeConcern': {'w': 'majority'}}");
@@ -1069,17 +1067,6 @@ insert_data (const char *db_name,
    collection = mongoc_database_get_collection (db, collection_name);
    mongoc_collection_delete_many (
       collection, tmp_bson ("{}"), majority, NULL, NULL);
-
-   /* drop the collection in case an existing JSON schema exists. */
-   mongoc_collection_drop (collection, &error);
-
-   /* ignore failure if it already exists */
-   tmp_collection =
-      mongoc_database_create_collection (db, collection_name, majority, &error);
-
-   if (tmp_collection) {
-      mongoc_collection_destroy (tmp_collection);
-   }
 
    if (!bson_has_field (scenario, "data")) {
       goto DONE;
