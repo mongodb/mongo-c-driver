@@ -981,12 +981,22 @@ check_topology_type (const bson_t *test)
    return can_proceed;
 }
 
+/* _recreate drops and creates db_name.collection_name.
+ * If 'scenario' contains 'json_schema', the collection is created with a JSON
+ * schema validator. Refer:
+ * https://github.com/mongodb/specifications/tree/d68e85c33c5a3b02bcd8a32a0bec9f11471e41ad/source/client-side-encryption/tests#spec-test-format
+ */
 static void
-_recreate (const char *db_name, const char *collection_name)
+_recreate (const char *db_name,
+           const char *collection_name,
+           const bson_t *scenario)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_database_t *db;
+   bson_t *opts;
+   bson_iter_t iter;
+   bson_error_t error;
 
    if (!db_name || !collection_name) {
       return;
@@ -998,9 +1008,24 @@ _recreate (const char *db_name, const char *collection_name)
    mongoc_collection_drop (collection, NULL);
    mongoc_collection_destroy (collection);
 
+   opts = bson_new ();
+   if (bson_iter_init_find (&iter, scenario, "json_schema")) {
+      bson_t json_schema;
+
+      bson_iter_bson (&iter, &json_schema);
+      BCON_APPEND (opts,
+                   "validator",
+                   "{",
+                   "$jsonSchema",
+                   BCON_DOCUMENT (&json_schema),
+                   "}");
+   }
+
    db = mongoc_client_get_database (client, db_name);
-   collection = mongoc_database_create_collection (
-      db, collection_name, NULL /* options */, NULL);
+   collection =
+      mongoc_database_create_collection (db, collection_name, opts, &error);
+   ASSERT_OR_PRINT (collection, error);
+   bson_destroy (opts);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
@@ -1819,8 +1844,8 @@ run_json_general_test (const json_test_config_t *config)
 
       set_auto_encryption_opts (client, &test);
       /* Drop and recreate test database/collection if necessary. */
-      _recreate (db_name, collection_name);
-      _recreate (db2_name, collection2_name);
+      _recreate (db_name, collection_name, scenario);
+      _recreate (db2_name, collection2_name, scenario);
       insert_data (db_name, collection_name, scenario);
 
       db = mongoc_client_get_database (client, db_name);

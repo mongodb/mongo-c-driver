@@ -63,25 +63,6 @@ _before_test (json_test_ctx_t *ctx, const bson_t *test)
       mongoc_collection_destroy (keyvault_coll);
    }
 
-   /* Collmod to include the json schema. Data was already inserted. */
-   if (bson_iter_init_find (&iter, ctx->config->scenario, "json_schema")) {
-      bson_t *cmd;
-      bson_t json_schema;
-
-      bson_iter_bson (&iter, &json_schema);
-      cmd = BCON_NEW ("collMod",
-                      BCON_UTF8 (mongoc_collection_get_name (ctx->collection)),
-                      "validator",
-                      "{",
-                      "$jsonSchema",
-                      BCON_DOCUMENT (&json_schema),
-                      "}");
-      ret = mongoc_client_command_simple (
-         client, mongoc_database_get_name (ctx->db), cmd, NULL, NULL, &error);
-      ASSERT_OR_PRINT (ret, error);
-      bson_destroy (cmd);
-   }
-
    bson_destroy (&insert_opts);
    mongoc_write_concern_destroy (wc);
    mongoc_client_destroy (client);
