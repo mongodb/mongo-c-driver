@@ -997,6 +997,7 @@ _recreate (const char *db_name,
    bson_t *opts;
    bson_iter_t iter;
    bson_error_t error;
+   bson_t *drop_opts;
 
    if (!db_name || !collection_name) {
       return;
@@ -1004,7 +1005,21 @@ _recreate (const char *db_name,
    /* Use a separate internal client for test setup. */
    client = test_framework_new_default_client ();
 
+   drop_opts = bson_new ();
    collection = mongoc_client_get_collection (client, db_name, collection_name);
+   if (bson_iter_init_find (&iter, scenario, "encrypted_fields")) {
+      bson_t encrypted_fields;
+
+      bson_iter_bson (&iter, &encrypted_fields);
+      BCON_APPEND (
+         drop_opts, "encryptedFields", BCON_DOCUMENT (&encrypted_fields));
+   }
+   if (!mongoc_collection_drop_with_opts (collection, drop_opts, &error)) {
+      /* Ignore "namespace does not exist" error. */
+      ASSERT_OR_PRINT (error.code == 26, error);
+   }
+
+   bson_destroy (drop_opts);
    mongoc_collection_drop (collection, NULL);
    mongoc_collection_destroy (collection);
 
@@ -1019,6 +1034,13 @@ _recreate (const char *db_name,
                    "$jsonSchema",
                    BCON_DOCUMENT (&json_schema),
                    "}");
+   }
+
+   if (bson_iter_init_find (&iter, scenario, "encrypted_fields")) {
+      bson_t encrypted_fields;
+
+      bson_iter_bson (&iter, &encrypted_fields);
+      BCON_APPEND (opts, "encryptedFields", BCON_DOCUMENT (&encrypted_fields));
    }
 
    db = mongoc_client_get_database (client, db_name);
