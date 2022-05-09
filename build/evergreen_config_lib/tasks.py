@@ -243,7 +243,7 @@ all_tasks = [
                 CC='clang-3.8',
                 CFLAGS='-fno-omit-frame-pointer',
                 CHECK_LOG='ON',
-                sanitizfe=['undefined'],
+                sanitize=['undefined'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                 PATH='/usr/lib/llvm-3.8/bin:$PATH'),
     SpecialTask('debug-compile-scan-build',
