@@ -1067,7 +1067,11 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
 
    /* Drop data collection. */
    if (!drop_with_opts (collection, opts, error)) {
-      goto fail;
+      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+         memset (error, 0, sizeof (bson_error_t));
+      } else {
+         goto fail;
+      }
    }
 
    /* Drop ESC collection. */
@@ -1080,7 +1084,11 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
    escCollection = mongoc_client_get_collection (
       collection->client, collection->db, escName);
    if (!drop_with_opts (escCollection, NULL /* opts */, error)) {
-      goto fail;
+      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+         memset (error, 0, sizeof (bson_error_t));
+      } else {
+         goto fail;
+      }
    }
 
    /* Drop ECC collection. */
@@ -1093,7 +1101,11 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
    eccCollection = mongoc_client_get_collection (
       collection->client, collection->db, eccName);
    if (!drop_with_opts (eccCollection, NULL /* opts */, error)) {
-      goto fail;
+      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+         memset (error, 0, sizeof (bson_error_t));
+      } else {
+         goto fail;
+      }
    }
 
    /* Drop ECOC collection. */
@@ -1106,7 +1118,11 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
    ecocCollection = mongoc_client_get_collection (
       collection->client, collection->db, ecocName);
    if (!drop_with_opts (ecocCollection, NULL /* opts */, error)) {
-      goto fail;
+      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+         memset (error, 0, sizeof (bson_error_t));
+      } else {
+         goto fail;
+      }
    }
 
    ok = true;
