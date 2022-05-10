@@ -284,6 +284,8 @@ struct _mongoc_client_encryption_datakey_opts_t {
    bson_t *masterkey;
    char **keyaltnames;
    uint32_t keyaltnames_count;
+   uint8_t *keymaterial;
+   uint32_t keymaterial_len;
 };
 
 mongoc_client_encryption_datakey_opts_t *
@@ -317,6 +319,7 @@ mongoc_client_encryption_datakey_opts_destroy (
 
    bson_destroy (opts->masterkey);
    _clear_datakey_keyaltnames (opts);
+   bson_free (opts->keymaterial);
 
    bson_free (opts);
 }
@@ -358,6 +361,25 @@ mongoc_client_encryption_datakey_opts_set_keyaltnames (
       }
       opts->keyaltnames_count = keyaltnames_count;
    }
+}
+
+void
+mongoc_client_encryption_datakey_opts_set_keymaterial (
+   mongoc_client_encryption_datakey_opts_t *opts,
+   const uint8_t *data,
+   uint32_t len)
+{
+   if (!opts) {
+      return;
+   }
+
+   if (opts->keymaterial) {
+      bson_free (opts->keymaterial);
+   }
+
+   opts->keymaterial = bson_malloc (len);
+   memcpy (opts->keymaterial, data, len);
+   opts->keymaterial_len = len;
 }
 
 /*--------------------------------------------------------------------------
@@ -1719,6 +1741,8 @@ mongoc_client_encryption_create_key (
                                       opts->masterkey,
                                       opts->keyaltnames,
                                       opts->keyaltnames_count,
+                                      opts->keymaterial,
+                                      opts->keymaterial_len,
                                       &datakey,
                                       error)) {
       GOTO (fail);

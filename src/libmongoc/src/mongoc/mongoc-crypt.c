@@ -1283,6 +1283,8 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
                               const bson_t *masterkey,
                               char **keyaltnames,
                               uint32_t keyaltnames_count,
+                              const uint8_t *keymaterial,
+                              uint32_t keymaterial_len,
                               bson_t *doc_out,
                               bson_error_t *error)
 {
@@ -1333,6 +1335,19 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
             goto fail;
          }
       }
+   }
+
+   if (keymaterial) {
+      bson_t *const bson = BCON_NEW (
+         "keyMaterial",
+         BCON_BIN (BSON_SUBTYPE_BINARY, keymaterial, keymaterial_len));
+      mongocrypt_binary_t *const bin = mongocrypt_binary_new_from_data (
+         (uint8_t *) bson_get_data (bson), bson->len);
+
+      mongocrypt_ctx_setopt_key_material (state_machine->ctx, bin);
+
+      bson_destroy (bson);
+      mongocrypt_binary_destroy (bin);
    }
 
    if (!mongocrypt_ctx_datakey_init (state_machine->ctx)) {

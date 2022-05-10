@@ -203,6 +203,12 @@ mongoc_client_encryption_datakey_opts_set_keyaltnames (
    char **keyaltnames,
    uint32_t keyaltnames_count);
 
+MONGOC_EXPORT (void)
+mongoc_client_encryption_datakey_opts_set_keymaterial (
+   mongoc_client_encryption_datakey_opts_t *opts,
+   const uint8_t *data,
+   uint32_t len);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_CLIENT_SIDE_ENCRYPTION_H */
