@@ -134,6 +134,7 @@ BUILD:
 
     # Only build contents that are committed to git
     ARG --required git_reset
+    ARG git_checkout
 
     # Whether we build with client-side-encryption
     ARG --required client_side_encryption
@@ -149,8 +150,12 @@ BUILD:
     # Enable parallelism for Make invocations
     ENV MAKEFLAGS=-j8
 
-    IF $git_reset
-        RUN git clean -fdx && git checkout .
+    IF $git_reset || ! test -z "$git_checkout"
+        RUN git clean -fdx && git checkout -- .
+        IF ! test -z "$git_checkout"
+            RUN git checkout "$git_checkout"
+        END
+        RUN git submodule update --init --recursive
     END
 
     ENV _base_configure_flags="-DBUILD_VERSION=$build_version -DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=$client_side_encryption -DENABLE_EXTRA_ALIGNMENT=OFF"
@@ -200,6 +205,7 @@ build:
     FROM "+${env}-env"
     # Reasonable default arguments for the build:
     ARG --required git_reset
+    ARG git_checkout
     ARG client_side_encryption=ON
     ARG debug=ON
     ARG check_log=ON
@@ -225,7 +231,10 @@ build:
         --zstd=$zstd \
         --snappy=$snappy \
         --arch=$arch \
-        --cc=$cc
+        --cc=$cc \
+        --git_checkout=$git_checkout
+
+    SAVE ARTIFACT install-dir install-dir
 
 debug-compile-asan-clang-openssl:
     ARG --required env
@@ -233,6 +242,7 @@ debug-compile-asan-clang-openssl:
     FROM "+${env}-env"
     WORKDIR /s
     ARG --required git_reset
+    ARG git_checkout
     DO +BUILD \
         --client_side_encryption=OFF \
         --debug=ON \
@@ -246,7 +256,8 @@ debug-compile-asan-clang-openssl:
         --sasl=OFF \
         --ssl=OPENSSL \
         --arch=native \
-        --git_reset=$git_reset
+        --git_reset=$git_reset \
+        --git_checkout=$git_checkout
 
 evg-tools:
     GIT CLONE https://github.com/mongodb-labs/drivers-evergreen-tools drivers-evergreen-tools
@@ -278,8 +289,9 @@ TEST:
 full-test:
     ARG --required env
     ARG --required git_reset
+    ARG git_checkout
     ARG skip_unit_tests=OFF
-    FROM +build --env=$env --skip_tests=$skip_unit_tests --git_reset=$git_reset
+    FROM +build --env=$env --skip_tests=$skip_unit_tests --git_reset=$git_reset --git_checkout=$git_checkout
     ARG mdb_version=5.0
     ARG topology=server
     ARG ssl=openssl
