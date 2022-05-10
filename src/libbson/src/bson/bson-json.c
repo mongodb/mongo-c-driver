@@ -1223,6 +1223,7 @@ _bson_json_read_start_map (bson_json_reader_t *reader) /* IN */
       case BSON_JSON_LF_SCOPE:
       case BSON_JSON_LF_TIMESTAMP_I:
       case BSON_JSON_LF_TIMESTAMP_T:
+      default:
          // These special LF keys aren't handled with BSON_JSON_IN_BSON_TYPE
          BSON_UNREACHABLE (
             "These LF values are handled with a different read_state");
