@@ -877,7 +877,7 @@ if (MONGOC_TEST_USE_CSFLE)
       COMMAND
          "${_PYTHON3_EXE}" -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
             --component csfle
-            --version 5.3.1
+            --version 6.0.0-rc4
             --edition enterprise
             --out "${CMAKE_CURRENT_BINARY_DIR}"
             --only "**/mongo_csfle_v1.*"
