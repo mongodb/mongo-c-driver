@@ -36,6 +36,7 @@ Creates a new handle into libmongocrypt.
 _mongoc_crypt_t *
 _mongoc_crypt_new (const bson_t *kms_providers,
                    const bson_t *schema_map,
+                   const bson_t *encrypted_fields_map,
                    const bson_t *tls_opts,
                    const char *csfle_override_path,
                    bool csfle_required,

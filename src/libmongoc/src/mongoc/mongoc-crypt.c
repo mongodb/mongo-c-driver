@@ -913,6 +913,7 @@ fail:
 _mongoc_crypt_t *
 _mongoc_crypt_new (const bson_t *kms_providers,
                    const bson_t *schema_map,
+                   const bson_t *encrypted_fields_map,
                    const bson_t *tls_opts,
                    const char *csfle_override_path,
                    bool csfle_required,
@@ -922,6 +923,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    _mongoc_crypt_t *crypt;
    mongocrypt_binary_t *local_masterkey_bin = NULL;
    mongocrypt_binary_t *schema_map_bin = NULL;
+   mongocrypt_binary_t *encrypted_fields_map_bin = NULL;
    mongocrypt_binary_t *kms_providers_bin = NULL;
    bool success = false;
 
@@ -947,6 +949,17 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       schema_map_bin = mongocrypt_binary_new_from_data (
          (uint8_t *) bson_get_data (schema_map), schema_map->len);
       if (!mongocrypt_setopt_schema_map (crypt->handle, schema_map_bin)) {
+         _crypt_check_error (crypt->handle, error, true);
+         goto fail;
+      }
+   }
+
+   if (encrypted_fields_map) {
+      encrypted_fields_map_bin = mongocrypt_binary_new_from_data (
+         (uint8_t *) bson_get_data (encrypted_fields_map),
+         encrypted_fields_map->len);
+      if (!mongocrypt_setopt_encrypted_field_config_map (
+             crypt->handle, encrypted_fields_map_bin)) {
          _crypt_check_error (crypt->handle, error, true);
          goto fail;
       }
@@ -994,6 +1007,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    success = true;
 fail:
    mongocrypt_binary_destroy (local_masterkey_bin);
+   mongocrypt_binary_destroy (encrypted_fields_map_bin);
    mongocrypt_binary_destroy (schema_map_bin);
    mongocrypt_binary_destroy (kms_providers_bin);
 

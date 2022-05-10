@@ -1331,6 +1331,7 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
    client->topology->crypt =
       _mongoc_crypt_new (opts->kms_providers,
                          opts->schema_map,
+                         opts->encrypted_fields_map,
                          opts->tls_opts,
                          client->topology->csfle_override_path,
                          client->topology->csfle_required,
@@ -1485,6 +1486,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (
 
    topology->crypt = _mongoc_crypt_new (opts->kms_providers,
                                         opts->schema_map,
+                                        opts->encrypted_fields_map,
                                         opts->tls_opts,
                                         topology->csfle_override_path,
                                         topology->csfle_required,
@@ -1584,6 +1586,7 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    client_encryption->crypt =
       _mongoc_crypt_new (opts->kms_providers,
                          NULL /* schema_map */,
+                         NULL /* encrypted_fields_map */,
                          opts->tls_opts,
                          NULL /* No csfle path */,
                          false /* csfle not requried */,
