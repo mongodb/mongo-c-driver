@@ -1,0 +1,120 @@
+{
+  "description": "createKey-provider-aws",
+  "schemaVersion": "1.8",
+  "runOnRequirements": [
+    {
+      "csfle": true
+    }
+  ],
+  "createEntities": [
+    {
+      "client": {
+        "id": "client0",
+        "useMultipleMongoses": true,
+        "observeEvents": [
+          "commandStartedEvent",
+          "commandSucceededEvent",
+          "commandFailedEvent"
+        ]
+      }
+    },
+    {
+      "clientEncryption": {
+        "id": "clientEncryption0",
+        "clientEncryptionOpts": {
+          "keyVaultClient": "client0",
+          "keyVaultNamespace": "keyvault.datakeys",
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {},
+              "secretAccessKey": {}
+            }
+          }
+        }
+      }
+    },
+    {
+      "database": {
+        "id": "database0",
+        "client": "client0",
+        "databaseName": "keyvault"
+      }
+    },
+    {
+      "collection": {
+        "id": "collection0",
+        "database": "database0",
+        "collectionName": "datakeys"
+      }
+    }
+  ],
+  "initialData": [
+    {
+      "databaseName": "keyvault",
+      "collectionName": "datakeys",
+      "documents": []
+    }
+  ],
+  "tests": [
+    {
+      "description": "create data key with AWS KMS provider",
+      "operations": [
+        {
+          "name": "createKey",
+          "object": "clientEncryption0",
+          "arguments": {
+            "kmsProvider": "aws",
+            "opts": {
+              "masterKey": {
+                "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
+                "region": "us-east-1"
+              }
+            }
+          },
+          "expectResult": {
+            "id": {
+              "$$type": "binData"
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "commandName": "insert",
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "masterKey": {
+                        "provider": "aws",
+                        "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
+                        "region": "us-east-1"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandSucceededEvent": {
+                "commandName": "insert",
+                "reply": {
+                  "ok": 1,
+                  "n": 1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

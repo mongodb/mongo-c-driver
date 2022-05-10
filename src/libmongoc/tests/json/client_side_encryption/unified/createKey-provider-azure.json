@@ -1,0 +1,121 @@
+{
+  "description": "createKey-provider-azure",
+  "schemaVersion": "1.8",
+  "runOnRequirements": [
+    {
+      "csfle": true
+    }
+  ],
+  "createEntities": [
+    {
+      "client": {
+        "id": "client0",
+        "useMultipleMongoses": true,
+        "observeEvents": [
+          "commandStartedEvent",
+          "commandSucceededEvent",
+          "commandFailedEvent"
+        ]
+      }
+    },
+    {
+      "clientEncryption": {
+        "id": "clientEncryption0",
+        "clientEncryptionOpts": {
+          "keyVaultClient": "client0",
+          "keyVaultNamespace": "keyvault.datakeys",
+          "kmsProviders": {
+            "azure": {
+              "tenantId": {},
+              "clientId": {},
+              "clientSecret": {}
+            }
+          }
+        }
+      }
+    },
+    {
+      "database": {
+        "id": "database0",
+        "client": "client0",
+        "databaseName": "keyvault"
+      }
+    },
+    {
+      "collection": {
+        "id": "collection0",
+        "database": "database0",
+        "collectionName": "datakeys"
+      }
+    }
+  ],
+  "initialData": [
+    {
+      "databaseName": "keyvault",
+      "collectionName": "datakeys",
+      "documents": []
+    }
+  ],
+  "tests": [
+    {
+      "description": "create datakey with Azure KMS provider",
+      "operations": [
+        {
+          "name": "createKey",
+          "object": "clientEncryption0",
+          "arguments": {
+            "kmsProvider": "azure",
+            "opts": {
+              "masterKey": {
+                "keyVaultEndpoint": "key-vault-csfle.vault.azure.net",
+                "keyName": "key-name-csfle"
+              }
+            }
+          },
+          "expectResult": {
+            "id": {
+              "$$type": "binData"
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "commandName": "insert",
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "masterKey": {
+                        "provider": "azure",
+                        "keyVaultEndpoint": "key-vault-csfle.vault.azure.net",
+                        "keyName": "key-name-csfle"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandSucceededEvent": {
+                "commandName": "insert",
+                "reply": {
+                  "ok": 1,
+                  "n": 1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
