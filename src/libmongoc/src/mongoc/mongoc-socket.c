@@ -27,6 +27,11 @@
 #ifdef _WIN32
 #include <Mstcpip.h>
 #include <process.h>
+
+#if (defined (_MSCVER)
+#pragma comment(lib, "Advapi32.lib")
+#endif
+
 #endif
 
 #undef MONGOC_LOG_DOMAIN
