@@ -44,7 +44,8 @@ _more() {
             if test $prev == 0; then
                 return 0
             fi
-            shift shift
+            shift
+            shift
             __impl "$@"
             ;;
         *)
