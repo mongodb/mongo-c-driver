@@ -1199,11 +1199,10 @@ tasks:
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
-        export SANITIZE=""
+        export SANITIZE="undefined"
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
-        export sanitizfe="['undefined']"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-scan-build
