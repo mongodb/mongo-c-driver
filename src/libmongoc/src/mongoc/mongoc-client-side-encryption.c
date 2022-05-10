@@ -44,6 +44,7 @@ struct _mongoc_auto_encryption_opts_t {
    bson_t *schema_map;
    bson_t *encrypted_fields_map;
    bool bypass_auto_encryption;
+   bool bypass_query_analysis;
    bson_t *extra;
 };
 
@@ -179,6 +180,16 @@ mongoc_auto_encryption_opts_set_bypass_auto_encryption (
       return;
    }
    opts->bypass_auto_encryption = bypass_auto_encryption;
+}
+
+void
+mongoc_auto_encryption_opts_set_bypass_query_analysis (
+   mongoc_auto_encryption_opts_t *opts, bool bypass_query_analysis)
+{
+   if (!opts) {
+      return;
+   }
+   opts->bypass_query_analysis = bypass_query_analysis;
 }
 
 void
@@ -1336,6 +1347,7 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
                          client->topology->csfle_override_path,
                          client->topology->csfle_required,
                          opts->bypass_auto_encryption,
+                         opts->bypass_query_analysis,
                          error);
    if (!client->topology->crypt) {
       GOTO (fail);
@@ -1491,6 +1503,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (
                                         topology->csfle_override_path,
                                         topology->csfle_required,
                                         opts->bypass_auto_encryption,
+                                        opts->bypass_query_analysis,
                                         error);
    if (!topology->crypt) {
       GOTO (fail);
@@ -1591,6 +1604,7 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                          NULL /* No csfle path */,
                          false /* csfle not requried */,
                          true, /* bypassAutoEncryption (We are explicit) */
+                         false /* bypass_query_analysis. Not applicable. */,
                          error);
    if (!client_encryption->crypt) {
       goto fail;

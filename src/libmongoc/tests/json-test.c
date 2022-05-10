@@ -1600,6 +1600,11 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          auto_encryption_opts, bson_iter_as_bool (&iter));
    }
 
+   if (bson_iter_init_find (&iter, &opts, "bypassQueryAnalysis")) {
+      mongoc_auto_encryption_opts_set_bypass_query_analysis (
+         auto_encryption_opts, bson_iter_as_bool (&iter));
+   }
+
    if (bson_iter_init_find (&iter, &opts, "keyVaultNamespace")) {
       const char *keyvault_ns;
       char *db_name;

@@ -41,6 +41,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    const char *csfle_override_path,
                    bool csfle_required,
                    bool bypass_auto_encryption,
+                   bool bypass_query_analysis,
                    bson_error_t *error);
 
 void

@@ -918,6 +918,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    const char *csfle_override_path,
                    bool csfle_required,
                    bool bypass_auto_encryption,
+                   bool bypass_query_analysis,
                    bson_error_t *error)
 {
    _mongoc_crypt_t *crypt;
@@ -977,6 +978,13 @@ _mongoc_crypt_new (const bson_t *kms_providers,
          if (!_crypt_check_error (crypt->handle, error, false)) {
             goto fail;
          }
+      }
+   }
+
+   if (bypass_query_analysis) {
+      mongocrypt_setopt_bypass_query_analysis (crypt->handle);
+      if (!_crypt_check_error (crypt->handle, error, false)) {
+         goto fail;
       }
    }
 
