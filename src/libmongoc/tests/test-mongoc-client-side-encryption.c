@@ -576,10 +576,10 @@ test_datakey_and_double_encryption_creating_and_using (
 
    /* Check that client captured a command_started event for the insert command
     * containing a majority writeConcern. */
-   BSON_ASSERT (match_bson (
+   assert_match_bson (
       test_ctx->last_cmd,
       tmp_bson ("{'insert': 'datakeys', 'writeConcern': { 'w': 'majority' } }"),
-      false));
+      false);
 
    /* Use client to run a find on keyvault.datakeys */
    coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
@@ -1805,8 +1805,8 @@ _test_corpus (bool local_schema)
 
    /* It should exactly match corpus. match_bson does a subset match, so match
     * in  both directions */
-   BSON_ASSERT (match_bson (corpus, corpus_decrypted, false));
-   BSON_ASSERT (match_bson (corpus_decrypted, corpus, false));
+   assert_match_bson (corpus, corpus_decrypted, false);
+   assert_match_bson (corpus_decrypted, corpus, false);
    mongoc_cursor_destroy (cursor);
 
    /* Load corpus-encrypted.json */

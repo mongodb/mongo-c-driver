@@ -1178,7 +1178,7 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
 
       bson_iter_bson (&iter, &expected_doc);
       ASSERT_CURSOR_NEXT (cursor, &actual_doc);
-      ASSERT (match_bson (actual_doc, &expected_doc, false));
+      assert_match_bson (actual_doc, &expected_doc, false);
    }
 
    ASSERT_CURSOR_DONE (cursor);

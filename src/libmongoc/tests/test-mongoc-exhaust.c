@@ -538,7 +538,7 @@ _mock_test_exhaust (bool pooled,
       /* initial query succeeds, gets a doc and cursor id of 123 */
       mock_server_replies (request, MONGOC_REPLY_NONE, 123, 1, 1, "{'a': 1}");
       ASSERT (future_get_bool (future));
-      ASSERT (match_bson (doc, tmp_bson ("{'a': 1}"), false));
+      assert_match_bson (doc, tmp_bson ("{'a': 1}"), false);
       ASSERT_CMPINT64 ((int64_t) 123, ==, mongoc_cursor_get_id (cursor));
 
       future_destroy (future);
