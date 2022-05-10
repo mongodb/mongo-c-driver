@@ -457,8 +457,8 @@ jsonsl_feed(jsonsl_t jsn, const jsonsl_char_t *bytes, size_t nbytes)
                 } else if (state->special_flags & JSONSL_SPECIALf_NULL ||
                            state->special_flags & JSONSL_SPECIALf_NAN) {
                    /* previous char was "n", are we parsing null or nan? */
-                   bool not_u = CUR_CHAR != 'u';
-                   bool not_a = tolower (CUR_CHAR) != 'a';
+                   const bool not_u = CUR_CHAR != 'u';
+                   const bool not_a = tolower (CUR_CHAR) != 'a';
                    if (not_u) {
                       state->special_flags &= ~JSONSL_SPECIALf_NULL;
                    }
@@ -466,6 +466,12 @@ jsonsl_feed(jsonsl_t jsn, const jsonsl_char_t *bytes, size_t nbytes)
                       state->special_flags &= ~JSONSL_SPECIALf_NAN;
                    }
                    if (not_u && not_a) {
+                      /* This veryify will always fail, as we have an 'n'
+                       * followed by a character that is neither 'a' nor 'u'
+                       * (and hence cannot be "null"). The purpose of this
+                       * VERIFY_SPECIAL is to generate an error in tokenization
+                       * that stops if a bare 'n' cannot possibly be a "nan" or
+                       * a "null". */
                       VERIFY_SPECIAL ("null", 4);
                    }
 #endif
