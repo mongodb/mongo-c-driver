@@ -1846,13 +1846,7 @@ mongoc_client_encryption_rewrap_many_datakey (
 
       bson_iter_t iter;
 
-      if (!bulk) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "failed to create bulk operation");
-         GOTO (fail);
-      }
+      BSON_ASSERT (bulk);
 
       if (!bson_iter_init_find (&iter, &keys, "v")) {
          bson_set_error (error,
