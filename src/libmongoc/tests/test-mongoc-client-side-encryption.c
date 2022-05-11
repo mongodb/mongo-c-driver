@@ -2381,7 +2381,7 @@ test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
 }
 
 static void
-test_bypass_spawning_via_bypassAutoEncryption (void *unused)
+test_bypass_spawning_via_helper (const char *auto_encryption_opt)
 {
    mongoc_client_t *client_encrypted;
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
@@ -2398,8 +2398,16 @@ test_bypass_spawning_via_bypassAutoEncryption (void *unused)
                                                   kms_providers);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
       auto_encryption_opts, "keyvault", "datakeys");
-   mongoc_auto_encryption_opts_set_bypass_auto_encryption (auto_encryption_opts,
-                                                           true);
+   if (0 == strcmp (auto_encryption_opt, "bypass_auto_encryption")) {
+      mongoc_auto_encryption_opts_set_bypass_auto_encryption (
+         auto_encryption_opts, true);
+   } else if (0 == strcmp (auto_encryption_opt, "bypass_query_analysis")) {
+      mongoc_auto_encryption_opts_set_bypass_query_analysis (
+         auto_encryption_opts, true);
+   } else {
+      test_error ("Unexpected 'auto_encryption_opt' argument: %s",
+                  auto_encryption_opt);
+   }
 
    /* Create a MongoClient with encryption enabled */
    client_encrypted = test_framework_new_default_client ();
@@ -2430,6 +2438,17 @@ test_bypass_spawning_via_bypassAutoEncryption (void *unused)
    bson_destroy (kms_providers);
 }
 
+static void
+test_bypass_spawning_via_bypassAutoEncryption (void *unused)
+{
+   test_bypass_spawning_via_helper ("bypass_auto_encryption");
+}
+
+static void
+test_bypass_spawning_via_bypassQueryAnalysis (void *unused)
+{
+   test_bypass_spawning_via_helper ("bypass_query_analysis");
+}
 
 static mongoc_client_encryption_t *
 _make_kms_certificate_client_encryption (mongoc_client_t *client,
@@ -3249,6 +3268,14 @@ test_client_side_encryption_install (TestSuite *suite)
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "bypassAutoEncryption",
                       test_bypass_spawning_via_bypassAutoEncryption,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/bypass_spawning_mongocryptd/"
+                      "bypassQueryAnalysis",
+                      test_bypass_spawning_via_bypassQueryAnalysis,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,

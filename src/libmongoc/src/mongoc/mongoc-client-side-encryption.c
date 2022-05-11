@@ -1354,8 +1354,10 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
    }
 
    client->topology->bypass_auto_encryption = opts->bypass_auto_encryption;
+   client->topology->bypass_query_analysis = opts->bypass_query_analysis;
 
-   if (!client->topology->bypass_auto_encryption) {
+   if (!client->topology->bypass_auto_encryption &&
+       !client->topology->bypass_query_analysis) {
       if (!client->topology->mongocryptd_bypass_spawn) {
          if (!_spawn_mongocryptd (client->topology->mongocryptd_spawn_path,
                                   client->topology->mongocryptd_spawn_args,
@@ -1510,8 +1512,9 @@ _mongoc_cse_client_pool_enable_auto_encryption (
    }
 
    topology->bypass_auto_encryption = opts->bypass_auto_encryption;
+   topology->bypass_query_analysis = opts->bypass_query_analysis;
 
-   if (!topology->bypass_auto_encryption) {
+   if (!topology->bypass_auto_encryption && !topology->bypass_query_analysis) {
       if (!topology->mongocryptd_bypass_spawn) {
          if (!_spawn_mongocryptd (topology->mongocryptd_spawn_path,
                                   topology->mongocryptd_spawn_args,

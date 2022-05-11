@@ -185,6 +185,7 @@ typedef struct _mongoc_topology_t {
    bool mongocryptd_bypass_spawn;
    char *mongocryptd_spawn_path;
    bson_t *mongocryptd_spawn_args;
+   bool bypass_query_analysis;
 #endif
 
    // Corresponds to extraOptions.csflePath
