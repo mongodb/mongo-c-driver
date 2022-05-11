@@ -578,8 +578,8 @@ bool
 mongoc_client_encryption_rewrap_many_datakey (
    mongoc_client_encryption_t *client_encryption,
    const bson_t *filter,
-   const char *kms_provider,
-   mongoc_client_encryption_datakey_opts_t *opts,
+   const char *provider,
+   const bson_t *master_key,
    mongoc_client_encryption_rewrap_many_datakey_result_t *result,
    bson_error_t *error)
 {
