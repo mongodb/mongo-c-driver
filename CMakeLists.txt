@@ -541,3 +541,7 @@ if (TARGET test-libmongoc)
          TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/LoadTests-${CMAKE_BUILD_TYPE}.cmake")
    endif ()
 endif ()
+
+if (CMAKE_GENERATOR STREQUAL "Ninja Multi-Config" AND PROJECT_IS_TOP_LEVEL)
+   set (CMAKE_CROSS_CONFIGS "all")
+endif ()
