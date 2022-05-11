@@ -16,6 +16,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       SKIP_MOCK_TESTS         Skips running the libmongoc mock server tests after compiling
 # Options for CMake:
 #       LIBBSON                 Build against bundled or external libbson
+#       SANITIZE                Sanitizers to enable (comma-separated)
 #       EXTRA_CONFIGURE_FLAGS   Extra configure flags to use
 #       EXTRA_CMAKE_PREFIX_PATH Extra directories to search for libraries/packages
 #       ZLIB                    Build against bundled or external zlib, or none
@@ -45,6 +46,7 @@ ZLIB=${ZLIB:-BUNDLED}
 INSTALL_DIR=$(pwd)/install-dir
 
 echo "CFLAGS: $CFLAGS"
+echo "SANITIZE: $SANITIZE"
 echo "MARCH: $MARCH"
 echo "RELEASE: $RELEASE"
 echo "DEBUG: $DEBUG"
@@ -198,6 +200,7 @@ esac
 if [ "darwin" = "$OS" -a "arm64" = "$MARCH" ]; then
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
+CONFIGURE_FLAGS="$CONFIGURE_FLAGS \"-DMONGO_SANITIZE=${SANITIZE}\""
 
 if ! python3 build/mongodl.py --test -C csfle -V 5.3.1 -o . > /dev/null; then
    echo "No csfle detected for this platform. Disabling MONGOC_TEST_USE_CSFLE."

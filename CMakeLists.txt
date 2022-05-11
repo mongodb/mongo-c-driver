@@ -89,6 +89,8 @@ include (CCache)
 if (NOT MSVC)
    include (LLDLinker)
 endif ()
+# Enable sanitizers
+include (Sanitizers)
 
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
 
