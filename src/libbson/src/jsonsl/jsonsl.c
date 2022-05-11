@@ -466,7 +466,7 @@ jsonsl_feed(jsonsl_t jsn, const jsonsl_char_t *bytes, size_t nbytes)
                       state->special_flags &= ~JSONSL_SPECIALf_NAN;
                    }
                    if (not_u && not_a) {
-                      /* This veryify will always fail, as we have an 'n'
+                      /* This verify will always fail, as we have an 'n'
                        * followed by a character that is neither 'a' nor 'u'
                        * (and hence cannot be "null"). The purpose of this
                        * VERIFY_SPECIAL is to generate an error in tokenization
