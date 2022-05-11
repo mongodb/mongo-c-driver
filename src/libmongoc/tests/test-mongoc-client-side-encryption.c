@@ -2283,8 +2283,24 @@ _check_mongocryptd_not_spawned (void)
    bson_error_t error;
    bool ret;
 
-   client = test_framework_client_new (
-      "mongodb://localhost:27021/db?serverSelectionTimeoutMS=1000", NULL);
+   /* Set up client. */
+   {
+      mongoc_uri_t *uri = mongoc_uri_new ("mongodb://localhost:27021");
+      ASSERT (mongoc_uri_set_option_as_int32 (
+         uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 1000));
+      /* Set SERVERSELECTIONTRYONCE to false so client will wait for the full
+       * second before giving up on server selection. */
+      ASSERT (mongoc_uri_set_option_as_bool (
+         uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false));
+
+      client = mongoc_client_new_from_uri (uri);
+      /* Bypass the 5 second cooldown so attempts to connect are repeated.
+       * Single threaded clients wait for 5 second cooldown period after failing
+       * to connect to a server before connecting again. If mongocryptd just
+       * spawned, it may take time before connections are accepted. */
+      _mongoc_topology_bypass_cooldown (client->topology);
+      mongoc_uri_destroy (uri);
+   }
    cmd = BCON_NEW (HANDSHAKE_CMD_LEGACY_HELLO, BCON_INT32 (1));
    ret = mongoc_client_command_simple (
       client, "keyvault", cmd, NULL /* read prefs */, NULL /* reply */, &error);
