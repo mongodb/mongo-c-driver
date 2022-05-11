@@ -26,8 +26,12 @@
           "keyVaultNamespace": "keyvault.datakeys",
           "kmsProviders": {
             "aws": {
-              "accessKeyId": {},
-              "secretAccessKey": {}
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
             }
           }
         }

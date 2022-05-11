@@ -26,8 +26,12 @@
           "keyVaultNamespace": "keyvault.datakeys",
           "kmsProviders": {
             "gcp": {
-              "email": {},
-              "privateKey": {}
+              "email": {
+                "$$placeholder": 1
+              },
+              "privateKey": {
+                "$$placeholder": 1
+              }
             }
           }
         }
