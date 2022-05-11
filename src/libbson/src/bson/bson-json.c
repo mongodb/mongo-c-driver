@@ -1174,11 +1174,14 @@ _bson_json_read_start_map (bson_json_reader_t *reader) /* IN */
    BASIC_CB_PREAMBLE;
 
    if (bson->read_state == BSON_JSON_IN_BSON_TYPE) {
-      if (bson->bson_state == BSON_JSON_LF_DATE) {
+      switch (bson->bson_state) {
+      case BSON_JSON_LF_DATE:
          bson->read_state = BSON_JSON_IN_BSON_TYPE_DATE_NUMBERLONG;
-      } else if (bson->bson_state == BSON_JSON_LF_BINARY) {
+         break;
+      case BSON_JSON_LF_BINARY:
          bson->read_state = BSON_JSON_IN_BSON_TYPE_BINARY_VALUES;
-      } else if (bson->bson_state == BSON_JSON_LF_TYPE) {
+         break;
+      case BSON_JSON_LF_TYPE:
          /* special case, we started parsing {$type: {$numberInt: "2"}} and we
           * expected a legacy Binary format. now we see the second "{", so
           * backtrack and parse $type query operator. */
@@ -1186,6 +1189,44 @@ _bson_json_read_start_map (bson_json_reader_t *reader) /* IN */
          STACK_PUSH_DOC (bson_append_document_begin (
             STACK_BSON_PARENT, key, len, STACK_BSON_CHILD));
          _bson_json_save_map_key (bson, (const uint8_t *) "$type", 5);
+         break;
+      case BSON_JSON_LF_CODE:
+      case BSON_JSON_LF_DECIMAL128:
+      case BSON_JSON_LF_DOUBLE:
+      case BSON_JSON_LF_INT32:
+      case BSON_JSON_LF_INT64:
+      case BSON_JSON_LF_MAXKEY:
+      case BSON_JSON_LF_MINKEY:
+      case BSON_JSON_LF_OID:
+      case BSON_JSON_LF_OPTIONS:
+      case BSON_JSON_LF_REGEX:
+      /**
+       * NOTE: A read_state of BSON_JSON_IN_BSON_TYPE is used when "$regex" is
+       * found, but BSON_JSON_IN_BSON_TYPE_REGEX_STARTMAP is used for
+       * "$regularExpression", which will instead go to a below 'if else' branch
+       * instead of this switch statement. They're both called "regex" in their
+       * respective enumerators, but they behave differently when parsing.
+       */
+      // fallthrough
+      case BSON_JSON_LF_REGULAR_EXPRESSION_OPTIONS:
+      case BSON_JSON_LF_REGULAR_EXPRESSION_PATTERN:
+      case BSON_JSON_LF_SYMBOL:
+      case BSON_JSON_LF_UNDEFINED:
+      case BSON_JSON_LF_UUID:
+         // These special keys do not expect objects as their values. Fail.
+         _bson_json_read_set_error (
+            reader,
+            "Unexpected nested object value for \"%s\" key",
+            reader->bson.unescaped.buf);
+         break;
+      case BSON_JSON_LF_DBPOINTER:
+      case BSON_JSON_LF_SCOPE:
+      case BSON_JSON_LF_TIMESTAMP_I:
+      case BSON_JSON_LF_TIMESTAMP_T:
+      default:
+         // These special LF keys aren't handled with BSON_JSON_IN_BSON_TYPE
+         BSON_UNREACHABLE (
+            "These LF values are handled with a different read_state");
       }
    } else if (bson->read_state == BSON_JSON_IN_BSON_TYPE_TIMESTAMP_STARTMAP) {
       bson->read_state = BSON_JSON_IN_BSON_TYPE_TIMESTAMP_VALUES;
