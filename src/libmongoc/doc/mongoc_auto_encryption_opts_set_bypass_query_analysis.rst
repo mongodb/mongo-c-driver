@@ -26,7 +26,7 @@ Set ``bypass_query_analysis`` to true to use explicit encryption on indexed fiel
 
 .. seealso::
 
-  | :symbol:`mongoc_client_enable_query_analysis()`
+  | :symbol:`mongoc_client_enable_auto_encryption()`
 
   | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
 
