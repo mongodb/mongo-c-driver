@@ -115,9 +115,11 @@ COMPILE_SH:
             ${env_vars} \
         /bin/sh -l .evergreen/compile.sh
 
-BUILD:
+COPY_C_SOURCE:
     COMMAND
-
+    ARG --required to
+    ARG --required git_reset
+    ARG git_checkout
     COPY --dir \
         .git/ \
         build/ \
@@ -127,14 +129,25 @@ BUILD:
         orchestration_configs/ \
         CMakeLists.txt \
         COPYING NEWS README.rst CONTRIBUTING.md THIRD_PARTY_NOTICES \
-        .
+        "${to}"
+    IF $git_reset || ! test -z "$git_checkout"
+        RUN cd "$to" && git clean -fdx && git checkout -- .
+        IF ! test -z "$git_checkout"
+            RUN cd "$to" && git checkout "$git_checkout"
+        END
+        RUN cd "$to" && git submodule update --init --recursive
+    END
+
+BUILD:
+    COMMAND
+
+    ARG --required jobs
+    ARG --required git_reset
+    ARG git_checkout
+    DO +COPY_C_SOURCE --to=. --git_reset=$git_reset --git_checkout=$git_checkout
 
     # The version that we are building
     ARG build_version=1.20.0-dev
-
-    # Only build contents that are committed to git
-    ARG --required git_reset
-    ARG git_checkout
 
     # Whether we build with client-side-encryption
     ARG --required client_side_encryption
@@ -148,15 +161,7 @@ BUILD:
     ENV CFLAGS=$cflags
 
     # Enable parallelism for Make invocations
-    ENV MAKEFLAGS=-j8
-
-    IF $git_reset || ! test -z "$git_checkout"
-        RUN git clean -fdx && git checkout -- .
-        IF ! test -z "$git_checkout"
-            RUN git checkout "$git_checkout"
-        END
-        RUN git submodule update --init --recursive
-    END
+    ENV MAKEFLAGS="-j$jobs"
 
     ENV _base_configure_flags="-DBUILD_VERSION=$build_version -DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=$client_side_encryption -DENABLE_EXTRA_ALIGNMENT=OFF"
 
@@ -217,6 +222,7 @@ build:
     ARG arch=native
     ARG skip_tests=OFF
     ARG cc=cc
+    ARG jobs=8
     WORKDIR /s
     DO +BUILD \
         --client_side_encryption=$client_side_encryption \
@@ -232,7 +238,8 @@ build:
         --snappy=$snappy \
         --arch=$arch \
         --cc=$cc \
-        --git_checkout=$git_checkout
+        --git_checkout=$git_checkout \
+        --jobs=$jobs
 
     SAVE ARTIFACT install-dir install-dir
 
@@ -243,6 +250,7 @@ debug-compile-asan-clang-openssl:
     WORKDIR /s
     ARG --required git_reset
     ARG git_checkout
+    ARG jobs=8
     DO +BUILD \
         --client_side_encryption=OFF \
         --debug=ON \
@@ -257,7 +265,8 @@ debug-compile-asan-clang-openssl:
         --ssl=OPENSSL \
         --arch=native \
         --git_reset=$git_reset \
-        --git_checkout=$git_checkout
+        --git_checkout=$git_checkout \
+        --jobs=$jobs
 
 evg-tools:
     GIT CLONE https://github.com/mongodb-labs/drivers-evergreen-tools drivers-evergreen-tools
@@ -322,3 +331,31 @@ build-all:
     BUILD +build --env=deb10    --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF
     BUILD +build --env=deb9.2   --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF
     BUILD +build --env=deb8.1   --git_reset=$git_reset --skip_tests=$skip_tests --zstd=OFF
+
+build-php:
+    ARG --required env
+    FROM "+${env}-env"
+    IF __is_debian_based
+        RUN __install "php7*-dev"
+    ELSE IF __is_redhat_based
+        RUN __install php-devel autoconf
+    END
+
+    ARG --required git_reset
+    ARG php_git_ref=master
+    WORKDIR /s
+    GIT CLONE \
+        --branch=$php_git_ref \
+        https://github.com/mongodb/mongo-php-driver.git \
+        /s/mongo-php-driver
+    WORKDIR /s/mongo-php-driver
+    RUN rm -rf src/libmongoc
+    DO +COPY_C_SOURCE \
+        --to=/s/mongo-php-driver/src/libmongoc \
+        --git_reset=$git_reset \
+        --git_checkout=""
+
+    RUN phpize
+    RUN bash ./configure --enable-mongodb-developer-flags
+    ARG jobs=8
+    RUN make -j "$jobs"
