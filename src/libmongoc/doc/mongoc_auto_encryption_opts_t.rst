@@ -36,4 +36,5 @@ Synopsis
     mongoc_auto_encryption_opts_set_extra
     mongoc_auto_encryption_opts_set_tls_opts
     mongoc_auto_encryption_opts_set_encrypted_fields_map
+    mongoc_auto_encryption_opts_set_bypass_query_analysis
 
