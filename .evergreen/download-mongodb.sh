@@ -488,7 +488,8 @@ get_mongodb_download_url_for ()
    echo $MONGODB_DOWNLOAD_URL
 }
 
-download_and_extract ()
+# download_and_extract_package downloads a MongoDB server package.
+download_and_extract_package ()
 {
    MONGODB_DOWNLOAD_URL=$1
    EXTRACT=$2
@@ -503,4 +504,31 @@ download_and_extract ()
    find . -name vcredist_x64.exe -exec {} /install /quiet \;
    ./mongodb/bin/mongod --version
    cd -
+}
+
+# download_and_extract downloads a requested MongoDB server package.
+# If the legacy shell is not included in the download, the legacy shell is also downloaded from the 6.0 package.
+download_and_extract ()
+{
+   MONGODB_DOWNLOAD_URL=$1
+   EXTRACT=$2
+
+   download_and_extract_package "$MONGODB_DOWNLOAD_URL" "$EXTRACT"
+
+   if [ ! -e $DRIVERS_TOOLS/mongodb/bin/mongo ]; then
+      # The legacy mongo shell is not included in server downloads of 6.0.0-rc6 or later. Refer: SERVER-64352.
+      # Some test scripts use the mongo shell for setup.
+      # Download 6.0 package to get the legacy mongo shell as a workaround until DRIVERS-???? is addressed.
+      echo "Legacy 'mongo' shell not detected. Download from 6.0 ... begin"
+      get_mongodb_download_url_for "$DISTRO" "6.0"
+
+      SAVED_DRIVERS_TOOLS=$DRIVERS_TOOLS
+      mkdir $DRIVERS_TOOLS/legacy-shell-download
+      DRIVERS_TOOLS=$DRIVERS_TOOLS/legacy-shell-download
+      download_and_extract_package "$MONGODB_DOWNLOAD_URL" "$EXTRACT"
+      cp $DRIVERS_TOOLS/mongodb/bin/mongo $SAVED_DRIVERS_TOOLS/mongodb/bin
+      DRIVERS_TOOLS=$SAVED_DRIVERS_TOOLS
+      rm -rf $DRIVERS_TOOLS/legacy-shell-download
+      echo "Legacy 'mongo' shell not detected. Download from 6.0 ... end"
+   fi
 }
