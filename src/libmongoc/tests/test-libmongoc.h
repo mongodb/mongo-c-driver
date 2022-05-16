@@ -199,6 +199,8 @@ WIRE_VERSION_CHECK_DECLS (9)
 WIRE_VERSION_CHECK_DECLS (13)
 /* wire version 14 begins with the 5.1 prerelease. */
 WIRE_VERSION_CHECK_DECLS (14)
+/* wire version 17 begins with the 6.0 release. */
+WIRE_VERSION_CHECK_DECLS (17)
 
 #undef WIRE_VERSION_CHECK_DECLS
 
