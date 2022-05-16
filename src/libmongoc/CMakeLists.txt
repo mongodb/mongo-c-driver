@@ -441,10 +441,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.3.0)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.5.0)
       message ("--   libmongocrypt found at ${LIBMONGOCRYPT_LIBRARY}")
       message ("--   libmongocrypt version ${mongocrypt_VERSION} found")
-      message ("--   libmongocrypt version 1.3.0 is required to enable Client-Side Field Level Encryption Support.")
+      message ("--   libmongocrypt version 1.5.0 is required to enable Client-Side Field Level Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -877,7 +877,7 @@ if (MONGOC_TEST_USE_CSFLE)
       COMMAND
          "${_PYTHON3_EXE}" -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
             --component csfle
-            --version 5.3.1
+            --version 6.0.0-rc4
             --edition enterprise
             --out "${CMAKE_CURRENT_BINARY_DIR}"
             --only "**/mongo_csfle_v1.*"

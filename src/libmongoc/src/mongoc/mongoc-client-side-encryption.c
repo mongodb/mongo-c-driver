@@ -44,6 +44,7 @@ struct _mongoc_auto_encryption_opts_t {
    bson_t *schema_map;
    bson_t *encrypted_fields_map;
    bool bypass_auto_encryption;
+   bool bypass_query_analysis;
    bson_t *extra;
 };
 
@@ -179,6 +180,16 @@ mongoc_auto_encryption_opts_set_bypass_auto_encryption (
       return;
    }
    opts->bypass_auto_encryption = bypass_auto_encryption;
+}
+
+void
+mongoc_auto_encryption_opts_set_bypass_query_analysis (
+   mongoc_auto_encryption_opts_t *opts, bool bypass_query_analysis)
+{
+   if (!opts) {
+      return;
+   }
+   opts->bypass_query_analysis = bypass_query_analysis;
 }
 
 void
@@ -1423,18 +1434,22 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
    client->topology->crypt =
       _mongoc_crypt_new (opts->kms_providers,
                          opts->schema_map,
+                         opts->encrypted_fields_map,
                          opts->tls_opts,
                          client->topology->csfle_override_path,
                          client->topology->csfle_required,
                          opts->bypass_auto_encryption,
+                         opts->bypass_query_analysis,
                          error);
    if (!client->topology->crypt) {
       GOTO (fail);
    }
 
    client->topology->bypass_auto_encryption = opts->bypass_auto_encryption;
+   client->topology->bypass_query_analysis = opts->bypass_query_analysis;
 
-   if (!client->topology->bypass_auto_encryption) {
+   if (!client->topology->bypass_auto_encryption &&
+       !client->topology->bypass_query_analysis) {
       if (!client->topology->mongocryptd_bypass_spawn) {
          if (!_spawn_mongocryptd (client->topology->mongocryptd_spawn_path,
                                   client->topology->mongocryptd_spawn_args,
@@ -1577,18 +1592,21 @@ _mongoc_cse_client_pool_enable_auto_encryption (
 
    topology->crypt = _mongoc_crypt_new (opts->kms_providers,
                                         opts->schema_map,
+                                        opts->encrypted_fields_map,
                                         opts->tls_opts,
                                         topology->csfle_override_path,
                                         topology->csfle_required,
                                         opts->bypass_auto_encryption,
+                                        opts->bypass_query_analysis,
                                         error);
    if (!topology->crypt) {
       GOTO (fail);
    }
 
    topology->bypass_auto_encryption = opts->bypass_auto_encryption;
+   topology->bypass_query_analysis = opts->bypass_query_analysis;
 
-   if (!topology->bypass_auto_encryption) {
+   if (!topology->bypass_auto_encryption && !topology->bypass_query_analysis) {
       if (!topology->mongocryptd_bypass_spawn) {
          if (!_spawn_mongocryptd (topology->mongocryptd_spawn_path,
                                   topology->mongocryptd_spawn_args,
@@ -1676,10 +1694,12 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    client_encryption->crypt =
       _mongoc_crypt_new (opts->kms_providers,
                          NULL /* schema_map */,
+                         NULL /* encrypted_fields_map */,
                          opts->tls_opts,
                          NULL /* No csfle path */,
                          false /* csfle not requried */,
                          true, /* bypassAutoEncryption (We are explicit) */
+                         false /* bypass_query_analysis. Not applicable. */,
                          error);
    if (!client_encryption->crypt) {
       goto fail;

@@ -73,6 +73,10 @@ mongoc_auto_encryption_opts_set_bypass_auto_encryption (
    mongoc_auto_encryption_opts_t *opts, bool bypass_auto_encryption);
 
 MONGOC_EXPORT (void)
+mongoc_auto_encryption_opts_set_bypass_query_analysis (
+   mongoc_auto_encryption_opts_t *opts, bool bypass_query_analysis);
+
+MONGOC_EXPORT (void)
 mongoc_auto_encryption_opts_set_extra (mongoc_auto_encryption_opts_t *opts,
                                        const bson_t *extra);
 

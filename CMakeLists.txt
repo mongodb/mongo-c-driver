@@ -89,6 +89,8 @@ include (CCache)
 if (NOT MSVC)
    include (LLDLinker)
 endif ()
+# Enable sanitizers
+include (Sanitizers)
 
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
 
@@ -538,4 +540,8 @@ if (TARGET test-libmongoc)
          APPEND PROPERTY
          TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/LoadTests-${CMAKE_BUILD_TYPE}.cmake")
    endif ()
+endif ()
+
+if (CMAKE_GENERATOR STREQUAL "Ninja Multi-Config" AND PROJECT_IS_TOP_LEVEL)
+   set (CMAKE_CROSS_CONFIGS "all")
 endif ()

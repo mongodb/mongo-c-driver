@@ -1862,7 +1862,7 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor,
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db'}"));
 
-   ASSERT (match_bson (request_get_doc (request, 0), &find_cmd, true));
+   assert_match_bson (request_get_doc (request, 0), &find_cmd, true);
 
    reply = bson_string_new (NULL);
    _make_reply_batch (reply, (uint32_t) test->reply_length[0], true, false);
