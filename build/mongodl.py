@@ -96,7 +96,7 @@ def _infer_target_os_rel():
     assert mat, 'Unable to detect ID from [/etc/os-release] content:\n{}'.format(
         content)
     os_id = mat.group(2)
-    if os_id == 'arch':
+    if os_id == 'arch' or os_id == 'alpine':
         # There are no Archlinux-specific MongoDB downloads, so we'll just use
         # the build for RHEL8, which is reasonably compatible with other modern
         # distributions (including Arch).
