@@ -29,6 +29,8 @@ struct _mongoc_client_pool_t;
    "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
 #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC \
    "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+#define MONGOC_ENCRYPT_ALGORITHM_INDEXED "Indexed"
+#define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
 
 BSON_BEGIN_DECLS
 
@@ -157,6 +159,17 @@ mongoc_client_encryption_encrypt_opts_set_keyaltname (
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_algorithm (
    mongoc_client_encryption_encrypt_opts_t *opts, const char *algorithm);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_opts_set_contention_factor (
+   mongoc_client_encryption_encrypt_opts_t *opts, int64_t contention_factor);
+
+typedef enum { MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY } mongoc_encrypt_query_type_t;
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_opts_set_query_type (
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   mongoc_encrypt_query_type_t query_type);
 
 MONGOC_EXPORT (mongoc_client_encryption_datakey_opts_t *)
 mongoc_client_encryption_datakey_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
