@@ -215,19 +215,9 @@ operation_create_key (test_t *test,
          goto opts_done;
       }
 
-      {
-         bson_t doc = BSON_INITIALIZER;
-
-         BSON_APPEND_UTF8 (&doc, "provider", kms_provider);
-
-         if (master_key) {
-            bson_concat (&doc, master_key);
-         }
-
+      if (master_key) {
          mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
-                                                              &doc);
-
-         bson_destroy (&doc);
+                                                              master_key);
       }
 
       if (key_alt_names) {
