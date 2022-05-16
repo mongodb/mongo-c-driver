@@ -82,6 +82,9 @@ include (CMakeDependentOption)
 
 include(MongoC-Warnings)
 
+# "Fuzzing" must be included before "Sanitizers," to enable fuzzer sanitizer
+include (Fuzzing)
+
 # Enable CCache, if possible
 include (CCache)
 
