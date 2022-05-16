@@ -20,6 +20,9 @@
 /* _mongoc_host_list_from_string_with_err */
 #include "mongoc/mongoc-host-list-private.h"
 
+/* MONGOC_SERVER_ERR_NS_NOT_FOUND */
+#include "mongoc/mongoc-error-private.h"
+
 #include "mongoc/mongoc-uri.h"
 
 static void
@@ -3197,6 +3200,156 @@ test_kms_tls_options_extra_rejected (void *unused)
    mongoc_client_destroy (keyvault_client);
 }
 
+/* ee_fixture is a fixture for the Explicit Encryption prose test. */
+typedef struct {
+   bson_value_t key1ID;
+   mongoc_client_t *keyVaultClient;
+   mongoc_client_encryption_t *clientEncryption;
+   mongoc_client_t *encryptedClient;
+} ee_fixture;
+
+static ee_fixture *
+explicit_encryption_setup (void)
+{
+   ee_fixture *eef = (ee_fixture *) bson_malloc0 (sizeof (ee_fixture));
+   bson_t *encryptedFields = get_bson_from_json_file (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "encryptedFields.json");
+   bson_t *key1Document = get_bson_from_json_file (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "key1-document.json");
+   mongoc_client_t *setupClient = test_framework_new_default_client ();
+
+
+   /* Read the ``"_id"`` field of ``key1Document`` as ``key1ID``. */
+   {
+      bson_iter_t iter;
+      const bson_value_t *value;
+
+      ASSERT (bson_iter_init_find (&iter, key1Document, "_id"));
+      value = bson_iter_value (&iter);
+      bson_value_copy (value, &eef->key1ID);
+   }
+
+   /* Drop and create the collection ``db.explicit_encryption`` using
+    * ``encryptedFields`` as an option. */
+   {
+      mongoc_database_t *db = mongoc_client_get_database (setupClient, "db");
+      mongoc_collection_t *coll =
+         mongoc_database_get_collection (db, "explicit_encryption");
+      bson_error_t error;
+      bson_t *opts;
+
+      opts = BCON_NEW ("encryptedFields", BCON_DOCUMENT (encryptedFields));
+
+      if (!mongoc_collection_drop_with_opts (coll, opts, &error)) {
+         if (error.code != MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+            test_error ("unexpected error in drop: %s", error.message);
+         }
+      }
+      mongoc_collection_destroy (coll);
+
+      coll = mongoc_database_create_collection (
+         db, "explicit_encryption", opts, &error);
+      ASSERT_OR_PRINT (coll, error);
+
+      mongoc_collection_destroy (coll);
+      bson_destroy (opts);
+      mongoc_database_destroy (db);
+   }
+
+   /* Drop and create the collection ``keyvault.datakeys``. */
+   {
+      mongoc_database_t *db =
+         mongoc_client_get_database (setupClient, "keyvault");
+      mongoc_collection_t *coll =
+         mongoc_database_get_collection (db, "datakeys");
+      bson_error_t error;
+
+      if (!mongoc_collection_drop (coll, &error)) {
+         if (error.code != MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+            test_error ("unexpected error in drop: %s", error.message);
+         }
+      }
+      mongoc_collection_destroy (coll);
+
+      coll = mongoc_database_create_collection (
+         db, "datakeys", NULL /* opts */, &error);
+      ASSERT_OR_PRINT (coll, error);
+
+      mongoc_collection_destroy (coll);
+      mongoc_database_destroy (db);
+   }
+
+   eef->keyVaultClient = test_framework_new_default_client ();
+
+   /* Create a ClientEncryption object named ``clientEncryption`` */
+   {
+      mongoc_client_encryption_opts_t *ceOpts =
+         mongoc_client_encryption_opts_new ();
+      bson_t *kms_providers = _make_local_kms_provider (NULL);
+      bson_error_t error;
+
+      mongoc_client_encryption_opts_set_keyvault_client (ceOpts,
+                                                         eef->keyVaultClient);
+      mongoc_client_encryption_opts_set_keyvault_namespace (
+         ceOpts, "keyvault", "datakeys");
+      mongoc_client_encryption_opts_set_kms_providers (ceOpts, kms_providers);
+
+      eef->clientEncryption = mongoc_client_encryption_new (ceOpts, &error);
+      ASSERT_OR_PRINT (eef->clientEncryption, error);
+
+      bson_destroy (kms_providers);
+      mongoc_client_encryption_opts_destroy (ceOpts);
+   }
+
+   /* Create a MongoClient named ``encryptedClient``. */
+   {
+      mongoc_auto_encryption_opts_t *aeOpts =
+         mongoc_auto_encryption_opts_new ();
+      bson_t *kms_providers = _make_local_kms_provider (NULL);
+      bson_error_t error;
+
+      mongoc_auto_encryption_opts_set_keyvault_namespace (
+         aeOpts, "keyvault", "datakeys");
+      mongoc_auto_encryption_opts_set_kms_providers (aeOpts, kms_providers);
+      mongoc_auto_encryption_opts_set_bypass_query_analysis (aeOpts, true);
+      eef->encryptedClient = test_framework_new_default_client ();
+      ASSERT_OR_PRINT (mongoc_client_enable_auto_encryption (
+                          eef->encryptedClient, aeOpts, &error),
+                       error);
+
+      bson_destroy (kms_providers);
+      mongoc_auto_encryption_opts_destroy (aeOpts);
+   }
+
+   mongoc_client_destroy (setupClient);
+   bson_destroy (key1Document);
+   bson_destroy (encryptedFields);
+   return eef;
+}
+
+static void
+explicit_encryption_destroy (ee_fixture *eef)
+{
+   if (!eef) {
+      return;
+   }
+
+   mongoc_client_destroy (eef->encryptedClient);
+   mongoc_client_encryption_destroy (eef->clientEncryption);
+   mongoc_client_destroy (eef->keyVaultClient);
+   bson_value_destroy (&eef->key1ID);
+   bson_free (eef);
+}
+
+static void
+test_explicit_encryption (void *unused)
+{
+   ee_fixture *eef = explicit_encryption_setup ();
+   explicit_encryption_destroy (eef);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -3343,4 +3496,13 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/explicit_encryption",
+                      test_explicit_encryption,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_17,
+                      test_framework_skip_if_single);
 }
