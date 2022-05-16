@@ -343,6 +343,9 @@
                       },
                       "upsert": {
                         "$$unsetOrMatches": false
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
                       }
                     },
                     {
@@ -371,6 +374,9 @@
                         }
                       },
                       "upsert": {
+                        "$$unsetOrMatches": false
+                      },
+                      "multi": {
                         "$$unsetOrMatches": false
                       }
                     },
@@ -401,6 +407,9 @@
                       },
                       "upsert": {
                         "$$unsetOrMatches": false
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
                       }
                     },
                     {
@@ -430,6 +439,9 @@
                       },
                       "upsert": {
                         "$$unsetOrMatches": false
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
                       }
                     },
                     {
@@ -458,6 +470,9 @@
                         }
                       },
                       "upsert": {
+                        "$$unsetOrMatches": false
+                      },
+                      "multi": {
                         "$$unsetOrMatches": false
                       }
                     }

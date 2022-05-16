@@ -1,5 +1,5 @@
 {
-  "description": "rewrapManyDataKey-encrypt_failure",
+  "description": "rewrapManyDataKey-decrypt_failure",
   "schemaVersion": "1.8",
   "runOnRequirements": [
     {
@@ -121,7 +121,7 @@
   ],
   "tests": [
     {
-      "description": "rewrap data key that fails during decryption",
+      "description": "rewrap data key that fails during decryption due to invalid masterKey",
       "operations": [
         {
           "name": "rewrapManyDataKey",
