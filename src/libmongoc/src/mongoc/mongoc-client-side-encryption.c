@@ -1843,6 +1843,8 @@ mongoc_client_encryption_rewrap_many_datakey (
 
       bson_iter_t iter;
 
+      bool bulk_success = false;
+
       BSON_ASSERT (bulk);
 
       if (!bson_iter_init_find (&iter, &keys, "v")) {
@@ -1850,7 +1852,7 @@ mongoc_client_encryption_rewrap_many_datakey (
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                          "result did not contain expected field 'v'");
-         GOTO (fail);
+         goto bulk_done;
       }
 
       if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
@@ -1858,7 +1860,7 @@ mongoc_client_encryption_rewrap_many_datakey (
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                          "result did not return an array as expected");
-         GOTO (fail);
+         goto bulk_done;
       }
 
       BSON_ASSERT (bson_iter_recurse (&iter, &iter));
@@ -1871,6 +1873,7 @@ mongoc_client_encryption_rewrap_many_datakey (
          bson_subtype_t subtype;
          bson_t selector = BSON_INITIALIZER;
          bson_t document = BSON_INITIALIZER;
+         bool doc_success = false;
 
          bson_iter_document (&iter, &len, &data);
 
@@ -1879,7 +1882,7 @@ mongoc_client_encryption_rewrap_many_datakey (
                             MONGOC_ERROR_CLIENT,
                             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                             "element is not a valid BSON document");
-            GOTO (fail);
+            goto doc_done;
          }
 
          /* Find _id and use as selector. */
@@ -1889,7 +1892,7 @@ mongoc_client_encryption_rewrap_many_datakey (
                                MONGOC_ERROR_CLIENT,
                                MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                                "could not find _id in key document");
-               GOTO (fail);
+               goto doc_done;
             }
 
             bson_iter_binary (&key_iter, &subtype, &len, &data);
@@ -1899,7 +1902,7 @@ mongoc_client_encryption_rewrap_many_datakey (
                                MONGOC_ERROR_CLIENT,
                                MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                                "expected _id in key document to be a UUID");
-               GOTO (fail);
+               goto doc_done;
             }
 
             BSON_ASSERT (bson_append_iter (&selector, "_id", 3, &key_iter));
@@ -1935,14 +1938,31 @@ mongoc_client_encryption_rewrap_many_datakey (
 
          if (!mongoc_bulk_operation_update_one_with_opts (
                 bulk, &selector, &document, NULL, error)) {
-            GOTO (fail);
+            goto doc_done;
          }
 
+         doc_success = true;
+
+      doc_done:
          bson_destroy (&key);
          bson_destroy (&selector);
+         bson_destroy (&document);
+
+         if (!doc_success) {
+            goto bulk_done;
+         }
       }
 
       if (!mongoc_bulk_operation_execute (bulk, bulk_write_result, error)) {
+         goto bulk_done;
+      }
+
+      bulk_success = true;
+
+   bulk_done:
+      mongoc_bulk_operation_destroy (bulk);
+
+      if (!bulk_success) {
          GOTO (fail);
       }
    }
