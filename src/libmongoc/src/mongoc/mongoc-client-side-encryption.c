@@ -1837,12 +1837,9 @@ mongoc_client_encryption_rewrap_many_datakey (
    }
 
    {
-      /* Bulk update must use ordered=true. */
-      bson_t *const opts = BCON_NEW ("ordered", BCON_BOOL (true));
-
       mongoc_bulk_operation_t *const bulk =
          mongoc_collection_create_bulk_operation_with_opts (
-            client_encryption->keyvault_coll, opts);
+            client_encryption->keyvault_coll, NULL);
 
       bson_iter_t iter;
 
