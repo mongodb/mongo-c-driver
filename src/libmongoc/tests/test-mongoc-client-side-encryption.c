@@ -703,7 +703,7 @@ test_create_key_with_custom_key_material (void *unused)
    }
 
    /* Create a ClientEncryption object (referred to as client_encryption) with
-    * keyvault.datakeys as the keyVaultClient. */
+    * client set as the keyVaultClient. */
    {
       mongoc_client_encryption_opts_t *const client_encryption_opts =
          mongoc_client_encryption_opts_new ();
