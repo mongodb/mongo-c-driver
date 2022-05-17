@@ -1835,9 +1835,13 @@ mongoc_client_encryption_rewrap_many_datakey (
    bson_t local_result = BSON_INITIALIZER;
    bson_t *const bulk_write_result =
       result ? &result->bulk_write_result : &local_result;
+   mongoc_bulk_operation_t *bulk = NULL;
+   bson_iter_t iter;
    bool ret = false;
 
    ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
 
    bson_reinit (bulk_write_result);
 
@@ -1858,135 +1862,114 @@ mongoc_client_encryption_rewrap_many_datakey (
       return true;
    }
 
-   {
-      mongoc_bulk_operation_t *const bulk =
-         mongoc_collection_create_bulk_operation_with_opts (
-            client_encryption->keyvault_coll, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      client_encryption->keyvault_coll, NULL);
 
-      bson_iter_t iter;
+   BSON_ASSERT (bulk);
 
-      bool bulk_success = false;
+   if (!bson_iter_init_find (&iter, &keys, "v")) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                      "result did not contain expected field 'v'");
+      GOTO (fail);
+   }
 
-      BSON_ASSERT (bulk);
+   if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                      "result did not return an array as expected");
+      GOTO (fail);
+   }
 
-      if (!bson_iter_init_find (&iter, &keys, "v")) {
+   BSON_ASSERT (bson_iter_recurse (&iter, &iter));
+
+   while (bson_iter_next (&iter)) {
+      const uint8_t *data = NULL;
+      uint32_t len = 0u;
+      bson_t key;
+      bson_iter_t key_iter;
+      bson_subtype_t subtype;
+      bson_t selector = BSON_INITIALIZER;
+      bson_t document = BSON_INITIALIZER;
+      bool doc_success = false;
+
+      bson_iter_document (&iter, &len, &data);
+
+      if (!data || !bson_init_static (&key, data, len)) {
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "result did not contain expected field 'v'");
-         goto bulk_done;
+                         "element is not a valid BSON document");
+         goto doc_done;
       }
 
-      if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "result did not return an array as expected");
-         goto bulk_done;
-      }
-
-      BSON_ASSERT (bson_iter_recurse (&iter, &iter));
-
-      while (bson_iter_next (&iter)) {
-         const uint8_t *data = NULL;
-         uint32_t len = 0u;
-         bson_t key;
-         bson_iter_t key_iter;
-         bson_subtype_t subtype;
-         bson_t selector = BSON_INITIALIZER;
-         bson_t document = BSON_INITIALIZER;
-         bool doc_success = false;
-
-         bson_iter_document (&iter, &len, &data);
-
-         if (!data || !bson_init_static (&key, data, len)) {
+      /* Find _id and use as selector. */
+      {
+         if (!bson_iter_init_find (&key_iter, &key, "_id")) {
             bson_set_error (error,
                             MONGOC_ERROR_CLIENT,
                             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                            "element is not a valid BSON document");
+                            "could not find _id in key document");
             goto doc_done;
          }
 
-         /* Find _id and use as selector. */
-         {
-            if (!bson_iter_init_find (&key_iter, &key, "_id")) {
-               bson_set_error (error,
-                               MONGOC_ERROR_CLIENT,
-                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                               "could not find _id in key document");
-               goto doc_done;
-            }
+         bson_iter_binary (&key_iter, &subtype, &len, &data);
 
-            bson_iter_binary (&key_iter, &subtype, &len, &data);
-
-            if (!data || subtype != BSON_SUBTYPE_UUID) {
-               bson_set_error (error,
-                               MONGOC_ERROR_CLIENT,
-                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                               "expected _id in key document to be a UUID");
-               goto doc_done;
-            }
-
-            BSON_ASSERT (bson_append_iter (&selector, "_id", 3, &key_iter));
-         }
-
-         /* Find and include potentially updated fields. */
-         {
-            bson_t child;
-
-            BSON_ASSERT (
-               BSON_APPEND_DOCUMENT_BEGIN (&document, "$set", &child));
-            {
-               if (bson_iter_init_find (&key_iter, &key, "masterKey")) {
-                  BSON_ASSERT (
-                     bson_append_iter (&child, "masterKey", -1, &key_iter));
-               }
-
-               if (bson_iter_init_find (&key_iter, &key, "keyMaterial")) {
-                  BSON_ASSERT (
-                     bson_append_iter (&child, "keyMaterial", -1, &key_iter));
-               }
-            }
-            BSON_ASSERT (bson_append_document_end (&document, &child));
-         }
-
-         /* Update updateDate field. */
-         BCON_APPEND (&document,
-                      "$currentDate",
-                      "{",
-                      "updateDate",
-                      BCON_BOOL (true),
-                      "}");
-
-         if (!mongoc_bulk_operation_update_one_with_opts (
-                bulk, &selector, &document, NULL, error)) {
+         if (!data || subtype != BSON_SUBTYPE_UUID) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "expected _id in key document to be a UUID");
             goto doc_done;
          }
 
-         doc_success = true;
+         BSON_ASSERT (bson_append_iter (&selector, "_id", 3, &key_iter));
+      }
 
-      doc_done:
-         bson_destroy (&key);
-         bson_destroy (&selector);
-         bson_destroy (&document);
+      /* Find and include potentially updated fields. */
+      {
+         bson_t child;
 
-         if (!doc_success) {
-            goto bulk_done;
+         BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (&document, "$set", &child));
+         {
+            if (bson_iter_init_find (&key_iter, &key, "masterKey")) {
+               BSON_ASSERT (
+                  bson_append_iter (&child, "masterKey", -1, &key_iter));
+            }
+
+            if (bson_iter_init_find (&key_iter, &key, "keyMaterial")) {
+               BSON_ASSERT (
+                  bson_append_iter (&child, "keyMaterial", -1, &key_iter));
+            }
          }
+         BSON_ASSERT (bson_append_document_end (&document, &child));
       }
 
-      if (!mongoc_bulk_operation_execute (bulk, bulk_write_result, error)) {
-         goto bulk_done;
+      /* Update updateDate field. */
+      BCON_APPEND (
+         &document, "$currentDate", "{", "updateDate", BCON_BOOL (true), "}");
+
+      if (!mongoc_bulk_operation_update_one_with_opts (
+             bulk, &selector, &document, NULL, error)) {
+         goto doc_done;
       }
 
-      bulk_success = true;
+      doc_success = true;
 
-   bulk_done:
-      mongoc_bulk_operation_destroy (bulk);
+   doc_done:
+      bson_destroy (&key);
+      bson_destroy (&selector);
+      bson_destroy (&document);
 
-      if (!bulk_success) {
+      if (!doc_success) {
          GOTO (fail);
       }
+   }
+
+   if (!mongoc_bulk_operation_execute (bulk, bulk_write_result, error)) {
+      GOTO (fail);
    }
 
    ret = true;
@@ -1994,6 +1977,7 @@ mongoc_client_encryption_rewrap_many_datakey (
 fail:
    bson_destroy (&keys);
    bson_destroy (&local_result);
+   mongoc_bulk_operation_destroy (bulk);
 
    RETURN (ret);
 }
