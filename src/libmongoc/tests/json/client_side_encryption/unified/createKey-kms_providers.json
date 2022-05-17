@@ -9,12 +9,7 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0",
-        "observeEvents": [
-          "commandStartedEvent",
-          "commandSucceededEvent",
-          "commandFailedEvent"
-        ]
+        "id": "client0"
       }
     },
     {
@@ -106,40 +101,23 @@
           "expectResult": {
             "$$type": "binData"
           }
-        }
-      ],
-      "expectEvents": [
+        },
         {
-          "client": "client0",
-          "events": [
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {},
+            "projection": {
+              "_id": 0,
+              "masterKey": 1
+            }
+          },
+          "expectResult": [
             {
-              "commandStartedEvent": {
-                "commandName": "insert",
-                "databaseName": "keyvault",
-                "command": {
-                  "insert": "datakeys",
-                  "documents": [
-                    {
-                      "masterKey": {
-                        "provider": "aws",
-                        "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
-                        "region": "us-east-1"
-                      }
-                    }
-                  ],
-                  "writeConcern": {
-                    "w": "majority"
-                  }
-                }
-              }
-            },
-            {
-              "commandSucceededEvent": {
-                "commandName": "insert",
-                "reply": {
-                  "ok": 1,
-                  "n": 1
-                }
+              "masterKey": {
+                "provider": "aws",
+                "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
+                "region": "us-east-1"
               }
             }
           ]
@@ -164,40 +142,23 @@
           "expectResult": {
             "$$type": "binData"
           }
-        }
-      ],
-      "expectEvents": [
+        },
         {
-          "client": "client0",
-          "events": [
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {},
+            "projection": {
+              "_id": 0,
+              "masterKey": 1
+            }
+          },
+          "expectResult": [
             {
-              "commandStartedEvent": {
-                "commandName": "insert",
-                "databaseName": "keyvault",
-                "command": {
-                  "insert": "datakeys",
-                  "documents": [
-                    {
-                      "masterKey": {
-                        "provider": "azure",
-                        "keyVaultEndpoint": "key-vault-csfle.vault.azure.net",
-                        "keyName": "key-name-csfle"
-                      }
-                    }
-                  ],
-                  "writeConcern": {
-                    "w": "majority"
-                  }
-                }
-              }
-            },
-            {
-              "commandSucceededEvent": {
-                "commandName": "insert",
-                "reply": {
-                  "ok": 1,
-                  "n": 1
-                }
+              "masterKey": {
+                "provider": "azure",
+                "keyVaultEndpoint": "key-vault-csfle.vault.azure.net",
+                "keyName": "key-name-csfle"
               }
             }
           ]
@@ -224,42 +185,25 @@
           "expectResult": {
             "$$type": "binData"
           }
-        }
-      ],
-      "expectEvents": [
+        },
         {
-          "client": "client0",
-          "events": [
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {},
+            "projection": {
+              "_id": 0,
+              "masterKey": 1
+            }
+          },
+          "expectResult": [
             {
-              "commandStartedEvent": {
-                "commandName": "insert",
-                "databaseName": "keyvault",
-                "command": {
-                  "insert": "datakeys",
-                  "documents": [
-                    {
-                      "masterKey": {
-                        "provider": "gcp",
-                        "projectId": "devprod-drivers",
-                        "location": "global",
-                        "keyRing": "key-ring-csfle",
-                        "keyName": "key-name-csfle"
-                      }
-                    }
-                  ],
-                  "writeConcern": {
-                    "w": "majority"
-                  }
-                }
-              }
-            },
-            {
-              "commandSucceededEvent": {
-                "commandName": "insert",
-                "reply": {
-                  "ok": 1,
-                  "n": 1
-                }
+              "masterKey": {
+                "provider": "gcp",
+                "projectId": "devprod-drivers",
+                "location": "global",
+                "keyRing": "key-ring-csfle",
+                "keyName": "key-name-csfle"
               }
             }
           ]
@@ -278,37 +222,23 @@
           "expectResult": {
             "$$type": "binData"
           }
-        }
-      ],
-      "expectEvents": [
+        },
         {
-          "client": "client0",
-          "events": [
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {},
+            "projection": {
+              "_id": 0,
+              "masterKey": 1
+            }
+          },
+          "expectResult": [
             {
-              "commandStartedEvent": {
-                "commandName": "insert",
-                "databaseName": "keyvault",
-                "command": {
-                  "insert": "datakeys",
-                  "documents": [
-                    {
-                      "masterKey": {
-                        "provider": "kmip"
-                      }
-                    }
-                  ],
-                  "writeConcern": {
-                    "w": "majority"
-                  }
-                }
-              }
-            },
-            {
-              "commandSucceededEvent": {
-                "commandName": "insert",
-                "reply": {
-                  "ok": 1,
-                  "n": 1
+              "masterKey": {
+                "provider": "kmip",
+                "keyId": {
+                  "$$type": "string"
                 }
               }
             }
@@ -328,38 +258,21 @@
           "expectResult": {
             "$$type": "binData"
           }
-        }
-      ],
-      "expectEvents": [
+        },
         {
-          "client": "client0",
-          "events": [
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {},
+            "projection": {
+              "_id": 0,
+              "masterKey": 1
+            }
+          },
+          "expectResult": [
             {
-              "commandStartedEvent": {
-                "commandName": "insert",
-                "databaseName": "keyvault",
-                "command": {
-                  "insert": "datakeys",
-                  "documents": [
-                    {
-                      "masterKey": {
-                        "provider": "local"
-                      }
-                    }
-                  ],
-                  "writeConcern": {
-                    "w": "majority"
-                  }
-                }
-              }
-            },
-            {
-              "commandSucceededEvent": {
-                "commandName": "insert",
-                "reply": {
-                  "ok": 1,
-                  "n": 1
-                }
+              "masterKey": {
+                "provider": "local"
               }
             }
           ]

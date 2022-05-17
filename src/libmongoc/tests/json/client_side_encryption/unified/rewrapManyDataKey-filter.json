@@ -9,10 +9,7 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0",
-        "observeEvents": [
-          "commandStartedEvent"
-        ]
+        "id": "client0"
       }
     },
     {
@@ -269,26 +266,6 @@
             "bulkWriteResult": {}
           }
         }
-      ],
-      "expectEvents": [
-        {
-          "client": "client0",
-          "events": [
-            {
-              "commandStartedEvent": {
-                "commandName": "find",
-                "databaseName": "keyvault",
-                "command": {
-                  "find": "datakeys",
-                  "filter": {},
-                  "readConcern": {
-                    "level": "majority"
-                  }
-                }
-              }
-            }
-          ]
-        }
       ]
     },
     {
@@ -302,7 +279,7 @@
               "keyAltNames": {
                 "$in": [
                   "aws_key",
-                  "local_key"
+                  "gcp_key"
                 ]
               }
             },
@@ -320,97 +297,64 @@
               "upsertedIds": {}
             }
           }
-        }
-      ],
-      "expectEvents": [
+        },
         {
-          "client": "client0",
-          "events": [
-            {
-              "commandStartedEvent": {
-                "commandName": "find",
-                "databaseName": "keyvault",
-                "command": {
-                  "find": "datakeys",
-                  "filter": {},
-                  "readConcern": {
-                    "level": "majority"
-                  }
+          "name": "aggregate",
+          "object": "collection0",
+          "arguments": {
+            "pipeline": [
+              {
+                "$project": {
+                  "provider": "$masterKey.provider"
                 }
               }
+            ]
+          },
+          "expectResult": [
+            {
+              "_id": {
+                "$binary": {
+                  "base64": "YXdzYXdzYXdzYXdzYXdzYQ==",
+                  "subType": "04"
+                }
+              },
+              "provider": "local"
             },
             {
-              "commandStartedEvent": {
-                "commandName": "update",
-                "databaseName": "keyvault",
-                "command": {
-                  "update": "datakeys",
-                  "ordered": true,
-                  "updates": [
-                    {
-                      "q": {
-                        "_id": {
-                          "$binary": {
-                            "base64": "YXdzYXdzYXdzYXdzYXdzYQ==",
-                            "subType": "04"
-                          }
-                        }
-                      },
-                      "u": {
-                        "$set": {
-                          "masterKey": {
-                            "provider": "local"
-                          },
-                          "keyMaterial": {
-                            "$$type": "binData"
-                          }
-                        },
-                        "$currentDate": {
-                          "updateDate": true
-                        }
-                      },
-                      "upsert": {
-                        "$$unsetOrMatches": false
-                      },
-                      "multi": {
-                        "$$unsetOrMatches": false
-                      }
-                    },
-                    {
-                      "q": {
-                        "_id": {
-                          "$binary": {
-                            "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
-                            "subType": "04"
-                          }
-                        }
-                      },
-                      "u": {
-                        "$set": {
-                          "masterKey": {
-                            "provider": "local"
-                          },
-                          "keyMaterial": {
-                            "$$type": "binData"
-                          }
-                        },
-                        "$currentDate": {
-                          "updateDate": true
-                        }
-                      },
-                      "upsert": {
-                        "$$unsetOrMatches": false
-                      },
-                      "multi": {
-                        "$$unsetOrMatches": false
-                      }
-                    }
-                  ],
-                  "writeConcern": {
-                    "w": "majority"
-                  }
+              "_id": {
+                "$binary": {
+                  "base64": "YXp1cmVhenVyZWF6dXJlYQ==",
+                  "subType": "04"
                 }
-              }
+              },
+              "provider": "azure"
+            },
+            {
+              "_id": {
+                "$binary": {
+                  "base64": "Z2NwZ2NwZ2NwZ2NwZ2NwZw==",
+                  "subType": "04"
+                }
+              },
+              "provider": "local"
+            },
+            {
+              "_id": {
+                "$binary": {
+                  "base64": "a21pcGttaXBrbWlwa21pcA==",
+                  "subType": "04"
+                }
+              },
+              "provider": "kmip"
+            },
+            {
+              "_id": {
+                "$binary": {
+                  "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                  "subType": "04"
+                }
+              },
+              "provider": "local"
             }
           ]
         }
@@ -427,7 +371,7 @@
               "masterKey.provider": {
                 "$in": [
                   "aws",
-                  "local"
+                  "gcp"
                 ]
               }
             },
@@ -445,97 +389,64 @@
               "upsertedIds": {}
             }
           }
-        }
-      ],
-      "expectEvents": [
+        },
         {
-          "client": "client0",
-          "events": [
-            {
-              "commandStartedEvent": {
-                "commandName": "find",
-                "databaseName": "keyvault",
-                "command": {
-                  "find": "datakeys",
-                  "filter": {},
-                  "readConcern": {
-                    "level": "majority"
-                  }
+          "name": "aggregate",
+          "object": "collection0",
+          "arguments": {
+            "pipeline": [
+              {
+                "$project": {
+                  "provider": "$masterKey.provider"
                 }
               }
+            ]
+          },
+          "expectResult": [
+            {
+              "_id": {
+                "$binary": {
+                  "base64": "YXdzYXdzYXdzYXdzYXdzYQ==",
+                  "subType": "04"
+                }
+              },
+              "provider": "local"
             },
             {
-              "commandStartedEvent": {
-                "commandName": "update",
-                "databaseName": "keyvault",
-                "command": {
-                  "update": "datakeys",
-                  "ordered": true,
-                  "updates": [
-                    {
-                      "q": {
-                        "_id": {
-                          "$binary": {
-                            "base64": "YXdzYXdzYXdzYXdzYXdzYQ==",
-                            "subType": "04"
-                          }
-                        }
-                      },
-                      "u": {
-                        "$set": {
-                          "masterKey": {
-                            "provider": "local"
-                          },
-                          "keyMaterial": {
-                            "$$type": "binData"
-                          }
-                        },
-                        "$currentDate": {
-                          "updateDate": true
-                        }
-                      },
-                      "upsert": {
-                        "$$unsetOrMatches": false
-                      },
-                      "multi": {
-                        "$$unsetOrMatches": false
-                      }
-                    },
-                    {
-                      "q": {
-                        "_id": {
-                          "$binary": {
-                            "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
-                            "subType": "04"
-                          }
-                        }
-                      },
-                      "u": {
-                        "$set": {
-                          "masterKey": {
-                            "provider": "local"
-                          },
-                          "keyMaterial": {
-                            "$$type": "binData"
-                          }
-                        },
-                        "$currentDate": {
-                          "updateDate": true
-                        }
-                      },
-                      "upsert": {
-                        "$$unsetOrMatches": false
-                      },
-                      "multi": {
-                        "$$unsetOrMatches": false
-                      }
-                    }
-                  ],
-                  "writeConcern": {
-                    "w": "majority"
-                  }
+              "_id": {
+                "$binary": {
+                  "base64": "YXp1cmVhenVyZWF6dXJlYQ==",
+                  "subType": "04"
                 }
-              }
+              },
+              "provider": "azure"
+            },
+            {
+              "_id": {
+                "$binary": {
+                  "base64": "Z2NwZ2NwZ2NwZ2NwZ2NwZw==",
+                  "subType": "04"
+                }
+              },
+              "provider": "local"
+            },
+            {
+              "_id": {
+                "$binary": {
+                  "base64": "a21pcGttaXBrbWlwa21pcA==",
+                  "subType": "04"
+                }
+              },
+              "provider": "kmip"
+            },
+            {
+              "_id": {
+                "$binary": {
+                  "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                  "subType": "04"
+                }
+              },
+              "provider": "local"
             }
           ]
         }

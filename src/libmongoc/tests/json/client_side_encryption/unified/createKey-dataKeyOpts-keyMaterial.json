@@ -9,12 +9,7 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0",
-        "observeEvents": [
-          "commandStartedEvent",
-          "commandSucceededEvent",
-          "commandFailedEvent"
-        ]
+        "id": "client0"
       }
     },
     {
@@ -76,38 +71,21 @@
           "expectResult": {
             "$$type": "binData"
           }
-        }
-      ],
-      "expectEvents": [
+        },
         {
-          "client": "client0",
-          "events": [
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {},
+            "projection": {
+              "_id": 0,
+              "masterKey": 1
+            }
+          },
+          "expectResult": [
             {
-              "commandStartedEvent": {
-                "commandName": "insert",
-                "databaseName": "keyvault",
-                "command": {
-                  "insert": "datakeys",
-                  "documents": [
-                    {
-                      "masterKey": {
-                        "provider": "local"
-                      }
-                    }
-                  ],
-                  "writeConcern": {
-                    "w": "majority"
-                  }
-                }
-              }
-            },
-            {
-              "commandSucceededEvent": {
-                "commandName": "insert",
-                "reply": {
-                  "ok": 1,
-                  "n": 1
-                }
+              "masterKey": {
+                "provider": "local"
               }
             }
           ]
