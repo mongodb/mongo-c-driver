@@ -596,9 +596,6 @@ mongoc_client_encryption_rewrap_many_datakey (
    mongoc_client_encryption_rewrap_many_datakey_result_t *result,
    bson_error_t *error)
 {
-   if (result) {
-      bson_reinit (&result->bulk_write_result);
-   }
    return _disabled_error (error);
 }
 
