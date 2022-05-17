@@ -273,18 +273,15 @@ operation_create_key (test_t *test,
    {
       const bool success = mongoc_client_encryption_create_key (
          ce, kms_provider, datakey_opts, &key_id_value, error);
-      bson_t bson = BSON_INITIALIZER;
       bson_val_t *val = NULL;
 
       if (success) {
-         BSON_ASSERT (BSON_APPEND_VALUE (&bson, "id", &key_id_value));
-         BSON_ASSERT ((val = bson_val_from_bson (&bson)));
+         val = bson_val_from_value (&key_id_value);
       }
 
       result_from_val_and_reply (result, val, NULL, error);
 
       bson_val_destroy (val);
-      bson_destroy (&bson);
    }
 
    ret = true;
