@@ -9,7 +9,12 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0"
+        "id": "client0",
+        "observeEvents": [
+          "commandStartedEvent",
+          "commandSucceededEvent",
+          "commandFailedEvent"
+        ]
       }
     },
     {
@@ -19,14 +24,7 @@
           "keyVaultClient": "client0",
           "keyVaultNamespace": "keyvault.datakeys",
           "kmsProviders": {
-            "aws": {
-              "accessKeyId": {
-                "$$placeholder": 1
-              },
-              "secretAccessKey": {
-                "$$placeholder": 1
-              }
-            }
+            "aws": {}
           }
         }
       }
@@ -49,6 +47,12 @@
             "isClientError": true
           }
         }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": []
+        }
       ]
     },
     {
@@ -68,6 +72,12 @@
           "expectError": {
             "isClientError": true
           }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": []
         }
       ]
     },
@@ -89,6 +99,12 @@
           "expectError": {
             "isClientError": true
           }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": []
         }
       ]
     }

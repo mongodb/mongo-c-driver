@@ -9,7 +9,12 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0"
+        "id": "client0",
+        "observeEvents": [
+          "commandStartedEvent",
+          "commandSucceededEvent",
+          "commandFailedEvent"
+        ]
       }
     },
     {
@@ -50,6 +55,12 @@
           "expectError": {
             "isClientError": true
           }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": []
         }
       ]
     }
