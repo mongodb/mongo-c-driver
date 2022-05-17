@@ -778,23 +778,31 @@ test_create_key_with_custom_key_material (void *unused)
 
    /* Replace the _id field in the copied key document with a UUID with base64
     * value AAAAAAAAAAAAAAAAAAAAAA== (16 bytes all equal to 0x00) and insert the
-    * modified key document into keyvault.datakeys. */
+    * modified key document into keyvault.datakeys with majority write concern.
+    */
    {
       mongoc_collection_t *const datakeys =
          mongoc_client_get_collection (client, "keyvault", "datakeys");
       bson_t modified_datakey = BSON_INITIALIZER;
       uint8_t bytes[16] = {0};
+      mongoc_write_concern_t *const wc = mongoc_write_concern_new();
+      bson_t opts = BSON_INITIALIZER;
 
       bson_copy_to_excluding_noinit (&datakey, &modified_datakey, "_id", NULL);
       BSON_ASSERT (BSON_APPEND_BINARY (
          &modified_datakey, "_id", BSON_SUBTYPE_UUID, bytes, sizeof (bytes)));
 
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_write_concern_append (wc, &opts);
+
       ASSERT_OR_PRINT (mongoc_collection_insert_one (
-                          datakeys, &modified_datakey, NULL, NULL, &error),
+                          datakeys, &modified_datakey, &opts, NULL, &error),
                        error);
 
       mongoc_collection_destroy (datakeys);
       bson_destroy (&modified_datakey);
+      mongoc_write_concern_destroy (wc);
+      bson_destroy (&opts);
    }
 
    /* Using client_encryption, encrypt the string "test" with the modified data
