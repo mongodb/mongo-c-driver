@@ -243,6 +243,10 @@ _make_cursor (mongoc_change_stream_t *stream)
    bson_init (&command);
    bson_copy_to (&(stream->opts.extra), &command_opts);
 
+   if (stream->opts.comment.value_type != BSON_TYPE_EOD) {
+      bson_append_value (&command_opts, "comment", 7, &stream->opts.comment);
+   }
+
    if (bson_iter_init_find (&iter, &command_opts, "sessionId")) {
       if (!_mongoc_client_session_from_iter (
              stream->client, &iter, &cs, &stream->err)) {

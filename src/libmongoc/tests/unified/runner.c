@@ -79,24 +79,13 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
    /* libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode. */
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
-   /* CDRIVER-4199: comment option for helpers */
-   {"aggregate", "aggregate with a document comment"},
-   {"aggregate", "aggregate with a document comment - pre 4.4"},
-   {"aggregate", "aggregate with comment sets comment on getMore"},
-   {"aggregate", "aggregate with comment does not set comment on getMore - pre 4.4"},
-   {"bulkWrite-comment", SKIP_ALL_TESTS},
-   {"deleteMany-comment", SKIP_ALL_TESTS},
-   {"deleteOne-comment", SKIP_ALL_TESTS},
-   {"estimatedDocumentCount-comment", SKIP_ALL_TESTS},
-   {"find-comment", SKIP_ALL_TESTS},
-   {"findOneAndDelete-comment", SKIP_ALL_TESTS},
-   {"findOneAndReplace-comment", SKIP_ALL_TESTS},
-   {"findOneAndUpdate-comment", SKIP_ALL_TESTS},
-   {"insertMany-comment", SKIP_ALL_TESTS},
-   {"insertOne-comment", SKIP_ALL_TESTS},
-   {"replaceOne-comment", SKIP_ALL_TESTS},
-   {"updateMany-comment", SKIP_ALL_TESTS},
-   {"updateOne-comment", SKIP_ALL_TESTS},
+   /* CDRIVER-4277: Change streams support for user-facing PIT pre- and post-images */
+   {"change-streams-pre_and_post_images", SKIP_ALL_TESTS},
+   /* CDRIVER-3973, CDRIVER-4305, CDRIVER-4279, CDRIVER-4321: unified change stream tests */
+   {"change-streams", SKIP_ALL_TESTS},
+   {"change-streams-errors", SKIP_ALL_TESTS},
+   {"change-streams-resume-allowlist", SKIP_ALL_TESTS},
+   {"change-streams-resume-errorlabels", SKIP_ALL_TESTS},
    {0},
 };
 /* clang-format on */
@@ -1110,7 +1099,7 @@ test_check_event (test_t *test,
       actual_val = bson_val_from_bson (actual->command);
 
       if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, true, error)) {
+             test->entity_map, expected_val, actual_val, false, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;
@@ -1141,7 +1130,7 @@ test_check_event (test_t *test,
       bson_val_t *expected_val = bson_val_from_bson (expected_reply);
       bson_val_t *actual_val = bson_val_from_bson (actual->reply);
       if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, true, error)) {
+             test->entity_map, expected_val, actual_val, false, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;

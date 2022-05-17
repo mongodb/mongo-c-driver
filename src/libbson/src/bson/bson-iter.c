@@ -1894,8 +1894,8 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
                      const bson_visitor_t *visitor, /* IN */
                      void *data)                    /* IN */
 {
-   uint32_t bson_type;
-   const char *key;
+   uint32_t bson_type = 0;
+   const char *key = NULL;
    bool unsupported;
 
    BSON_ASSERT (iter);
