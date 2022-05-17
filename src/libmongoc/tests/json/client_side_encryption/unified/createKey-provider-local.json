@@ -66,9 +66,7 @@
             "kmsProvider": "local"
           },
           "expectResult": {
-            "id": {
-              "$$type": "binData"
-            }
+            "$$type": "binData"
           }
         }
       ],

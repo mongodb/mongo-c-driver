@@ -262,21 +262,11 @@
           },
           "expectResult": {
             "bulkWriteResult": {
-              "insertedCount": {
-                "$numberInt": "0"
-              },
-              "matchedCount": {
-                "$numberInt": "5"
-              },
-              "modifiedCount": {
-                "$numberInt": "5"
-              },
-              "deletedCount": {
-                "$numberInt": "0"
-              },
-              "upsertedCount": {
-                "$numberInt": "0"
-              },
+              "insertedCount": 0,
+              "matchedCount": 5,
+              "modifiedCount": 5,
+              "deletedCount": 0,
+              "upsertedCount": 0,
               "upsertedIds": {}
             }
           }

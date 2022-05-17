@@ -312,21 +312,11 @@
           },
           "expectResult": {
             "bulkWriteResult": {
-              "insertedCount": {
-                "$numberInt": "0"
-              },
-              "matchedCount": {
-                "$numberInt": "2"
-              },
-              "modifiedCount": {
-                "$numberInt": "2"
-              },
-              "deletedCount": {
-                "$numberInt": "0"
-              },
-              "upsertedCount": {
-                "$numberInt": "0"
-              },
+              "insertedCount": 0,
+              "matchedCount": 2,
+              "modifiedCount": 2,
+              "deletedCount": 0,
+              "upsertedCount": 0,
               "upsertedIds": {}
             }
           }
@@ -447,21 +437,11 @@
           },
           "expectResult": {
             "bulkWriteResult": {
-              "insertedCount": {
-                "$numberInt": "0"
-              },
-              "matchedCount": {
-                "$numberInt": "2"
-              },
-              "modifiedCount": {
-                "$numberInt": "2"
-              },
-              "deletedCount": {
-                "$numberInt": "0"
-              },
-              "upsertedCount": {
-                "$numberInt": "0"
-              },
+              "insertedCount": 0,
+              "matchedCount": 2,
+              "modifiedCount": 2,
+              "deletedCount": 0,
+              "upsertedCount": 0,
               "upsertedIds": {}
             }
           }

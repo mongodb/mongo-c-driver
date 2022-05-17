@@ -66,9 +66,7 @@
             "kmsProvider": "kmip"
           },
           "expectResult": {
-            "id": {
-              "$$type": "binData"
-            }
+            "$$type": "binData"
           }
         }
       ],

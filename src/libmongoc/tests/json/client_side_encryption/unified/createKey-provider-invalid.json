@@ -9,12 +9,7 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0",
-        "observeEvents": [
-          "commandStartedEvent",
-          "commandSucceededEvent",
-          "commandFailedEvent"
-        ]
+        "id": "client0"
       }
     },
     {
@@ -35,27 +30,6 @@
           }
         }
       }
-    },
-    {
-      "database": {
-        "id": "database0",
-        "client": "client0",
-        "databaseName": "keyvault"
-      }
-    },
-    {
-      "collection": {
-        "id": "collection0",
-        "database": "database0",
-        "collectionName": "datakeys"
-      }
-    }
-  ],
-  "initialData": [
-    {
-      "databaseName": "keyvault",
-      "collectionName": "datakeys",
-      "documents": []
     }
   ],
   "tests": [

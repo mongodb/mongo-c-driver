@@ -75,9 +75,7 @@
             }
           },
           "expectResult": {
-            "id": {
-              "$$type": "binData"
-            }
+            "$$type": "binData"
           }
         }
       ],
