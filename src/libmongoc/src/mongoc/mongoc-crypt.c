@@ -1134,6 +1134,8 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 const char *algorithm,
                                 const bson_value_t *keyid,
                                 char *keyaltname,
+                                mongoc_encrypt_query_type_t *query_type,
+                                int64_t *contention_factor,
                                 const bson_value_t *value_in,
                                 bson_value_t *value_out,
                                 bson_error_t *error)
@@ -1156,9 +1158,48 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
       goto fail;
    }
 
-   if (!mongocrypt_ctx_setopt_algorithm (state_machine->ctx, algorithm, -1)) {
-      _ctx_check_error (state_machine->ctx, error, true);
-      goto fail;
+   if (NULL != algorithm &&
+       0 == strcmp (algorithm, MONGOC_ENCRYPT_ALGORITHM_INDEXED)) {
+      if (!mongocrypt_ctx_setopt_index_type (state_machine->ctx,
+                                             MONGOCRYPT_INDEX_TYPE_EQUALITY)) {
+         _ctx_check_error (state_machine->ctx, error, true);
+         goto fail;
+      }
+   } else if (NULL != algorithm &&
+              0 == strcmp (algorithm, MONGOC_ENCRYPT_ALGORITHM_UNINDEXED)) {
+      if (!mongocrypt_ctx_setopt_index_type (state_machine->ctx,
+                                             MONGOCRYPT_INDEX_TYPE_NONE)) {
+         _ctx_check_error (state_machine->ctx, error, true);
+         goto fail;
+      }
+   } else {
+      if (!mongocrypt_ctx_setopt_algorithm (
+             state_machine->ctx, algorithm, -1)) {
+         _ctx_check_error (state_machine->ctx, error, true);
+         goto fail;
+      }
+   }
+
+   if (query_type != NULL) {
+      mongocrypt_query_type_t converted;
+
+      switch (*query_type) {
+      case MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY:
+         converted = MONGOCRYPT_QUERY_TYPE_EQUALITY;
+         break;
+      }
+      if (!mongocrypt_ctx_setopt_query_type (state_machine->ctx, converted)) {
+         _ctx_check_error (state_machine->ctx, error, true);
+         goto fail;
+      }
+   }
+
+   if (contention_factor != NULL) {
+      if (!mongocrypt_ctx_setopt_contention_factor (state_machine->ctx,
+                                                    *contention_factor)) {
+         _ctx_check_error (state_machine->ctx, error, true);
+         goto fail;
+      }
    }
 
    if (keyaltname) {

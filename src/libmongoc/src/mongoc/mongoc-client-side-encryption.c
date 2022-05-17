@@ -1777,14 +1777,17 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
       GOTO (fail);
    }
 
-   if (!_mongoc_crypt_explicit_encrypt (client_encryption->crypt,
-                                        client_encryption->keyvault_coll,
-                                        opts->algorithm,
-                                        &opts->keyid,
-                                        opts->keyaltname,
-                                        value,
-                                        ciphertext,
-                                        error)) {
+   if (!_mongoc_crypt_explicit_encrypt (
+          client_encryption->crypt,
+          client_encryption->keyvault_coll,
+          opts->algorithm,
+          &opts->keyid,
+          opts->keyaltname,
+          opts->query_type.set ? &opts->query_type.value : NULL,
+          opts->contention_factor.set ? &opts->contention_factor.value : NULL,
+          value,
+          ciphertext,
+          error)) {
       GOTO (fail);
    }
 
