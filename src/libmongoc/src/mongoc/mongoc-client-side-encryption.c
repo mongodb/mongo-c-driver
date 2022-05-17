@@ -484,10 +484,12 @@ void
 mongoc_client_encryption_rewrap_many_datakey_result_destroy (
    mongoc_client_encryption_rewrap_many_datakey_result_t *result)
 {
-   if (result) {
-      bson_destroy (&result->bulk_write_result);
-      bson_free (result);
+   if (!result) {
+      return;
    }
+
+   bson_destroy (&result->bulk_write_result);
+   bson_free (result);
 }
 
 const bson_t *
