@@ -305,7 +305,7 @@ _command_started (const mongoc_apm_command_started_t *event)
    }
 }
 
-/* Prose test: BSON size limits and batch splitting */
+/* Prose Test 4: BSON Size Limits and Batch Splitting */
 static void
 test_bson_size_limits_and_batch_splitting (void *unused)
 {
@@ -682,7 +682,7 @@ test_datakey_and_double_encryption_creating_and_using (
    mongoc_client_encryption_datakey_opts_destroy (opts);
 }
 
-/* Prose test "Create key with custom key material" */
+/* Prose Test 1: Custom Key Material Test */
 static void
 test_create_key_with_custom_key_material (void *unused)
 {
@@ -850,7 +850,7 @@ test_create_key_with_custom_key_material (void *unused)
    bson_destroy (&datakey);
 }
 
-/* Prose test "Data key and double encryption" */
+/* Prose Test 2: Data Key and Double Encryption */
 static void
 test_datakey_and_double_encryption (void *unused)
 {
@@ -1089,6 +1089,7 @@ _test_key_vault (bool with_external_key_vault)
    mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);
 }
 
+/* Prose Test 3: External Key Vault Test */
 static void
 test_external_key_vault (void *unused)
 {
@@ -1096,6 +1097,7 @@ test_external_key_vault (void *unused)
    _test_key_vault (true /* external */);
 }
 
+/* Prose Test 5: Views Are Prohibited */
 static void
 test_views_are_prohibited (void *unused)
 {
@@ -1302,6 +1304,7 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
       mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);          \
    } while (0)
 
+/* Prose Test 7: Custom Endpoint Test */
 static void
 test_custom_endpoint (void *unused)
 {
@@ -2020,6 +2023,7 @@ _test_corpus (bool local_schema)
    mongoc_client_destroy (client);
 }
 
+/* Prose Test 6: Corpus Test */
 static void
 test_corpus (void *unused)
 {
@@ -2483,6 +2487,7 @@ _check_mongocryptd_not_spawned (void)
    bson_destroy (cmd);
 }
 
+/* Prose Test 8: Bypass Spawning mongocryptd - Via mongocryptdBypassSpawn */
 static void
 test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
 {
@@ -2608,12 +2613,14 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
    bson_destroy (kms_providers);
 }
 
+/* Prose Test 8: Bypass Spawning mongocryptd - Via bypassAutoEncryption */
 static void
 test_bypass_spawning_via_bypassAutoEncryption (void *unused)
 {
    test_bypass_spawning_via_helper ("bypass_auto_encryption");
 }
 
+/* Prose Test 8: Bypass Spawning mongocryptd - Via bypassQueryAnalysis */
 static void
 test_bypass_spawning_via_bypassQueryAnalysis (void *unused)
 {
@@ -2717,6 +2724,7 @@ test_kms_tls_cert_valid (void *unused)
    bson_free (tls_ca_file);
 }
 
+/* Prose Test 10: KMS TLS Tests - Invalid KMS Certificate */
 static void
 test_kms_tls_cert_expired (void *unused)
 {
@@ -2762,6 +2770,7 @@ test_kms_tls_cert_expired (void *unused)
 }
 
 
+/* Prose Test 10: KMS TLS Tests - Invalid Hostname in KMS Certificate */
 static void
 test_kms_tls_cert_wrong_host (void *unused)
 {
@@ -3027,6 +3036,7 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
 #define ASSERT_INVALID_HOSTNAME(error)
 #endif
 
+/* Prose Test 11: KMS TLS Options Tests */
 static void
 test_kms_tls_options (void *unused)
 {
