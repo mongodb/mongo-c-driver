@@ -15,7 +15,8 @@ else
 fi
 
 if test "$2" = true || test "$2" = false; then
-    ln -f -s "$b" "/usr/local/bin/$1"
+    __write "/usr/local/bin/$1" "#!/usr/bin/env $2"
+    chmod a+x "/usr/local/bin/$1"
 else
     echo "Second argument to __add_boolcmd must be 'true' or 'false' (Got '$b')"
 fi

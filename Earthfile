@@ -48,6 +48,12 @@ SETUP:
         RUN __install \
             gcc gcc-c++ make python3 libopenssl-devel pkg-config git \
             net-snmp-devel jq
+    ELSE IF __is_alpine
+        RUN __install \
+            openssl-dev gcc g++ musl-dev make pkgconf python3 jq git cmake \
+            zstd-dev snappy-dev net-snmp-dev
+        # Have the build use the system's CMake on Alpine
+        ENV CMAKE=cmake
     END
     DO +GIT_CONFIG
     DO +GET_CMAKE
@@ -101,6 +107,9 @@ amzn2-env:
 
 suse-env:
     DO +SETUP --from=suse --version=42
+
+alpine3.15-env:
+    DO +SETUP --from=alpine --version=3.15.4
 
 COMPILE_SH:
     COMMAND
