@@ -3047,7 +3047,6 @@ _bson_as_json_visit_codewscope (const bson_iter_t *iter,
    bson_json_state_t *state = data;
    char *code_escaped;
    char *scope;
-   int32_t max_scope_len = BSON_MAX_LEN_UNLIMITED;
 
    code_escaped = bson_utf8_escape_for_json (v_code, v_code_len);
    if (!code_escaped) {
@@ -3059,11 +3058,6 @@ _bson_as_json_visit_codewscope (const bson_iter_t *iter,
    bson_string_append (state->str, "\", \"$scope\" : ");
 
    bson_free (code_escaped);
-
-   /* Encode scope with the same mode */
-   if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
-      max_scope_len = BSON_MAX (0, state->max_len - state->str->len);
-   }
 
    scope = _bson_as_json_visit_all (v_scope, NULL, state->opts);
 
