@@ -173,6 +173,208 @@ done:
 }
 
 static bool
+operation_create_key (test_t *test,
+                      operation_t *op,
+                      result_t *result,
+                      bson_error_t *error)
+{
+   bson_parser_t *parser = bson_parser_new ();
+   char *kms_provider = NULL;
+   bson_t *opts;
+   mongoc_client_encryption_t *ce = NULL;
+   mongoc_client_encryption_datakey_opts_t *datakey_opts = NULL;
+   bson_value_t key_id_value = {0};
+   bool ret = false;
+
+   bson_parser_utf8 (parser, "kmsProvider", &kms_provider);
+   bson_parser_doc_optional (parser, "opts", &opts);
+
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   if (!(ce = entity_map_get_client_encryption (
+            test->entity_map, op->object, error))) {
+      goto done;
+   }
+
+   datakey_opts = mongoc_client_encryption_datakey_opts_new ();
+
+   if (opts) {
+      bson_parser_t *opts_parser = bson_parser_new ();
+      bson_t *master_key = NULL;
+      bson_t *key_alt_names = NULL;
+      bson_val_t *key_material_val = NULL;
+      bool success = false;
+
+      bson_parser_doc_optional (opts_parser, "masterKey", &master_key);
+      bson_parser_array_optional (opts_parser, "keyAltNames", &key_alt_names);
+      bson_parser_any_optional (opts_parser, "keyMaterial", &key_material_val);
+
+      if (!bson_parser_parse (opts_parser, opts, error)) {
+         goto opts_done;
+      }
+
+      if (master_key) {
+         mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
+                                                              master_key);
+      }
+
+      if (key_alt_names) {
+         bson_iter_t iter;
+         mongoc_array_t arr;
+
+         _mongoc_array_init (&arr, sizeof (char *));
+
+         BSON_FOREACH (key_alt_names, iter)
+         {
+            const char *key_alt_name = bson_iter_utf8 (&iter, NULL);
+
+            _mongoc_array_append_val (&arr, key_alt_name);
+         }
+
+         BSON_ASSERT (bson_in_range_unsigned (uint32_t, arr.len));
+
+         mongoc_client_encryption_datakey_opts_set_keyaltnames (
+            datakey_opts, arr.data, (uint32_t) arr.len);
+
+         _mongoc_array_destroy (&arr);
+      }
+
+      if (key_material_val) {
+         const bson_value_t *value = bson_val_to_value (key_material_val);
+
+         BSON_ASSERT (value);
+
+         if (value->value_type != BSON_TYPE_BINARY ||
+             value->value.v_binary.subtype != BSON_SUBTYPE_BINARY) {
+            test_set_error (
+               error,
+               "expected field 'keyMaterial' to be binData with subtype 00");
+            goto opts_done;
+         }
+
+         mongoc_client_encryption_datakey_opts_set_keymaterial (
+            datakey_opts,
+            value->value.v_binary.data,
+            value->value.v_binary.data_len);
+      }
+
+      success = true;
+
+   opts_done:
+      bson_parser_destroy_with_parsed_fields (opts_parser);
+
+      if (!success) {
+         goto done;
+      }
+   }
+
+   {
+      const bool success = mongoc_client_encryption_create_key (
+         ce, kms_provider, datakey_opts, &key_id_value, error);
+      bson_val_t *val = NULL;
+
+      if (success) {
+         val = bson_val_from_value (&key_id_value);
+      }
+
+      result_from_val_and_reply (result, val, NULL, error);
+
+      bson_val_destroy (val);
+   }
+
+   ret = true;
+
+done:
+   mongoc_client_encryption_datakey_opts_destroy (datakey_opts);
+   bson_parser_destroy_with_parsed_fields (parser);
+   bson_value_destroy (&key_id_value);
+
+   return ret;
+}
+
+static bool
+operation_rewrap_many_data_key (test_t *test,
+                                operation_t *op,
+                                result_t *result,
+                                bson_error_t *error)
+{
+   bson_parser_t *const parser = bson_parser_new ();
+   mongoc_client_encryption_rewrap_many_datakey_result_t *const rmd_result =
+      mongoc_client_encryption_rewrap_many_datakey_result_new ();
+
+   bool ret = false;
+   mongoc_client_encryption_t *ce = NULL;
+   bson_t *filter_doc = NULL;
+   bson_t *opts_doc = NULL;
+   char *provider = NULL;
+   bson_t *master_key = NULL;
+
+   bson_parser_doc (parser, "filter", &filter_doc);
+   bson_parser_doc_optional (parser, "opts", &opts_doc);
+
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   if (!(ce = entity_map_get_client_encryption (
+            test->entity_map, op->object, error))) {
+      goto done;
+   }
+
+   if (opts_doc) {
+      bson_parser_t *const opts_parser = bson_parser_new ();
+
+      bson_parser_utf8 (opts_parser, "provider", &provider);
+      bson_parser_doc_optional (opts_parser, "masterKey", &master_key);
+
+      if (!bson_parser_parse (opts_parser, opts_doc, error)) {
+         goto opts_done;
+      }
+
+   opts_done:
+      bson_parser_destroy (opts_parser);
+   }
+
+   if (mongoc_client_encryption_rewrap_many_datakey (
+          ce, filter_doc, provider, master_key, rmd_result, error)) {
+      const bson_t *const bulk_write_result =
+         mongoc_client_encryption_rewrap_many_datakey_result_get_bulk_write_result (
+            rmd_result);
+
+      bson_t doc = BSON_INITIALIZER;
+
+      {
+         bson_t *const rewritten =
+            rewrite_bulk_write_result (bulk_write_result);
+         BSON_APPEND_DOCUMENT (&doc, "bulkWriteResult", rewritten);
+         bson_destroy (rewritten);
+      }
+
+      {
+         bson_val_t *const val = bson_val_from_bson (&doc);
+         result_from_val_and_reply (result, val, NULL, error);
+         bson_val_destroy (val);
+      }
+
+      bson_destroy (&doc);
+   } else {
+      result_from_val_and_reply (result, NULL, NULL, error);
+   }
+
+   ret = true;
+
+done:
+   bson_free (provider);
+   bson_destroy (master_key);
+   mongoc_client_encryption_rewrap_many_datakey_result_destroy (rmd_result);
+   bson_parser_destroy_with_parsed_fields (parser);
+
+   return ret;
+}
+
+static bool
 operation_create_collection (test_t *test,
                              operation_t *op,
                              result_t *result,
@@ -2575,6 +2777,10 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       /* Client operations */
       {"createChangeStream", operation_create_change_stream},
       {"listDatabases", operation_list_databases},
+
+      /* ClientEncryption operations */
+      {"createKey", operation_create_key},
+      {"rewrapManyDataKey", operation_rewrap_many_data_key},
 
       /* Database operations */
       {"createCollection", operation_create_collection},

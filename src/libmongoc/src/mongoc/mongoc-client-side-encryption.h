@@ -86,6 +86,8 @@ typedef struct _mongoc_client_encryption_encrypt_opts_t
    mongoc_client_encryption_encrypt_opts_t;
 typedef struct _mongoc_client_encryption_datakey_opts_t
    mongoc_client_encryption_datakey_opts_t;
+typedef struct _mongoc_client_encryption_rewrap_many_datakey_result_t
+   mongoc_client_encryption_rewrap_many_datakey_result_t;
 
 MONGOC_EXPORT (mongoc_client_encryption_opts_t *)
 mongoc_client_encryption_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
@@ -110,6 +112,19 @@ MONGOC_EXPORT (void)
 mongoc_client_encryption_opts_set_tls_opts (
    mongoc_client_encryption_opts_t *opts, const bson_t *tls_opts);
 
+MONGOC_EXPORT (mongoc_client_encryption_rewrap_many_datakey_result_t *)
+mongoc_client_encryption_rewrap_many_datakey_result_new (void)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_rewrap_many_datakey_result_destroy (
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result);
+
+MONGOC_EXPORT (const bson_t *)
+mongoc_client_encryption_rewrap_many_datakey_result_get_bulk_write_result (
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+
 MONGOC_EXPORT (mongoc_client_encryption_t *)
 mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                               bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
@@ -124,6 +139,23 @@ mongoc_client_encryption_create_datakey (
    const char *kms_provider,
    mongoc_client_encryption_datakey_opts_t *opts,
    bson_value_t *keyid,
+   bson_error_t *error);
+
+MONGOC_EXPORT (bool)
+mongoc_client_encryption_create_key (
+   mongoc_client_encryption_t *client_encryption,
+   const char *kms_provider,
+   mongoc_client_encryption_datakey_opts_t *opts,
+   bson_value_t *keyid,
+   bson_error_t *error);
+
+MONGOC_EXPORT (bool)
+mongoc_client_encryption_rewrap_many_datakey (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *filter,
+   const char *provider,
+   const bson_t *master_key,
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result,
    bson_error_t *error);
 
 MONGOC_EXPORT (bool)
@@ -174,6 +206,12 @@ mongoc_client_encryption_datakey_opts_set_keyaltnames (
    mongoc_client_encryption_datakey_opts_t *opts,
    char **keyaltnames,
    uint32_t keyaltnames_count);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_datakey_opts_set_keymaterial (
+   mongoc_client_encryption_datakey_opts_t *opts,
+   const uint8_t *data,
+   uint32_t len);
 
 BSON_END_DECLS
 

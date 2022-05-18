@@ -17,6 +17,8 @@
 #include "json-test.h"
 #include "test-libmongoc.h"
 
+#include "common-b64-private.h"
+
 /* _mongoc_host_list_from_string_with_err */
 #include "mongoc/mongoc-host-list-private.h"
 
@@ -303,7 +305,7 @@ _command_started (const mongoc_apm_command_started_t *event)
    }
 }
 
-/* Prose test: BSON size limits and batch splitting */
+/* Prose Test 4: BSON Size Limits and Batch Splitting */
 static void
 test_bson_size_limits_and_batch_splitting (void *unused)
 {
@@ -680,7 +682,183 @@ test_datakey_and_double_encryption_creating_and_using (
    mongoc_client_encryption_datakey_opts_destroy (opts);
 }
 
-/* Prose test "Data key and double encryption" */
+/* Prose Test 1: Custom Key Material Test */
+static void
+test_create_key_with_custom_key_material (void *unused)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_client_encryption_t *client_encryption = NULL;
+   bson_error_t error;
+   bson_t datakey = BSON_INITIALIZER;
+
+   /* Create a MongoClient object (referred to as client). */
+   client = test_framework_new_default_client ();
+
+   /* Using client, drop the collection keyvault.datakeys. */
+   {
+      mongoc_collection_t *const datakeys =
+         mongoc_client_get_collection (client, "keyvault", "datakeys");
+      (void) mongoc_collection_drop (datakeys, NULL);
+      mongoc_collection_destroy (datakeys);
+   }
+
+   /* Create a ClientEncryption object (referred to as client_encryption) with
+    * client set as the keyVaultClient. */
+   {
+      mongoc_client_encryption_opts_t *const client_encryption_opts =
+         mongoc_client_encryption_opts_new ();
+      bson_t *const kms_providers =
+         _make_kms_providers (true /* aws */, true /* local */);
+      bson_t *const tls_opts = _make_tls_opts ();
+
+      mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
+                                                       kms_providers);
+      mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts,
+                                                  tls_opts);
+      mongoc_client_encryption_opts_set_keyvault_namespace (
+         client_encryption_opts, "keyvault", "datakeys");
+      mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
+                                                         client);
+      client_encryption =
+         mongoc_client_encryption_new (client_encryption_opts, &error);
+      ASSERT_OR_PRINT (client_encryption, error);
+
+      mongoc_client_encryption_opts_destroy (client_encryption_opts);
+      bson_destroy (kms_providers);
+      bson_destroy (tls_opts);
+   }
+
+   /* Using client_encryption, create a data key with a local KMS provider and
+    * the following custom key material: */
+   {
+      const char key_material[] =
+         "xPTAjBRG5JiPm+d3fj6XLi2q5DMXUS/"
+         "f1f+SMAlhhwkhDRL0kr8r9GDLIGTAGlvC+HVjSIgdL+"
+         "RKwZCvpXSyxTICWSXTUYsWYPyu3IoHbuBZdmw2faM3WhcRIgbMReU5";
+      uint8_t data[96];
+      mongoc_client_encryption_datakey_opts_t *datakey_opts =
+         mongoc_client_encryption_datakey_opts_new ();
+      bson_value_t keyid;
+
+      BSON_ASSERT (
+         mcommon_b64_pton (key_material, data, sizeof (key_material)) == 96);
+
+      mongoc_client_encryption_datakey_opts_set_keymaterial (
+         datakey_opts, data, sizeof (data));
+
+      ASSERT_OR_PRINT (
+         mongoc_client_encryption_create_key (
+            client_encryption, "local", datakey_opts, &keyid, &error),
+         error);
+
+      ASSERT (keyid.value_type == BSON_TYPE_BINARY);
+      ASSERT (keyid.value.v_binary.subtype == BSON_SUBTYPE_UUID);
+      ASSERT (keyid.value.v_binary.data_len != 0);
+
+      mongoc_client_encryption_datakey_opts_destroy (datakey_opts);
+      bson_value_destroy (&keyid);
+   }
+
+   /* Find the resulting key document in keyvault.datakeys, save a copy of the
+    * key document, then remove the key document from the collection. */
+   {
+      mongoc_collection_t *const datakeys =
+         mongoc_client_get_collection (client, "keyvault", "datakeys");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         datakeys, tmp_bson ("{}"), NULL /* opts */, NULL /* read prefs */);
+      const bson_t *bson;
+
+      ASSERT (mongoc_cursor_next (cursor, &bson));
+      bson_copy_to (bson, &datakey);
+      mongoc_cursor_destroy (cursor);
+
+      (void) mongoc_collection_drop (datakeys, &error);
+      mongoc_collection_destroy (datakeys);
+   }
+
+   /* Replace the _id field in the copied key document with a UUID with base64
+    * value AAAAAAAAAAAAAAAAAAAAAA== (16 bytes all equal to 0x00) and insert the
+    * modified key document into keyvault.datakeys with majority write concern.
+    */
+   {
+      mongoc_collection_t *const datakeys =
+         mongoc_client_get_collection (client, "keyvault", "datakeys");
+      bson_t modified_datakey = BSON_INITIALIZER;
+      uint8_t bytes[16] = {0};
+      mongoc_write_concern_t *const wc = mongoc_write_concern_new();
+      bson_t opts = BSON_INITIALIZER;
+
+      bson_copy_to_excluding_noinit (&datakey, &modified_datakey, "_id", NULL);
+      BSON_ASSERT (BSON_APPEND_BINARY (
+         &modified_datakey, "_id", BSON_SUBTYPE_UUID, bytes, sizeof (bytes)));
+
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_write_concern_append (wc, &opts);
+
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                          datakeys, &modified_datakey, &opts, NULL, &error),
+                       error);
+
+      mongoc_collection_destroy (datakeys);
+      bson_destroy (&modified_datakey);
+      mongoc_write_concern_destroy (wc);
+      bson_destroy (&opts);
+   }
+
+   /* Using client_encryption, encrypt the string "test" with the modified data
+    * key using the AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic algorithm and
+    * assert the resulting value is equal to the following (given as base64): */
+   {
+      const char expected[] =
+         "AQAAAAAAAAAAAAAAAAAAAAACz0ZOLuuhEYi807ZXTdhbqhLaS2/"
+         "t9wLifJnnNYwiw79d75QYIZ6M/aYC1h9nCzCjZ7pGUpAuNnkUhnIXM3PjrA==";
+      mongoc_client_encryption_encrypt_opts_t *const encrypt_opts =
+         mongoc_client_encryption_encrypt_opts_new ();
+      bson_value_t keyid = {0};
+      bson_value_t to_encrypt = {0};
+      bson_value_t ciphertext = {0};
+
+      keyid.value_type = BSON_TYPE_BINARY;
+      keyid.value.v_binary.subtype = BSON_SUBTYPE_UUID;
+      keyid.value.v_binary.data = bson_malloc0 (16);
+      keyid.value.v_binary.data_len = 16u;
+
+      to_encrypt.value_type = BSON_TYPE_UTF8;
+      to_encrypt.value.v_utf8.str = bson_strdup ("test");
+      to_encrypt.value.v_utf8.len = 4u;
+
+      mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+      ASSERT_OR_PRINT (
+         mongoc_client_encryption_encrypt (
+            client_encryption, &to_encrypt, encrypt_opts, &ciphertext, &error),
+         error);
+
+      {
+         char actual[256];
+
+         /* Need room for null terminator. */
+         ASSERT (mcommon_b64_ntop (ciphertext.value.v_binary.data,
+                                   ciphertext.value.v_binary.data_len,
+                                   actual,
+                                   sizeof (actual)) < 255);
+
+         ASSERT_CMPSTR (expected, actual);
+      }
+
+      bson_value_destroy (&keyid);
+      bson_value_destroy (&ciphertext);
+      bson_value_destroy (&to_encrypt);
+      mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);
+   }
+
+   mongoc_client_destroy (client);
+   mongoc_client_encryption_destroy (client_encryption);
+   bson_destroy (&datakey);
+}
+
+/* Prose Test 2: Data Key and Double Encryption */
 static void
 test_datakey_and_double_encryption (void *unused)
 {
@@ -919,6 +1097,7 @@ _test_key_vault (bool with_external_key_vault)
    mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);
 }
 
+/* Prose Test 3: External Key Vault Test */
 static void
 test_external_key_vault (void *unused)
 {
@@ -926,6 +1105,7 @@ test_external_key_vault (void *unused)
    _test_key_vault (true /* external */);
 }
 
+/* Prose Test 5: Views Are Prohibited */
 static void
 test_views_are_prohibited (void *unused)
 {
@@ -1132,6 +1312,7 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
       mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);          \
    } while (0)
 
+/* Prose Test 7: Custom Endpoint Test */
 static void
 test_custom_endpoint (void *unused)
 {
@@ -1850,6 +2031,7 @@ _test_corpus (bool local_schema)
    mongoc_client_destroy (client);
 }
 
+/* Prose Test 6: Corpus Test */
 static void
 test_corpus (void *unused)
 {
@@ -2313,6 +2495,7 @@ _check_mongocryptd_not_spawned (void)
    bson_destroy (cmd);
 }
 
+/* Prose Test 8: Bypass Spawning mongocryptd - Via mongocryptdBypassSpawn */
 static void
 test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
 {
@@ -2438,12 +2621,14 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
    bson_destroy (kms_providers);
 }
 
+/* Prose Test 8: Bypass Spawning mongocryptd - Via bypassAutoEncryption */
 static void
 test_bypass_spawning_via_bypassAutoEncryption (void *unused)
 {
    test_bypass_spawning_via_helper ("bypass_auto_encryption");
 }
 
+/* Prose Test 8: Bypass Spawning mongocryptd - Via bypassQueryAnalysis */
 static void
 test_bypass_spawning_via_bypassQueryAnalysis (void *unused)
 {
@@ -2547,6 +2732,7 @@ test_kms_tls_cert_valid (void *unused)
    bson_free (tls_ca_file);
 }
 
+/* Prose Test 10: KMS TLS Tests - Invalid KMS Certificate */
 static void
 test_kms_tls_cert_expired (void *unused)
 {
@@ -2592,6 +2778,7 @@ test_kms_tls_cert_expired (void *unused)
 }
 
 
+/* Prose Test 10: KMS TLS Tests - Invalid Hostname in KMS Certificate */
 static void
 test_kms_tls_cert_wrong_host (void *unused)
 {
@@ -2857,6 +3044,7 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
 #define ASSERT_INVALID_HOSTNAME(error)
 #endif
 
+/* Prose Test 11: KMS TLS Options Tests */
 static void
 test_kms_tls_options (void *unused)
 {
@@ -3203,10 +3391,19 @@ test_client_side_encryption_install (TestSuite *suite)
    install_json_test_suite_with_check (
       suite,
       JSON_DIR,
-      "client_side_encryption",
+      "client_side_encryption/legacy",
       test_client_side_encryption_cb,
       test_framework_skip_if_no_client_side_encryption);
    /* Prose tests from the spec. */
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/create_key_with_custom_key_material",
+      test_create_key_with_custom_key_material,
+      NULL,
+      NULL,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_8,
+      test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/datakey_and_double_encryption",
                       test_datakey_and_double_encryption,
