@@ -434,7 +434,7 @@ _print_bson_array_as_json (FILE *out, const bson_t *arr)
       bson_t elem;
       bson_iter_bson (&it, &elem);
 
-      bson_json_opts_t opts = {};
+      bson_json_opts_t opts = {0};
       opts.initial_indent = "";
       opts.level_indent = "  ";
       opts.subsequent_indent = "    ";
