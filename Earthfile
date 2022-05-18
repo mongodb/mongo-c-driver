@@ -211,6 +211,9 @@ BUILD:
     # Toggle Valgrind
     ARG --required valgrind
     ENV VALGRIND=$valgrind
+    # Toggle sanitizers
+    ARG sanitize
+    ENV SANITIZE=$sanitize
 
     DO +COMPILE_SH --conf_flags "$_base_configure_flags"
 
@@ -232,6 +235,8 @@ build:
     ARG skip_tests=OFF
     ARG cc=cc
     ARG jobs=8
+    ARG sanitize=address,undefined
+
     WORKDIR /s
     DO +BUILD \
         --client_side_encryption=$client_side_encryption \
@@ -244,6 +249,7 @@ build:
         --ssl=$ssl \
         --zlib=$zlib \
         --zstd=$zstd \
+        --sanitize=$sanitize \
         --snappy=$snappy \
         --arch=$arch \
         --cc=$cc \
@@ -273,6 +279,7 @@ debug-compile-asan-clang-openssl:
         --sasl=OFF \
         --ssl=OPENSSL \
         --arch=native \
+        --sanitize=address \
         --git_reset=$git_reset \
         --git_checkout=$git_checkout \
         --jobs=$jobs
