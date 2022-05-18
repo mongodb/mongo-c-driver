@@ -185,12 +185,15 @@ typedef struct _mongoc_topology_t {
    bool mongocryptd_bypass_spawn;
    char *mongocryptd_spawn_path;
    bson_t *mongocryptd_spawn_args;
+   bool bypass_query_analysis;
 #endif
 
    // Corresponds to extraOptions.csflePath
    char *csfle_override_path;
    // Corresponds to extraOptions.csfleRequired
    bool csfle_required;
+   // Corresponds to AutoEncryptionOpts.encryptedFieldsMap.
+   bson_t *encrypted_fields_map;
 
    /* For background monitoring. */
    mongoc_set_t *server_monitors;

@@ -29,6 +29,9 @@ Parameters
 .. include:: includes/read-opts.txt
 * ``skip``: An int specifying how many documents matching the ``query`` should be skipped before counting.
 * ``limit``: An int specifying the maximum number of documents to count.
+* ``comment``: A :symbol:`bson_value_t` specifying the comment to attach to this command. The comment will appear in log messages, profiler output, and currentOp output. Requires MongoDB 4.4 or later.
+
+For a list of all options, see `the MongoDB Manual entry on the count command <https://www.mongodb.com/docs/manual/reference/command/count/>`_.
 
 Description
 -----------

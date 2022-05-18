@@ -132,7 +132,7 @@ The ``cmake`` utility is also required. First `install Homebrew according to its
 Build environment on Windows with Visual Studio
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Building on Windows requires Windows Vista or newer and Visual Studio 2010 or newer. Additionally, ``cmake`` is required to generate Visual Studio project files.  Installation of these components on Windows is beyond the scope of this document.
+Building on Windows requires Windows Vista or newer and Visual Studio 2013 or newer. Additionally, ``cmake`` is required to generate Visual Studio project files.  Installation of these components on Windows is beyond the scope of this document.
 
 Build environment on Windows with MinGW-W64 and MSYS2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

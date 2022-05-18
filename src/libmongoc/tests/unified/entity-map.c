@@ -379,6 +379,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 
    client = test_framework_client_new_from_uri (uri, api);
    test_framework_set_ssl_opts (client);
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;
    callbacks = mongoc_apm_callbacks_new ();
 
@@ -1818,7 +1819,7 @@ bool
 entity_map_match (entity_map_t *em,
                   const bson_val_t *expected,
                   const bson_val_t *actual,
-                  bool allow_extra,
+                  bool array_of_root_docs,
                   bson_error_t *error)
 {
    bson_matcher_t *matcher;
@@ -1829,7 +1830,8 @@ entity_map_match (entity_map_t *em,
       matcher, "$$sessionLsid", special_session_lsid, em);
    bson_matcher_add_special (
       matcher, "$$matchesEntity", special_matches_entity, em);
-   ret = bson_matcher_match (matcher, expected, actual, "", allow_extra, error);
+   ret = bson_matcher_match (
+      matcher, expected, actual, "", array_of_root_docs, error);
    bson_matcher_destroy (matcher);
    return ret;
 }

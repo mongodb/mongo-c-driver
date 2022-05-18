@@ -63,25 +63,6 @@ _before_test (json_test_ctx_t *ctx, const bson_t *test)
       mongoc_collection_destroy (keyvault_coll);
    }
 
-   /* Collmod to include the json schema. Data was already inserted. */
-   if (bson_iter_init_find (&iter, ctx->config->scenario, "json_schema")) {
-      bson_t *cmd;
-      bson_t json_schema;
-
-      bson_iter_bson (&iter, &json_schema);
-      cmd = BCON_NEW ("collMod",
-                      BCON_UTF8 (mongoc_collection_get_name (ctx->collection)),
-                      "validator",
-                      "{",
-                      "$jsonSchema",
-                      BCON_DOCUMENT (&json_schema),
-                      "}");
-      ret = mongoc_client_command_simple (
-         client, mongoc_database_get_name (ctx->db), cmd, NULL, NULL, &error);
-      ASSERT_OR_PRINT (ret, error);
-      bson_destroy (cmd);
-   }
-
    bson_destroy (&insert_opts);
    mongoc_write_concern_destroy (wc);
    mongoc_client_destroy (client);
@@ -370,18 +351,26 @@ test_bson_size_limits_and_batch_splitting (void *unused)
          client, "db", cmd, NULL /* read prefs */, NULL /* reply */, &error),
       error);
 
+   mongoc_collection_destroy (coll);
    /* Drop and create the key vault collection, keyvault.datakeys. */
-   mongoc_collection_destroy (coll);
-   coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
-   (void) mongoc_collection_drop (coll, NULL);
-   datakey = get_bson_from_json_file (
-      "./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (
-         coll, datakey, NULL /* opts */, NULL /* reply */, &error),
-      error);
+   {
+      mongoc_write_concern_t *wc;
 
-   mongoc_collection_destroy (coll);
+      coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
+      (void) mongoc_collection_drop (coll, NULL);
+      datakey = get_bson_from_json_file (
+         "./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
+      wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_wmajority (wc, 1000);
+      mongoc_collection_set_write_concern (coll, wc);
+      ASSERT_OR_PRINT (
+         mongoc_collection_insert_one (
+            coll, datakey, NULL /* opts */, NULL /* reply */, &error),
+         error);
+      mongoc_write_concern_destroy (wc);
+      mongoc_collection_destroy (coll);
+   }
+
    mongoc_client_destroy (client);
 
    client = test_framework_client_new_from_uri (uri, NULL);
@@ -587,10 +576,10 @@ test_datakey_and_double_encryption_creating_and_using (
 
    /* Check that client captured a command_started event for the insert command
     * containing a majority writeConcern. */
-   BSON_ASSERT (match_bson (
+   assert_match_bson (
       test_ctx->last_cmd,
       tmp_bson ("{'insert': 'datakeys', 'writeConcern': { 'w': 'majority' } }"),
-      false));
+      false);
 
    /* Use client to run a find on keyvault.datakeys */
    coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
@@ -1816,8 +1805,8 @@ _test_corpus (bool local_schema)
 
    /* It should exactly match corpus. match_bson does a subset match, so match
     * in  both directions */
-   BSON_ASSERT (match_bson (corpus, corpus_decrypted, false));
-   BSON_ASSERT (match_bson (corpus_decrypted, corpus, false));
+   assert_match_bson (corpus, corpus_decrypted, false);
+   assert_match_bson (corpus_decrypted, corpus, false);
    mongoc_cursor_destroy (cursor);
 
    /* Load corpus-encrypted.json */
@@ -1914,6 +1903,7 @@ _reset (mongoc_client_pool_t **pool,
       mongoc_collection_t *coll;
       bson_t *datakey;
       bson_error_t error;
+      mongoc_write_concern_t *wc;
 
       uri = test_framework_get_uri ();
       *pool = test_framework_client_pool_new_from_uri (uri, NULL);
@@ -1927,6 +1917,9 @@ _reset (mongoc_client_pool_t **pool,
       coll = mongoc_client_get_collection (
          *singled_threaded_client, "db", "keyvault");
       (void) mongoc_collection_drop (coll, NULL);
+      wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_wmajority (wc, 1000);
+      mongoc_collection_set_write_concern (coll, wc);
       datakey = get_bson_from_json_file (
          "./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
       BSON_ASSERT (datakey);
@@ -1936,6 +1929,7 @@ _reset (mongoc_client_pool_t **pool,
          error);
 
       bson_destroy (datakey);
+      mongoc_write_concern_destroy (wc);
       mongoc_collection_destroy (coll);
    }
    bson_destroy (schema);
@@ -2162,6 +2156,7 @@ _test_multi_threaded (bool external_key_vault)
    bson_t *kms_providers;
    int r;
    int i;
+   mongoc_write_concern_t *wc;
 
    uri = test_framework_get_uri ();
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
@@ -2176,6 +2171,9 @@ _test_multi_threaded (bool external_key_vault)
    datakey = get_bson_from_json_file (
       "./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
    BSON_ASSERT (datakey);
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_collection_set_write_concern (coll, wc);
    ASSERT_OR_PRINT (
       mongoc_collection_insert_one (
          coll, datakey, NULL /* opts */, NULL /* reply */, &error),
@@ -2214,6 +2212,7 @@ _test_multi_threaded (bool external_key_vault)
       BSON_ASSERT (r == 0);
    }
 
+   mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
    mongoc_client_pool_push (pool, client1);
@@ -2284,8 +2283,24 @@ _check_mongocryptd_not_spawned (void)
    bson_error_t error;
    bool ret;
 
-   client = test_framework_client_new (
-      "mongodb://localhost:27021/db?serverSelectionTimeoutMS=1000", NULL);
+   /* Set up client. */
+   {
+      mongoc_uri_t *uri = mongoc_uri_new ("mongodb://localhost:27021");
+      ASSERT (mongoc_uri_set_option_as_int32 (
+         uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 1000));
+      /* Set SERVERSELECTIONTRYONCE to false so client will wait for the full
+       * second before giving up on server selection. */
+      ASSERT (mongoc_uri_set_option_as_bool (
+         uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false));
+
+      client = mongoc_client_new_from_uri (uri);
+      /* Bypass the 5 second cooldown so attempts to connect are repeated.
+       * Single threaded clients wait for 5 second cooldown period after failing
+       * to connect to a server before connecting again. If mongocryptd just
+       * spawned, it may take time before connections are accepted. */
+      _mongoc_topology_bypass_cooldown (client->topology);
+      mongoc_uri_destroy (uri);
+   }
    cmd = BCON_NEW (HANDSHAKE_CMD_LEGACY_HELLO, BCON_INT32 (1));
    ret = mongoc_client_command_simple (
       client, "keyvault", cmd, NULL /* read prefs */, NULL /* reply */, &error);
@@ -2366,7 +2381,7 @@ test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
 }
 
 static void
-test_bypass_spawning_via_bypassAutoEncryption (void *unused)
+test_bypass_spawning_via_helper (const char *auto_encryption_opt)
 {
    mongoc_client_t *client_encrypted;
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
@@ -2383,8 +2398,16 @@ test_bypass_spawning_via_bypassAutoEncryption (void *unused)
                                                   kms_providers);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
       auto_encryption_opts, "keyvault", "datakeys");
-   mongoc_auto_encryption_opts_set_bypass_auto_encryption (auto_encryption_opts,
-                                                           true);
+   if (0 == strcmp (auto_encryption_opt, "bypass_auto_encryption")) {
+      mongoc_auto_encryption_opts_set_bypass_auto_encryption (
+         auto_encryption_opts, true);
+   } else if (0 == strcmp (auto_encryption_opt, "bypass_query_analysis")) {
+      mongoc_auto_encryption_opts_set_bypass_query_analysis (
+         auto_encryption_opts, true);
+   } else {
+      test_error ("Unexpected 'auto_encryption_opt' argument: %s",
+                  auto_encryption_opt);
+   }
 
    /* Create a MongoClient with encryption enabled */
    client_encrypted = test_framework_new_default_client ();
@@ -2415,6 +2438,17 @@ test_bypass_spawning_via_bypassAutoEncryption (void *unused)
    bson_destroy (kms_providers);
 }
 
+static void
+test_bypass_spawning_via_bypassAutoEncryption (void *unused)
+{
+   test_bypass_spawning_via_helper ("bypass_auto_encryption");
+}
+
+static void
+test_bypass_spawning_via_bypassQueryAnalysis (void *unused)
+{
+   test_bypass_spawning_via_helper ("bypass_query_analysis");
+}
 
 static mongoc_client_encryption_t *
 _make_kms_certificate_client_encryption (mongoc_client_t *client,
@@ -3234,6 +3268,14 @@ test_client_side_encryption_install (TestSuite *suite)
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "bypassAutoEncryption",
                       test_bypass_spawning_via_bypassAutoEncryption,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/bypass_spawning_mongocryptd/"
+                      "bypassQueryAnalysis",
+                      test_bypass_spawning_via_bypassQueryAnalysis,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,

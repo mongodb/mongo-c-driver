@@ -48,8 +48,8 @@ endif ()
 # Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
 # will look for zconf.h in that location.
 configure_file (
-   "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
-   "${CMAKE_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
+   "${SOURCE_DIR}/src/zlib-1.2.12/zconf.h.in"
+   "${CMAKE_BINARY_DIR}/src/zlib-1.2.12/zconf.h"
    COPYONLY
 )
 set (ZLIB_INCLUDE_DIRS "")
@@ -80,8 +80,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
       BEFORE PUBLIC
-      "${SOURCE_DIR}/src/zlib-1.2.11"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.11"
+      "${SOURCE_DIR}/src/zlib-1.2.12"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.2.12"
    )
    # Disable all warnings for compiling Zlib
    target_compile_options (zlib_obj PRIVATE -w)
@@ -89,8 +89,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.2.11"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.11"
+      "${SOURCE_DIR}/src/zlib-1.2.12"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.2.12"
    )
 endif ()
 
@@ -196,8 +196,8 @@ if (NOT ENABLE_SSL STREQUAL OFF)
 endif ()
 
 if (OPENSSL_FOUND)
-   if (WIN32 AND OPENSSL_VERSION GREATER 1.1 AND NOT
-         ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.7)
+   if (WIN32 AND OPENSSL_VERSION VERSION_GREATER 1.1 AND
+         ${CMAKE_VERSION} VERSION_LESS 3.7)
       message (FATAL_ERROR "Building against OpenSSL 1.1.0 and later requires CMake 3.7 or later (hint:"
          " You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
    endif ()
@@ -441,10 +441,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.3.0)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.5.0)
       message ("--   libmongocrypt found at ${LIBMONGOCRYPT_LIBRARY}")
       message ("--   libmongocrypt version ${mongocrypt_VERSION} found")
-      message ("--   libmongocrypt version 1.3.0 is required to enable Client-Side Field Level Encryption Support.")
+      message ("--   libmongocrypt version 1.5.0 is required to enable Client-Side Field Level Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -877,7 +877,7 @@ if (MONGOC_TEST_USE_CSFLE)
       COMMAND
          "${_PYTHON3_EXE}" -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
             --component csfle
-            --version 5.3.1
+            --version 6.0.0-rc4
             --edition enterprise
             --out "${CMAKE_CURRENT_BINARY_DIR}"
             --only "**/mongo_csfle_v1.*"

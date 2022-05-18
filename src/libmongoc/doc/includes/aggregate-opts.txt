@@ -13,3 +13,4 @@
 * ``serverId``: To target a specific server, include an int32 "serverId" field. Obtain the id by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
 * ``batchSize``: An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`
 * ``let``: A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language.
+* ``comment``: A :symbol:`bson_value_t` specifying the comment to attach to this command. The comment will appear in log messages, profiler output, and currentOp output. Only string values are supported prior to MongoDB 4.4.

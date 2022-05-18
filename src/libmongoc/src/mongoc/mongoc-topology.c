@@ -701,6 +701,8 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_cond_destroy (&topology->cond_client);
    bson_mutex_destroy (&topology->tpld_modification_mtx);
 
+   bson_destroy (topology->encrypted_fields_map);
+
    bson_free (topology);
 }
 

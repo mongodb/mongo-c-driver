@@ -36,19 +36,13 @@ tar_src_files = set()
 cmake_produced = [
     "libbson/src/bson/bson-version.h",
     "libmongoc/src/mongoc/mongoc-version.h",
-    "zlib-1.2.11/zconf.h"
+    "zlib-1.2.12/zconf.h",
 ]
 
 for root, dirs, files in os.walk(repo_src_dir):
     for file in files:
         relpath = os.path.relpath(os.path.join(root, file), repo_src_dir)
 
-        # Files in bundled zlib that aren't needed to compile zlib are not included
-        # in the tarball.
-        if (relpath.startswith("zlib-1.2.11/contrib") or
-            relpath.startswith("zlib-1.2.11/example") or
-            relpath.startswith("zlib-1.2.11/test")):
-            continue
         if pattern.match(relpath):
             repo_src_files.add(relpath)
 
