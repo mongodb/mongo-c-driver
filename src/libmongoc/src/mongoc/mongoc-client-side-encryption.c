@@ -631,6 +631,17 @@ mongoc_client_encryption_rewrap_many_datakey (
 }
 
 
+bool
+mongoc_client_encryption_delete_key (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   bson_t *reply,
+   bson_error_t *error)
+{
+   bson_init (reply);
+   return _disabled_error (error);
+}
+
 MONGOC_EXPORT (mongoc_client_encryption_t *)
 mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                               bson_error_t *error)
@@ -2023,6 +2034,42 @@ fail:
    bson_destroy (&keys);
    bson_destroy (&local_result);
    mongoc_bulk_operation_destroy (bulk);
+
+   RETURN (ret);
+}
+
+bool
+mongoc_client_encryption_delete_key (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   bson_t *reply,
+   bson_error_t *error)
+{
+   bool ret = false;
+   bson_t selector = BSON_INITIALIZER;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (keyid);
+   BSON_ASSERT_PARAM (reply);
+
+   BSON_ASSERT (mongoc_write_concern_get_wmajority (
+      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+
+   BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
+   BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
+   BSON_ASSERT (keyid->value.v_binary.data_len > 0u);
+
+   BSON_ASSERT (BSON_APPEND_BINARY (&selector,
+                                    "_id",
+                                    keyid->value.v_binary.subtype,
+                                    keyid->value.v_binary.data,
+                                    keyid->value.v_binary.data_len));
+
+   ret = mongoc_collection_delete_one (
+      client_encryption->keyvault_coll, &selector, NULL, reply, error);
+
+fail:
+   bson_destroy (&selector);
 
    RETURN (ret);
 }

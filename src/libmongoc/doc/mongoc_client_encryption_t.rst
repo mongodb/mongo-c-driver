@@ -37,6 +37,7 @@ The key vault client, configured via :symbol:`mongoc_client_encryption_opts_set_
     mongoc_client_encryption_create_key
     mongoc_client_encryption_create_datakey
     mongoc_client_encryption_rewrap_many_datakey
+    mongoc_client_encryption_delete_key
     mongoc_client_encryption_encrypt
     mongoc_client_encryption_decrypt
 
