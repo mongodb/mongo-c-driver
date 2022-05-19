@@ -377,6 +377,48 @@ done:
 }
 
 static bool
+operation_delete_key (test_t *test,
+                      operation_t *op,
+                      result_t *result,
+                      bson_error_t *error)
+{
+   bson_parser_t *const parser = bson_parser_new ();
+
+   bool ret = false;
+   bson_val_t *id_val = NULL;
+   mongoc_client_encryption_t *ce = NULL;
+
+   bson_parser_any (parser, "id", &id_val);
+
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   if (!(ce = entity_map_get_client_encryption (
+            test->entity_map, op->object, error))) {
+      goto done;
+   }
+
+   {
+      bson_t reply;
+      const bool success = mongoc_client_encryption_delete_key (
+         ce, bson_val_to_value (id_val), &reply, error);
+      bson_val_t *const val = success ? bson_val_from_bson (&reply) : NULL;
+
+      result_from_val_and_reply (result, val, NULL, error);
+
+      bson_val_destroy (val);
+   }
+
+   ret = true;
+
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+
+   return ret;
+}
+
+static bool
 operation_create_collection (test_t *test,
                              operation_t *op,
                              result_t *result,
@@ -2783,6 +2825,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       /* ClientEncryption operations */
       {"createKey", operation_create_key},
       {"rewrapManyDataKey", operation_rewrap_many_data_key},
+      {"deleteKey", operation_delete_key},
 
       /* Database operations */
       {"createCollection", operation_create_collection},
