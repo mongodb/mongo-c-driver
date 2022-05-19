@@ -203,7 +203,7 @@ fi
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGO_SANITIZE=$SANITIZE"
 
-if ! python3 build/mongodl.py --test -C csfle -V 5.3.1 -o . > /dev/null; then
+if ! python3 build/mongodl.py --test -C csfle -V 6.0.0-rc4 -o . > /dev/null; then
    echo "No csfle detected for this platform. Disabling MONGOC_TEST_USE_CSFLE."
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CSFLE=OFF"
 fi

@@ -872,6 +872,7 @@ if (MONGOC_TEST_USE_CSFLE)
    endif ()
 
    get_filename_component (csfle_dest "${CMAKE_CURRENT_BINARY_DIR}/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
+   # If updating the "--version" for csfle, update the version in compile-unix.sh to match.
    add_custom_command (
       OUTPUT "${csfle_dest}"
       COMMAND
