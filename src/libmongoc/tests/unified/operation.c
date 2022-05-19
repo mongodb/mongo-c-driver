@@ -325,16 +325,18 @@ operation_rewrap_many_data_key (test_t *test,
 
    if (opts_doc) {
       bson_parser_t *const opts_parser = bson_parser_new ();
+      bool success = false;
 
       bson_parser_utf8 (opts_parser, "provider", &provider);
       bson_parser_doc_optional (opts_parser, "masterKey", &master_key);
 
-      if (!bson_parser_parse (opts_parser, opts_doc, error)) {
-         goto opts_done;
-      }
+      success = bson_parser_parse (opts_parser, opts_doc, error);
 
-   opts_done:
       bson_parser_destroy (opts_parser);
+
+      if (!success) {
+         goto done;
+      }
    }
 
    if (mongoc_client_encryption_rewrap_many_datakey (
