@@ -401,6 +401,14 @@ struct _mongoc_client_encryption_encrypt_opts_t {
    bson_value_t keyid;
    char *algorithm;
    char *keyaltname;
+   struct {
+      int64_t value;
+      bool set;
+   } contention_factor;
+   struct {
+      mongoc_encrypt_query_type_t value;
+      bool set;
+   } query_type;
 };
 
 mongoc_client_encryption_encrypt_opts_t *
@@ -458,6 +466,29 @@ mongoc_client_encryption_encrypt_opts_set_algorithm (
    bson_free (opts->algorithm);
    opts->algorithm = NULL;
    opts->algorithm = bson_strdup (algorithm);
+}
+
+void
+mongoc_client_encryption_encrypt_opts_set_contention_factor (
+   mongoc_client_encryption_encrypt_opts_t *opts, int64_t contention_factor)
+{
+   if (!opts) {
+      return;
+   }
+   opts->contention_factor.value = contention_factor;
+   opts->contention_factor.set = true;
+}
+
+void
+mongoc_client_encryption_encrypt_opts_set_query_type (
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   mongoc_encrypt_query_type_t query_type)
+{
+   if (!opts) {
+      return;
+   }
+   opts->query_type.value = query_type;
+   opts->query_type.set = true;
 }
 
 /*--------------------------------------------------------------------------
@@ -2011,14 +2042,17 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
       GOTO (fail);
    }
 
-   if (!_mongoc_crypt_explicit_encrypt (client_encryption->crypt,
-                                        client_encryption->keyvault_coll,
-                                        opts->algorithm,
-                                        &opts->keyid,
-                                        opts->keyaltname,
-                                        value,
-                                        ciphertext,
-                                        error)) {
+   if (!_mongoc_crypt_explicit_encrypt (
+          client_encryption->crypt,
+          client_encryption->keyvault_coll,
+          opts->algorithm,
+          &opts->keyid,
+          opts->keyaltname,
+          opts->query_type.set ? &opts->query_type.value : NULL,
+          opts->contention_factor.set ? &opts->contention_factor.value : NULL,
+          value,
+          ciphertext,
+          error)) {
       GOTO (fail);
    }
 

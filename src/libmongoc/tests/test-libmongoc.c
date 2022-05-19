@@ -2604,6 +2604,8 @@ WIRE_VERSION_CHECKS (9)
 WIRE_VERSION_CHECKS (13)
 /* wire version 14 begins with the 5.1 prerelease. */
 WIRE_VERSION_CHECKS (14)
+/* wire version 17 begins with the 6.0 release. */
+WIRE_VERSION_CHECKS (17)
 
 int
 test_framework_skip_if_no_dual_ip_hostname (void)

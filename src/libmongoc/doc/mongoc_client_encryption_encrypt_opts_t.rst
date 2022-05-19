@@ -27,6 +27,8 @@ Used to set options for :symbol:`mongoc_client_encryption_encrypt()`.
     mongoc_client_encryption_encrypt_opts_set_keyid
     mongoc_client_encryption_encrypt_opts_set_keyaltname
     mongoc_client_encryption_encrypt_opts_set_algorithm
+    mongoc_client_encryption_encrypt_opts_set_contention_factor
+    mongoc_client_encryption_encrypt_opts_set_query_type
 
 .. seealso::
 

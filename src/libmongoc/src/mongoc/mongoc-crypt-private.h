@@ -79,6 +79,8 @@ Perform explicit encryption.
 - exactly one of keyid or keyaltname must be set, the other NULL, or an error is
 returned.
 - value_out is always initialized.
+- query_type may be NULL.
+- contention_factor may be NULL.
 - may return false and set error.
 */
 bool
@@ -87,6 +89,8 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 const char *algorithm,
                                 const bson_value_t *keyid,
                                 char *keyaltname,
+                                const mongoc_encrypt_query_type_t *query_type,
+                                const int64_t *contention_factor,
                                 const bson_value_t *value_in,
                                 bson_value_t *value_out,
                                 bson_error_t *error);
