@@ -1,5 +1,5 @@
 {
-  "description": "createKey-kms_providers",
+  "description": "createKey",
   "schemaVersion": "1.8",
   "runOnRequirements": [
     {
@@ -276,6 +276,223 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "description": "create datakey with no keyAltName",
+      "operations": [
+        {
+          "name": "createKey",
+          "object": "clientEncryption0",
+          "arguments": {
+            "kmsProvider": "local",
+            "opts": {
+              "keyAltNames": []
+            }
+          },
+          "expectResult": {
+            "$$type": "binData"
+          }
+        },
+        {
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {}
+          },
+          "expectResult": [
+            {
+              "_id": {
+                "$$type": "binData"
+              },
+              "keyAltNames": {
+                "$$exists": false
+              },
+              "keyMaterial": {
+                "$$type": "binData"
+              },
+              "creationDate": {
+                "$$type": "date"
+              },
+              "updateDate": {
+                "$$type": "date"
+              },
+              "status": {
+                "$$type": "int"
+              },
+              "masterKey": {
+                "$$type": "object"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "create datakey with single keyAltName",
+      "operations": [
+        {
+          "name": "createKey",
+          "object": "clientEncryption0",
+          "arguments": {
+            "kmsProvider": "local",
+            "opts": {
+              "keyAltNames": [
+                "local_key"
+              ]
+            }
+          },
+          "expectResult": {
+            "$$type": "binData"
+          }
+        },
+        {
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {}
+          },
+          "expectResult": [
+            {
+              "_id": {
+                "$$type": "binData"
+              },
+              "keyAltNames": [
+                "local_key"
+              ],
+              "keyMaterial": {
+                "$$type": "binData"
+              },
+              "creationDate": {
+                "$$type": "date"
+              },
+              "updateDate": {
+                "$$type": "date"
+              },
+              "status": {
+                "$$type": "int"
+              },
+              "masterKey": {
+                "$$type": "object"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "create datakey with multiple keyAltNames",
+      "operations": [
+        {
+          "name": "createKey",
+          "object": "clientEncryption0",
+          "arguments": {
+            "kmsProvider": "local",
+            "opts": {
+              "keyAltNames": [
+                "abc",
+                "def"
+              ]
+            }
+          },
+          "expectResult": {
+            "$$type": "binData"
+          }
+        },
+        {
+          "name": "aggregate",
+          "object": "collection0",
+          "arguments": {
+            "pipeline": [
+              {
+                "$project": {
+                  "_id": 0,
+                  "keyAltNames": 1
+                }
+              },
+              {
+                "$unwind": "$keyAltNames"
+              },
+              {
+                "$sort": {
+                  "keyAltNames": 1
+                }
+              }
+            ]
+          },
+          "expectResult": [
+            {
+              "keyAltNames": "abc"
+            },
+            {
+              "keyAltNames": "def"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "create datakey with custom key material",
+      "operations": [
+        {
+          "name": "createKey",
+          "object": "clientEncryption0",
+          "arguments": {
+            "kmsProvider": "local",
+            "opts": {
+              "keyMaterial": {
+                "$binary": {
+                  "base64": "a2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFs",
+                  "subType": "00"
+                }
+              }
+            }
+          },
+          "expectResult": {
+            "$$type": "binData"
+          }
+        },
+        {
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {},
+            "projection": {
+              "_id": 0,
+              "masterKey": 1
+            }
+          },
+          "expectResult": [
+            {
+              "masterKey": {
+                "provider": "local"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "create datakey with invalid custom key material (too short)",
+      "operations": [
+        {
+          "name": "createKey",
+          "object": "clientEncryption0",
+          "arguments": {
+            "kmsProvider": "local",
+            "opts": {
+              "keyMaterial": {
+                "$binary": {
+                  "base64": "a2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFs",
+                  "subType": "00"
+                }
+              }
+            }
+          },
+          "expectError": {
+            "isClientError": true
+          }
         }
       ]
     }
