@@ -1346,6 +1346,8 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
                               const bson_t *masterkey,
                               char **keyaltnames,
                               uint32_t keyaltnames_count,
+                              const uint8_t *keymaterial,
+                              uint32_t keymaterial_len,
                               bson_t *doc_out,
                               bson_error_t *error)
 {
@@ -1398,6 +1400,19 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
       }
    }
 
+   if (keymaterial) {
+      bson_t *const bson = BCON_NEW (
+         "keyMaterial",
+         BCON_BIN (BSON_SUBTYPE_BINARY, keymaterial, keymaterial_len));
+      mongocrypt_binary_t *const bin = mongocrypt_binary_new_from_data (
+         (uint8_t *) bson_get_data (bson), bson->len);
+
+      mongocrypt_ctx_setopt_key_material (state_machine->ctx, bin);
+
+      bson_destroy (bson);
+      mongocrypt_binary_destroy (bin);
+   }
+
    if (!mongocrypt_ctx_datakey_init (state_machine->ctx)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
@@ -1414,6 +1429,87 @@ fail:
    bson_destroy (&masterkey_w_provider);
    mongocrypt_binary_destroy (masterkey_w_provider_bin);
    _state_machine_destroy (state_machine);
+   return ret;
+}
+
+bool
+_mongoc_crypt_rewrap_many_datakey (_mongoc_crypt_t *crypt,
+                                   mongoc_collection_t *keyvault_coll,
+                                   const bson_t *filter,
+                                   const char *provider,
+                                   const bson_t *master_key,
+                                   bson_t *doc_out,
+                                   bson_error_t *error)
+{
+   _state_machine_t *state_machine = NULL;
+   const bson_t empty_bson = BSON_INITIALIZER;
+   mongocrypt_binary_t *filter_bin = NULL;
+   bool ret = false;
+
+   bson_init (doc_out);
+   state_machine = _state_machine_new (crypt);
+   state_machine->keyvault_coll = keyvault_coll;
+   state_machine->ctx = mongocrypt_ctx_new (crypt->handle);
+   if (!state_machine->ctx) {
+      _crypt_check_error (crypt->handle, error, true);
+      goto fail;
+   }
+
+   {
+      bson_t new_provider = BSON_INITIALIZER;
+      mongocrypt_binary_t *new_provider_bin = NULL;
+      bool success = true;
+
+      if (provider) {
+         BSON_APPEND_UTF8 (&new_provider, "provider", provider);
+
+         if (master_key) {
+            bson_concat (&new_provider, master_key);
+         }
+
+         new_provider_bin = mongocrypt_binary_new_from_data (
+            (uint8_t *) bson_get_data (&new_provider), new_provider.len);
+
+         if (!mongocrypt_ctx_setopt_key_encryption_key (state_machine->ctx,
+                                                        new_provider_bin)) {
+            _ctx_check_error (state_machine->ctx, error, true);
+            success = false;
+         }
+
+         mongocrypt_binary_destroy (new_provider_bin);
+      }
+
+      bson_destroy (&new_provider);
+
+      if (!success) {
+         goto fail;
+      }
+   }
+
+   if (!filter) {
+      filter = &empty_bson;
+   }
+
+   filter_bin = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (filter), filter->len);
+
+   if (!mongocrypt_ctx_rewrap_many_datakey_init (state_machine->ctx,
+                                                 filter_bin)) {
+      _ctx_check_error (state_machine->ctx, error, true);
+      goto fail;
+   }
+
+   bson_destroy (doc_out);
+   if (!_state_machine_run (state_machine, doc_out, error)) {
+      goto fail;
+   }
+
+   ret = true;
+
+fail:
+   mongocrypt_binary_destroy (filter_bin);
+   _state_machine_destroy (state_machine);
+
    return ret;
 }
 

@@ -1,0 +1,96 @@
+{
+  "description": "createKey-dataKeyOpts-keyMaterial",
+  "schemaVersion": "1.8",
+  "runOnRequirements": [
+    {
+      "csfle": true
+    }
+  ],
+  "createEntities": [
+    {
+      "client": {
+        "id": "client0"
+      }
+    },
+    {
+      "clientEncryption": {
+        "id": "clientEncryption0",
+        "clientEncryptionOpts": {
+          "keyVaultClient": "client0",
+          "keyVaultNamespace": "keyvault.datakeys",
+          "kmsProviders": {
+            "local": {
+              "key": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "database": {
+        "id": "database0",
+        "client": "client0",
+        "databaseName": "keyvault"
+      }
+    },
+    {
+      "collection": {
+        "id": "collection0",
+        "database": "database0",
+        "collectionName": "datakeys"
+      }
+    }
+  ],
+  "initialData": [
+    {
+      "databaseName": "keyvault",
+      "collectionName": "datakeys",
+      "documents": []
+    }
+  ],
+  "tests": [
+    {
+      "description": "create datakey with custom key material",
+      "operations": [
+        {
+          "name": "createKey",
+          "object": "clientEncryption0",
+          "arguments": {
+            "kmsProvider": "local",
+            "opts": {
+              "keyMaterial": {
+                "$binary": {
+                  "base64": "a2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFsa2V5X21hdGVyaWFs",
+                  "subType": "00"
+                }
+              }
+            }
+          },
+          "expectResult": {
+            "$$type": "binData"
+          }
+        },
+        {
+          "name": "find",
+          "object": "collection0",
+          "arguments": {
+            "filter": {},
+            "projection": {
+              "_id": 0,
+              "masterKey": 1
+            }
+          },
+          "expectResult": [
+            {
+              "masterKey": {
+                "provider": "local"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -31,33 +31,43 @@ void
 result_destroy (result_t *result);
 
 void
-result_from_bulk_write (result_t *result, bson_t *reply, bson_error_t *error);
+result_from_bulk_write (result_t *result,
+                        const bson_t *reply,
+                        const bson_error_t *error);
 
 void
-result_from_insert_one (result_t *result, bson_t *reply, bson_error_t *error);
+result_from_insert_one (result_t *result,
+                        const bson_t *reply,
+                        const bson_error_t *error);
 
 void
-result_from_insert_many (result_t *result, bson_t *reply, bson_error_t *error);
+result_from_insert_many (result_t *result,
+                         const bson_t *reply,
+                         const bson_error_t *error);
 
 void
-result_from_delete (result_t *result, bson_t *reply, bson_error_t *error);
+result_from_delete (result_t *result,
+                    const bson_t *reply,
+                    const bson_error_t *error);
 
 void
-result_from_distinct (result_t *result, bson_t *reply, bson_error_t *error);
+result_from_distinct (result_t *result,
+                      const bson_t *reply,
+                      const bson_error_t *error);
 
 void
 result_from_update_or_replace (result_t *result,
-                               bson_t *reply,
-                               bson_error_t *error);
+                               const bson_t *reply,
+                               const bson_error_t *error);
 
 void
 result_from_cursor (result_t *result, mongoc_cursor_t *cursor);
 
 void
 result_from_val_and_reply (result_t *result,
-                           bson_val_t *value,
-                           bson_t *reply,
-                           bson_error_t *error);
+                           const bson_val_t *value,
+                           const bson_t *reply,
+                           const bson_error_t *error);
 
 void
 result_from_ok (result_t *result);
@@ -67,6 +77,9 @@ result_to_string (result_t *result);
 
 bson_val_t *
 result_get_val (result_t *result);
+
+bson_t *
+rewrite_bulk_write_result (const bson_t *bulk_write_result);
 
 bool
 result_check (result_t *result,
