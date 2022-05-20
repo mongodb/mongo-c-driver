@@ -642,6 +642,17 @@ mongoc_client_encryption_delete_key (
    return _disabled_error (error);
 }
 
+
+mongoc_cursor_t *
+mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
+                                  const bson_value_t *keyid,
+                                  bson_error_t *error)
+{
+   _disabled_error (error);
+   return NULL;
+}
+
+
 MONGOC_EXPORT (mongoc_client_encryption_t *)
 mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                               bson_error_t *error)
@@ -2072,6 +2083,41 @@ fail:
    bson_destroy (&selector);
 
    RETURN (ret);
+}
+
+mongoc_cursor_t *
+mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
+                                  const bson_value_t *keyid,
+                                  bson_error_t *error)
+{
+   bson_t filter = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor = NULL;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (keyid);
+
+   BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
+   BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
+   BSON_ASSERT (keyid->value.v_binary.data_len > 0u);
+
+   BSON_ASSERT (BSON_APPEND_BINARY (&filter,
+                                    "_id",
+                                    keyid->value.v_binary.subtype,
+                                    keyid->value.v_binary.data,
+                                    keyid->value.v_binary.data_len));
+
+   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
+                           mongoc_collection_get_read_concern (
+                              client_encryption->keyvault_coll)),
+                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
+
+   /* If an error occurred, user should query cursor error. */
+   cursor = mongoc_collection_find_with_opts (
+      client_encryption->keyvault_coll, &filter, NULL, NULL);
+
+   bson_destroy (&filter);
+
+   return cursor;
 }
 
 bool

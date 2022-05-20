@@ -24,6 +24,7 @@
 /* Forward declare */
 struct _mongoc_client_t;
 struct _mongoc_client_pool_t;
+struct _mongoc_cursor_t;
 
 #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM \
    "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
@@ -166,6 +167,11 @@ mongoc_client_encryption_delete_key (
    const bson_value_t *keyid,
    bson_t *reply,
    bson_error_t *error);
+
+MONGOC_EXPORT (struct _mongoc_cursor_t *)
+mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
+                                  const bson_value_t *keyid,
+                                  bson_error_t *error);
 
 MONGOC_EXPORT (bool)
 mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
