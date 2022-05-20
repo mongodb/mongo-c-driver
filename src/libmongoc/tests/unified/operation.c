@@ -463,6 +463,47 @@ done:
 }
 
 static bool
+operation_get_keys (test_t *test,
+                    operation_t *op,
+                    result_t *result,
+                    bson_error_t *error)
+{
+   bson_parser_t *const parser = bson_parser_new ();
+
+   bool ret = false;
+   mongoc_client_encryption_t *ce = NULL;
+
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   if (!(ce = entity_map_get_client_encryption (
+            test->entity_map, op->object, error))) {
+      goto done;
+   }
+
+   {
+      mongoc_cursor_t *const cursor =
+         mongoc_client_encryption_get_keys (ce, error);
+
+      if (cursor) {
+         result_from_cursor (result, cursor);
+      } else {
+         result_from_val_and_reply (result, NULL, NULL, error);
+      }
+
+      mongoc_cursor_destroy (cursor);
+   }
+
+   ret = true;
+
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+
+   return ret;
+}
+
+static bool
 operation_create_collection (test_t *test,
                              operation_t *op,
                              result_t *result,
@@ -2871,6 +2912,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"rewrapManyDataKey", operation_rewrap_many_data_key},
       {"deleteKey", operation_delete_key},
       {"getKey", operation_get_key},
+      {"getKeys", operation_get_keys},
 
       /* Database operations */
       {"createCollection", operation_create_collection},
