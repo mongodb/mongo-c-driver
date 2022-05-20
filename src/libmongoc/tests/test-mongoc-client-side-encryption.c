@@ -788,7 +788,7 @@ test_create_key_with_custom_key_material (void *unused)
          mongoc_client_get_collection (client, "keyvault", "datakeys");
       bson_t modified_datakey = BSON_INITIALIZER;
       uint8_t bytes[16] = {0};
-      mongoc_write_concern_t *const wc = mongoc_write_concern_new();
+      mongoc_write_concern_t *const wc = mongoc_write_concern_new ();
       bson_t opts = BSON_INITIALIZER;
 
       bson_copy_to_excluding_noinit (&datakey, &modified_datakey, "_id", NULL);
