@@ -464,7 +464,7 @@ class IntegrationTask(MatrixTask):
     axes = OD([('valgrind', ['valgrind', False]),
                ('sanitizer', ['asan', 'tsan', False]),
                ('coverage', ['coverage', False]),
-               ('version', ['latest', '5.0', '4.4', '4.2', '4.0', '3.6']),
+               ('version', ['latest', '6.0', '5.0', '4.4', '4.2', '4.0', '3.6']),
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
                ('auth', [True, False]),
                ('sasl', ['sasl', 'sspi', False]),
