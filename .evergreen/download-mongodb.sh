@@ -54,7 +54,7 @@ get_mongodb_download_url_for ()
    # Set VERSION_RAPID to the latest rapid release each quarter.
    VERSION_RAPID="5.3.1"
    VERSION_60_LATEST="v6.0-latest"
-   VERSION_60="6.0.0-rc4"
+   VERSION_60="6.0.0-rc5"
    VERSION_50="5.0.8"
    VERSION_44="4.4.13"
    VERSION_42="4.2.19"
@@ -507,7 +507,7 @@ download_and_extract_package ()
 }
 
 # download_and_extract downloads a requested MongoDB server package.
-# If the legacy shell is not included in the download, the legacy shell is also downloaded from the 6.0 package.
+# If the legacy shell is not included in the download, the legacy shell is also downloaded from the 5.0 package.
 download_and_extract ()
 {
    MONGODB_DOWNLOAD_URL=$1
