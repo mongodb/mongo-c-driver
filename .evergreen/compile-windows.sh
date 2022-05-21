@@ -115,7 +115,7 @@ fi
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
-   git clone https://github.com/mongodb/libmongocrypt
+   git clone https://github.com/kevinAlbs/libmongocrypt --branch M429
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
    "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" ../
