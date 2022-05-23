@@ -178,6 +178,14 @@ mongoc_client_encryption_get_keys (
    mongoc_client_encryption_t *client_encryption, bson_error_t *error);
 
 MONGOC_EXPORT (bool)
+mongoc_client_encryption_add_key_alternate_name (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   const char *keyaltname,
+   bson_value_t *key_doc,
+   bson_error_t *error);
+
+MONGOC_EXPORT (bool)
 mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
                                   const bson_value_t *value,
                                   mongoc_client_encryption_encrypt_opts_t *opts,
