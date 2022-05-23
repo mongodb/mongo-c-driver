@@ -692,6 +692,17 @@ mongoc_client_encryption_remove_key_alternate_name (
 }
 
 
+mongoc_cursor_t *
+mongoc_client_encryption_get_key_by_alt_name (
+   mongoc_client_encryption_t *client_encryption,
+   const char *keyaltname,
+   bson_error_t *error)
+{
+   _disabled_error (error);
+   return NULL;
+}
+
+
 MONGOC_EXPORT (mongoc_client_encryption_t *)
 mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                               bson_error_t *error)
@@ -2353,6 +2364,32 @@ mongoc_client_encryption_remove_key_alternate_name (
    bson_destroy (&local_reply);
 
    RETURN (ret);
+}
+
+mongoc_cursor_t *
+mongoc_client_encryption_get_key_by_alt_name (
+   mongoc_client_encryption_t *client_encryption,
+   const char *keyaltname,
+   bson_error_t *error)
+{
+   bson_t filter = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor = NULL;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (keyaltname);
+
+   BSON_ASSERT (mongoc_write_concern_get_wmajority (
+      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+
+   BSON_ASSERT (BSON_APPEND_UTF8 (&filter, "keyAltNames", keyaltname));
+
+   /* If an error occurred, user should query cursor error. */
+   cursor = mongoc_collection_find_with_opts (
+      client_encryption->keyvault_coll, &filter, NULL, NULL);
+
+   bson_destroy (&filter);
+
+   return cursor;
 }
 
 bool
