@@ -594,6 +594,50 @@ done:
 }
 
 static bool
+operation_get_key_by_alt_name (test_t *test,
+                               operation_t *op,
+                               result_t *result,
+                               bson_error_t *error)
+{
+   bson_parser_t *const parser = bson_parser_new ();
+
+   bool ret = false;
+   char *keyaltname = NULL;
+   mongoc_client_encryption_t *ce = NULL;
+
+   bson_parser_utf8 (parser, "keyAltName", &keyaltname);
+
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   if (!(ce = entity_map_get_client_encryption (
+            test->entity_map, op->object, error))) {
+      goto done;
+   }
+
+   {
+      mongoc_cursor_t *const cursor =
+         mongoc_client_encryption_get_key_by_alt_name (ce, keyaltname, error);
+
+      if (cursor) {
+         result_from_cursor (result, cursor);
+      } else {
+         result_from_val_and_reply (result, NULL, NULL, error);
+      }
+
+      mongoc_cursor_destroy (cursor);
+   }
+
+   ret = true;
+
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+
+   return ret;
+}
+
+static bool
 operation_create_collection (test_t *test,
                              operation_t *op,
                              result_t *result,
@@ -3005,6 +3049,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"getKeys", operation_get_keys},
       {"addKeyAlternateName", operation_add_key_alternate_name},
       {"removeKeyAlternateName", operation_remove_key_alternate_name},
+      {"getKeyByAltName", operation_get_key_by_alt_name},
 
       /* Database operations */
       {"createCollection", operation_create_collection},
