@@ -1046,6 +1046,7 @@ create_encField_state_collection (mongoc_database_t *database,
    char *state_collection = NULL;
    mongoc_collection_t *collection = NULL;
    bool ok = false;
+   bson_t opts = BSON_INITIALIZER;
 
    state_collection = _mongoc_get_encryptedField_state_collection (
       encryptedFields, data_collection, state_collection_suffix, error);
@@ -1053,8 +1054,19 @@ create_encField_state_collection (mongoc_database_t *database,
       goto fail;
    }
 
-   collection =
-      create_collection (database, state_collection, NULL /* opts */, error);
+   BCON_APPEND (&opts,
+                "clusteredIndex",
+                "{",
+                "key",
+                "{",
+                "_id",
+                BCON_INT32 (1),
+                "}",
+                "unique",
+                BCON_BOOL (true),
+                "}");
+
+   collection = create_collection (database, state_collection, &opts, error);
    if (collection == NULL) {
       goto fail;
    }
@@ -1063,6 +1075,7 @@ create_encField_state_collection (mongoc_database_t *database,
 fail:
    bson_free (state_collection);
    mongoc_collection_destroy (collection);
+   bson_destroy (&opts);
    return ok;
 }
 
