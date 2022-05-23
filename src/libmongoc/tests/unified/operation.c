@@ -549,6 +549,51 @@ done:
 }
 
 static bool
+operation_remove_key_alternate_name (test_t *test,
+                                     operation_t *op,
+                                     result_t *result,
+                                     bson_error_t *error)
+{
+   bson_parser_t *const parser = bson_parser_new ();
+
+   bool ret = false;
+   bson_val_t *id_val = NULL;
+   char *alt_name = NULL;
+   mongoc_client_encryption_t *ce = NULL;
+
+   bson_parser_any (parser, "id", &id_val);
+   bson_parser_utf8 (parser, "keyAltName", &alt_name);
+
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   if (!(ce = entity_map_get_client_encryption (
+            test->entity_map, op->object, error))) {
+      goto done;
+   }
+
+   {
+      bson_value_t key_doc;
+      const bool success = mongoc_client_encryption_remove_key_alternate_name (
+         ce, bson_val_to_value (id_val), alt_name, &key_doc, error);
+      bson_val_t *const val = success ? bson_val_from_value (&key_doc) : NULL;
+
+      result_from_val_and_reply (result, val, NULL, error);
+
+      bson_value_destroy (&key_doc);
+      bson_val_destroy (val);
+   }
+
+   ret = true;
+
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+
+   return ret;
+}
+
+static bool
 operation_create_collection (test_t *test,
                              operation_t *op,
                              result_t *result,
@@ -2959,6 +3004,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"getKey", operation_get_key},
       {"getKeys", operation_get_keys},
       {"addKeyAlternateName", operation_add_key_alternate_name},
+      {"removeKeyAlternateName", operation_remove_key_alternate_name},
 
       /* Database operations */
       {"createCollection", operation_create_collection},
