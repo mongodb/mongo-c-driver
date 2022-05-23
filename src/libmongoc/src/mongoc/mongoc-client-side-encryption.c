@@ -677,6 +677,21 @@ mongoc_client_encryption_add_key_alternate_name (
 }
 
 
+bool
+mongoc_client_encryption_remove_key_alternate_name (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   const char *keyaltname,
+   bson_value_t *key_doc,
+   bson_error_t *error)
+{
+   if (key_doc) {
+      memset (key_doc, 0, sizeof (*key_doc));
+   }
+   return _disabled_error (error);
+}
+
+
 MONGOC_EXPORT (mongoc_client_encryption_t *)
 mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                               bson_error_t *error)
@@ -2231,6 +2246,109 @@ mongoc_client_encryption_add_key_alternate_name (
    }
 
    mongoc_find_and_modify_opts_destroy (opts);
+   bson_destroy (&query);
+   bson_destroy (&local_reply);
+
+   RETURN (ret);
+}
+
+bool
+mongoc_client_encryption_remove_key_alternate_name (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   const char *keyaltname,
+   bson_value_t *key_doc,
+   bson_error_t *error)
+{
+   bson_t query = BSON_INITIALIZER;
+   bool ret = false;
+   bson_t local_reply;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (keyid);
+   BSON_ASSERT_PARAM (keyaltname);
+
+   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
+                           mongoc_collection_get_read_concern (
+                              client_encryption->keyvault_coll)),
+                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
+
+   BSON_ASSERT (mongoc_write_concern_get_wmajority (
+      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+
+   BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
+   BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
+   BSON_ASSERT (keyid->value.v_binary.data_len > 0u);
+
+   BSON_ASSERT (BSON_APPEND_BINARY (&query,
+                                    "_id",
+                                    keyid->value.v_binary.subtype,
+                                    keyid->value.v_binary.data,
+                                    keyid->value.v_binary.data_len));
+
+   if (key_doc) {
+      memset (key_doc, 0, sizeof (*key_doc));
+   }
+
+   {
+      mongoc_find_and_modify_opts_t *const opts =
+         mongoc_find_and_modify_opts_new ();
+      bson_t *const update =
+         BCON_NEW ("$pull", "{", "keyAltNames", BCON_UTF8 (keyaltname), "}");
+
+      BSON_ASSERT (mongoc_find_and_modify_opts_set_update (opts, update));
+
+      ret = mongoc_collection_find_and_modify_with_opts (
+         client_encryption->keyvault_coll, &query, opts, &local_reply, error);
+
+      bson_destroy (update);
+      mongoc_find_and_modify_opts_destroy (opts);
+   }
+
+   /* Ensure keyAltNames field is removed if it would otherwise be empty. */
+   if (ret) {
+      bson_iter_t iter;
+      bool is_empty = true;
+
+      BSON_ASSERT (bson_iter_init (&iter, &local_reply));
+
+      if (bson_iter_find_descendant (&iter, "value.keyAltNames", &iter)) {
+         if (BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &iter)) {
+            while (bson_iter_next (&iter) && BSON_ITER_HOLDS_UTF8 (&iter)) {
+               if (strcmp (bson_iter_utf8 (&iter, NULL), keyaltname) != 0) {
+                  is_empty = false;
+                  break;
+               }
+            }
+         }
+      }
+
+      if (is_empty) {
+         bson_t *update =
+            BCON_NEW ("$unset", "{", "keyAltNames", BCON_BOOL (true), "}");
+         bson_t reply;
+
+         /* How to handle possible error here? */
+         mongoc_collection_update_one (client_encryption->keyvault_coll,
+                                       &query,
+                                       update,
+                                       NULL,
+                                       &reply,
+                                       error);
+
+         bson_destroy (update);
+         bson_destroy (&reply);
+      }
+   }
+
+   if (ret && key_doc) {
+      bson_iter_t iter;
+
+      if (bson_iter_init_find (&iter, &local_reply, "value")) {
+         bson_value_copy (bson_iter_value (&iter), key_doc);
+      }
+   }
+
    bson_destroy (&query);
    bson_destroy (&local_reply);
 
