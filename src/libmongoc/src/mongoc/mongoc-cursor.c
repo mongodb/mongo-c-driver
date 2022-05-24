@@ -1764,11 +1764,12 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
       /* CRUD spec: If a comment is provided, drivers MUST attach this comment
        * to all subsequent getMore commands run on the same cursor for server
        * versions 4.4 and above. For server versions below 4.4 drivers MUST NOT
-       * attach a comment to getMore commands. */
+       * attach a comment to getMore commands.
+       *
+       * Since this function has no error reporting, we also no-op if we cannot
+       * fetch a stream. */
       server_stream = _mongoc_cursor_fetch_stream (cursor);
 
-      /* TODO: is no-op on server_stream sensible? This function has no error
-       * reporting so it's unclear can be done if we fail to fetch a stream. */
       if (server_stream != NULL &&
           server_stream->sd->max_wire_version >= WIRE_VERSION_4_4) {
          bson_append_value (
