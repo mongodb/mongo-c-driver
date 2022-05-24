@@ -1694,6 +1694,7 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    mongoc_client_encryption_t *client_encryption = NULL;
    bool success = false;
    mongoc_write_concern_t *wc = NULL;
+   mongoc_read_concern_t *rc = NULL;
 
    /* Check for required options */
    if (!opts || !opts->keyvault_client || !opts->keyvault_db ||
@@ -1719,6 +1720,9 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_wmajority (wc, 1000);
    mongoc_collection_set_write_concern (client_encryption->keyvault_coll, wc);
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_collection_set_read_concern (client_encryption->keyvault_coll, rc);
 
    client_encryption->kms_providers = bson_copy (opts->kms_providers);
    client_encryption->crypt =
@@ -1738,6 +1742,7 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
 
 fail:
    mongoc_write_concern_destroy (wc);
+   mongoc_read_concern_destroy (rc);
    if (!success) {
       mongoc_client_encryption_destroy (client_encryption);
       return NULL;
@@ -1771,6 +1776,11 @@ mongoc_client_encryption_create_key (
 
    ENTRY;
 
+   BSON_ASSERT_PARAM (client_encryption);
+
+   BSON_ASSERT (mongoc_write_concern_get_wmajority (
+      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+
    if (!opts) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
@@ -1798,7 +1808,6 @@ mongoc_client_encryption_create_key (
       GOTO (fail);
    }
 
-   /* Insert the data key with write concern majority */
    if (!mongoc_collection_insert_one (client_encryption->keyvault_coll,
                                       &datakey,
                                       NULL /* opts */,
@@ -1870,6 +1879,14 @@ mongoc_client_encryption_rewrap_many_datakey (
    ENTRY;
 
    BSON_ASSERT_PARAM (client_encryption);
+
+   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
+                           mongoc_collection_get_read_concern (
+                              client_encryption->keyvault_coll)),
+                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
+
+   BSON_ASSERT (mongoc_write_concern_get_wmajority (
+      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
 
    bson_reinit (bulk_write_result);
 
