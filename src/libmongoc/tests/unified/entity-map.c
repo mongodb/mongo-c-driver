@@ -1475,6 +1475,21 @@ entity_map_get (entity_map_t *entity_map, const char *id, bson_error_t *error)
 }
 
 bool
+entity_map_rename (entity_map_t *self,
+                   const char *const from,
+                   const char *const to,
+                   bson_error_t *error)
+{
+   entity_t *ent = entity_map_get (self, from, error);
+   if (!ent) {
+      return false;
+   }
+   bson_free (ent->id);
+   ent->id = bson_strdup (to);
+   return true;
+}
+
+bool
 entity_map_delete (entity_map_t *em, const char *id, bson_error_t *error)
 {
    entity_t *entity = entity_map_get (em, id, error);
