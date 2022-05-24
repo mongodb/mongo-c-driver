@@ -123,7 +123,9 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
    bson_append_document_begin (&pipeline, "0", 1, &change_stream_stage);
    bson_append_document_begin (
       &change_stream_stage, "$changeStream", 13, &change_stream_doc);
-   bson_concat (&change_stream_doc, stream->full_document);
+   if (stream->full_document) {
+      bson_concat (&change_stream_doc, stream->full_document);
+   }
 
    if (stream->resumed) {
       /* Change stream spec: Resume Process */
@@ -412,7 +414,12 @@ _change_stream_init (mongoc_change_stream_t *stream,
       return;
    }
 
-   stream->full_document = BCON_NEW ("fullDocument", stream->opts.fullDocument);
+   if (stream->opts.fullDocument) {
+      stream->full_document =
+         BCON_NEW ("fullDocument", stream->opts.fullDocument);
+   } else {
+      stream->full_document = NULL;
+   }
 
    _mongoc_timestamp_set (&stream->operation_time,
                           &stream->opts.startAtOperationTime);
