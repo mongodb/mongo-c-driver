@@ -1185,6 +1185,8 @@ test_check_expected_events_for_client (test_t *test,
    bson_parser_t *bp = NULL;
    char *client_id = NULL;
    bson_t *expected_events = NULL;
+   bool just_false = false;
+   bool *ignore_extra_events = &just_false;
    entity_t *entity = NULL;
    bson_iter_t iter;
    event_t *eiter = NULL;
@@ -1195,6 +1197,7 @@ test_check_expected_events_for_client (test_t *test,
    bp = bson_parser_new ();
    bson_parser_utf8 (bp, "client", &client_id);
    bson_parser_array (bp, "events", &expected_events);
+   bson_parser_bool_optional (bp, "ignoreExtraEvents", &ignore_extra_events);
    bson_parser_utf8_optional (bp, "eventType", &event_type);
    if (!bson_parser_parse (bp, expected_events_for_client, error)) {
       goto done;
@@ -1224,11 +1227,19 @@ test_check_expected_events_for_client (test_t *test,
    expected_num_events = bson_count_keys (expected_events);
    LL_COUNT (entity->events, eiter, actual_num_events);
    if (expected_num_events != actual_num_events) {
-      test_set_error (error,
-                      "expected: %" PRIu32 " events but got %" PRIu32,
-                      expected_num_events,
-                      actual_num_events);
-      goto done;
+      bool too_many_events = actual_num_events > expected_num_events;
+      if (*ignore_extra_events) {
+         // We can never have too many events
+         too_many_events = false;
+      }
+      bool too_few_events = actual_num_events < expected_num_events;
+      if (too_few_events || too_many_events) {
+         test_set_error (error,
+                         "expected: %" PRIu32 " events but got %" PRIu32,
+                         expected_num_events,
+                         actual_num_events);
+         goto done;
+      }
    }
 
    eiter = entity->events;
