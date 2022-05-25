@@ -2769,14 +2769,12 @@ operation_rename (test_t *test,
 {
    // First validate the arguments
    const char *object = op->object;
-   bson_iter_t it;
-   bool okay = bson_iter_init_find (&it, op->arguments, "to");
-   if (!okay) {
-      test_set_error (error, "'rename' operation is missing a 'to' argument");
-      return false;
-   }
-   if (!BSON_ITER_HOLDS_UTF8 (&it)) {
-      test_set_error (error, "'rename' argument is not a utf8 string");
+   bson_parser_t *bp = bson_parser_new ();
+   char *new_name;
+   bson_parser_utf8 (bp, "to", &new_name);
+   bool parse_ok = bson_parser_parse (bp, op->arguments, error);
+   bson_parser_destroy (bp);
+   if (!parse_ok) {
       return false;
    }
 
@@ -2796,7 +2794,6 @@ operation_rename (test_t *test,
    }
    // Rename the collection in the server,
    mongoc_collection_t *coll = ent->value;
-   const char *new_name = bson_iter_utf8 (&it, NULL);
    if (!mongoc_collection_rename (coll, coll->db, new_name, false, error)) {
       return false;
    }
