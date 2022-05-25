@@ -28,7 +28,7 @@ Parameters
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
 * ``kms_provider``: A string identifying the Key Management Service (KMS) provider used to encrypt the datakey (e.g. "aws" or "local").
 * ``opts``: A :symbol:`mongoc_client_encryption_datakey_opts_t`
-* ``keyid``: The resulting UUID (BSON binary subtype 0x04) of the newly created key. Must be freed by :symbol:`bson_value_destroy`.
+* ``keyid``: Optional. An uninitialized :symbol:`bson_value_t` set to the UUID (BSON binary subtype 0x04) of the newly created key. Must be freed by :symbol:`bson_value_destroy`.
 * ``error``: Optional. A :symbol:`bson_error_t`.
 
 Returns

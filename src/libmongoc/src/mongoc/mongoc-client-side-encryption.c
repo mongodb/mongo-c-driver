@@ -638,7 +638,7 @@ mongoc_client_encryption_delete_key (
    bson_t *reply,
    bson_error_t *error)
 {
-   bson_init (reply);
+   _mongoc_bson_init_if_set (reply);
    return _disabled_error (error);
 }
 

@@ -21,7 +21,7 @@ Parameters
 
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
 * ``keyid``: The UUID (BSON binary subtype 0x04) of the key to get.
-* ``key_doc``: The resulting key document or a BSON null value. Must be freed by :symbol:`bson_value_destroy`.
+* ``key_doc``: Optional. An uninitialized :symbol:`bson_value_t` set to the resulting key document or a BSON null value. Must be freed by :symbol:`bson_value_destroy`.
 * ``error``: Optional. :symbol:`bson_error_t`.
 
 Returns
