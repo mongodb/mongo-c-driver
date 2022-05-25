@@ -16,7 +16,7 @@ Synopsis
       bson_value_t *key_doc,
       bson_error_t *error);
 
-Add ``keyaltname`` to the set of keyAltnames in the key document with UUID ``keyid``.
+Add ``keyaltname`` to the set of alternate names in the key document with UUID ``keyid``.
 
 Parameters
 ----------
@@ -24,7 +24,7 @@ Parameters
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
 * ``keyid``: A UUID key ID of the key to add the key alternate name to.
 * ``keyaltname``: The key alternate name to add.
-* ``key_doc``: The value of the key document before addition of the key alternate name, or ``null`` if a key with the given UUID does not exist. Must be freed by :symbol:`bson_value_destroy`.
+* ``key_doc``: The value of the key document before addition of the alternate name, or ``null`` if a key with the given UUID does not exist. Must be freed by :symbol:`bson_value_destroy`.
 * ``error``: Optional. :symbol:`bson_error_t`.
 
 Returns
