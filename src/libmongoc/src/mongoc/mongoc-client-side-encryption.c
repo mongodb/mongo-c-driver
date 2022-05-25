@@ -2356,6 +2356,9 @@ mongoc_client_encryption_remove_key_alt_name (
                }
             }
          }
+      } else {
+         /* If keyAltNames does not exist, do not try to remove it. */
+         is_empty = false;
       }
 
       if (is_empty) {
