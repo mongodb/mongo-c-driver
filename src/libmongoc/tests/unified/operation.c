@@ -2800,6 +2800,7 @@ operation_rename (test_t *test,
    if (!mongoc_collection_rename (coll, coll->db, new_name, false, error)) {
       return false;
    }
+   result_from_ok (result);
    return true;
 }
 
