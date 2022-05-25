@@ -1181,7 +1181,7 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
    }
 
    if (query_type != NULL) {
-      mongocrypt_query_type_t converted;
+      mongocrypt_query_type_t converted = 0;
 
       switch (*query_type) {
       case MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY:
