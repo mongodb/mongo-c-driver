@@ -114,19 +114,22 @@ operation_create_change_stream (test_t *test,
       changestream = mongoc_collection_watch (coll, pipeline, opts);
    }
 
-   if (!op->save_result_as_entity) {
-      test_set_error (error,
-                      "unexpected createChangeStream does not save result");
-      goto done;
-   }
-
-   if (!entity_map_add_changestream (
-          test->entity_map, op->save_result_as_entity, changestream, error)) {
-      goto done;
-   }
-
    mongoc_change_stream_error_document (changestream, &op_error, &op_reply);
    result_from_val_and_reply (result, NULL, (bson_t *) op_reply, &op_error);
+
+   if (op->save_result_as_entity) {
+      if (!entity_map_add_changestream (test->entity_map,
+                                        op->save_result_as_entity,
+                                        changestream,
+                                        error)) {
+         goto done;
+      } else {
+         // Successfully saved the changestream
+      }
+   } else {
+      // We're not saving the changestream
+      mongoc_change_stream_destroy (changestream);
+   }
 
    ret = true;
 done:
