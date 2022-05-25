@@ -1796,7 +1796,7 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    client_encryption->keyvault_coll = mongoc_client_get_collection (
       opts->keyvault_client, opts->keyvault_db, opts->keyvault_coll);
    wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_collection_set_write_concern (client_encryption->keyvault_coll, wc);
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
