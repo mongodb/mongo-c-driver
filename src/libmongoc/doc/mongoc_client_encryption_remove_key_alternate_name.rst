@@ -16,7 +16,7 @@ Synopsis
       bson_value_t *key_doc,
       bson_error_t *error);
 
-Remove ``keyaltname`` from the set of keyAltnames in the key document with UUID ``keyid``.
+Remove ``keyaltname`` from the set of keyAltNames in the key document with UUID ``keyid``.
 
 Also removes the ``keyAltNames`` field from the key document if it would otherwise be empty.
 
