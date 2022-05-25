@@ -127,9 +127,6 @@
             }
           },
           "expectResult": {
-            "acknowledged": {
-              "$$unsetOrMatches": true
-            },
             "deletedCount": 0
           }
         }
@@ -222,9 +219,6 @@
             }
           },
           "expectResult": {
-            "acknowledged": {
-              "$$unsetOrMatches": true
-            },
             "deletedCount": 1
           }
         }
@@ -284,9 +278,6 @@
             }
           },
           "expectResult": {
-            "acknowledged": {
-              "$$unsetOrMatches": true
-            },
             "deletedCount": 1
           }
         }
@@ -348,9 +339,6 @@
             }
           },
           "expectResult": {
-            "acknowledged": {
-              "$$unsetOrMatches": true
-            },
             "deletedCount": 1
           }
         },
@@ -366,9 +354,6 @@
             }
           },
           "expectResult": {
-            "acknowledged": {
-              "$$unsetOrMatches": true
-            },
             "deletedCount": 0
           }
         }

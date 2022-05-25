@@ -643,13 +643,16 @@ mongoc_client_encryption_delete_key (
 }
 
 
-mongoc_cursor_t *
+bool
 mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
                                   const bson_value_t *keyid,
+                                  bson_value_t *key_doc,
                                   bson_error_t *error)
 {
-   _disabled_error (error);
-   return NULL;
+   if (key_doc) {
+      memset (key_doc, 0, sizeof (*key_doc));
+   }
+   return _disabled_error (error);
 }
 
 
@@ -692,14 +695,17 @@ mongoc_client_encryption_remove_key_alternate_name (
 }
 
 
-mongoc_cursor_t *
+bool
 mongoc_client_encryption_get_key_by_alt_name (
    mongoc_client_encryption_t *client_encryption,
    const char *keyaltname,
+   bson_value_t *key_doc,
    bson_error_t *error)
 {
-   _disabled_error (error);
-   return NULL;
+   if (key_doc) {
+      memset (key_doc, 0, sizeof (*key_doc));
+   }
+   return _disabled_error (error);
 }
 
 
@@ -2135,13 +2141,15 @@ fail:
    RETURN (ret);
 }
 
-mongoc_cursor_t *
+bool
 mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
                                   const bson_value_t *keyid,
+                                  bson_value_t *key_doc,
                                   bson_error_t *error)
 {
    bson_t filter = BSON_INITIALIZER;
    mongoc_cursor_t *cursor = NULL;
+   bool ret = false;
 
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyid);
@@ -2161,13 +2169,33 @@ mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
                               client_encryption->keyvault_coll)),
                         MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
 
-   /* If an error occurred, user should query cursor error. */
+   if (key_doc) {
+      memset (key_doc, 0, sizeof (*key_doc));
+   }
+
    cursor = mongoc_collection_find_with_opts (
       client_encryption->keyvault_coll, &filter, NULL, NULL);
 
-   bson_destroy (&filter);
+   ret = !mongoc_cursor_error (cursor, error);
 
-   return cursor;
+   if (ret && key_doc) {
+      const bson_t *bson = NULL;
+
+      if (!mongoc_cursor_next (cursor, &bson)) {
+         key_doc->value_type = BSON_TYPE_NULL;
+      } else {
+         bson_t *const doc = BCON_NEW ("v", BCON_DOCUMENT (bson));
+         bson_iter_t iter;
+         BSON_ASSERT (bson_iter_init_find (&iter, doc, "v"));
+         bson_value_copy (bson_iter_value (&iter), key_doc);
+         bson_destroy (doc);
+      }
+   }
+
+   bson_destroy (&filter);
+   mongoc_cursor_destroy (cursor);
+
+   return ret;
 }
 
 mongoc_cursor_t *
@@ -2324,7 +2352,8 @@ mongoc_client_encryption_remove_key_alternate_name (
       BSON_ASSERT (bson_iter_init (&iter, &local_reply));
 
       if (bson_iter_find_descendant (&iter, "value.keyAltNames", &iter)) {
-         if (BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &iter)) {
+         if (BSON_ITER_HOLDS_ARRAY (&iter) &&
+             bson_iter_recurse (&iter, &iter)) {
             while (bson_iter_next (&iter) && BSON_ITER_HOLDS_UTF8 (&iter)) {
                if (strcmp (bson_iter_utf8 (&iter, NULL), keyaltname) != 0) {
                   is_empty = false;
@@ -2366,14 +2395,16 @@ mongoc_client_encryption_remove_key_alternate_name (
    RETURN (ret);
 }
 
-mongoc_cursor_t *
+bool
 mongoc_client_encryption_get_key_by_alt_name (
    mongoc_client_encryption_t *client_encryption,
    const char *keyaltname,
+   bson_value_t *key_doc,
    bson_error_t *error)
 {
    bson_t filter = BSON_INITIALIZER;
    mongoc_cursor_t *cursor = NULL;
+   bool ret = false;
 
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyaltname);
@@ -2383,13 +2414,29 @@ mongoc_client_encryption_get_key_by_alt_name (
 
    BSON_ASSERT (BSON_APPEND_UTF8 (&filter, "keyAltNames", keyaltname));
 
-   /* If an error occurred, user should query cursor error. */
    cursor = mongoc_collection_find_with_opts (
       client_encryption->keyvault_coll, &filter, NULL, NULL);
 
-   bson_destroy (&filter);
+   ret = !mongoc_cursor_error (cursor, error);
 
-   return cursor;
+   if (ret && key_doc) {
+      const bson_t *bson = NULL;
+
+      if (!mongoc_cursor_next (cursor, &bson)) {
+         key_doc->value_type = BSON_TYPE_NULL;
+      } else {
+         bson_t *const doc = BCON_NEW ("v", BCON_DOCUMENT (bson));
+         bson_iter_t iter;
+         BSON_ASSERT (bson_iter_init_find (&iter, doc, "v"));
+         bson_value_copy (bson_iter_value (&iter), key_doc);
+         bson_destroy (doc);
+      }
+   }
+
+   bson_destroy (&filter);
+   mongoc_cursor_destroy (cursor);
+
+   return ret;
 }
 
 bool

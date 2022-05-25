@@ -442,16 +442,15 @@ operation_get_key (test_t *test,
    }
 
    {
-      mongoc_cursor_t *const cursor = mongoc_client_encryption_get_key (
-         ce, bson_val_to_value (id_val), error);
+      bson_value_t key_doc;
+      const bool success = mongoc_client_encryption_get_key (
+         ce, bson_val_to_value (id_val), &key_doc, error);
+      bson_val_t *const val = success ? bson_val_from_value (&key_doc) : NULL;
 
-      if (cursor) {
-         result_from_cursor (result, cursor);
-      } else {
-         result_from_val_and_reply (result, NULL, NULL, error);
-      }
+      result_from_val_and_reply (result, val, NULL, error);
 
-      mongoc_cursor_destroy (cursor);
+      bson_val_destroy (val);
+      bson_value_destroy (&key_doc);
    }
 
    ret = true;
@@ -617,16 +616,15 @@ operation_get_key_by_alt_name (test_t *test,
    }
 
    {
-      mongoc_cursor_t *const cursor =
-         mongoc_client_encryption_get_key_by_alt_name (ce, keyaltname, error);
+      bson_value_t key_doc;
+      const bool success = mongoc_client_encryption_get_key_by_alt_name (
+         ce, keyaltname, &key_doc, error);
+      bson_val_t *const val = success ? bson_val_from_value (&key_doc) : NULL;
 
-      if (cursor) {
-         result_from_cursor (result, cursor);
-      } else {
-         result_from_val_and_reply (result, NULL, NULL, error);
-      }
+      result_from_val_and_reply (result, val, NULL, error);
 
-      mongoc_cursor_destroy (cursor);
+      bson_value_destroy (&key_doc);
+      bson_val_destroy (val);
    }
 
    ret = true;

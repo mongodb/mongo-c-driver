@@ -168,9 +168,10 @@ mongoc_client_encryption_delete_key (
    bson_t *reply,
    bson_error_t *error);
 
-MONGOC_EXPORT (struct _mongoc_cursor_t *)
+MONGOC_EXPORT (bool)
 mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
                                   const bson_value_t *keyid,
+                                  bson_value_t *key_doc,
                                   bson_error_t *error);
 
 MONGOC_EXPORT (struct _mongoc_cursor_t *)
@@ -193,10 +194,11 @@ mongoc_client_encryption_remove_key_alternate_name (
    bson_value_t *key_doc,
    bson_error_t *error);
 
-MONGOC_EXPORT (struct _mongoc_cursor_t *)
+MONGOC_EXPORT (bool)
 mongoc_client_encryption_get_key_by_alt_name (
    mongoc_client_encryption_t *client_encryption,
    const char *keyaltname,
+   bson_value_t *key_doc,
    bson_error_t *error);
 
 MONGOC_EXPORT (bool)
