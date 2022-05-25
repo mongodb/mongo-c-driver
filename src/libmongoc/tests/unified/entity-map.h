@@ -95,22 +95,6 @@ entity_map_add_bson (entity_map_t *em,
 entity_t *
 entity_map_get (entity_map_t *em, const char *id, bson_error_t *error);
 
-/**
- * @brief Rename an entity in the entity map
- *
- * @param em The map to modify
- * @param from The name of the existing object
- * @param to The new name of the object
- * @param[out] error Sets an error, if any
- * @return true On success
- * @return false Otherwise
- */
-bool
-entity_map_rename (entity_map_t *em,
-                   const char *from,
-                   const char *to,
-                   bson_error_t *error);
-
 /* Removes an entity from the entity map. Returns false and sets @error if @id
  * does not map to an entry. */
 bool
