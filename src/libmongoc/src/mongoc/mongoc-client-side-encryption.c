@@ -2307,11 +2307,6 @@ mongoc_client_encryption_remove_key_alt_name (
    BSON_ASSERT_PARAM (keyid);
    BSON_ASSERT_PARAM (keyaltname);
 
-   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
-                           mongoc_collection_get_read_concern (
-                              client_encryption->keyvault_coll)),
-                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
-
    BSON_ASSERT (mongoc_write_concern_get_wmajority (
       mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
 
