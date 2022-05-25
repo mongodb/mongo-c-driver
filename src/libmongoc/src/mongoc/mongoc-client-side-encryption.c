@@ -2342,26 +2342,44 @@ mongoc_client_encryption_remove_key_alt_name (
    /* Ensure keyAltNames field is removed if it would otherwise be empty. */
    if (ret) {
       bson_iter_t iter;
-      bool is_empty = true;
+      bool should_remove = true;
 
       BSON_ASSERT (bson_iter_init (&iter, &local_reply));
 
       if (bson_iter_find_descendant (&iter, "value.keyAltNames", &iter)) {
-         if (BSON_ITER_HOLDS_ARRAY (&iter) &&
-             bson_iter_recurse (&iter, &iter)) {
-            while (bson_iter_next (&iter) && BSON_ITER_HOLDS_UTF8 (&iter)) {
+         if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "expected keyAltNames to be an array of strings");
+            ret = false;
+            GOTO (fail);
+         }
+
+         if (bson_iter_recurse (&iter, &iter)) {
+            while (bson_iter_next (&iter)) {
+               if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+                  bson_set_error (
+                     error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                     "expected keyAltNames to be an array of strings");
+                  ret = false;
+                  GOTO (fail);
+               }
+
                if (strcmp (bson_iter_utf8 (&iter, NULL), keyaltname) != 0) {
-                  is_empty = false;
+                  should_remove = false;
                   break;
                }
             }
          }
       } else {
          /* If keyAltNames does not exist, do not try to remove it. */
-         is_empty = false;
+         should_remove = false;
       }
 
-      if (is_empty) {
+      if (should_remove) {
          bson_t *update =
             BCON_NEW ("$unset", "{", "keyAltNames", BCON_BOOL (true), "}");
          bson_t reply;
@@ -2386,6 +2404,7 @@ mongoc_client_encryption_remove_key_alt_name (
       }
    }
 
+fail:
    bson_destroy (&query);
    bson_destroy (&local_reply);
 
