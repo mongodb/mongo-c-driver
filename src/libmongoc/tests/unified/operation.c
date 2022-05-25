@@ -407,6 +407,7 @@ operation_delete_key (test_t *test,
 
       result_from_val_and_reply (result, val, NULL, error);
 
+      bson_destroy (&reply);
       bson_val_destroy (val);
    }
 
