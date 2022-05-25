@@ -1139,6 +1139,9 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
       bson_destroy (create_indexes);
       bson_free (index_name);
       bson_destroy (keys);
+      if (!ok) {
+         goto fail;
+      }
    }
 
    ok = true;
