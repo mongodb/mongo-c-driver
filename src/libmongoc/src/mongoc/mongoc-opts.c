@@ -1581,7 +1581,7 @@ _mongoc_change_stream_opts_parse (
    bson_init (&mongoc_change_stream_opts->startAfter);
    memset (&mongoc_change_stream_opts->startAtOperationTime, 0, sizeof (mongoc_timestamp_t));
    mongoc_change_stream_opts->maxAwaitTimeMS = 0;
-   mongoc_change_stream_opts->fullDocument = "default";
+   mongoc_change_stream_opts->fullDocument = NULL;
    memset (&mongoc_change_stream_opts->comment, 0, sizeof (bson_value_t));
    bson_init (&mongoc_change_stream_opts->extra);
 

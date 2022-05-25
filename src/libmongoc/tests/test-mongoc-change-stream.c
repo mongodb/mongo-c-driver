@@ -130,7 +130,7 @@ test_change_stream_pipeline (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db',"
                 " 'aggregate': 'coll',"
-                " 'pipeline': [{'$changeStream': {'fullDocument': 'default'}}],"
+                " 'pipeline': [{'$changeStream': {}}],"
                 " 'cursor': {}}"));
 
    mock_server_replies_simple (
@@ -180,15 +180,15 @@ test_change_stream_pipeline (void)
    /* Test non-empty pipeline */
    future = future_collection_watch (coll, nonempty_pipeline, NULL);
 
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db',"
-                " 'aggregate': 'coll',"
-                " 'pipeline': ["
-                "   {'$changeStream': {'fullDocument': 'default'}},"
-                "   {'$project': {'ns': false}}],"
-                " 'cursor': {}}"));
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " 'aggregate': 'coll',"
+                                          " 'pipeline': ["
+                                          "   {'$changeStream': {}},"
+                                          "   {'$project': {'ns': false}}],"
+                                          " 'cursor': {}}"));
    mock_server_replies_simple (
       request,
       "{'cursor': {'id': 123, 'ns': 'db.coll','firstBatch': []},'ok': 1}");
@@ -739,11 +739,10 @@ test_change_stream_resumable_error (void)
       "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }";
    const char *interrupted_err =
       "{ 'code': 11601, 'errmsg': 'interrupted', 'ok': 0 }";
-   const bson_t *watch_cmd =
-      tmp_bson ("{'$db': 'db',"
-                " 'aggregate': 'coll',"
-                " 'pipeline': [{'$changeStream': {'fullDocument': 'default'}}],"
-                " 'cursor': {}}");
+   const bson_t *watch_cmd = tmp_bson ("{'$db': 'db',"
+                                       " 'aggregate': 'coll',"
+                                       " 'pipeline': [{'$changeStream': {}}],"
+                                       " 'cursor': {}}");
    const char *expected_msg =
       "{'$db': 'db', 'getMore': {'$numberLong': '%d'}, 'collection': 'coll' }";
 
@@ -1825,7 +1824,7 @@ _test_resume (const char *opts,
       server,
       MONGOC_QUERY_NONE,
       tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { %s "
-                "'fullDocument': 'default' } } ], 'cursor': {  } }",
+                " 'fullDocument': null } } ], 'cursor': {  } }",
                 expected_change_stream_opts));
    msg = bson_strdup_printf ("{'cursor': {'id': 123, 'ns': 'db.coll',"
                              "'firstBatch': [%s]%s }, 'operationTime': "
@@ -1855,7 +1854,7 @@ _test_resume (const char *opts,
       server,
       MONGOC_QUERY_NONE,
       tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { %s "
-                "'fullDocument': 'default' }} ], 'cursor': {  } }",
+                " 'fullDocument': null }} ], 'cursor': {  } }",
                 expected_resume_change_stream_opts));
    mock_server_replies_simple (
       request,
