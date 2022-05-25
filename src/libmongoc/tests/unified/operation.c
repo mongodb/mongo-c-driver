@@ -2761,6 +2761,48 @@ operation_assert_number_connections_checked_out (test_t *test,
    return true;
 }
 
+static bool
+operation_rename (test_t *test,
+                  operation_t *op,
+                  result_t *result,
+                  bson_error_t *error)
+{
+   // First validate the arguments
+   const char *object = op->object;
+   bson_iter_t it;
+   bool okay = bson_iter_init_find (&it, op->arguments, "to");
+   if (!okay) {
+      test_set_error (error, "'rename' operation is missing a 'to' argument");
+      return false;
+   }
+   if (!BSON_ITER_HOLDS_UTF8 (&it)) {
+      test_set_error (error, "'rename' argument is not a utf8 string");
+      return false;
+   }
+
+   // Now get the entity
+   entity_t *ent = entity_map_get (test->entity_map, object, error);
+   if (!ent) {
+      return false;
+   }
+   // We only support collections so far
+   if (0 != strcmp (ent->type, "collection")) {
+      test_set_error (
+         error,
+         "'rename' is only supported for collection objects '%s' has type '%s'",
+         object,
+         ent->type);
+      return false;
+   }
+   // Rename the collection in the server,
+   mongoc_collection_t *coll = ent->value;
+   const char *new_name = bson_iter_utf8 (&it, NULL);
+   if (!mongoc_collection_rename (coll, coll->db, new_name, false, error)) {
+      return false;
+   }
+   return true;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -2809,6 +2851,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"replaceOne", operation_replace_one},
       {"updateOne", operation_update_one},
       {"updateMany", operation_update_many},
+      {"rename", operation_rename},
 
       /* Change stream and cursor operations */
       {"iterateUntilDocumentOrError",
