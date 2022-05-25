@@ -1,5 +1,5 @@
 {
-  "description": "removeKeyAlternateName",
+  "description": "removeKeyAltName",
   "schemaVersion": "1.8",
   "runOnRequirements": [
     {
@@ -84,7 +84,7 @@
       "description": "remove keyAltName from non-existent data key",
       "operations": [
         {
-          "name": "removeKeyAlternateName",
+          "name": "removeKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {
@@ -143,7 +143,7 @@
       "description": "remove non-existent keyAltName from existing data key",
       "operations": [
         {
-          "name": "removeKeyAlternateName",
+          "name": "removeKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {
@@ -233,7 +233,7 @@
       "description": "remove an existing keyAltName from an existing data key",
       "operations": [
         {
-          "name": "removeKeyAlternateName",
+          "name": "removeKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {
@@ -301,7 +301,7 @@
       "description": "remove the last keyAltName from an existing data key",
       "operations": [
         {
-          "name": "removeKeyAlternateName",
+          "name": "removeKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {
@@ -346,7 +346,7 @@
           }
         },
         {
-          "name": "removeKeyAlternateName",
+          "name": "removeKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {

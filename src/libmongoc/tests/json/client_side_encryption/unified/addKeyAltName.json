@@ -1,5 +1,5 @@
 {
-  "description": "addKeyAlternateName",
+  "description": "addKeyAltName",
   "schemaVersion": "1.8",
   "runOnRequirements": [
     {
@@ -80,7 +80,7 @@
       "description": "add keyAltName to non-existent data key",
       "operations": [
         {
-          "name": "addKeyAlternateName",
+          "name": "addKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {
@@ -135,7 +135,7 @@
       "description": "add new keyAltName to data key with no keyAltNames",
       "operations": [
         {
-          "name": "addKeyAlternateName",
+          "name": "addKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {
@@ -199,7 +199,7 @@
       "description": "add existing keyAltName to existing data key",
       "operations": [
         {
-          "name": "addKeyAlternateName",
+          "name": "addKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {
@@ -240,7 +240,7 @@
           }
         },
         {
-          "name": "addKeyAlternateName",
+          "name": "addKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {
@@ -297,10 +297,10 @@
       ]
     },
     {
-      "description": "add new keyAltName to data key with keyAltnames",
+      "description": "add new keyAltName to data key with keyAltNames",
       "operations": [
         {
-          "name": "addKeyAlternateName",
+          "name": "addKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {
@@ -341,7 +341,7 @@
           }
         },
         {
-          "name": "addKeyAlternateName",
+          "name": "addKeyAltName",
           "object": "clientEncryption0",
           "arguments": {
             "id": {

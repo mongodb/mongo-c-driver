@@ -504,7 +504,7 @@ done:
 }
 
 static bool
-operation_add_key_alternate_name (test_t *test,
+operation_add_key_alt_name (test_t *test,
                                   operation_t *op,
                                   result_t *result,
                                   bson_error_t *error)
@@ -530,7 +530,7 @@ operation_add_key_alternate_name (test_t *test,
 
    {
       bson_value_t key_doc;
-      const bool success = mongoc_client_encryption_add_key_alternate_name (
+      const bool success = mongoc_client_encryption_add_key_alt_name (
          ce, bson_val_to_value (id_val), alt_name, &key_doc, error);
       bson_val_t *const val = success ? bson_val_from_value (&key_doc) : NULL;
 
@@ -549,7 +549,7 @@ done:
 }
 
 static bool
-operation_remove_key_alternate_name (test_t *test,
+operation_remove_key_alt_name (test_t *test,
                                      operation_t *op,
                                      result_t *result,
                                      bson_error_t *error)
@@ -575,7 +575,7 @@ operation_remove_key_alternate_name (test_t *test,
 
    {
       bson_value_t key_doc;
-      const bool success = mongoc_client_encryption_remove_key_alternate_name (
+      const bool success = mongoc_client_encryption_remove_key_alt_name (
          ce, bson_val_to_value (id_val), alt_name, &key_doc, error);
       bson_val_t *const val = success ? bson_val_from_value (&key_doc) : NULL;
 
@@ -3046,8 +3046,8 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"deleteKey", operation_delete_key},
       {"getKey", operation_get_key},
       {"getKeys", operation_get_keys},
-      {"addKeyAlternateName", operation_add_key_alternate_name},
-      {"removeKeyAlternateName", operation_remove_key_alternate_name},
+      {"addKeyAltName", operation_add_key_alt_name},
+      {"removeKeyAltName", operation_remove_key_alt_name},
       {"getKeyByAltName", operation_get_key_by_alt_name},
 
       /* Database operations */

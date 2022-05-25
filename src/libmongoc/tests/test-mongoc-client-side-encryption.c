@@ -4124,7 +4124,7 @@ _test_unique_index_on_keyaltnames_case_2 (
     * in Step 1 and assert the operation does not fail. */
    {
       bson_value_t key_doc;
-      ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alternate_name (
+      ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alt_name (
                           client_encryption, &new_key, "abc", &key_doc, &error),
                        error);
       bson_value_destroy (&key_doc);
@@ -4133,7 +4133,7 @@ _test_unique_index_on_keyaltnames_case_2 (
    /* Step 3: Repeat Step 2 and assert the operation does not fail. */
    {
       bson_value_t key_doc;
-      ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alternate_name (
+      ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alt_name (
                           client_encryption, &new_key, "abc", &key_doc, &error),
                        error);
       bson_value_destroy (&key_doc);
@@ -4144,7 +4144,7 @@ _test_unique_index_on_keyaltnames_case_2 (
     * error. */
    {
       bson_value_t key_doc;
-      ASSERT (!mongoc_client_encryption_add_key_alternate_name (
+      ASSERT (!mongoc_client_encryption_add_key_alt_name (
          client_encryption, &new_key, "def", &key_doc, &error));
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_QUERY,
@@ -4158,7 +4158,7 @@ _test_unique_index_on_keyaltnames_case_2 (
    {
       bson_value_t key_doc;
       ASSERT_OR_PRINT (
-         mongoc_client_encryption_add_key_alternate_name (
+         mongoc_client_encryption_add_key_alt_name (
             client_encryption, existing_key, "def", &key_doc, &error),
          error);
       bson_value_destroy (&key_doc);

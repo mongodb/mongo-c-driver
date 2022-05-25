@@ -1,7 +1,7 @@
-:man_page: mongoc_client_encryption_add_key_alternate_name
+:man_page: mongoc_client_encryption_add_key_alt_name
 
-mongoc_client_encryption_add_key_alternate_name()
-=================================================
+mongoc_client_encryption_add_key_alt_name()
+===========================================
 
 Synopsis
 --------
@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
    MONGOC_EXPORT (bool)
-   mongoc_client_encryption_add_key_alternate_name (
+   mongoc_client_encryption_add_key_alt_name (
       mongoc_client_encryption_t *client_encryption,
       const bson_value_t *keyid,
       const char *keyaltname,
