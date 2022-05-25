@@ -22,7 +22,7 @@ Parameters
 ----------
 
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
-* ``keyid``: A UUID key ID of the key to add the key alternate name to.
+* ``keyid``: A UUID (BSON binary subtype 0x04) key ID of the key to add the key alternate name to.
 * ``keyaltname``: The key alternate name to add.
 * ``key_doc``: The value of the key document before addition of the alternate name, or ``null`` if a key with the given UUID does not exist. Must be freed by :symbol:`bson_value_destroy`.
 * ``error``: Optional. :symbol:`bson_error_t`.

@@ -18,9 +18,8 @@ Parameters
 ----------
 
 * ``opts``: A :symbol:`mongoc_client_encryption_encrypt_opts_t`
-* ``keyid``: A UUID (BSON binary with subtype 4) corresponding to the ``_id`` of the data key.
+* ``keyid``: The UUID (BSON binary subtype 0x04) corresponding to the ``_id`` of the data key.
 
 .. seealso::
 
   | :symbol:`mongoc_client_encryption_encrypt_opts_set_keyaltname`
-

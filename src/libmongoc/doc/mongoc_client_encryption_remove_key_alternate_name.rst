@@ -24,7 +24,7 @@ Parameters
 ----------
 
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
-* ``keyid``: A UUID key ID of the key to remove the key alternate name from.
+* ``keyid``: The UUID (BSON binary subtype 0x04) of the key to remove the key alternate name from.
 * ``keyaltname``: The key alternate name to remove.
 * ``key_doc``: The value of the key document before removal of the key alternate name, or ``null`` if a key with the given UUID does not exist. Must be freed by :symbol:`bson_value_destroy`.
 * ``error``: Optional. :symbol:`bson_error_t`.
