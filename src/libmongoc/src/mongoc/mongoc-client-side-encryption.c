@@ -2368,24 +2368,23 @@ mongoc_client_encryption_remove_key_alternate_name (
             BCON_NEW ("$unset", "{", "keyAltNames", BCON_BOOL (true), "}");
          bson_t reply;
 
-         /* How to handle possible error here? */
-         mongoc_collection_update_one (client_encryption->keyvault_coll,
-                                       &query,
-                                       update,
-                                       NULL,
-                                       &reply,
-                                       error);
+         ret = mongoc_collection_update_one (client_encryption->keyvault_coll,
+                                             &query,
+                                             update,
+                                             NULL,
+                                             &reply,
+                                             error);
 
          bson_destroy (update);
          bson_destroy (&reply);
       }
-   }
 
-   if (ret && key_doc) {
-      bson_iter_t iter;
+      if (ret && key_doc) {
+         bson_iter_t iter;
 
-      if (bson_iter_init_find (&iter, &local_reply, "value")) {
-         bson_value_copy (bson_iter_value (&iter), key_doc);
+         if (bson_iter_init_find (&iter, &local_reply, "value")) {
+            bson_value_copy (bson_iter_value (&iter), key_doc);
+         }
       }
    }
 
