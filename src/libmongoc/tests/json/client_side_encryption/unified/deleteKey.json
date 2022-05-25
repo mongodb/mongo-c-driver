@@ -9,7 +9,10 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0"
+        "id": "client0",
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
       }
     },
     {
@@ -131,6 +134,37 @@
           }
         }
       ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "delete": "datakeys",
+                  "deletes": [
+                    {
+                      "q": {
+                        "_id": {
+                          "$binary": {
+                            "base64": "AAAzYXdzYXdzYXdzYXdzYQ==",
+                            "subType": "04"
+                          }
+                        }
+                      },
+                      "limit": 1
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
       "outcome": [
         {
           "collectionName": "datakeys",
@@ -223,6 +257,37 @@
           }
         }
       ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "delete": "datakeys",
+                  "deletes": [
+                    {
+                      "q": {
+                        "_id": {
+                          "$binary": {
+                            "base64": "YXdzYXdzYXdzYXdzYXdzYQ==",
+                            "subType": "04"
+                          }
+                        }
+                      },
+                      "limit": 1
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
       "outcome": [
         {
           "collectionName": "datakeys",
@@ -280,6 +345,37 @@
           "expectResult": {
             "deletedCount": 1
           }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "delete": "datakeys",
+                  "deletes": [
+                    {
+                      "q": {
+                        "_id": {
+                          "$binary": {
+                            "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                            "subType": "04"
+                          }
+                        }
+                      },
+                      "limit": 1
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            }
+          ]
         }
       ],
       "outcome": [
@@ -356,6 +452,61 @@
           "expectResult": {
             "deletedCount": 0
           }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "delete": "datakeys",
+                  "deletes": [
+                    {
+                      "q": {
+                        "_id": {
+                          "$binary": {
+                            "base64": "YXdzYXdzYXdzYXdzYXdzYQ==",
+                            "subType": "04"
+                          }
+                        }
+                      },
+                      "limit": 1
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "delete": "datakeys",
+                  "deletes": [
+                    {
+                      "q": {
+                        "_id": {
+                          "$binary": {
+                            "base64": "YXdzYXdzYXdzYXdzYXdzYQ==",
+                            "subType": "04"
+                          }
+                        }
+                      },
+                      "limit": 1
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            }
+          ]
         }
       ],
       "outcome": [

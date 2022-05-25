@@ -9,7 +9,10 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0"
+        "id": "client0",
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
       }
     },
     {
@@ -128,6 +131,32 @@
           },
           "expectResult": null
         }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "find": "datakeys",
+                  "filter": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "AAAzYXdzYXdzYXdzYXdzYQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "readConcern": {
+                    "level": "majority"
+                  }
+                }
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -178,6 +207,32 @@
             }
           }
         }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "find": "datakeys",
+                  "filter": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "YXdzYXdzYXdzYXdzYXdzYQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "readConcern": {
+                    "level": "majority"
+                  }
+                }
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -225,6 +280,32 @@
               "provider": "local"
             }
           }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "find": "datakeys",
+                  "filter": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "readConcern": {
+                    "level": "majority"
+                  }
+                }
+              }
+            }
+          ]
         }
       ]
     }

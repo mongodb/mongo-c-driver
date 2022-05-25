@@ -9,7 +9,10 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0"
+        "id": "client0",
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
       }
     },
     {
@@ -92,6 +95,37 @@
             "keyAltName": "new_key_alt_name"
           },
           "expectResult": null
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "AAAjYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$addToSet": {
+                      "keyAltNames": "new_key_alt_name"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            }
+          ]
         }
       ],
       "outcome": [
@@ -193,6 +227,42 @@
             }
           ]
         }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$addToSet": {
+                      "keyAltNames": "local_key"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "commandName": "find"
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -291,6 +361,66 @@
               "keyAltNames": [
                 "local_key"
               ]
+            }
+          ]
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$addToSet": {
+                      "keyAltNames": "local_key"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$addToSet": {
+                      "keyAltNames": "local_key"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "commandName": "find"
+              }
             }
           ]
         }
@@ -404,6 +534,66 @@
             },
             {
               "keyAltNames": "local_key"
+            }
+          ]
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$addToSet": {
+                      "keyAltNames": "local_key"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$addToSet": {
+                      "keyAltNames": "another_name"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "commandName": "aggregate"
+              }
             }
           ]
         }

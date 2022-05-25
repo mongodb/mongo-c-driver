@@ -9,7 +9,10 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0"
+        "id": "client0",
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
       }
     },
     {
@@ -123,6 +126,27 @@
           },
           "expectResult": null
         }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "find": "datakeys",
+                  "filter": {
+                    "keyAltNames": "does_not_exist"
+                  },
+                  "readConcern": {
+                    "level": "majority"
+                  }
+                }
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -168,6 +192,27 @@
             }
           }
         }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "find": "datakeys",
+                  "filter": {
+                    "keyAltNames": "aws_key"
+                  },
+                  "readConcern": {
+                    "level": "majority"
+                  }
+                }
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -210,6 +255,27 @@
               "provider": "local"
             }
           }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "find": "datakeys",
+                  "filter": {
+                    "keyAltNames": "local_key"
+                  },
+                  "readConcern": {
+                    "level": "majority"
+                  }
+                }
+              }
+            }
+          ]
         }
       ]
     }

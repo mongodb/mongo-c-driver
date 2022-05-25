@@ -9,7 +9,10 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0"
+        "id": "client0",
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
       }
     },
     {
@@ -96,6 +99,37 @@
             "keyAltName": "does_not_exist"
           },
           "expectResult": null
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "AAAjYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$pull": {
+                      "keyAltNames": "does_not_exist"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            }
+          ]
         }
       ],
       "outcome": [
@@ -186,6 +220,37 @@
               "provider": "local"
             }
           }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$pull": {
+                      "keyAltNames": "does_not_exist"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            }
+          ]
         }
       ],
       "outcome": [
@@ -295,6 +360,42 @@
             }
           ]
         }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$pull": {
+                      "keyAltNames": "alternate_name"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "commandName": "find"
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -381,21 +482,86 @@
               "provider": "local"
             }
           }
-        },
+        }
+      ],
+      "expectEvents": [
         {
-          "name": "find",
-          "object": "collection0",
-          "arguments": {
-            "filter": {},
-            "projection": {
-              "_id": 0,
-              "keyAltNames": 1
-            }
-          },
-          "expectResult": [
+          "client": "client0",
+          "events": [
             {
-              "keyAltNames": {
-                "$$exists": false
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$pull": {
+                      "keyAltNames": "alternate_name"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "findAndModify": "datakeys",
+                  "query": {
+                    "_id": {
+                      "$binary": {
+                        "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                        "subType": "04"
+                      }
+                    }
+                  },
+                  "update": {
+                    "$pull": {
+                      "keyAltNames": "local_key"
+                    }
+                  },
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "update": "datakeys",
+                  "updates": [
+                    {
+                      "q": {
+                        "_id": {
+                          "$binary": {
+                            "base64": "bG9jYWxrZXlsb2NhbGtleQ==",
+                            "subType": "04"
+                          }
+                        }
+                      },
+                      "u": {
+                        "$unset": {
+                          "keyAltNames": true
+                        }
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
               }
             }
           ]

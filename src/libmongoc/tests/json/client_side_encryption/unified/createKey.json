@@ -9,7 +9,10 @@
   "createEntities": [
     {
       "client": {
-        "id": "client0"
+        "id": "client0",
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
       }
     },
     {
@@ -101,23 +104,45 @@
           "expectResult": {
             "$$type": "binData"
           }
-        },
+        }
+      ],
+      "expectEvents": [
         {
-          "name": "find",
-          "object": "collection0",
-          "arguments": {
-            "filter": {},
-            "projection": {
-              "_id": 0,
-              "masterKey": 1
-            }
-          },
-          "expectResult": [
+          "client": "client0",
+          "events": [
             {
-              "masterKey": {
-                "provider": "aws",
-                "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
-                "region": "us-east-1"
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "_id": {
+                        "$$type": "binData"
+                      },
+                      "keyMaterial": {
+                        "$$type": "binData"
+                      },
+                      "creationDate": {
+                        "$$type": "date"
+                      },
+                      "updateDate": {
+                        "$$type": "date"
+                      },
+                      "status": {
+                        "$$exists": true
+                      },
+                      "masterKey": {
+                        "provider": "aws",
+                        "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
+                        "region": "us-east-1"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
               }
             }
           ]
@@ -142,23 +167,45 @@
           "expectResult": {
             "$$type": "binData"
           }
-        },
+        }
+      ],
+      "expectEvents": [
         {
-          "name": "find",
-          "object": "collection0",
-          "arguments": {
-            "filter": {},
-            "projection": {
-              "_id": 0,
-              "masterKey": 1
-            }
-          },
-          "expectResult": [
+          "client": "client0",
+          "events": [
             {
-              "masterKey": {
-                "provider": "azure",
-                "keyVaultEndpoint": "key-vault-csfle.vault.azure.net",
-                "keyName": "key-name-csfle"
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "_id": {
+                        "$$type": "binData"
+                      },
+                      "keyMaterial": {
+                        "$$type": "binData"
+                      },
+                      "creationDate": {
+                        "$$type": "date"
+                      },
+                      "updateDate": {
+                        "$$type": "date"
+                      },
+                      "status": {
+                        "$$exists": true
+                      },
+                      "masterKey": {
+                        "provider": "azure",
+                        "keyVaultEndpoint": "key-vault-csfle.vault.azure.net",
+                        "keyName": "key-name-csfle"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
               }
             }
           ]
@@ -185,25 +232,47 @@
           "expectResult": {
             "$$type": "binData"
           }
-        },
+        }
+      ],
+      "expectEvents": [
         {
-          "name": "find",
-          "object": "collection0",
-          "arguments": {
-            "filter": {},
-            "projection": {
-              "_id": 0,
-              "masterKey": 1
-            }
-          },
-          "expectResult": [
+          "client": "client0",
+          "events": [
             {
-              "masterKey": {
-                "provider": "gcp",
-                "projectId": "devprod-drivers",
-                "location": "global",
-                "keyRing": "key-ring-csfle",
-                "keyName": "key-name-csfle"
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "_id": {
+                        "$$type": "binData"
+                      },
+                      "keyMaterial": {
+                        "$$type": "binData"
+                      },
+                      "creationDate": {
+                        "$$type": "date"
+                      },
+                      "updateDate": {
+                        "$$type": "date"
+                      },
+                      "status": {
+                        "$$exists": true
+                      },
+                      "masterKey": {
+                        "provider": "gcp",
+                        "projectId": "devprod-drivers",
+                        "location": "global",
+                        "keyRing": "key-ring-csfle",
+                        "keyName": "key-name-csfle"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
               }
             }
           ]
@@ -222,23 +291,45 @@
           "expectResult": {
             "$$type": "binData"
           }
-        },
+        }
+      ],
+      "expectEvents": [
         {
-          "name": "find",
-          "object": "collection0",
-          "arguments": {
-            "filter": {},
-            "projection": {
-              "_id": 0,
-              "masterKey": 1
-            }
-          },
-          "expectResult": [
+          "client": "client0",
+          "events": [
             {
-              "masterKey": {
-                "provider": "kmip",
-                "keyId": {
-                  "$$type": "string"
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "_id": {
+                        "$$type": "binData"
+                      },
+                      "keyMaterial": {
+                        "$$type": "binData"
+                      },
+                      "creationDate": {
+                        "$$type": "date"
+                      },
+                      "updateDate": {
+                        "$$type": "date"
+                      },
+                      "status": {
+                        "$$exists": true
+                      },
+                      "masterKey": {
+                        "provider": "kmip",
+                        "keyId": {
+                          "$$type": "string"
+                        }
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
                 }
               }
             }
@@ -258,21 +349,43 @@
           "expectResult": {
             "$$type": "binData"
           }
-        },
+        }
+      ],
+      "expectEvents": [
         {
-          "name": "find",
-          "object": "collection0",
-          "arguments": {
-            "filter": {},
-            "projection": {
-              "_id": 0,
-              "masterKey": 1
-            }
-          },
-          "expectResult": [
+          "client": "client0",
+          "events": [
             {
-              "masterKey": {
-                "provider": "local"
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "_id": {
+                        "$$type": "binData"
+                      },
+                      "keyMaterial": {
+                        "$$type": "binData"
+                      },
+                      "creationDate": {
+                        "$$type": "date"
+                      },
+                      "updateDate": {
+                        "$$type": "date"
+                      },
+                      "status": {
+                        "$$exists": true
+                      },
+                      "masterKey": {
+                        "provider": "local"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
               }
             }
           ]
@@ -294,35 +407,46 @@
           "expectResult": {
             "$$type": "binData"
           }
-        },
+        }
+      ],
+      "expectEvents": [
         {
-          "name": "find",
-          "object": "collection0",
-          "arguments": {
-            "filter": {}
-          },
-          "expectResult": [
+          "client": "client0",
+          "events": [
             {
-              "_id": {
-                "$$type": "binData"
-              },
-              "keyAltNames": {
-                "$$exists": false
-              },
-              "keyMaterial": {
-                "$$type": "binData"
-              },
-              "creationDate": {
-                "$$type": "date"
-              },
-              "updateDate": {
-                "$$type": "date"
-              },
-              "status": {
-                "$$type": "int"
-              },
-              "masterKey": {
-                "$$type": "object"
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "_id": {
+                        "$$type": "binData"
+                      },
+                      "keyAltNames": {
+                        "$$exists": false
+                      },
+                      "keyMaterial": {
+                        "$$type": "binData"
+                      },
+                      "creationDate": {
+                        "$$type": "date"
+                      },
+                      "updateDate": {
+                        "$$type": "date"
+                      },
+                      "status": {
+                        "$$type": "int"
+                      },
+                      "masterKey": {
+                        "$$type": "object"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
               }
             }
           ]
@@ -346,35 +470,46 @@
           "expectResult": {
             "$$type": "binData"
           }
-        },
+        }
+      ],
+      "expectEvents": [
         {
-          "name": "find",
-          "object": "collection0",
-          "arguments": {
-            "filter": {}
-          },
-          "expectResult": [
+          "client": "client0",
+          "events": [
             {
-              "_id": {
-                "$$type": "binData"
-              },
-              "keyAltNames": [
-                "local_key"
-              ],
-              "keyMaterial": {
-                "$$type": "binData"
-              },
-              "creationDate": {
-                "$$type": "date"
-              },
-              "updateDate": {
-                "$$type": "date"
-              },
-              "status": {
-                "$$type": "int"
-              },
-              "masterKey": {
-                "$$type": "object"
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "_id": {
+                        "$$type": "binData"
+                      },
+                      "keyAltNames": [
+                        "local_key"
+                      ],
+                      "keyMaterial": {
+                        "$$type": "binData"
+                      },
+                      "creationDate": {
+                        "$$type": "date"
+                      },
+                      "updateDate": {
+                        "$$type": "date"
+                      },
+                      "status": {
+                        "$$type": "int"
+                      },
+                      "masterKey": {
+                        "$$type": "object"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
               }
             }
           ]
@@ -430,6 +565,54 @@
             }
           ]
         }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "_id": {
+                        "$$type": "binData"
+                      },
+                      "keyAltNames": {
+                        "$$type": "array"
+                      },
+                      "keyMaterial": {
+                        "$$type": "binData"
+                      },
+                      "creationDate": {
+                        "$$type": "date"
+                      },
+                      "updateDate": {
+                        "$$type": "date"
+                      },
+                      "status": {
+                        "$$type": "int"
+                      },
+                      "masterKey": {
+                        "$$type": "object"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "commandName": "aggregate"
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -452,21 +635,43 @@
           "expectResult": {
             "$$type": "binData"
           }
-        },
+        }
+      ],
+      "expectEvents": [
         {
-          "name": "find",
-          "object": "collection0",
-          "arguments": {
-            "filter": {},
-            "projection": {
-              "_id": 0,
-              "masterKey": 1
-            }
-          },
-          "expectResult": [
+          "client": "client0",
+          "events": [
             {
-              "masterKey": {
-                "provider": "local"
+              "commandStartedEvent": {
+                "databaseName": "keyvault",
+                "command": {
+                  "insert": "datakeys",
+                  "documents": [
+                    {
+                      "_id": {
+                        "$$type": "binData"
+                      },
+                      "keyMaterial": {
+                        "$$type": "binData"
+                      },
+                      "creationDate": {
+                        "$$type": "date"
+                      },
+                      "updateDate": {
+                        "$$type": "date"
+                      },
+                      "status": {
+                        "$$type": "int"
+                      },
+                      "masterKey": {
+                        "$$type": "object"
+                      }
+                    }
+                  ],
+                  "writeConcern": {
+                    "w": "majority"
+                  }
+                }
               }
             }
           ]
@@ -493,6 +698,12 @@
           "expectError": {
             "isClientError": true
           }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": []
         }
       ]
     }
