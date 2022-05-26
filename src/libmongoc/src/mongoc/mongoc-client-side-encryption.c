@@ -2109,7 +2109,6 @@ mongoc_client_encryption_delete_key (
 
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyid);
-   BSON_ASSERT_PARAM (reply);
 
    BSON_ASSERT (mongoc_write_concern_get_wmajority (
       mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
