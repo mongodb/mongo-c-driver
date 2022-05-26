@@ -2799,9 +2799,10 @@ operation_rename (test_t *test,
       goto done;
    }
    result_from_ok (result);
+   ret = true;
 done:
    bson_free (new_name);
-   return true;
+   return ret;
 }
 
 typedef struct {
