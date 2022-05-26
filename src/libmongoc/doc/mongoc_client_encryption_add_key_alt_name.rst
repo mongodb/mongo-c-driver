@@ -13,7 +13,7 @@ Synopsis
       mongoc_client_encryption_t *client_encryption,
       const bson_value_t *keyid,
       const char *keyaltname,
-      bson_value_t *key_doc,
+      bson_t *key_doc,
       bson_error_t *error);
 
 Add ``keyaltname`` to the set of alternate names in the key document with UUID ``keyid``.
@@ -24,7 +24,7 @@ Parameters
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
 * ``keyid``: A UUID (BSON binary subtype 0x04) key ID of the key to add the key alternate name to.
 * ``keyaltname``: The key alternate name to add.
-* ``key_doc``: Optional. An uninitialized :symbol:`bson_value_t` set to the value of the key document before addition of the alternate name or a BSON null value if the key does not exist. Must be freed by :symbol:`bson_value_destroy`.
+* ``key_doc``: Optional. An uninitialized :symbol:`bson_t` set to the value of the key document before addition of the alternate name, or an empty document if the key does not exist. Must be freed by :symbol:`bson_destroy`.
 * ``error``: Optional. :symbol:`bson_error_t`.
 
 Returns

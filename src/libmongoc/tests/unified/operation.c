@@ -443,15 +443,19 @@ operation_get_key (test_t *test,
    }
 
    {
-      bson_value_t key_doc;
+      bson_t key_doc;
       const bool success = mongoc_client_encryption_get_key (
          ce, bson_val_to_value (id_val), &key_doc, error);
-      bson_val_t *const val = success ? bson_val_from_value (&key_doc) : NULL;
+      const bson_value_t value = {.value_type = BSON_TYPE_NULL};
+      bson_val_t *const val =
+         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value)
+                                          : bson_val_from_bson (&key_doc))
+                 : NULL;
 
       result_from_val_and_reply (result, val, NULL, error);
 
       bson_val_destroy (val);
-      bson_value_destroy (&key_doc);
+      bson_destroy (&key_doc);
    }
 
    ret = true;
@@ -529,14 +533,18 @@ operation_add_key_alt_name (test_t *test,
    }
 
    {
-      bson_value_t key_doc;
+      bson_t key_doc;
       const bool success = mongoc_client_encryption_add_key_alt_name (
          ce, bson_val_to_value (id_val), alt_name, &key_doc, error);
-      bson_val_t *const val = success ? bson_val_from_value (&key_doc) : NULL;
+      const bson_value_t value = {.value_type = BSON_TYPE_NULL};
+      bson_val_t *const val =
+         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value)
+                                          : bson_val_from_bson (&key_doc))
+                 : NULL;
 
       result_from_val_and_reply (result, val, NULL, error);
 
-      bson_value_destroy (&key_doc);
+      bson_destroy (&key_doc);
       bson_val_destroy (val);
    }
 
@@ -574,14 +582,18 @@ operation_remove_key_alt_name (test_t *test,
    }
 
    {
-      bson_value_t key_doc;
+      bson_t key_doc;
       const bool success = mongoc_client_encryption_remove_key_alt_name (
          ce, bson_val_to_value (id_val), alt_name, &key_doc, error);
-      bson_val_t *const val = success ? bson_val_from_value (&key_doc) : NULL;
+      const bson_value_t value = {.value_type = BSON_TYPE_NULL};
+      bson_val_t *const val =
+         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value)
+                                          : bson_val_from_bson (&key_doc))
+                 : NULL;
 
       result_from_val_and_reply (result, val, NULL, error);
 
-      bson_value_destroy (&key_doc);
+      bson_destroy (&key_doc);
       bson_val_destroy (val);
    }
 
@@ -617,14 +629,18 @@ operation_get_key_by_alt_name (test_t *test,
    }
 
    {
-      bson_value_t key_doc;
+      bson_t key_doc;
       const bool success = mongoc_client_encryption_get_key_by_alt_name (
          ce, keyaltname, &key_doc, error);
-      bson_val_t *const val = success ? bson_val_from_value (&key_doc) : NULL;
+      const bson_value_t value = {.value_type = BSON_TYPE_NULL};
+      bson_val_t *const val =
+         success ? (bson_empty (&key_doc) ? bson_val_from_value (&value)
+                                          : bson_val_from_bson (&key_doc))
+                 : NULL;
 
       result_from_val_and_reply (result, val, NULL, error);
 
-      bson_value_destroy (&key_doc);
+      bson_destroy (&key_doc);
       bson_val_destroy (val);
    }
 

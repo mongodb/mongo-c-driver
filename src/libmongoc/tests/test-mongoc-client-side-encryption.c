@@ -4123,45 +4123,45 @@ _test_unique_index_on_keyaltnames_case_2 (
    /* Step 2: Use client_encryption to add a keyAltName "abc" to the key created
     * in Step 1 and assert the operation does not fail. */
    {
-      bson_value_t key_doc;
+      bson_t key_doc;
       ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alt_name (
                           client_encryption, &new_key, "abc", &key_doc, &error),
                        error);
-      bson_value_destroy (&key_doc);
+      bson_destroy (&key_doc);
    }
 
    /* Step 3: Repeat Step 2 and assert the operation does not fail. */
    {
-      bson_value_t key_doc;
+      bson_t key_doc;
       ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alt_name (
                           client_encryption, &new_key, "abc", &key_doc, &error),
                        error);
-      bson_value_destroy (&key_doc);
+      bson_destroy (&key_doc);
    }
 
    /* Step 4: Use client_encryption to add a keyAltName "def" to the key created
     * in Step 1 and assert the operation fails due to a duplicate key server
     * error. */
    {
-      bson_value_t key_doc;
+      bson_t key_doc;
       ASSERT (!mongoc_client_encryption_add_key_alt_name (
          client_encryption, &new_key, "def", &key_doc, &error));
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_QUERY,
                              MONGOC_ERROR_DUPLICATE_KEY,
                              "keyAltNames: \"def\"");
-      bson_value_destroy (&key_doc);
+      bson_destroy (&key_doc);
    }
 
    /* Step 5: Use client_encryption to add a keyAltName "def" to the existing
     * key and assert the operation does not fail. */
    {
-      bson_value_t key_doc;
+      bson_t key_doc;
       ASSERT_OR_PRINT (
          mongoc_client_encryption_add_key_alt_name (
             client_encryption, existing_key, "def", &key_doc, &error),
          error);
-      bson_value_destroy (&key_doc);
+      bson_destroy (&key_doc);
    }
 
    bson_value_destroy (&new_key);

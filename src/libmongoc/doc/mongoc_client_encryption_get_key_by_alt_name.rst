@@ -22,7 +22,7 @@ Parameters
 
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
 * ``keyaltname``: The key alternate name of the key to get.
-* ``key_doc``: Optional. An uninitialized :symbol:`bson_value_t` set to the resulting key document or a BSON null value if the key does not exist. Must be freed by :symbol:`bson_value_destroy`.
+* ``key_doc``: Optional. An uninitialized :symbol:`bson_t` set to the resulting key document, or an empty document if the key does not exist. Must be freed by :symbol:`bson_value_destroy`.
 * ``error``: Optional. :symbol:`bson_error_t`.
 
 Returns

@@ -13,7 +13,7 @@ Synopsis
       mongoc_client_encryption_t *client_encryption,
       const bson_value_t *keyid,
       const char *keyaltname,
-      bson_value_t *key_doc,
+      bson_t *key_doc,
       bson_error_t *error);
 
 Remove ``keyaltname`` from the set of keyAltNames in the key document with UUID ``keyid``.
@@ -26,7 +26,7 @@ Parameters
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
 * ``keyid``: The UUID (BSON binary subtype 0x04) of the key to remove the key alternate name from.
 * ``keyaltname``: The key alternate name to remove.
-* ``key_doc``: Optional. An uninitialized :symbol:`bson_value_t` set to the value of the key document before removal of the key alternate name or a BSON null value if the key does not exist. Must be freed by :symbol:`bson_value_destroy`.
+* ``key_doc``: Optional. An uninitialized :symbol:`bson_t` set to the value of the key document before removal of the key alternate name, or an empty document the key does not exist. Must be freed by :symbol:`bson_value_destroy`.
 * ``error``: Optional. :symbol:`bson_error_t`.
 
 Returns
