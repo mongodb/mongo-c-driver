@@ -505,9 +505,9 @@ done:
 
 static bool
 operation_add_key_alt_name (test_t *test,
-                                  operation_t *op,
-                                  result_t *result,
-                                  bson_error_t *error)
+                            operation_t *op,
+                            result_t *result,
+                            bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
 
@@ -550,9 +550,9 @@ done:
 
 static bool
 operation_remove_key_alt_name (test_t *test,
-                                     operation_t *op,
-                                     result_t *result,
-                                     bson_error_t *error)
+                               operation_t *op,
+                               result_t *result,
+                               bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
 
