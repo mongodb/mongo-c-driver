@@ -4168,7 +4168,7 @@ _test_unique_index_on_keyaltnames_case_2 (
    mongoc_client_encryption_datakey_opts_destroy (opts);
 }
 
-/* Prose Test 12: Unique Index on keyAltNames */
+/* Prose Test 13: Unique Index on keyAltNames */
 static void
 test_unique_index_on_keyaltnames (void *unused)
 {
