@@ -2171,6 +2171,8 @@ mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
 
       if (mongoc_cursor_next (cursor, &bson)) {
          bson_copy_to (bson, key_doc);
+      } else if (mongoc_cursor_error (cursor, error)) {
+         ret = false;
       }
    }
 
@@ -2456,6 +2458,8 @@ mongoc_client_encryption_get_key_by_alt_name (
 
       if (mongoc_cursor_next (cursor, &bson)) {
          bson_copy_to (bson, key_doc);
+      } else if (mongoc_cursor_error (cursor, error)) {
+         ret = false;
       }
    }
 
