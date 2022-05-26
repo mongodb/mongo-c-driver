@@ -349,7 +349,6 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
    mongocrypt_binary_t *key_bin = NULL;
    const bson_t *key_bson;
    mongoc_cursor_t *cursor = NULL;
-   mongoc_read_concern_t *rc = NULL;
 
    /* 1. Use MongoCollection.find on the MongoClient connected to the key vault
     * client (which may be the same as the encrypted client). Use the filter
@@ -365,16 +364,10 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
       goto fail;
    }
 
-   rc = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
-   if (!mongoc_read_concern_append (rc, &opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "%s",
-                      "could not set read concern");
-      goto fail;
-   }
+   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
+                           mongoc_collection_get_read_concern (
+                              state_machine->keyvault_coll)),
+                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
 
    cursor = mongoc_collection_find_with_opts (
       state_machine->keyvault_coll, &filter_bson, &opts, NULL /* read prefs */);
@@ -404,7 +397,6 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
 fail:
    mongocrypt_binary_destroy (filter_bin);
    mongoc_cursor_destroy (cursor);
-   mongoc_read_concern_destroy (rc);
    bson_destroy (&opts);
    mongocrypt_binary_destroy (key_bin);
    return ret;
