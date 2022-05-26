@@ -38,6 +38,7 @@ struct _mongoc_change_stream_t {
    bson_t pipeline_to_append;
    bson_t resume_token;
    bson_t *full_document;
+   bson_t *full_document_before_change;
 
    bson_error_t err;
    bson_t err_doc;
