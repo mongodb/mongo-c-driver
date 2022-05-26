@@ -2798,7 +2798,7 @@ operation_rename (test_t *test,
    }
    // Rename the collection in the server,
    mongoc_collection_t *coll = ent->value;
-   if (!mongoc_collection_rename (coll, coll->db, new_name, false, error)) {
+   if (!mongoc_collection_rename (coll, NULL, new_name, false, error)) {
       goto done;
    }
    result_from_ok (result);
