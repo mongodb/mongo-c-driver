@@ -2126,7 +2126,6 @@ mongoc_client_encryption_delete_key (
    ret = mongoc_collection_delete_one (
       client_encryption->keyvault_coll, &selector, NULL, reply, error);
 
-fail:
    bson_destroy (&selector);
 
    RETURN (ret);
