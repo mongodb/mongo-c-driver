@@ -4060,7 +4060,7 @@ _test_unique_index_on_keyaltnames_case_1 (
    }
 
    /* Step 2: Repeat Step 1 and assert the operation fails due to a duplicate
-    * key server error. */
+    * key server error (error code 11000). */
    {
       mongoc_client_encryption_datakey_opts_t *const opts =
          mongoc_client_encryption_datakey_opts_new ();
@@ -4081,8 +4081,9 @@ _test_unique_index_on_keyaltnames_case_1 (
       bson_value_destroy (&keyid);
    }
 
-   /* Step 3: Repeat Step 1 and assert the operation fails due to a duplicate
-    * key server error. */
+   /* Step 3: Use client_encryption to create a new local data key with a
+    * keyAltName "def" and assert the operation fails due to a duplicate key
+    * server error (error code 11000). */
    {
       mongoc_client_encryption_datakey_opts_t *const opts =
          mongoc_client_encryption_datakey_opts_new ();
@@ -4141,7 +4142,7 @@ _test_unique_index_on_keyaltnames_case_2 (
 
    /* Step 4: Use client_encryption to add a keyAltName "def" to the key created
     * in Step 1 and assert the operation fails due to a duplicate key server
-    * error. */
+    * error (error code 11000). */
    {
       bson_t key_doc;
       ASSERT (!mongoc_client_encryption_add_key_alt_name (
