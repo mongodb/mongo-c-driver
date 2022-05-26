@@ -2773,18 +2773,19 @@ operation_rename (test_t *test,
    // First validate the arguments
    const char *object = op->object;
    bson_parser_t *bp = bson_parser_new ();
-   char *new_name;
+   bool ret = false;
+   char *new_name = NULL;
    bson_parser_utf8 (bp, "to", &new_name);
    bool parse_ok = bson_parser_parse (bp, op->arguments, error);
    bson_parser_destroy (bp);
    if (!parse_ok) {
-      return false;
+      goto done;
    }
 
    // Now get the entity
    entity_t *ent = entity_map_get (test->entity_map, object, error);
    if (!ent) {
-      return false;
+      goto done;
    }
    // We only support collections so far
    if (0 != strcmp (ent->type, "collection")) {
@@ -2793,14 +2794,16 @@ operation_rename (test_t *test,
          "'rename' is only supported for collection objects '%s' has type '%s'",
          object,
          ent->type);
-      return false;
+      goto done;
    }
    // Rename the collection in the server,
    mongoc_collection_t *coll = ent->value;
    if (!mongoc_collection_rename (coll, coll->db, new_name, false, error)) {
-      return false;
+      goto done;
    }
    result_from_ok (result);
+done:
+   bson_free (new_name);
    return true;
 }
 
