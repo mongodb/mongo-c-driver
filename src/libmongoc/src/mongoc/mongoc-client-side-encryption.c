@@ -2196,11 +2196,6 @@ mongoc_client_encryption_get_keys (
                               client_encryption->keyvault_coll)),
                         MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
 
-   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
-                           mongoc_collection_get_read_concern (
-                              client_encryption->keyvault_coll)),
-                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
-
    /* If an error occurred, user should query cursor error. */
    cursor = mongoc_collection_find_with_opts (
       client_encryption->keyvault_coll, &filter, NULL, NULL);
