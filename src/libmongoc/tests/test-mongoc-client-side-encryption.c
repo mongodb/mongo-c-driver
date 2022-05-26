@@ -3945,7 +3945,7 @@ _test_unique_index_on_keyaltnames_setup (
     * filter for only documents where keyAltNames exists. */
    {
       bson_t *const command = BCON_NEW ("createIndexes",
-                                        BCON_UTF8 ("datakeys"),
+                                        "datakeys",
                                         "indexes",
                                         "[",
                                         "{",
@@ -3955,7 +3955,7 @@ _test_unique_index_on_keyaltnames_setup (
                                         BCON_INT32 (1),
                                         "}",
                                         "name",
-                                        BCON_UTF8 ("keyAltNames"),
+                                        "keyAltNames_1",
                                         "unique",
                                         BCON_BOOL (true),
                                         "partialFilterExpression",
@@ -3971,7 +3971,7 @@ _test_unique_index_on_keyaltnames_setup (
                                         "writeConcern",
                                         "{",
                                         "w",
-                                        BCON_UTF8 ("majority"),
+                                        "majority",
                                         "}");
 
       ASSERT_OR_PRINT (mongoc_database_write_command_with_opts (
