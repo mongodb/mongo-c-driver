@@ -81,11 +81,6 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
    /* CDRIVER-4277: Change streams support for user-facing PIT pre- and post-images */
    {"change-streams-pre_and_post_images", SKIP_ALL_TESTS},
-   /* CDRIVER-3973, CDRIVER-4305, CDRIVER-4279, CDRIVER-4321: unified change stream tests */
-   {"change-streams", SKIP_ALL_TESTS},
-   {"change-streams-errors", SKIP_ALL_TESTS},
-   {"change-streams-resume-allowlist", SKIP_ALL_TESTS},
-   {"change-streams-resume-errorlabels", SKIP_ALL_TESTS},
    {0},
 };
 /* clang-format on */
