@@ -1848,6 +1848,23 @@ mongoc_client_encryption_destroy (mongoc_client_encryption_t *client_encryption)
    bson_free (client_encryption);
 }
 
+static bool
+_coll_has_write_concern_majority (const mongoc_collection_t *coll)
+{
+   const mongoc_write_concern_t *const wc =
+      mongoc_collection_get_write_concern (coll);
+   return wc && mongoc_write_concern_get_wmajority (wc);
+}
+
+static bool
+_coll_has_read_concern_majority (const mongoc_collection_t *coll)
+{
+   const mongoc_read_concern_t *const rc =
+      mongoc_collection_get_read_concern (coll);
+   const char *const level = rc ? mongoc_read_concern_get_level (rc) : NULL;
+   return level && strcmp (level, MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0;
+}
+
 bool
 mongoc_client_encryption_create_key (
    mongoc_client_encryption_t *client_encryption,
@@ -1864,8 +1881,8 @@ mongoc_client_encryption_create_key (
 
    BSON_ASSERT_PARAM (client_encryption);
 
-   BSON_ASSERT (mongoc_write_concern_get_wmajority (
-      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
 
    if (!opts) {
       bson_set_error (error,
@@ -1966,13 +1983,10 @@ mongoc_client_encryption_rewrap_many_datakey (
 
    BSON_ASSERT_PARAM (client_encryption);
 
-   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
-                           mongoc_collection_get_read_concern (
-                              client_encryption->keyvault_coll)),
-                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
-
-   BSON_ASSERT (mongoc_write_concern_get_wmajority (
-      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+   BSON_ASSERT (
+      _coll_has_read_concern_majority (client_encryption->keyvault_coll));
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
 
    bson_reinit (bulk_write_result);
 
@@ -2126,8 +2140,8 @@ mongoc_client_encryption_delete_key (
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyid);
 
-   BSON_ASSERT (mongoc_write_concern_get_wmajority (
-      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
 
    BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
    BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
@@ -2170,10 +2184,8 @@ mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
                                     keyid->value.v_binary.data,
                                     keyid->value.v_binary.data_len));
 
-   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
-                           mongoc_collection_get_read_concern (
-                              client_encryption->keyvault_coll)),
-                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
+   BSON_ASSERT (
+      _coll_has_read_concern_majority (client_encryption->keyvault_coll));
 
    _mongoc_bson_init_if_set (key_doc);
 
@@ -2207,10 +2219,8 @@ mongoc_client_encryption_get_keys (
 
    BSON_ASSERT_PARAM (client_encryption);
 
-   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
-                           mongoc_collection_get_read_concern (
-                              client_encryption->keyvault_coll)),
-                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
+   BSON_ASSERT (
+      _coll_has_read_concern_majority (client_encryption->keyvault_coll));
 
    /* If an error occurred, user should query cursor error. */
    cursor = mongoc_collection_find_with_opts (
@@ -2239,13 +2249,10 @@ mongoc_client_encryption_add_key_alt_name (
    BSON_ASSERT_PARAM (keyid);
    BSON_ASSERT_PARAM (keyaltname);
 
-   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
-                           mongoc_collection_get_read_concern (
-                              client_encryption->keyvault_coll)),
-                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
-
-   BSON_ASSERT (mongoc_write_concern_get_wmajority (
-      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+   BSON_ASSERT (
+      _coll_has_read_concern_majority (client_encryption->keyvault_coll));
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
 
    BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
    BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
@@ -2318,8 +2325,8 @@ mongoc_client_encryption_remove_key_alt_name (
    BSON_ASSERT_PARAM (keyid);
    BSON_ASSERT_PARAM (keyaltname);
 
-   BSON_ASSERT (mongoc_write_concern_get_wmajority (
-      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
 
    BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
    BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
@@ -2452,8 +2459,8 @@ mongoc_client_encryption_get_key_by_alt_name (
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyaltname);
 
-   BSON_ASSERT (mongoc_write_concern_get_wmajority (
-      mongoc_collection_get_write_concern (client_encryption->keyvault_coll)));
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
 
    BSON_ASSERT (BSON_APPEND_UTF8 (&filter, "keyAltNames", keyaltname));
 

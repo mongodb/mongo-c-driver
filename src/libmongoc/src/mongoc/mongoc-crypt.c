@@ -364,10 +364,13 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
       goto fail;
    }
 
-   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (
-                           mongoc_collection_get_read_concern (
-                              state_machine->keyvault_coll)),
-                        MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
+   {
+      const mongoc_read_concern_t *const rc =
+         mongoc_collection_get_read_concern (state_machine->keyvault_coll);
+      const char *const level = rc ? mongoc_read_concern_get_level (rc) : NULL;
+      BSON_ASSERT (level &&
+                   strcmp (level, MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
+   }
 
    cursor = mongoc_collection_find_with_opts (
       state_machine->keyvault_coll, &filter_bson, &opts, NULL /* read prefs */);
