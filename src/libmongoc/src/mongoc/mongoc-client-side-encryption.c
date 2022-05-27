@@ -816,9 +816,13 @@ _release_mongocryptd_client (mongoc_client_t *client_encrypted,
 mongoc_collection_t *
 _get_keyvault_coll (mongoc_client_t *client_encrypted)
 {
+   mongoc_write_concern_t *const wc = mongoc_write_concern_new ();
+   mongoc_read_concern_t *const rc = mongoc_read_concern_new ();
+
    mongoc_client_t *keyvault_client;
    const char *db;
    const char *coll;
+   mongoc_collection_t *res = NULL;
 
    db = client_encrypted->topology->keyvault_db;
    coll = client_encrypted->topology->keyvault_coll;
@@ -837,7 +841,19 @@ _get_keyvault_coll (mongoc_client_t *client_encrypted)
          keyvault_client = client_encrypted;
       }
    }
-   return mongoc_client_get_collection (keyvault_client, db, coll);
+
+   res = mongoc_client_get_collection (keyvault_client, db, coll);
+
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+   mongoc_collection_set_write_concern (res, wc);
+
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_collection_set_read_concern (res, rc);
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_read_concern_destroy (rc);
+
+   return res;
 }
 
 void
