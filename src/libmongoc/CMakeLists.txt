@@ -442,7 +442,7 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
    endif ()
 
    if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.5.0)
-      message ("--   libmongocrypt found at ${LIBMONGOCRYPT_LIBRARY}")
+      message ("--   libmongocrypt found at ${mongocrypt_DIR}")
       message ("--   libmongocrypt version ${mongocrypt_VERSION} found")
       message ("--   libmongocrypt version 1.5.0 is required to enable Client-Side Field Level Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
