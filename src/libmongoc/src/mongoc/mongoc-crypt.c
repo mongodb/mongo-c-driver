@@ -308,7 +308,7 @@ _state_need_mongo_markings (_state_machine_t *state_machine,
     * mongocrypt_ctx_mongo_op on the MongoClient connected to mongocryptd. */
    bson_destroy (&reply);
    if (!mongoc_client_command_simple (state_machine->mongocryptd_client,
-                                      "admin",
+                                      state_machine->db_name,
                                       &mongocryptd_cmd_bson,
                                       NULL /* read_prefs */,
                                       &reply,
