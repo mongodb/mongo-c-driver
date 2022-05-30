@@ -562,7 +562,10 @@ operation_list_indexes (test_t *test,
          goto done;
       }
    }
-   bson_concat (opts, op->arguments);
+
+   if (op->arguments) {
+      bson_concat (opts, op->arguments);
+   }
 
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
