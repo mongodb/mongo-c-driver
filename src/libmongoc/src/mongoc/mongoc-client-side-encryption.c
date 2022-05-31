@@ -2137,6 +2137,8 @@ mongoc_client_encryption_delete_key (
    bool ret = false;
    bson_t selector = BSON_INITIALIZER;
 
+   ENTRY;
+
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyid);
 
@@ -2170,6 +2172,8 @@ mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
    bson_t filter = BSON_INITIALIZER;
    mongoc_cursor_t *cursor = NULL;
    bool ret = false;
+
+   ENTRY;
 
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyid);
@@ -2207,7 +2211,7 @@ mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
    bson_destroy (&filter);
    mongoc_cursor_destroy (cursor);
 
-   return ret;
+   RETURN (ret);
 }
 
 mongoc_cursor_t *
@@ -2216,6 +2220,8 @@ mongoc_client_encryption_get_keys (
 {
    mongoc_cursor_t *cursor = NULL;
    bson_t filter = BSON_INITIALIZER;
+
+   ENTRY;
 
    BSON_ASSERT_PARAM (client_encryption);
 
@@ -2228,7 +2234,7 @@ mongoc_client_encryption_get_keys (
 
    bson_destroy (&filter);
 
-   return cursor;
+   RETURN (cursor);
 }
 
 bool
@@ -2244,6 +2250,8 @@ mongoc_client_encryption_add_key_alt_name (
    bson_t query = BSON_INITIALIZER;
    bool ret = false;
    bson_t local_reply;
+
+   ENTRY;
 
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyid);
@@ -2320,6 +2328,8 @@ mongoc_client_encryption_remove_key_alt_name (
    bson_t query = BSON_INITIALIZER;
    bool ret = false;
    bson_t local_reply;
+
+   ENTRY;
 
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyid);
@@ -2456,6 +2466,8 @@ mongoc_client_encryption_get_key_by_alt_name (
    mongoc_cursor_t *cursor = NULL;
    bool ret = false;
 
+   ENTRY;
+
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (keyaltname);
 
@@ -2484,7 +2496,7 @@ mongoc_client_encryption_get_key_by_alt_name (
    bson_destroy (&filter);
    mongoc_cursor_destroy (cursor);
 
-   return ret;
+   RETURN (ret);
 }
 
 bool
