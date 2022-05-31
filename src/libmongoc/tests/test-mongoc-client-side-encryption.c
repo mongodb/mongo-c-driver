@@ -788,7 +788,7 @@ test_create_key_with_custom_key_material (void *unused)
          mongoc_client_get_collection (client, "keyvault", "datakeys");
       bson_t modified_datakey = BSON_INITIALIZER;
       uint8_t bytes[16] = {0};
-      mongoc_write_concern_t *const wc = mongoc_write_concern_new();
+      mongoc_write_concern_t *const wc = mongoc_write_concern_new ();
       bson_t opts = BSON_INITIALIZER;
 
       bson_copy_to_excluding_noinit (&datakey, &modified_datakey, "_id", NULL);
@@ -3919,6 +3919,267 @@ test_explicit_encryption_case5 (void *unused)
    explicit_encryption_destroy (eef);
 }
 
+static void
+_test_unique_index_on_keyaltnames_setup (
+   void (*test_case) (mongoc_client_encryption_t *, const bson_value_t *keyid))
+{
+   mongoc_client_t *client = NULL;
+   mongoc_database_t *keyvault = NULL;
+   mongoc_client_encryption_t *client_encryption = NULL;
+   bson_value_t existing_key;
+   bson_error_t error;
+
+   /* Create a MongoClient object (referred to as client). */
+   client = test_framework_new_default_client ();
+   keyvault = mongoc_client_get_database (client, "keyvault");
+
+   /* Using client, drop the collection keyvault.datakeys. */
+   {
+      mongoc_collection_t *const datakeys =
+         mongoc_database_get_collection (keyvault, "datakeys");
+      mongoc_collection_drop (datakeys, &error);
+      mongoc_collection_destroy (datakeys);
+   }
+
+   /* Using client, create a unique index on keyAltNames with a partial index
+    * filter for only documents where keyAltNames exists. */
+   {
+      bson_t *const command = BCON_NEW ("createIndexes",
+                                        "datakeys",
+                                        "indexes",
+                                        "[",
+                                        "{",
+                                        "key",
+                                        "{",
+                                        "keyAltNames",
+                                        BCON_INT32 (1),
+                                        "}",
+                                        "name",
+                                        "keyAltNames_1",
+                                        "unique",
+                                        BCON_BOOL (true),
+                                        "partialFilterExpression",
+                                        "{",
+                                        "keyAltNames",
+                                        "{",
+                                        "$exists",
+                                        BCON_BOOL (true),
+                                        "}",
+                                        "}",
+                                        "}",
+                                        "]",
+                                        "writeConcern",
+                                        "{",
+                                        "w",
+                                        "majority",
+                                        "}");
+
+      ASSERT_OR_PRINT (mongoc_database_write_command_with_opts (
+                          keyvault, command, NULL, NULL, &error),
+                       error);
+
+      bson_destroy (command);
+   }
+
+   /* Create a ClientEncryption object (referred to as client_encryption) with
+    * client set as the keyVaultClient. */
+   {
+      mongoc_client_encryption_opts_t *const client_encryption_opts =
+         mongoc_client_encryption_opts_new ();
+      bson_t *const kms_providers =
+         _make_kms_providers (true /* aws */, true /* local */);
+      bson_t *const tls_opts = _make_tls_opts ();
+
+      mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
+                                                       kms_providers);
+      mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts,
+                                                  tls_opts);
+      mongoc_client_encryption_opts_set_keyvault_namespace (
+         client_encryption_opts, "keyvault", "datakeys");
+      mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
+                                                         client);
+      client_encryption =
+         mongoc_client_encryption_new (client_encryption_opts, &error);
+      ASSERT_OR_PRINT (client_encryption, error);
+
+      mongoc_client_encryption_opts_destroy (client_encryption_opts);
+      bson_destroy (kms_providers);
+      bson_destroy (tls_opts);
+   }
+
+   /* Using client_encryption, create a data key with a local KMS provider
+    * and the keyAltName "def" (referred to as "the existing key"). */
+   {
+      mongoc_client_encryption_datakey_opts_t *const opts =
+         mongoc_client_encryption_datakey_opts_new ();
+      const char *const keyaltname[] = {"def"};
+
+      mongoc_client_encryption_datakey_opts_set_keyaltnames (
+         opts, (char **) keyaltname, 1u);
+
+      ASSERT_OR_PRINT (
+         mongoc_client_encryption_create_key (
+            client_encryption, "local", opts, &existing_key, &error),
+         error);
+
+      mongoc_client_encryption_datakey_opts_destroy (opts);
+   }
+
+   test_case (client_encryption, &existing_key);
+
+   mongoc_client_destroy (client);
+   mongoc_database_destroy (keyvault);
+   mongoc_client_encryption_destroy (client_encryption);
+   bson_value_destroy (&existing_key);
+}
+
+static void
+_test_unique_index_on_keyaltnames_case_1 (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *existing_key)
+{
+   bson_error_t error;
+
+   /* Step 1: Use client_encryption to create a new local data key with a
+    * keyAltName "abc" and assert the operation does not fail. */
+   {
+      mongoc_client_encryption_datakey_opts_t *const opts =
+         mongoc_client_encryption_datakey_opts_new ();
+      const char *const keyaltname[] = {"abc"};
+      bson_value_t keyid;
+
+      mongoc_client_encryption_datakey_opts_set_keyaltnames (
+         opts, (char **) keyaltname, 1u);
+
+      ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+                          client_encryption, "local", opts, &keyid, &error),
+                       error);
+
+      mongoc_client_encryption_datakey_opts_destroy (opts);
+      bson_value_destroy (&keyid);
+   }
+
+   /* Step 2: Repeat Step 1 and assert the operation fails due to a duplicate
+    * key server error (error code 11000). */
+   {
+      mongoc_client_encryption_datakey_opts_t *const opts =
+         mongoc_client_encryption_datakey_opts_new ();
+      const char *const keyaltname[] = {"abc"};
+      bson_value_t keyid;
+
+      mongoc_client_encryption_datakey_opts_set_keyaltnames (
+         opts, (char **) keyaltname, 1u);
+
+      ASSERT (!mongoc_client_encryption_create_key (
+         client_encryption, "local", opts, &keyid, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COLLECTION,
+                             MONGOC_ERROR_DUPLICATE_KEY,
+                             "keyAltNames: \"abc\"");
+
+      mongoc_client_encryption_datakey_opts_destroy (opts);
+      bson_value_destroy (&keyid);
+   }
+
+   /* Step 3: Use client_encryption to create a new local data key with a
+    * keyAltName "def" and assert the operation fails due to a duplicate key
+    * server error (error code 11000). */
+   {
+      mongoc_client_encryption_datakey_opts_t *const opts =
+         mongoc_client_encryption_datakey_opts_new ();
+      const char *const keyaltname[] = {"def"};
+      bson_value_t keyid;
+
+      mongoc_client_encryption_datakey_opts_set_keyaltnames (
+         opts, (char **) keyaltname, 1u);
+
+      ASSERT (!mongoc_client_encryption_create_key (
+         client_encryption, "local", opts, &keyid, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COLLECTION,
+                             MONGOC_ERROR_DUPLICATE_KEY,
+                             "keyAltNames: \"def\"");
+
+      mongoc_client_encryption_datakey_opts_destroy (opts);
+      bson_value_destroy (&keyid);
+   }
+}
+
+static void
+_test_unique_index_on_keyaltnames_case_2 (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *existing_key)
+{
+   bson_value_t new_key;
+   bson_error_t error;
+   mongoc_client_encryption_datakey_opts_t *const opts =
+      mongoc_client_encryption_datakey_opts_new ();
+
+   /* Step 1: Use client_encryption to create a new local data key and assert
+    * the operation does not fail. */
+   ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+                       client_encryption, "local", opts, &new_key, &error),
+                    error);
+
+   /* Step 2: Use client_encryption to add a keyAltName "abc" to the key created
+    * in Step 1 and assert the operation does not fail. */
+   {
+      bson_t key_doc;
+      ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alt_name (
+                          client_encryption, &new_key, "abc", &key_doc, &error),
+                       error);
+      bson_destroy (&key_doc);
+   }
+
+   /* Step 3: Repeat Step 2 and assert the operation does not fail. */
+   {
+      bson_t key_doc;
+      ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alt_name (
+                          client_encryption, &new_key, "abc", &key_doc, &error),
+                       error);
+      bson_destroy (&key_doc);
+   }
+
+   /* Step 4: Use client_encryption to add a keyAltName "def" to the key created
+    * in Step 1 and assert the operation fails due to a duplicate key server
+    * error (error code 11000). */
+   {
+      bson_t key_doc;
+      ASSERT (!mongoc_client_encryption_add_key_alt_name (
+         client_encryption, &new_key, "def", &key_doc, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_QUERY,
+                             MONGOC_ERROR_DUPLICATE_KEY,
+                             "keyAltNames: \"def\"");
+      bson_destroy (&key_doc);
+   }
+
+   /* Step 5: Use client_encryption to add a keyAltName "def" to the existing
+    * key and assert the operation does not fail. */
+   {
+      bson_t key_doc;
+      ASSERT_OR_PRINT (
+         mongoc_client_encryption_add_key_alt_name (
+            client_encryption, existing_key, "def", &key_doc, &error),
+         error);
+      bson_destroy (&key_doc);
+   }
+
+   bson_value_destroy (&new_key);
+   mongoc_client_encryption_datakey_opts_destroy (opts);
+}
+
+/* Prose Test 13: Unique Index on keyAltNames */
+static void
+test_unique_index_on_keyaltnames (void *unused)
+{
+   _test_unique_index_on_keyaltnames_setup (
+      _test_unique_index_on_keyaltnames_case_1);
+
+   _test_unique_index_on_keyaltnames_setup (
+      _test_unique_index_on_keyaltnames_case_2);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -4028,6 +4289,13 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/wrong_host",
                       test_kms_tls_cert_wrong_host,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/unique_index_on_keyaltnames",
+                      test_unique_index_on_keyaltnames,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
