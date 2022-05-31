@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-   MONGOC_EXPORT (bool)
+   bool
    mongoc_client_encryption_add_key_alt_name (
       mongoc_client_encryption_t *client_encryption,
       const bson_value_t *keyid,
