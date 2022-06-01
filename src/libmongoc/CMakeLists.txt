@@ -1091,10 +1091,6 @@ mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 
-if (TARGET get-csfle AND TARGET test-libmongoc)
-   target_compile_definitions (test-libmongoc PRIVATE "TESTING_CSFLE_OVERRIDE_PATH=\"./mongo_crypt_v1${CMAKE_SHARED_LIBRARY_SUFFIX}\"")
-endif ()
-
 if (ENABLE_TESTS)
    # "make test" doesn't compile tests, so we create "make check" which compiles
    # and runs tests: https://gitlab.kitware.com/cmake/cmake/issues/8774
