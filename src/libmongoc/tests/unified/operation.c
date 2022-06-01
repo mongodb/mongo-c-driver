@@ -843,7 +843,10 @@ operation_list_indexes (test_t *test,
          goto done;
       }
    }
-   bson_concat (opts, op->arguments);
+
+   if (op->arguments) {
+      bson_concat (opts, op->arguments);
+   }
 
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
@@ -919,6 +922,54 @@ done:
    bson_destroy (&op_reply);
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (opts);
+   return ret;
+}
+
+static bool
+operation_modify_collection (test_t *test,
+                             operation_t *op,
+                             result_t *result,
+                             bson_error_t *error)
+{
+   bson_parser_t *const parser = bson_parser_new ();
+
+   char *coll_name = NULL;
+   mongoc_database_t *db = NULL;
+   bson_t command = BSON_INITIALIZER;
+   bool ret = false;
+
+   bson_parser_utf8 (parser, "collection", &coll_name);
+   bson_parser_allow_extra (parser, true);
+
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   if (!(db = entity_map_get_database (test->entity_map, op->object, error))) {
+      goto done;
+   }
+
+   BSON_ASSERT (BSON_APPEND_UTF8 (&command, "collMod", coll_name));
+
+   /* Forward all arguments other than collection name as-is. */
+   BSON_ASSERT (bson_concat (&command, bson_parser_get_extra (parser)));
+
+   {
+      bson_t reply;
+
+      mongoc_database_write_command_with_opts (
+         db, &command, NULL, &reply, error);
+      result_from_val_and_reply (result, NULL, &reply, error);
+
+      bson_destroy (&reply);
+   }
+
+   ret = true;
+
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+   bson_destroy (&command);
+
    return ret;
 }
 
@@ -3120,6 +3171,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"listCollectionNames", operation_list_collection_names},
       {"listIndexes", operation_list_indexes},
       {"runCommand", operation_run_command},
+      {"modifyCollection", operation_modify_collection},
 
       /* Collection operations */
       {"aggregate", operation_aggregate},

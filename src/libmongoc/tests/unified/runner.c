@@ -1693,7 +1693,7 @@ run_one_test_file (bson_t *bson)
       test_t *test = NULL;
       bson_t test_bson;
       bool test_ok;
-      bson_error_t error;
+      bson_error_t error = {0};
 
       test_diagnostics_reset ();
       test_diagnostics_test_info ("test file: %s", test_file->description);
