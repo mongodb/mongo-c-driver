@@ -1000,7 +1000,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
             error,
             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-            "Option 'cryptSharedLibRequired' is 'true', but we failed to "
+            "Option 'cryptSharedLibRequired' is 'true', but failed to "
             "load the crypt_shared runtime libary");
          goto fail;
       }
