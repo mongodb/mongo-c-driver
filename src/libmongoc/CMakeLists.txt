@@ -857,36 +857,36 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
 endif ()
 
 cmake_dependent_option (
-   MONGOC_TEST_USE_CSFLE "If TRUE, download and use a csfle dynamic library for client-side-encryption testing. Otherwise will rely on mongocryptd"
+   MONGOC_TEST_USE_CRYPT_SHARED "If TRUE, download and use a crypt_shared library for client-side-encryption testing. Otherwise will rely on mongocryptd"
    TRUE ENABLE_TESTS FALSE
 )
 
-if (MONGOC_TEST_USE_CSFLE)
+if (MONGOC_TEST_USE_CRYPT_SHARED)
    find_program (_PYTHON3_EXE NAMES python3 py python)
    mark_as_advanced (_PYTHON3_EXE)
    if (NOT _PYTHON3_EXE)
       message (SEND_ERROR
-         "MONGOC_TEST_USE_CSFLE is enabled, but we were unable to find a Python 3 interpreter to use mongodl.py. "
-         "Install a Python 3 or set MONGOC_TEST_USE_CSFLE to FALSE"
+         "MONGOC_TEST_USE_CRYPT_SHARED is enabled, but we were unable to find a Python 3 interpreter to use mongodl.py. "
+         "Install a Python 3 or set MONGOC_TEST_USE_CRYPT_SHARED to FALSE"
       )
    endif ()
 
-   get_filename_component (csfle_dest "${CMAKE_CURRENT_BINARY_DIR}/mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
+   get_filename_component (crypt_shared_dest "${CMAKE_CURRENT_BINARY_DIR}/mongo_crypt_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
    # If updating the "--version" for csfle, update the version in compile-unix.sh to match.
    add_custom_command (
-      OUTPUT "${csfle_dest}"
+      OUTPUT "${crypt_shared_dest}"
       COMMAND
          "${_PYTHON3_EXE}" -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
-            --component csfle
+            --component crypt_shared
             --version 6.0.0-rc5
             --edition enterprise
             --out "${CMAKE_CURRENT_BINARY_DIR}"
-            --only "**/mongo_csfle_v1.*"
+            --only "**/mongo_crypt_v1.*"
             --strip-path-components 1
-      COMMENT "Downloading csfle"
+      COMMENT "Downloading crypt_shared"
       VERBATIM
    )
-   add_custom_target (get-csfle ALL DEPENDS "${csfle_dest}")
+   add_custom_target (get-crypt_shared ALL DEPENDS "${crypt_shared_dest}")
 endif ()
 
 function (mongoc_add_test test use_shared)
@@ -1092,7 +1092,7 @@ mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongo
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 
 if (TARGET get-csfle AND TARGET test-libmongoc)
-   target_compile_definitions (test-libmongoc PRIVATE "TESTING_CSFLE_OVERRIDE_PATH=\"./mongo_csfle_v1${CMAKE_SHARED_LIBRARY_SUFFIX}\"")
+   target_compile_definitions (test-libmongoc PRIVATE "TESTING_CSFLE_OVERRIDE_PATH=\"./mongo_crypt_v1${CMAKE_SHARED_LIBRARY_SUFFIX}\"")
 endif ()
 
 if (ENABLE_TESTS)

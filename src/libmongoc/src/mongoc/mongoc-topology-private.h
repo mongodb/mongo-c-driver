@@ -188,10 +188,15 @@ typedef struct _mongoc_topology_t {
    bool bypass_query_analysis;
 #endif
 
-   // Corresponds to extraOptions.csflePath
-   char *csfle_override_path;
-   // Corresponds to extraOptions.csfleRequired
-   bool csfle_required;
+   struct {
+      struct {
+         struct {
+            char *cryptSharedLibPath;
+            bool cryptSharedLibRequired;
+         } extraOptions;
+      } autoOptions;
+   } clientSideEncryption;
+
    // Corresponds to AutoEncryptionOpts.encryptedFieldsMap.
    bson_t *encrypted_fields_map;
 

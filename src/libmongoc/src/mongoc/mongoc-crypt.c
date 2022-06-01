@@ -910,8 +910,8 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    const bson_t *schema_map,
                    const bson_t *encrypted_fields_map,
                    const bson_t *tls_opts,
-                   const char *csfle_override_path,
-                   bool csfle_required,
+                   const char *crypt_shared_lib_path,
+                   bool crypt_shared_lib_required,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
                    bson_error_t *error)
@@ -962,14 +962,15 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    }
 
    if (!bypass_auto_encryption) {
-      mongocrypt_setopt_append_csfle_search_path (crypt->handle, "$SYSTEM");
+      mongocrypt_setopt_append_crypt_shared_lib_search_path (crypt->handle,
+                                                             "$SYSTEM");
       if (!_crypt_check_error (crypt->handle, error, false)) {
          goto fail;
       }
 
-      if (csfle_override_path != NULL) {
-         mongocrypt_setopt_set_csfle_lib_path_override (crypt->handle,
-                                                        csfle_override_path);
+      if (crypt_shared_lib_path != NULL) {
+         mongocrypt_setopt_set_crypt_shared_lib_path_override (
+            crypt->handle, crypt_shared_lib_path);
          if (!_crypt_check_error (crypt->handle, error, false)) {
             goto fail;
          }
@@ -988,22 +989,24 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       goto fail;
    }
 
-   if (csfle_required) {
+   if (crypt_shared_lib_required) {
       uint32_t len = 0;
-      const char *s = mongocrypt_csfle_version_string (crypt->handle, &len);
+      const char *s =
+         mongocrypt_crypt_shared_lib_version_string (crypt->handle, &len);
       if (!s || len == 0) {
          // empty/null version string indicates that csfle was not loaded by
          // libmongocrypt
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "Option 'csfleRequired' is 'true', but we failed to "
-                         "load the csfle runtime libary");
+         bson_set_error (
+            error,
+            MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+            "Option 'cryptSharedLibRequired' is 'true', but we failed to "
+            "load the crypt_shared runtime libary");
          goto fail;
       }
       mongoc_log (MONGOC_LOG_LEVEL_DEBUG,
                   MONGOC_LOG_DOMAIN,
-                  "csfle version '%s' was found and loaded",
+                  "crypt_shared library version '%s' was found and loaded",
                   s);
    }
 
