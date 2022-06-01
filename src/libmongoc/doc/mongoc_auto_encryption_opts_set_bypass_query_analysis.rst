@@ -21,8 +21,9 @@ Parameters
 
 
 ``bypass_query_analysis`` disables automatic analysis of outgoing commands.
-``bypass_query_analysis`` is useful for encrypting indexed fields without the ``csfle`` shared library or ``mongocryptd`` process.
-Set ``bypass_query_analysis`` to true to use explicit encryption on indexed fields.
+``bypass_query_analysis`` is useful for encrypting indexed fields without the
+``crypt_shared`` library or ``mongocryptd`` process. Set
+``bypass_query_analysis`` to true to use explicit encryption on indexed fields.
 
 .. seealso::
 

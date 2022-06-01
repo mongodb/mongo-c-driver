@@ -1423,29 +1423,32 @@ _parse_extra (const bson_t *extra,
          }
       }
 
-      if (bson_iter_init_find (&iter, extra, "csflePath")) {
+      if (bson_iter_init_find (&iter, extra, "cryptSharedLibPath")) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_CLIENT,
                             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected a string for 'csflePath'");
+                            "Expected a string for 'cryptSharedLibPath'");
             GOTO (fail);
          }
          size_t len;
          const char *ptr = bson_iter_utf8_unsafe (&iter, &len);
-         bson_free (topology->csfle_override_path);
-         topology->csfle_override_path = bson_strdup (ptr);
+         bson_free (topology->clientSideEncryption.autoOptions.extraOptions
+                       .cryptSharedLibPath);
+         topology->clientSideEncryption.autoOptions.extraOptions
+            .cryptSharedLibPath = bson_strdup (ptr);
       }
 
-      if (bson_iter_init_find (&iter, extra, "csfleRequired")) {
+      if (bson_iter_init_find (&iter, extra, "cryptSharedLibRequired")) {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_CLIENT,
                             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected a bool for 'csfleRequired'");
+                            "Expected a bool for 'cryptSharedLibRequired'");
             GOTO (fail);
          }
-         topology->csfle_required = bson_iter_bool_unsafe (&iter);
+         topology->clientSideEncryption.autoOptions.extraOptions
+            .cryptSharedLibRequired = bson_iter_bool_unsafe (&iter);
       }
    }
 
@@ -1552,8 +1555,10 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
                          opts->schema_map,
                          opts->encrypted_fields_map,
                          opts->tls_opts,
-                         client->topology->csfle_override_path,
-                         client->topology->csfle_required,
+                         client->topology->clientSideEncryption.autoOptions
+                            .extraOptions.cryptSharedLibPath,
+                         client->topology->clientSideEncryption.autoOptions
+                            .extraOptions.cryptSharedLibRequired,
                          opts->bypass_auto_encryption,
                          opts->bypass_query_analysis,
                          error);
@@ -1706,15 +1711,18 @@ _mongoc_cse_client_pool_enable_auto_encryption (
       GOTO (fail);
    }
 
-   topology->crypt = _mongoc_crypt_new (opts->kms_providers,
-                                        opts->schema_map,
-                                        opts->encrypted_fields_map,
-                                        opts->tls_opts,
-                                        topology->csfle_override_path,
-                                        topology->csfle_required,
-                                        opts->bypass_auto_encryption,
-                                        opts->bypass_query_analysis,
-                                        error);
+   topology->crypt =
+      _mongoc_crypt_new (opts->kms_providers,
+                         opts->schema_map,
+                         opts->encrypted_fields_map,
+                         opts->tls_opts,
+                         topology->clientSideEncryption.autoOptions.extraOptions
+                            .cryptSharedLibPath,
+                         topology->clientSideEncryption.autoOptions.extraOptions
+                            .cryptSharedLibRequired,
+                         opts->bypass_auto_encryption,
+                         opts->bypass_query_analysis,
+                         error);
    if (!topology->crypt) {
       GOTO (fail);
    }
@@ -1816,8 +1824,8 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                          NULL /* schema_map */,
                          NULL /* encrypted_fields_map */,
                          opts->tls_opts,
-                         NULL /* No csfle path */,
-                         false /* csfle not requried */,
+                         NULL /* No crypt_shared path */,
+                         false /* crypt_shared not requried */,
                          true, /* bypassAutoEncryption (We are explicit) */
                          false /* bypass_query_analysis. Not applicable. */,
                          error);
