@@ -878,7 +878,7 @@ if (MONGOC_TEST_USE_CRYPT_SHARED)
       COMMAND
          "${_PYTHON3_EXE}" -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
             --component crypt_shared
-            --version 6.0.0-rc5
+            --version 6.0.0-rc8
             --edition enterprise
             --out "${CMAKE_CURRENT_BINARY_DIR}"
             --only "**/mongo_crypt_v1.*"
