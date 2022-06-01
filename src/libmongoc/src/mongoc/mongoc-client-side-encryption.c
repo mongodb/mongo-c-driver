@@ -1824,8 +1824,8 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                          NULL /* schema_map */,
                          NULL /* encrypted_fields_map */,
                          opts->tls_opts,
-                         NULL /* No csfle path */,
-                         false /* csfle not requried */,
+                         NULL /* No crypt_shared path */,
+                         false /* crypt_shared not requried */,
                          true, /* bypassAutoEncryption (We are explicit) */
                          false /* bypass_query_analysis. Not applicable. */,
                          error);

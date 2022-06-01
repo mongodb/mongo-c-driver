@@ -994,7 +994,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       const char *s =
          mongocrypt_crypt_shared_lib_version_string (crypt->handle, &len);
       if (!s || len == 0) {
-         // empty/null version string indicates that csfle was not loaded by
+         // empty/null version string indicates that crypt_shared was not loaded by
          // libmongocrypt
          bson_set_error (
             error,

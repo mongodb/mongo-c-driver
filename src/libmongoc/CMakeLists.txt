@@ -872,7 +872,7 @@ if (MONGOC_TEST_USE_CRYPT_SHARED)
    endif ()
 
    get_filename_component (crypt_shared_dest "${CMAKE_CURRENT_BINARY_DIR}/mongo_crypt_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
-   # If updating the "--version" for csfle, update the version in compile-unix.sh to match.
+   # If updating the "--version" for crypt_shared, update the version in compile-unix.sh to match.
    add_custom_command (
       OUTPUT "${crypt_shared_dest}"
       COMMAND
