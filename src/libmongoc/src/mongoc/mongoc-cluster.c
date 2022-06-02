@@ -553,18 +553,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
          cluster, cmd, compressor_id, reply, error);
    }
 
-   if (_mongoc_cse_is_enabled (cluster->client)) {
-      bson_destroy (&decrypted);
-      retval = _mongoc_cse_auto_decrypt (
-         cluster->client, cmd->db_name, reply, &decrypted, error);
-      bson_destroy (reply);
-      bson_steal (reply, &decrypted);
-      bson_init (&decrypted);
-      if (!retval) {
-         goto fail_no_events;
-      }
-   }
-
    if (retval && callbacks->succeeded) {
       bson_t fake_reply = BSON_INITIALIZER;
       /*
@@ -610,6 +598,21 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
 
       callbacks->failed (&failed_event);
       mongoc_apm_command_failed_cleanup (&failed_event);
+   }
+
+   if (_mongoc_cse_is_enabled (cluster->client)) {
+      bool decrypt_ret;
+
+      bson_destroy (&decrypted);
+      decrypt_ret = _mongoc_cse_auto_decrypt (
+         cluster->client, cmd->db_name, reply, &decrypted, error);
+      bson_destroy (reply);
+      bson_steal (reply, &decrypted);
+      bson_init (&decrypted);
+      if (!decrypt_ret) {
+         retval = false;
+         goto fail_no_events;
+      }
    }
 
    _handle_not_primary_error (cluster, server_stream, reply);
