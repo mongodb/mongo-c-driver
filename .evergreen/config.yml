@@ -1867,7 +1867,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
-        export USE_CSFLE="${USE_CSFLE}"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1900,7 +1900,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL_STATIC"
-        export USE_CSFLE="${USE_CSFLE}"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1933,7 +1933,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="DARWIN"
-        export USE_CSFLE="${USE_CSFLE}"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1966,7 +1966,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="WINDOWS"
-        export USE_CSFLE="${USE_CSFLE}"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1999,7 +1999,7 @@ tasks:
         export SANITIZE="address"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
-        export USE_CSFLE="${USE_CSFLE}"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
