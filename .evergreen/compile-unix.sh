@@ -206,6 +206,9 @@ CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGO_SANITIZE=$SANITIZE"
 if ! python3 build/mongodl.py --test -C crypt_shared -V 6.0.0-rc8 -o . > /dev/null; then
    echo "No crypt_shared detected for this platform. Disabling MONGOC_TEST_USE_CRYPT_SHARED."
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CRYPT_SHARED=OFF"
+elif [ "$USE_CRYPT_SHARED" = "OFF" ]; then
+   echo "Variant requested disabling csfle. Disabling MONGOC_TEST_USE_CRYPT_SHARED."
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CRYPT_SHARED=OFF"
 fi
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS $EXTRA_CONFIGURE_FLAGS"
