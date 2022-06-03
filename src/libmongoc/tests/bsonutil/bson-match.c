@@ -60,6 +60,20 @@ is_special_match (const bson_t *bson)
    return true;
 }
 
+/* implements $$placeholder */
+static bool
+special_placeholder (bson_matcher_t *matcher,
+                     const bson_t *assertion,
+                     const bson_val_t *actual,
+                     void *ctx,
+                     const char *path,
+                     bson_error_t *error)
+{
+   /* Nothing to do (not an operator, just a reserved key value). The meaning
+    * and corresponding behavior of $$placeholder depends on context. */
+   return true;
+}
+
 /* implements $$exists */
 static bool
 special_exists (bson_matcher_t *matcher,
@@ -300,6 +314,8 @@ bson_matcher_new ()
 {
    bson_matcher_t *matcher = bson_malloc0 (sizeof (bson_matcher_t));
    /* Add default special functions. */
+   bson_matcher_add_special (
+      matcher, "$$placeholder", special_placeholder, NULL);
    bson_matcher_add_special (matcher, "$$exists", special_exists, NULL);
    bson_matcher_add_special (matcher, "$$type", special_type, NULL);
    bson_matcher_add_special (
@@ -353,7 +369,7 @@ bson_matcher_match (bson_matcher_t *matcher,
                     const bson_val_t *expected,
                     const bson_val_t *actual,
                     const char *path,
-                    bool allow_extra,
+                    bool array_of_root_docs,
                     bson_error_t *error)
 {
    bool ret = false;
@@ -421,12 +437,8 @@ bson_matcher_match (bson_matcher_t *matcher,
          }
 
          path_child = bson_strdup_printf ("%s.%s", path, key);
-         if (!bson_matcher_match (matcher,
-                                  expected_val,
-                                  actual_val,
-                                  path_child,
-                                  allow_extra,
-                                  error)) {
+         if (!bson_matcher_match (
+                matcher, expected_val, actual_val, path_child, false, error)) {
             bson_val_destroy (expected_val);
             bson_val_destroy (actual_val);
             bson_free (path_child);
@@ -439,14 +451,20 @@ bson_matcher_match (bson_matcher_t *matcher,
 
       expected_keys = bson_count_keys (expected_bson);
       actual_keys = bson_count_keys (actual_bson);
-      if (!is_root) {
-         if (expected_keys < actual_keys && !allow_extra) {
-            MATCH_ERR ("expected %" PRIu32 " keys in document, got: %" PRIu32,
-                       expected_keys,
-                       actual_keys);
-            goto done;
-         }
+
+      /* Unified test format spec: "When matching root-level documents, test
+       * runners MUST permit the actual document to contain additional fields
+       * not present in the expected document.""
+       *
+       * This logic must also handle the case where `expected` is one of any
+       * number of root documents within an array (i.e. cursor result). */
+      if (!(is_root || array_of_root_docs) && expected_keys < actual_keys) {
+         MATCH_ERR ("expected %" PRIu32 " keys in document, got: %" PRIu32,
+                    expected_keys,
+                    actual_keys);
+         goto done;
       }
+
       ret = true;
       goto done;
    }
@@ -467,8 +485,8 @@ bson_matcher_match (bson_matcher_t *matcher,
 
       actual_bson = bson_val_to_array (actual);
       actual_keys = bson_count_keys (actual_bson);
-      if ((expected_keys > actual_keys) ||
-          (expected_keys < actual_keys && !allow_extra)) {
+
+      if (expected_keys != actual_keys) {
          MATCH_ERR ("expected array of size %" PRIu32
                     ", but got array of size: %" PRIu32,
                     expected_keys,
@@ -498,7 +516,7 @@ bson_matcher_match (bson_matcher_t *matcher,
                                   expected_val,
                                   actual_val,
                                   path_child,
-                                  allow_extra,
+                                  (is_root && array_of_root_docs),
                                   error)) {
             bson_val_destroy (expected_val);
             bson_val_destroy (actual_val);
@@ -539,12 +557,12 @@ done:
 bool
 bson_match (const bson_val_t *expected,
             const bson_val_t *actual,
-            bool allow_extra,
+            bool array_of_root_docs,
             bson_error_t *error)
 {
    bson_matcher_t *matcher = bson_matcher_new ();
-   bool matched =
-      bson_matcher_match (matcher, expected, actual, "", allow_extra, error);
+   bool matched = bson_matcher_match (
+      matcher, expected, actual, "", array_of_root_docs, error);
    bson_matcher_destroy (matcher);
    return matched;
 }

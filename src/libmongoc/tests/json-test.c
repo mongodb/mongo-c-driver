@@ -981,26 +981,76 @@ check_topology_type (const bson_t *test)
    return can_proceed;
 }
 
+/* _recreate drops and creates db_name.collection_name.
+ * If 'scenario' contains 'json_schema', the collection is created with a JSON
+ * schema validator. Refer:
+ * https://github.com/mongodb/specifications/tree/d68e85c33c5a3b02bcd8a32a0bec9f11471e41ad/source/client-side-encryption/tests#spec-test-format
+ */
 static void
-_recreate (mongoc_client_t *client,
-           const char *db_name,
-           const char *collection_name)
+_recreate (const char *db_name,
+           const char *collection_name,
+           const bson_t *scenario)
 {
+   mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_database_t *db;
+   bson_t *opts;
+   bson_iter_t iter;
+   bson_error_t error;
+   bson_t *drop_opts;
 
    if (!db_name || !collection_name) {
       return;
    }
+   /* Use a separate internal client for test setup. */
+   client = test_framework_new_default_client ();
+
+   drop_opts = bson_new ();
    collection = mongoc_client_get_collection (client, db_name, collection_name);
+   if (bson_iter_init_find (&iter, scenario, "encrypted_fields")) {
+      bson_t encrypted_fields;
+
+      bson_iter_bson (&iter, &encrypted_fields);
+      BCON_APPEND (
+         drop_opts, "encryptedFields", BCON_DOCUMENT (&encrypted_fields));
+   }
+   if (!mongoc_collection_drop_with_opts (collection, drop_opts, &error)) {
+      /* Ignore "namespace does not exist" error. */
+      ASSERT_OR_PRINT (error.code == 26, error);
+   }
+
+   bson_destroy (drop_opts);
    mongoc_collection_drop (collection, NULL);
    mongoc_collection_destroy (collection);
 
+   opts = bson_new ();
+   if (bson_iter_init_find (&iter, scenario, "json_schema")) {
+      bson_t json_schema;
+
+      bson_iter_bson (&iter, &json_schema);
+      BCON_APPEND (opts,
+                   "validator",
+                   "{",
+                   "$jsonSchema",
+                   BCON_DOCUMENT (&json_schema),
+                   "}");
+   }
+
+   if (bson_iter_init_find (&iter, scenario, "encrypted_fields")) {
+      bson_t encrypted_fields;
+
+      bson_iter_bson (&iter, &encrypted_fields);
+      BCON_APPEND (opts, "encryptedFields", BCON_DOCUMENT (&encrypted_fields));
+   }
+
    db = mongoc_client_get_database (client, db_name);
-   collection = mongoc_database_create_collection (
-      db, collection_name, NULL /* options */, NULL);
+   collection =
+      mongoc_database_create_collection (db, collection_name, opts, &error);
+   ASSERT_OR_PRINT (collection, error);
+   bson_destroy (opts);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
 }
 
 
@@ -1053,8 +1103,6 @@ insert_data (const char *db_name,
    mongoc_client_t *client;
    mongoc_database_t *db;
    mongoc_collection_t *collection;
-   mongoc_collection_t *tmp_collection;
-   bson_error_t error;
    bson_t documents;
    bson_iter_t iter;
    bson_t *majority = tmp_bson ("{'writeConcern': {'w': 'majority'}}");
@@ -1066,17 +1114,6 @@ insert_data (const char *db_name,
    collection = mongoc_database_get_collection (db, collection_name);
    mongoc_collection_delete_many (
       collection, tmp_bson ("{}"), majority, NULL, NULL);
-
-   /* drop the collection in case an existing JSON schema exists. */
-   mongoc_collection_drop (collection, &error);
-
-   /* ignore failure if it already exists */
-   tmp_collection =
-      mongoc_database_create_collection (db, collection_name, majority, &error);
-
-   if (tmp_collection) {
-      mongoc_collection_destroy (tmp_collection);
-   }
 
    if (!bson_has_field (scenario, "data")) {
       goto DONE;
@@ -1141,7 +1178,7 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
 
       bson_iter_bson (&iter, &expected_doc);
       ASSERT_CURSOR_NEXT (cursor, &actual_doc);
-      ASSERT (match_bson (actual_doc, &expected_doc, false));
+      assert_match_bson (actual_doc, &expected_doc, false);
    }
 
    ASSERT_CURSOR_DONE (cursor);
@@ -1563,6 +1600,11 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          auto_encryption_opts, bson_iter_as_bool (&iter));
    }
 
+   if (bson_iter_init_find (&iter, &opts, "bypassQueryAnalysis")) {
+      mongoc_auto_encryption_opts_set_bypass_query_analysis (
+         auto_encryption_opts, bson_iter_as_bool (&iter));
+   }
+
    if (bson_iter_init_find (&iter, &opts, "keyVaultNamespace")) {
       const char *keyvault_ns;
       char *db_name;
@@ -1596,11 +1638,28 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_init (&extra);
    }
 
+   if (bson_iter_init_find (&iter, &opts, "encryptedFieldsMap")) {
+      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+      bson_t efm;
+
+      bson_iter_bson (&iter, &efm);
+      mongoc_auto_encryption_opts_set_encrypted_fields_map (
+         auto_encryption_opts, &efm);
+      bson_destroy (&efm);
+   }
+
    if (test_framework_getenv_bool ("MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN") &&
        !bson_iter_init_find (&iter, &extra, "mongocryptdBypassSpawn")) {
       /* forking is disallowed in test runner, bypass spawning mongocryptd and
        * assume it is running in the background. */
       BSON_APPEND_BOOL (&extra, "mongocryptdBypassSpawn", true);
+   }
+
+   char *env_cryptSharedLibPath =
+      test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+   if (env_cryptSharedLibPath) {
+      BSON_APPEND_UTF8 (&extra, "cryptSharedLibPath", env_cryptSharedLibPath);
+      bson_free (env_cryptSharedLibPath);
    }
 
    mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, &extra);
@@ -1813,8 +1872,8 @@ run_json_general_test (const json_test_config_t *config)
 
       set_auto_encryption_opts (client, &test);
       /* Drop and recreate test database/collection if necessary. */
-      _recreate (client, db_name, collection_name);
-      _recreate (client, db2_name, collection2_name);
+      _recreate (db_name, collection_name, scenario);
+      _recreate (db2_name, collection2_name, scenario);
       insert_data (db_name, collection_name, scenario);
 
       db = mongoc_client_get_database (client, db_name);

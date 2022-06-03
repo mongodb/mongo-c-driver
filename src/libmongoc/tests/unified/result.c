@@ -33,6 +33,7 @@ struct _result_t {
       For a read operation, reply is an optional server reply. */
    bson_t *reply;
    char *str;
+   bool array_of_root_docs;
 };
 
 result_t *
@@ -43,9 +44,9 @@ result_new (void)
 
 static void
 _result_init (result_t *result,
-              bson_val_t *value,
-              bson_t *reply,
-              bson_error_t *error)
+              const bson_val_t *value,
+              const bson_t *reply,
+              const bson_error_t *error)
 {
    bson_string_t *str;
 
@@ -124,50 +125,60 @@ rewrite_upserted_ids (bson_t *mongoc_upserted_ids)
    return upserted_ids;
 }
 
-void
-result_from_bulk_write (result_t *result, bson_t *reply, bson_error_t *error)
+bson_t *
+rewrite_bulk_write_result (const bson_t *bulk_write_result)
 {
-   bson_t *write_result;
-   bson_t *upserted_ids = NULL;
-   bson_t *rewritten_upserted_ids = NULL;
-   bson_val_t *val;
+   bson_t *const res = bson_new ();
+   if (!bson_empty0 (bulk_write_result)) {
+      BCON_APPEND (
+         res,
+         "insertedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nInserted")),
+         "deletedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nRemoved")),
+         "matchedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nMatched")),
+         "modifiedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nModified")),
+         "upsertedCount",
+         BCON_INT32 (bson_lookup_int32 (bulk_write_result, "nUpserted")));
 
-   write_result = bson_new ();
-   if (!bson_empty (reply)) {
-      BCON_APPEND (write_result,
-                   "insertedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nInserted")),
-                   "deletedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nRemoved")),
-                   "matchedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nMatched")),
-                   "modifiedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nModified")),
-                   "upsertedCount",
-                   BCON_INT32 (bson_lookup_int32 (reply, "nUpserted")));
-
-      if (bson_has_field (reply, "upserted")) {
-         upserted_ids = bson_lookup_bson (reply, "upserted");
-         rewritten_upserted_ids = rewrite_upserted_ids (upserted_ids);
-         BSON_APPEND_DOCUMENT (
-            write_result, "upsertedIds", rewritten_upserted_ids);
+      if (bson_has_field (bulk_write_result, "upserted")) {
+         bson_t *const upserted_ids =
+            bson_lookup_bson (bulk_write_result, "upserted");
+         bson_t *const rewritten_upserted_ids =
+            rewrite_upserted_ids (upserted_ids);
+         BSON_APPEND_DOCUMENT (res, "upsertedIds", rewritten_upserted_ids);
+         bson_destroy (upserted_ids);
+         bson_destroy (rewritten_upserted_ids);
       } else {
          /* upsertedIds is a required field in BulkWriteResult, so append an
           * empty document even if no documents were upserted. */
-         upserted_ids = bson_new ();
-         BSON_APPEND_DOCUMENT (write_result, "upsertedIds", upserted_ids);
+         bson_t empty = BSON_INITIALIZER;
+         BSON_APPEND_DOCUMENT (res, "upsertedIds", &empty);
       }
    }
-   val = bson_val_from_bson (write_result);
-   _result_init (result, val, reply, error);
-   bson_val_destroy (val);
-   bson_destroy (write_result);
-   bson_destroy (upserted_ids);
-   bson_destroy (rewritten_upserted_ids);
+   return res;
 }
 
 void
-result_from_insert_one (result_t *result, bson_t *reply, bson_error_t *error)
+result_from_bulk_write (result_t *result,
+                        const bson_t *reply,
+                        const bson_error_t *error)
+{
+   bson_t *const write_result = rewrite_bulk_write_result (reply);
+   bson_val_t *const val = bson_val_from_bson (write_result);
+
+   _result_init (result, val, reply, error);
+
+   bson_val_destroy (val);
+   bson_destroy (write_result);
+}
+
+void
+result_from_insert_one (result_t *result,
+                        const bson_t *reply,
+                        const bson_error_t *error)
 {
    bson_t *write_result;
    bson_val_t *val;
@@ -186,7 +197,9 @@ result_from_insert_one (result_t *result, bson_t *reply, bson_error_t *error)
 }
 
 void
-result_from_insert_many (result_t *result, bson_t *reply, bson_error_t *error)
+result_from_insert_many (result_t *result,
+                         const bson_t *reply,
+                         const bson_error_t *error)
 {
    bson_t *write_result;
    bson_val_t *val;
@@ -217,8 +230,8 @@ result_from_insert_many (result_t *result, bson_t *reply, bson_error_t *error)
 
 void
 result_from_update_or_replace (result_t *result,
-                               bson_t *reply,
-                               bson_error_t *error)
+                               const bson_t *reply,
+                               const bson_error_t *error)
 {
    bson_t *write_result;
    bson_val_t *val;
@@ -247,7 +260,9 @@ result_from_update_or_replace (result_t *result,
 }
 
 void
-result_from_delete (result_t *result, bson_t *reply, bson_error_t *error)
+result_from_delete (result_t *result,
+                    const bson_t *reply,
+                    const bson_error_t *error)
 {
    bson_t *write_result;
    bson_val_t *val;
@@ -266,7 +281,9 @@ result_from_delete (result_t *result, bson_t *reply, bson_error_t *error)
 }
 
 void
-result_from_distinct (result_t *result, bson_t *reply, bson_error_t *error)
+result_from_distinct (result_t *result,
+                      const bson_t *reply,
+                      const bson_error_t *error)
 {
    bson_val_t *val = NULL;
    bson_iter_t iter;
@@ -305,15 +322,16 @@ result_from_cursor (result_t *result, mongoc_cursor_t *cursor)
    val = bson_val_from_array (documents);
 
    _result_init (result, val, (bson_t *) reply, &error);
+   result->array_of_root_docs = true;
    bson_destroy (documents);
    bson_val_destroy (val);
 }
 
 void
 result_from_val_and_reply (result_t *result,
-                           bson_val_t *val,
-                           bson_t *reply,
-                           bson_error_t *error)
+                           const bson_val_t *val,
+                           const bson_t *reply,
+                           const bson_error_t *error)
 {
    _result_init (result, val, reply, error);
 }
@@ -361,10 +379,15 @@ result_check (result_t *result,
             error, "expected result, but got error: %s", result->error.message);
          goto done;
       }
-      if (!entity_map_match (em, expect_result, result->value, false, error)) {
-         test_set_error (error,
-                         "checking expectResult: %s",
-                         bson_val_to_json (expect_result));
+      if (!entity_map_match (em,
+                             expect_result,
+                             result->value,
+                             result->array_of_root_docs,
+                             error)) {
+         test_diagnostics_error_info (
+            "expectResult mismatch:\nExpected: %s\nActual: %s\n",
+            bson_val_to_json (expect_result),
+            bson_val_to_json (result->value));
          goto done;
       }
    }
@@ -527,10 +550,18 @@ result_check (result_t *result,
             goto done;
          }
 
-         if (!bson_match (error_expect_result, result->value, true, error)) {
+         /* Note: expectError.expectResult is not used for cursor-bearing
+          * operations, so array_of_root_docs should always be false */
+         BSON_ASSERT (!result->array_of_root_docs);
+
+         if (!bson_match (error_expect_result,
+                          result->value,
+                          result->array_of_root_docs,
+                          error)) {
             test_diagnostics_error_info (
-               "checking error.expectResult: %s",
-               bson_val_to_json (error_expect_result));
+               "error.expectResult mismatch:\nExpected: %s\nActual: %s\n",
+               bson_val_to_json (error_expect_result),
+               bson_val_to_json (result->value));
             goto done;
          }
       }

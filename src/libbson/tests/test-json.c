@@ -2727,6 +2727,7 @@ test_bson_json_errors (void)
        "Invalid read of boolean in state IN_BSON_TYPE"},
       {"{\"x\": {\"$dbPointer\": true}}",
        "Invalid read of boolean in state IN_BSON_TYPE_DBPOINTER_STARTMAP"},
+      {"[{\"$code\": {}}]", "Unexpected nested object value for \"$code\" key"},
       {"{\"x\": {\"$numberInt\": \"8589934592\"}}",
        "Invalid input string \"8589934592\", looking for INT32"},
       {0},

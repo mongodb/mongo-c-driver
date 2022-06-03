@@ -34,7 +34,15 @@ The key vault client, configured via :symbol:`mongoc_client_encryption_opts_set_
 
     mongoc_client_encryption_new
     mongoc_client_encryption_destroy
+    mongoc_client_encryption_create_key
     mongoc_client_encryption_create_datakey
+    mongoc_client_encryption_rewrap_many_datakey
+    mongoc_client_encryption_delete_key
+    mongoc_client_encryption_get_key
+    mongoc_client_encryption_get_keys
+    mongoc_client_encryption_add_key_alt_name
+    mongoc_client_encryption_remove_key_alt_name
+    mongoc_client_encryption_get_key_by_alt_name
     mongoc_client_encryption_encrypt
     mongoc_client_encryption_decrypt
 
@@ -47,4 +55,3 @@ The key vault client, configured via :symbol:`mongoc_client_encryption_opts_set_
   | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>` for libmongoc
 
   | The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_
-

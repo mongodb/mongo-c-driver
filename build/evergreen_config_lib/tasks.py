@@ -33,7 +33,8 @@ class CompileTask(NamedTask):
     def __init__(self, task_name, tags=None, config='debug',
                  compression='default', continue_on_err=False,
                  suffix_commands=None, depends_on=None,
-                 extra_script=None, prefix_commands=None, **kwargs):
+                 extra_script=None, prefix_commands=None, sanitize=(),
+                 **kwargs):
         super(CompileTask, self).__init__(task_name=task_name,
                                           depends_on=depends_on,
                                           tags=tags,
@@ -61,6 +62,8 @@ class CompileTask(NamedTask):
                 'BUNDLED' if compression in ('all', 'zlib') else 'OFF')
             self.compile_sh_opt['ZSTD'] = (
                 'ON' if compression in ('all', 'zstd') else 'OFF')
+
+        self.compile_sh_opt['SANITIZE'] = ','.join(sanitize)
 
         self.continue_on_err = continue_on_err
 
@@ -116,9 +119,10 @@ class CompileWithClientSideEncryption(CompileTask):
 class CompileWithClientSideEncryptionAsan(CompileTask):
     def __init__(self, *args, **kwargs):
         compile_with_cse = CompileTask(*args,
-                                       CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK",
+                                       CFLAGS="-fno-omit-frame-pointer",
                                        COMPILE_LIBMONGOCRYPT="ON",
                                        CHECK_LOG="ON",
+                                       sanitize=['address'],
                                        EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF",
                                        PATH='/usr/lib/llvm-3.8/bin:$PATH',
                                        **kwargs).to_dict()
@@ -127,9 +131,10 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
 
         # Skip running mock server tests, because those were already run in the non-CSE build.
         super(CompileWithClientSideEncryptionAsan, self).__init__(*args,
-                                                                  CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK",
+                                                                  CFLAGS="-fno-omit-frame-pointer",
                                                                   extra_script=extra_script,
                                                                   CHECK_LOG="ON",
+                                                                  sanitize=['address'],
                                                                   EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
                                                                   PATH='/usr/lib/llvm-3.8/bin:$PATH',
                                                                   SKIP_MOCK_TESTS="ON",
@@ -198,8 +203,7 @@ all_tasks = [
                 tags=['debug-compile', 'valgrind'],
                 SASL='OFF',
                 SSL='OPENSSL',
-                VALGRIND='ON',
-                CFLAGS='-DBSON_MEMCHECK'),
+                VALGRIND='ON'),
     SpecialTask('debug-compile-coverage',
                 tags=['debug-compile', 'coverage'],
                 COVERAGE='ON',
@@ -211,34 +215,35 @@ all_tasks = [
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
                 CC='clang-3.8',
-                CFLAGS='-fsanitize=address -fno-omit-frame-pointer'
-                       ' -DBSON_MEMCHECK',
+                CFLAGS='-fno-omit-frame-pointer',
                 CHECK_LOG='ON',
+                sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF',
                 PATH='/usr/lib/llvm-3.8/bin:$PATH'),
     # include -pthread in CFLAGS on gcc to address the issue explained here:
     # https://groups.google.com/forum/#!topic/address-sanitizer/JxnwgrWOLuc
     SpecialTask('debug-compile-asan-gcc',
                 compression='zlib',
-                CFLAGS='-fsanitize=address -pthread',
+                CFLAGS='-pthread',
                 CHECK_LOG='ON',
+                sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"),
     SpecialTask('debug-compile-asan-clang-openssl',
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
                 CC='clang-3.8',
-                CFLAGS='-fsanitize=address -fno-omit-frame-pointer'
-                       ' -DBSON_MEMCHECK',
+                CFLAGS='-fno-omit-frame-pointer',
                 CHECK_LOG='ON',
+                sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                 PATH='/usr/lib/llvm-3.8/bin:$PATH',
                 SSL='OPENSSL'),
     SpecialTask('debug-compile-ubsan',
                 compression='zlib',
                 CC='clang-3.8',
-                CFLAGS='-fsanitize=undefined -fno-omit-frame-pointer'
-                       ' -DBSON_MEMCHECK',
+                CFLAGS='-fno-omit-frame-pointer',
                 CHECK_LOG='ON',
+                sanitize=['undefined'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                 PATH='/usr/lib/llvm-3.8/bin:$PATH'),
     SpecialTask('debug-compile-scan-build',
@@ -435,8 +440,9 @@ all_tasks = [
                 CFLAGS="-Wno-redundant-decls", SSL="OPENSSL", SASL="OFF"),
     SpecialTask('debug-compile-tsan-openssl',
                 tags=['tsan'],
-                CFLAGS='-fsanitize=thread -fno-omit-frame-pointer',
+                CFLAGS='-fno-omit-frame-pointer',
                 CHECK_LOG='ON',
+                sanitize=['thread'],
                 SSL='OPENSSL',
                 EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF'),
     NamedTask('build-and-test-with-toolchain',
@@ -458,7 +464,7 @@ class IntegrationTask(MatrixTask):
     axes = OD([('valgrind', ['valgrind', False]),
                ('sanitizer', ['asan', 'tsan', False]),
                ('coverage', ['coverage', False]),
-               ('version', ['latest', '5.0', '4.4', '4.2', '4.0', '3.6']),
+               ('version', ['latest', '6.0', '5.0', '4.4', '4.2', '4.0', '3.6']),
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
                ('auth', [True, False]),
                ('sasl', ['sasl', 'sspi', False]),
@@ -608,7 +614,11 @@ class IntegrationTask(MatrixTask):
 
         if self.cse:
             require(self.version == 'latest' or parse_version(self.version) >= parse_version("4.2"))
-            require(self.topology == 'server')
+            if self.version == 'latest' or parse_version(self.version) >= parse_version("6.0"):
+                # FLE 2.0 Client-Side Encryption tasks on 6.0 require a non-standalone topology.
+                require(self.topology in ('server', 'replica_set'))
+            else:
+                require(self.topology == 'server')
             if self.sanitizer != "asan":
                 # limit to SASL=AUTO to reduce redundant tasks.
                 require(self.sasl)
@@ -843,7 +853,7 @@ all_tasks = chain(all_tasks, [
         commands=[
             shell_mongoc("""
                 VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO \
-                  SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+                  SSL=OPENSSL sh .evergreen/compile.sh
                 """),
             func('run auth tests', valgrind='true')]),
     PostCompileTask(

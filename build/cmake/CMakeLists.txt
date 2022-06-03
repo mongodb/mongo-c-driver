@@ -12,6 +12,7 @@ set (build_cmake_MODULES
    MongoC-Warnings.cmake
    ParseVersion.cmake
    SphinxBuild.cmake
+   Sanitizers.cmake
    CCache.cmake
    LLDLinker.cmake
 )

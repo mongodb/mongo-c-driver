@@ -23,6 +23,7 @@ typedef struct _mongoc_crud_opts_t {
    bool write_concern_owned;
    mongoc_client_session_t *client_session;
    bson_validate_flags_t validate;
+   bson_value_t comment;
 } mongoc_crud_opts_t;
 
 typedef struct _mongoc_update_opts_t {
@@ -87,6 +88,7 @@ typedef struct _mongoc_bulk_opts_t {
    bool ordered;
    mongoc_client_session_t *client_session;
    bson_t let;
+   bson_value_t comment;
    bson_t extra;
 } mongoc_bulk_opts_t;
 
@@ -143,6 +145,8 @@ typedef struct _mongoc_change_stream_opts_t {
    mongoc_timestamp_t startAtOperationTime;
    int64_t maxAwaitTimeMS;
    const char *fullDocument;
+   const char *fullDocumentBeforeChange;
+   bson_value_t comment;
    bson_t extra;
 } mongoc_change_stream_opts_t;
 
@@ -189,6 +193,7 @@ typedef struct _mongoc_aggregate_opts_t {
    int32_t batchSize;
    bool batchSize_is_set;
    bson_t let;
+   bson_value_t comment;
    bson_t extra;
 } mongoc_aggregate_opts_t;
 
@@ -198,6 +203,7 @@ typedef struct _mongoc_find_and_modify_appended_opts_t {
    mongoc_client_session_t *client_session;
    bson_value_t hint;
    bson_t let;
+   bson_value_t comment;
    bson_t extra;
 } mongoc_find_and_modify_appended_opts_t;
 

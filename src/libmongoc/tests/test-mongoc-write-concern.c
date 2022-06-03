@@ -32,8 +32,8 @@ test_write_concern_append (void)
    mongoc_write_concern_set_w (wc, 1);
    BSON_ASSERT (mongoc_write_concern_append (wc, cmd));
 
-   ASSERT (match_bson (
-      cmd, tmp_bson ("{'foo': 1, 'writeConcern': {'w': 1}}"), true));
+   assert_match_bson (
+      cmd, tmp_bson ("{'foo': 1, 'writeConcern': {'w': 1}}"), true);
 
    mongoc_write_concern_destroy (wc);
 }

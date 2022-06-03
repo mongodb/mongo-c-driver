@@ -98,6 +98,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->set_version = MONGOC_NO_SET_VERSION;
    bson_oid_copy_unsafe (&kObjectIdZero, &sd->election_id);
    bson_oid_copy_unsafe (&kObjectIdZero, &sd->service_id);
+   sd->server_connection_id = MONGOC_NO_SERVER_CONNECTION_ID;
 }
 
 /*
@@ -738,6 +739,10 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          if (!BSON_ITER_HOLDS_OID (&iter))
             goto failure;
          bson_oid_copy_unsafe (bson_iter_oid (&iter), &sd->service_id);
+      } else if (strcmp ("connectionId", bson_iter_key (&iter)) == 0) {
+         if (!BSON_ITER_HOLDS_INT32 (&iter))
+            goto failure;
+         sd->server_connection_id = bson_iter_int32 (&iter);
       }
    }
 
@@ -824,6 +829,7 @@ mongoc_server_description_new_copy (
    bson_init (&copy->compressors);
    bson_copy_to (&description->topology_version, &copy->topology_version);
    bson_oid_copy (&description->service_id, &copy->service_id);
+   copy->server_connection_id = description->server_connection_id;
 
    if (description->has_hello_response) {
       /* calls mongoc_server_description_reset */

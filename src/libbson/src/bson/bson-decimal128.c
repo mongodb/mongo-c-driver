@@ -542,7 +542,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
          continue;
       }
 
-      if (ndigits_stored < 34) {
+      if (ndigits_stored < BSON_DECIMAL128_MAX_DIGITS) {
          if (*str_read != '0' || found_nonzero) {
             if (!found_nonzero) {
                first_nonzero = ndigits_read;
@@ -634,7 +634,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
       /* Shift exponent to significand and decrease */
       last_digit++;
 
-      if (last_digit - first_digit > BSON_DECIMAL128_MAX_DIGITS) {
+      if (last_digit - first_digit >= BSON_DECIMAL128_MAX_DIGITS) {
          /* The exponent is too great to shift into the significand. */
          if (significant_digits == 0) {
             /* Value is zero, we are allowed to clamp the exponent. */

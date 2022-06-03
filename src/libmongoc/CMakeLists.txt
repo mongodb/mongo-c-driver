@@ -48,8 +48,8 @@ endif ()
 # Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
 # will look for zconf.h in that location.
 configure_file (
-   "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
-   "${CMAKE_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
+   "${SOURCE_DIR}/src/zlib-1.2.12/zconf.h.in"
+   "${CMAKE_BINARY_DIR}/src/zlib-1.2.12/zconf.h"
    COPYONLY
 )
 set (ZLIB_INCLUDE_DIRS "")
@@ -80,8 +80,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
       BEFORE PUBLIC
-      "${SOURCE_DIR}/src/zlib-1.2.11"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.11"
+      "${SOURCE_DIR}/src/zlib-1.2.12"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.2.12"
    )
    # Disable all warnings for compiling Zlib
    target_compile_options (zlib_obj PRIVATE -w)
@@ -89,8 +89,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.2.11"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.11"
+      "${SOURCE_DIR}/src/zlib-1.2.12"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.2.12"
    )
 endif ()
 
@@ -196,8 +196,8 @@ if (NOT ENABLE_SSL STREQUAL OFF)
 endif ()
 
 if (OPENSSL_FOUND)
-   if (WIN32 AND OPENSSL_VERSION GREATER 1.1 AND NOT
-         ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.7)
+   if (WIN32 AND OPENSSL_VERSION VERSION_GREATER 1.1 AND
+         ${CMAKE_VERSION} VERSION_LESS 3.7)
       message (FATAL_ERROR "Building against OpenSSL 1.1.0 and later requires CMake 3.7 or later (hint:"
          " You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
    endif ()
@@ -441,10 +441,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.3.0)
-      message ("--   libmongocrypt found at ${LIBMONGOCRYPT_LIBRARY}")
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.5.0)
+      message ("--   libmongocrypt found at ${mongocrypt_DIR}")
       message ("--   libmongocrypt version ${mongocrypt_VERSION} found")
-      message ("--   libmongocrypt version 1.3.0 is required to enable Client-Side Field Level Encryption Support.")
+      message ("--   libmongocrypt version 1.5.0 is required to enable Client-Side Field Level Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -798,7 +798,7 @@ set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BAS
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   target_link_libraries (mongoc_static ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
+   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
       message ("Adding -fPIC to compilation of mongoc_static components")
@@ -856,35 +856,68 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
    )
 endif ()
 
+cmake_dependent_option (
+   MONGOC_TEST_USE_CRYPT_SHARED "If TRUE, download and use a crypt_shared library for client-side-encryption testing. Otherwise will rely on mongocryptd"
+   TRUE ENABLE_TESTS FALSE
+)
+
+if (MONGOC_TEST_USE_CRYPT_SHARED)
+   find_program (_PYTHON3_EXE NAMES python3 py python)
+   mark_as_advanced (_PYTHON3_EXE)
+   if (NOT _PYTHON3_EXE)
+      message (SEND_ERROR
+         "MONGOC_TEST_USE_CRYPT_SHARED is enabled, but we were unable to find a Python 3 interpreter to use mongodl.py. "
+         "Install a Python 3 or set MONGOC_TEST_USE_CRYPT_SHARED to FALSE"
+      )
+   endif ()
+
+   get_filename_component (crypt_shared_dest "${CMAKE_CURRENT_BINARY_DIR}/mongo_crypt_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
+   # If updating the "--version" for crypt_shared, update the version in compile-unix.sh to match.
+   add_custom_command (
+      OUTPUT "${crypt_shared_dest}"
+      COMMAND
+         "${_PYTHON3_EXE}" -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
+            --component crypt_shared
+            --version 6.0.0-rc8
+            --edition enterprise
+            --out "${CMAKE_CURRENT_BINARY_DIR}"
+            --only "**/mongo_crypt_v1.*"
+            --strip-path-components 1
+      COMMENT "Downloading crypt_shared"
+      VERBATIM
+   )
+   add_custom_target (get-crypt_shared ALL DEPENDS "${crypt_shared_dest}")
+endif ()
+
 function (mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable (${test} ${ARGN})
-      if (NOT MSVC)
-         # We've tests that test our deprecated api. MSVC 2013 will complain about invalid flag
-         set_source_files_properties (${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
-      else ()
-         target_link_libraries (${test} DbgHelp.dll)
-      endif ()
-      target_include_directories (${test} PRIVATE ${PROJECT_SOURCE_DIR}/tests)
+      target_link_libraries (${test}
+         PRIVATE
+            $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
+            $<$<PLATFORM_ID:Windows>:shlwapi>
+            $<$<BOOL:${use_shared}>:mongoc_shared>
+            $<$<NOT:$<BOOL:${use_shared}>>:mongoc_static>
+            ${LIBRARIES}
+            ${RESOLV_LIBRARIES}
+      )
+      # We have tests that test our deprecated api.
+      target_compile_options (${test}
+         PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
+      )
+      target_include_directories (${test}
+         PRIVATE
+            ${PROJECT_SOURCE_DIR}/tests
+            ${MONGOC_INTERNAL_INCLUDE_DIRS}
+            $<$<BOOL:${use_shared}>:${BSON_INCLUDE_DIRS}>
+            $<$<NOT:$<BOOL:${use_shared}>>:${BSON_STATIC_INCLUDE_DIRS}>
+      )
       target_compile_definitions (${test}
          PUBLIC
             "MONGOC_COMPILATION"
             "BSON_COMPILATION"
             "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
       )
-      if (${use_shared})
-         target_link_libraries (${test} mongoc_shared ${LIBRARIES})
-         target_include_directories (${test} PRIVATE ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
-      else ()
-         target_link_libraries (${test} mongoc_static ${LIBRARIES})
-         target_include_directories (${test} PRIVATE ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
-      endif ()
-      target_link_libraries (${test} ${RESOLV_LIBRARIES})
-      if (WIN32)
-         target_link_libraries (${test} shlwapi)
-      else ()
-         target_link_libraries (${test})
-      endif ()
    endif ()
 endfunction ()
 

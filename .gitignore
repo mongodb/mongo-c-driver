@@ -16,6 +16,7 @@ CMakeFiles
 CPackConfig.cmake
 CPackSourceConfig.cmake
 CTestTestfile.cmake
+_build/
 dist_manifest.txt
 Makefile
 test-results.json

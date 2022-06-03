@@ -36,7 +36,12 @@ Creates a new handle into libmongocrypt.
 _mongoc_crypt_t *
 _mongoc_crypt_new (const bson_t *kms_providers,
                    const bson_t *schema_map,
+                   const bson_t *encrypted_fields_map,
                    const bson_t *tls_opts,
+                   const char *crypt_shared_lib_path,
+                   bool crypt_shared_lib_required,
+                   bool bypass_auto_encryption,
+                   bool bypass_query_analysis,
                    bson_error_t *error);
 
 void
@@ -74,6 +79,8 @@ Perform explicit encryption.
 - exactly one of keyid or keyaltname must be set, the other NULL, or an error is
 returned.
 - value_out is always initialized.
+- query_type may be NULL.
+- contention_factor may be NULL.
 - may return false and set error.
 */
 bool
@@ -82,6 +89,8 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 const char *algorithm,
                                 const bson_value_t *keyid,
                                 char *keyaltname,
+                                const mongoc_encrypt_query_type_t *query_type,
+                                const int64_t *contention_factor,
                                 const bson_value_t *value_in,
                                 bson_value_t *value_out,
                                 bson_error_t *error);
@@ -109,8 +118,28 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
                               const bson_t *masterkey,
                               char **keyaltnames,
                               uint32_t keyaltnames_count,
+                              const uint8_t *keymaterial,
+                              uint32_t keymaterial_len,
                               bson_t *doc_out,
                               bson_error_t *error);
+
+/*
+Rewrap datakeys in keyvault_coll matching the given filter with a new KMS
+provider (does not bulk-update into key vault).
+- filter may be NULL (equivalent to an empty document).
+- kms_provider may be NULL.
+- masterkey may be NULL if kms_provider is NULL.
+- doc_out is always initialized.
+- may return false and set error.
+*/
+bool
+_mongoc_crypt_rewrap_many_datakey (_mongoc_crypt_t *crypt,
+                                   mongoc_collection_t *keyvault_coll,
+                                   const bson_t *filter,
+                                   const char *provider,
+                                   const bson_t *master_key,
+                                   bson_t *doc_out,
+                                   bson_error_t *error);
 
 #endif /* MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION */
 #endif /* MONGOC_CRYPT_PRIVATE_H */

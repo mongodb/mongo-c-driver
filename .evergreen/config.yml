@@ -864,6 +864,7 @@ tasks:
         export CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O"
         export DEBUG="ON"
         export LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
+        export SANITIZE=""
         export SNAPPY="OFF"
         export ZLIB="OFF"
         export ZSTD="OFF"
@@ -885,6 +886,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
@@ -903,6 +905,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SNAPPY="ON"
         export ZLIB="OFF"
         export ZSTD="OFF"
@@ -921,6 +924,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SNAPPY="OFF"
         export ZLIB="OFF"
         export ZSTD="ON"
@@ -941,6 +945,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SNAPPY="ON"
         export ZLIB="BUNDLED"
         export ZSTD="ON"
@@ -959,6 +964,7 @@ tasks:
         set -o errexit
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
+        export SANITIZE=""
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
@@ -978,6 +984,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SSL="OFF"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -992,6 +999,7 @@ tasks:
         set -o errexit
         export CFLAGS="-flto"
         export DEBUG="ON"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-lto-thin
@@ -1005,6 +1013,7 @@ tasks:
         set -o errexit
         export CFLAGS="-flto=thin"
         export DEBUG="ON"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-c11
@@ -1023,6 +1032,7 @@ tasks:
         set -o errexit
         export CFLAGS="-std=c11"
         export DEBUG="ON"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-c99
@@ -1041,6 +1051,7 @@ tasks:
         set -o errexit
         export CFLAGS="-std=c99"
         export DEBUG="ON"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-valgrind
@@ -1056,8 +1067,8 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-DBSON_MEMCHECK"
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="OFF"
         export SSL="OPENSSL"
         export VALGRIND="ON"
@@ -1078,6 +1089,7 @@ tasks:
         set -o errexit
         export COVERAGE="ON"
         export DEBUG="ON"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
   - func: upload coverage
@@ -1095,6 +1107,7 @@ tasks:
         set -o errexit
         export DEBUG="ON"
         export ENABLE_SHM_COUNTERS="OFF"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-asan-clang
@@ -1111,11 +1124,12 @@ tasks:
       script: |-
         set -o errexit
         export CC="clang-3.8"
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
+        export SANITIZE="address"
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
@@ -1132,10 +1146,11 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fsanitize=address -pthread"
+        export CFLAGS="-pthread"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
+        export SANITIZE="address"
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
@@ -1155,11 +1170,12 @@ tasks:
       script: |-
         set -o errexit
         export CC="clang-3.8"
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
+        export SANITIZE="address"
         export SNAPPY="OFF"
         export SSL="OPENSSL"
         export ZLIB="BUNDLED"
@@ -1178,11 +1194,12 @@ tasks:
       script: |-
         set -o errexit
         export CC="clang-3.8"
-        export CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
+        export SANITIZE="undefined"
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
@@ -1205,6 +1222,7 @@ tasks:
         export ANALYZE="ON"
         export CC="clang"
         export DEBUG="ON"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
   - func: upload scan artifacts
@@ -1229,6 +1247,7 @@ tasks:
         set -o errexit
         export CFLAGS="-Werror -Wno-cast-align"
         export DEBUG="ON"
+        export SANITIZE=""
         export TRACING="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1245,6 +1264,7 @@ tasks:
       script: |-
         set -o errexit
         export RELEASE="ON"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl
@@ -1261,6 +1281,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1278,6 +1299,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1295,6 +1317,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SSL="DARWIN"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1312,6 +1335,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SSL="WINDOWS"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1329,6 +1353,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="AUTO"
         export SSL="OFF"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1347,6 +1372,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="AUTO"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1365,6 +1391,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="AUTO"
         export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1383,6 +1410,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="AUTO"
         export SSL="DARWIN"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1401,6 +1429,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="CYRUS"
         export SSL="WINDOWS"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1419,6 +1448,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="SSPI"
         export SSL="OFF"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1437,6 +1467,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="SSPI"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1455,6 +1486,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="SSPI"
         export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1470,6 +1502,7 @@ tasks:
         set -o errexit
         export DEBUG="ON"
         export ENABLE_RDTSCP="ON"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sspi-winssl
@@ -1486,6 +1519,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="SSPI"
         export SSL="WINDOWS"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1502,6 +1536,7 @@ tasks:
       script: |-
         set -o errexit
         export DEBUG="ON"
+        export SANITIZE=""
         export SRV="OFF"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1808,6 +1843,7 @@ tasks:
         set -o errexit
         export CFLAGS="-Werror -Wno-cast-align"
         export DEBUG="ON"
+        export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-cse
@@ -1827,6 +1863,7 @@ tasks:
         set -o errexit
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
+        export SANITIZE=""
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
@@ -1836,6 +1873,7 @@ tasks:
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export SANITIZE=""
         export SASL="AUTO"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1857,6 +1895,7 @@ tasks:
         set -o errexit
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
+        export SANITIZE=""
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL_STATIC"
@@ -1866,6 +1905,7 @@ tasks:
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export SANITIZE=""
         export SASL="AUTO"
         export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1887,6 +1927,7 @@ tasks:
         set -o errexit
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
+        export SANITIZE=""
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="DARWIN"
@@ -1896,6 +1937,7 @@ tasks:
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export SANITIZE=""
         export SASL="AUTO"
         export SSL="DARWIN"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1917,6 +1959,7 @@ tasks:
         set -o errexit
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
+        export SANITIZE=""
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="WINDOWS"
@@ -1926,6 +1969,7 @@ tasks:
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export SANITIZE=""
         export SASL="AUTO"
         export SSL="WINDOWS"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1943,22 +1987,24 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF"
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
+        export SANITIZE="address"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF"
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
+        export SANITIZE="address"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1976,6 +2022,7 @@ tasks:
         set -o errexit
         export CFLAGS="-Wno-redundant-decls"
         export DEBUG="ON"
+        export SANITIZE=""
         export SASL="OFF"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1992,10 +2039,11 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fsanitize=thread -fno-omit-frame-pointer"
+        export CFLAGS="-fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF"
+        export SANITIZE="thread"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -2148,6 +2196,144 @@ tasks:
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'on'
+- name: test-valgrind-6.0-server-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'on'
+- name: test-valgrind-6.0-server-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'on'
+- name: test-valgrind-6.0-replica-set-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'on'
+- name: test-valgrind-6.0-replica-set-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'on'
+- name: test-valgrind-6.0-sharded-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'on'
+- name: test-valgrind-6.0-sharded-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
   - func: run tests
     vars:
       ASAN: 'off'
@@ -2917,6 +3103,33 @@ tasks:
       AUTH: noauth
       SSL: nossl
       VALGRIND: 'off'
+- name: test-asan-latest-replica-set-auth-nosasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-asan-latest-replica-set-auth-nosasl-openssl
   tags:
   - latest
@@ -3003,6 +3216,198 @@ tasks:
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-asan-6.0-server-auth-nosasl-openssl-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-asan-6.0-server-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-asan-6.0-server-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-asan-6.0-replica-set-auth-nosasl-openssl-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-asan-6.0-replica-set-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-asan-6.0-replica-set-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-asan-6.0-sharded-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-asan-6.0-sharded-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
   - func: run tests
     vars:
       ASAN: 'on'
@@ -3912,6 +4317,138 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-tsan-6.0-server-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-6.0-server-noauth-nosasl-openssl
+  tags:
+  - '6.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-6.0-replica-set-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-6.0-replica-set-noauth-nosasl-openssl
+  tags:
+  - '6.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-6.0-sharded-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-6.0-sharded-noauth-nosasl-openssl
+  tags:
+  - '6.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-tsan-5.0-server-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -4685,6 +5222,126 @@ tasks:
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-6.0-server-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-6.0-server-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-6.0-replica-set-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-6.0-replica-set-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-6.0-sharded-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-6.0-sharded-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5974,6 +6631,35 @@ tasks:
       AUTH: noauth
       SSL: nossl
       VALGRIND: 'off'
+- name: test-latest-replica-set-auth-sasl-openssl-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - latest
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-openssl
   tags:
   - auth
@@ -5998,6 +6684,35 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-auth-sasl-openssl-static-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - latest
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-openssl-static
   tags:
@@ -6024,6 +6739,35 @@ tasks:
       AUTH: auth
       SSL: openssl-static
       VALGRIND: 'off'
+- name: test-latest-replica-set-auth-sasl-darwinssl-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - darwinssl
+  - latest
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-darwinssl
   tags:
   - auth
@@ -6048,6 +6792,35 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-auth-sasl-winssl-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - latest
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
       VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-winssl
   tags:
@@ -6174,6 +6947,35 @@ tasks:
       AUTH: auth
       SSL: winssl
       VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-sasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - noauth
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-openssl
   tags:
   - latest
@@ -6198,6 +7000,35 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-sasl-openssl-static-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-openssl-static
   tags:
@@ -6224,6 +7055,35 @@ tasks:
       AUTH: noauth
       SSL: openssl-static
       VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-sasl-darwinssl-cse
+  tags:
+  - client-side-encryption
+  - darwinssl
+  - latest
+  - noauth
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-darwinssl
   tags:
   - darwinssl
@@ -6248,6 +7108,35 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-sasl-winssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - noauth
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
       VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-winssl
   tags:
@@ -6818,6 +7707,1745 @@ tasks:
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-sasl-openssl-cse
+  tags:
+  - '6.0'
+  - auth
+  - client-side-encryption
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-sasl-openssl
+  tags:
+  - '6.0'
+  - auth
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-sasl-openssl-static-cse
+  tags:
+  - '6.0'
+  - auth
+  - client-side-encryption
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-sasl-openssl-static
+  tags:
+  - '6.0'
+  - auth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-sasl-darwinssl-cse
+  tags:
+  - '6.0'
+  - auth
+  - client-side-encryption
+  - darwinssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-sasl-darwinssl
+  tags:
+  - '6.0'
+  - auth
+  - darwinssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-sasl-winssl-cse
+  tags:
+  - '6.0'
+  - auth
+  - client-side-encryption
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-sasl-winssl
+  tags:
+  - '6.0'
+  - auth
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - auth
+  - nosasl
+  - openssl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-nosasl-openssl-static
+  tags:
+  - '6.0'
+  - auth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-nosasl-darwinssl
+  tags:
+  - '6.0'
+  - auth
+  - darwinssl
+  - nosasl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-server-auth-nosasl-winssl
+  tags:
+  - '6.0'
+  - auth
+  - nosasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-sasl-openssl-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - noauth
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-sasl-openssl
+  tags:
+  - '6.0'
+  - noauth
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-sasl-openssl-static-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-sasl-openssl-static
+  tags:
+  - '6.0'
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-sasl-darwinssl-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - darwinssl
+  - noauth
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-sasl-darwinssl
+  tags:
+  - '6.0'
+  - darwinssl
+  - noauth
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-sasl-winssl-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - noauth
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-sasl-winssl
+  tags:
+  - '6.0'
+  - noauth
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-nosasl-openssl
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - openssl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-nosasl-openssl-static
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-nosasl-darwinssl
+  tags:
+  - '6.0'
+  - darwinssl
+  - noauth
+  - nosasl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-nosasl-winssl
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-server-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - nossl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: server
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-sasl-openssl-cse
+  tags:
+  - '6.0'
+  - auth
+  - client-side-encryption
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-sasl-openssl
+  tags:
+  - '6.0'
+  - auth
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-sasl-openssl-static-cse
+  tags:
+  - '6.0'
+  - auth
+  - client-side-encryption
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-sasl-openssl-static
+  tags:
+  - '6.0'
+  - auth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-sasl-darwinssl-cse
+  tags:
+  - '6.0'
+  - auth
+  - client-side-encryption
+  - darwinssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-sasl-darwinssl
+  tags:
+  - '6.0'
+  - auth
+  - darwinssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-sasl-winssl-cse
+  tags:
+  - '6.0'
+  - auth
+  - client-side-encryption
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-sasl-winssl
+  tags:
+  - '6.0'
+  - auth
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - auth
+  - nosasl
+  - openssl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-nosasl-openssl-static
+  tags:
+  - '6.0'
+  - auth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-nosasl-darwinssl
+  tags:
+  - '6.0'
+  - auth
+  - darwinssl
+  - nosasl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-auth-nosasl-winssl
+  tags:
+  - '6.0'
+  - auth
+  - nosasl
+  - replica_set
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-sasl-openssl-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - noauth
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-sasl-openssl
+  tags:
+  - '6.0'
+  - noauth
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-sasl-openssl-static-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-sasl-openssl-static
+  tags:
+  - '6.0'
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-sasl-darwinssl-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - darwinssl
+  - noauth
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-sasl-darwinssl
+  tags:
+  - '6.0'
+  - darwinssl
+  - noauth
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-sasl-winssl-cse
+  tags:
+  - '6.0'
+  - client-side-encryption
+  - noauth
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-sasl-winssl
+  tags:
+  - '6.0'
+  - noauth
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-nosasl-openssl
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - openssl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-nosasl-openssl-static
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-nosasl-darwinssl
+  tags:
+  - '6.0'
+  - darwinssl
+  - noauth
+  - nosasl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-nosasl-winssl
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - replica_set
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-replica-set-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - nossl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: replica_set
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-auth-sasl-openssl
+  tags:
+  - '6.0'
+  - auth
+  - openssl
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-auth-sasl-openssl-static
+  tags:
+  - '6.0'
+  - auth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-sharded-auth-sasl-darwinssl
+  tags:
+  - '6.0'
+  - auth
+  - darwinssl
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-auth-sasl-winssl
+  tags:
+  - '6.0'
+  - auth
+  - sasl
+  - sharded_cluster
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-auth-nosasl-openssl
+  tags:
+  - '6.0'
+  - auth
+  - nosasl
+  - openssl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-auth-nosasl-openssl-static
+  tags:
+  - '6.0'
+  - auth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-sharded-auth-nosasl-darwinssl
+  tags:
+  - '6.0'
+  - auth
+  - darwinssl
+  - nosasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-auth-nosasl-winssl
+  tags:
+  - '6.0'
+  - auth
+  - nosasl
+  - sharded_cluster
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-noauth-sasl-openssl
+  tags:
+  - '6.0'
+  - noauth
+  - openssl
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-noauth-sasl-openssl-static
+  tags:
+  - '6.0'
+  - noauth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-sharded-noauth-sasl-darwinssl
+  tags:
+  - '6.0'
+  - darwinssl
+  - noauth
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-noauth-sasl-winssl
+  tags:
+  - '6.0'
+  - noauth
+  - sasl
+  - sharded_cluster
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-noauth-nosasl-openssl
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - openssl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-noauth-nosasl-openssl-static
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-6.0-sharded-noauth-nosasl-darwinssl
+  tags:
+  - '6.0'
+  - darwinssl
+  - noauth
+  - nosasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-noauth-nosasl-winssl
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - sharded_cluster
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-6.0-sharded-noauth-nosasl-nossl
+  tags:
+  - '6.0'
+  - noauth
+  - nosasl
+  - nossl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: sharded_cluster
+      VERSION: '6.0'
   - func: run tests
     vars:
       ASAN: 'off'
@@ -14282,7 +16910,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+        VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL sh .evergreen/compile.sh
   - func: run auth tests
     vars:
       valgrind: 'true'

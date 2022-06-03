@@ -853,12 +853,11 @@ mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
    return ret;
 }
 
-
-mongoc_collection_t *
-mongoc_database_create_collection (mongoc_database_t *database,
-                                   const char *name,
-                                   const bson_t *opts,
-                                   bson_error_t *error)
+static mongoc_collection_t *
+create_collection (mongoc_database_t *database,
+                   const char *name,
+                   const bson_t *opts,
+                   bson_error_t *error)
 {
    mongoc_collection_t *collection = NULL;
    bson_iter_t iter;
@@ -994,6 +993,300 @@ mongoc_database_create_collection (mongoc_database_t *database,
    bson_destroy (&cmd);
 
    return collection;
+}
+
+char *
+_mongoc_get_encryptedField_state_collection (
+   const bson_t *encryptedFields,
+   const char *data_collection,
+   const char *state_collection_suffix,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+   const char *fieldName = NULL;
+
+   if (0 == strcmp (state_collection_suffix, "esc")) {
+      fieldName = "escCollection";
+   } else if (0 == strcmp (state_collection_suffix, "ecc")) {
+      fieldName = "eccCollection";
+   } else if (0 == strcmp (state_collection_suffix, "ecoc")) {
+      fieldName = "ecocCollection";
+   } else {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "expected state_collection_suffix to be 'esc', 'ecc', or "
+                      "'ecoc', got: %s",
+                      state_collection_suffix);
+      return NULL;
+   }
+
+   if (bson_iter_init_find (&iter, encryptedFields, fieldName)) {
+      if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "expected encryptedFields.%s to be UTF-8",
+                         fieldName);
+         return NULL;
+      }
+      return bson_strdup (bson_iter_utf8 (&iter, NULL));
+   }
+   return bson_strdup_printf (
+      "enxcol_.%s.%s", data_collection, state_collection_suffix);
+}
+
+static bool
+create_encField_state_collection (mongoc_database_t *database,
+                                  const bson_t *encryptedFields,
+                                  const char *data_collection,
+                                  const char *state_collection_suffix,
+                                  bson_error_t *error)
+{
+   char *state_collection = NULL;
+   mongoc_collection_t *collection = NULL;
+   bool ok = false;
+   bson_t opts = BSON_INITIALIZER;
+
+   state_collection = _mongoc_get_encryptedField_state_collection (
+      encryptedFields, data_collection, state_collection_suffix, error);
+   if (!state_collection) {
+      goto fail;
+   }
+
+   BCON_APPEND (&opts,
+                "clusteredIndex",
+                "{",
+                "key",
+                "{",
+                "_id",
+                BCON_INT32 (1),
+                "}",
+                "unique",
+                BCON_BOOL (true),
+                "}");
+
+   collection = create_collection (database, state_collection, &opts, error);
+   if (collection == NULL) {
+      goto fail;
+   }
+
+   ok = true;
+fail:
+   bson_free (state_collection);
+   mongoc_collection_destroy (collection);
+   bson_destroy (&opts);
+   return ok;
+}
+
+static mongoc_collection_t *
+create_collection_with_encryptedFields (mongoc_database_t *database,
+                                        const char *name,
+                                        const bson_t *opts,
+                                        const bson_t *encryptedFields,
+                                        bson_error_t *error)
+{
+   mongoc_collection_t *dataCollection = NULL;
+   bool ok = false;
+   bson_t *cc_opts = NULL;
+   bool state_collections_ok =
+      create_encField_state_collection (
+         database, encryptedFields, name, "esc", error) &&
+      create_encField_state_collection (
+         database, encryptedFields, name, "ecc", error) &&
+      create_encField_state_collection (
+         database, encryptedFields, name, "ecoc", error);
+   if (!state_collections_ok) {
+      // Failed to create one or more state collections
+      goto fail;
+   }
+
+   /* Create data collection. */
+   cc_opts = bson_copy (opts);
+   if (!BSON_APPEND_DOCUMENT (cc_opts, "encryptedFields", encryptedFields)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "unable to append encryptedFields");
+      goto fail;
+   }
+   dataCollection = create_collection (database, name, cc_opts, error);
+   if (!dataCollection) {
+      goto fail;
+   }
+
+   /* Create index on __safeContent__. */
+   {
+      bson_t *keys = BCON_NEW ("__safeContent__", BCON_INT32 (1));
+      char *index_name;
+      bson_t *create_indexes;
+
+      index_name = mongoc_collection_keys_to_index_string (keys);
+      create_indexes = BCON_NEW ("createIndexes",
+                                 BCON_UTF8 (name),
+                                 "indexes",
+                                 "[",
+                                 "{",
+                                 "key",
+                                 BCON_DOCUMENT (keys),
+                                 "name",
+                                 BCON_UTF8 (index_name),
+                                 "}",
+                                 "]");
+
+      ok = mongoc_database_write_command_with_opts (
+         database, create_indexes, NULL /* opts */, NULL /* reply */, error);
+      bson_destroy (create_indexes);
+      bson_free (index_name);
+      bson_destroy (keys);
+      if (!ok) {
+         goto fail;
+      }
+   }
+
+   ok = true;
+fail:
+   bson_destroy (cc_opts);
+   if (ok) {
+      return dataCollection;
+   } else {
+      mongoc_collection_destroy (dataCollection);
+      return NULL;
+   }
+}
+
+bool
+_mongoc_get_encryptedFields_from_map (mongoc_client_t *client,
+                                      const char *dbName,
+                                      const char *collName,
+                                      bson_t *encryptedFields,
+                                      bson_error_t *error)
+{
+   const bson_t *efMap = client->topology->encrypted_fields_map;
+
+   bson_init (encryptedFields);
+
+   if (bson_empty0 (efMap)) {
+      /* Unset or empty efMap will have no encrypted fields */
+      return true;
+   }
+
+   char *ns = bson_strdup_printf ("%s.%s", dbName, collName);
+   bson_iter_t iter;
+   if (!bson_iter_init_find (&iter, efMap, ns)) {
+      /* No efMap entry for this database+collection. */
+      bson_free (ns);
+      return true;
+   }
+   bson_free (ns);
+
+   if (!_mongoc_iter_document_as_bson (&iter, encryptedFields, error)) {
+      /* The efMap entry should always be a document. */
+      return false;
+   }
+
+   return true;
+}
+
+bool
+_mongoc_get_encryptedFields_from_server (mongoc_client_t *client,
+                                         const char *dbName,
+                                         const char *collName,
+                                         bson_t *encryptedFields,
+                                         bson_error_t *error)
+{
+   mongoc_database_t *db = mongoc_client_get_database (client, dbName);
+   bson_t *opts = BCON_NEW ("filter", "{", "name", BCON_UTF8 (collName), "}");
+   mongoc_cursor_t *cursor;
+   bool ret = false;
+   const bson_t *collInfo;
+
+   bson_init (encryptedFields);
+
+   cursor = mongoc_database_find_collections_with_opts (db, opts);
+   if (mongoc_cursor_error (cursor, error)) {
+      goto fail;
+   }
+
+   if (mongoc_cursor_next (cursor, &collInfo)) {
+      /* Check if the collInfo has options.encryptedFields. */
+      bson_iter_t iter;
+      if (!bson_iter_init (&iter, collInfo)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "unable to iterate listCollections result");
+         goto fail;
+      }
+
+      if (bson_iter_find_descendant (&iter, "options.encryptedFields", &iter)) {
+         bson_t tmp;
+         if (!_mongoc_iter_document_as_bson (&iter, &tmp, error)) {
+            goto fail;
+         }
+         bson_copy_to (&tmp, encryptedFields);
+      }
+   }
+
+   if (mongoc_cursor_error (cursor, error)) {
+      goto fail;
+   }
+
+   ret = true;
+fail:
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (opts);
+   mongoc_database_destroy (db);
+   return ret;
+}
+
+mongoc_collection_t *
+mongoc_database_create_collection (mongoc_database_t *database,
+                                   const char *name,
+                                   const bson_t *opts,
+                                   bson_error_t *error)
+{
+   bson_iter_t iter;
+   bson_t encryptedFields = BSON_INITIALIZER;
+
+   if (opts && bson_iter_init_find (&iter, opts, "encryptedFields")) {
+      if (!_mongoc_iter_document_as_bson (&iter, &encryptedFields, error)) {
+         return NULL;
+      }
+   }
+
+   if (bson_empty (&encryptedFields)) {
+      if (!_mongoc_get_encryptedFields_from_map (
+             database->client,
+             mongoc_database_get_name (database),
+             name,
+             &encryptedFields,
+             error)) {
+         return NULL;
+      }
+   }
+
+   if (!bson_empty (&encryptedFields)) {
+      bson_t opts_without_encryptedFields = BSON_INITIALIZER;
+
+      if (opts) {
+         bson_copy_to_excluding_noinit (
+            opts, &opts_without_encryptedFields, "encryptedFields", NULL);
+      }
+
+      mongoc_collection_t *ret =
+         create_collection_with_encryptedFields (database,
+                                                 name,
+                                                 &opts_without_encryptedFields,
+                                                 &encryptedFields,
+                                                 error);
+
+      bson_destroy (&opts_without_encryptedFields);
+      bson_destroy (&encryptedFields);
+      return ret;
+   }
+
+   return create_collection (database, name, opts, error);
 }
 
 

@@ -128,7 +128,7 @@ Option                   BSON type           Option               BSON type
 ``allowPartialResults``  bool                ``returnKey``        bool
 ``awaitData``            bool                ``sessionId``        (none)
 ``collation``            document            ``showRecordId``     bool
-``comment``              string              ``singleBatch``      bool
+``comment``              any                 ``singleBatch``      bool
 ``allowDiskUse``         bool                ``let``              document
 =======================  ==================  ===================  ==================
 
@@ -147,6 +147,8 @@ For some options like "collation", the driver returns an error if the server ver
 Any fields in ``opts`` that are not listed here are passed to the server unmodified.
 
 ``allowDiskUse`` is only supported in MongoDB 4.4+.
+
+``comment`` only supports string values prior to MongoDB 4.4.
 
 Deprecated Options
 ------------------

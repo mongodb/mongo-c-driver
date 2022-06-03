@@ -16,6 +16,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       SKIP_MOCK_TESTS         Skips running the libmongoc mock server tests after compiling
 # Options for CMake:
 #       LIBBSON                 Build against bundled or external libbson
+#       SANITIZE                Sanitizers to enable (comma-separated)
 #       EXTRA_CONFIGURE_FLAGS   Extra configure flags to use
 #       EXTRA_CMAKE_PREFIX_PATH Extra directories to search for libraries/packages
 #       ZLIB                    Build against bundled or external zlib, or none
@@ -45,6 +46,7 @@ ZLIB=${ZLIB:-BUNDLED}
 INSTALL_DIR=$(pwd)/install-dir
 
 echo "CFLAGS: $CFLAGS"
+echo "SANITIZE: $SANITIZE"
 echo "MARCH: $MARCH"
 echo "RELEASE: $RELEASE"
 echo "DEBUG: $DEBUG"
@@ -199,6 +201,13 @@ if [ "darwin" = "$OS" -a "arm64" = "$MARCH" ]; then
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
+CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGO_SANITIZE=$SANITIZE"
+
+if ! python3 build/mongodl.py --test -C crypt_shared -V 6.0.0-rc8 -o . > /dev/null; then
+   echo "No crypt_shared detected for this platform. Disabling MONGOC_TEST_USE_CRYPT_SHARED."
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CRYPT_SHARED=OFF"
+fi
+
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS $EXTRA_CONFIGURE_FLAGS"
 export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_SKIP_LIVE=on
@@ -218,6 +227,7 @@ pkg-config --modversion libssl || true
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
+   # TODO (CDRIVER-4397): add "--branch 1.5.0-rc0" in git clone once libmongocrypt 1.5.0-rc0 is released.
    git clone https://github.com/mongodb/libmongocrypt
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build

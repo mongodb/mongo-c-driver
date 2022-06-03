@@ -45,6 +45,8 @@
 
 #define MONGOC_RTT_UNSET -1
 
+#define MONGOC_NO_SERVER_CONNECTION_ID -1
+
 typedef enum {
    MONGOC_SERVER_UNKNOWN,
    MONGOC_SERVER_STANDALONE,
@@ -123,6 +125,7 @@ struct _mongoc_server_description_t {
     * service IDs. The only server generation is mapped from kZeroServiceID */
    mongoc_generation_map_t *_generation_map_;
    bson_oid_t service_id;
+   int32_t server_connection_id;
 };
 
 /** Get a mutable pointer to the server's generation map */

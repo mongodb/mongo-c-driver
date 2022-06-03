@@ -379,7 +379,8 @@ test_runner_new (void)
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
    uri = test_framework_get_uri ();
-   /* In load balanced mode, the internal client must use the SINGLE_LB_MONGOS_URI. */
+   /* In load balanced mode, the internal client must use the
+    * SINGLE_LB_MONGOS_URI. */
    if (!test_framework_is_loadbalanced ()) {
       /* Always use multiple mongoses if speaking to a mongos.
        * Some test operations require communicating with all known mongos */
@@ -618,7 +619,7 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.5"};
+   const char *supported_version_strs[] = {"1.8"};
    int i;
 
    for (i = 0; i < sizeof (supported_version_strs) /
@@ -771,6 +772,35 @@ check_run_on_requirement (test_runner_t *test_runner,
             auth_requirement ? "requires" : "forbids");
 
          return false;
+      }
+
+#if defined(MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
+      if (0 == strcmp (key, "csfle")) {
+         const bool csfle_required = bson_iter_bool (&req_iter);
+
+         if (csfle_required) {
+            continue;
+         }
+
+         *fail_reason =
+            bson_strdup_printf ("CSFLE is not allowed but libmongoc was built "
+                                "with MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
+
+         return false;
+#else
+      if (0 == strcmp (key, "csfle")) {
+         const bool csfle_required = bson_iter_bool (&req_iter);
+
+         if (!csfle_required) {
+            continue;
+         }
+
+         *fail_reason = bson_strdup_printf (
+            "CSFLE is required but libmongoc was built "
+            "without MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
+
+         return false;
+#endif /* !defined(MONGOC_CLIENT_SIDE_ENCRYPTION) */
       }
 
       test_error ("Unexpected runOnRequirement field: %s", key);
@@ -1009,6 +1039,7 @@ test_check_event (test_t *test,
    char *expected_database_name = NULL;
    bson_t *expected_reply = NULL;
    bool *expected_has_service_id = NULL;
+   bool *expected_has_server_connection_id = NULL;
 
    if (bson_count_keys (expected) != 1) {
       test_set_error (error,
@@ -1042,6 +1073,8 @@ test_check_event (test_t *test,
    bson_parser_utf8_optional (bp, "databaseName", &expected_database_name);
    bson_parser_doc_optional (bp, "reply", &expected_reply);
    bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
+   bson_parser_bool_optional (
+      bp, "hasServerConnectionId", &expected_has_server_connection_id);
    if (!bson_parser_parse (bp, &expected_bson, error)) {
       goto done;
    }
@@ -1059,7 +1092,7 @@ test_check_event (test_t *test,
       actual_val = bson_val_from_bson (actual->command);
 
       if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, true, error)) {
+             test->entity_map, expected_val, actual_val, false, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;
@@ -1090,7 +1123,7 @@ test_check_event (test_t *test,
       bson_val_t *expected_val = bson_val_from_bson (expected_reply);
       bson_val_t *actual_val = bson_val_from_bson (actual->reply);
       if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, true, error)) {
+             test->entity_map, expected_val, actual_val, false, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;
@@ -1104,14 +1137,29 @@ test_check_event (test_t *test,
       bool has_service_id = false;
 
       bson_oid_to_string (&actual->service_id, oid_str);
-      has_service_id = 0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
+      has_service_id =
+         0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
 
       if (*expected_has_service_id && !has_service_id) {
          test_error ("expected serviceId, but got none");
       }
-      
+
       if (!*expected_has_service_id && has_service_id) {
          test_error ("expected no serviceId, but got %s", oid_str);
+      }
+   }
+
+   if (expected_has_server_connection_id) {
+      const bool has_server_connection_id =
+         actual->server_connection_id != MONGOC_NO_SERVER_CONNECTION_ID;
+
+      if (*expected_has_server_connection_id && !has_server_connection_id) {
+         test_error ("expected server connectionId, but got none");
+      }
+
+      if (!*expected_has_server_connection_id && has_server_connection_id) {
+         test_error ("expected no server connectionId, but got %d",
+                     actual->server_connection_id);
       }
    }
 
@@ -1130,6 +1178,8 @@ test_check_expected_events_for_client (test_t *test,
    bson_parser_t *bp = NULL;
    char *client_id = NULL;
    bson_t *expected_events = NULL;
+   bool just_false = false;
+   bool *ignore_extra_events = &just_false;
    entity_t *entity = NULL;
    bson_iter_t iter;
    event_t *eiter = NULL;
@@ -1140,6 +1190,7 @@ test_check_expected_events_for_client (test_t *test,
    bp = bson_parser_new ();
    bson_parser_utf8 (bp, "client", &client_id);
    bson_parser_array (bp, "events", &expected_events);
+   bson_parser_bool_optional (bp, "ignoreExtraEvents", &ignore_extra_events);
    bson_parser_utf8_optional (bp, "eventType", &event_type);
    if (!bson_parser_parse (bp, expected_events_for_client, error)) {
       goto done;
@@ -1169,11 +1220,19 @@ test_check_expected_events_for_client (test_t *test,
    expected_num_events = bson_count_keys (expected_events);
    LL_COUNT (entity->events, eiter, actual_num_events);
    if (expected_num_events != actual_num_events) {
-      test_set_error (error,
-                      "expected: %" PRIu32 " events but got %" PRIu32,
-                      expected_num_events,
-                      actual_num_events);
-      goto done;
+      bool too_many_events = actual_num_events > expected_num_events;
+      if (*ignore_extra_events) {
+         // We can never have too many events
+         too_many_events = false;
+      }
+      bool too_few_events = actual_num_events < expected_num_events;
+      if (too_few_events || too_many_events) {
+         test_set_error (error,
+                         "expected: %" PRIu32 " events but got %" PRIu32,
+                         expected_num_events,
+                         actual_num_events);
+         goto done;
+      }
    }
 
    eiter = entity->events;
@@ -1634,7 +1693,7 @@ run_one_test_file (bson_t *bson)
       test_t *test = NULL;
       bson_t test_bson;
       bool test_ok;
-      bson_error_t error;
+      bson_error_t error = {0};
 
       test_diagnostics_reset ();
       test_diagnostics_test_info ("test file: %s", test_file->description);
@@ -1682,4 +1741,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "change_streams/unified");
 
    run_unified_tests (suite, JSON_DIR, "load_balancers");
+
+   run_unified_tests (suite, JSON_DIR, "client_side_encryption/unified");
 }

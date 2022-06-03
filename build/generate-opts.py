@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """IDL for functions that take flexible options as a bson_t.
 
 Defines the options accepted by functions that receive a const bson_t *opts,
@@ -25,6 +24,7 @@ Generates struct types, options parsing code, and RST documentation.
 Written for Python 2.6+, requires Jinja 2 for templating.
 """
 
+# yapf: disable
 from collections import OrderedDict
 from os.path import basename, dirname, join as joinpath, normpath
 import re
@@ -156,11 +156,24 @@ let_option = ('let', {
     'help': 'A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language.'
 })
 
+comment_option_since_4_4 = ('comment', {
+    'type': 'bson_value_t',
+    'convert': '_mongoc_convert_bson_value_t',
+    'help': 'A :symbol:`bson_value_t` specifying the comment to attach to this command. The comment will appear in log messages, profiler output, and currentOp output. Requires MongoDB 4.4 or later.'
+})
+
+comment_option_string_pre_4_4 = ('comment', {
+    'type': 'bson_value_t',
+    'convert': '_mongoc_convert_bson_value_t',
+    'help': 'A :symbol:`bson_value_t` specifying the comment to attach to this command. The comment will appear in log messages, profiler output, and currentOp output. Only string values are supported prior to MongoDB 4.4.'
+})
+
 opts_structs = OrderedDict([
     ('mongoc_crud_opts_t', Shared([
         write_concern_option,
         session_option,
         validate_option,
+        comment_option_since_4_4,
     ])),
 
     ('mongoc_update_opts_t', Shared([
@@ -217,6 +230,7 @@ opts_structs = OrderedDict([
         ordered_option,
         session_option,
         let_option,
+        comment_option_since_4_4,
     ], allow_extra=False, ordered='true')),
 
     ('mongoc_bulk_insert_opts_t', Struct([
@@ -278,8 +292,25 @@ opts_structs = OrderedDict([
         ('startAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. Unlike ``resumeAfter``, this can resume notifications after an "invalidate" event. The result of :symbol:`mongoc_change_stream_get_resume_token()` or the ``_id`` field  of any change received from a change stream can be used here.  This option is mutually exclusive with ``resumeAfter`` and ``startAtOperationTime``.'}),
         ('startAtOperationTime', {'type': 'timestamp', 'help': 'A ``Timestamp``. The change stream only provides changes that occurred at or after the specified timestamp. Any command run against the server will return an operation time that can be used here. This option is mutually exclusive with ``resumeAfter`` and ``startAfter``.'}),
         ('maxAwaitTimeMS', {'type': 'int64_t', 'convert': '_mongoc_convert_int64_positive', 'help': 'An ``int64`` representing the maximum amount of time a call to :symbol:`mongoc_change_stream_next` will block waiting for data'}),
-        ('fullDocument', {'type': 'utf8', 'help': 'A UTF-8 string. Set this option to "updateLookup" to direct the change stream cursor to lookup the most current majority-committed version of the document associated to an update change stream event.'}),
-    ], fullDocument="default")),
+        ('fullDocument', {
+            'type': 'utf8',
+            'help': 'An optional UTF-8 string. Set this option to "default", '
+                    '"updateLookup", "whenAvailable", or "required", If unset, '
+                    'The string "default" is assumed. Set this option to '
+                    '"updateLookup" to direct the change stream cursor to '
+                    'lookup the most current majority-committed version of the '
+                    'document associated to an update change stream event.'
+        }),
+        ('fullDocumentBeforeChange', {
+            'type': 'utf8',
+            'help': 'An optional UTF-8 string. Set this option to '
+                    '"whenAvailable", "required", or "off". When unset, the '
+                    'default value is "off". Similar to "fullDocument", but '
+                    'returns the value of the document before the associated '
+                    'change.',
+        }),
+        comment_option_string_pre_4_4,
+    ], fullDocument=None, fullDocumentBeforeChange=None)),
 
     ('mongoc_create_index_opts_t', Struct([
         write_concern_option,
@@ -330,6 +361,7 @@ opts_structs = OrderedDict([
         server_option,
         ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`', 'check_set': True}),
         let_option,
+        comment_option_string_pre_4_4,
     ])),
 
     ('mongoc_find_and_modify_appended_opts_t', Struct([
@@ -337,6 +369,7 @@ opts_structs = OrderedDict([
         session_option,
         hint_option,
         let_option,
+        comment_option_since_4_4,
     ], opts_name='extra'))
 ])
 

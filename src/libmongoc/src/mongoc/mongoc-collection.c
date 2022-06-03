@@ -39,6 +39,7 @@
 #include "mongoc-opts-private.h"
 #include "mongoc-write-command-private.h"
 #include "mongoc-error-private.h"
+#include "mongoc-database-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -790,57 +791,6 @@ mongoc_collection_count_with_opts (
    RETURN (ret);
 }
 
-/* --------------------------------------------------------------------------
- *
- * _make_aggregate_for_edc --
- *
- *       Construct an aggregate pipeline with the following form:
- *
- *
- *       { pipeline: [
- *           { $collStats: { count: {} } },
- *           { $group: { _id: 1, n: { $sum: $count } } },
- *         ]
- *       }
- *
- *--------------------------------------------------------------------------
- */
-static void
-_make_aggregate_for_edc (const mongoc_collection_t *coll, bson_t *out)
-{
-   bson_t pipeline;
-   bson_t coll_stats_stage;
-   bson_t coll_stats_stage_doc;
-   bson_t group_stage;
-   bson_t group_stage_doc;
-   bson_t sum;
-   bson_t cursor_empty;
-   bson_t empty;
-
-   BSON_APPEND_UTF8 (out, "aggregate", coll->collection);
-   BSON_APPEND_DOCUMENT_BEGIN (out, "cursor", &cursor_empty);
-   bson_append_document_end (out, &cursor_empty);
-   BSON_APPEND_ARRAY_BEGIN (out, "pipeline", &pipeline);
-
-   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, "0", &coll_stats_stage);
-   BSON_APPEND_DOCUMENT_BEGIN (
-      &coll_stats_stage, "$collStats", &coll_stats_stage_doc);
-   BSON_APPEND_DOCUMENT_BEGIN (&coll_stats_stage_doc, "count", &empty);
-   bson_append_document_end (&coll_stats_stage_doc, &empty);
-   bson_append_document_end (&coll_stats_stage, &coll_stats_stage_doc);
-   bson_append_document_end (&pipeline, &coll_stats_stage);
-
-   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, "1", &group_stage);
-   BSON_APPEND_DOCUMENT_BEGIN (&group_stage, "$group", &group_stage_doc);
-   BSON_APPEND_INT32 (&group_stage_doc, "_id", 1);
-   BSON_APPEND_DOCUMENT_BEGIN (&group_stage_doc, "n", &sum);
-   BSON_APPEND_UTF8 (&sum, "$sum", "$count");
-   bson_append_document_end (&group_stage_doc, &sum);
-   bson_append_document_end (&group_stage, &group_stage_doc);
-   bson_append_document_end (&pipeline, &group_stage);
-   bson_append_array_end (out, &pipeline);
-}
-
 int64_t
 mongoc_collection_estimated_document_count (
    mongoc_collection_t *coll,
@@ -878,48 +828,23 @@ mongoc_collection_estimated_document_count (
    }
 
    reply_ptr = reply ? reply : &reply_local;
-   if (server_stream->sd->max_wire_version < WIRE_VERSION_4_9) {
-      /* On < 4.9, use actual count command for estimatedDocumentCount */
-      BSON_APPEND_UTF8 (&cmd, "count", coll->collection);
-      ret = _mongoc_client_command_with_opts (coll->client,
-                                              coll->db,
-                                              &cmd,
-                                              MONGOC_CMD_READ,
-                                              opts,
-                                              MONGOC_QUERY_NONE,
-                                              read_prefs,
-                                              coll->read_prefs,
-                                              coll->read_concern,
-                                              coll->write_concern,
-                                              reply_ptr,
-                                              error);
-      if (ret) {
-         if (bson_iter_init_find (&iter, reply_ptr, "n")) {
-            count = bson_iter_as_int64 (&iter);
-         }
-      }
-   } else {
-      /* On >= 4.9, use aggregate with collStats for estimatedDocumentCount */
-      _make_aggregate_for_edc (coll, &cmd);
-      ret = mongoc_collection_read_command_with_opts (
-         coll, &cmd, read_prefs, opts, reply_ptr, error);
 
-      if (!ret && error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
-         /* Collection does not exist. From spec: return 0 but no err:
-          * https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst#estimateddocumentcount
-          */
-         if (reply) {
-            bson_reinit (reply);
-         }
-         memset (error, 0, sizeof *error);
-         count = 0;
-         GOTO (done);
-      }
-      if (ret && bson_iter_init (&iter, reply_ptr)) {
-         if (bson_iter_find_descendant (
-                &iter, "cursor.firstBatch.0.n", &iter)) {
-            count = bson_iter_as_int64 (&iter);
-         }
+   BSON_APPEND_UTF8 (&cmd, "count", coll->collection);
+   ret = _mongoc_client_command_with_opts (coll->client,
+                                           coll->db,
+                                           &cmd,
+                                           MONGOC_CMD_READ,
+                                           opts,
+                                           MONGOC_QUERY_NONE,
+                                           read_prefs,
+                                           coll->read_prefs,
+                                           coll->read_concern,
+                                           coll->write_concern,
+                                           reply_ptr,
+                                           error);
+   if (ret) {
+      if (bson_iter_init_find (&iter, reply_ptr, "n")) {
+         count = bson_iter_as_int64 (&iter);
       }
    }
 
@@ -1094,10 +1019,10 @@ mongoc_collection_drop (mongoc_collection_t *collection, /* IN */
 }
 
 
-bool
-mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
-                                  const bson_t *opts,
-                                  bson_error_t *error)
+static bool
+drop_with_opts (mongoc_collection_t *collection,
+                const bson_t *opts,
+                bson_error_t *error)
 {
    bool ret;
    bson_t cmd;
@@ -1123,6 +1048,148 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
    bson_destroy (&cmd);
 
    return ret;
+}
+
+static bool
+drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
+                                     const bson_t *opts,
+                                     const bson_t *encryptedFields,
+                                     bson_error_t *error)
+{
+   char *escName = NULL;
+   char *eccName = NULL;
+   char *ecocName = NULL;
+   mongoc_collection_t *escCollection = NULL;
+   mongoc_collection_t *eccCollection = NULL;
+   mongoc_collection_t *ecocCollection = NULL;
+   bool ok = false;
+   const char *name = mongoc_collection_get_name (collection);
+
+   /* Drop ESC collection. */
+   escName = _mongoc_get_encryptedField_state_collection (
+      encryptedFields, name, "esc", error);
+   if (!escName) {
+      goto fail;
+   }
+
+   escCollection = mongoc_client_get_collection (
+      collection->client, collection->db, escName);
+   if (!drop_with_opts (escCollection, NULL /* opts */, error)) {
+      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+         memset (error, 0, sizeof (bson_error_t));
+      } else {
+         goto fail;
+      }
+   }
+
+   /* Drop ECC collection. */
+   eccName = _mongoc_get_encryptedField_state_collection (
+      encryptedFields, name, "ecc", error);
+   if (!eccName) {
+      goto fail;
+   }
+
+   eccCollection = mongoc_client_get_collection (
+      collection->client, collection->db, eccName);
+   if (!drop_with_opts (eccCollection, NULL /* opts */, error)) {
+      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+         memset (error, 0, sizeof (bson_error_t));
+      } else {
+         goto fail;
+      }
+   }
+
+   /* Drop ECOC collection. */
+   ecocName = _mongoc_get_encryptedField_state_collection (
+      encryptedFields, name, "ecoc", error);
+   if (!ecocName) {
+      goto fail;
+   }
+
+   ecocCollection = mongoc_client_get_collection (
+      collection->client, collection->db, ecocName);
+   if (!drop_with_opts (ecocCollection, NULL /* opts */, error)) {
+      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+         memset (error, 0, sizeof (bson_error_t));
+      } else {
+         goto fail;
+      }
+   }
+
+   /* Drop data collection. */
+   if (!drop_with_opts (collection, opts, error)) {
+      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+         memset (error, 0, sizeof (bson_error_t));
+      } else {
+         goto fail;
+      }
+   }
+
+   ok = true;
+fail:
+   mongoc_collection_destroy (ecocCollection);
+   bson_free (ecocName);
+   mongoc_collection_destroy (eccCollection);
+   bson_free (eccName);
+   mongoc_collection_destroy (escCollection);
+   bson_free (escName);
+   return ok;
+}
+
+bool
+mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
+                                  const bson_t *opts,
+                                  bson_error_t *error)
+{
+   bson_iter_t iter;
+   bson_t encryptedFields = BSON_INITIALIZER;
+
+   if (opts && bson_iter_init_find (&iter, opts, "encryptedFields")) {
+      if (!_mongoc_iter_document_as_bson (&iter, &encryptedFields, error)) {
+         return false;
+      }
+   }
+
+   if (bson_empty (&encryptedFields)) {
+      if (!_mongoc_get_encryptedFields_from_map (
+             collection->client,
+             collection->db,
+             mongoc_collection_get_name (collection),
+             &encryptedFields,
+             error)) {
+         return false;
+      }
+   }
+
+   if (bson_empty (&encryptedFields) &&
+       collection->client->topology->encrypted_fields_map != NULL) {
+      if (!_mongoc_get_encryptedFields_from_server (
+             collection->client,
+             collection->db,
+             mongoc_collection_get_name (collection),
+             &encryptedFields,
+             error)) {
+         return false;
+      }
+   }
+
+   if (!bson_empty (&encryptedFields)) {
+      bson_t opts_without_encryptedFields = BSON_INITIALIZER;
+
+      if (opts) {
+         bson_copy_to_excluding_noinit (
+            opts, &opts_without_encryptedFields, "encryptedFields", NULL);
+      }
+
+      bool ret = drop_with_opts_with_encryptedFields (
+         collection, &opts_without_encryptedFields, &encryptedFields, error);
+
+      bson_destroy (&opts_without_encryptedFields);
+      bson_destroy (&encryptedFields);
+      return ret;
+   }
+
+   return drop_with_opts (collection, opts, error);
 }
 
 
@@ -1851,6 +1918,7 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
    mongoc_insert_one_opts_t insert_one_opts;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
+   bson_t cmd_opts = BSON_INITIALIZER;
    bool ret = false;
 
    ENTRY;
@@ -1865,6 +1933,15 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
       GOTO (done);
    }
 
+   if (!bson_empty (&insert_one_opts.extra)) {
+      bson_concat (&cmd_opts, &insert_one_opts.extra);
+   }
+
+   if (insert_one_opts.crud.comment.value_type != BSON_TYPE_EOD) {
+      bson_append_value (
+         &cmd_opts, "comment", 7, &insert_one_opts.crud.comment);
+   }
+
    if (!_mongoc_validate_new_document (
           document, insert_one_opts.crud.validate, error)) {
       GOTO (done);
@@ -1874,7 +1951,7 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
    _mongoc_write_command_init_insert_idl (
       &command,
       document,
-      &insert_one_opts.extra,
+      &cmd_opts,
       ++collection->client->cluster.operation_id);
 
    command.flags.bypass_document_validation = insert_one_opts.bypass;
@@ -1895,6 +1972,8 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
 
 done:
    _mongoc_insert_one_opts_cleanup (&insert_one_opts);
+   bson_destroy (&cmd_opts);
+
    RETURN (ret);
 }
 
@@ -1936,6 +2015,7 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
    mongoc_insert_many_opts_t insert_many_opts;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
+   bson_t cmd_opts = BSON_INITIALIZER;
    size_t i;
    bool ret;
 
@@ -1952,12 +2032,18 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
       return false;
    }
 
+   if (insert_many_opts.crud.comment.value_type != BSON_TYPE_EOD) {
+      bson_append_value (
+         &cmd_opts, "comment", 7, &insert_many_opts.crud.comment);
+   }
+
+   if (!bson_empty (&insert_many_opts.extra)) {
+      bson_concat (&cmd_opts, &insert_many_opts.extra);
+   }
+
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_insert_idl (
-      &command,
-      NULL,
-      &insert_many_opts.extra,
-      ++collection->client->cluster.operation_id);
+      &command, NULL, &cmd_opts, ++collection->client->cluster.operation_id);
 
    command.flags.ordered = insert_many_opts.ordered;
    command.flags.bypass_document_validation = insert_many_opts.bypass;
@@ -1988,6 +2074,7 @@ done:
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
    _mongoc_insert_many_opts_cleanup (&insert_many_opts);
+   bson_destroy (&cmd_opts);
 
    RETURN (ret);
 }
@@ -2123,6 +2210,10 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
 
    if (!bson_empty (&update_opts->let)) {
       bson_append_document (&cmd_opts, "let", 3, &update_opts->let);
+   }
+
+   if (update_opts->crud.comment.value_type != BSON_TYPE_EOD) {
+      bson_append_value (&cmd_opts, "comment", 7, &update_opts->crud.comment);
    }
 
    if (update_opts->upsert) {
@@ -2590,6 +2681,10 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
 
    if (!bson_empty (&delete_opts->let)) {
       bson_append_document (&cmd_opts, "let", 3, &delete_opts->let);
+   }
+
+   if (delete_opts->crud.comment.value_type != BSON_TYPE_EOD) {
+      bson_append_value (&cmd_opts, "comment", 7, &delete_opts->crud.comment);
    }
 
    _mongoc_write_result_init (&result);
@@ -3228,7 +3323,14 @@ mongoc_collection_create_bulk_operation_with_opts (
                                       write_flags,
                                       wc);
 
-   mongoc_bulk_operation_set_let (bulk, &bulk_opts.let);
+   if (!bson_empty (&bulk_opts.let)) {
+      mongoc_bulk_operation_set_let (bulk, &bulk_opts.let);
+   }
+
+   if (bulk_opts.comment.value_type != BSON_TYPE_EOD) {
+      mongoc_bulk_operation_set_comment (bulk, &bulk_opts.comment);
+   }
+
    bulk->session = bulk_opts.client_session;
    if (err.domain) {
       /* _mongoc_bulk_opts_parse failed, above */
@@ -3416,6 +3518,10 @@ mongoc_collection_find_and_modify_with_opts (
 
    if (!bson_empty (&appended_opts.let)) {
       bson_append_document (&parts.extra, "let", 3, &appended_opts.let);
+   }
+
+   if (appended_opts.comment.value_type != BSON_TYPE_EOD) {
+      bson_append_value (&parts.extra, "comment", 7, &appended_opts.comment);
    }
 
    /* Append any remaining unparsed options set via

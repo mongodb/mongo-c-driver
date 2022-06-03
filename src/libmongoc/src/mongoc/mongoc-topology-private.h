@@ -185,7 +185,20 @@ typedef struct _mongoc_topology_t {
    bool mongocryptd_bypass_spawn;
    char *mongocryptd_spawn_path;
    bson_t *mongocryptd_spawn_args;
+   bool bypass_query_analysis;
 #endif
+
+   struct {
+      struct {
+         struct {
+            char *cryptSharedLibPath;
+            bool cryptSharedLibRequired;
+         } extraOptions;
+      } autoOptions;
+   } clientSideEncryption;
+
+   // Corresponds to AutoEncryptionOpts.encryptedFieldsMap.
+   bson_t *encrypted_fields_map;
 
    /* For background monitoring. */
    mongoc_set_t *server_monitors;
