@@ -4426,7 +4426,7 @@ test_decryption_events_command_error (void *unused)
 }
 
 /* test_decryption_events_network_error is a regression test for CDRIVER-4401.
- * Send a command on an encrypted client resulting in a network.
+ * Send a command on an encrypted client resulting in a network error.
  * Expect an error returned and a CommandFailed event to be emitted. */
 static void
 test_decryption_events_network_error (void *unused)
