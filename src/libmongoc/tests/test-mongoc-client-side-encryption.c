@@ -4185,7 +4185,6 @@ typedef struct {
    mongoc_client_t *setupClient;
    mongoc_client_t *encryptedClient;
    mongoc_collection_t *encryptedColl;
-   mongoc_client_t *keyVaultClient;
    bson_value_t ciphertext;
    bson_value_t malformedCiphertext;
    /* aggEvent is the CommandSucceeded or CommandFailed event observed for the
@@ -4256,9 +4255,6 @@ decryption_events_setup (void)
       mongoc_collection_destroy (coll);
    }
 
-
-   def->keyVaultClient = test_framework_new_default_client ();
-
    /* Create a ClientEncryption object */
    {
       mongoc_client_encryption_opts_t *ceOpts =
@@ -4267,7 +4263,7 @@ decryption_events_setup (void)
       bson_error_t error;
 
       mongoc_client_encryption_opts_set_keyvault_client (ceOpts,
-                                                         def->keyVaultClient);
+                                                         def->setupClient);
       mongoc_client_encryption_opts_set_keyvault_namespace (
          ceOpts, "keyvault", "datakeys");
       mongoc_client_encryption_opts_set_kms_providers (ceOpts, kms_providers);
@@ -4378,7 +4374,6 @@ decryption_events_fixture_destroy (decryption_events_fixture *def)
    mongoc_client_destroy (def->setupClient);
    mongoc_client_destroy (def->encryptedClient);
    mongoc_collection_destroy (def->encryptedColl);
-   mongoc_client_destroy (def->keyVaultClient);
    bson_value_destroy (&def->ciphertext);
    bson_value_destroy (&def->malformedCiphertext);
    bson_destroy (def->aggEvent.gotSucceededReply);
