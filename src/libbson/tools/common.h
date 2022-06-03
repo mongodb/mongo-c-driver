@@ -44,7 +44,7 @@ read_stream (FILE *strm)
       uint8_t *const ptr = data + total_nread;
       // Read some more
       TRACE ("Try to read %zu bytes", buf_remain);
-      const size_t part_nread = fread (ptr, 1, buf_remain, stdin);
+      const size_t part_nread = fread (ptr, 1, buf_remain, strm);
       TRACE ("Read %zu bytes", part_nread);
       if (part_nread == 0) {
          // EOF
