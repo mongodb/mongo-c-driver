@@ -2,7 +2,7 @@ option (ENABLE_FUZZING "Enable fuzzing using LLVM libFuzzer" OFF)
 
 if (ENABLE_FUZZING)
     # This will add another sanitizer when we later include Sanitizers.cmake
-    list (APPEND MONGOC_SANITIZE "fuzzer-no-link")
+    list (APPEND MONGO_SANITIZE "fuzzer-no-link")
 endif ()
 
 include (ProcessorCount)
