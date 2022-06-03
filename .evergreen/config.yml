@@ -24683,7 +24683,7 @@ buildvariants:
   display_name: ASAN Tests without csfle (Ubuntu 18.04)
   expansions:
     CC: clang
-    USE_CSFLE: 'OFF'
+    USE_CRYPT_SHARED: 'OFF'
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-asan-openssl-cse

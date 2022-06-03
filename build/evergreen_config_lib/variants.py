@@ -25,8 +25,11 @@ mobile_flags = (
 )
 
 # Returns minutes for batchtime.
+
+
 def days(n):
     return n * 24 * 60
+
 
 all_variants = [
     Variant('releng',
@@ -53,7 +56,8 @@ all_variants = [
              'link-with-cmake-snappy',
              'link-with-cmake-snappy-deprecated',
              OD([('name', 'link-with-cmake-mac'), ('distros', ['macos-1014'])]),
-             OD([('name', 'link-with-cmake-mac-deprecated'), ('distros', ['macos-1014'])]),
+             OD([('name', 'link-with-cmake-mac-deprecated'),
+                 ('distros', ['macos-1014'])]),
              OD([('name', 'link-with-cmake-windows'),
                  ('distros', ['windows-64-vs2017-test'])]),
              OD([('name', 'link-with-cmake-windows-ssl'),
@@ -81,7 +85,7 @@ all_variants = [
                  ('distros', ['windows-64-vs2017-test'])]),
              'debug-compile-with-warnings',
              OD([('name', 'build-and-test-with-toolchain'),
-                 ('distros', ['debian10-small'])]),]),
+                 ('distros', ['debian10-small'])]), ]),
     Variant('clang34ubuntu',
             'clang 3.4 (Ubuntu 14.04)',
             'ubuntu1404-build',
@@ -249,7 +253,7 @@ all_variants = [
             'GCC 6.3 (Debian 9.2)',
             'debian92-test',
             ['release-compile',
-            'debug-compile-nosasl-nossl',
+             'debug-compile-nosasl-nossl',
              '.debug-compile !.sspi .openssl',
              '.debug-compile !.sspi .openssl-static',
              '.debug-compile !.sspi .nossl',
@@ -264,7 +268,7 @@ all_variants = [
             'GCC 8.3 (Debian 10.0)',
             'debian10-test',
             ['release-compile',
-            'debug-compile-nosasl-nossl',
+             'debug-compile-nosasl-nossl',
              '.debug-compile !.sspi .openssl',
              '.debug-compile !.sspi .openssl-static',
              '.debug-compile !.sspi .nossl',
@@ -332,7 +336,7 @@ all_variants = [
             '*Darwin, macOS (Apple LLVM)',
             'macos-1014',
             ['.compression !.snappy !.zstd',
-            # Remove !.zstd in CDRIVER-3483.
+             # Remove !.zstd in CDRIVER-3483.
              'debug-compile-coverage',
              'release-compile',
              'debug-compile-nosasl-nossl',
@@ -359,7 +363,7 @@ all_variants = [
              'test-aws-openssl-regular-latest'
              ],
             {'CC': 'clang'}),
-    Variant ('windows-2017-32',
+    Variant('windows-2017-32',
             'Windows (i686) (VS 2017)',
             'windows-64-vs2017-test',
             ['.debug-compile .winssl .nosasl',
@@ -370,8 +374,8 @@ all_variants = [
              '.nosasl .latest .nossl',
              '.sspi .latest',
              ],
-             {'CC': 'Visual Studio 15 2017'}),
-    Variant ('windows-2017',
+            {'CC': 'Visual Studio 15 2017'}),
+    Variant('windows-2017',
             'Windows (VS 2017)',
             'windows-64-vs2017-test',
             ['.debug-compile .winssl',
@@ -391,7 +395,7 @@ all_variants = [
              'test-aws-openssl-regular-4.4',
              'test-aws-openssl-regular-latest'
              ],
-             {'CC': 'Visual Studio 15 2017 Win64'}),
+            {'CC': 'Visual Studio 15 2017 Win64'}),
     Variant('windows-2015',
             'Windows (VS 2015)',
             'windows-64-vs2015-compile',
@@ -524,7 +528,7 @@ all_variants = [
             '*zSeries',
             'rhel83-zseries-small',
             ['release-compile',
-        #      '.compression', --> TODO: waiting on ticket CDRIVER-3258
+             #      '.compression', --> TODO: waiting on ticket CDRIVER-3258
              'debug-compile-nosasl-nossl',
              'debug-compile-no-align',
              '.debug-compile !.sspi .openssl',
@@ -570,7 +574,7 @@ all_variants = [
             'ubuntu1804-test',
             ['debug-compile-asan-openssl-cse',
              '.test-asan !.3.6 .client-side-encryption'],
-            {'CC': 'clang', 'USE_CSFLE': 'OFF'},
+            {'CC': 'clang', 'USE_CRYPT_SHARED': 'OFF'},
             batchtime=days(1)),
     # There is no MongoDB < 4.0 with SSL available on Ubuntu post 16.04.
     # So have a variant for ASAN to test against MongoDB 3.6.
@@ -581,7 +585,7 @@ all_variants = [
              '.test-asan .3.6'],
             {'CC': 'clang'},
             batchtime=days(1)),
-    Variant ('clang60ubuntu', 'clang 6.0 (Ubuntu 18.04)', 'ubuntu1804-test', [
+    Variant('clang60ubuntu', 'clang 6.0 (Ubuntu 18.04)', 'ubuntu1804-test', [
         'debug-compile-aws',
         'debug-compile-nosasl-openssl-static',
         'debug-compile-sasl-openssl-static',
@@ -598,53 +602,57 @@ all_variants = [
         'test-aws-openssl-lambda-4.4'
     ], {'CC': 'clang'}),
     Variant('rhel62',
-        'RHEL 6.2',
-        'rhel62-test',
-        ['debug-compile-sasl-openssl',
-        'test-4.0-server-auth-sasl-openssl',
-        'test-4.0-replica-set-auth-sasl-openssl',
-        'test-latest-server-auth-sasl-openssl',
-        'test-latest-replica-set-auth-sasl-openssl'
-        ],
-        { 'CC': 'gcc' },
-        batchtime=days(1)),
+            'RHEL 6.2',
+            'rhel62-test',
+            ['debug-compile-sasl-openssl',
+             'test-4.0-server-auth-sasl-openssl',
+             'test-4.0-replica-set-auth-sasl-openssl',
+             'test-latest-server-auth-sasl-openssl',
+             'test-latest-replica-set-auth-sasl-openssl'
+             ],
+            {'CC': 'gcc'},
+            batchtime=days(1)),
     Variant('mongohouse',
-        'Mongohouse Test',
-        'ubuntu1804-test',
-        ['debug-compile-sasl-openssl',
-         'test-mongohouse'],
-        {}),
-    Variant ('ocsp', 'OCSP tests', 'ubuntu2004-small', [
-        OD([('name', 'debug-compile-nosasl-openssl'), ('distros', ['ubuntu2004-small'])]),
-        OD([('name', 'debug-compile-nosasl-openssl-static'), ('distros', ['ubuntu2004-small'])]),
+            'Mongohouse Test',
+            'ubuntu1804-test',
+            ['debug-compile-sasl-openssl',
+             'test-mongohouse'],
+            {}),
+    Variant('ocsp', 'OCSP tests', 'ubuntu2004-small', [
+        OD([('name', 'debug-compile-nosasl-openssl'),
+            ('distros', ['ubuntu2004-small'])]),
+        OD([('name', 'debug-compile-nosasl-openssl-static'),
+            ('distros', ['ubuntu2004-small'])]),
         OD([('name', 'debug-compile-nosasl-darwinssl'), ('distros', ['macos-1014'])]),
-        OD([('name', 'debug-compile-nosasl-winssl'), ('distros', ['windows-64-vs2017-test'])]),
+        OD([('name', 'debug-compile-nosasl-winssl'),
+            ('distros', ['windows-64-vs2017-test'])]),
         OD([('name', '.ocsp-openssl'), ('distros', ['ubuntu2004-small'])]),
         OD([('name', '.ocsp-darwinssl'), ('distros', ['macos-1014'])]),
         OD([('name', '.ocsp-winssl'), ('distros', ['windows-64-vs2017-test'])]),
-        OD([('name', 'debug-compile-nosasl-openssl-1.0.1'), ('distros', ['ubuntu2004-small'])]),
+        OD([('name', 'debug-compile-nosasl-openssl-1.0.1'),
+            ('distros', ['ubuntu2004-small'])]),
         OD([('name', '.ocsp-openssl-1.0.1'), ('distros', ['ubuntu2004-small'])])
     ], {}, batchtime=days(7)),
-    Variant ('packaging', 'Linux Distro Packaging', 'ubuntu1804-test', [
+    Variant('packaging', 'Linux Distro Packaging', 'ubuntu1804-test', [
         'debian-package-build',
         OD([('name', 'rpm-package-build'), ('distros', ['rhel82-arm64-small'])]),
     ], {}, batchtime=days(1)),
     Variant('tsan-ubuntu',
-        'Thread Sanitizer (TSAN) Tests (Ubuntu 18.04)',
-        'ubuntu1804-small',
-        ['.tsan !.3.6'],
-        {'CC': '/opt/mongodbtoolchain/v3/bin/clang'},
-        batchtime=days(1)),
+            'Thread Sanitizer (TSAN) Tests (Ubuntu 18.04)',
+            'ubuntu1804-small',
+            ['.tsan !.3.6'],
+            {'CC': '/opt/mongodbtoolchain/v3/bin/clang'},
+            batchtime=days(1)),
     Variant('versioned-api',
-        'Versioned API Tests',
-        'ubuntu1804-test',
-        ['debug-compile-nosasl-openssl',
-         'debug-compile-nosasl-nossl',
-         '.versioned-api'],
-        {}),
+            'Versioned API Tests',
+            'ubuntu1804-test',
+            ['debug-compile-nosasl-openssl',
+             'debug-compile-nosasl-nossl',
+             '.versioned-api'],
+            {}),
     Variant('macos_m1',
-        'macOS m1 (Apple LLVM)',
-        'macos-1100-arm64',
-        ['debug-compile-sasl-darwinssl'],
-        {'CC': 'clang'}),
+            'macOS m1 (Apple LLVM)',
+            'macos-1100-arm64',
+            ['debug-compile-sasl-darwinssl'],
+            {'CC': 'clang'}),
 ]
