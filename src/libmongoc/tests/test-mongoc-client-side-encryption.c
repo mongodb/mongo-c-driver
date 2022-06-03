@@ -4347,10 +4347,11 @@ decryption_events_setup (void)
                           def->encryptedClient, aeOpts, &error),
                        error);
 
-      bson_destroy (kms_providers);
-      mongoc_auto_encryption_opts_destroy (aeOpts);
       def->encryptedColl = mongoc_client_get_collection (
          def->encryptedClient, "db", "decryption_events");
+
+      bson_destroy (kms_providers);
+      mongoc_auto_encryption_opts_destroy (aeOpts);
       mongoc_uri_destroy (uri);
    }
 
