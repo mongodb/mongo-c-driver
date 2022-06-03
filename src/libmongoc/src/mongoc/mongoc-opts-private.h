@@ -145,6 +145,7 @@ typedef struct _mongoc_change_stream_opts_t {
    mongoc_timestamp_t startAtOperationTime;
    int64_t maxAwaitTimeMS;
    const char *fullDocument;
+   const char *fullDocumentBeforeChange;
    bson_value_t comment;
    bson_t extra;
 } mongoc_change_stream_opts_t;

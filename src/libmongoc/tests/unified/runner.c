@@ -79,8 +79,6 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
    /* libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode. */
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
-   /* CDRIVER-4277: Change streams support for user-facing PIT pre- and post-images */
-   {"change-streams-pre_and_post_images", SKIP_ALL_TESTS},
    {0},
 };
 /* clang-format on */
@@ -1695,7 +1693,7 @@ run_one_test_file (bson_t *bson)
       test_t *test = NULL;
       bson_t test_bson;
       bool test_ok;
-      bson_error_t error;
+      bson_error_t error = {0};
 
       test_diagnostics_reset ();
       test_diagnostics_test_info ("test file: %s", test_file->description);

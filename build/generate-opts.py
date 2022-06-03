@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """IDL for functions that take flexible options as a bson_t.
 
 Defines the options accepted by functions that receive a const bson_t *opts,
@@ -25,6 +24,7 @@ Generates struct types, options parsing code, and RST documentation.
 Written for Python 2.6+, requires Jinja 2 for templating.
 """
 
+# yapf: disable
 from collections import OrderedDict
 from os.path import basename, dirname, join as joinpath, normpath
 import re
@@ -292,9 +292,25 @@ opts_structs = OrderedDict([
         ('startAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. Unlike ``resumeAfter``, this can resume notifications after an "invalidate" event. The result of :symbol:`mongoc_change_stream_get_resume_token()` or the ``_id`` field  of any change received from a change stream can be used here.  This option is mutually exclusive with ``resumeAfter`` and ``startAtOperationTime``.'}),
         ('startAtOperationTime', {'type': 'timestamp', 'help': 'A ``Timestamp``. The change stream only provides changes that occurred at or after the specified timestamp. Any command run against the server will return an operation time that can be used here. This option is mutually exclusive with ``resumeAfter`` and ``startAfter``.'}),
         ('maxAwaitTimeMS', {'type': 'int64_t', 'convert': '_mongoc_convert_int64_positive', 'help': 'An ``int64`` representing the maximum amount of time a call to :symbol:`mongoc_change_stream_next` will block waiting for data'}),
-        ('fullDocument', {'type': 'utf8', 'help': 'A UTF-8 string. Set this option to "updateLookup" to direct the change stream cursor to lookup the most current majority-committed version of the document associated to an update change stream event.'}),
+        ('fullDocument', {
+            'type': 'utf8',
+            'help': 'An optional UTF-8 string. Set this option to "default", '
+                    '"updateLookup", "whenAvailable", or "required", If unset, '
+                    'The string "default" is assumed. Set this option to '
+                    '"updateLookup" to direct the change stream cursor to '
+                    'lookup the most current majority-committed version of the '
+                    'document associated to an update change stream event.'
+        }),
+        ('fullDocumentBeforeChange', {
+            'type': 'utf8',
+            'help': 'An optional UTF-8 string. Set this option to '
+                    '"whenAvailable", "required", or "off". When unset, the '
+                    'default value is "off". Similar to "fullDocument", but '
+                    'returns the value of the document before the associated '
+                    'change.',
+        }),
         comment_option_string_pre_4_4,
-    ], fullDocument="default")),
+    ], fullDocument=None, fullDocumentBeforeChange=None)),
 
     ('mongoc_create_index_opts_t', Struct([
         write_concern_option,

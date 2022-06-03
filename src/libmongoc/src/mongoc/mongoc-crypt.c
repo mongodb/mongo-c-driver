@@ -349,7 +349,6 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
    mongocrypt_binary_t *key_bin = NULL;
    const bson_t *key_bson;
    mongoc_cursor_t *cursor = NULL;
-   mongoc_read_concern_t *rc = NULL;
 
    /* 1. Use MongoCollection.find on the MongoClient connected to the key vault
     * client (which may be the same as the encrypted client). Use the filter
@@ -365,15 +364,12 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
       goto fail;
    }
 
-   rc = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
-   if (!mongoc_read_concern_append (rc, &opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "%s",
-                      "could not set read concern");
-      goto fail;
+   {
+      const mongoc_read_concern_t *const rc =
+         mongoc_collection_get_read_concern (state_machine->keyvault_coll);
+      const char *const level = rc ? mongoc_read_concern_get_level (rc) : NULL;
+      BSON_ASSERT (level &&
+                   strcmp (level, MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0);
    }
 
    cursor = mongoc_collection_find_with_opts (
@@ -404,7 +400,6 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
 fail:
    mongocrypt_binary_destroy (filter_bin);
    mongoc_cursor_destroy (cursor);
-   mongoc_read_concern_destroy (rc);
    bson_destroy (&opts);
    mongocrypt_binary_destroy (key_bin);
    return ret;
@@ -915,8 +910,8 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    const bson_t *schema_map,
                    const bson_t *encrypted_fields_map,
                    const bson_t *tls_opts,
-                   const char *csfle_override_path,
-                   bool csfle_required,
+                   const char *crypt_shared_lib_path,
+                   bool crypt_shared_lib_required,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
                    bson_error_t *error)
@@ -967,14 +962,15 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    }
 
    if (!bypass_auto_encryption) {
-      mongocrypt_setopt_append_csfle_search_path (crypt->handle, "$SYSTEM");
+      mongocrypt_setopt_append_crypt_shared_lib_search_path (crypt->handle,
+                                                             "$SYSTEM");
       if (!_crypt_check_error (crypt->handle, error, false)) {
          goto fail;
       }
 
-      if (csfle_override_path != NULL) {
-         mongocrypt_setopt_set_csfle_lib_path_override (crypt->handle,
-                                                        csfle_override_path);
+      if (crypt_shared_lib_path != NULL) {
+         mongocrypt_setopt_set_crypt_shared_lib_path_override (
+            crypt->handle, crypt_shared_lib_path);
          if (!_crypt_check_error (crypt->handle, error, false)) {
             goto fail;
          }
@@ -993,22 +989,24 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       goto fail;
    }
 
-   if (csfle_required) {
+   if (crypt_shared_lib_required) {
       uint32_t len = 0;
-      const char *s = mongocrypt_csfle_version_string (crypt->handle, &len);
+      const char *s =
+         mongocrypt_crypt_shared_lib_version_string (crypt->handle, &len);
       if (!s || len == 0) {
-         // empty/null version string indicates that csfle was not loaded by
+         // empty/null version string indicates that crypt_shared was not loaded by
          // libmongocrypt
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                         "Option 'csfleRequired' is 'true', but we failed to "
-                         "load the csfle runtime libary");
+         bson_set_error (
+            error,
+            MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+            "Option 'cryptSharedLibRequired' is 'true', but failed to "
+            "load the crypt_shared runtime libary");
          goto fail;
       }
       mongoc_log (MONGOC_LOG_LEVEL_DEBUG,
                   MONGOC_LOG_DOMAIN,
-                  "csfle version '%s' was found and loaded",
+                  "crypt_shared library version '%s' was found and loaded",
                   s);
    }
 
@@ -1181,7 +1179,7 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
    }
 
    if (query_type != NULL) {
-      mongocrypt_query_type_t converted;
+      mongocrypt_query_type_t converted = 0;
 
       switch (*query_type) {
       case MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY:

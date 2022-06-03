@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-   MONGOC_EXPORT (void)
+    void
     mongoc_client_encryption_encrypt_opts_set_contention_factor (
         mongoc_client_encryption_encrypt_opts_t *opts, int64_t contention_factor);
 
