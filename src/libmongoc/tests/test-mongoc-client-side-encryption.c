@@ -4302,7 +4302,7 @@ decryption_events_setup (void)
       plaintext.value.v_utf8.len = strlen (plaintext.value.v_utf8.str);
 
       mongoc_client_encryption_encrypt_opts_set_algorithm (
-         eOpts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM);
+         eOpts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
       mongoc_client_encryption_encrypt_opts_set_keyid (eOpts, &keyID);
 
       ASSERT_OR_PRINT (
