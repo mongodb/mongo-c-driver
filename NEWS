@@ -19,6 +19,12 @@ Features:
   * Support 'let' option for multiple CRUD commands.
   * Add Key Management API functions.
 
+Notes:
+
+  * The 5.0-compat release (1.18.0) accidentally broke estimatedDocumentCount on views by changing its implementation to use aggregate and a $collStats stage instead of the count command.
+  * The new release is fixing estimatedDocumentCount on views by reverting back to using count in its implementation.
+  * Due to an oversight, the count command was omitted from the Stable API in server versions 5.0.0 - 5.0.8 and 5.1.0 - 5.3.1, so users of the Stable API with estimatedDocumentCount are recommended to upgrade their MongoDB clusters to 5.0.9 or 5.3.2 (if on Atlas) or set apiStrict: false when constructing their MongoClients.
+
 Thanks to everyone who contributed to the development of this release.
 
   * Kevin Albertson
