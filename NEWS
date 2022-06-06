@@ -1,3 +1,37 @@
+libmongoc 1.22.0
+================
+
+Bug fixes:
+  
+  * Do not auto decrypt before emitting CommandSucceeded events.
+
+Improvements:
+
+  * Use OP_MSG if a server API version is requested.
+
+Features:
+
+  * Add server connectionId to command monitoring events.
+  * Add support for the comment field to all helpers.
+  * Support mongo_shared shared library.
+  * Support pre-point-in-time change stream events.
+  * Support Queryable Encryption.
+  * Support 'let' option for multiple CRUD commands.
+  * Add Key Management API functions.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Jeremy Mikola
+  * Colby Pike
+  * Ezra Chung
+  * Roberto C. Sánchez
+  * Jake Molnar
+  * Jesse Williamson
+  * Remi Collet
+
+
+
 libmongoc 1.21.1
 ================
 
