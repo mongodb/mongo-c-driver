@@ -12,11 +12,29 @@
 find_program (CCACHE_EXECUTABLE ccache)
 if (CCACHE_EXECUTABLE)
     message (STATUS "Found ccache: ${CCACHE_EXECUTABLE}")
-    option (MONGO_USE_CCACHE "Use CCache when compiling" ON)
+
+    execute_process (
+        COMMAND ${CCACHE_EXECUTABLE} --version | perl -ne "print $1 if /^ccache version (.+)$/"
+        OUTPUT_VARIABLE CCACHE_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    # Assume `ccache --version` mentions a simple version string, e.g. 1.2.3
+    set (SIMPLE_SEMVER_REGEX "([0-9]+)\.([0-9]+)\.([0-9]+)")
+    string (REGEX MATCH "${SIMPLE_SEMVER_REGEX}" CCACHE_VERSION ${CCACHE_VERSION})
+
+    # Avoid spurious "ccache.conf: No such file or directory" errors due to ccache being invoked in parallel, which was patched in ccache version 3.4.3.
+    if (${CCACHE_VERSION} VERSION_LESS 3.4.3)
+        message (STATUS "Detected ccache version ${CCACHE_VERSION} is less than 3.4.3, which may lead to spurious failures when run in parallel. See https://github.com/ccache/ccache/issues/260 for more information.")
+        message (STATUS "Compiling with CCache disabled. Enable by setting MONGO_USE_CCACHE to ON")
+        option (MONGO_USE_CCACHE "Use CCache when compiling" OFF)
+    else ()
+        message (STATUS "Compiling with CCache enabled. Disable by setting MONGO_USE_CCACHE to OFF")
+        option (MONGO_USE_CCACHE "Use CCache when compiling" ON)
+    endif ()
 endif ()
 
 if (MONGO_USE_CCACHE)
-    message (STATUS "Compiling with CCache enabled. Disable by setting MONGO_USE_CCACHE to OFF")
     set (CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
     set (CMAKE_C_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
 endif ()
