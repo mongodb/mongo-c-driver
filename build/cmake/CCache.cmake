@@ -12,7 +12,7 @@
 find_program (CCACHE_EXECUTABLE ccache)
 if (CCACHE_EXECUTABLE)
     message (STATUS "Found ccache: ${CCACHE_EXECUTABLE}")
-    option (MONGO_USE_CCACHE "Use CCache when compiling" ON)
+    option (MONGO_USE_CCACHE "Use CCache when compiling" OFF)
 endif ()
 
 if (MONGO_USE_CCACHE)
