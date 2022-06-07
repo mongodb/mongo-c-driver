@@ -20,8 +20,9 @@ if (NOT DEFINED MONGO_USE_CCACHE)
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
 
-        # Assume `ccache --version` mentions a simple version string, e.g. 1.2.3
-        set (SIMPLE_SEMVER_REGEX "([0-9]+)\.([0-9]+)\.([0-9]+)")
+        # Assume `ccache --version` mentions a simple version string, e.g. "1.2.3".
+        # Permit patch number to be omitted, e.g. "1.2".
+        set (SIMPLE_SEMVER_REGEX "([0-9]+)\.([0-9]+)(\.([0-9]+))?")
         string (REGEX MATCH "${SIMPLE_SEMVER_REGEX}" CCACHE_VERSION ${CCACHE_VERSION})
 
         # Avoid spurious "ccache.conf: No such file or directory" errors due to ccache being invoked in parallel, which was patched in ccache version 3.4.3.
