@@ -25,6 +25,13 @@ if (NOT DEFINED MONGO_USE_CCACHE)
         set (SIMPLE_SEMVER_REGEX "([0-9]+)\.([0-9]+)(\.([0-9]+))?")
         string (REGEX MATCH "${SIMPLE_SEMVER_REGEX}" CCACHE_VERSION ${CCACHE_VERSION})
 
+        if (CCACHE_VERSION)
+            message (STATUS "Detected ccache version: ${CCACHE_VERSION}")
+        else ()
+            message (WARNING "Could not obtain ccache version from `ccache --version`. Defaulting to 0.1.0.")
+            set (CCACHE_VERSION 0.1.0)
+        endif ()
+
         # Avoid spurious "ccache.conf: No such file or directory" errors due to ccache being invoked in parallel, which was patched in ccache version 3.4.3.
         if (${CCACHE_VERSION} VERSION_LESS 3.4.3)
             message (STATUS "Detected ccache version ${CCACHE_VERSION} is less than 3.4.3, which may lead to spurious failures when run in parallel. See https://github.com/ccache/ccache/issues/260 for more information.")
