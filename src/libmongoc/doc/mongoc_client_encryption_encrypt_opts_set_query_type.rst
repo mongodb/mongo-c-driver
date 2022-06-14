@@ -14,6 +14,9 @@ Synopsis
     mongoc_client_encryption_encrypt_opts_set_query_type (
         mongoc_client_encryption_encrypt_opts_t *opts, mongoc_encrypt_query_type_t query_type);
 
+.. important:: |qenc:api-is-experimental|
+.. versionadded:: 1.22.0
+
 Sets a query type for explicit encryption.
 Only applies when the algorithm set by :symbol:`mongoc_client_encryption_encrypt_opts_set_algorithm()` is "Indexed".
 It is an error to set the query type when algorithm is not "Indexed".
