@@ -28,7 +28,7 @@ analysis with :symbol:`mongoc_auto_encryption_opts_set_bypass_query_analysis`.
 The :symbol:`mongoc_auto_encryption_opts_t` must not be configured to bypass
 automatic encryption with
 :symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption`. **Note** that
-the ``"Indexed"`` payload type |qenc:is-experimental|!
+the ``"Indexed"`` payload type |qenc:is-experimental|
 
 Parameters
 ----------
