@@ -1221,7 +1221,7 @@ test_check_expected_events_for_client (test_t *test,
    LL_COUNT (entity->events, eiter, actual_num_events);
    if (expected_num_events != actual_num_events) {
       bool too_many_events = actual_num_events > expected_num_events;
-      if (*ignore_extra_events) {
+      if (ignore_extra_events && *ignore_extra_events) {
          // We can never have too many events
          too_many_events = false;
       }
