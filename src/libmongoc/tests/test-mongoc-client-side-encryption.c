@@ -4567,8 +4567,9 @@ static void
 test_qe_docs_example (void *unused)
 {
    bson_error_t error;
-   mongoc_client_t *client = test_framework_new_default_client ();
-   bson_t *kmsProviders;
+   mongoc_client_t *const client = test_framework_new_default_client ();
+   bson_t *const kmsProviders =
+      _make_kms_providers (false /* with aws */, true /* with local */);
    bson_value_t key1ID;
    bson_value_t key2ID;
    bson_t *encryptedFieldsMap;
@@ -4591,9 +4592,6 @@ test_qe_docs_example (void *unused)
       ASSERT_OR_PRINT (mongoc_database_drop (db, &error), error);
       mongoc_database_destroy (db);
    }
-
-   kmsProviders =
-      _make_kms_providers (false /* with aws */, true /* with local */);
 
    /* Create two data keys. */
    {
