@@ -777,6 +777,16 @@ check_run_on_requirement (test_runner_t *test_runner,
 #if defined(MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
       if (0 == strcmp (key, "csfle")) {
          const bool csfle_required = bson_iter_bool (&req_iter);
+         semver_t min_server_version;
+         
+         semver_parse ("4.2.0", &min_server_version);
+         if (semver_cmp (server_version, &min_server_version) < 0) {
+            *fail_reason = bson_strdup_printf (
+               "Server version %s is lower than minServerVersion %s required by CSFLE",
+               semver_to_string (server_version),
+               semver_to_string (&min_server_version));
+            return false;
+         }
 
          if (csfle_required) {
             continue;
