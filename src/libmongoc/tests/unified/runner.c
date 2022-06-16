@@ -782,7 +782,7 @@ check_run_on_requirement (test_runner_t *test_runner,
          semver_parse ("4.2.0", &min_server_version);
          if (semver_cmp (server_version, &min_server_version) < 0) {
             *fail_reason = bson_strdup_printf (
-               "Server version(%s) is lower than minServerVersion(%s) for CSFLE",
+               "Server version %s is lower than minServerVersion %s required by CSFLE",
                semver_to_string (server_version),
                semver_to_string (&min_server_version));
             return false;
