@@ -4132,12 +4132,15 @@ _test_unique_index_on_keyaltnames_case_2 (
       bson_destroy (&key_doc);
    }
 
-   /* Step 3: Repeat Step 2 and assert the operation does not fail. */
+   /* Step 3: Repeat Step 2, assert the operation does not fail, and assert the
+    * returned key document contains the keyAltName "abc" added in Step 2. */
    {
       bson_t key_doc;
       ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alt_name (
                           client_encryption, &new_key, "abc", &key_doc, &error),
                        error);
+      ASSERT (
+         match_bson (&key_doc, tmp_bson ("{'keyAltNames': ['abc']}"), false));
       bson_destroy (&key_doc);
    }
 
@@ -4156,13 +4159,16 @@ _test_unique_index_on_keyaltnames_case_2 (
    }
 
    /* Step 5: Use client_encryption to add a keyAltName "def" to the existing
-    * key and assert the operation does not fail. */
+    * key, assert the operation does not fail, and assert the returned key
+    * document contains the keyAltName "def" added during Setup. */
    {
       bson_t key_doc;
       ASSERT_OR_PRINT (
          mongoc_client_encryption_add_key_alt_name (
             client_encryption, existing_key, "def", &key_doc, &error),
          error);
+      ASSERT (
+         match_bson (&key_doc, tmp_bson ("{'keyAltNames': ['def']}"), false));
       bson_destroy (&key_doc);
    }
 
