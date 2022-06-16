@@ -994,8 +994,8 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       const char *s =
          mongocrypt_crypt_shared_lib_version_string (crypt->handle, &len);
       if (!s || len == 0) {
-         // empty/null version string indicates that crypt_shared was not loaded by
-         // libmongocrypt
+         // empty/null version string indicates that crypt_shared was not loaded
+         // by libmongocrypt
          bson_set_error (
             error,
             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
@@ -1132,7 +1132,7 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 const char *algorithm,
                                 const bson_value_t *keyid,
                                 char *keyaltname,
-                                const mongoc_encrypt_query_type_t *query_type,
+                                const char *query_type,
                                 const int64_t *contention_factor,
                                 const bson_value_t *value_in,
                                 bson_value_t *value_out,
@@ -1156,38 +1156,14 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
       goto fail;
    }
 
-   if (NULL != algorithm &&
-       0 == strcmp (algorithm, MONGOC_ENCRYPT_ALGORITHM_INDEXED)) {
-      if (!mongocrypt_ctx_setopt_index_type (state_machine->ctx,
-                                             MONGOCRYPT_INDEX_TYPE_EQUALITY)) {
-         _ctx_check_error (state_machine->ctx, error, true);
-         goto fail;
-      }
-   } else if (NULL != algorithm &&
-              0 == strcmp (algorithm, MONGOC_ENCRYPT_ALGORITHM_UNINDEXED)) {
-      if (!mongocrypt_ctx_setopt_index_type (state_machine->ctx,
-                                             MONGOCRYPT_INDEX_TYPE_NONE)) {
-         _ctx_check_error (state_machine->ctx, error, true);
-         goto fail;
-      }
-   } else {
-      if (!mongocrypt_ctx_setopt_algorithm (
-             state_machine->ctx, algorithm, -1)) {
-         _ctx_check_error (state_machine->ctx, error, true);
-         goto fail;
-      }
+   if (!mongocrypt_ctx_setopt_algorithm (state_machine->ctx, algorithm, -1)) {
+      _ctx_check_error (state_machine->ctx, error, true);
+      goto fail;
    }
 
    if (query_type != NULL) {
-      mongocrypt_query_type_t converted = 0;
-
-      switch (*query_type) {
-      case MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY:
-         converted = MONGOCRYPT_QUERY_TYPE_EQUALITY;
-         break;
-      }
-      if (!mongocrypt_ctx_setopt_query_type (state_machine->ctx, converted)) {
-         _ctx_check_error (state_machine->ctx, error, true);
+      if (!mongocrypt_ctx_setopt_query_type (
+             state_machine->ctx, query_type, -1)) {
          goto fail;
       }
    }
