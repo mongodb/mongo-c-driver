@@ -306,6 +306,10 @@ _mongoc_wire_version_to_server_version (int32_t version)
       return "5.1";
    case 15:
       return "5.2";
+   case 16:
+      return "5.3";
+   case 17:
+      return "6.0";
    default:
       return "Unknown";
    }

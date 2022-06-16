@@ -34,7 +34,8 @@ _{{ struct_name }}_parse (
 {% elif info['type'] in ('document', 'array') %}
    bson_init (&{{ struct_name }}->{{ path }});
 {% elif info['type'] == 'utf8' %}
-   {{ struct_name }}->{{ path }} = "{{ description.default(opt_name, "")}}";
+   {% set dflt = description.default(opt_name, "") -%}
+   {{ struct_name }}->{{ path }} = {{ "NULL" if dflt is none else (dflt|tojson) }};
 {% elif info['type'] == 'timestamp' %}
    memset (&{{ struct_name }}->{{ path }}, 0, sizeof (mongoc_timestamp_t));
 {% else %}

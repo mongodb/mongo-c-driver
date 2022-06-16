@@ -203,9 +203,12 @@ fi
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGO_SANITIZE=$SANITIZE"
 
-if ! python3 build/mongodl.py --test -C csfle -V 5.3.1 -o . > /dev/null; then
-   echo "No csfle detected for this platform. Disabling MONGOC_TEST_USE_CSFLE."
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CSFLE=OFF"
+if ! python3 build/mongodl.py --test -C crypt_shared -V 6.0.0-rc8 -o . > /dev/null; then
+   echo "No crypt_shared detected for this platform. Disabling MONGOC_TEST_USE_CRYPT_SHARED."
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CRYPT_SHARED=OFF"
+elif [ "$USE_CRYPT_SHARED" = "OFF" ]; then
+   echo "Variant requested disabling csfle. Disabling MONGOC_TEST_USE_CRYPT_SHARED."
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CRYPT_SHARED=OFF"
 fi
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS $EXTRA_CONFIGURE_FLAGS"
@@ -227,6 +230,7 @@ pkg-config --modversion libssl || true
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
+   # TODO (CDRIVER-4397): add "--branch 1.5.0-rc0" in git clone once libmongocrypt 1.5.0-rc0 is released.
    git clone https://github.com/mongodb/libmongocrypt
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build

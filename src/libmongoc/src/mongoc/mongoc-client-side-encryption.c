@@ -295,6 +295,8 @@ struct _mongoc_client_encryption_datakey_opts_t {
    bson_t *masterkey;
    char **keyaltnames;
    uint32_t keyaltnames_count;
+   uint8_t *keymaterial;
+   uint32_t keymaterial_len;
 };
 
 mongoc_client_encryption_datakey_opts_t *
@@ -328,6 +330,7 @@ mongoc_client_encryption_datakey_opts_destroy (
 
    bson_destroy (opts->masterkey);
    _clear_datakey_keyaltnames (opts);
+   bson_free (opts->keymaterial);
 
    bson_free (opts);
 }
@@ -371,6 +374,25 @@ mongoc_client_encryption_datakey_opts_set_keyaltnames (
    }
 }
 
+void
+mongoc_client_encryption_datakey_opts_set_keymaterial (
+   mongoc_client_encryption_datakey_opts_t *opts,
+   const uint8_t *data,
+   uint32_t len)
+{
+   if (!opts) {
+      return;
+   }
+
+   if (opts->keymaterial) {
+      bson_free (opts->keymaterial);
+   }
+
+   opts->keymaterial = bson_malloc (len);
+   memcpy (opts->keymaterial, data, len);
+   opts->keymaterial_len = len;
+}
+
 /*--------------------------------------------------------------------------
  * Explicit Encryption options.
  *--------------------------------------------------------------------------
@@ -379,6 +401,14 @@ struct _mongoc_client_encryption_encrypt_opts_t {
    bson_value_t keyid;
    char *algorithm;
    char *keyaltname;
+   struct {
+      int64_t value;
+      bool set;
+   } contention_factor;
+   struct {
+      mongoc_encrypt_query_type_t value;
+      bool set;
+   } query_type;
 };
 
 mongoc_client_encryption_encrypt_opts_t *
@@ -438,6 +468,72 @@ mongoc_client_encryption_encrypt_opts_set_algorithm (
    opts->algorithm = bson_strdup (algorithm);
 }
 
+void
+mongoc_client_encryption_encrypt_opts_set_contention_factor (
+   mongoc_client_encryption_encrypt_opts_t *opts, int64_t contention_factor)
+{
+   if (!opts) {
+      return;
+   }
+   opts->contention_factor.value = contention_factor;
+   opts->contention_factor.set = true;
+}
+
+void
+mongoc_client_encryption_encrypt_opts_set_query_type (
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   mongoc_encrypt_query_type_t query_type)
+{
+   if (!opts) {
+      return;
+   }
+   opts->query_type.value = query_type;
+   opts->query_type.set = true;
+}
+
+/*--------------------------------------------------------------------------
+ * RewrapManyDataKeyResult.
+ *--------------------------------------------------------------------------
+ */
+struct _mongoc_client_encryption_rewrap_many_datakey_result_t {
+   bson_t bulk_write_result;
+};
+
+mongoc_client_encryption_rewrap_many_datakey_result_t *
+mongoc_client_encryption_rewrap_many_datakey_result_new (void)
+{
+   mongoc_client_encryption_rewrap_many_datakey_result_t *const res =
+      bson_malloc0 (
+         sizeof (mongoc_client_encryption_rewrap_many_datakey_result_t));
+
+   bson_init (&res->bulk_write_result);
+
+   return res;
+}
+
+void
+mongoc_client_encryption_rewrap_many_datakey_result_destroy (
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result)
+{
+   if (!result) {
+      return;
+   }
+
+   bson_destroy (&result->bulk_write_result);
+   bson_free (result);
+}
+
+const bson_t *
+mongoc_client_encryption_rewrap_many_datakey_result_get_bulk_write_result (
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result)
+{
+   if (!result) {
+      return NULL;
+   }
+
+   return &result->bulk_write_result;
+}
+
 #ifndef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
 static bool
@@ -495,7 +591,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (
 
 
 bool
-mongoc_client_encryption_create_datakey (
+mongoc_client_encryption_create_key (
    mongoc_client_encryption_t *client_encryption,
    const char *kms_provider,
    mongoc_client_encryption_datakey_opts_t *opts,
@@ -505,6 +601,102 @@ mongoc_client_encryption_create_datakey (
    if (keyid) {
       memset (keyid, 0, sizeof (*keyid));
    }
+   return _disabled_error (error);
+}
+
+
+bool
+mongoc_client_encryption_create_datakey (
+   mongoc_client_encryption_t *client_encryption,
+   const char *kms_provider,
+   mongoc_client_encryption_datakey_opts_t *opts,
+   bson_value_t *keyid,
+   bson_error_t *error)
+{
+   return mongoc_client_encryption_create_key (
+      client_encryption, kms_provider, opts, keyid, error);
+}
+
+
+bool
+mongoc_client_encryption_rewrap_many_datakey (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *filter,
+   const char *provider,
+   const bson_t *master_key,
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result,
+   bson_error_t *error)
+{
+   return _disabled_error (error);
+}
+
+
+bool
+mongoc_client_encryption_delete_key (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   bson_t *reply,
+   bson_error_t *error)
+{
+   _mongoc_bson_init_if_set (reply);
+   return _disabled_error (error);
+}
+
+
+bool
+mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
+                                  const bson_value_t *keyid,
+                                  bson_t *key_doc,
+                                  bson_error_t *error)
+{
+   _mongoc_bson_init_if_set (key_doc);
+   return _disabled_error (error);
+}
+
+
+mongoc_cursor_t *
+mongoc_client_encryption_get_keys (
+   mongoc_client_encryption_t *client_encryption, bson_error_t *error)
+{
+   _disabled_error (error);
+   return NULL;
+}
+
+
+bool
+mongoc_client_encryption_add_key_alt_name (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   const char *keyaltname,
+   bson_t *key_doc,
+   bson_error_t *error)
+{
+   _mongoc_bson_init_if_set (key_doc);
+   return _disabled_error (error);
+}
+
+
+bool
+mongoc_client_encryption_remove_key_alt_name (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   const char *keyaltname,
+   bson_t *key_doc,
+   bson_error_t *error)
+{
+   _mongoc_bson_init_if_set (key_doc);
+   return _disabled_error (error);
+}
+
+
+bool
+mongoc_client_encryption_get_key_by_alt_name (
+   mongoc_client_encryption_t *client_encryption,
+   const char *keyaltname,
+   bson_t *key_doc,
+   bson_error_t *error)
+{
+   _mongoc_bson_init_if_set (key_doc);
    return _disabled_error (error);
 }
 
@@ -624,9 +816,13 @@ _release_mongocryptd_client (mongoc_client_t *client_encrypted,
 mongoc_collection_t *
 _get_keyvault_coll (mongoc_client_t *client_encrypted)
 {
+   mongoc_write_concern_t *const wc = mongoc_write_concern_new ();
+   mongoc_read_concern_t *const rc = mongoc_read_concern_new ();
+
    mongoc_client_t *keyvault_client;
    const char *db;
    const char *coll;
+   mongoc_collection_t *res = NULL;
 
    db = client_encrypted->topology->keyvault_db;
    coll = client_encrypted->topology->keyvault_coll;
@@ -645,7 +841,19 @@ _get_keyvault_coll (mongoc_client_t *client_encrypted)
          keyvault_client = client_encrypted;
       }
    }
-   return mongoc_client_get_collection (keyvault_client, db, coll);
+
+   res = mongoc_client_get_collection (keyvault_client, db, coll);
+
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+   mongoc_collection_set_write_concern (res, wc);
+
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_collection_set_read_concern (res, rc);
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_read_concern_destroy (rc);
+
+   return res;
 }
 
 void
@@ -1215,29 +1423,32 @@ _parse_extra (const bson_t *extra,
          }
       }
 
-      if (bson_iter_init_find (&iter, extra, "csflePath")) {
+      if (bson_iter_init_find (&iter, extra, "cryptSharedLibPath")) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_CLIENT,
                             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected a string for 'csflePath'");
+                            "Expected a string for 'cryptSharedLibPath'");
             GOTO (fail);
          }
          size_t len;
          const char *ptr = bson_iter_utf8_unsafe (&iter, &len);
-         bson_free (topology->csfle_override_path);
-         topology->csfle_override_path = bson_strdup (ptr);
+         bson_free (topology->clientSideEncryption.autoOptions.extraOptions
+                       .cryptSharedLibPath);
+         topology->clientSideEncryption.autoOptions.extraOptions
+            .cryptSharedLibPath = bson_strdup (ptr);
       }
 
-      if (bson_iter_init_find (&iter, extra, "csfleRequired")) {
+      if (bson_iter_init_find (&iter, extra, "cryptSharedLibRequired")) {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_CLIENT,
                             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected a bool for 'csfleRequired'");
+                            "Expected a bool for 'cryptSharedLibRequired'");
             GOTO (fail);
          }
-         topology->csfle_required = bson_iter_bool_unsafe (&iter);
+         topology->clientSideEncryption.autoOptions.extraOptions
+            .cryptSharedLibRequired = bson_iter_bool_unsafe (&iter);
       }
    }
 
@@ -1344,8 +1555,10 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
                          opts->schema_map,
                          opts->encrypted_fields_map,
                          opts->tls_opts,
-                         client->topology->csfle_override_path,
-                         client->topology->csfle_required,
+                         client->topology->clientSideEncryption.autoOptions
+                            .extraOptions.cryptSharedLibPath,
+                         client->topology->clientSideEncryption.autoOptions
+                            .extraOptions.cryptSharedLibRequired,
                          opts->bypass_auto_encryption,
                          opts->bypass_query_analysis,
                          error);
@@ -1498,15 +1711,18 @@ _mongoc_cse_client_pool_enable_auto_encryption (
       GOTO (fail);
    }
 
-   topology->crypt = _mongoc_crypt_new (opts->kms_providers,
-                                        opts->schema_map,
-                                        opts->encrypted_fields_map,
-                                        opts->tls_opts,
-                                        topology->csfle_override_path,
-                                        topology->csfle_required,
-                                        opts->bypass_auto_encryption,
-                                        opts->bypass_query_analysis,
-                                        error);
+   topology->crypt =
+      _mongoc_crypt_new (opts->kms_providers,
+                         opts->schema_map,
+                         opts->encrypted_fields_map,
+                         opts->tls_opts,
+                         topology->clientSideEncryption.autoOptions.extraOptions
+                            .cryptSharedLibPath,
+                         topology->clientSideEncryption.autoOptions.extraOptions
+                            .cryptSharedLibRequired,
+                         opts->bypass_auto_encryption,
+                         opts->bypass_query_analysis,
+                         error);
    if (!topology->crypt) {
       GOTO (fail);
    }
@@ -1572,6 +1788,7 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    mongoc_client_encryption_t *client_encryption = NULL;
    bool success = false;
    mongoc_write_concern_t *wc = NULL;
+   mongoc_read_concern_t *rc = NULL;
 
    /* Check for required options */
    if (!opts || !opts->keyvault_client || !opts->keyvault_db ||
@@ -1595,8 +1812,11 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    client_encryption->keyvault_coll = mongoc_client_get_collection (
       opts->keyvault_client, opts->keyvault_db, opts->keyvault_coll);
    wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_collection_set_write_concern (client_encryption->keyvault_coll, wc);
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_collection_set_read_concern (client_encryption->keyvault_coll, rc);
 
    client_encryption->kms_providers = bson_copy (opts->kms_providers);
    client_encryption->crypt =
@@ -1604,8 +1824,8 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                          NULL /* schema_map */,
                          NULL /* encrypted_fields_map */,
                          opts->tls_opts,
-                         NULL /* No csfle path */,
-                         false /* csfle not requried */,
+                         NULL /* No crypt_shared path */,
+                         false /* crypt_shared not requried */,
                          true, /* bypassAutoEncryption (We are explicit) */
                          false /* bypass_query_analysis. Not applicable. */,
                          error);
@@ -1616,6 +1836,7 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
 
 fail:
    mongoc_write_concern_destroy (wc);
+   mongoc_read_concern_destroy (rc);
    if (!success) {
       mongoc_client_encryption_destroy (client_encryption);
       return NULL;
@@ -1635,8 +1856,25 @@ mongoc_client_encryption_destroy (mongoc_client_encryption_t *client_encryption)
    bson_free (client_encryption);
 }
 
+static bool
+_coll_has_write_concern_majority (const mongoc_collection_t *coll)
+{
+   const mongoc_write_concern_t *const wc =
+      mongoc_collection_get_write_concern (coll);
+   return wc && mongoc_write_concern_get_wmajority (wc);
+}
+
+static bool
+_coll_has_read_concern_majority (const mongoc_collection_t *coll)
+{
+   const mongoc_read_concern_t *const rc =
+      mongoc_collection_get_read_concern (coll);
+   const char *const level = rc ? mongoc_read_concern_get_level (rc) : NULL;
+   return level && strcmp (level, MONGOC_READ_CONCERN_LEVEL_MAJORITY) == 0;
+}
+
 bool
-mongoc_client_encryption_create_datakey (
+mongoc_client_encryption_create_key (
    mongoc_client_encryption_t *client_encryption,
    const char *kms_provider,
    mongoc_client_encryption_datakey_opts_t *opts,
@@ -1648,6 +1886,11 @@ mongoc_client_encryption_create_datakey (
    bson_t insert_opts = BSON_INITIALIZER;
 
    ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
 
    if (!opts) {
       bson_set_error (error,
@@ -1669,12 +1912,13 @@ mongoc_client_encryption_create_datakey (
                                       opts->masterkey,
                                       opts->keyaltnames,
                                       opts->keyaltnames_count,
+                                      opts->keymaterial,
+                                      opts->keymaterial_len,
                                       &datakey,
                                       error)) {
       GOTO (fail);
    }
 
-   /* Insert the data key with write concern majority */
    if (!mongoc_collection_insert_one (client_encryption->keyvault_coll,
                                       &datakey,
                                       NULL /* opts */,
@@ -1715,6 +1959,521 @@ fail:
 }
 
 bool
+mongoc_client_encryption_create_datakey (
+   mongoc_client_encryption_t *client_encryption,
+   const char *kms_provider,
+   mongoc_client_encryption_datakey_opts_t *opts,
+   bson_value_t *keyid,
+   bson_error_t *error)
+{
+   return mongoc_client_encryption_create_key (
+      client_encryption, kms_provider, opts, keyid, error);
+}
+
+bool
+mongoc_client_encryption_rewrap_many_datakey (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *filter,
+   const char *provider,
+   const bson_t *master_key,
+   mongoc_client_encryption_rewrap_many_datakey_result_t *result,
+   bson_error_t *error)
+{
+   bson_t keys = BSON_INITIALIZER;
+   bson_t local_result = BSON_INITIALIZER;
+   bson_t *const bulk_write_result =
+      result ? &result->bulk_write_result : &local_result;
+   mongoc_bulk_operation_t *bulk = NULL;
+   bson_iter_t iter;
+   bool ret = false;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+
+   BSON_ASSERT (
+      _coll_has_read_concern_majority (client_encryption->keyvault_coll));
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
+
+   bson_reinit (bulk_write_result);
+
+   if (!_mongoc_crypt_rewrap_many_datakey (client_encryption->crypt,
+                                           client_encryption->keyvault_coll,
+                                           filter,
+                                           provider,
+                                           master_key,
+                                           &keys,
+                                           error)) {
+      GOTO (fail);
+   }
+
+   /* No keys rewrapped, no key documents to update. */
+   if (bson_empty (&keys)) {
+      bson_destroy (&keys);
+      bson_destroy (&local_result);
+      return true;
+   }
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      client_encryption->keyvault_coll, NULL);
+
+   BSON_ASSERT (bulk);
+
+   if (!bson_iter_init_find (&iter, &keys, "v")) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                      "result did not contain expected field 'v'");
+      GOTO (fail);
+   }
+
+   if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                      "result did not return an array as expected");
+      GOTO (fail);
+   }
+
+   BSON_ASSERT (bson_iter_recurse (&iter, &iter));
+
+   while (bson_iter_next (&iter)) {
+      const uint8_t *data = NULL;
+      uint32_t len = 0u;
+      bson_t key;
+      bson_iter_t key_iter;
+      bson_subtype_t subtype;
+      bson_t selector = BSON_INITIALIZER;
+      bson_t document = BSON_INITIALIZER;
+      bool doc_success = false;
+
+      bson_iter_document (&iter, &len, &data);
+
+      if (!data || !bson_init_static (&key, data, len)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "element is not a valid BSON document");
+         goto doc_done;
+      }
+
+      /* Find _id and use as selector. */
+      {
+         if (!bson_iter_init_find (&key_iter, &key, "_id")) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "could not find _id in key document");
+            goto doc_done;
+         }
+
+         bson_iter_binary (&key_iter, &subtype, &len, &data);
+
+         if (!data || subtype != BSON_SUBTYPE_UUID) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "expected _id in key document to be a UUID");
+            goto doc_done;
+         }
+
+         BSON_ASSERT (bson_append_iter (&selector, "_id", 3, &key_iter));
+      }
+
+      /* Find and include potentially updated fields. */
+      {
+         bson_t child;
+
+         BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (&document, "$set", &child));
+         {
+            if (bson_iter_init_find (&key_iter, &key, "masterKey")) {
+               BSON_ASSERT (
+                  bson_append_iter (&child, "masterKey", -1, &key_iter));
+            }
+
+            if (bson_iter_init_find (&key_iter, &key, "keyMaterial")) {
+               BSON_ASSERT (
+                  bson_append_iter (&child, "keyMaterial", -1, &key_iter));
+            }
+         }
+         BSON_ASSERT (bson_append_document_end (&document, &child));
+      }
+
+      /* Update updateDate field. */
+      BCON_APPEND (
+         &document, "$currentDate", "{", "updateDate", BCON_BOOL (true), "}");
+
+      if (!mongoc_bulk_operation_update_one_with_opts (
+             bulk, &selector, &document, NULL, error)) {
+         goto doc_done;
+      }
+
+      doc_success = true;
+
+   doc_done:
+      bson_destroy (&key);
+      bson_destroy (&selector);
+      bson_destroy (&document);
+
+      if (!doc_success) {
+         GOTO (fail);
+      }
+   }
+
+   if (!mongoc_bulk_operation_execute (bulk, bulk_write_result, error)) {
+      GOTO (fail);
+   }
+
+   ret = true;
+
+fail:
+   bson_destroy (&keys);
+   bson_destroy (&local_result);
+   mongoc_bulk_operation_destroy (bulk);
+
+   RETURN (ret);
+}
+
+bool
+mongoc_client_encryption_delete_key (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   bson_t *reply,
+   bson_error_t *error)
+{
+   bool ret = false;
+   bson_t selector = BSON_INITIALIZER;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (keyid);
+
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
+
+   BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
+   BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
+   BSON_ASSERT (keyid->value.v_binary.data_len > 0u);
+
+   BSON_ASSERT (BSON_APPEND_BINARY (&selector,
+                                    "_id",
+                                    keyid->value.v_binary.subtype,
+                                    keyid->value.v_binary.data,
+                                    keyid->value.v_binary.data_len));
+
+   ret = mongoc_collection_delete_one (
+      client_encryption->keyvault_coll, &selector, NULL, reply, error);
+
+   bson_destroy (&selector);
+
+   RETURN (ret);
+}
+
+bool
+mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
+                                  const bson_value_t *keyid,
+                                  bson_t *key_doc,
+                                  bson_error_t *error)
+{
+   bson_t filter = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor = NULL;
+   bool ret = false;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (keyid);
+
+   BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
+   BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
+   BSON_ASSERT (keyid->value.v_binary.data_len > 0u);
+
+   BSON_ASSERT (BSON_APPEND_BINARY (&filter,
+                                    "_id",
+                                    keyid->value.v_binary.subtype,
+                                    keyid->value.v_binary.data,
+                                    keyid->value.v_binary.data_len));
+
+   BSON_ASSERT (
+      _coll_has_read_concern_majority (client_encryption->keyvault_coll));
+
+   _mongoc_bson_init_if_set (key_doc);
+
+   cursor = mongoc_collection_find_with_opts (
+      client_encryption->keyvault_coll, &filter, NULL, NULL);
+
+   ret = !mongoc_cursor_error (cursor, error);
+
+   if (ret && key_doc) {
+      const bson_t *bson = NULL;
+
+      if (mongoc_cursor_next (cursor, &bson)) {
+         bson_copy_to (bson, key_doc);
+      } else if (mongoc_cursor_error (cursor, error)) {
+         ret = false;
+      }
+   }
+
+   bson_destroy (&filter);
+   mongoc_cursor_destroy (cursor);
+
+   RETURN (ret);
+}
+
+mongoc_cursor_t *
+mongoc_client_encryption_get_keys (
+   mongoc_client_encryption_t *client_encryption, bson_error_t *error)
+{
+   mongoc_cursor_t *cursor = NULL;
+   bson_t filter = BSON_INITIALIZER;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+
+   BSON_ASSERT (
+      _coll_has_read_concern_majority (client_encryption->keyvault_coll));
+
+   /* If an error occurred, user should query cursor error. */
+   cursor = mongoc_collection_find_with_opts (
+      client_encryption->keyvault_coll, &filter, NULL, NULL);
+
+   bson_destroy (&filter);
+
+   RETURN (cursor);
+}
+
+bool
+mongoc_client_encryption_add_key_alt_name (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   const char *keyaltname,
+   bson_t *key_doc,
+   bson_error_t *error)
+{
+   mongoc_find_and_modify_opts_t *const opts =
+      mongoc_find_and_modify_opts_new ();
+   bson_t query = BSON_INITIALIZER;
+   bool ret = false;
+   bson_t local_reply;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (keyid);
+   BSON_ASSERT_PARAM (keyaltname);
+
+   BSON_ASSERT (
+      _coll_has_read_concern_majority (client_encryption->keyvault_coll));
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
+
+   BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
+   BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
+   BSON_ASSERT (keyid->value.v_binary.data_len > 0u);
+
+   BSON_ASSERT (BSON_APPEND_BINARY (&query,
+                                    "_id",
+                                    keyid->value.v_binary.subtype,
+                                    keyid->value.v_binary.data,
+                                    keyid->value.v_binary.data_len));
+
+   _mongoc_bson_init_if_set (key_doc);
+
+   {
+      bson_t *const update = BCON_NEW (
+         "$addToSet", "{", "keyAltNames", BCON_UTF8 (keyaltname), "}");
+      BSON_ASSERT (mongoc_find_and_modify_opts_set_update (opts, update));
+      bson_destroy (update);
+   }
+
+   ret = mongoc_collection_find_and_modify_with_opts (
+      client_encryption->keyvault_coll, &query, opts, &local_reply, error);
+
+   if (ret && key_doc) {
+      bson_iter_t iter;
+
+      if (bson_iter_init_find (&iter, &local_reply, "value")) {
+         const bson_value_t *const value = bson_iter_value (&iter);
+
+         if (value->value_type == BSON_TYPE_DOCUMENT) {
+            bson_t bson;
+            BSON_ASSERT (bson_init_static (
+               &bson, value->value.v_doc.data, value->value.v_doc.data_len));
+            bson_copy_to (&bson, key_doc);
+            bson_destroy (&bson);
+         } else if (value->value_type == BSON_TYPE_NULL) {
+            bson_t bson = BSON_INITIALIZER;
+            bson_copy_to (&bson, key_doc);
+            bson_destroy (&bson);
+         } else {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "expected field value to be a document or null");
+            ret = false;
+         }
+      }
+   }
+
+   mongoc_find_and_modify_opts_destroy (opts);
+   bson_destroy (&query);
+   bson_destroy (&local_reply);
+
+   RETURN (ret);
+}
+
+bool
+mongoc_client_encryption_remove_key_alt_name (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_value_t *keyid,
+   const char *keyaltname,
+   bson_t *key_doc,
+   bson_error_t *error)
+{
+   bson_t query = BSON_INITIALIZER;
+   bool ret = false;
+   bson_t local_reply;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (keyid);
+   BSON_ASSERT_PARAM (keyaltname);
+
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
+
+   BSON_ASSERT (keyid->value_type == BSON_TYPE_BINARY);
+   BSON_ASSERT (keyid->value.v_binary.subtype == BSON_SUBTYPE_UUID);
+   BSON_ASSERT (keyid->value.v_binary.data_len > 0u);
+
+   BSON_ASSERT (BSON_APPEND_BINARY (&query,
+                                    "_id",
+                                    keyid->value.v_binary.subtype,
+                                    keyid->value.v_binary.data,
+                                    keyid->value.v_binary.data_len));
+
+   _mongoc_bson_init_if_set (key_doc);
+
+
+   {
+      mongoc_find_and_modify_opts_t *const opts =
+         mongoc_find_and_modify_opts_new ();
+
+      /* clang-format off */
+      bson_t *const update = BCON_NEW (
+         "0", "{",
+            "$set", "{",
+               "keyAltNames", "{",
+                  "$cond", "[",
+                     "{",
+                        "$eq", "[", "$keyAltNames", "[", keyaltname, "]", "]",
+                     "}",
+                     "$$REMOVE",
+                     "{",
+                        "$filter", "{",
+                           "input", "$keyAltNames",
+                           "cond", "{",
+                              "$ne", "[", "$$this", keyaltname, "]",
+                           "}",
+                        "}",
+                     "}",
+                  "]",
+               "}",
+            "}",
+         "}");
+      /* clang-format on */
+
+      BSON_ASSERT (mongoc_find_and_modify_opts_set_update (opts, update));
+
+      ret = mongoc_collection_find_and_modify_with_opts (
+         client_encryption->keyvault_coll, &query, opts, &local_reply, error);
+
+      bson_destroy (update);
+      mongoc_find_and_modify_opts_destroy (opts);
+   }
+
+   if (ret && key_doc) {
+      bson_iter_t iter;
+
+      if (bson_iter_init_find (&iter, &local_reply, "value")) {
+         const bson_value_t *const value = bson_iter_value (&iter);
+
+         if (value->value_type == BSON_TYPE_DOCUMENT) {
+            bson_t bson;
+            BSON_ASSERT (bson_init_static (
+               &bson, value->value.v_doc.data, value->value.v_doc.data_len));
+            bson_copy_to (&bson, key_doc);
+            bson_destroy (&bson);
+         } else if (value->value_type == BSON_TYPE_NULL) {
+            bson_t bson = BSON_INITIALIZER;
+            bson_copy_to (&bson, key_doc);
+            bson_destroy (&bson);
+         } else {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                            "expected field value to be a document or null");
+            ret = false;
+         }
+      }
+   }
+
+fail:
+   bson_destroy (&query);
+   bson_destroy (&local_reply);
+
+   RETURN (ret);
+}
+
+bool
+mongoc_client_encryption_get_key_by_alt_name (
+   mongoc_client_encryption_t *client_encryption,
+   const char *keyaltname,
+   bson_t *key_doc,
+   bson_error_t *error)
+{
+   bson_t filter = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor = NULL;
+   bool ret = false;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (keyaltname);
+
+   BSON_ASSERT (
+      _coll_has_write_concern_majority (client_encryption->keyvault_coll));
+
+   BSON_ASSERT (BSON_APPEND_UTF8 (&filter, "keyAltNames", keyaltname));
+
+   _mongoc_bson_init_if_set (key_doc);
+
+   cursor = mongoc_collection_find_with_opts (
+      client_encryption->keyvault_coll, &filter, NULL, NULL);
+
+   ret = !mongoc_cursor_error (cursor, error);
+
+   if (ret && key_doc) {
+      const bson_t *bson = NULL;
+
+      if (mongoc_cursor_next (cursor, &bson)) {
+         bson_copy_to (bson, key_doc);
+      } else if (mongoc_cursor_error (cursor, error)) {
+         ret = false;
+      }
+   }
+
+   bson_destroy (&filter);
+   mongoc_cursor_destroy (cursor);
+
+   RETURN (ret);
+}
+
+bool
 mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
                                   const bson_value_t *value,
                                   mongoc_client_encryption_encrypt_opts_t *opts,
@@ -1746,14 +2505,17 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
       GOTO (fail);
    }
 
-   if (!_mongoc_crypt_explicit_encrypt (client_encryption->crypt,
-                                        client_encryption->keyvault_coll,
-                                        opts->algorithm,
-                                        &opts->keyid,
-                                        opts->keyaltname,
-                                        value,
-                                        ciphertext,
-                                        error)) {
+   if (!_mongoc_crypt_explicit_encrypt (
+          client_encryption->crypt,
+          client_encryption->keyvault_coll,
+          opts->algorithm,
+          &opts->keyid,
+          opts->keyaltname,
+          opts->query_type.set ? &opts->query_type.value : NULL,
+          opts->contention_factor.set ? &opts->contention_factor.value : NULL,
+          value,
+          ciphertext,
+          error)) {
       GOTO (fail);
    }
 
