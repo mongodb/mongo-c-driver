@@ -4136,7 +4136,6 @@ _test_unique_index_on_keyaltnames_case_2 (
     * returned key document contains the keyAltName "abc" added in Step 2. */
    {
       bson_t key_doc;
-      bson_iter_t iter;
       ASSERT_OR_PRINT (mongoc_client_encryption_add_key_alt_name (
                           client_encryption, &new_key, "abc", &key_doc, &error),
                        error);
