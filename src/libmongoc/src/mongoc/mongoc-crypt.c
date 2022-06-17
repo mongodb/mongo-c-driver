@@ -35,6 +35,7 @@ struct __mongoc_crypt_t {
    mongoc_ssl_opt_t aws_tls_opt;
    mongoc_ssl_opt_t azure_tls_opt;
    mongoc_ssl_opt_t gcp_tls_opt;
+   _credentials_callback creds_cb;
 };
 
 static void
@@ -576,6 +577,21 @@ fail:
 }
 
 static bool
+_state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
+{
+   bson_t creds = BSON_INITIALIZER;
+   BSON_ASSERT (sm->crypt->creds_cb.fn);
+
+   sm->crypt->creds_cb.fn (sm->crypt->creds_cb.userdata, &creds);
+   mongocrypt_binary_t *data = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (&creds), creds.len);
+   bool okay = mongocrypt_ctx_provide_kms_providers (sm->ctx, data);
+   mongocrypt_binary_destroy (data);
+   bson_destroy (&creds);
+   return okay;
+}
+
+static bool
 _state_ready (_state_machine_t *state_machine,
               bson_t *result,
               bson_error_t *error)
@@ -648,6 +664,11 @@ _state_machine_run (_state_machine_t *state_machine,
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          if (!_state_need_kms (state_machine, error)) {
+            goto fail;
+         }
+         break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         if (!_state_need_kms_credentials (state_machine, error)) {
             goto fail;
          }
          break;
@@ -914,6 +935,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool crypt_shared_lib_required,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
+                   _credentials_callback creds_cb,
                    bson_error_t *error)
 {
    _mongoc_crypt_t *crypt;
@@ -939,6 +961,12 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    if (!mongocrypt_setopt_kms_providers (crypt->handle, kms_providers_bin)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;
+   }
+
+   if (creds_cb.fn) {
+      // The user has provided a callback to lazily obtain KMS credentials. We
+      // need to opt-in to the libmongocrypt feature.
+      mongocrypt_setopt_use_need_kms_credentials_state (crypt->handle);
    }
 
    if (schema_map) {
@@ -1010,6 +1038,8 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                   s);
    }
 
+   crypt->creds_cb = creds_cb;
+
    success = true;
 fail:
    mongocrypt_binary_destroy (local_masterkey_bin);
@@ -1030,6 +1060,9 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
 {
    if (!crypt) {
       return;
+   }
+   if (crypt->creds_cb.destroy) {
+      crypt->creds_cb.destroy (crypt->creds_cb.userdata);
    }
    mongocrypt_destroy (crypt->handle);
    _mongoc_ssl_opts_cleanup (&crypt->kmip_tls_opt, true /* free_internal */);
