@@ -405,10 +405,7 @@ struct _mongoc_client_encryption_encrypt_opts_t {
       int64_t value;
       bool set;
    } contention_factor;
-   struct {
-      mongoc_encrypt_query_type_t value;
-      bool set;
-   } query_type;
+   char *query_type;
 };
 
 mongoc_client_encryption_encrypt_opts_t *
@@ -427,6 +424,7 @@ mongoc_client_encryption_encrypt_opts_destroy (
    bson_value_destroy (&opts->keyid);
    bson_free (opts->algorithm);
    bson_free (opts->keyaltname);
+   bson_free (opts->query_type);
    bson_free (opts);
 }
 
@@ -481,14 +479,13 @@ mongoc_client_encryption_encrypt_opts_set_contention_factor (
 
 void
 mongoc_client_encryption_encrypt_opts_set_query_type (
-   mongoc_client_encryption_encrypt_opts_t *opts,
-   mongoc_encrypt_query_type_t query_type)
+   mongoc_client_encryption_encrypt_opts_t *opts, const char *query_type)
 {
    if (!opts) {
       return;
    }
-   opts->query_type.value = query_type;
-   opts->query_type.set = true;
+   bson_free (opts->query_type);
+   opts->query_type = query_type ? bson_strdup (query_type) : NULL;
 }
 
 /*--------------------------------------------------------------------------
@@ -2422,7 +2419,6 @@ mongoc_client_encryption_remove_key_alt_name (
       }
    }
 
-fail:
    bson_destroy (&query);
    bson_destroy (&local_reply);
 
@@ -2511,7 +2507,7 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
           opts->algorithm,
           &opts->keyid,
           opts->keyaltname,
-          opts->query_type.set ? &opts->query_type.value : NULL,
+          opts->query_type,
           opts->contention_factor.set ? &opts->contention_factor.value : NULL,
           value,
           ciphertext,
