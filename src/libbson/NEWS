@@ -1,3 +1,29 @@
+libbson 1.21.2
+==============
+
+Announcing libbson 1.21.2.
+
+No changes since 1.21.1; release to keep pace with libmongoc's version.
+
+-- Ezra Chung
+
+libbson 1.22.0-beta0
+====================
+
+Bug fixes:
+
+  * Fix BSON_ASSERT triggered by invalid JavaScript/JSON.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Colby Pike
+  * Ezra Chung
+  * Jesse Williamson
+  * MonkeybreadSoftware
+
+
+
 libbson 1.21.1
 ==============
 

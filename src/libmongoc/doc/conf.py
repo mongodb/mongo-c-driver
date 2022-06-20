@@ -51,6 +51,23 @@ html_sidebars = {
     'configuring_tls': [],  # Make more room for the big table.
 }
 
+rst_prolog = '''
+.. |qenc:is-experimental| replace::
+
+    is part of the experimental
+    :doc:`Queryable Encryption </queryable-encryption>` API and may be subject
+    to breaking changes in future releases.
+
+.. |qenc:opt-is-experimental| replace::
+
+    This option |qenc:is-experimental|
+
+.. |qenc:api-is-experimental| replace::
+
+    This API |qenc:is-experimental|
+
+'''
+
 
 def add_canonical_link(app, pagename, templatename, context, doctree):
     link = ('<link rel="canonical"'
