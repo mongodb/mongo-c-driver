@@ -4323,10 +4323,10 @@ decryption_events_setup (void)
    {
       bson_value_copy (&def->ciphertext, &def->malformedCiphertext);
       ASSERT (def->ciphertext.value_type == BSON_TYPE_BINARY);
-      /* Set the last data byte to zero to make malformed. The last data byte is
+      /* Change the last data byte to make malformed. The last data byte is
        * part of the HMAC tag. */
       def->malformedCiphertext.value.v_binary
-         .data[def->malformedCiphertext.value.v_binary.data_len - 1] = 0;
+         .data[def->malformedCiphertext.value.v_binary.data_len - 1]++;
    }
 
    /* Create a MongoClient with automatic decryption. */
