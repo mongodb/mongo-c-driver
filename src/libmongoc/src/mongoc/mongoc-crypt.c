@@ -35,6 +35,10 @@ struct __mongoc_crypt_t {
    mongoc_ssl_opt_t aws_tls_opt;
    mongoc_ssl_opt_t azure_tls_opt;
    mongoc_ssl_opt_t gcp_tls_opt;
+   /// The kmsProviders that were provided by the user when encryption was
+   /// initiated. We need to remember this in case we need to load on-demand
+   /// credentials.
+   bson_t kms_providers;
 };
 
 static void
@@ -927,6 +931,10 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    crypt = bson_malloc0 (sizeof (*crypt));
    crypt->handle = mongocrypt_new ();
 
+   // Stash away a copy of the user's kmsProviders in case we need to lazily
+   // load credentials.
+   bson_copy_to (kms_providers, &crypt->kms_providers);
+
    if (!_parse_all_tls_opts (crypt, tls_opts, error)) {
       goto fail;
    }
@@ -1019,6 +1027,7 @@ fail:
 
    if (!success) {
       _mongoc_crypt_destroy (crypt);
+      bson_destroy (&crypt->kms_providers);
       return NULL;
    }
 
@@ -1036,6 +1045,7 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
    _mongoc_ssl_opts_cleanup (&crypt->aws_tls_opt, true /* free_internal */);
    _mongoc_ssl_opts_cleanup (&crypt->azure_tls_opt, true /* free_internal */);
    _mongoc_ssl_opts_cleanup (&crypt->gcp_tls_opt, true /* free_internal */);
+   bson_destroy (&crypt->kms_providers);
    bson_free (crypt);
 }
 
