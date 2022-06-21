@@ -27,6 +27,7 @@
 #include "mongoc-host-list-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-ssl-private.h"
+#include "mongoc-cluster-aws-private.h"
 #include "mongoc-util-private.h"
 
 struct __mongoc_crypt_t {
@@ -579,6 +580,133 @@ fail:
 #undef BUFFER_SIZE
 }
 
+/**
+ * @brief Check that the given kmsProviders has an empty 'aws' subdocument, and
+ * that it is the only empty subdocument.
+ *
+ * @param kms_providers The user-provided kmsProviders
+ * @param error Output parameter
+ * @return true If 'aws' is present and the only empty subdocument
+ * @return false On error or if there are other empty subdocuments.
+ */
+static bool
+_validate_kms_on_demand_aws_only (bson_t const *kms_providers,
+                                  bson_error_t *error)
+{
+   bson_iter_t iter;
+   if (!bson_iter_init (&iter, kms_providers)) {
+      BSON_UNREACHABLE (
+         "Failed to iterate on the user-provided kmsProviders document");
+   }
+
+   bool found_empty_aws_doc = false;
+
+   while (bson_iter_next (&iter)) {
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         // Nothing to do here
+         continue;
+      }
+      const uint8_t *dataptr;
+      uint32_t datalen;
+      bson_iter_document (&iter, &datalen, &dataptr);
+      bson_t subdoc;
+      const char *const key = bson_iter_key (&iter);
+      if (!bson_init_static (&subdoc, dataptr, datalen)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "Invalid sub-document '%s' in kmsProviders",
+                         key);
+         return false;
+      }
+      if (!bson_empty (&subdoc)) {
+         // Not an empty provider, so we don't need to do anything to fill it
+         // out.
+         continue;
+      }
+      // This is an empty provider, which means libmongocrypt wants us to
+      // provide credentials for it.
+      if (0 != strcmp (key, "aws")) {
+         // We only support AWS credentials (yet)
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "No credentials provided for '%s'",
+                         key);
+         return false;
+      }
+      // We found the empty AWS credentials
+      found_empty_aws_doc = true;
+   }
+
+   /// NEEDS_CREDENTIALS state is only entered when a kmsProvider was listed
+   /// with an empty document. The above loop will return if it finds any empty
+   /// subdocument that is not "aws". Therefore, this 'return true' is only
+   /// reachable if 'aws' is present and is the only empty subdocument.
+   BSON_ASSERT (found_empty_aws_doc);
+   return true;
+}
+
+static bool
+_state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
+{
+   if (_validate_kms_on_demand_aws_only (&sm->crypt->kms_providers, error)) {
+      // There was an error
+      return false;
+   }
+
+   /// We reach this point iff the user provided an empty "aws" kmsProvider and
+   /// no other providers were listed as empty documents.
+
+   // Attempt to obtain AWS credentials from the environment.
+   _mongoc_aws_credentials_t got_creds;
+   if (!_mongoc_aws_credentials_obtain (NULL, &got_creds, error)) {
+      // Failed to get credentials
+      return false;
+   }
+
+   // We have the credentials. Give them back to libmongocrypt
+
+   bool okay = false;
+   bson_t new_creds;
+   bson_t aws = {0};
+   bson_init (&new_creds);
+   // Begin the new "aws" subdoc
+   if (!BSON_APPEND_DOCUMENT_BEGIN (&new_creds, "aws", &aws)) {
+      goto append_begin_fail;
+   }
+   // Add the accessKeyId and the secretAccessKey
+   if (!(BSON_APPEND_UTF8 (&aws, "accessKeyId", got_creds.access_key_id) &&
+         BSON_APPEND_UTF8 (
+            &aws, "secretAccessKey", got_creds.secret_access_key))) {
+      goto build_fail;
+   }
+   // We may have a sessionToken to add as well
+   if (got_creds.session_token) {
+      if (!BSON_APPEND_UTF8 (&aws, "sessionToken", got_creds.session_token)) {
+         goto build_fail;
+      }
+   }
+
+   // Finish the subdoc
+   if (!bson_append_document_end (&new_creds, &aws)) {
+      goto build_fail;
+   }
+
+   // Now actually send that data to libmongocrypt
+   mongocrypt_binary_t *const def = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (&new_creds), new_creds.len);
+   okay = mongocrypt_ctx_provide_kms_providers (sm->ctx, def);
+   mongocrypt_binary_destroy (def);
+
+build_fail:
+   bson_destroy (&aws);
+append_begin_fail:
+   bson_destroy (&new_creds);
+
+   return okay;
+}
+
 static bool
 _state_ready (_state_machine_t *state_machine,
               bson_t *result,
@@ -652,6 +780,11 @@ _state_machine_run (_state_machine_t *state_machine,
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          if (!_state_need_kms (state_machine, error)) {
+            goto fail;
+         }
+         break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         if (!_state_need_kms_credentials (state_machine, error)) {
             goto fail;
          }
          break;
@@ -991,6 +1124,9 @@ _mongoc_crypt_new (const bson_t *kms_providers,
          goto fail;
       }
    }
+
+   // Enable the NEEDS_CREDENTIALS state for on-demand credential loading
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt->handle);
 
    if (!mongocrypt_init (crypt->handle)) {
       _crypt_check_error (crypt->handle, error, true);
