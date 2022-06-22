@@ -35,29 +35,6 @@ typedef struct {
 
 /* clang-format off */
 skipped_unified_test_t SKIPPED_TESTS[] = {
-   /* CDRIVER-3630: libmongoc does not unconditionally raise an error when using
-    * hint option with an unacknowledged write concern */
-   {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteOne with hints fails with client-side error"},
-   {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteMany with hints fails with client-side error"},
-   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite updateOne with hints fails with client-side error"},
-   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite updateMany with hints fails with client-side error"},
-   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite replaceOne with hints fails with client-side error"},
-   {"unacknowledged-deleteMany-hint-clientError", "Unacknowledged deleteMany with hint string fails with client-side error"},
-   {"unacknowledged-deleteMany-hint-clientError", "Unacknowledged deleteMany with hint document fails with client-side error"},
-   {"unacknowledged-deleteOne-hint-clientError", "Unacknowledged deleteOne with hint string fails with client-side error"},
-   {"unacknowledged-deleteOne-hint-clientError", "Unacknowledged deleteOne with hint document fails with client-side error"},
-   {"unacknowledged-findOneAndDelete-hint-clientError", "Unacknowledged findOneAndDelete with hint string fails with client-side error"},
-   {"unacknowledged-findOneAndDelete-hint-clientError", "Unacknowledged findOneAndDelete with hint document fails with client-side error"},
-   {"unacknowledged-findOneAndReplace-hint-clientError", "Unacknowledged findOneAndReplace with hint string fails with client-side error"},
-   {"unacknowledged-findOneAndReplace-hint-clientError", "Unacknowledged findOneAndReplace with hint document fails with client-side error"},
-   {"unacknowledged-findOneAndUpdate-hint-clientError", "Unacknowledged findOneAndUpdate with hint string fails with client-side error"},
-   {"unacknowledged-findOneAndUpdate-hint-clientError", "Unacknowledged findOneAndUpdate with hint document fails with client-side error"},
-   {"unacknowledged-replaceOne-hint-clientError", "Unacknowledged ReplaceOne with hint string fails with client-side error"},
-   {"unacknowledged-replaceOne-hint-clientError", "Unacknowledged ReplaceOne with hint document fails with client-side error"},
-   {"unacknowledged-updateMany-hint-clientError", "Unacknowledged updateMany with hint string fails with client-side error"},
-   {"unacknowledged-updateMany-hint-clientError", "Unacknowledged updateMany with hint document fails with client-side error"},
-   {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint string fails with client-side error"},
-   {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint document fails with client-side error"},
    /* CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior */
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
    /* CDRIVER-3867: drivers atlas testing (schema version 1.2) */
