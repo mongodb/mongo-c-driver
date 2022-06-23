@@ -528,6 +528,12 @@ mongoc_client_encryption_rewrap_many_datakey_result_get_bulk_write_result (
       return NULL;
    }
 
+   /* bulkWriteResult may be empty if no result of a bulk write operation has
+    * been assigned to it. Treat as equivalent to an unset optional state. */
+   if (bson_empty (&result->bulk_write_result)) {
+      return NULL;
+   }
+
    return &result->bulk_write_result;
 }
 
