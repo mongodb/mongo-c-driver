@@ -77,7 +77,7 @@ run_delete_with_hint_and_wc0 (bool expect_error,
       ASSERT_ERROR_CONTAINS (
          error,
          MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
          "The selected server does not support hint for delete");
       ASSERT (!r);
    } else {
