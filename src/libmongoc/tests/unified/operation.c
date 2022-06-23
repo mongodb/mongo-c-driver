@@ -350,7 +350,7 @@ operation_rewrap_many_data_key (test_t *test,
 
       bson_t doc = BSON_INITIALIZER;
 
-      {
+      if (bulk_write_result) {
          bson_t *const rewritten =
             rewrite_bulk_write_result (bulk_write_result);
          BSON_APPEND_DOCUMENT (&doc, "bulkWriteResult", rewritten);
