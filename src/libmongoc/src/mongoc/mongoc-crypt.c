@@ -581,82 +581,57 @@ fail:
 }
 
 /**
- * @brief Check that the given kmsProviders has an empty 'aws' subdocument, and
- * that it is the only empty subdocument.
+ * @brief Determine whether the given kmsProviders has an empty 'aws'
+ * subdocument
  *
  * @param kms_providers The user-provided kmsProviders
- * @param error Output parameter
- * @return true If 'aws' is present and the only empty subdocument
- * @return false On error or if there are other empty subdocuments.
+ * @param error Output parameter for possible errors.
+ * @return true If 'aws' is present and an empty subdocument
+ * @return false Otherwise or on error
  */
 static bool
-_validate_kms_on_demand_aws_only (bson_t const *kms_providers,
-                                  bson_error_t *error)
+_needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
 {
    bson_iter_t iter;
-   if (!bson_iter_init (&iter, kms_providers)) {
-      BSON_UNREACHABLE (
-         "Failed to iterate on the user-provided kmsProviders document");
+   if (!bson_iter_init_find (&iter, kms_providers, "aws")) {
+      // No "aws" subdocument
+      return false;
    }
 
-   bool found_empty_aws_doc = false;
-
-   while (bson_iter_next (&iter)) {
-      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         // Nothing to do here
-         continue;
-      }
-      const uint8_t *dataptr;
-      uint32_t datalen;
-      bson_iter_document (&iter, &datalen, &dataptr);
-      bson_t subdoc;
-      const char *const key = bson_iter_key (&iter);
-      if (!bson_init_static (&subdoc, dataptr, datalen)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                         "Invalid sub-document '%s' in kmsProviders",
-                         key);
-         return false;
-      }
-      if (!bson_empty (&subdoc)) {
-         // Not an empty provider, so we don't need to do anything to fill it
-         // out.
-         continue;
-      }
-      // This is an empty provider, which means libmongocrypt wants us to
-      // provide credentials for it.
-      if (0 != strcmp (key, "aws")) {
-         // We only support AWS credentials (yet)
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                         "No credentials provided for '%s'",
-                         key);
-         return false;
-      }
-      // We found the empty AWS credentials
-      found_empty_aws_doc = true;
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      // "aws" is not a document? Should be validated by libmongocrypt
+      return false;
    }
 
-   /// NEEDS_CREDENTIALS state is only entered when a kmsProvider was listed
-   /// with an empty document. The above loop will return if it finds any empty
-   /// subdocument that is not "aws". Therefore, this 'return true' is only
-   /// reachable if 'aws' is present and is the only empty subdocument.
-   BSON_ASSERT (found_empty_aws_doc);
-   return true;
+   const uint8_t *dataptr;
+   uint32_t datalen;
+   bson_iter_document (&iter, &datalen, &dataptr);
+   bson_t subdoc;
+   if (!bson_init_static (&subdoc, dataptr, datalen)) {
+      // Invalid "aws" document? Should be validated by libmongocrypt
+      return false;
+   }
+
+   if (bson_empty (&subdoc)) {
+      // "aws" is present and is an empty subdocument, which means that the user
+      // requests that the AWS credentials be loaded on-demand from the
+      // environment.
+      return true;
+   } else {
+      // "aws" is present and is non-empty, which means that the user has
+      // already provided credentials for AWS.
+      return false;
+   }
 }
 
 static bool
 _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
 {
-   if (_validate_kms_on_demand_aws_only (&sm->crypt->kms_providers, error)) {
-      // There was an error
+   // Note: We only support on-demand credentials for AWS at this time.
+   if (!_needs_on_demand_aws_kms (&sm->crypt->kms_providers, error)) {
+      // "aws" is not requested, or there was an error parsing the object.
       return false;
    }
-
-   /// We reach this point iff the user provided an empty "aws" kmsProvider and
-   /// no other providers were listed as empty documents.
 
    // Attempt to obtain AWS credentials from the environment.
    _mongoc_aws_credentials_t got_creds;
@@ -697,6 +672,9 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    mongocrypt_binary_t *const def = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (&new_creds), new_creds.len);
    okay = mongocrypt_ctx_provide_kms_providers (sm->ctx, def);
+   if (!okay) {
+      _ctx_check_error (sm->ctx, error, true);
+   }
    mongocrypt_binary_destroy (def);
 
 build_fail:
@@ -1163,7 +1141,6 @@ fail:
 
    if (!success) {
       _mongoc_crypt_destroy (crypt);
-      bson_destroy (&crypt->kms_providers);
       return NULL;
    }
 
