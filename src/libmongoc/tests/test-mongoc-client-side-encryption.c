@@ -3570,6 +3570,7 @@ explicit_encryption_setup (void)
    }
 
    mongoc_client_destroy (setupClient);
+   bson_destroy (key3Document);
    bson_destroy (key1Document);
    bson_destroy (encryptedFields);
    return eef;
