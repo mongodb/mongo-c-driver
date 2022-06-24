@@ -604,7 +604,7 @@ _mongoc_cse_auto_decrypt (mongoc_client_t *client,
 bool
 _mongoc_cse_client_enable_auto_encryption (
    mongoc_client_t *client,
-   mongoc_auto_encryption_opts_t *opts /* may be NULL */,
+   const mongoc_auto_encryption_opts_t *opts /* may be NULL */,
    bson_error_t *error)
 {
    return _disabled_error (error);
@@ -613,7 +613,7 @@ _mongoc_cse_client_enable_auto_encryption (
 bool
 _mongoc_cse_client_pool_enable_auto_encryption (
    mongoc_topology_t *topology,
-   mongoc_auto_encryption_opts_t *opts /* may be NULL */,
+   const mongoc_auto_encryption_opts_t *opts /* may be NULL */,
    bson_error_t *error)
 {
    return _disabled_error (error);
@@ -1503,9 +1503,10 @@ fail:
 }
 
 bool
-_mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
-                                           mongoc_auto_encryption_opts_t *opts,
-                                           bson_error_t *error)
+_mongoc_cse_client_enable_auto_encryption (
+   mongoc_client_t *client,
+   const mongoc_auto_encryption_opts_t *opts,
+   bson_error_t *error)
 {
    bool ret = false;
    mongoc_uri_t *mongocryptd_uri = NULL;
