@@ -3509,7 +3509,7 @@ mongoc_collection_find_and_modify_with_opts (
             error,
             MONGOC_ERROR_COMMAND,
             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-            "selected server does not support hint on findAndModify");
+            "The selected server does not support hint for findAndModify");
          GOTO (done);
       }
 
