@@ -40,8 +40,8 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_auto_encryption_opts_t mongoc_auto_encryption_opts_t;
 
-typedef void (*mongoc_kms_credentials_provider_callback_fn) (void *userdata,
-                                                             bson_t *out);
+typedef bool (*mongoc_kms_credentials_provider_callback_fn) (
+   void *userdata, bson_t *out, bson_error_t *error);
 typedef void (*mongoc_kms_credentials_provider_userdata_destructor) (
    void *userdata);
 

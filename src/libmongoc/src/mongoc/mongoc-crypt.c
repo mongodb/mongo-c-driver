@@ -582,7 +582,18 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    bson_t creds = BSON_INITIALIZER;
    BSON_ASSERT (sm->crypt->creds_cb.fn);
 
-   sm->crypt->creds_cb.fn (sm->crypt->creds_cb.userdata, &creds);
+   if (!sm->crypt->creds_cb.fn (sm->crypt->creds_cb.userdata, &creds, error)) {
+      // The callback reports that it has failed
+      if (!error->code) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "Unknown error from user-provided callback for "
+                         "on-demand KMS credentials");
+      }
+      return false;
+   }
+
    mongocrypt_binary_t *data = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (&creds), creds.len);
    bool okay = mongocrypt_ctx_provide_kms_providers (sm->ctx, data);
