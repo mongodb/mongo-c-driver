@@ -42,8 +42,6 @@ typedef struct _mongoc_auto_encryption_opts_t mongoc_auto_encryption_opts_t;
 
 typedef bool (*mongoc_kms_credentials_provider_callback_fn) (
    void *userdata, bson_t *out, bson_error_t *error);
-typedef void (*mongoc_kms_credentials_provider_userdata_destructor) (
-   void *userdata);
 
 MONGOC_EXPORT (mongoc_auto_encryption_opts_t *)
 mongoc_auto_encryption_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
@@ -95,8 +93,7 @@ MONGOC_EXPORT (void)
 mongoc_auto_encryption_opts_set_kms_credential_provider_callback (
    mongoc_auto_encryption_opts_t *opts,
    mongoc_kms_credentials_provider_callback_fn fn,
-   void *userdata,
-   mongoc_kms_credentials_provider_userdata_destructor destroy);
+   void *userdata);
 
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
@@ -134,8 +131,7 @@ MONGOC_EXPORT (void)
 mongoc_client_encryption_opts_set_kms_credential_provider_callback (
    mongoc_client_encryption_opts_t *opts,
    mongoc_kms_credentials_provider_callback_fn fn,
-   void *userdata,
-   mongoc_kms_credentials_provider_userdata_destructor destroy);
+   void *userdata);
 
 MONGOC_EXPORT (mongoc_client_encryption_rewrap_many_datakey_result_t *)
 mongoc_client_encryption_rewrap_many_datakey_result_new (void)

@@ -50,19 +50,13 @@ struct _mongoc_auto_encryption_opts_t {
 };
 
 static void
-_set_creds_callback (
-   _credentials_callback *cb,
-   mongoc_kms_credentials_provider_callback_fn fn,
-   void *userdata,
-   mongoc_kms_credentials_provider_userdata_destructor destroy)
+_set_creds_callback (_credentials_callback *cb,
+                     mongoc_kms_credentials_provider_callback_fn fn,
+                     void *userdata)
 {
    BSON_ASSERT (cb);
-   if (cb->destroy) {
-      cb->destroy (cb->userdata);
-   }
    cb->fn = fn;
    cb->userdata = userdata;
-   cb->destroy = destroy;
 }
 
 mongoc_auto_encryption_opts_t *
@@ -77,7 +71,6 @@ mongoc_auto_encryption_opts_destroy (mongoc_auto_encryption_opts_t *opts)
    if (!opts) {
       return;
    }
-   _set_creds_callback (&opts->creds_cb, NULL, NULL, NULL);
    bson_destroy (opts->extra);
    bson_destroy (opts->kms_providers);
    bson_destroy (opts->schema_map);
@@ -228,10 +221,9 @@ void
 mongoc_auto_encryption_opts_set_kms_credential_provider_callback (
    mongoc_auto_encryption_opts_t *opts,
    mongoc_kms_credentials_provider_callback_fn fn,
-   void *userdata,
-   mongoc_kms_credentials_provider_userdata_destructor destroy)
+   void *userdata)
 {
-   _set_creds_callback (&opts->creds_cb, fn, userdata, destroy);
+   _set_creds_callback (&opts->creds_cb, fn, userdata);
 }
 
 /*--------------------------------------------------------------------------
@@ -259,7 +251,7 @@ mongoc_client_encryption_opts_destroy (mongoc_client_encryption_opts_t *opts)
    if (!opts) {
       return;
    }
-   _set_creds_callback (&opts->creds_cb, NULL, NULL, NULL);
+   _set_creds_callback (&opts->creds_cb, NULL, NULL);
    bson_free (opts->keyvault_db);
    bson_free (opts->keyvault_coll);
    bson_destroy (opts->kms_providers);
@@ -321,9 +313,11 @@ void
 mongoc_client_encryption_opts_set_kms_credential_provider_callback (
    mongoc_client_encryption_opts_t *opts,
    mongoc_kms_credentials_provider_callback_fn fn,
-   void *userdata,
-   mongoc_kms_credentials_provider_userdata_destructor destroy)
+   void *userdata)
 {
+   BSON_ASSERT_PARAM (opts);
+   opts->creds_cb.fn = fn;
+   opts->creds_cb.userdata = userdata;
 }
 
 /*--------------------------------------------------------------------------
@@ -1602,9 +1596,6 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
    if (!client->topology->crypt) {
       GOTO (fail);
    }
-   // The encryptor now owns the callback data
-   opts->creds_cb.destroy = NULL;
-   _set_creds_callback (&opts->creds_cb, NULL, NULL, NULL);
 
    client->topology->bypass_auto_encryption = opts->bypass_auto_encryption;
    client->topology->bypass_query_analysis = opts->bypass_query_analysis;
@@ -1767,9 +1758,6 @@ _mongoc_cse_client_pool_enable_auto_encryption (
    if (!topology->crypt) {
       GOTO (fail);
    }
-   // The encryptor now owns the callback data
-   opts->creds_cb.destroy = NULL;
-   _set_creds_callback (&opts->creds_cb, NULL, NULL, NULL);
 
    topology->bypass_auto_encryption = opts->bypass_auto_encryption;
    topology->bypass_query_analysis = opts->bypass_query_analysis;
@@ -1878,9 +1866,6 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    if (!client_encryption->crypt) {
       goto fail;
    }
-   // The encryptor now owns the callback data
-   opts->creds_cb.destroy = NULL;
-   _set_creds_callback (&opts->creds_cb, NULL, NULL, NULL);
 
    success = true;
 

@@ -1075,9 +1075,6 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
    if (!crypt) {
       return;
    }
-   if (crypt->creds_cb.destroy) {
-      crypt->creds_cb.destroy (crypt->creds_cb.userdata);
-   }
    mongocrypt_destroy (crypt->handle);
    _mongoc_ssl_opts_cleanup (&crypt->kmip_tls_opt, true /* free_internal */);
    _mongoc_ssl_opts_cleanup (&crypt->aws_tls_opt, true /* free_internal */);

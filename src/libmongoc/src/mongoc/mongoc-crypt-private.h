@@ -32,7 +32,6 @@ typedef struct __mongoc_crypt_t _mongoc_crypt_t;
 typedef struct _credentials_callback {
    mongoc_kms_credentials_provider_callback_fn fn;
    void *userdata;
-   mongoc_kms_credentials_provider_userdata_destructor destroy;
 } _credentials_callback;
 
 /*
