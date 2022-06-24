@@ -597,6 +597,9 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    mongocrypt_binary_t *data = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (&creds), creds.len);
    bool okay = mongocrypt_ctx_provide_kms_providers (sm->ctx, data);
+   if (!okay) {
+      _ctx_check_error (sm->ctx, error, true);
+   }
    mongocrypt_binary_destroy (data);
    bson_destroy (&creds);
    return okay;
