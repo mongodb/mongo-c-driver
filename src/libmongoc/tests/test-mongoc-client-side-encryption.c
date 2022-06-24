@@ -3392,10 +3392,13 @@ test_kms_tls_options_extra_rejected (void *unused)
 /* ee_fixture is a fixture for the Explicit Encryption prose test. */
 typedef struct {
    bson_value_t key1ID;
+   bson_value_t key3ID;
    mongoc_client_t *keyVaultClient;
    mongoc_client_encryption_t *clientEncryption;
    mongoc_client_t *encryptedClient;
    mongoc_collection_t *encryptedColl;
+   mongoc_client_t *autoEncryptedClient;
+   mongoc_collection_t *autoEncryptedColl;
 } ee_fixture;
 
 static ee_fixture *
@@ -3408,6 +3411,9 @@ explicit_encryption_setup (void)
    bson_t *key1Document = get_bson_from_json_file (
       "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
       "key1-document.json");
+   bson_t *key3Document = get_bson_from_json_file (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "key3-document.json");
    mongoc_client_t *setupClient = test_framework_new_default_client ();
 
 
@@ -3419,6 +3425,16 @@ explicit_encryption_setup (void)
       ASSERT (bson_iter_init_find (&iter, key1Document, "_id"));
       value = bson_iter_value (&iter);
       bson_value_copy (value, &eef->key1ID);
+   }
+
+   /* Read the ``"_id"`` field of ``key3Document`` as ``key3ID``. */
+   {
+      bson_iter_t iter;
+      const bson_value_t *value;
+
+      ASSERT (bson_iter_init_find (&iter, key3Document, "_id"));
+      value = bson_iter_value (&iter);
+      bson_value_copy (value, &eef->key3ID);
    }
 
    /* Drop and create the collection ``db.explicit_encryption`` using
@@ -3477,6 +3493,11 @@ explicit_encryption_setup (void)
                           coll, key1Document, &iopts, NULL /* reply */, &error),
                        error);
 
+      /* Insert keyDocument3 with write concern majority */
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                          coll, key3Document, &iopts, NULL /* reply */, &error),
+                       error);
+
       mongoc_write_concern_destroy (wc);
       bson_destroy (&iopts);
       mongoc_collection_destroy (coll);
@@ -3527,6 +3548,27 @@ explicit_encryption_setup (void)
          eef->encryptedClient, "db", "explicit_encryption");
    }
 
+   /* Create a MongoClient named ``autoEncryptedClient``. */
+   {
+      mongoc_auto_encryption_opts_t *aeOpts =
+         mongoc_auto_encryption_opts_new ();
+      bson_t *kms_providers = _make_local_kms_provider (NULL);
+      bson_error_t error;
+
+      mongoc_auto_encryption_opts_set_keyvault_namespace (
+         aeOpts, "keyvault", "datakeys");
+      mongoc_auto_encryption_opts_set_kms_providers (aeOpts, kms_providers);
+      eef->autoEncryptedClient = test_framework_new_default_client ();
+      ASSERT_OR_PRINT (mongoc_client_enable_auto_encryption (
+                          eef->autoEncryptedClient, aeOpts, &error),
+                       error);
+
+      bson_destroy (kms_providers);
+      mongoc_auto_encryption_opts_destroy (aeOpts);
+      eef->autoEncryptedColl = mongoc_client_get_collection (
+         eef->autoEncryptedClient, "db", "explicit_encryption");
+   }
+
    mongoc_client_destroy (setupClient);
    bson_destroy (key1Document);
    bson_destroy (encryptedFields);
@@ -3540,10 +3582,13 @@ explicit_encryption_destroy (ee_fixture *eef)
       return;
    }
 
+   mongoc_collection_destroy (eef->autoEncryptedColl);
+   mongoc_client_destroy (eef->autoEncryptedClient);
    mongoc_collection_destroy (eef->encryptedColl);
    mongoc_client_destroy (eef->encryptedClient);
    mongoc_client_encryption_destroy (eef->clientEncryption);
    mongoc_client_destroy (eef->keyVaultClient);
+   bson_value_destroy (&eef->key3ID);
    bson_value_destroy (&eef->key1ID);
    bson_free (eef);
 }
@@ -3677,7 +3722,7 @@ test_explicit_encryption_case2 (void *unused)
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
    }
 
-   /* Find with default contention factor of 0. Expect < 10 documents returned.
+   /* Find with contention factor of 0. Expect < 10 documents returned.
     */
    {
       bson_value_t findPayload;
@@ -3692,6 +3737,7 @@ test_explicit_encryption_case2 (void *unused)
          eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
       mongoc_client_encryption_encrypt_opts_set_query_type (
          eopts, MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
 
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &findPayload, &error);
@@ -3917,6 +3963,75 @@ test_explicit_encryption_case5 (void *unused)
    }
 
    bson_value_destroy (&payload);
+   explicit_encryption_destroy (eef);
+}
+
+static void
+test_explicit_encryption_case6 (void *unused)
+{
+   /* Case 6: can find with default contention */
+   bson_error_t error;
+   bool ok;
+   mongoc_client_encryption_encrypt_opts_t *eopts;
+   bson_value_t plaintext = {0};
+   int i = 0;
+
+   ee_fixture *eef = explicit_encryption_setup ();
+   plaintext.value_type = BSON_TYPE_UTF8;
+   plaintext.value.v_utf8.str = "encrypted indexed value";
+   plaintext.value.v_utf8.len = (uint32_t) strlen (plaintext.value.v_utf8.str);
+
+   /* Use ``autoEncryptedClient`` to insert the document ``{
+    * "defaultContention": "encrypted indexed value" }`` 10 times. */
+   for (i = 0; i < 10; i++) {
+      ok = mongoc_collection_insert_one (
+         eef->autoEncryptedColl,
+         tmp_bson ("{'defaultContention': 'encrypted indexed value'}"),
+         NULL /* opts */,
+         NULL /* reply */,
+         &error);
+      ASSERT_OR_PRINT (ok, error);
+   }
+
+   /* Find with default contention factor. Expect all documents to be returned.
+    */
+   {
+      bson_value_t findPayload;
+      mongoc_cursor_t *cursor;
+      bson_t filter = BSON_INITIALIZER;
+      const bson_t *got;
+      int got_count = 0;
+
+      eopts = mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eopts, &eef->key3ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
+      mongoc_client_encryption_encrypt_opts_set_query_type (
+         eopts, MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY);
+
+      ok = mongoc_client_encryption_encrypt (
+         eef->clientEncryption, &plaintext, eopts, &findPayload, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      ASSERT (BSON_APPEND_VALUE (&filter, "defaultContention", &findPayload));
+
+      cursor = mongoc_collection_find_with_opts (
+         eef->encryptedColl, &filter, NULL /* opts */, NULL /* read_prefs */);
+
+      while (mongoc_cursor_next (cursor, &got)) {
+         got_count++;
+         ASSERT_MATCH (got,
+                       "{ 'defaultContention': 'encrypted indexed value' }");
+      }
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT_CMPINT (got_count, ==, 10);
+
+      bson_value_destroy (&findPayload);
+      mongoc_cursor_destroy (cursor);
+      mongoc_client_encryption_encrypt_opts_destroy (eopts);
+      bson_destroy (&filter);
+   }
+
    explicit_encryption_destroy (eef);
 }
 
@@ -4963,6 +5078,15 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/client_side_encryption/explicit_encryption/case5",
                       test_explicit_encryption_case5,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_17,
+                      test_framework_skip_if_single);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/explicit_encryption/case6",
+                      test_explicit_encryption_case6,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,

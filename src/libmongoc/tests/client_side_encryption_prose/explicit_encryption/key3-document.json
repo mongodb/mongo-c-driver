@@ -1,0 +1,30 @@
+{
+    "_id": {
+        "$binary": {
+            "base64": "os4DSnsTQcm5ZxSKgZDnqA==",
+            "subType": "04"
+        }
+    },
+    "keyMaterial": {
+        "$binary": {
+            "base64": "CPzBcgsnZQrhh6/8BqhnCXmj/J4v8qVdF676NO5neAf3T2P82PSknA7mpLnJ/RUSfTcv+pWqJ4Bz/Vvwqe+HtpOdITvnyPXSVMUjloPc/qQNSRYx81gEC9kR32QxqaTXKDSrWfZAKMt6v1gOWlcEg/ZWhSnlaJ9zB4PdMoZWOFtY5Qa1KsVOa+oLIdt+55RFPfSQrS4Qf3P0QVCU4RibXQ==",
+            "subType": "00"
+        }
+    },
+    "creationDate": {
+        "$date": {
+            "$numberLong": "1648914851981"
+        }
+    },
+    "updateDate": {
+        "$date": {
+            "$numberLong": "1648914851981"
+        }
+    },
+    "status": {
+        "$numberInt": "0"
+    },
+    "masterKey": {
+        "provider": "local"
+    }
+}
