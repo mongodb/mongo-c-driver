@@ -4308,7 +4308,7 @@ decryption_events_setup (void)
       plaintext.value.v_utf8.len = strlen (plaintext.value.v_utf8.str);
 
       mongoc_client_encryption_encrypt_opts_set_algorithm (
-         eOpts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM);
+         eOpts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
       mongoc_client_encryption_encrypt_opts_set_keyid (eOpts, &keyID);
 
       ASSERT_OR_PRINT (
@@ -4323,10 +4323,10 @@ decryption_events_setup (void)
    {
       bson_value_copy (&def->ciphertext, &def->malformedCiphertext);
       ASSERT (def->ciphertext.value_type == BSON_TYPE_BINARY);
-      /* Set the last data byte to zero to make malformed. The last data byte is
+      /* Change the last data byte to make malformed. The last data byte is
        * part of the HMAC tag. */
       def->malformedCiphertext.value.v_binary
-         .data[def->malformedCiphertext.value.v_binary.data_len - 1] = 0;
+         .data[def->malformedCiphertext.value.v_binary.data_len - 1]++;
    }
 
    /* Create a MongoClient with automatic decryption. */
@@ -4387,11 +4387,12 @@ decryption_events_fixture_destroy (decryption_events_fixture *def)
    bson_free (def);
 }
 
+/* Prose test 14: Case 1: Command Error */
 /* test_decryption_events_command_error is a regression test for CDRIVER-4401.
  * Send a command on an encrypted client resulting in a { 'ok': 0 } reply.
  * Expect an error returned and a CommandFailed event to be emitted. */
 static void
-test_decryption_events_command_error (void *unused)
+test_decryption_events_case1 (void *unused)
 {
    bool got;
    bson_error_t error;
@@ -4431,11 +4432,12 @@ test_decryption_events_command_error (void *unused)
    decryption_events_fixture_destroy (def);
 }
 
+/* Prose test 14: Case 2: Network Error */
 /* test_decryption_events_network_error is a regression test for CDRIVER-4401.
  * Send a command on an encrypted client resulting in a network error.
  * Expect an error returned and a CommandFailed event to be emitted. */
 static void
-test_decryption_events_network_error (void *unused)
+test_decryption_events_case2 (void *unused)
 
 {
    bool got;
@@ -4477,12 +4479,13 @@ test_decryption_events_network_error (void *unused)
    decryption_events_fixture_destroy (def);
 }
 
+/* Prose test 14: Case 3: Decrypt Error. */
 /* test_decryption_events_decrypt_error is a regression test for CDRIVER-4401.
  * Decrypt a reply with a malformed ciphertext.
  * Expect an error returned and a CommandSucceeded event to be emitted with
  * ciphertext. */
 static void
-test_decryption_events_decrypt_error (void *unused)
+test_decryption_events_case3 (void *unused)
 {
    bool got;
    bson_error_t error;
@@ -4524,12 +4527,13 @@ test_decryption_events_decrypt_error (void *unused)
    decryption_events_fixture_destroy (def);
 }
 
+/* Prose test 14: Case 4: Decrypt Success. */
 /* test_decryption_events_decrypt_success is a regression test for CDRIVER-4401.
  * Decrypt a reply with a valid ciphertext.
  * Expect a successful return and a CommandSucceeded event to be emitted with
  * ciphertext. */
 static void
-test_decryption_events_decrypt_success (void *unused)
+test_decryption_events_case4 (void *unused)
 {
    bool got;
    bson_error_t error;
@@ -4966,37 +4970,37 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
-                      "/client_side_encryption/decryption_events/command_error",
-                      test_decryption_events_command_error,
+                      "/client_side_encryption/decryption_events/case1",
+                      test_decryption_events_case1,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
    TestSuite_AddFull (suite,
-                      "/client_side_encryption/decryption_events/network_error",
-                      test_decryption_events_network_error,
+                      "/client_side_encryption/decryption_events/case2",
+                      test_decryption_events_case2,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
    TestSuite_AddFull (suite,
-                      "/client_side_encryption/decryption_events/decrypt_error",
-                      test_decryption_events_decrypt_error,
+                      "/client_side_encryption/decryption_events/case3",
+                      test_decryption_events_case3,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
-   TestSuite_AddFull (
-      suite,
-      "/client_side_encryption/decryption_events/decrypt_success",
-      test_decryption_events_decrypt_success,
-      NULL /* dtor */,
-      NULL /* ctx */,
-      test_framework_skip_if_no_client_side_encryption,
-      test_framework_skip_if_max_wire_version_less_than_8);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/decryption_events/case4",
+                      test_decryption_events_case4,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/qe_docs_example",
