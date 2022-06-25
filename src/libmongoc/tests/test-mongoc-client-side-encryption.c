@@ -5126,5 +5126,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_kms_callback,
                       NULL, // dtor
                       NULL, // ctx
+                      test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
 }
