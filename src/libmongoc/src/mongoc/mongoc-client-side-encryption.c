@@ -45,12 +45,12 @@ struct _mongoc_auto_encryption_opts_t {
    bson_t *encrypted_fields_map;
    bool bypass_auto_encryption;
    bool bypass_query_analysis;
-   _credentials_callback creds_cb;
+   mc_kms_credentials_callback creds_cb;
    bson_t *extra;
 };
 
 static void
-_set_creds_callback (_credentials_callback *cb,
+_set_creds_callback (mc_kms_credentials_callback *cb,
                      mongoc_kms_credentials_provider_callback_fn fn,
                      void *userdata)
 {
@@ -236,7 +236,7 @@ struct _mongoc_client_encryption_opts_t {
    char *keyvault_coll;
    bson_t *kms_providers;
    bson_t *tls_opts;
-   _credentials_callback creds_cb;
+   mc_kms_credentials_callback creds_cb;
 };
 
 mongoc_client_encryption_opts_t *
@@ -604,7 +604,7 @@ _mongoc_cse_auto_decrypt (mongoc_client_t *client,
 bool
 _mongoc_cse_client_enable_auto_encryption (
    mongoc_client_t *client,
-   const mongoc_auto_encryption_opts_t *opts /* may be NULL */,
+   mongoc_auto_encryption_opts_t *opts /* may be NULL */,
    bson_error_t *error)
 {
    return _disabled_error (error);
@@ -613,7 +613,7 @@ _mongoc_cse_client_enable_auto_encryption (
 bool
 _mongoc_cse_client_pool_enable_auto_encryption (
    mongoc_topology_t *topology,
-   const mongoc_auto_encryption_opts_t *opts /* may be NULL */,
+   mongoc_auto_encryption_opts_t *opts /* may be NULL */,
    bson_error_t *error)
 {
    return _disabled_error (error);

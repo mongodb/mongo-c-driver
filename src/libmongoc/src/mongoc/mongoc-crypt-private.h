@@ -21,18 +21,17 @@
 
 #include "mongoc-config.h"
 
-#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
-
 #include "mongoc.h"
+
+typedef struct mc_kms_credentials_callback {
+   mongoc_kms_credentials_provider_callback_fn fn;
+   void *userdata;
+} mc_kms_credentials_callback;
+
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
 /* For interacting with libmongocrypt */
 typedef struct __mongoc_crypt_t _mongoc_crypt_t;
-
-
-typedef struct _credentials_callback {
-   mongoc_kms_credentials_provider_callback_fn fn;
-   void *userdata;
-} _credentials_callback;
 
 /*
 Creates a new handle into libmongocrypt.
@@ -48,7 +47,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool crypt_shared_lib_required,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
-                   _credentials_callback creds_cb,
+                   mc_kms_credentials_callback creds_cb,
                    bson_error_t *error);
 
 void
