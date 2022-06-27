@@ -3572,6 +3572,7 @@ test_explicit_encryption_case1 (void *unused)
       mongoc_client_encryption_encrypt_opts_set_keyid (eopts, &eef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm (
          eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
 
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
@@ -3607,6 +3608,7 @@ test_explicit_encryption_case1 (void *unused)
          eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
       mongoc_client_encryption_encrypt_opts_set_query_type (
          eopts, MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
 
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &findPayload, &error);
@@ -3677,7 +3679,7 @@ test_explicit_encryption_case2 (void *unused)
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
    }
 
-   /* Find with default contention factor of 0. Expect < 10 documents returned.
+   /* Find with contention factor of 0. Expect < 10 documents returned.
     */
    {
       bson_value_t findPayload;
@@ -3692,6 +3694,7 @@ test_explicit_encryption_case2 (void *unused)
          eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
       mongoc_client_encryption_encrypt_opts_set_query_type (
          eopts, MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
 
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &findPayload, &error);
@@ -3850,6 +3853,7 @@ test_explicit_encryption_case4 (void *unused)
       mongoc_client_encryption_encrypt_opts_set_keyid (eopts, &eef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm (
          eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
 
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &payload, &error);
