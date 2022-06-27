@@ -115,8 +115,11 @@ fi
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
-   # TODO (CDRIVER-4397): add "--branch 1.5.0-rc0" in git clone once libmongocrypt 1.5.0-rc0 is released.
-   git clone https://github.com/kevinAlbs/libmongocrypt --branch M433-reapply
+   git clone https://github.com/kevinAlbs/libmongocrypt
+   # Pin to commit with MONGOCRYPT-433.
+   cd libmongocrypt
+   git checkout 28a25b869f84f642386d90a6a6ed78ffae2ac5aa
+   cd ..
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
    "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" ../
