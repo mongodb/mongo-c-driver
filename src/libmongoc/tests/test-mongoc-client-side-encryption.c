@@ -4764,7 +4764,10 @@ struct kms_callback_data {
 };
 
 static bool
-_kms_callback (void *userdata, bson_t *out, bson_error_t *error)
+_kms_callback (void *userdata,
+               const bson_t *params,
+               bson_t *out,
+               bson_error_t *error)
 {
    struct kms_callback_data *ctx = userdata;
    ctx->value = 42;

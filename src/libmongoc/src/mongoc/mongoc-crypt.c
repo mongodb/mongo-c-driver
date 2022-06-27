@@ -581,8 +581,10 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
 {
    bson_t creds = BSON_INITIALIZER;
    BSON_ASSERT (sm->crypt->creds_cb.fn);
+   const bson_t empty = BSON_INITIALIZER;
 
-   if (!sm->crypt->creds_cb.fn (sm->crypt->creds_cb.userdata, &creds, error)) {
+   if (!sm->crypt->creds_cb.fn (
+          sm->crypt->creds_cb.userdata, &empty, &creds, error)) {
       // The callback reports that it has failed
       if (!error->code) {
          bson_set_error (error,
