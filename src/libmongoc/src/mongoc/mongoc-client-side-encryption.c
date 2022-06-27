@@ -594,7 +594,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (
 
 
 bool
-mongoc_client_encryption_create_key (
+mongoc_client_encryption_create_datakey (
    mongoc_client_encryption_t *client_encryption,
    const char *kms_provider,
    mongoc_client_encryption_datakey_opts_t *opts,
@@ -605,19 +605,6 @@ mongoc_client_encryption_create_key (
       memset (keyid, 0, sizeof (*keyid));
    }
    return _disabled_error (error);
-}
-
-
-bool
-mongoc_client_encryption_create_datakey (
-   mongoc_client_encryption_t *client_encryption,
-   const char *kms_provider,
-   mongoc_client_encryption_datakey_opts_t *opts,
-   bson_value_t *keyid,
-   bson_error_t *error)
-{
-   return mongoc_client_encryption_create_key (
-      client_encryption, kms_provider, opts, keyid, error);
 }
 
 
@@ -1877,7 +1864,7 @@ _coll_has_read_concern_majority (const mongoc_collection_t *coll)
 }
 
 bool
-mongoc_client_encryption_create_key (
+mongoc_client_encryption_create_datakey (
    mongoc_client_encryption_t *client_encryption,
    const char *kms_provider,
    mongoc_client_encryption_datakey_opts_t *opts,
@@ -1959,18 +1946,6 @@ fail:
    bson_destroy (&datakey);
 
    RETURN (ret);
-}
-
-bool
-mongoc_client_encryption_create_datakey (
-   mongoc_client_encryption_t *client_encryption,
-   const char *kms_provider,
-   mongoc_client_encryption_datakey_opts_t *opts,
-   bson_value_t *keyid,
-   bson_error_t *error)
-{
-   return mongoc_client_encryption_create_key (
-      client_encryption, kms_provider, opts, keyid, error);
 }
 
 bool
