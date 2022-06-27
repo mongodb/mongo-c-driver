@@ -4760,6 +4760,7 @@ test_qe_docs_example (void *unused)
 struct kms_callback_data {
    int value;
    const char *set_error;
+   bool provide_creds;
 };
 
 static bool
@@ -4774,6 +4775,15 @@ _kms_callback (void *userdata, bson_t *out, bson_error_t *error)
                       "%s",
                       ctx->set_error);
       return false;
+   }
+   if (ctx->provide_creds) {
+      uint8_t keydata[96] = {0};
+      BCON_APPEND (out,
+                   "local",
+                   "{",
+                   "key",
+                   BCON_BIN (BSON_SUBTYPE_BINARY, keydata, sizeof keydata),
+                   "}");
    }
    return true;
 }
@@ -4842,6 +4852,17 @@ test_kms_callback (void *unused)
                                 MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                                 1,
                                 "no kms provider set");
+      }
+
+      {
+         // Now actually provide a key
+         callback_data.provide_creds = true;
+         ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
+                             enc, "local", dk_opts, &keyid, &error),
+                          error);
+
+         // The callback will have set a value when it was called
+         BSON_ASSERT (callback_data.value == 42);
       }
 
       // Clear the value and tell the callback to set its own error
