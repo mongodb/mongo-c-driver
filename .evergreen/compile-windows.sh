@@ -115,7 +115,6 @@ fi
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
-   # TODO (CDRIVER-4397): add "--branch 1.5.0-rc0" in git clone once libmongocrypt 1.5.0-rc0 is released.
    git clone https://github.com/kevinAlbs/libmongocrypt --branch require_cf
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
