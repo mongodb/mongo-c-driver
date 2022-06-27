@@ -687,7 +687,7 @@ test_datakey_and_double_encryption_creating_and_using (
 
 /* Prose Test 1: Custom Key Material Test */
 static void
-test_create_key_with_custom_key_material (void *unused)
+test_create_datakey_with_custom_key_material (void *unused)
 {
    mongoc_client_t *client = NULL;
    mongoc_client_encryption_t *client_encryption = NULL;
@@ -750,7 +750,7 @@ test_create_key_with_custom_key_material (void *unused)
          datakey_opts, data, sizeof (data));
 
       ASSERT_OR_PRINT (
-         mongoc_client_encryption_create_key (
+         mongoc_client_encryption_create_datakey (
             client_encryption, "local", datakey_opts, &keyid, &error),
          error);
 
@@ -4019,7 +4019,7 @@ _test_unique_index_on_keyaltnames_setup (
          opts, (char **) keyaltname, 1u);
 
       ASSERT_OR_PRINT (
-         mongoc_client_encryption_create_key (
+         mongoc_client_encryption_create_datakey (
             client_encryption, "local", opts, &existing_key, &error),
          error);
 
@@ -4052,7 +4052,7 @@ _test_unique_index_on_keyaltnames_case_1 (
       mongoc_client_encryption_datakey_opts_set_keyaltnames (
          opts, (char **) keyaltname, 1u);
 
-      ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+      ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
                           client_encryption, "local", opts, &keyid, &error),
                        error);
 
@@ -4071,7 +4071,7 @@ _test_unique_index_on_keyaltnames_case_1 (
       mongoc_client_encryption_datakey_opts_set_keyaltnames (
          opts, (char **) keyaltname, 1u);
 
-      ASSERT (!mongoc_client_encryption_create_key (
+      ASSERT (!mongoc_client_encryption_create_datakey (
          client_encryption, "local", opts, &keyid, &error));
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COLLECTION,
@@ -4094,7 +4094,7 @@ _test_unique_index_on_keyaltnames_case_1 (
       mongoc_client_encryption_datakey_opts_set_keyaltnames (
          opts, (char **) keyaltname, 1u);
 
-      ASSERT (!mongoc_client_encryption_create_key (
+      ASSERT (!mongoc_client_encryption_create_datakey (
          client_encryption, "local", opts, &keyid, &error));
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COLLECTION,
@@ -4118,7 +4118,7 @@ _test_unique_index_on_keyaltnames_case_2 (
 
    /* Step 1: Use client_encryption to create a new local data key and assert
     * the operation does not fail. */
-   ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+   ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
                        client_encryption, "local", opts, &new_key, &error),
                     error);
 
@@ -4614,10 +4614,10 @@ test_qe_docs_example (void *unused)
       ASSERT_OR_PRINT (ce, error);
 
       dkOpts = mongoc_client_encryption_datakey_opts_new ();
-      ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+      ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
                           ce, "local", dkOpts, &key1ID, &error),
                        error);
-      ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+      ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
                           ce, "local", dkOpts, &key2ID, &error),
                        error);
 
@@ -4769,8 +4769,8 @@ test_client_side_encryption_install (TestSuite *suite)
    /* Prose tests from the spec. */
    TestSuite_AddFull (
       suite,
-      "/client_side_encryption/create_key_with_custom_key_material",
-      test_create_key_with_custom_key_material,
+      "/client_side_encryption/create_datakey_with_custom_key_material",
+      test_create_datakey_with_custom_key_material,
       NULL,
       NULL,
       test_framework_skip_if_no_client_side_encryption,

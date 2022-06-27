@@ -33,4 +33,4 @@ Returns ``true`` if successful. Returns ``false`` and sets ``error`` otherwise.
 .. seealso::
 
   | :symbol:`mongoc_client_encryption_t`
-  | :symbol:`mongoc_client_encryption_create_key`
+  | :symbol:`mongoc_client_encryption_create_datakey`

@@ -29,5 +29,4 @@ Used to set options for :symbol:`mongoc_client_encryption_create_datakey()`.
 
 .. seealso::
 
-  | :symbol:`mongoc_client_encryption_create_key()`
   | :symbol:`mongoc_client_encryption_create_datakey()`
