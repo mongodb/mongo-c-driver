@@ -230,11 +230,7 @@ pkg-config --modversion libssl || true
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
-   git clone https://github.com/mongodb/libmongocrypt
-   # Pin to commit with MONGOCRYPT-433.
-   cd libmongocrypt
-   git checkout 28a25b869f84f642386d90a6a6ed78ffae2ac5aa
-   cd ..
+   git clone https://github.com/mongodb/libmongocrypt --branch 1.5.0
 
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
