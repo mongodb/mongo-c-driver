@@ -1,6 +1,7 @@
 mongo-c-driver (1.22.0-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * Update to Standards-Version 4.6.1 (no changes)
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Wed, 29 Jun 2022 17:22:09 -0400
 
