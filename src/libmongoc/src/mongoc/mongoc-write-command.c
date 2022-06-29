@@ -1017,7 +1017,7 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
          bson_set_error (
             &result->error,
             MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
             "The selected server does not support hint for delete");
          result->failed = true;
          EXIT;

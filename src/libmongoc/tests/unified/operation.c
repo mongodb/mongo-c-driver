@@ -176,10 +176,10 @@ done:
 }
 
 static bool
-operation_create_key (test_t *test,
-                      operation_t *op,
-                      result_t *result,
-                      bson_error_t *error)
+operation_create_datakey (test_t *test,
+                          operation_t *op,
+                          result_t *result,
+                          bson_error_t *error)
 {
    bson_parser_t *parser = bson_parser_new ();
    char *kms_provider = NULL;
@@ -274,7 +274,7 @@ operation_create_key (test_t *test,
    }
 
    {
-      const bool success = mongoc_client_encryption_create_key (
+      const bool success = mongoc_client_encryption_create_datakey (
          ce, kms_provider, datakey_opts, &key_id_value, error);
       bson_val_t *val = NULL;
 
@@ -298,10 +298,10 @@ done:
 }
 
 static bool
-operation_rewrap_many_data_key (test_t *test,
-                                operation_t *op,
-                                result_t *result,
-                                bson_error_t *error)
+operation_rewrap_many_datakey (test_t *test,
+                               operation_t *op,
+                               result_t *result,
+                               bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
    mongoc_client_encryption_rewrap_many_datakey_result_t *const rmd_result =
@@ -350,7 +350,7 @@ operation_rewrap_many_data_key (test_t *test,
 
       bson_t doc = BSON_INITIALIZER;
 
-      {
+      if (bulk_write_result) {
          bson_t *const rewritten =
             rewrite_bulk_write_result (bulk_write_result);
          BSON_APPEND_DOCUMENT (&doc, "bulkWriteResult", rewritten);
@@ -3155,8 +3155,8 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"listDatabases", operation_list_databases},
 
       /* ClientEncryption operations */
-      {"createKey", operation_create_key},
-      {"rewrapManyDataKey", operation_rewrap_many_data_key},
+      {"createDataKey", operation_create_datakey},
+      {"rewrapManyDataKey", operation_rewrap_many_datakey},
       {"deleteKey", operation_delete_key},
       {"getKey", operation_get_key},
       {"getKeys", operation_get_keys},

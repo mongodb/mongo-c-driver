@@ -687,7 +687,7 @@ test_datakey_and_double_encryption_creating_and_using (
 
 /* Prose Test 1: Custom Key Material Test */
 static void
-test_create_key_with_custom_key_material (void *unused)
+test_create_datakey_with_custom_key_material (void *unused)
 {
    mongoc_client_t *client = NULL;
    mongoc_client_encryption_t *client_encryption = NULL;
@@ -750,7 +750,7 @@ test_create_key_with_custom_key_material (void *unused)
          datakey_opts, data, sizeof (data));
 
       ASSERT_OR_PRINT (
-         mongoc_client_encryption_create_key (
+         mongoc_client_encryption_create_datakey (
             client_encryption, "local", datakey_opts, &keyid, &error),
          error);
 
@@ -3572,6 +3572,7 @@ test_explicit_encryption_case1 (void *unused)
       mongoc_client_encryption_encrypt_opts_set_keyid (eopts, &eef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm (
          eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
 
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
@@ -3607,6 +3608,7 @@ test_explicit_encryption_case1 (void *unused)
          eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
       mongoc_client_encryption_encrypt_opts_set_query_type (
          eopts, MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
 
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &findPayload, &error);
@@ -3677,7 +3679,7 @@ test_explicit_encryption_case2 (void *unused)
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
    }
 
-   /* Find with default contention factor of 0. Expect < 10 documents returned.
+   /* Find with contention factor of 0. Expect < 10 documents returned.
     */
    {
       bson_value_t findPayload;
@@ -3692,6 +3694,7 @@ test_explicit_encryption_case2 (void *unused)
          eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
       mongoc_client_encryption_encrypt_opts_set_query_type (
          eopts, MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
 
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &findPayload, &error);
@@ -3850,6 +3853,7 @@ test_explicit_encryption_case4 (void *unused)
       mongoc_client_encryption_encrypt_opts_set_keyid (eopts, &eef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm (
          eopts, MONGOC_ENCRYPT_ALGORITHM_INDEXED);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
 
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &payload, &error);
@@ -4019,7 +4023,7 @@ _test_unique_index_on_keyaltnames_setup (
          opts, (char **) keyaltname, 1u);
 
       ASSERT_OR_PRINT (
-         mongoc_client_encryption_create_key (
+         mongoc_client_encryption_create_datakey (
             client_encryption, "local", opts, &existing_key, &error),
          error);
 
@@ -4052,7 +4056,7 @@ _test_unique_index_on_keyaltnames_case_1 (
       mongoc_client_encryption_datakey_opts_set_keyaltnames (
          opts, (char **) keyaltname, 1u);
 
-      ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+      ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
                           client_encryption, "local", opts, &keyid, &error),
                        error);
 
@@ -4071,7 +4075,7 @@ _test_unique_index_on_keyaltnames_case_1 (
       mongoc_client_encryption_datakey_opts_set_keyaltnames (
          opts, (char **) keyaltname, 1u);
 
-      ASSERT (!mongoc_client_encryption_create_key (
+      ASSERT (!mongoc_client_encryption_create_datakey (
          client_encryption, "local", opts, &keyid, &error));
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COLLECTION,
@@ -4094,7 +4098,7 @@ _test_unique_index_on_keyaltnames_case_1 (
       mongoc_client_encryption_datakey_opts_set_keyaltnames (
          opts, (char **) keyaltname, 1u);
 
-      ASSERT (!mongoc_client_encryption_create_key (
+      ASSERT (!mongoc_client_encryption_create_datakey (
          client_encryption, "local", opts, &keyid, &error));
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COLLECTION,
@@ -4118,7 +4122,7 @@ _test_unique_index_on_keyaltnames_case_2 (
 
    /* Step 1: Use client_encryption to create a new local data key and assert
     * the operation does not fail. */
-   ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+   ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
                        client_encryption, "local", opts, &new_key, &error),
                     error);
 
@@ -4308,7 +4312,7 @@ decryption_events_setup (void)
       plaintext.value.v_utf8.len = strlen (plaintext.value.v_utf8.str);
 
       mongoc_client_encryption_encrypt_opts_set_algorithm (
-         eOpts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM);
+         eOpts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
       mongoc_client_encryption_encrypt_opts_set_keyid (eOpts, &keyID);
 
       ASSERT_OR_PRINT (
@@ -4323,10 +4327,10 @@ decryption_events_setup (void)
    {
       bson_value_copy (&def->ciphertext, &def->malformedCiphertext);
       ASSERT (def->ciphertext.value_type == BSON_TYPE_BINARY);
-      /* Set the last data byte to zero to make malformed. The last data byte is
+      /* Change the last data byte to make malformed. The last data byte is
        * part of the HMAC tag. */
       def->malformedCiphertext.value.v_binary
-         .data[def->malformedCiphertext.value.v_binary.data_len - 1] = 0;
+         .data[def->malformedCiphertext.value.v_binary.data_len - 1]++;
    }
 
    /* Create a MongoClient with automatic decryption. */
@@ -4387,11 +4391,12 @@ decryption_events_fixture_destroy (decryption_events_fixture *def)
    bson_free (def);
 }
 
+/* Prose test 14: Case 1: Command Error */
 /* test_decryption_events_command_error is a regression test for CDRIVER-4401.
  * Send a command on an encrypted client resulting in a { 'ok': 0 } reply.
  * Expect an error returned and a CommandFailed event to be emitted. */
 static void
-test_decryption_events_command_error (void *unused)
+test_decryption_events_case1 (void *unused)
 {
    bool got;
    bson_error_t error;
@@ -4431,11 +4436,12 @@ test_decryption_events_command_error (void *unused)
    decryption_events_fixture_destroy (def);
 }
 
+/* Prose test 14: Case 2: Network Error */
 /* test_decryption_events_network_error is a regression test for CDRIVER-4401.
  * Send a command on an encrypted client resulting in a network error.
  * Expect an error returned and a CommandFailed event to be emitted. */
 static void
-test_decryption_events_network_error (void *unused)
+test_decryption_events_case2 (void *unused)
 
 {
    bool got;
@@ -4477,12 +4483,13 @@ test_decryption_events_network_error (void *unused)
    decryption_events_fixture_destroy (def);
 }
 
+/* Prose test 14: Case 3: Decrypt Error. */
 /* test_decryption_events_decrypt_error is a regression test for CDRIVER-4401.
  * Decrypt a reply with a malformed ciphertext.
  * Expect an error returned and a CommandSucceeded event to be emitted with
  * ciphertext. */
 static void
-test_decryption_events_decrypt_error (void *unused)
+test_decryption_events_case3 (void *unused)
 {
    bool got;
    bson_error_t error;
@@ -4524,12 +4531,13 @@ test_decryption_events_decrypt_error (void *unused)
    decryption_events_fixture_destroy (def);
 }
 
+/* Prose test 14: Case 4: Decrypt Success. */
 /* test_decryption_events_decrypt_success is a regression test for CDRIVER-4401.
  * Decrypt a reply with a valid ciphertext.
  * Expect a successful return and a CommandSucceeded event to be emitted with
  * ciphertext. */
 static void
-test_decryption_events_decrypt_success (void *unused)
+test_decryption_events_case4 (void *unused)
 {
    bool got;
    bson_error_t error;
@@ -4614,10 +4622,10 @@ test_qe_docs_example (void *unused)
       ASSERT_OR_PRINT (ce, error);
 
       dkOpts = mongoc_client_encryption_datakey_opts_new ();
-      ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+      ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
                           ce, "local", dkOpts, &key1ID, &error),
                        error);
-      ASSERT_OR_PRINT (mongoc_client_encryption_create_key (
+      ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
                           ce, "local", dkOpts, &key2ID, &error),
                        error);
 
@@ -4907,8 +4915,8 @@ test_client_side_encryption_install (TestSuite *suite)
    /* Prose tests from the spec. */
    TestSuite_AddFull (
       suite,
-      "/client_side_encryption/create_key_with_custom_key_material",
-      test_create_key_with_custom_key_material,
+      "/client_side_encryption/create_datakey_with_custom_key_material",
+      test_create_datakey_with_custom_key_material,
       NULL,
       NULL,
       test_framework_skip_if_no_client_side_encryption,
@@ -5104,37 +5112,37 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
-                      "/client_side_encryption/decryption_events/command_error",
-                      test_decryption_events_command_error,
+                      "/client_side_encryption/decryption_events/case1",
+                      test_decryption_events_case1,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
    TestSuite_AddFull (suite,
-                      "/client_side_encryption/decryption_events/network_error",
-                      test_decryption_events_network_error,
+                      "/client_side_encryption/decryption_events/case2",
+                      test_decryption_events_case2,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
    TestSuite_AddFull (suite,
-                      "/client_side_encryption/decryption_events/decrypt_error",
-                      test_decryption_events_decrypt_error,
+                      "/client_side_encryption/decryption_events/case3",
+                      test_decryption_events_case3,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
-   TestSuite_AddFull (
-      suite,
-      "/client_side_encryption/decryption_events/decrypt_success",
-      test_decryption_events_decrypt_success,
-      NULL /* dtor */,
-      NULL /* ctx */,
-      test_framework_skip_if_no_client_side_encryption,
-      test_framework_skip_if_max_wire_version_less_than_8);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/decryption_events/case4",
+                      test_decryption_events_case4,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/qe_docs_example",
