@@ -17,7 +17,7 @@ Synopsis
     void *userdata);
 
 Set the user-provided callback to provide KMS credentials on-demand when they
-are needed for explicit encryption.
+are needed.
 
 Parameters
 ----------
