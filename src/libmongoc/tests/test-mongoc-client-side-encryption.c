@@ -4874,6 +4874,7 @@ test_kms_callback (void *unused)
 
          // The callback will have set a value when it was called
          BSON_ASSERT (callback_data.value == 42);
+         bson_value_destroy (&keyid);
       }
 
       // Clear the value and tell the callback to set its own error
