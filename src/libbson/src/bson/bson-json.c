@@ -387,13 +387,12 @@ _noop (void)
    }
 
 
-
 bson_json_opts_t *
 bson_json_opts_new (bson_json_mode_t mode, int32_t max_len)
 {
    bson_json_opts_t *opts;
 
-   opts = (bson_json_opts_t *) bson_malloc (sizeof *opts);
+   opts = (bson_json_opts_t *) bson_malloc0 (sizeof *opts);
    opts->mode = mode;
    opts->max_len = max_len;
 

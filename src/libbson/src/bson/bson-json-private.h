@@ -23,6 +23,9 @@
 struct _bson_json_opts_t {
    bson_json_mode_t mode;
    int32_t max_len;
+   const char *initial_indent;
+   const char *subsequent_indent;
+   const char *level_indent;
 };
 
 

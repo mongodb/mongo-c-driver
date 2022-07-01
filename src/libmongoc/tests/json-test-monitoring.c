@@ -24,6 +24,7 @@
 #include "mongoc/mongoc-topology-private.h"
 #include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-util-private.h"
+#include <bson/bson-json-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -425,22 +426,33 @@ apm_match_visitor (match_ctx_t *ctx,
    return MATCH_ACTION_CONTINUE;
 }
 
+static void
+_print_bson_array_as_json (FILE *out, const bson_t *arr)
+{
+   bson_iter_t it;
+   for (bson_iter_init (&it, arr); bson_iter_next (&it);) {
+      bson_t elem;
+      bson_iter_bson (&it, &elem);
+
+      bson_json_opts_t opts = {0};
+      opts.initial_indent = "";
+      opts.level_indent = "  ";
+      opts.subsequent_indent = "    ";
+      opts.mode = BSON_JSON_MODE_CANONICAL;
+      opts.max_len = BSON_MAX_LEN_UNLIMITED;
+      char *str = bson_as_json_with_opts (&elem, NULL, &opts);
+      fprintf (out, "  - %s\n", str);
+      bson_free (str);
+   }
+}
 
 static void
 _apm_match_error_context (const bson_t *actual, const bson_t *expectations)
 {
-   char *actual_str;
-   char *expectations_str;
-
-   actual_str = bson_as_canonical_extended_json (actual, NULL);
-   expectations_str = bson_as_canonical_extended_json (expectations, NULL);
-   fprintf (stderr,
-            "Error in APM matching\nFull list of captured events: %s\nFull "
-            "list of expectations: %s",
-            actual_str,
-            expectations_str);
-   bson_free (actual_str);
-   bson_free (expectations_str);
+   fprintf (stderr, "Error in APM matching.\nFull list of captured events:\n");
+   _print_bson_array_as_json (stderr, actual);
+   fprintf (stderr, "Expected events:\n");
+   _print_bson_array_as_json (stderr, expectations);
 }
 
 bool
