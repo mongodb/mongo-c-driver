@@ -3,7 +3,7 @@
 mongoc_client_encryption_opts_set_kms_credential_provider_callback ()
 =====================================================================
 
-.. versionadded:: 1.22.0
+.. versionadded:: 1.23.0
 
 Synopsis
 --------
