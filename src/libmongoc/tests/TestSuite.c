@@ -319,6 +319,9 @@ _V_TestSuite_AddFull (TestSuite *suite,
    Test *iter;
 
    if (suite->ctest_run && (0 != strcmp (suite->ctest_run, name))) {
+      if (dtor) {
+         dtor (ctx);
+      }
       return NULL;
    }
 
