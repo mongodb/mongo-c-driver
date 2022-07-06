@@ -40,6 +40,7 @@ struct __mongoc_crypt_t {
    /// initiated. We need to remember this in case we need to load on-demand
    /// credentials.
    bson_t kms_providers;
+   mc_kms_credentials_callback creds_cb;
 };
 
 static void
@@ -624,66 +625,113 @@ _needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
    }
 }
 
+/**
+ * @brief Attempt to load AWS credentials from the environment and insert them
+ * into the given kmsProviders bson document on the "aws" property.
+ *
+ * @param out A kmsProviders object to update
+ * @param error An error-out parameter
+ * @return true If there was no error. We MAY or MAY NOT have successfully added
+ * the "aws" property.
+ * @return false If there was an error while updating the BSON data or obtaining
+ * credentials.
+ */
 static bool
-_state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
+_try_add_aws_from_env (bson_t *out, bson_error_t *error)
 {
-   // Note: We only support on-demand credentials for AWS at this time.
-   if (!_needs_on_demand_aws_kms (&sm->crypt->kms_providers, error)) {
-      // "aws" is not requested, or there was an error parsing the object.
-      return false;
-   }
-
    // Attempt to obtain AWS credentials from the environment.
    _mongoc_aws_credentials_t got_creds;
    if (!_mongoc_aws_credentials_obtain (NULL, &got_creds, error)) {
-      // Failed to get credentials
-      return false;
+      // Failed to get credentials. This isn't necessarily an error.
+      return error->code == 0;
    }
 
    // We have the credentials. Give them back to libmongocrypt
 
-   bool okay = false;
-   bson_t new_creds;
    bson_t aws = {0};
-   bson_init (&new_creds);
    // Begin the new "aws" subdoc
-   if (!BSON_APPEND_DOCUMENT_BEGIN (&new_creds, "aws", &aws)) {
-      goto append_begin_fail;
+   if (!BSON_APPEND_DOCUMENT_BEGIN (out, "aws", &aws)) {
+      return false;
    }
    // Add the accessKeyId and the secretAccessKey
    if (!(BSON_APPEND_UTF8 (&aws, "accessKeyId", got_creds.access_key_id) &&
          BSON_APPEND_UTF8 (
             &aws, "secretAccessKey", got_creds.secret_access_key))) {
-      goto build_fail;
+      return false;
    }
    // We may have a sessionToken to add as well
    if (got_creds.session_token) {
       if (!BSON_APPEND_UTF8 (&aws, "sessionToken", got_creds.session_token)) {
-         goto build_fail;
+         return false;
       }
    }
 
    // Finish the subdoc
-   if (!bson_append_document_end (&new_creds, &aws)) {
-      goto build_fail;
+   if (!bson_append_document_end (out, &aws)) {
+      return false;
+   }
+
+   // Good!
+   return true;
+}
+
+static bool
+_state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
+{
+   bson_t creds = BSON_INITIALIZER;
+   const bson_t empty = BSON_INITIALIZER;
+   bool okay = false;
+
+   if (sm->crypt->creds_cb.fn) {
+      // We have a user-provided credentials callback. Try it.
+      const bool okay1 = sm->crypt->creds_cb.fn (
+         sm->crypt->creds_cb.userdata, &empty, &creds, error);
+      if (!okay1) {
+         if (!error->code) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                            "Unknown error from user-provided callback for "
+                            "on-demand KMS credentials");
+         }
+         goto fail;
+      }
+      // The user's callback reported success
+   }
+
+   bson_iter_t iter;
+   const bool callback_provided_aws =
+      bson_iter_init_find (&iter, &creds, "aws");
+
+   if (!callback_provided_aws &&
+       _needs_on_demand_aws_kms (&sm->crypt->kms_providers, error)) {
+      // The original kmsProviders had an empty "aws" property, and the
+      // user-provided callback did not fill in a new "aws" property for us.
+      // Attempt instead to load the AWS credentials from the environment:
+      if (!_try_add_aws_from_env (&creds, error)) {
+         // Error while trying to add AWS credentials
+         goto fail;
+      } else {
+         // The callback didn't have an error, and may or may not have added an
+         // "aws" property.
+      }
    }
 
    // Now actually send that data to libmongocrypt
    mongocrypt_binary_t *const def = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (&new_creds), new_creds.len);
+      (uint8_t *) bson_get_data (&creds), creds.len);
    okay = mongocrypt_ctx_provide_kms_providers (sm->ctx, def);
    if (!okay) {
       _ctx_check_error (sm->ctx, error, true);
    }
    mongocrypt_binary_destroy (def);
 
-build_fail:
-   bson_destroy (&aws);
-append_begin_fail:
-   bson_destroy (&new_creds);
+fail:
+   bson_destroy (&creds);
 
    return okay;
 }
+
 
 static bool
 _state_ready (_state_machine_t *state_machine,
@@ -1029,6 +1077,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool crypt_shared_lib_required,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
+                   mc_kms_credentials_callback creds_cb,
                    bson_error_t *error)
 {
    _mongoc_crypt_t *crypt;
@@ -1058,6 +1107,12 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    if (!mongocrypt_setopt_kms_providers (crypt->handle, kms_providers_bin)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;
+   }
+
+   if (creds_cb.fn) {
+      // The user has provided a callback to lazily obtain KMS credentials. We
+      // need to opt-in to the libmongocrypt feature.
+      mongocrypt_setopt_use_need_kms_credentials_state (crypt->handle);
    }
 
    if (schema_map) {
@@ -1123,7 +1178,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
             "Option 'cryptSharedLibRequired' is 'true', but failed to "
-            "load the crypt_shared runtime libary");
+            "load the crypt_shared runtime library");
          goto fail;
       }
       mongoc_log (MONGOC_LOG_LEVEL_DEBUG,
@@ -1131,6 +1186,8 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                   "crypt_shared library version '%s' was found and loaded",
                   s);
    }
+
+   crypt->creds_cb = creds_cb;
 
    success = true;
 fail:

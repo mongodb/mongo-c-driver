@@ -15,6 +15,8 @@ Synopsis
 
 Get the bulk write result set by a successful call to :symbol:`mongoc_client_encryption_rewrap_many_datakey()`.
 
+Returns ``NULL`` if no bulk write operation was executed or if the bulk write operation was unacknowledged.
+
 Parameters
 ----------
 
