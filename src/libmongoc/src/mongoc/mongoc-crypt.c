@@ -35,6 +35,7 @@ struct __mongoc_crypt_t {
    mongoc_ssl_opt_t aws_tls_opt;
    mongoc_ssl_opt_t azure_tls_opt;
    mongoc_ssl_opt_t gcp_tls_opt;
+   mc_kms_credentials_callback creds_cb;
 };
 
 static void
@@ -576,6 +577,37 @@ fail:
 }
 
 static bool
+_state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
+{
+   bson_t creds = BSON_INITIALIZER;
+   BSON_ASSERT (sm->crypt->creds_cb.fn);
+   const bson_t empty = BSON_INITIALIZER;
+
+   if (!sm->crypt->creds_cb.fn (
+          sm->crypt->creds_cb.userdata, &empty, &creds, error)) {
+      // The callback reports that it has failed
+      if (!error->code) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "Unknown error from user-provided callback for "
+                         "on-demand KMS credentials");
+      }
+      return false;
+   }
+
+   mongocrypt_binary_t *data = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (&creds), creds.len);
+   bool okay = mongocrypt_ctx_provide_kms_providers (sm->ctx, data);
+   if (!okay) {
+      _ctx_check_error (sm->ctx, error, true);
+   }
+   mongocrypt_binary_destroy (data);
+   bson_destroy (&creds);
+   return okay;
+}
+
+static bool
 _state_ready (_state_machine_t *state_machine,
               bson_t *result,
               bson_error_t *error)
@@ -648,6 +680,11 @@ _state_machine_run (_state_machine_t *state_machine,
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          if (!_state_need_kms (state_machine, error)) {
+            goto fail;
+         }
+         break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         if (!_state_need_kms_credentials (state_machine, error)) {
             goto fail;
          }
          break;
@@ -914,6 +951,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool crypt_shared_lib_required,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
+                   mc_kms_credentials_callback creds_cb,
                    bson_error_t *error)
 {
    _mongoc_crypt_t *crypt;
@@ -939,6 +977,12 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    if (!mongocrypt_setopt_kms_providers (crypt->handle, kms_providers_bin)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;
+   }
+
+   if (creds_cb.fn) {
+      // The user has provided a callback to lazily obtain KMS credentials. We
+      // need to opt-in to the libmongocrypt feature.
+      mongocrypt_setopt_use_need_kms_credentials_state (crypt->handle);
    }
 
    if (schema_map) {
@@ -1009,6 +1053,8 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                   "crypt_shared library version '%s' was found and loaded",
                   s);
    }
+
+   crypt->creds_cb = creds_cb;
 
    success = true;
 fail:

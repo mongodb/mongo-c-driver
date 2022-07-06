@@ -4765,6 +4765,145 @@ test_qe_docs_example (void *unused)
    mongoc_client_destroy (client);
 }
 
+struct kms_callback_data {
+   int value;
+   const char *set_error;
+   bool provide_creds;
+};
+
+static bool
+_kms_callback (void *userdata,
+               const bson_t *params,
+               bson_t *out,
+               bson_error_t *error)
+{
+   struct kms_callback_data *ctx = userdata;
+   ctx->value = 42;
+   if (ctx->set_error) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      1729,
+                      "%s",
+                      ctx->set_error);
+      return false;
+   }
+   if (ctx->provide_creds) {
+      uint8_t keydata[96] = {0};
+      BCON_APPEND (out,
+                   "local",
+                   "{",
+                   "key",
+                   BCON_BIN (BSON_SUBTYPE_BINARY, keydata, sizeof keydata),
+                   "}");
+   }
+   return true;
+}
+
+static void
+test_kms_callback (void *unused)
+{
+   // No interesting datakey options
+   mongoc_client_encryption_datakey_opts_t *dk_opts =
+      mongoc_client_encryption_datakey_opts_new ();
+
+   // Create a client encryption object
+   mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_t *cl = test_framework_new_default_client ();
+   mongoc_client_encryption_opts_set_keyvault_client (opts, cl);
+
+   // Given it an on-demand 'local' provider
+   bson_t *empty_local = tmp_bson ("{'local': {}}");
+   mongoc_client_encryption_opts_set_kms_providers (opts, empty_local);
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      opts, "testing", "testing");
+
+   {
+      // Attempting to create a key from 'local' will fail immediately
+      // Create a client encryption object for it.
+      bson_error_t error;
+      mongoc_client_encryption_t *enc =
+         mongoc_client_encryption_new (opts, &error);
+      ASSERT_OR_PRINT (enc, error);
+
+      bson_value_t keyid;
+      mongoc_client_encryption_create_datakey (
+         enc, "local", dk_opts, &keyid, &error);
+      mongoc_client_encryption_destroy (enc);
+
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                             1,
+                             "Requested kms provider not configured");
+   }
+
+
+   {
+      // Now attach a callback
+      struct kms_callback_data callback_data = {0};
+      mongoc_client_encryption_opts_set_kms_credential_provider_callback (
+         opts, _kms_callback, &callback_data);
+      BSON_ASSERT (callback_data.value == 0);
+
+      bson_error_t error;
+      mongoc_client_encryption_t *enc =
+         mongoc_client_encryption_new (opts, &error);
+      ASSERT_OR_PRINT (enc, error);
+
+      bson_value_t keyid;
+
+      {
+         mongoc_client_encryption_create_datakey (
+            enc, "local", dk_opts, &keyid, &error);
+
+         // The callback will have set a value when it was called
+         BSON_ASSERT (callback_data.value == 42);
+
+         // But we still get an error, because we didn't fill in 'local'
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                                1,
+                                "no kms provider set");
+      }
+
+      {
+         // Now actually provide a key
+         callback_data.provide_creds = true;
+         ASSERT_OR_PRINT (mongoc_client_encryption_create_datakey (
+                             enc, "local", dk_opts, &keyid, &error),
+                          error);
+
+         // The callback will have set a value when it was called
+         BSON_ASSERT (callback_data.value == 42);
+         bson_value_destroy (&keyid);
+      }
+
+      // Clear the value and tell the callback to set its own error
+      callback_data.value = 0;
+      callback_data.set_error =
+         "This is the error that should appear from the callback";
+
+      {
+         mongoc_client_encryption_create_datakey (
+            enc, "local", dk_opts, &keyid, &error);
+         // It was called again:
+         BSON_ASSERT (callback_data.value == 42);
+
+         // This time the callback provided an error
+         ASSERT_ERROR_CONTAINS (
+            error,
+            MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+            1729,
+            "This is the error that should appear from the callback");
+      }
+
+      mongoc_client_encryption_destroy (enc);
+   }
+
+   mongoc_client_encryption_datakey_opts_destroy (dk_opts);
+   mongoc_client_encryption_opts_destroy (opts);
+   mongoc_client_destroy (cl);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -5014,4 +5153,12 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms/callback",
+                      test_kms_callback,
+                      NULL, // dtor
+                      NULL, // ctx
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
 }
