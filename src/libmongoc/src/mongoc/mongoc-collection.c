@@ -1065,15 +1065,6 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
    bool ok = false;
    const char *name = mongoc_collection_get_name (collection);
 
-   /* Drop data collection. */
-   if (!drop_with_opts (collection, opts, error)) {
-      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
-         memset (error, 0, sizeof (bson_error_t));
-      } else {
-         goto fail;
-      }
-   }
-
    /* Drop ESC collection. */
    escName = _mongoc_get_encryptedField_state_collection (
       encryptedFields, name, "esc", error);
@@ -1118,6 +1109,15 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
    ecocCollection = mongoc_client_get_collection (
       collection->client, collection->db, ecocName);
    if (!drop_with_opts (ecocCollection, NULL /* opts */, error)) {
+      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+         memset (error, 0, sizeof (bson_error_t));
+      } else {
+         goto fail;
+      }
+   }
+
+   /* Drop data collection. */
+   if (!drop_with_opts (collection, opts, error)) {
       if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
          memset (error, 0, sizeof (bson_error_t));
       } else {
@@ -3509,7 +3509,7 @@ mongoc_collection_find_and_modify_with_opts (
             error,
             MONGOC_ERROR_COMMAND,
             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-            "selected server does not support hint on findAndModify");
+            "The selected server does not support hint for findAndModify");
          GOTO (done);
       }
 

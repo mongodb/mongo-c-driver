@@ -38,7 +38,7 @@ PREVIOUS = len(sys.argv) > 1 and '-p' in sys.argv
 NEXT_MINOR = len(sys.argv) > 1 and '--next-minor' in sys.argv
 
 PREVIOUS_TAG_RE = re.compile('(?P<ver>(?P<vermaj>[0-9]+)\\.(?P<vermin>[0-9]+)'
-                             '\\.(?P<verpatch>[0-9]+))')
+                             '\\.(?P<verpatch>[0-9]+)(?:-(?P<verpre>.*))?)')
 RELEASE_TAG_RE = re.compile('(?P<ver>(?P<vermaj>[0-9]+)\\.(?P<vermin>[0-9]+)'
                             '\\.(?P<verpatch>[0-9]+)(?:-(?P<verpre>.*))?)')
 RELEASE_BRANCH_RE = re.compile('(?:(?:refs/remotes/)?origin/)?(?P<brname>r'
@@ -219,9 +219,8 @@ def previous(rel_ver):
             version_new['major'] = int(previous_tag_match.group('vermaj'))
             version_new['minor'] = int(previous_tag_match.group('vermin'))
             version_new['patch'] = int(previous_tag_match.group('verpatch'))
-            new_version_loose = LooseVersion(str(version_new['major']) + '.' +
-                                             str(version_new['minor']) + '.' +
-                                             str(version_new['patch']))
+            version_new['prerelease'] = previous_tag_match.group('verpre')
+            new_version_loose = LooseVersion(tag)
             if new_version_loose < rel_ver_loose and new_version_loose > version_loose:
                 version_loose = new_version_loose
                 if DEBUG:

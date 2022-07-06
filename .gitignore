@@ -33,3 +33,6 @@ secrets.json
 Debug
 install_manifest.txt
 x64
+
+# "dist" is produced during the release process
+dist

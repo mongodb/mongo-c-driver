@@ -112,6 +112,7 @@ class CompileWithClientSideEncryption(CompileTask):
                                                               extra_script=extra_script,
                                                               EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF",
                                                               SKIP_MOCK_TESTS="ON",
+                                                              USE_CRYPT_SHARED="${USE_CRYPT_SHARED}",
                                                               **kwargs)
         self.add_tags('client-side-encryption', 'special')
 
@@ -134,10 +135,12 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
                                                                   CFLAGS="-fno-omit-frame-pointer",
                                                                   extra_script=extra_script,
                                                                   CHECK_LOG="ON",
-                                                                  sanitize=['address'],
+                                                                  sanitize=[
+                                                                      'address'],
                                                                   EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
                                                                   PATH='/usr/lib/llvm-3.8/bin:$PATH',
                                                                   SKIP_MOCK_TESTS="ON",
+                                                                  USE_CRYPT_SHARED="${USE_CRYPT_SHARED}",
                                                                   **kwargs)
         self.add_tags('client-side-encryption')
 
@@ -456,19 +459,23 @@ all_tasks = [
                           ('bucket', 'mongo-c-toolchain'),
                           ('local_file', 'mongo-c-toolchain.tar.gz'),
                       ]))]),
-                  shell_mongoc('sh ./.evergreen/build-and-test-with-toolchain.sh')
-                  ])
+                  shell_mongoc(
+                      'sh ./.evergreen/build-and-test-with-toolchain.sh')
+              ])
 ]
+
 
 class IntegrationTask(MatrixTask):
     axes = OD([('valgrind', ['valgrind', False]),
                ('sanitizer', ['asan', 'tsan', False]),
                ('coverage', ['coverage', False]),
-               ('version', ['latest', '5.0', '4.4', '4.2', '4.0', '3.6']),
+               ('version', ['latest', '6.0', '5.0',
+                            '4.4', '4.2', '4.0', '3.6']),
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
                ('auth', [True, False]),
                ('sasl', ['sasl', 'sspi', False]),
-               ('ssl', ['openssl', 'openssl-static', 'darwinssl', 'winssl', False]),
+               ('ssl', ['openssl', 'openssl-static',
+                        'darwinssl', 'winssl', False]),
                ('cse', [True, False])])
 
     def __init__(self, *args, **kwargs):
@@ -562,12 +569,12 @@ class IntegrationTask(MatrixTask):
 
     def _check_allowed(self):
         if self.sanitizer == 'tsan':
-            require (self.ssl == 'openssl')
-            prohibit (self.sasl)
-            prohibit (self.valgrind)
-            prohibit (self.coverage)
-            prohibit (self.cse)
-            prohibit (self.version == "3.0")
+            require(self.ssl == 'openssl')
+            prohibit(self.sasl)
+            prohibit(self.valgrind)
+            prohibit(self.coverage)
+            prohibit(self.cse)
+            prohibit(self.version == "3.0")
 
         if self.valgrind:
             prohibit(self.cse)
@@ -613,7 +620,8 @@ class IntegrationTask(MatrixTask):
                 prohibit(self.ssl)
 
         if self.cse:
-            require(self.version == 'latest' or parse_version(self.version) >= parse_version("4.2"))
+            require(self.version == 'latest' or parse_version(
+                self.version) >= parse_version("4.2"))
             if self.version == 'latest' or parse_version(self.version) >= parse_version("6.0"):
                 # FLE 2.0 Client-Side Encryption tasks on 6.0 require a non-standalone topology.
                 require(self.topology in ('server', 'replica_set'))
@@ -668,8 +676,9 @@ class DNSTask(MatrixTask):
         dns = 'on'
         if self.loadbalanced:
             dns = 'loadbalanced'
-            commands.append (func("clone drivers-evergreen-tools"))
-            commands.append (func("start load balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
+            commands.append(func("clone drivers-evergreen-tools"))
+            commands.append(func(
+                "start load balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
         elif self.auth:
             dns = 'dns-auth'
         commands.append(run_tests(SSL='ssl',
@@ -679,9 +688,9 @@ class DNSTask(MatrixTask):
         return task
 
     def _check_allowed(self):
-        prohibit (self.loadbalanced and self.auth)
+        prohibit(self.loadbalanced and self.auth)
         # Load balancer tests only run on some Linux hosts in Evergreen until CDRIVER-4041 is resolved.
-        prohibit (self.loadbalanced and self.ssl in ["darwinssl", "winssl"])
+        prohibit(self.loadbalanced and self.ssl in ["darwinssl", "winssl"])
 
 
 all_tasks = chain(all_tasks, DNSTask.matrix())
@@ -920,7 +929,8 @@ all_tasks = chain(all_tasks, [
     SSLTask('openssl-1.0.2', 'l'),
     SSLTask('openssl-1.1.0', 'f'),
     SSLTask('libressl-2.5', '.2', require_tls12=True),
-    SSLTask('libressl-3.0', '.2', require_tls12=True, enable_ssl="AUTO", cflags="-Wno-redundant-decls"),
+    SSLTask('libressl-3.0', '.2', require_tls12=True,
+            enable_ssl="AUTO", cflags="-Wno-redundant-decls"),
     SSLTask('libressl-3.0', '.2', require_tls12=True),
 ])
 
@@ -986,7 +996,8 @@ class AWSTestTask(MatrixTask):
         self.add_dependency('debug-compile-aws')
         self.commands.extend([
             func('fetch build', BUILD_NAME=self.depends_on['name']),
-            bootstrap(AUTH="auth", ORCHESTRATION_FILE="auth-aws", VERSION=self.version, TOPOLOGY="server"),
+            bootstrap(AUTH="auth", ORCHESTRATION_FILE="auth-aws",
+                      VERSION=self.version, TOPOLOGY="server"),
             func('run aws tests', TESTCASE=self.testcase.upper())])
 
     @property
@@ -1030,26 +1041,28 @@ class OCSPTask(MatrixTask):
             stapling = 'mustStaple-disableStapling'
 
         orchestration_file = '%s-basic-tls-ocsp-%s' % (self.cert, stapling)
-        orchestration = bootstrap(VERSION=self.version, TOPOLOGY='server', SSL='ssl', OCSP='on', ORCHESTRATION_FILE=orchestration_file)
+        orchestration = bootstrap(VERSION=self.version, TOPOLOGY='server',
+                                  SSL='ssl', OCSP='on', ORCHESTRATION_FILE=orchestration_file)
 
         # The cache test expects a revoked response from an OCSP responder, exactly like TEST_4.
         test_column = 'TEST_4' if self.test == 'cache' else self.test.upper()
 
         commands.append(shell_mongoc(
             'TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-responder.sh' % (
-            test_column, self.cert, 'on' if self.delegate == 'delegate' else 'off')))
+                test_column, self.cert, 'on' if self.delegate == 'delegate' else 'off')))
         commands.append(orchestration)
         if self.depends_on['name'] == 'debug-compile-nosasl-openssl-1.0.1':
             # LD_LIBRARY_PATH is needed so the in-tree OpenSSL 1.0.1 is found at runtime
             if self.test == 'cache':
                 commands.append(shell_mongoc('export LD_LIBRARY_PATH=$(pwd)/install-dir/lib\n'
-                    'CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+                                             'CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
             else:
                 commands.append(shell_mongoc('export LD_LIBRARY_PATH=$(pwd)/install-dir/lib\n'
-                    'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
+                                             'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
         else:
             if self.test == 'cache':
-                commands.append(shell_mongoc('CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+                commands.append(shell_mongoc(
+                    'CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
             else:
                 commands.append(shell_mongoc(
                     'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
@@ -1076,26 +1089,30 @@ class OCSPTask(MatrixTask):
 
 all_tasks = chain(all_tasks, OCSPTask.matrix())
 
+
 class LoadBalancedTask(MatrixTask):
     axes = OD([
         ('asan', [True]),
-        ('build_ssl', ['openssl']), # The SSL library the C driver is built with.
-        ('test_ssl', [True, False]), # Whether tests are run with SSL connections.
+        # The SSL library the C driver is built with.
+        ('build_ssl', ['openssl']),
+        # Whether tests are run with SSL connections.
+        ('test_ssl', [True, False]),
         ('test_auth', [True, False]),
         ('version', ['5.0', 'latest'])
     ])
 
-    def _check_allowed (self):
+    def _check_allowed(self):
         # Test with both SSL and auth, or neither.
-        prohibit (self.test_ssl != self.test_auth)
+        prohibit(self.test_ssl != self.test_auth)
 
     def __init__(self, *args, **kwargs):
         super(LoadBalancedTask, self).__init__(*args, **kwargs)
         if self.asan and self.build_ssl == "openssl":
-            self.add_dependency ('debug-compile-asan-clang-openssl')
+            self.add_dependency('debug-compile-asan-clang-openssl')
             self.add_tags('test-asan')
         else:
-            raise RuntimeError ("unimplemented configuration for LoadBalancedTask")
+            raise RuntimeError(
+                "unimplemented configuration for LoadBalancedTask")
 
         self.add_tags(self.version)
         self.options['exec_timeout_secs'] = 3600
@@ -1125,21 +1142,21 @@ class LoadBalancedTask(MatrixTask):
         commands.append(
             func('fetch build', BUILD_NAME=self.depends_on['name']))
 
-
         orchestration = bootstrap(TOPOLOGY='sharded_cluster',
                                   AUTH='auth' if self.test_auth else 'noauth',
                                   SSL='ssl' if self.test_ssl else 'nossl',
                                   VERSION=self.version)
         commands.append(orchestration)
-        commands.append (func("clone drivers-evergreen-tools"))
-        commands.append (func("start load balancer",
-            MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
+        commands.append(func("clone drivers-evergreen-tools"))
+        commands.append(func("start load balancer",
+                             MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
         commands.append(run_tests(ASAN='on' if self.asan else 'off',
                                   SSL='ssl' if self.test_ssl else 'nossl',
                                   AUTH='auth' if self.test_auth else 'noauth',
                                   LOADBALANCED='loadbalanced'))
 
         return task
+
 
 all_tasks = chain(all_tasks, LoadBalancedTask.matrix())
 

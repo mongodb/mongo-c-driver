@@ -35,29 +35,6 @@ typedef struct {
 
 /* clang-format off */
 skipped_unified_test_t SKIPPED_TESTS[] = {
-   /* CDRIVER-3630: libmongoc does not unconditionally raise an error when using
-    * hint option with an unacknowledged write concern */
-   {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteOne with hints fails with client-side error"},
-   {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteMany with hints fails with client-side error"},
-   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite updateOne with hints fails with client-side error"},
-   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite updateMany with hints fails with client-side error"},
-   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite replaceOne with hints fails with client-side error"},
-   {"unacknowledged-deleteMany-hint-clientError", "Unacknowledged deleteMany with hint string fails with client-side error"},
-   {"unacknowledged-deleteMany-hint-clientError", "Unacknowledged deleteMany with hint document fails with client-side error"},
-   {"unacknowledged-deleteOne-hint-clientError", "Unacknowledged deleteOne with hint string fails with client-side error"},
-   {"unacknowledged-deleteOne-hint-clientError", "Unacknowledged deleteOne with hint document fails with client-side error"},
-   {"unacknowledged-findOneAndDelete-hint-clientError", "Unacknowledged findOneAndDelete with hint string fails with client-side error"},
-   {"unacknowledged-findOneAndDelete-hint-clientError", "Unacknowledged findOneAndDelete with hint document fails with client-side error"},
-   {"unacknowledged-findOneAndReplace-hint-clientError", "Unacknowledged findOneAndReplace with hint string fails with client-side error"},
-   {"unacknowledged-findOneAndReplace-hint-clientError", "Unacknowledged findOneAndReplace with hint document fails with client-side error"},
-   {"unacknowledged-findOneAndUpdate-hint-clientError", "Unacknowledged findOneAndUpdate with hint string fails with client-side error"},
-   {"unacknowledged-findOneAndUpdate-hint-clientError", "Unacknowledged findOneAndUpdate with hint document fails with client-side error"},
-   {"unacknowledged-replaceOne-hint-clientError", "Unacknowledged ReplaceOne with hint string fails with client-side error"},
-   {"unacknowledged-replaceOne-hint-clientError", "Unacknowledged ReplaceOne with hint document fails with client-side error"},
-   {"unacknowledged-updateMany-hint-clientError", "Unacknowledged updateMany with hint string fails with client-side error"},
-   {"unacknowledged-updateMany-hint-clientError", "Unacknowledged updateMany with hint document fails with client-side error"},
-   {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint string fails with client-side error"},
-   {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint document fails with client-side error"},
    /* CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior */
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
    /* CDRIVER-3867: drivers atlas testing (schema version 1.2) */
@@ -79,13 +56,6 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
    /* libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode. */
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
-   /* CDRIVER-4277: Change streams support for user-facing PIT pre- and post-images */
-   {"change-streams-pre_and_post_images", SKIP_ALL_TESTS},
-   /* CDRIVER-3973, CDRIVER-4305, CDRIVER-4279, CDRIVER-4321: unified change stream tests */
-   {"change-streams", SKIP_ALL_TESTS},
-   {"change-streams-errors", SKIP_ALL_TESTS},
-   {"change-streams-resume-allowlist", SKIP_ALL_TESTS},
-   {"change-streams-resume-errorlabels", SKIP_ALL_TESTS},
    {0},
 };
 /* clang-format on */
@@ -784,6 +754,16 @@ check_run_on_requirement (test_runner_t *test_runner,
 #if defined(MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
       if (0 == strcmp (key, "csfle")) {
          const bool csfle_required = bson_iter_bool (&req_iter);
+         semver_t min_server_version;
+         
+         semver_parse ("4.2.0", &min_server_version);
+         if (semver_cmp (server_version, &min_server_version) < 0) {
+            *fail_reason = bson_strdup_printf (
+               "Server version %s is lower than minServerVersion %s required by CSFLE",
+               semver_to_string (server_version),
+               semver_to_string (&min_server_version));
+            return false;
+         }
 
          if (csfle_required) {
             continue;
@@ -1185,6 +1165,8 @@ test_check_expected_events_for_client (test_t *test,
    bson_parser_t *bp = NULL;
    char *client_id = NULL;
    bson_t *expected_events = NULL;
+   bool just_false = false;
+   bool *ignore_extra_events = &just_false;
    entity_t *entity = NULL;
    bson_iter_t iter;
    event_t *eiter = NULL;
@@ -1195,6 +1177,7 @@ test_check_expected_events_for_client (test_t *test,
    bp = bson_parser_new ();
    bson_parser_utf8 (bp, "client", &client_id);
    bson_parser_array (bp, "events", &expected_events);
+   bson_parser_bool_optional (bp, "ignoreExtraEvents", &ignore_extra_events);
    bson_parser_utf8_optional (bp, "eventType", &event_type);
    if (!bson_parser_parse (bp, expected_events_for_client, error)) {
       goto done;
@@ -1224,11 +1207,19 @@ test_check_expected_events_for_client (test_t *test,
    expected_num_events = bson_count_keys (expected_events);
    LL_COUNT (entity->events, eiter, actual_num_events);
    if (expected_num_events != actual_num_events) {
-      test_set_error (error,
-                      "expected: %" PRIu32 " events but got %" PRIu32,
-                      expected_num_events,
-                      actual_num_events);
-      goto done;
+      bool too_many_events = actual_num_events > expected_num_events;
+      if (ignore_extra_events && *ignore_extra_events) {
+         // We can never have too many events
+         too_many_events = false;
+      }
+      bool too_few_events = actual_num_events < expected_num_events;
+      if (too_few_events || too_many_events) {
+         test_set_error (error,
+                         "expected: %" PRIu32 " events but got %" PRIu32,
+                         expected_num_events,
+                         actual_num_events);
+         goto done;
+      }
    }
 
    eiter = entity->events;
@@ -1689,7 +1680,7 @@ run_one_test_file (bson_t *bson)
       test_t *test = NULL;
       bson_t test_bson;
       bool test_ok;
-      bson_error_t error;
+      bson_error_t error = {0};
 
       test_diagnostics_reset ();
       test_diagnostics_test_info ("test file: %s", test_file->description);
@@ -1737,4 +1728,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "change_streams/unified");
 
    run_unified_tests (suite, JSON_DIR, "load_balancers");
+
+   run_unified_tests (suite, JSON_DIR, "client_side_encryption/unified");
 }
