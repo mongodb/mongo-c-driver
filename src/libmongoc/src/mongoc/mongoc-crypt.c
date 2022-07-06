@@ -631,8 +631,7 @@ _needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
  *
  * @param out A kmsProviders object to update
  * @param error An error-out parameter
- * @return true If there was no error. We MAY or MAY NOT have successfully added
- * the "aws" property.
+ * @return true If there was no error and we successfully loaded credentials.
  * @return false If there was an error while updating the BSON data or obtaining
  * credentials.
  */
@@ -642,13 +641,13 @@ _try_add_aws_from_env (bson_t *out, bson_error_t *error)
    // Attempt to obtain AWS credentials from the environment.
    _mongoc_aws_credentials_t got_creds;
    if (!_mongoc_aws_credentials_obtain (NULL, &got_creds, error)) {
-      // Failed to get credentials. This isn't necessarily an error.
-      return error->code == 0;
+      // Error while obtaining credentials
+      return false;
    }
 
    // We have the credentials. Give them back to libmongocrypt
 
-   bson_t aws = {0};
+   bson_t aws;
    // Begin the new "aws" subdoc
    if (!BSON_APPEND_DOCUMENT_BEGIN (out, "aws", &aws)) {
       return false;
@@ -684,15 +683,17 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
 
    if (sm->crypt->creds_cb.fn) {
       // We have a user-provided credentials callback. Try it.
-      const bool okay1 = sm->crypt->creds_cb.fn (
-         sm->crypt->creds_cb.userdata, &empty, &creds, error);
-      if (!okay1) {
+      if (!sm->crypt->creds_cb.fn (
+             sm->crypt->creds_cb.userdata, &empty, &creds, error)) {
+         // User-provided callback indicated failure
          if (!error->code) {
+            // The callback did not set an error, so we'll provide a default
+            // one.
             bson_set_error (error,
                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Unknown error from user-provided callback for "
-                            "on-demand KMS credentials");
+                            "The user-provided callback for on-demand KMS "
+                            "credentials failed.");
          }
          goto fail;
       }
@@ -711,9 +712,6 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
       if (!_try_add_aws_from_env (&creds, error)) {
          // Error while trying to add AWS credentials
          goto fail;
-      } else {
-         // The callback didn't have an error, and may or may not have added an
-         // "aws" property.
       }
    }
 
