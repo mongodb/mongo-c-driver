@@ -1095,12 +1095,6 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       goto fail;
    }
 
-   if (creds_cb.fn) {
-      // The user has provided a callback to lazily obtain KMS credentials. We
-      // need to opt-in to the libmongocrypt feature.
-      mongocrypt_setopt_use_need_kms_credentials_state (crypt->handle);
-   }
-
    if (schema_map) {
       schema_map_bin = mongocrypt_binary_new_from_data (
          (uint8_t *) bson_get_data (schema_map), schema_map->len);
