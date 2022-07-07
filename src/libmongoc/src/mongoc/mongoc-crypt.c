@@ -639,37 +639,25 @@ static bool
 _try_add_aws_from_env (bson_t *out, bson_error_t *error)
 {
    // Attempt to obtain AWS credentials from the environment.
-   _mongoc_aws_credentials_t got_creds;
-   if (!_mongoc_aws_credentials_obtain (NULL, &got_creds, error)) {
+   _mongoc_aws_credentials_t creds;
+   if (!_mongoc_aws_credentials_obtain (NULL, &creds, error)) {
       // Error while obtaining credentials
       return false;
    }
 
-   // We have the credentials. Give them back to libmongocrypt
-
+   // Build the new "aws" subdoc
    bson_t aws;
-   // Begin the new "aws" subdoc
-   if (!BSON_APPEND_DOCUMENT_BEGIN (out, "aws", &aws)) {
-      return false;
-   }
-   // Add the accessKeyId and the secretAccessKey
-   if (!(BSON_APPEND_UTF8 (&aws, "accessKeyId", got_creds.access_key_id) &&
-         BSON_APPEND_UTF8 (
-            &aws, "secretAccessKey", got_creds.secret_access_key))) {
-      return false;
-   }
-   // We may have a sessionToken to add as well
-   if (got_creds.session_token) {
-      if (!BSON_APPEND_UTF8 (&aws, "sessionToken", got_creds.session_token)) {
-         return false;
-      }
-   }
-
-   // Finish the subdoc
-   if (!bson_append_document_end (out, &aws)) {
-      return false;
-   }
-
+   bool okay =
+      BSON_APPEND_DOCUMENT_BEGIN (out, "aws", &aws)
+      // Add the accessKeyId and the secretAccessKey
+      && BSON_APPEND_UTF8 (&aws, "accessKeyId", creds.access_key_id)         //
+      && BSON_APPEND_UTF8 (&aws, "secretAccessKey", creds.secret_access_key) //
+      // Add the sessionToken, if we got one:
+      && (!creds.session_token ||
+          BSON_APPEND_UTF8 (&aws, "sessionToken", creds.session_token)) //
+      // Finish the document
+      && bson_append_document_end (out, &aws);
+   BSON_ASSERT (okay && "Failed to build aws credentials document");
    // Good!
    return true;
 }
