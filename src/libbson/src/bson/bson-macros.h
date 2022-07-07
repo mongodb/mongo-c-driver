@@ -370,4 +370,15 @@
       abort ();                                              \
    } while (0)
 
+/**
+ * @brief Silence warnings for deliberately unused variables or parameters.
+ *
+ * @param expr An unused variable or parameter.
+ *
+ */
+#define BSON_UNUSED(expr) \
+   do {                   \
+      (void) (expr);      \
+   } while (0)
+
 #endif /* BSON_MACROS_H */
