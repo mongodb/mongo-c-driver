@@ -4,6 +4,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Supported/used environment variables:
 # Options for this script:
 #       CFLAGS                  Additional compiler flags
+#       C_STD_VERSION           C standard version to compile with (default: 99)
 #       MARCH                   Machine Architecture. Defaults to lowercase uname -m
 #       RELEASE                 Use the fully qualified release archive
 #       DEBUG                   Use debug configure flags
@@ -28,6 +29,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       ZSTD                    Build against system zstd.
 
 # Options for this script.
+C_STD_VERSION=${CSTD_VERSION:-99}
 RELEASE=${RELEASE:-OFF}
 DEBUG=${DEBUG:-OFF}
 TRACING=${TRACING:-OFF}
@@ -46,6 +48,7 @@ ZLIB=${ZLIB:-BUNDLED}
 INSTALL_DIR=$(pwd)/install-dir
 
 echo "CFLAGS: $CFLAGS"
+echo "C_STD_VERSION: $C_STD_VERSION"
 echo "SANITIZE: $SANITIZE"
 echo "MARCH: $MARCH"
 echo "RELEASE: $RELEASE"
@@ -162,6 +165,8 @@ export UBSAN_OPTIONS="print_stacktrace=1 abort_on_error=1"
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
 export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
 export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
+
+CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_C_STANDARD=$C_STD_VERSION -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=OFF"
 
 case "$MARCH" in
    i386)
