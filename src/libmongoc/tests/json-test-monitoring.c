@@ -265,6 +265,8 @@ set_apm_callbacks (json_test_ctx_t *ctx, mongoc_client_t *client)
 {
    mongoc_apm_callbacks_t *callbacks;
 
+   BSON_UNUSED (client);
+
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, started_cb);
    /* Even if test only checks command started events (i.e.

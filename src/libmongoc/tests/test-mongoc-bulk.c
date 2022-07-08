@@ -604,6 +604,8 @@ test_upsert_unordered_oversized (void *ctx)
    bson_error_t error;
    bson_t reply;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "upsert_oversized");
    bson_append_bool (&opts, "ordered", 7, false);
@@ -653,6 +655,8 @@ test_upserted_index (bool ordered)
    bson_t *emp = tmp_bson ("{}");
    bson_t *inc = tmp_bson ("{'$inc': {'b': 1}}");
    bool r;
+
+   BSON_UNUSED (ordered);
 
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
@@ -938,6 +942,8 @@ test_update_arrayfilters (void *ctx)
    bson_t reply;
    bool ret = false;
    int i;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
@@ -1292,6 +1298,8 @@ test_upsert_large (void *ctx)
    int i;
    bson_t reply;
 
+   BSON_UNUSED (ctx);
+
    memset (large_str, 'a', sz);
    large_str[sz - 1] = '\0';
    client = test_framework_new_default_client ();
@@ -1345,6 +1353,8 @@ test_upsert_huge (void *ctx)
    bson_error_t error;
    bson_t reply;
    mongoc_cursor_t *cursor;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
@@ -2718,6 +2728,8 @@ _test_oversized_bulk_op (bool ordered)
 static void
 test_oversized_bulk_op_ordered (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_oversized_bulk_op (true);
 }
 
@@ -2725,6 +2737,8 @@ test_oversized_bulk_op_ordered (void *ctx)
 static void
 test_oversized_bulk_op_unordered (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_oversized_bulk_op (false);
 }
 
@@ -3206,6 +3220,8 @@ test_large_inserts_ordered (void *ctx)
    bson_t query = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
@@ -3291,6 +3307,8 @@ test_large_inserts_unordered (void *ctx)
    const bson_t *retdoc;
    bson_t query = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
@@ -3461,6 +3479,8 @@ _test_numerous (bool ordered)
 static void
 test_numerous_ordered (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_numerous (true);
 }
 
@@ -3468,6 +3488,8 @@ test_numerous_ordered (void *ctx)
 static void
 test_numerous_unordered (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_numerous (false);
 }
 
@@ -4010,6 +4032,8 @@ test_bulk_write_concern_split (void *unused)
    bson_iter_t iter;
    bool r;
    int num_docs;
+
+   BSON_UNUSED (unused);
 
    num_docs = (int) test_framework_max_write_batch_size () + 10;
 

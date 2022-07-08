@@ -185,6 +185,8 @@ test_create_with_write_concern (void *ctx)
    char *dbname;
    char *name;
 
+   BSON_UNUSED (ctx);
+
    capture_logs (true);
    opts = bson_new ();
 

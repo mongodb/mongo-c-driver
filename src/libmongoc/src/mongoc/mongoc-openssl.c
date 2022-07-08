@@ -112,6 +112,8 @@ _mongoc_openssl_password_cb (char *buf, int num, int rwflag, void *user_data)
    char *pass = (char *) user_data;
    int pass_len = (int) strlen (pass);
 
+   BSON_UNUSED (rwflag);
+
    if (num < pass_len + 1) {
       return 0;
    }
@@ -526,6 +528,7 @@ STACK_OF (X509) * _get_verified_chain (SSL *ssl)
 void
 _free_verified_chain (STACK_OF (X509) * verified_chain)
 {
+   BSON_UNUSED (verified_chain);
    /* _get_verified_chain does not return a copy. Do nothing. */
    return;
 }
@@ -1070,6 +1073,8 @@ _mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
    BIO *strbio = NULL;
    char *str = NULL;
    int ret;
+
+   BSON_UNUSED (passphrase);
 
    if (!filename) {
       return NULL;

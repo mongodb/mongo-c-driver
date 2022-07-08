@@ -1344,6 +1344,10 @@ test_bson_json_read_invalid_json (void)
 static ssize_t
 test_bson_json_read_bad_cb_helper (void *_ctx, uint8_t *buf, size_t len)
 {
+   BSON_UNUSED (_ctx);
+   BSON_UNUSED (buf);
+   BSON_UNUSED (len);
+
    return -1;
 }
 
@@ -1371,6 +1375,7 @@ test_bson_json_read_bad_cb (void)
 static ssize_t
 test_bson_json_read_invalid_helper (void *ctx, uint8_t *buf, size_t len)
 {
+   BSON_UNUSED (ctx);
    BSON_ASSERT (len);
    *buf = 0x80; /* no UTF-8 sequence can start with 0x80 */
    return 1;

@@ -164,6 +164,9 @@ _mongoc_set_for_each_helper (uint32_t id, void *item, void *ctx)
 {
    _mongoc_set_for_each_helper_t *helper =
       (_mongoc_set_for_each_helper_t *) ctx;
+
+   BSON_UNUSED (id);
+
    return helper->cb (item, helper->ctx);
 }
 

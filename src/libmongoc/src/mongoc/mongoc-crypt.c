@@ -46,6 +46,9 @@ _log_callback (mongocrypt_log_level_t mongocrypt_log_level,
 {
    mongoc_log_level_t log_level = MONGOC_LOG_LEVEL_ERROR;
 
+   BSON_UNUSED (message_len);
+   BSON_UNUSED (ctx);
+
    switch (mongocrypt_log_level) {
    case MONGOCRYPT_LOG_LEVEL_FATAL:
       log_level = MONGOC_LOG_LEVEL_CRITICAL;

@@ -9,6 +9,8 @@ test_mongoc_usleep_basic (void *unused)
    int64_t start;
    int64_t duration;
 
+   BSON_UNUSED (unused);
+
    start = bson_get_monotonic_time ();
    _mongoc_usleep (50 * 1000); /* 50 ms */
    duration = bson_get_monotonic_time () - start;

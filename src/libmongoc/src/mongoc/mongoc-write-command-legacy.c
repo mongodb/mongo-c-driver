@@ -147,6 +147,8 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
 
    ENTRY;
 
+   BSON_UNUSED (offset);
+
    BSON_ASSERT (command);
    BSON_ASSERT (client);
    BSON_ASSERT (database);
@@ -260,6 +262,8 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
    int data_offset = 0;
 
    ENTRY;
+
+   BSON_UNUSED (offset);
 
    BSON_ASSERT (command);
    BSON_ASSERT (client);
@@ -398,6 +402,8 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
    bool eof;
 
    ENTRY;
+
+   BSON_UNUSED (offset);
 
    BSON_ASSERT (command);
    BSON_ASSERT (client);

@@ -525,6 +525,8 @@ _parse_kms_provider_aws (bson_t *kms_providers,
    bson_t child;
    bson_iter_t iter;
 
+   BSON_UNUSED (tls_opts);
+
    BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
 
    BSON_FOREACH (kms_doc, iter)
@@ -570,6 +572,8 @@ _parse_kms_provider_azure (bson_t *kms_providers,
 {
    bson_t child;
    bson_iter_t iter;
+
+   BSON_UNUSED (tls_opts);
 
    BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
 
@@ -617,6 +621,8 @@ _parse_kms_provider_gcp (bson_t *kms_providers,
 {
    bson_t child;
    bson_iter_t iter;
+
+   BSON_UNUSED (tls_opts);
 
    BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
 
@@ -726,6 +732,8 @@ _parse_kms_provider_local (bson_t *kms_providers,
 {
    bson_t child;
    bson_iter_t iter;
+
+   BSON_UNUSED (tls_opts);
 
    BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
 

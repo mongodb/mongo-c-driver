@@ -635,42 +635,46 @@ _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array)
 void
 _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
 {
+   BSON_UNUSED (rpc);
+
 #if BSON_BYTE_ORDER != BSON_LITTLE_ENDIAN
-   mongoc_opcode_t opcode;
+   {
+      mongoc_opcode_t opcode;
 
-   opcode = rpc->header.opcode;
+      opcode = rpc->header.opcode;
 
-   switch (opcode) {
-   case MONGOC_OPCODE_REPLY:
-      _mongoc_rpc_swab_to_le_reply (&rpc->reply);
-      break;
-   case MONGOC_OPCODE_MSG:
-      _mongoc_rpc_swab_to_le_msg (&rpc->msg);
-      break;
-   case MONGOC_OPCODE_UPDATE:
-      _mongoc_rpc_swab_to_le_update (&rpc->update);
-      break;
-   case MONGOC_OPCODE_INSERT:
-      _mongoc_rpc_swab_to_le_insert (&rpc->insert);
-      break;
-   case MONGOC_OPCODE_QUERY:
-      _mongoc_rpc_swab_to_le_query (&rpc->query);
-      break;
-   case MONGOC_OPCODE_GET_MORE:
-      _mongoc_rpc_swab_to_le_get_more (&rpc->get_more);
-      break;
-   case MONGOC_OPCODE_DELETE:
-      _mongoc_rpc_swab_to_le_delete (&rpc->delete_);
-      break;
-   case MONGOC_OPCODE_KILL_CURSORS:
-      _mongoc_rpc_swab_to_le_kill_cursors (&rpc->kill_cursors);
-      break;
-   case MONGOC_OPCODE_COMPRESSED:
-      _mongoc_rpc_swab_to_le_compressed (&rpc->compressed);
-      break;
-   default:
-      MONGOC_WARNING ("Unknown rpc type: 0x%08x", opcode);
-      break;
+      switch (opcode) {
+      case MONGOC_OPCODE_REPLY:
+         _mongoc_rpc_swab_to_le_reply (&rpc->reply);
+         break;
+      case MONGOC_OPCODE_MSG:
+         _mongoc_rpc_swab_to_le_msg (&rpc->msg);
+         break;
+      case MONGOC_OPCODE_UPDATE:
+         _mongoc_rpc_swab_to_le_update (&rpc->update);
+         break;
+      case MONGOC_OPCODE_INSERT:
+         _mongoc_rpc_swab_to_le_insert (&rpc->insert);
+         break;
+      case MONGOC_OPCODE_QUERY:
+         _mongoc_rpc_swab_to_le_query (&rpc->query);
+         break;
+      case MONGOC_OPCODE_GET_MORE:
+         _mongoc_rpc_swab_to_le_get_more (&rpc->get_more);
+         break;
+      case MONGOC_OPCODE_DELETE:
+         _mongoc_rpc_swab_to_le_delete (&rpc->delete_);
+         break;
+      case MONGOC_OPCODE_KILL_CURSORS:
+         _mongoc_rpc_swab_to_le_kill_cursors (&rpc->kill_cursors);
+         break;
+      case MONGOC_OPCODE_COMPRESSED:
+         _mongoc_rpc_swab_to_le_compressed (&rpc->compressed);
+         break;
+      default:
+         MONGOC_WARNING ("Unknown rpc type: 0x%08x", opcode);
+         break;
+      }
    }
 #endif
 #if 0
@@ -682,42 +686,46 @@ _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
 void
 _mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
 {
+   BSON_UNUSED (rpc);
+
 #if BSON_BYTE_ORDER != BSON_LITTLE_ENDIAN
-   mongoc_opcode_t opcode;
+   {
+      mongoc_opcode_t opcode;
 
-   opcode = BSON_UINT32_FROM_LE (rpc->header.opcode);
+      opcode = BSON_UINT32_FROM_LE (rpc->header.opcode);
 
-   switch (opcode) {
-   case MONGOC_OPCODE_REPLY:
-      _mongoc_rpc_swab_from_le_reply (&rpc->reply);
-      break;
-   case MONGOC_OPCODE_MSG:
-      _mongoc_rpc_swab_from_le_msg (&rpc->msg);
-      break;
-   case MONGOC_OPCODE_UPDATE:
-      _mongoc_rpc_swab_from_le_update (&rpc->update);
-      break;
-   case MONGOC_OPCODE_INSERT:
-      _mongoc_rpc_swab_from_le_insert (&rpc->insert);
-      break;
-   case MONGOC_OPCODE_QUERY:
-      _mongoc_rpc_swab_from_le_query (&rpc->query);
-      break;
-   case MONGOC_OPCODE_GET_MORE:
-      _mongoc_rpc_swab_from_le_get_more (&rpc->get_more);
-      break;
-   case MONGOC_OPCODE_DELETE:
-      _mongoc_rpc_swab_from_le_delete (&rpc->delete_);
-      break;
-   case MONGOC_OPCODE_KILL_CURSORS:
-      _mongoc_rpc_swab_from_le_kill_cursors (&rpc->kill_cursors);
-      break;
-   case MONGOC_OPCODE_COMPRESSED:
-      _mongoc_rpc_swab_from_le_compressed (&rpc->compressed);
-      break;
-   default:
-      MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
-      break;
+      switch (opcode) {
+      case MONGOC_OPCODE_REPLY:
+         _mongoc_rpc_swab_from_le_reply (&rpc->reply);
+         break;
+      case MONGOC_OPCODE_MSG:
+         _mongoc_rpc_swab_from_le_msg (&rpc->msg);
+         break;
+      case MONGOC_OPCODE_UPDATE:
+         _mongoc_rpc_swab_from_le_update (&rpc->update);
+         break;
+      case MONGOC_OPCODE_INSERT:
+         _mongoc_rpc_swab_from_le_insert (&rpc->insert);
+         break;
+      case MONGOC_OPCODE_QUERY:
+         _mongoc_rpc_swab_from_le_query (&rpc->query);
+         break;
+      case MONGOC_OPCODE_GET_MORE:
+         _mongoc_rpc_swab_from_le_get_more (&rpc->get_more);
+         break;
+      case MONGOC_OPCODE_DELETE:
+         _mongoc_rpc_swab_from_le_delete (&rpc->delete_);
+         break;
+      case MONGOC_OPCODE_KILL_CURSORS:
+         _mongoc_rpc_swab_from_le_kill_cursors (&rpc->kill_cursors);
+         break;
+      case MONGOC_OPCODE_COMPRESSED:
+         _mongoc_rpc_swab_from_le_compressed (&rpc->compressed);
+         break;
+      default:
+         MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
+         break;
+      }
    }
 #endif
 #if 0

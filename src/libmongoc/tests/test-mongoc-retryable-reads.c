@@ -90,6 +90,8 @@ test_cmd_helpers (void *ctx)
    mongoc_database_t *database;
    const bson_t *doc;
 
+   BSON_UNUSED (ctx);
+
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, "retryReads", true);
 
@@ -237,6 +239,8 @@ test_retry_reads_off (void *ctx)
    bson_t *cmd;
    bson_error_t error;
    bool res;
+
+   BSON_UNUSED (ctx);
 
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, "retryreads", false);

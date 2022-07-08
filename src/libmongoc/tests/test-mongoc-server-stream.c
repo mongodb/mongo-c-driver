@@ -113,6 +113,8 @@ test_server_stream_ties_server_description_pooled (void *unused)
    bson_error_t error;
    mongoc_server_description_t *sd;
 
+   BSON_UNUSED (unused);
+
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -197,6 +199,8 @@ test_server_stream_ties_server_description_single (void *unused)
    bson_error_t error;
    mongoc_server_description_t *sd;
    mc_tpld_modification tdmod;
+
+   BSON_UNUSED (unused);
 
    server = mock_server_new ();
    mock_server_run (server);

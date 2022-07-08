@@ -441,6 +441,8 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
    ENTRY;
 
+   BSON_UNUSED (timeout_msec);
+
    BSON_ASSERT (file);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
@@ -502,6 +504,8 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
    uint32_t iov_pos;
 
    ENTRY;
+
+   BSON_UNUSED (timeout_msec);
 
    BSON_ASSERT (file);
    BSON_ASSERT (iov);

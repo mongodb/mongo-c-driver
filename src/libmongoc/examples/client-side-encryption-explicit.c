@@ -7,7 +7,7 @@
 /* This example demonstrates how to use explicit encryption and decryption using
  * the community version of MongoDB */
 int
-main (int argc, char **argv)
+main (void)
 {
 /* The collection used to store the encryption data keys. */
 #define KEYVAULT_DB "encryption"

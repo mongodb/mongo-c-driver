@@ -1497,6 +1497,8 @@ void
 _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
                                            bool val)
 {
+   BSON_UNUSED (val);
+
    BSON_ASSERT (ts->handshake_cmd == NULL);
    ts->loadbalanced = true;
 }

@@ -659,6 +659,8 @@ test_topology_events_disabled (void)
 static bool
 responder (request_t *request, void *data)
 {
+   BSON_UNUSED (data);
+
    if (!strcmp (request->command_name, "foo")) {
       mock_server_replies_simple (request, "{'ok': 1}");
       request_destroy (request);
@@ -885,12 +887,16 @@ _test_heartbeat_fails_dns (bool pooled)
 static void
 test_heartbeat_fails_dns_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_heartbeat_fails_dns (false);
 }
 
 static void
 test_heartbeat_fails_dns_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_heartbeat_fails_dns (true);
 }
 

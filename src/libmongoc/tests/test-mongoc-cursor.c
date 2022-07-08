@@ -1044,6 +1044,8 @@ test_cursor_new_from_aggregate_no_initial (void)
 static void
 test_cursor_new_from_find (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_cursor_new_from_command ("{'find': 'test_cursor_new_from_find'}",
                                   "test_cursor_new_from_find");
 }
@@ -1052,6 +1054,8 @@ test_cursor_new_from_find (void *ctx)
 static void
 test_cursor_new_from_find_batches (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_cursor_new_from_command (
       "{'find': 'test_cursor_new_from_find_batches', 'batchSize': 1}",
       "test_cursor_new_from_find_batches");

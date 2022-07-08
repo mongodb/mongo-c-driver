@@ -77,7 +77,7 @@ col_view_create (const char *stub, ...)
 }
 
 int
-main (int argc, char *argv[])
+main (void)
 {
    bson_t *bson;
    char *json;

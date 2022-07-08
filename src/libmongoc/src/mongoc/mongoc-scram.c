@@ -1132,6 +1132,8 @@ _mongoc_sasl_prep_impl (const char *name,
 char *
 _mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err)
 {
+   BSON_UNUSED (in_utf8_len);
+
 #ifdef MONGOC_ENABLE_ICU
    return _mongoc_sasl_prep_impl ("password", in_utf8, in_utf8_len, err);
 #else

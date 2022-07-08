@@ -84,6 +84,7 @@ test_diagnostics_error_string (bson_error_t *error)
 static void
 handle_abort (int signo)
 {
+   BSON_UNUSED (signo);
    MONGOC_ERROR ("abort handler entered");
    fprintf (stderr, "%s", test_diagnostics_error_string (NULL));
 }

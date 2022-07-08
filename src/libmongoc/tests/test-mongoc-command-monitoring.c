@@ -1020,6 +1020,8 @@ test_killcursors_deprecated (void *unused)
    bool r;
    bson_error_t error;
 
+   BSON_UNUSED (unused);
+
    cmd_test_init (&test);
    client = test_framework_new_default_client ();
 

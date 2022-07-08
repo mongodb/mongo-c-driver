@@ -124,6 +124,9 @@ _mock_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
    /* TODO CDRIVER-2542: ZSeries appears to have excessive delay with repeated
     * calls to poll. As a workaround, set the poll timeout to 5ms. */
    ssize_t nactive = gOriginalPoll (streams, nstreams, 5);
+
+   BSON_UNUSED (timeout);
+
    starting_nactive = nactive;
 
    /* check if any of the poll responses need to be overwritten. */
@@ -164,6 +167,11 @@ _test_scanner_callback (uint32_t id,
 {
    he_testcase_t *testcase = (he_testcase_t *) data;
    int should_succeed = strcmp (testcase->expected.conn_succeeds_to, "neither");
+
+   BSON_UNUSED (id);
+   BSON_UNUSED (bson);
+   BSON_UNUSED (rtt_msec);
+
    if (should_succeed) {
       ASSERT_OR_PRINT (!error->code, (*error));
    } else {

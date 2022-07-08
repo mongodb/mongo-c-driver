@@ -370,6 +370,8 @@ test_mongoc_socket_check_closed (void)
 static void
 test_mongoc_socket_timed_out (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_mongoc_socket_check_closed (1000);
 }
 
@@ -380,6 +382,8 @@ test_mongoc_socket_sendv (void *ctx)
    socket_test_data_t data = {0};
    bson_thread_t threads[2];
    int i, r;
+
+   BSON_UNUSED (ctx);
 
    bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
@@ -406,8 +410,10 @@ test_mongoc_socket_poll_refusal (void *ctx)
    mongoc_socket_t *sock;
    mongoc_stream_t *ssock;
    int64_t start;
-
    struct sockaddr_in ipv4_addr = {0};
+
+   BSON_UNUSED (ctx);
+
    ipv4_addr.sin_family = AF_INET;
    BSON_ASSERT (inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr));
    ipv4_addr.sin_port = htons (12345);

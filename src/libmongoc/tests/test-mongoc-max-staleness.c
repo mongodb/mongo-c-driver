@@ -293,6 +293,8 @@ _test_last_write_date (bool pooled)
 static void
 test_last_write_date (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_last_write_date (false);
 }
 
@@ -300,6 +302,8 @@ test_last_write_date (void *ctx)
 static void
 test_last_write_date_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_last_write_date (true);
 }
 
@@ -341,6 +345,8 @@ _test_last_write_date_absent (bool pooled)
 static void
 test_last_write_date_absent (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_last_write_date_absent (false);
 }
 
@@ -348,6 +354,8 @@ test_last_write_date_absent (void *ctx)
 static void
 test_last_write_date_absent_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_last_write_date_absent (true);
 }
 

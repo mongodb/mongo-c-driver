@@ -104,6 +104,12 @@ _mongoc_cyrus_canon_user (sasl_conn_t *conn,
                           unsigned out_max,
                           unsigned *out_len)
 {
+   BSON_UNUSED (conn);
+   BSON_UNUSED (sasl);
+   BSON_UNUSED (flags);
+   BSON_UNUSED (user_realm);
+   BSON_UNUSED (out_max);
+
    TRACE ("Canonicalizing %s (%" PRIu32 ")\n", in, inlen);
    strcpy (out, in);
    *out_len = inlen;

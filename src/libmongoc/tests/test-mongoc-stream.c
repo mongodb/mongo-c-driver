@@ -92,6 +92,10 @@ failing_stream_writev (mongoc_stream_t *stream,
 {
    failing_stream_t *fstream = (failing_stream_t *) stream;
 
+   BSON_UNUSED (iov);
+   BSON_UNUSED (iovcnt);
+   BSON_UNUSED (timeout_msec);
+
    return fstream->rval;
 }
 

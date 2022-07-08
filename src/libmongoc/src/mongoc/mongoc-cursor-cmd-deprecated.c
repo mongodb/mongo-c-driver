@@ -52,6 +52,8 @@ _pop_from_batch (mongoc_cursor_t *cursor)
 static mongoc_cursor_state_t
 _get_next_batch (mongoc_cursor_t *cursor)
 {
+   BSON_UNUSED (cursor);
+
    /* there's no next batch to get, return DONE immediately. */
    return DONE;
 }

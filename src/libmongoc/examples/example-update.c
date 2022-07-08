@@ -1,7 +1,7 @@
 #include "mongoc/mongoc.h"
 
 int
-main (int argc, char **argv)
+main (void)
 {
    bson_t *to_insert = BCON_NEW ("_id", BCON_INT32 (1));
    bson_t *selector = BCON_NEW ("_id", "{", "$gt", BCON_INT32 (0), "}");

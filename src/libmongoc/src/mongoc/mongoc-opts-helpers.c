@@ -84,6 +84,8 @@ _mongoc_convert_document (mongoc_client_t *client,
    const uint8_t *data;
    bson_t value;
 
+   BSON_UNUSED (client);
+
    if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
       CONVERSION_ERR ("Invalid field \"%s\" in opts, should contain document,"
                       " not %s",
@@ -112,6 +114,8 @@ _mongoc_convert_array (mongoc_client_t *client,
    const uint8_t *data;
    bson_t value;
 
+   BSON_UNUSED (client);
+
    if (!BSON_ITER_HOLDS_ARRAY (iter)) {
       CONVERSION_ERR ("Invalid field \"%s\" in opts, should contain array,"
                       " not %s",
@@ -137,6 +141,8 @@ _mongoc_convert_int64_positive (mongoc_client_t *client,
                                 bson_error_t *error)
 {
    int64_t i;
+
+   BSON_UNUSED (client);
 
    if (!BSON_ITER_HOLDS_NUMBER (iter)) {
       CONVERSION_ERR ("Invalid field \"%s\" in opts, should contain number,"
@@ -164,6 +170,8 @@ _mongoc_convert_int32_t (mongoc_client_t *client,
                          bson_error_t *error)
 {
    int64_t i;
+
+   BSON_UNUSED (client);
 
    if (!BSON_ITER_HOLDS_NUMBER (iter)) {
       CONVERSION_ERR ("Invalid field \"%s\" in opts", bson_iter_key (iter));
@@ -212,6 +220,8 @@ _mongoc_convert_bool (mongoc_client_t *client,
                       bool *flag,
                       bson_error_t *error)
 {
+   BSON_UNUSED (client);
+
    if (BSON_ITER_HOLDS_BOOL (iter)) {
       *flag = bson_iter_bool (iter);
       return true;
@@ -229,7 +239,11 @@ _mongoc_convert_bson_value_t (mongoc_client_t *client,
                               bson_value_t *value,
                               bson_error_t *error)
 {
+   BSON_UNUSED (client);
+   BSON_UNUSED (error);
+
    bson_value_copy (bson_iter_value ((bson_iter_t *) iter), value);
+
    return true;
 }
 
@@ -239,7 +253,11 @@ _mongoc_convert_timestamp (mongoc_client_t *client,
                            mongoc_timestamp_t *timestamp,
                            bson_error_t *error)
 {
+   BSON_UNUSED (client);
+   BSON_UNUSED (error);
+
    bson_iter_timestamp (iter, &timestamp->timestamp, &timestamp->increment);
+
    return true;
 }
 
@@ -249,6 +267,8 @@ _mongoc_convert_utf8 (mongoc_client_t *client,
                       const char **str,
                       bson_error_t *error)
 {
+   BSON_UNUSED (client);
+
    if (BSON_ITER_HOLDS_UTF8 (iter)) {
       *str = bson_iter_utf8 (iter, NULL);
       return true;
@@ -266,6 +286,8 @@ _mongoc_convert_validate_flags (mongoc_client_t *client,
                                 bson_validate_flags_t *flags,
                                 bson_error_t *error)
 {
+   BSON_UNUSED (client);
+
    if (BSON_ITER_HOLDS_BOOL (iter)) {
       if (!bson_iter_as_bool (iter)) {
          *flags = BSON_VALIDATE_NONE;
@@ -302,6 +324,8 @@ _mongoc_convert_write_concern (mongoc_client_t *client,
 {
    mongoc_write_concern_t *tmp;
 
+   BSON_UNUSED (client);
+
    tmp = _mongoc_write_concern_new_from_iter (iter, error);
    if (tmp) {
       *wc = tmp;
@@ -318,6 +342,8 @@ _mongoc_convert_server_id (mongoc_client_t *client,
                            bson_error_t *error)
 {
    int64_t tmp;
+
+   BSON_UNUSED (client);
 
    if (!BSON_ITER_HOLDS_INT (iter)) {
       CONVERSION_ERR ("The serverId option must be an integer");
@@ -338,6 +364,8 @@ _mongoc_convert_read_concern (mongoc_client_t *client,
                               mongoc_read_concern_t **rc,
                               bson_error_t *error)
 {
+   BSON_UNUSED (client);
+
    *rc = _mongoc_read_concern_new_from_iter (iter, error);
    if (!*rc) {
       return false;
@@ -351,6 +379,8 @@ _mongoc_convert_hint (mongoc_client_t *client,
                       bson_value_t *value,
                       bson_error_t *error)
 {
+   BSON_UNUSED (client);
+
    if (BSON_ITER_HOLDS_UTF8 (iter) || BSON_ITER_HOLDS_DOCUMENT (iter)) {
       bson_value_copy (bson_iter_value ((bson_iter_t *) iter), value);
       return true;
