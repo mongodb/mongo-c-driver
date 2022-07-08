@@ -305,6 +305,12 @@ z_size_t ZEXPORT gzfwrite(buf, size, nitems, file)
         return 0;
     }
 
+    /* avoid potential division by zero */
+    if (size == 0) {
+        gz_error(state, Z_STREAM_ERROR, "size of items to write must not be 0");
+        return 0;
+    }
+
     /* write len bytes to buf, return the number of full items written */
     return len ? gz_write(state, buf, len) / size : 0;
 }
