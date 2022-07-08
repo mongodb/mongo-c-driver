@@ -155,7 +155,7 @@ def get_branch_tags(active_branch_name):
     else:
         # Not a release branch, so look for the most recent tag in history
         commits = check_output(['git', 'log', '--pretty=format:%H',
-                                '--first-parent', '--no-merges'])
+                                '--no-merges'])
         if len(commits) > 0:
             for commit in commits.splitlines():
                 tags = check_output(['git', 'tag', '--points-at',
