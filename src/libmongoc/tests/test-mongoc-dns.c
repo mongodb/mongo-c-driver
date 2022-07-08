@@ -909,12 +909,11 @@ _mock_rr_resolver_prose_test_10 (const char *service,
                                  size_t initial_buffer_size,
                                  bson_error_t *error)
 {
+   BSON_UNUSED (initial_buffer_size);
+
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
    BSON_ASSERT_PARAM (error);
-
-   /* Silence unused parameter warning. */
-   BSON_ASSERT (initial_buffer_size >= 0u);
 
    if (rr_type == MONGOC_RR_SRV) {
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
@@ -1011,12 +1010,11 @@ _mock_rr_resolver_prose_test_11 (const char *service,
                                  size_t initial_buffer_size,
                                  bson_error_t *error)
 {
+   BSON_UNUSED (initial_buffer_size);
+
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
    BSON_ASSERT_PARAM (error);
-
-   /* Silence unused parameter warning. */
-   BSON_ASSERT (initial_buffer_size >= 0u);
 
    if (rr_type == MONGOC_RR_SRV) {
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
@@ -1111,12 +1109,11 @@ _mock_rr_resolver_prose_test_12 (const char *service,
                                  size_t initial_buffer_size,
                                  bson_error_t *error)
 {
+   BSON_UNUSED (initial_buffer_size);
+
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
    BSON_ASSERT_PARAM (error);
-
-   /* Silence unused parameter warning. */
-   BSON_ASSERT (initial_buffer_size >= 0u);
 
    if (rr_type == MONGOC_RR_SRV) {
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
