@@ -79,6 +79,8 @@ def check_head_tag():
     # have git tell us if any tags that look like release tags point at HEAD;
     # based on our policy, a commit should never have more than one release tag
     tags = check_output(['git', 'tag', '--points-at', 'HEAD', '--list', '1.*']).split()
+    if len(tags) > 1:
+        raise Exception ('Expected 1 or 0 tags on HEAD, got: {}'.format(tags))
 
     tag = tags[0] if len(tags) > 0 else ''
     release_tag_match = RELEASE_TAG_RE.match(tag)
