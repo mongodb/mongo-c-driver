@@ -259,6 +259,11 @@ if [ "$ANALYZE" = "ON" ]; then
    else
       SCAN_BUILD_COMMAND="scan-build-3.9"
    fi
+
+   # Do not include bundled zlib in scan-build analysis.
+   # scan-build `--exclude`` flag is not available on all Evergreen variants.
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=OFF"
+
    $SCAN_BUILD_COMMAND $CMAKE $CONFIGURE_FLAGS .
 
    # Put clang static analyzer results in scan/ and fail build if warnings found.
