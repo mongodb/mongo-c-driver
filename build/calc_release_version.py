@@ -59,11 +59,9 @@ def check_output(args):
             raise subprocess.CalledProcessError(ret, args[0], output=out)
 
     if type(out) is bytes:
-       """
-       git isn't guaranteed to always return UTF-8, but for our purposes
-       this should be fine as tags and hashes should be ASCII only.
-       """
-       out = out.decode('utf-8')
+        # git isn't guaranteed to always return UTF-8, but for our purposes
+        # this should be fine as tags and hashes should be ASCII only.
+        out = out.decode('utf-8')
 
     return out
 
@@ -85,7 +83,7 @@ def check_head_tag():
     if len(tags) == 1:
         tag = tags[0]
     elif len(tags) > 1:
-        raise Exception ('Expected 1 or 0 tags on HEAD, got: {}'.format(tags))
+        raise Exception('Expected 1 or 0 tags on HEAD, got: {}'.format(tags))
 
     release_tag_match = RELEASE_TAG_RE.match(tag)
     if release_tag_match:
