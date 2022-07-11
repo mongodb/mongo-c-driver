@@ -4830,10 +4830,8 @@ test_kms_callback (void *unused)
          enc, "local", dk_opts, &keyid, &error);
       mongoc_client_encryption_destroy (enc);
 
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                             1,
-                             "Requested kms provider not configured");
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "no kms provider set");
    }
 
 

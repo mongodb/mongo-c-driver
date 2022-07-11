@@ -513,12 +513,14 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
    creds->secret_access_key = NULL;
    creds->session_token = NULL;
 
-   TRACE ("%s", "checking URI for credentials");
-   if (!_obtain_creds_from_uri (creds, uri, error)) {
-      goto fail;
-   }
-   if (!_creds_empty (creds)) {
-      goto succeed;
+   if (uri) {
+      TRACE ("%s", "checking URI for credentials");
+      if (!_obtain_creds_from_uri (creds, uri, error)) {
+         goto fail;
+      }
+      if (!_creds_empty (creds)) {
+         goto succeed;
+      }
    }
 
    TRACE ("%s", "checking environment variables for credentials");
