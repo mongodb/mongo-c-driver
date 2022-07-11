@@ -434,12 +434,6 @@ z_size_t ZEXPORT gzfread(buf, size, nitems, file)
         return 0;
     }
 
-    /* avoid potential division by zero */
-    if (size == 0) {
-        gz_error(state, Z_STREAM_ERROR, "size of items to read must not be 0");
-        return 0;
-    }
-
     /* read len or fewer bytes to buf, return the number of full items read */
     return len ? gz_read(state, buf, len) / size : 0;
 }
