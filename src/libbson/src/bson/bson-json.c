@@ -1370,26 +1370,42 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
 
    /* clang-format off */
    if (bson->read_state == BSON_JSON_IN_BSON_TYPE) {
-      if HANDLE_OPTION ("$regex", BSON_TYPE_REGEX, BSON_JSON_LF_REGEX)
-         else if HANDLE_OPTION ("$options", BSON_TYPE_REGEX, BSON_JSON_LF_OPTIONS) else if HANDLE_OPTION ("$oid",
-                                                                                                          BSON_TYPE_OID,
-                                                                                                          BSON_JSON_LF_OID) else if HANDLE_OPTION ("$binary", BSON_TYPE_BINARY, BSON_JSON_LF_BINARY) else if HANDLE_OPTION ("$type", BSON_TYPE_BINARY, BSON_JSON_LF_TYPE) else if HANDLE_OPTION ("$uuid",
-                                                                                                                                                                                                                                                                                                 BSON_TYPE_BINARY,
-                                                                                                                                                                                                                                                                                                 BSON_JSON_LF_UUID) else if HANDLE_OPTION ("$date", BSON_TYPE_DATE_TIME, BSON_JSON_LF_DATE) else if HANDLE_OPTION ("$undefined",
-                                                                                                                                                                                                                                                                                                                                                                                                                   BSON_TYPE_UNDEFINED,
-                                                                                                                                                                                                                                                                                                                                                                                                                   BSON_JSON_LF_UNDEFINED) else if HANDLE_OPTION ("$minKey",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  BSON_TYPE_MINKEY,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  BSON_JSON_LF_MINKEY) else if HANDLE_OPTION ("$maxKey", BSON_TYPE_MAXKEY, BSON_JSON_LF_MAXKEY) else if HANDLE_OPTION ("$numberInt", BSON_TYPE_INT32, BSON_JSON_LF_INT32) else if HANDLE_OPTION ("$numberLong", BSON_TYPE_INT64, BSON_JSON_LF_INT64) else if HANDLE_OPTION ("$numberDouble", BSON_TYPE_DOUBLE, BSON_JSON_LF_DOUBLE) else if HANDLE_OPTION ("$symbol",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           BSON_TYPE_SYMBOL,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           BSON_JSON_LF_SYMBOL) else if HANDLE_OPTION ("$numberDecimal", BSON_TYPE_DECIMAL128, BSON_JSON_LF_DECIMAL128) else if (!strcmp ("$timestamp",
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          (const char
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              *)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             val))
-         {
-            bson->bson_type = BSON_TYPE_TIMESTAMP;
-            bson->read_state = BSON_JSON_IN_BSON_TYPE_TIMESTAMP_STARTMAP;
-         }
-      else if (!strcmp ("$regularExpression", (const char *) val)) {
+      if
+         HANDLE_OPTION ("$regex", BSON_TYPE_REGEX, BSON_JSON_LF_REGEX)
+      else if
+         HANDLE_OPTION ("$options", BSON_TYPE_REGEX, BSON_JSON_LF_OPTIONS)
+      else if
+         HANDLE_OPTION ("$oid", BSON_TYPE_OID, BSON_JSON_LF_OID)
+      else if
+         HANDLE_OPTION ("$binary", BSON_TYPE_BINARY, BSON_JSON_LF_BINARY)
+      else if
+         HANDLE_OPTION ("$type", BSON_TYPE_BINARY, BSON_JSON_LF_TYPE)
+      else if
+         HANDLE_OPTION ("$uuid", BSON_TYPE_BINARY, BSON_JSON_LF_UUID)
+      else if
+         HANDLE_OPTION ("$date", BSON_TYPE_DATE_TIME, BSON_JSON_LF_DATE)
+      else if
+         HANDLE_OPTION (
+            "$undefined", BSON_TYPE_UNDEFINED, BSON_JSON_LF_UNDEFINED)
+      else if
+         HANDLE_OPTION ("$minKey", BSON_TYPE_MINKEY, BSON_JSON_LF_MINKEY)
+      else if
+         HANDLE_OPTION ("$maxKey", BSON_TYPE_MAXKEY, BSON_JSON_LF_MAXKEY)
+      else if
+         HANDLE_OPTION ("$numberInt", BSON_TYPE_INT32, BSON_JSON_LF_INT32)
+      else if
+         HANDLE_OPTION ("$numberLong", BSON_TYPE_INT64, BSON_JSON_LF_INT64)
+      else if
+         HANDLE_OPTION ("$numberDouble", BSON_TYPE_DOUBLE, BSON_JSON_LF_DOUBLE)
+      else if
+         HANDLE_OPTION ("$symbol", BSON_TYPE_SYMBOL, BSON_JSON_LF_SYMBOL)
+      else if
+         HANDLE_OPTION (
+            "$numberDecimal", BSON_TYPE_DECIMAL128, BSON_JSON_LF_DECIMAL128)
+      else if (!strcmp ("$timestamp", (const char *) val)) {
+         bson->bson_type = BSON_TYPE_TIMESTAMP;
+         bson->read_state = BSON_JSON_IN_BSON_TYPE_TIMESTAMP_STARTMAP;
+      } else if (!strcmp ("$regularExpression", (const char *) val)) {
          bson->bson_type = BSON_TYPE_REGEX;
          bson->read_state = BSON_JSON_IN_BSON_TYPE_REGEX_STARTMAP;
       } else if (!strcmp ("$dbPointer", (const char *) val)) {
@@ -1409,37 +1425,37 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
          _bson_json_bad_key_in_type (reader, val);
       }
    } else if (bson->read_state == BSON_JSON_IN_BSON_TYPE_DATE_NUMBERLONG) {
-      if HANDLE_OPTION ("$numberLong", BSON_TYPE_DATE_TIME, BSON_JSON_LF_INT64)
-         else
-         {
-            _bson_json_bad_key_in_type (reader, val);
-         }
+      if
+         HANDLE_OPTION ("$numberLong", BSON_TYPE_DATE_TIME, BSON_JSON_LF_INT64)
+      else {
+         _bson_json_bad_key_in_type (reader, val);
+      }
    } else if (bson->read_state == BSON_JSON_IN_BSON_TYPE_TIMESTAMP_VALUES) {
-      if HANDLE_OPTION ("t", BSON_TYPE_TIMESTAMP, BSON_JSON_LF_TIMESTAMP_T)
-         else if HANDLE_OPTION ("i",
-                                BSON_TYPE_TIMESTAMP,
-                                BSON_JSON_LF_TIMESTAMP_I) else
-         {
-            _bson_json_bad_key_in_type (reader, val);
-         }
+      if
+         HANDLE_OPTION ("t", BSON_TYPE_TIMESTAMP, BSON_JSON_LF_TIMESTAMP_T)
+      else if
+         HANDLE_OPTION ("i", BSON_TYPE_TIMESTAMP, BSON_JSON_LF_TIMESTAMP_I)
+      else {
+         _bson_json_bad_key_in_type (reader, val);
+      }
    } else if (bson->read_state == BSON_JSON_IN_BSON_TYPE_REGEX_VALUES) {
-      if HANDLE_OPTION ("pattern",
-                        BSON_TYPE_REGEX,
-                        BSON_JSON_LF_REGULAR_EXPRESSION_PATTERN)
-         else if HANDLE_OPTION ("options",
-                                BSON_TYPE_REGEX,
-                                BSON_JSON_LF_REGULAR_EXPRESSION_OPTIONS) else
-         {
-            _bson_json_bad_key_in_type (reader, val);
-         }
+      if
+         HANDLE_OPTION (
+            "pattern", BSON_TYPE_REGEX, BSON_JSON_LF_REGULAR_EXPRESSION_PATTERN)
+      else if
+         HANDLE_OPTION (
+            "options", BSON_TYPE_REGEX, BSON_JSON_LF_REGULAR_EXPRESSION_OPTIONS)
+      else {
+         _bson_json_bad_key_in_type (reader, val);
+      }
    } else if (bson->read_state == BSON_JSON_IN_BSON_TYPE_BINARY_VALUES) {
-      if HANDLE_OPTION ("base64", BSON_TYPE_BINARY, BSON_JSON_LF_BINARY)
-         else if HANDLE_OPTION ("subType",
-                                BSON_TYPE_BINARY,
-                                BSON_JSON_LF_TYPE) else
-         {
-            _bson_json_bad_key_in_type (reader, val);
-         }
+      if
+         HANDLE_OPTION ("base64", BSON_TYPE_BINARY, BSON_JSON_LF_BINARY)
+      else if
+         HANDLE_OPTION ("subType", BSON_TYPE_BINARY, BSON_JSON_LF_TYPE)
+      else {
+         _bson_json_bad_key_in_type (reader, val);
+      }
    } else {
       _bson_json_save_map_key (bson, val, len);
    }
