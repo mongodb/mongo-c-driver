@@ -659,6 +659,7 @@ _try_add_aws_from_env (bson_t *out, bson_error_t *error)
       && bson_append_document_end (out, &aws);
    BSON_ASSERT (okay && "Failed to build aws credentials document");
    // Good!
+   _mongoc_aws_credentials_cleanup (&creds);
    return true;
 }
 
