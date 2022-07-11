@@ -387,7 +387,6 @@ _noop (void)
    }
 
 
-
 bson_json_opts_t *
 bson_json_opts_new (bson_json_mode_t mode, int32_t max_len)
 {
@@ -1369,6 +1368,7 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
       _bson_json_save_map_key (bson, val, len);
    }
 
+   /* clang-format off */
    if (bson->read_state == BSON_JSON_IN_BSON_TYPE) {
       if
          HANDLE_OPTION ("$regex", BSON_TYPE_REGEX, BSON_JSON_LF_REGEX)
@@ -1459,6 +1459,7 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
    } else {
       _bson_json_save_map_key (bson, val, len);
    }
+   /* clang-format on */
 }
 
 

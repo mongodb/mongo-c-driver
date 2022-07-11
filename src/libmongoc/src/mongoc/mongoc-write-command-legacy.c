@@ -471,14 +471,16 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
          } else if (strcmp (bson_iter_key (&subiter), "multi") == 0) {
             val = bson_iter_bool (&subiter);
             if (val) {
-               rpc.update.flags = (mongoc_update_flags_t) (
-                  rpc.update.flags | MONGOC_UPDATE_MULTI_UPDATE);
+               rpc.update.flags =
+                  (mongoc_update_flags_t) (rpc.update.flags |
+                                           MONGOC_UPDATE_MULTI_UPDATE);
             }
          } else if (strcmp (bson_iter_key (&subiter), "upsert") == 0) {
             val = bson_iter_bool (&subiter);
             if (val) {
-               rpc.update.flags = (mongoc_update_flags_t) (
-                  rpc.update.flags | MONGOC_UPDATE_UPSERT);
+               rpc.update.flags =
+                  (mongoc_update_flags_t) (rpc.update.flags |
+                                           MONGOC_UPDATE_UPSERT);
             }
          }
       }

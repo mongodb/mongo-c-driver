@@ -3222,10 +3222,10 @@ _bson_as_json_visit_all (const bson_t *bson,
       return NULL;
    }
 
-   /* Append closing space and } separately, in case we hit the max in between. */
+   /* Append closing space and } separately, in case we hit the max in between.
+    */
    remaining = state.max_len - state.str->len;
-   if (state.max_len == BSON_MAX_LEN_UNLIMITED ||
-       remaining > 1) {
+   if (state.max_len == BSON_MAX_LEN_UNLIMITED || remaining > 1) {
       bson_string_append (state.str, " }");
    } else if (remaining == 1) {
       bson_string_append (state.str, " ");
@@ -3286,7 +3286,7 @@ bson_array_as_json (const bson_t *bson, size_t *length)
 
    if (length) {
       *length = 0;
-    }
+   }
 
    if (bson_empty0 (bson)) {
       if (length) {

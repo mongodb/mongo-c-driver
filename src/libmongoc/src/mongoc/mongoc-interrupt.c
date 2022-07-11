@@ -284,7 +284,7 @@ _mongoc_interrupt_flush (mongoc_interrupt_t *interrupt)
       }
    }
 
-   BSON_UNREACHABLE("reached unreachable code");
+   BSON_UNREACHABLE ("reached unreachable code");
 }
 
 bool

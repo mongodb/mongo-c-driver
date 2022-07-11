@@ -523,7 +523,8 @@ STACK_OF (X509) * _get_verified_chain (SSL *ssl)
    return SSL_get0_verified_chain (ssl);
 }
 
-void _free_verified_chain (STACK_OF (X509) * verified_chain)
+void
+_free_verified_chain (STACK_OF (X509) * verified_chain)
 {
    /* _get_verified_chain does not return a copy. Do nothing. */
    return;
@@ -572,7 +573,8 @@ fail:
 
 /* On OpenSSL < 1.1.0, this chain isn't attached to the SSL session, so we need
  * it to dispose of itself. */
-void _free_verified_chain (STACK_OF (X509) * verified_chain)
+void
+_free_verified_chain (STACK_OF (X509) * verified_chain)
 {
    if (!verified_chain) {
       return;
