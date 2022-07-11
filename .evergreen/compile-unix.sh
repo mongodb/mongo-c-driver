@@ -63,6 +63,9 @@ echo "ZSTD: $ZSTD"
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
 
+# Assume we are running in the mongo-c-driver source root directory
+MONGOC_DIR="$PWD"
+
 # Since zstd inconsitently installed on macos-1014.
 # Remove this check in CDRIVER-3483.
 if [ "darwin" = "$OS" ]; then
@@ -234,7 +237,9 @@ if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
 
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
-   $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" ../
+   $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" \
+      -DMONGOCRYPT_MONGOC_DIR="$MONGOC_DIR" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+      -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" -DBUILD_TESTING=OFF ../
    make install
    cd ../../
    else
@@ -254,6 +259,11 @@ if [ "$ANALYZE" = "ON" ]; then
    else
       SCAN_BUILD_COMMAND="scan-build-3.9"
    fi
+
+   # Do not include bundled zlib in scan-build analysis.
+   # scan-build `--exclude`` flag is not available on all Evergreen variants.
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=OFF"
+
    $SCAN_BUILD_COMMAND $CMAKE $CONFIGURE_FLAGS .
 
    # Put clang static analyzer results in scan/ and fail build if warnings found.

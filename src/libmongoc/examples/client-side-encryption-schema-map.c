@@ -93,7 +93,7 @@ fail:
    if (outfile) {
       fclose (outfile);
    }
-   return true;
+   return ret;
 }
 
 /* This example demonstrates how to use automatic encryption with a client-side
