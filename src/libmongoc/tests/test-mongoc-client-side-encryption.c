@@ -4913,8 +4913,7 @@ _test_auto_aws (bool should_succeed)
       dk_opts,
       tmp_bson ("{ 'region': 'us-east-1', 'key': "
                 "'arn:aws:kms:us-east-1:579766882180:key/"
-                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
-                "'127.0.0.1:8001' }"));
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0' }"));
 
    // Create a client encryption object
    mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new ();
@@ -4941,6 +4940,7 @@ _test_auto_aws (bool should_succeed)
       mongoc_client_encryption_destroy (enc);
 
       if (should_succeed) {
+         bson_value_destroy (&keyid);
          ASSERT_OR_PRINT (error.code == 0, error);
       } else {
          // We should encounter an error while attempting to connect to the EC2
@@ -4970,13 +4970,13 @@ test_auto_aws_succeed (void *unused)
 }
 
 static int
-_skip_if_aws_creds (void *unused)
+_have_aws_creds_env (void *unused)
 {
    // State variable:
    //    Zero: Haven't checked yet
    //    One: We have AWS creds
    //    Two = We do not have AWS creds
-   static bool creds_check_state = 0;
+   static int creds_check_state = 0;
    if (creds_check_state == 0) {
       // We need to do a check
       _mongoc_aws_credentials_t creds = {0};
@@ -4993,9 +4993,9 @@ _skip_if_aws_creds (void *unused)
 }
 
 static int
-_skip_if_no_aws_creds (void *unused)
+_not_have_aws_creds_env (void *unused)
 {
-   return !_skip_if_aws_creds (unused);
+   return !_have_aws_creds_env (unused);
 }
 
 void
@@ -5263,7 +5263,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8,
-                      _skip_if_aws_creds);
+                      _not_have_aws_creds_env);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms/auto-aws/succeed",
@@ -5272,5 +5272,5 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8,
-                      _skip_if_no_aws_creds);
+                      _have_aws_creds_env);
 }
