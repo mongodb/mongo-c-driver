@@ -32,7 +32,8 @@ Written for Python 2.6+, requires Jinja 2 for templating.
 from collections import namedtuple
 from os.path import basename, dirname, join as joinpath, normpath
 
-from jinja2 import Environment, FileSystemLoader  # Please "pip install jinja2".
+# Please "pip install jinja2".
+from jinja2 import Environment, FileSystemLoader
 
 this_dir = dirname(__file__)
 template_dir = joinpath(this_dir, 'future_function_templates')
@@ -60,6 +61,7 @@ typedef_list = [
 
     # Const fundamental.
     typedef("const_char_ptr", "const char *"),
+    typedef("bool_ptr", "bool *"),
 
     # libbson.
     typedef("bson_error_ptr", "bson_error_t *"),
@@ -98,7 +100,8 @@ typedef_list = [
             "const mongoc_find_and_modify_opts_t *"),
     typedef("const_mongoc_iovec_ptr", "const mongoc_iovec_t *"),
     typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
-    typedef("const_mongoc_write_concern_ptr", "const mongoc_write_concern_t *"),
+    typedef("const_mongoc_write_concern_ptr",
+            "const mongoc_write_concern_t *"),
 ]
 
 type_list = [T.name for T in typedef_list]
@@ -451,6 +454,7 @@ future_functions = [
                     [param("mongoc_topology_ptr", "topology"),
                      param("mongoc_ss_optype_t", "optype"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("bool_ptr", "must_use_primary"),
                      param("bson_error_ptr", "error")]),
 
     future_function("mongoc_gridfs_ptr",

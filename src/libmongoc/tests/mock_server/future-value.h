@@ -22,6 +22,7 @@ typedef char * char_ptr;
 typedef char ** char_ptr_ptr;
 typedef void * void_ptr;
 typedef const char * const_char_ptr;
+typedef bool * bool_ptr;
 typedef bson_error_t * bson_error_ptr;
 typedef bson_t * bson_ptr;
 typedef const bson_t * const_bson_ptr;
@@ -61,6 +62,7 @@ typedef enum {
    future_value_uint32_t_type,
    future_value_void_ptr_type,
    future_value_const_char_ptr_type,
+   future_value_bool_ptr_type,
    future_value_bson_error_ptr_type,
    future_value_bson_ptr_type,
    future_value_const_bson_ptr_type,
@@ -109,6 +111,7 @@ typedef struct _future_value_t
       uint32_t uint32_t_value;
       void_ptr void_ptr_value;
       const_char_ptr const_char_ptr_value;
+      bool_ptr bool_ptr_value;
       bson_error_ptr bson_error_ptr_value;
       bson_ptr bson_ptr_value;
       const_bson_ptr const_bson_ptr_value;
@@ -243,6 +246,15 @@ future_value_set_const_char_ptr(
 
 const_char_ptr
 future_value_get_const_char_ptr (
+   future_value_t *future_value);
+
+void
+future_value_set_bool_ptr(
+   future_value_t *future_value,
+   bool_ptr value);
+
+bool_ptr
+future_value_get_bool_ptr (
    future_value_t *future_value);
 
 void

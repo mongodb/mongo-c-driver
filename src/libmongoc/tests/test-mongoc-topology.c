@@ -367,7 +367,7 @@ _test_server_selection (bool try_once)
 
    /* no primary, selection fails after one try */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, secondary_response);
@@ -398,7 +398,7 @@ _test_server_selection (bool try_once)
 
    /* second selection, now we try hello again */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
 
@@ -721,7 +721,7 @@ test_cooldown_standalone (void)
 
    /* first hello fails, selection fails */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
@@ -746,7 +746,7 @@ test_cooldown_standalone (void)
 
    /* third selection doesn't try to call hello: we're still in cooldown */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    mock_server_set_request_timeout_msec (server, 100);
    BSON_ASSERT (!mock_server_receives_any_hello (server)); /* no hello call */
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
@@ -762,7 +762,7 @@ test_cooldown_standalone (void)
 
    /* cooldown ends, now we try hello again, this time succeeding */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server); /* not in cooldown now */
    BSON_ASSERT (request);
    mock_server_replies_simple (request,
@@ -837,7 +837,7 @@ test_cooldown_rs (void)
 
    /* server 0 is a secondary. */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
 
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
@@ -858,7 +858,7 @@ test_cooldown_rs (void)
 
    /* second selection doesn't try hello on server 1: it's in cooldown */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
 
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
@@ -877,7 +877,7 @@ test_cooldown_rs (void)
 
    /* cooldown ends, now we try hello on server 1, this time succeeding */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
 
    request = mock_server_receives_any_hello (servers[1]);
    BSON_ASSERT (request);
@@ -924,7 +924,7 @@ test_cooldown_retry (void)
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
 
    /* first hello fails */
    request = mock_server_receives_any_hello (server);
@@ -1019,8 +1019,8 @@ _test_select_succeed (bool try_once)
 
    /* start waiting for a primary (NULL read pref) */
    start = bson_get_monotonic_time ();
-   future =
-      future_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
+   future = future_topology_select (
+      client->topology, MONGOC_SS_READ, NULL, NULL, &error);
 
    /* selection succeeds */
    sd = future_get_mongoc_server_description_ptr (future);

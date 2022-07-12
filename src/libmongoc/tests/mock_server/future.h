@@ -72,6 +72,9 @@ future_get_void_ptr (future_t *future);
 const_char_ptr
 future_get_const_char_ptr (future_t *future);
 
+bool_ptr
+future_get_bool_ptr (future_t *future);
+
 bson_error_ptr
 future_get_bson_error_ptr (future_t *future);
 

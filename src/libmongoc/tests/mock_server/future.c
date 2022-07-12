@@ -145,6 +145,18 @@ future_get_const_char_ptr (future_t *future)
    abort ();
 }
 
+bool_ptr
+future_get_bool_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_bool_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
+   abort ();
+}
+
 bson_error_ptr
 future_get_bson_error_ptr (future_t *future)
 {
