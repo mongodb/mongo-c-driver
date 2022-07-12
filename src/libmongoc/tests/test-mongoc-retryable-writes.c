@@ -141,6 +141,8 @@ test_command_with_opts (void *ctx)
    bson_t reply_result;
    bson_error_t error;
 
+   BSON_UNUSED (ctx);
+
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
 
@@ -447,6 +449,8 @@ test_retry_no_crypto (void *ctx)
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
 
+   BSON_UNUSED (ctx);
+
    capture_logs (true);
 
    /* Test that no warning is logged if retryWrites is disabled. Warning logic
@@ -623,6 +627,8 @@ test_bulk_retry_tracks_new_server (void *unused)
    mongoc_server_description_t *sd;
    mongoc_apm_callbacks_t *callbacks;
    _tracks_new_server_counters_t counters = {0};
+
+   BSON_UNUSED (unused);
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, _tracks_new_server_cb);

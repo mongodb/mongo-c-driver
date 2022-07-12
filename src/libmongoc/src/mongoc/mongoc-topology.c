@@ -212,6 +212,8 @@ _server_session_init (mongoc_server_session_t *session,
                       mongoc_topology_t *unused,
                       bson_error_t *error)
 {
+   BSON_UNUSED (unused);
+
    _mongoc_server_session_init (session, error);
 }
 
@@ -219,6 +221,8 @@ static void
 _server_session_destroy (mongoc_server_session_t *session,
                          mongoc_topology_t *unused)
 {
+   BSON_UNUSED (unused);
+
    _mongoc_server_session_destroy (session);
 }
 
@@ -1620,6 +1624,8 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
 {
    ENTRY;
 
+   BSON_UNUSED (topology);
+
    /**
     * ! note:
     * At time of writing, this diverges from the spec:
@@ -1740,6 +1746,8 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
    bool should_clear_pool = false;
    mc_tpld_modification tdmod;
    mongoc_server_description_t *mut_sd;
+
+   BSON_UNUSED (td);
 
    if (_mongoc_cmd_check_ok_no_wce (
           reply, MONGOC_ERROR_API_VERSION_2, &cmd_error)) {

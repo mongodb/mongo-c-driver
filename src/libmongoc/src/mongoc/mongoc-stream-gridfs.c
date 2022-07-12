@@ -108,6 +108,8 @@ _mongoc_stream_gridfs_readv (mongoc_stream_t *stream,
 
    ENTRY;
 
+   BSON_UNUSED (timeout_msec);
+
    BSON_ASSERT (stream);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
@@ -132,6 +134,8 @@ _mongoc_stream_gridfs_writev (mongoc_stream_t *stream,
 
    ENTRY;
 
+   BSON_UNUSED (timeout_msec);
+
    BSON_ASSERT (stream);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
@@ -152,6 +156,8 @@ _mongoc_stream_gridfs_writev (mongoc_stream_t *stream,
 static bool
 _mongoc_stream_gridfs_check_closed (mongoc_stream_t *stream) /* IN */
 {
+   BSON_UNUSED (stream);
+
    return false;
 }
 

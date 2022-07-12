@@ -192,6 +192,8 @@ _server_changed (const mongoc_apm_server_changed_t *event)
 bool
 auto_respond_polling_hello (request_t *request, void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    if (0 == strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) ||
        0 == strcmp (request->command_name, "hello")) {
       const bson_t *doc;

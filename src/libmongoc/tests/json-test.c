@@ -1900,6 +1900,7 @@ run_json_general_test (const json_test_config_t *config)
 void
 json_test_config_cleanup (json_test_config_t *config)
 {
+   BSON_UNUSED (config);
    /* no-op */
 }
 

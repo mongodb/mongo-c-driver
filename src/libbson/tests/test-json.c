@@ -1344,6 +1344,10 @@ test_bson_json_read_invalid_json (void)
 static ssize_t
 test_bson_json_read_bad_cb_helper (void *_ctx, uint8_t *buf, size_t len)
 {
+   BSON_UNUSED (_ctx);
+   BSON_UNUSED (buf);
+   BSON_UNUSED (len);
+
    return -1;
 }
 
@@ -1371,6 +1375,7 @@ test_bson_json_read_bad_cb (void)
 static ssize_t
 test_bson_json_read_invalid_helper (void *ctx, uint8_t *buf, size_t len)
 {
+   BSON_UNUSED (ctx);
    BSON_ASSERT (len);
    *buf = 0x80; /* no UTF-8 sequence can start with 0x80 */
    return 1;
@@ -2895,9 +2900,9 @@ test_bson_as_json_multi_object (void)
 
 static void
 test_bson_as_json_with_opts (bson_t *bson,
-			     bson_json_mode_t mode,
-			     int max_len,
-			     const char *expected)
+                             bson_json_mode_t mode,
+                             int max_len,
+                             const char *expected)
 {
    bson_json_opts_t *opts = bson_json_opts_new (mode, max_len);
    size_t json_len;
@@ -2928,8 +2933,8 @@ truncate_string (const char *str, size_t len)
 
 static void
 run_bson_as_json_with_opts_tests (bson_t *bson,
-			bson_json_mode_t mode,
-			const char *expected)
+                                  bson_json_mode_t mode,
+                                  const char *expected)
 {
    size_t len = strlen (expected);
    char *truncated;
@@ -2960,8 +2965,12 @@ test_bson_as_json_with_opts_double (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_DOUBLE (b, "v", 1.0));
 
-   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$numberDouble\" : \"1.0\" } }");
-   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 1.0 }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"v\" : { \"$numberDouble\" : \"1.0\" } }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 1.0 }");
 
    bson_destroy (b);
 }
@@ -2974,8 +2983,10 @@ test_bson_as_json_with_opts_utf8 (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_UTF8 (b, "v", "abcdef"));
 
-   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : \"abcdef\" }");
-   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : \"abcdef\" }");
 
    bson_destroy (b);
 }
@@ -2992,8 +3003,14 @@ test_bson_as_json_with_opts_document (void)
    BSON_ASSERT (bson_append_document_end (b, &nested));
    BSON_ASSERT (BSON_APPEND_UTF8 (b, "w", "abcdef"));
 
-   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"v\" : \"abcdef\" }, \"w\" : \"abcdef\" }");
-   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"v\" : \"abcdef\" }, \"w\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"v\" : { \"v\" : \"abcdef\" }, \"w\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_RELAXED,
+      "{ \"v\" : { \"v\" : \"abcdef\" }, \"w\" : \"abcdef\" }");
 
    bson_destroy (b);
    bson_destroy (&nested);
@@ -3011,8 +3028,14 @@ test_bson_as_json_with_opts_array (void)
    BSON_ASSERT (bson_append_array_end (b, &nested));
    BSON_ASSERT (BSON_APPEND_UTF8 (b, "w", "abcdef"));
 
-   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : [ \"abcdef\" ], \"w\" : \"abcdef\" }");
-   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : [ \"abcdef\" ], \"w\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"v\" : [ \"abcdef\" ], \"w\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_RELAXED,
+      "{ \"v\" : [ \"abcdef\" ], \"w\" : \"abcdef\" }");
 
    bson_destroy (b);
    bson_destroy (&nested);
@@ -3027,15 +3050,17 @@ test_bson_as_json_with_opts_binary (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_BINARY (b, "v", 0, data, sizeof data));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$binary\" : { \"base64\" : "
-			   "\"AQIDBA==\", \"subType\" : \"00\" } } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"v\" : { \"$binary\" : { \"base64\" : "
+      "\"AQIDBA==\", \"subType\" : \"00\" } } }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : { \"$binary\" : { \"base64\" : "
-			   "\"AQIDBA==\", \"subType\" : \"00\" } } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_RELAXED,
+      "{ \"v\" : { \"$binary\" : { \"base64\" : "
+      "\"AQIDBA==\", \"subType\" : \"00\" } } }");
 
    bson_destroy (b);
 }
@@ -3048,13 +3073,11 @@ test_bson_as_json_with_opts_undefined (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_UNDEFINED (b, "v"));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : { \"$undefined\" : true } }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$undefined\" : true } }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$undefined\" : true } }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$undefined\" : true } }");
 
    bson_destroy (b);
 }
@@ -3193,13 +3216,15 @@ test_bson_as_json_with_opts_code (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_CODE (b, "v", "function(){}"));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : { \"$code\" : \"function(){}\" } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_RELAXED,
+      "{ \"v\" : { \"$code\" : \"function(){}\" } }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$code\" : \"function(){}\" } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"v\" : { \"$code\" : \"function(){}\" } }");
 
    bson_destroy (b);
 }
@@ -3212,13 +3237,11 @@ test_bson_as_json_with_opts_symbol (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_SYMBOL (b, "v", "symbol"));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : { \"$symbol\" : \"symbol\" } }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$symbol\" : \"symbol\" } }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$symbol\" : \"symbol\" } }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$symbol\" : \"symbol\" } }");
 
    bson_destroy (b);
 }
@@ -3235,15 +3258,17 @@ test_bson_as_json_with_opts_codewscope (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_CODE_WITH_SCOPE (b, "v", "function(){}", scope));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : { \"$code\" : \"function(){}\", "
-			   "\"$scope\" : { \"v\" : \"abcdef\" } } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_RELAXED,
+      "{ \"v\" : { \"$code\" : \"function(){}\", "
+      "\"$scope\" : { \"v\" : \"abcdef\" } } }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$code\" : \"function(){}\", "
-			   "\"$scope\" : { \"v\" : \"abcdef\" } } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"v\" : { \"$code\" : \"function(){}\", "
+      "\"$scope\" : { \"v\" : \"abcdef\" } } }");
 
    bson_destroy (b);
    bson_destroy (scope);
@@ -3257,13 +3282,13 @@ test_bson_as_json_with_opts_int32 (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_INT32 (b, "v", 461394000));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : 461394000 }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 461394000 }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$numberInt\" : \"461394000\" } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"v\" : { \"$numberInt\" : \"461394000\" } }");
 
    bson_destroy (b);
 }
@@ -3276,13 +3301,13 @@ test_bson_as_json_with_opts_int64 (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_INT64 (b, "v", 461394000));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : 461394000 }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 461394000 }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$numberLong\" : \"461394000\" } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"v\" : { \"$numberLong\" : \"461394000\" } }");
 
    bson_destroy (b);
 }
@@ -3316,13 +3341,11 @@ test_bson_as_json_with_opts_minkey (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_MINKEY (b, "v"));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : { \"$minKey\" : 1 } }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$minKey\" : 1 } }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$minKey\" : 1 } }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$minKey\" : 1 } }");
 
    bson_destroy (b);
 }
@@ -3335,13 +3358,11 @@ test_bson_as_json_with_opts_maxkey (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_MAXKEY (b, "v"));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : { \"$maxKey\" : 1 } }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$maxKey\" : 1 } }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$maxKey\" : 1 } }");
+   run_bson_as_json_with_opts_tests (
+      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$maxKey\" : 1 } }");
 
    bson_destroy (b);
 }
@@ -3358,15 +3379,17 @@ test_bson_as_json_with_opts_decimal128 (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_DECIMAL128 (b, "v", &dec));
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : { \"$numberDecimal\" : "
-			   "\"5192296858534827628530496329220095\" } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_RELAXED,
+      "{ \"v\" : { \"$numberDecimal\" : "
+      "\"5192296858534827628530496329220095\" } }");
 
-   run_bson_as_json_with_opts_tests (b,
-			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$numberDecimal\" : "
-			   "\"5192296858534827628530496329220095\" } }");
+   run_bson_as_json_with_opts_tests (
+      b,
+      BSON_JSON_MODE_CANONICAL,
+      "{ \"v\" : { \"$numberDecimal\" : "
+      "\"5192296858534827628530496329220095\" } }");
 
    bson_destroy (b);
 }
@@ -3386,29 +3409,30 @@ test_bson_as_json_with_opts_all_types (void)
    bson_oid_init_from_string (&oid, "123412341234abcdabcdabcd");
 
    bson_init (&scope);
-   BCON_APPEND (&scope, "x", BCON_INT32(1));
+   BCON_APPEND (&scope, "x", BCON_INT32 (1));
 
    bson_init (&b);
-   BCON_APPEND (&b, "double", BCON_DOUBLE(123.0));
+   BCON_APPEND (&b, "double", BCON_DOUBLE (123.0));
    BCON_APPEND (&b, "utf8", "bar");
-   BCON_APPEND (&b, "document", "{", "x", BCON_INT32(1), "}");
-   BCON_APPEND (&b, "array", "[", BCON_INT32(1), "]");
-   BCON_APPEND (&b, "binary", BCON_BIN (BSON_SUBTYPE_BINARY, (uint8_t*) "abc", 3));
+   BCON_APPEND (&b, "document", "{", "x", BCON_INT32 (1), "}");
+   BCON_APPEND (&b, "array", "[", BCON_INT32 (1), "]");
+   BCON_APPEND (
+      &b, "binary", BCON_BIN (BSON_SUBTYPE_BINARY, (uint8_t *) "abc", 3));
    BCON_APPEND (&b, "undefined", BCON_UNDEFINED);
    BCON_APPEND (&b, "oid", BCON_OID (&oid));
-   BCON_APPEND (&b, "false", BCON_BOOL(false));
-   BCON_APPEND (&b, "true", BCON_BOOL(true));
-   BCON_APPEND (&b, "date", BCON_DATE_TIME(time (NULL)));
+   BCON_APPEND (&b, "false", BCON_BOOL (false));
+   BCON_APPEND (&b, "true", BCON_BOOL (true));
+   BCON_APPEND (&b, "date", BCON_DATE_TIME (time (NULL)));
    BCON_APPEND (&b, "null", BCON_NULL);
-   BCON_APPEND (&b, "regex", BCON_REGEX("^abcd", "xi"));
-   BCON_APPEND (&b, "dbpointer", BCON_DBPOINTER("mycollection", &oid));
+   BCON_APPEND (&b, "regex", BCON_REGEX ("^abcd", "xi"));
+   BCON_APPEND (&b, "dbpointer", BCON_DBPOINTER ("mycollection", &oid));
    BCON_APPEND (&b, "code", BCON_CODE ("code"));
    BCON_APPEND (&b, "symbol", BCON_SYMBOL ("symbol"));
    BCON_APPEND (&b, "codewscope", BCON_CODEWSCOPE ("code", &scope));
-   BCON_APPEND (&b, "int32", BCON_INT32(1234));
-   BCON_APPEND (&b, "timestamp", BCON_TIMESTAMP((uint32_t) time (NULL), 1234));
-   BCON_APPEND (&b, "int64", BCON_INT64(4321));
-   BCON_APPEND (&b, "decimal128", BCON_DECIMAL128(&decimal128));
+   BCON_APPEND (&b, "int32", BCON_INT32 (1234));
+   BCON_APPEND (&b, "timestamp", BCON_TIMESTAMP ((uint32_t) time (NULL), 1234));
+   BCON_APPEND (&b, "int64", BCON_INT64 (4321));
+   BCON_APPEND (&b, "decimal128", BCON_DECIMAL128 (&decimal128));
    BCON_APPEND (&b, "minkey", BCON_MINKEY);
    BCON_APPEND (&b, "maxkey", BCON_MAXKEY);
 
@@ -3416,7 +3440,8 @@ test_bson_as_json_with_opts_all_types (void)
    full_relaxed = bson_as_relaxed_extended_json (&b, NULL);
 
    run_bson_as_json_with_opts_tests (&b, BSON_JSON_MODE_RELAXED, full_relaxed);
-   run_bson_as_json_with_opts_tests (&b, BSON_JSON_MODE_CANONICAL, full_canonical);
+   run_bson_as_json_with_opts_tests (
+      &b, BSON_JSON_MODE_CANONICAL, full_canonical);
 
    bson_free (full_canonical);
    bson_free (full_relaxed);
@@ -3608,6 +3633,6 @@ test_json_install (TestSuite *suite)
                   "/bson/as_json_with_opts/decimal128",
                   test_bson_as_json_with_opts_decimal128);
    TestSuite_Add (suite,
-		  "/bson/as_json_with_opts/all_types",
-		  test_bson_as_json_with_opts_all_types);
+                  "/bson/as_json_with_opts/all_types",
+                  test_bson_as_json_with_opts_all_types);
 }

@@ -133,6 +133,8 @@ test_counters_op_msg (void *ctx)
    const bson_t *bson;
    mongoc_client_t *client;
 
+   BSON_UNUSED (ctx);
+
    client = _client_new_disable_ss (false);
    _ping (client);
    DIFF_AND_RESET (op_egress_msg, ==, 1);
@@ -165,6 +167,8 @@ test_counters_op_compressed (void *ctx)
 {
    mongoc_collection_t *coll;
    mongoc_client_t *client;
+
+   BSON_UNUSED (ctx);
 
    client = _client_new_disable_ss (true);
    _ping (client);
@@ -276,6 +280,8 @@ test_counters_streams (void *ctx)
    const int TIMEOUT = 500;
    mongoc_gridfs_file_opt_t gridfs_opts = {0};
    bool ret;
+
+   BSON_UNUSED (ctx);
 
    /* test ingress and egress of a stream to a server. */
    _ping (client);
@@ -392,6 +398,8 @@ test_counters_auth (void *ctx)
    mongoc_uri_t *uri;
    bool ret;
    bson_error_t err;
+
+   BSON_UNUSED (ctx);
 
    uri = mongoc_uri_new (uri_str);
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);

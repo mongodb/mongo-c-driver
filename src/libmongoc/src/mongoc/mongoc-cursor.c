@@ -751,6 +751,8 @@ _mongoc_cursor_append_docs_array (mongoc_cursor_t *cursor,
    size_t keylen;
    const bson_t *doc;
 
+   BSON_UNUSED (cursor);
+
    while ((doc = bson_reader_read (response->reader, &eof))) {
       keylen = bson_uint32_to_string (i, &key, str, sizeof str);
       bson_append_document (docs, key, (int) keylen, doc);
@@ -1689,6 +1691,8 @@ _mongoc_cursor_response_read (mongoc_cursor_t *cursor,
    uint32_t data_len = 0;
 
    ENTRY;
+
+   BSON_UNUSED (cursor);
 
    if (bson_iter_next (&response->batch_iter) &&
        BSON_ITER_HOLDS_DOCUMENT (&response->batch_iter)) {

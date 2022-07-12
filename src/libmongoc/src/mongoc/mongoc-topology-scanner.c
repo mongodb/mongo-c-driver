@@ -112,7 +112,8 @@ _add_hello (mongoc_topology_scanner_t *ts)
    BSON_APPEND_INT32 (&ts->legacy_hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
    BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
 
-   /* Append appropriate server API metadata (such as "serverApi") if selected: */
+   /* Append appropriate server API metadata (such as "serverApi") if selected:
+    */
    if (mongoc_topology_scanner_uses_server_api (ts)) {
       _mongoc_cmd_append_server_api (&ts->hello_cmd, ts->api);
    }
@@ -1496,6 +1497,8 @@ void
 _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
                                            bool val)
 {
+   BSON_UNUSED (val);
+
    BSON_ASSERT (ts->handshake_cmd == NULL);
    ts->loadbalanced = true;
 }

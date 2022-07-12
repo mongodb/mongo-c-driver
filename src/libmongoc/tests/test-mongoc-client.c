@@ -133,6 +133,8 @@ test_server_id_option (void *ctx)
    bson_t *cmd;
    bool r;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    cmd = tmp_bson ("{'ping': 1}");
    r = mongoc_client_read_command_with_opts (client,
@@ -188,6 +190,8 @@ test_client_cmd_w_write_concern (void *ctx)
    bson_t reply;
    bson_t *opts = NULL;
    bson_error_t error;
+
+   BSON_UNUSED (ctx);
 
    opts = bson_new ();
    client = test_framework_new_default_client ();
@@ -394,6 +398,8 @@ test_mongoc_client_authenticate (void *context)
    bool r;
    bson_t q;
 
+   BSON_UNUSED (context);
+
    /*
     * Log in as admin.
     */
@@ -597,12 +603,16 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
 static void
 test_mongoc_client_single_speculative_auth_failure (void *context)
 {
+   BSON_UNUSED (context);
+
    test_mongoc_client_speculative_auth_failure (false);
 }
 
 static void
 test_mongoc_client_pooled_speculative_auth_failure (void *context)
 {
+   BSON_UNUSED (context);
+
    test_mongoc_client_speculative_auth_failure (true);
 }
 
@@ -685,6 +695,8 @@ test_mongoc_client_authenticate_cached (bool pooled)
 static void
 test_mongoc_client_authenticate_cached_pooled (void *context)
 {
+   BSON_UNUSED (context);
+
    test_mongoc_client_authenticate_cached (true);
 }
 
@@ -692,6 +704,8 @@ test_mongoc_client_authenticate_cached_pooled (void *context)
 static void
 test_mongoc_client_authenticate_cached_single (void *context)
 {
+   BSON_UNUSED (context);
+
    test_mongoc_client_authenticate_cached (false);
 }
 
@@ -711,6 +725,8 @@ test_mongoc_client_authenticate_failure (void *context)
    char *uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
    char *bad_uri_str =
       test_framework_add_user_password (uri_str_no_auth, "baduser", "badpass");
+
+   BSON_UNUSED (context);
 
    /*
     * Try authenticating with bad user.
@@ -768,6 +784,8 @@ test_mongoc_client_authenticate_timeout (void *context)
    bson_error_t error;
    future_t *future;
    request_t *request;
+
+   BSON_UNUSED (context);
 
    if (!TestSuite_CheckMockServerAllowed ()) {
       return;
@@ -1744,6 +1762,8 @@ typedef enum { NO_CONNECT, CONNECT, RECONNECT } connection_option_t;
 static bool
 responder (request_t *request, void *data)
 {
+   BSON_UNUSED (data);
+
    if (!strcmp (request->command_name, "foo")) {
       mock_server_replies_ok_and_destroys (request);
       return true;
@@ -2020,6 +2040,8 @@ test_recovering (void *ctx)
    mongoc_read_prefs_t *prefs;
    bson_error_t error;
 
+   BSON_UNUSED (ctx);
+
    if (!TestSuite_CheckMockServerAllowed ()) {
       return;
    }
@@ -2221,6 +2243,8 @@ test_mongoc_client_unix_domain_socket (void *context)
    mongoc_client_t *client;
    bson_error_t error;
    char *uri_str;
+
+   BSON_UNUSED (context);
 
    uri_str = test_framework_get_unix_domain_socket_uri_str ();
    client = test_framework_client_new (uri_str, NULL);
@@ -2532,6 +2556,8 @@ test_mongoc_client_descriptions_pooled (void *unused)
    mongoc_server_description_t **sds;
    size_t n, expected_n;
    int64_t start;
+
+   BSON_UNUSED (unused);
 
    expected_n = test_framework_server_count ();
    n = 0;
@@ -3360,6 +3386,8 @@ _test_client_sends_handshake (bool pooled)
 static void
 test_client_sends_handshake_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_client_sends_handshake (false);
 }
 
@@ -3537,12 +3565,16 @@ _test_null_error_pointer (bool pooled)
 static void
 test_null_error_pointer_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_null_error_pointer (false);
 }
 
 static void
 test_null_error_pointer_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_null_error_pointer (true);
 }
 

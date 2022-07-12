@@ -64,7 +64,9 @@ bson_malloc (size_t num_bytes) /* IN */
 
    if (BSON_LIKELY (num_bytes)) {
       if (BSON_UNLIKELY (!(mem = gMemVtable.malloc (num_bytes)))) {
-         fprintf (stderr, "Failure to allocate memory in bson_malloc(). errno: %d.\n", errno);
+         fprintf (stderr,
+                  "Failure to allocate memory in bson_malloc(). errno: %d.\n",
+                  errno);
          abort ();
       }
    }
@@ -102,7 +104,9 @@ bson_malloc0 (size_t num_bytes) /* IN */
 
    if (BSON_LIKELY (num_bytes)) {
       if (BSON_UNLIKELY (!(mem = gMemVtable.calloc (1, num_bytes)))) {
-         fprintf (stderr, "Failure to allocate memory in bson_malloc0(). errno: %d.\n", errno);
+         fprintf (stderr,
+                  "Failure to allocate memory in bson_malloc0(). errno: %d.\n",
+                  errno);
          abort ();
       }
    }
@@ -150,7 +154,9 @@ bson_realloc (void *mem,        /* IN */
    mem = gMemVtable.realloc (mem, num_bytes);
 
    if (BSON_UNLIKELY (!mem)) {
-      fprintf (stderr, "Failure to re-allocate memory in bson_realloc(). errno: %d.\n", errno);
+      fprintf (stderr,
+               "Failure to re-allocate memory in bson_realloc(). errno: %d.\n",
+               errno);
       abort ();
    }
 
@@ -187,6 +193,8 @@ bson_realloc_ctx (void *mem,        /* IN */
                   size_t num_bytes, /* IN */
                   void *ctx)        /* IN */
 {
+   BSON_UNUSED (ctx);
+
    return bson_realloc (mem, num_bytes);
 }
 

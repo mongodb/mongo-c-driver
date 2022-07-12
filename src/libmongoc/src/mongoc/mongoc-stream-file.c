@@ -123,34 +123,41 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream, /* IN */
    mongoc_stream_file_t *file = (mongoc_stream_file_t *) stream;
    ssize_t ret = 0;
 
+   BSON_UNUSED (min_bytes);
+   BSON_UNUSED (timeout_msec);
+
 #ifdef _WIN32
-   ssize_t nread;
-   size_t i;
+   {
+      ssize_t nread;
+      size_t i;
 
-   ENTRY;
+      ENTRY;
 
-   for (i = 0; i < iovcnt; i++) {
-      nread = _read (file->fd, iov[i].iov_base, iov[i].iov_len);
-      if (nread < 0) {
-         ret = ret ? ret : -1;
-         GOTO (done);
-      } else if (nread == 0) {
-         ret = ret ? ret : 0;
-         GOTO (done);
-      } else {
-         ret += nread;
-         if (nread != iov[i].iov_len) {
+      for (i = 0; i < iovcnt; i++) {
+         nread = _read (file->fd, iov[i].iov_base, iov[i].iov_len);
+         if (nread < 0) {
             ret = ret ? ret : -1;
             GOTO (done);
+         } else if (nread == 0) {
+            ret = ret ? ret : 0;
+            GOTO (done);
+         } else {
+            ret += nread;
+            if (nread != iov[i].iov_len) {
+               ret = ret ? ret : -1;
+               GOTO (done);
+            }
          }
       }
-   }
 
-   GOTO (done);
+      GOTO (done);
+   }
 #else
-   ENTRY;
-   ret = readv (file->fd, iov, (int) iovcnt);
-   GOTO (done);
+   {
+      ENTRY;
+      ret = readv (file->fd, iov, (int) iovcnt);
+      GOTO (done);
+   }
 #endif
 done:
    if (ret > 0) {
@@ -169,22 +176,28 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream, /* IN */
    mongoc_stream_file_t *file = (mongoc_stream_file_t *) stream;
    ssize_t ret = 0;
 
-#ifdef _WIN32
-   ssize_t nwrite;
-   size_t i;
+   BSON_UNUSED (timeout_msec);
 
-   for (i = 0; i < iovcnt; i++) {
-      nwrite = _write (file->fd, iov[i].iov_base, iov[i].iov_len);
-      if (nwrite != iov[i].iov_len) {
-         ret = ret ? ret : -1;
-         goto done;
+#ifdef _WIN32
+   {
+      ssize_t nwrite;
+      size_t i;
+
+      for (i = 0; i < iovcnt; i++) {
+         nwrite = _write (file->fd, iov[i].iov_base, iov[i].iov_len);
+         if (nwrite != iov[i].iov_len) {
+            ret = ret ? ret : -1;
+            goto done;
+         }
+         ret += nwrite;
       }
-      ret += nwrite;
+      goto done;
    }
-   goto done;
 #else
-   ret = writev (file->fd, iov, (int) iovcnt);
-   goto done;
+   {
+      ret = writev (file->fd, iov, (int) iovcnt);
+      goto done;
+   }
 #endif
 done:
    if (ret > 0) {
@@ -197,6 +210,8 @@ done:
 static bool
 _mongoc_stream_file_check_closed (mongoc_stream_t *stream) /* IN */
 {
+   BSON_UNUSED (stream);
+
    return false;
 }
 

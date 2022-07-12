@@ -38,6 +38,8 @@ _before_test (json_test_ctx_t *ctx, const bson_t *test)
    mongoc_write_concern_t *wc;
    bson_t insert_opts;
 
+   BSON_UNUSED (test);
+
    /* Insert data into the key vault. */
    client = test_framework_new_default_client ();
    wc = mongoc_write_concern_new ();
@@ -332,6 +334,8 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    const int size_2mib = 2097152;
    const int exceeds_2mib_after_encryption = size_2mib - 2000;
    const int exceeds_16mib_after_encryption = size_16mib - 2000;
+
+   BSON_UNUSED (unused);
 
    /* Do the test setup. */
 
@@ -694,6 +698,8 @@ test_create_datakey_with_custom_key_material (void *unused)
    bson_error_t error;
    bson_t datakey = BSON_INITIALIZER;
 
+   BSON_UNUSED (unused);
+
    /* Create a MongoClient object (referred to as client). */
    client = test_framework_new_default_client ();
 
@@ -878,6 +884,8 @@ test_datakey_and_double_encryption (void *unused)
    bson_t *schema_map;
    bool ret;
    _datakey_and_double_encryption_ctx_t test_ctx = {0};
+
+   BSON_UNUSED (unused);
 
    /* Test setup */
    /* Create a MongoClient without encryption enabled (referred to as client).
@@ -1104,6 +1112,8 @@ _test_key_vault (bool with_external_key_vault)
 static void
 test_external_key_vault (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _test_key_vault (false /* external */);
    _test_key_vault (true /* external */);
 }
@@ -1120,6 +1130,8 @@ test_views_are_prohibited (void *unused)
 
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
    bson_t *kms_providers;
+
+   BSON_UNUSED (unused);
 
    client = test_framework_new_default_client ();
 
@@ -1327,6 +1339,8 @@ test_custom_endpoint (void *unused)
    bool res;
    bson_t *masterkey;
    bson_value_t keyid;
+
+   BSON_UNUSED (unused);
 
    keyvault_client = test_framework_new_default_client ();
 
@@ -2038,6 +2052,8 @@ _test_corpus (bool local_schema)
 static void
 test_corpus (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _test_corpus (false /* local schema */);
    _test_corpus (true /* local schema */);
 }
@@ -2160,6 +2176,8 @@ test_invalid_single_and_pool_mismatches (void *unused)
    mongoc_auto_encryption_opts_t *opts = NULL;
    bson_error_t error;
    bool ret;
+
+   BSON_UNUSED (unused);
 
    _reset (&pool, &single_threaded_client, &multi_threaded_client, &opts, true);
 
@@ -2415,6 +2433,8 @@ _test_multi_threaded (bool external_key_vault)
 static void
 test_multi_threaded (void *ctx_unused)
 {
+   BSON_UNUSED (ctx_unused);
+
    _test_multi_threaded (true);
    _test_multi_threaded (false);
 }
@@ -2430,6 +2450,8 @@ test_malformed_explicit (void *unused)
    bson_value_t ciphertext;
    bool ret;
    bson_error_t error;
+
+   BSON_UNUSED (unused);
 
    /* Create a MongoClient without encryption enabled */
    client = test_framework_new_default_client ();
@@ -2513,6 +2535,8 @@ test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
    bool ret;
    bson_error_t error;
    mongoc_collection_t *coll;
+
+   BSON_UNUSED (unused);
 
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
    kms_providers = _make_kms_providers (false /* aws */, true /* local */);
@@ -2629,6 +2653,8 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
 static void
 test_bypass_spawning_via_bypassAutoEncryption (void *unused)
 {
+   BSON_UNUSED (unused);
+
    test_bypass_spawning_via_helper ("bypass_auto_encryption");
 }
 
@@ -2636,6 +2662,8 @@ test_bypass_spawning_via_bypassAutoEncryption (void *unused)
 static void
 test_bypass_spawning_via_bypassQueryAnalysis (void *unused)
 {
+   BSON_UNUSED (unused);
+
    test_bypass_spawning_via_helper ("bypass_query_analysis");
 }
 
@@ -2704,6 +2732,8 @@ test_kms_tls_cert_valid (void *unused)
    char *tls_cert_key_file = test_framework_getenv_required (
       "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
+   BSON_UNUSED (unused);
+
 #if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    /* Certificate verification fails with Secure Channel given
     * "127.0.0.1:7999" with error: "hostname doesn't match certificate". */
@@ -2754,6 +2784,8 @@ test_kms_tls_cert_expired (void *unused)
    mongoc_client_encryption_datakey_opts_t *opts =
       mongoc_client_encryption_datakey_opts_new ();
 
+   BSON_UNUSED (unused);
+
    mongoc_client_encryption_datakey_opts_set_masterkey (
       opts,
       tmp_bson ("{ 'region': 'us-east-1', 'key': "
@@ -2799,6 +2831,8 @@ test_kms_tls_cert_wrong_host (void *unused)
 
    mongoc_client_encryption_datakey_opts_t *opts =
       mongoc_client_encryption_datakey_opts_new ();
+
+   BSON_UNUSED (unused);
 
    mongoc_client_encryption_datakey_opts_set_masterkey (
       opts,
@@ -3064,6 +3098,8 @@ test_kms_tls_options (void *unused)
    const int mongocrypt_errno =
       1; /* libmongocrypt returns all errors with code 1. */
 
+   BSON_UNUSED (unused);
+
    keyvault_client = test_framework_new_default_client ();
    client_encryption_no_client_cert =
       _tls_test_make_client_encryption (keyvault_client, NO_CLIENT_CERT);
@@ -3312,6 +3348,8 @@ test_kms_tls_options_extra_rejected (void *unused)
    bson_t *kms_providers =
       tmp_bson ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}");
 
+   BSON_UNUSED (unused);
+
    keyvault_client = test_framework_new_default_client ();
 
    /* Test that the "local" KMS provider is rejected. */
@@ -3556,8 +3594,10 @@ test_explicit_encryption_case1 (void *unused)
    bool ok;
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
-
    ee_fixture *eef = explicit_encryption_setup ();
+
+   BSON_UNUSED (unused);
+
    plaintext.value_type = BSON_TYPE_UTF8;
    plaintext.value.v_utf8.str = "encrypted indexed value";
    plaintext.value.v_utf8.len = (uint32_t) strlen (plaintext.value.v_utf8.str);
@@ -3642,8 +3682,10 @@ test_explicit_encryption_case2 (void *unused)
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
    int i = 0;
-
    ee_fixture *eef = explicit_encryption_setup ();
+
+   BSON_UNUSED (unused);
+
    plaintext.value_type = BSON_TYPE_UTF8;
    plaintext.value.v_utf8.str = "encrypted indexed value";
    plaintext.value.v_utf8.len = (uint32_t) strlen (plaintext.value.v_utf8.str);
@@ -3769,8 +3811,10 @@ test_explicit_encryption_case3 (void *unused)
    bool ok;
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
-
    ee_fixture *eef = explicit_encryption_setup ();
+
+   BSON_UNUSED (unused);
+
    plaintext.value_type = BSON_TYPE_UTF8;
    plaintext.value.v_utf8.str = "encrypted unindexed value";
    plaintext.value.v_utf8.len = (uint32_t) strlen (plaintext.value.v_utf8.str);
@@ -3840,8 +3884,10 @@ test_explicit_encryption_case4 (void *unused)
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
    bson_value_t payload;
-
    ee_fixture *eef = explicit_encryption_setup ();
+
+   BSON_UNUSED (unused);
+
    plaintext.value_type = BSON_TYPE_UTF8;
    plaintext.value.v_utf8.str = "encrypted indexed value";
    plaintext.value.v_utf8.len = (uint32_t) strlen (plaintext.value.v_utf8.str);
@@ -3887,8 +3933,10 @@ test_explicit_encryption_case5 (void *unused)
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
    bson_value_t payload;
-
    ee_fixture *eef = explicit_encryption_setup ();
+
+   BSON_UNUSED (unused);
+
    plaintext.value_type = BSON_TYPE_UTF8;
    plaintext.value.v_utf8.str = "encrypted unindexed value";
    plaintext.value.v_utf8.len = (uint32_t) strlen (plaintext.value.v_utf8.str);
@@ -4045,6 +4093,8 @@ _test_unique_index_on_keyaltnames_case_1 (
 {
    bson_error_t error;
 
+   BSON_UNUSED (existing_key);
+
    /* Step 1: Use client_encryption to create a new local data key with a
     * keyAltName "abc" and assert the operation does not fail. */
    {
@@ -4184,6 +4234,8 @@ _test_unique_index_on_keyaltnames_case_2 (
 static void
 test_unique_index_on_keyaltnames (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _test_unique_index_on_keyaltnames_setup (
       _test_unique_index_on_keyaltnames_case_1);
 
@@ -4404,6 +4456,8 @@ test_decryption_events_case1 (void *unused)
    const bson_t *found;
    mongoc_cursor_t *cursor;
 
+   BSON_UNUSED (unused);
+
    got = mongoc_client_command_simple (
       def->setupClient,
       "admin",
@@ -4449,6 +4503,8 @@ test_decryption_events_case2 (void *unused)
    decryption_events_fixture *def = decryption_events_setup ();
    const bson_t *found;
    mongoc_cursor_t *cursor;
+
+   BSON_UNUSED (unused);
 
    got = mongoc_client_command_simple (
       def->setupClient,
@@ -4498,6 +4554,8 @@ test_decryption_events_case3 (void *unused)
    const bson_t *found;
    mongoc_cursor_t *cursor;
 
+   BSON_UNUSED (unused);
+
    BSON_APPEND_VALUE (&to_insert, "encrypted", &def->malformedCiphertext);
 
    got = mongoc_collection_insert_one (def->encryptedColl,
@@ -4546,6 +4604,8 @@ test_decryption_events_case4 (void *unused)
    const bson_t *found;
    mongoc_cursor_t *cursor;
 
+   BSON_UNUSED (unused);
+
    BSON_APPEND_VALUE (&to_insert, "encrypted", &def->ciphertext);
 
    got = mongoc_collection_insert_one (def->encryptedColl,
@@ -4589,6 +4649,8 @@ test_qe_docs_example (void *unused)
    bson_t *encryptedFieldsMap;
    mongoc_client_t *encryptedClient;
    mongoc_collection_t *encryptedColl;
+
+   BSON_UNUSED (unused);
 
    /* Drop data from prior test runs. */
    {
@@ -4778,6 +4840,9 @@ _kms_callback (void *userdata,
                bson_error_t *error)
 {
    struct kms_callback_data *ctx = userdata;
+
+   BSON_UNUSED (params);
+
    ctx->value = 42;
    if (ctx->set_error) {
       bson_set_error (error,
@@ -4810,6 +4875,8 @@ test_kms_callback (void *unused)
    mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new ();
    mongoc_client_t *cl = test_framework_new_default_client ();
    mongoc_client_encryption_opts_set_keyvault_client (opts, cl);
+
+   BSON_UNUSED (unused);
 
    // Given it an on-demand 'local' provider
    bson_t *empty_local = tmp_bson ("{'local': {}}");

@@ -285,12 +285,16 @@ test_exhaust_cursor (bool pooled)
 static void
 test_exhaust_cursor_single (void *context)
 {
+   BSON_UNUSED (context);
+
    test_exhaust_cursor (false);
 }
 
 static void
 test_exhaust_cursor_pool (void *context)
 {
+   BSON_UNUSED (context);
+
    test_exhaust_cursor (true);
 }
 
@@ -302,6 +306,8 @@ test_exhaust_cursor_fallback (void *unused)
    bson_error_t error;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
+
+   BSON_UNUSED (unused);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -355,6 +361,8 @@ test_exhaust_cursor_multi_batch (void *context)
    uint32_t server_id;
    mongoc_cursor_t *cursor;
    const bson_t *cursor_doc;
+
+   BSON_UNUSED (context);
 
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_exhaust_cursor_multi_batch");

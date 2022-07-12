@@ -387,7 +387,6 @@ _noop (void)
    }
 
 
-
 bson_json_opts_t *
 bson_json_opts_new (bson_json_mode_t mode, int32_t max_len)
 {
@@ -1369,6 +1368,7 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
       _bson_json_save_map_key (bson, val, len);
    }
 
+   /* clang-format off */
    if (bson->read_state == BSON_JSON_IN_BSON_TYPE) {
       if
          HANDLE_OPTION ("$regex", BSON_TYPE_REGEX, BSON_JSON_LF_REGEX)
@@ -1459,6 +1459,7 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
    } else {
       _bson_json_save_map_key (bson, val, len);
    }
+   /* clang-format on */
 }
 
 
@@ -2012,6 +2013,9 @@ _push_callback (jsonsl_t json,
 {
    bson_json_reader_t *reader = (bson_json_reader_t *) json->data;
 
+   BSON_UNUSED (action);
+   BSON_UNUSED (buf);
+
    switch (state->type) {
    case JSONSL_T_STRING:
    case JSONSL_T_HKEY:
@@ -2042,6 +2046,8 @@ _pop_callback (jsonsl_t json,
    ssize_t len;
    double d;
    const char *obj_text;
+
+   BSON_UNUSED (action);
 
    reader = (bson_json_reader_t *) json->data;
    reader_bson = &reader->bson;
@@ -2109,6 +2115,8 @@ _error_callback (jsonsl_t json,
                  char *errat)
 {
    bson_json_reader_t *reader = (bson_json_reader_t *) json->data;
+
+   BSON_UNUSED (state);
 
    if (err == JSONSL_ERROR_CANT_INSERT && *errat == '{') {
       /* start the next document */
@@ -2259,6 +2267,8 @@ bson_json_reader_new (void *data,               /* IN */
 {
    bson_json_reader_t *r;
    bson_json_reader_producer_t *p;
+
+   BSON_UNUSED (allow_multiple);
 
    r = bson_malloc0 (sizeof *r);
    r->json = jsonsl_new (STACK_MAX);

@@ -216,6 +216,8 @@ test_find_and_modify_write_concern_failure (void *context)
    bool success;
    mongoc_write_concern_t *wc;
 
+   BSON_UNUSED (context);
+
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "writeFailure");
    wc = mongoc_write_concern_new ();

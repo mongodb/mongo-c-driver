@@ -26,6 +26,8 @@ test_obtain_credentials (void *unused)
    bool ret;
    bson_error_t error;
 
+   BSON_UNUSED (unused);
+
    /* A username specified with a password is parsed correctly. */
    uri = mongoc_uri_new ("mongodb://"
                          "access_key_id:secret_access_key@localhost/?"
@@ -100,6 +102,8 @@ test_obtain_credentials_from_env (void *unused)
    _mongoc_aws_credentials_t creds;
    bool ret;
    bson_error_t error;
+
+   BSON_UNUSED (unused);
 
    /* "clear" environment variables by setting them to the empty string. */
    test_framework_setenv ("AWS_ACCESS_KEY_ID", "");
@@ -187,6 +191,8 @@ test_derive_region (void *unused)
    char *region;
    bool ret;
    char *large;
+
+   BSON_UNUSED (unused);
 
 #define WITH_LEN(s) s, strlen (s)
 

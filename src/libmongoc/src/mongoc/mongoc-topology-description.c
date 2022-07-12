@@ -53,6 +53,8 @@ _is_data_node (const mongoc_server_description_t *sd)
 static void
 _mongoc_topology_server_dtor (void *server_, void *ctx_)
 {
+   BSON_UNUSED (ctx_);
+
    mongoc_server_description_destroy ((mongoc_server_description_t *) server_);
 }
 
@@ -1301,6 +1303,8 @@ _mongoc_topology_description_check_if_has_primary (
    mongoc_topology_description_t *topology,
    const mongoc_server_description_t *server)
 {
+   BSON_UNUSED (server);
+
    _update_rs_type (topology);
 }
 
@@ -1799,6 +1803,8 @@ _mongoc_topology_description_set_topology_type_to_sharded (
    mongoc_topology_description_t *topology,
    const mongoc_server_description_t *server)
 {
+   BSON_UNUSED (server);
+
    _mongoc_topology_description_set_state (topology, MONGOC_TOPOLOGY_SHARDED);
 }
 

@@ -591,6 +591,10 @@ _mongoc_cse_auto_encrypt (mongoc_client_t *client,
                           bson_t *encrypted,
                           bson_error_t *error)
 {
+   BSON_UNUSED (client);
+   BSON_UNUSED (cmd);
+   BSON_UNUSED (encrypted_cmd);
+
    bson_init (encrypted);
 
    return _disabled_error (error);
@@ -603,7 +607,12 @@ _mongoc_cse_auto_decrypt (mongoc_client_t *client,
                           bson_t *decrypted,
                           bson_error_t *error)
 {
+   BSON_UNUSED (client);
+   BSON_UNUSED (db_name);
+   BSON_UNUSED (reply);
+
    bson_init (decrypted);
+
    return _disabled_error (error);
 }
 
@@ -613,6 +622,9 @@ _mongoc_cse_client_enable_auto_encryption (
    mongoc_auto_encryption_opts_t *opts /* may be NULL */,
    bson_error_t *error)
 {
+   BSON_UNUSED (client);
+   BSON_UNUSED (opts);
+
    return _disabled_error (error);
 }
 
@@ -622,6 +634,9 @@ _mongoc_cse_client_pool_enable_auto_encryption (
    mongoc_auto_encryption_opts_t *opts /* may be NULL */,
    bson_error_t *error)
 {
+   BSON_UNUSED (topology);
+   BSON_UNUSED (opts);
+
    return _disabled_error (error);
 }
 
@@ -634,9 +649,14 @@ mongoc_client_encryption_create_datakey (
    bson_value_t *keyid,
    bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+   BSON_UNUSED (kms_provider);
+   BSON_UNUSED (opts);
+
    if (keyid) {
       memset (keyid, 0, sizeof (*keyid));
    }
+
    return _disabled_error (error);
 }
 
@@ -650,6 +670,12 @@ mongoc_client_encryption_rewrap_many_datakey (
    mongoc_client_encryption_rewrap_many_datakey_result_t *result,
    bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+   BSON_UNUSED (filter);
+   BSON_UNUSED (provider);
+   BSON_UNUSED (master_key);
+   BSON_UNUSED (result);
+
    return _disabled_error (error);
 }
 
@@ -661,7 +687,11 @@ mongoc_client_encryption_delete_key (
    bson_t *reply,
    bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+   BSON_UNUSED (keyid);
+
    _mongoc_bson_init_if_set (reply);
+
    return _disabled_error (error);
 }
 
@@ -672,7 +702,11 @@ mongoc_client_encryption_get_key (mongoc_client_encryption_t *client_encryption,
                                   bson_t *key_doc,
                                   bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+   BSON_UNUSED (keyid);
+
    _mongoc_bson_init_if_set (key_doc);
+
    return _disabled_error (error);
 }
 
@@ -681,7 +715,10 @@ mongoc_cursor_t *
 mongoc_client_encryption_get_keys (
    mongoc_client_encryption_t *client_encryption, bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+
    _disabled_error (error);
+
    return NULL;
 }
 
@@ -694,7 +731,12 @@ mongoc_client_encryption_add_key_alt_name (
    bson_t *key_doc,
    bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+   BSON_UNUSED (keyid);
+   BSON_UNUSED (keyaltname);
+
    _mongoc_bson_init_if_set (key_doc);
+
    return _disabled_error (error);
 }
 
@@ -707,7 +749,12 @@ mongoc_client_encryption_remove_key_alt_name (
    bson_t *key_doc,
    bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+   BSON_UNUSED (keyid);
+   BSON_UNUSED (keyaltname);
+
    _mongoc_bson_init_if_set (key_doc);
+
    return _disabled_error (error);
 }
 
@@ -719,7 +766,11 @@ mongoc_client_encryption_get_key_by_alt_name (
    bson_t *key_doc,
    bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+   BSON_UNUSED (keyaltname);
+
    _mongoc_bson_init_if_set (key_doc);
+
    return _disabled_error (error);
 }
 
@@ -728,13 +779,17 @@ MONGOC_EXPORT (mongoc_client_encryption_t *)
 mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
                               bson_error_t *error)
 {
+   BSON_UNUSED (opts);
+
    _disabled_error (error);
+
    return NULL;
 }
 
 void
 mongoc_client_encryption_destroy (mongoc_client_encryption_t *client_encryption)
 {
+   BSON_UNUSED (client_encryption);
 }
 
 bool
@@ -744,9 +799,14 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
                                   bson_value_t *ciphertext,
                                   bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+   BSON_UNUSED (value);
+   BSON_UNUSED (opts);
+
    if (ciphertext) {
       memset (ciphertext, 0, sizeof (*ciphertext));
    }
+
    return _disabled_error (error);
 }
 
@@ -756,15 +816,21 @@ mongoc_client_encryption_decrypt (mongoc_client_encryption_t *client_encryption,
                                   bson_value_t *value,
                                   bson_error_t *error)
 {
+   BSON_UNUSED (client_encryption);
+   BSON_UNUSED (ciphertext);
+
    if (value) {
       memset (value, 0, sizeof (*value));
    }
+
    return _disabled_error (error);
 }
 
 bool
 _mongoc_cse_is_enabled (mongoc_client_t *client)
 {
+   BSON_UNUSED (client);
+
    return false;
 }
 
@@ -1050,6 +1116,8 @@ _mongoc_cse_auto_decrypt (mongoc_client_t *client_encrypted,
    mongoc_collection_t *keyvault_coll = NULL;
 
    ENTRY;
+
+   BSON_UNUSED (db_name);
 
    keyvault_coll = _get_keyvault_coll (client_encrypted);
    if (!_mongoc_crypt_auto_decrypt (client_encrypted->topology->crypt,
@@ -2246,6 +2314,8 @@ mongoc_client_encryption_get_keys (
    bson_t filter = BSON_INITIALIZER;
 
    ENTRY;
+
+   BSON_UNUSED (error);
 
    BSON_ASSERT_PARAM (client_encryption);
 

@@ -1966,6 +1966,8 @@ _mongoc_cluster_node_dtor (void *data_, void *ctx_)
 {
    mongoc_cluster_node_t *node = (mongoc_cluster_node_t *) data_;
 
+   BSON_UNUSED (ctx_);
+
    _mongoc_cluster_node_destroy (node);
 }
 

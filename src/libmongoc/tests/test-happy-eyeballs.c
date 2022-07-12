@@ -124,6 +124,9 @@ _mock_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
    /* TODO CDRIVER-2542: ZSeries appears to have excessive delay with repeated
     * calls to poll. As a workaround, set the poll timeout to 5ms. */
    ssize_t nactive = gOriginalPoll (streams, nstreams, 5);
+
+   BSON_UNUSED (timeout);
+
    starting_nactive = nactive;
 
    /* check if any of the poll responses need to be overwritten. */
@@ -164,6 +167,11 @@ _test_scanner_callback (uint32_t id,
 {
    he_testcase_t *testcase = (he_testcase_t *) data;
    int should_succeed = strcmp (testcase->expected.conn_succeeds_to, "neither");
+
+   BSON_UNUSED (id);
+   BSON_UNUSED (bson);
+   BSON_UNUSED (rtt_msec);
+
    if (should_succeed) {
       ASSERT_OR_PRINT (!error->code, (*error));
    } else {
@@ -353,22 +361,22 @@ _testcase_run (he_testcase_t *testcase)
 
 #define CLIENT(client) \
    {                   \
-      #client          \
+#client          \
    }
 
 #define CLIENT_WITH_DNS_CACHE_TIMEOUT(type, timeout) \
    {                                                 \
-      #type, timeout                                 \
+#type, timeout                                 \
    }
 #define HANGUP true
 #define LISTEN false
 #define SERVER(type, hangup) \
    {                         \
-      #type, hangup          \
+#type, hangup          \
    }
 #define DELAYED_SERVER(type, hangup, delay) \
    {                                        \
-      #type, hangup, delay                  \
+#type, hangup, delay                  \
    }
 #define SERVERS(...) \
    {                 \
@@ -378,7 +386,7 @@ _testcase_run (he_testcase_t *testcase)
 #define DURATION_MS(min, max) (min), (max)
 #define EXPECT(type, num_acmds, duration) \
    {                                      \
-      #type, num_acmds, duration          \
+#type, num_acmds, duration          \
    }
 #define NCMDS(n) (n)
 

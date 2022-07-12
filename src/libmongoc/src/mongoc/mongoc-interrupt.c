@@ -237,6 +237,8 @@ _mongoc_interrupt_new (uint32_t timeout_ms)
 
    ENTRY;
 
+   BSON_UNUSED (timeout_ms);
+
    interrupt = (mongoc_interrupt_t *) bson_malloc0 (sizeof *interrupt);
    bson_mutex_init (&interrupt->mutex);
 
@@ -284,7 +286,7 @@ _mongoc_interrupt_flush (mongoc_interrupt_t *interrupt)
       }
    }
 
-   BSON_UNREACHABLE("reached unreachable code");
+   BSON_UNREACHABLE ("reached unreachable code");
 }
 
 bool

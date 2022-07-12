@@ -3557,6 +3557,8 @@ callback (mongoc_client_session_t *session,
    bool success = false;
    bool ret = false;
 
+   BSON_UNUSED (ctx);
+
    client = mongoc_client_session_get_client (session);
    coll = mongoc_client_get_collection (client, "mydb1", "foo");
    doc = BCON_NEW ("abc", BCON_INT32 (1));
@@ -3721,6 +3723,8 @@ _test_sample_versioned_api_example_4 (void)
 static int64_t
 iso_to_unix (const char *iso_str)
 {
+   BSON_UNUSED (iso_str);
+
    /* TODO (CDRIVER-2945) there is no convenient helper for converting ISO8601
     * strings to Unix timestamps. This is not shown in the example. */
    return 1628330345;
@@ -3998,6 +4002,9 @@ static void
 test_with_txn_example (void *unused)
 {
    bson_error_t error;
+
+   BSON_UNUSED (unused);
+
    ASSERT_OR_PRINT (with_transaction_example (&error), error);
 }
 

@@ -131,6 +131,8 @@ test_mongoc_log_trace_enabled (void *context)
    struct log_state old_state;
    struct log_func_data data;
 
+   BSON_UNUSED (context);
+
    save_state (&old_state);
    mongoc_log_set_handler (log_func, &data);
 
@@ -169,6 +171,8 @@ test_mongoc_log_trace_disabled (void *context)
 {
    struct log_state old_state;
    struct log_func_data data = {(mongoc_log_level_t) -1, 0, NULL};
+
+   BSON_UNUSED (context);
 
    save_state (&old_state);
    mongoc_log_set_handler (log_func, &data);

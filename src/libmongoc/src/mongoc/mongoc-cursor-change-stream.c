@@ -52,6 +52,8 @@ _update_post_batch_resume_token (mongoc_cursor_t *cursor)
 static mongoc_cursor_state_t
 _prime (mongoc_cursor_t *cursor)
 {
+   BSON_UNUSED (cursor);
+
    fprintf (stderr, "Prime unsupported on change stream cursor.");
    BSON_ASSERT (false);
 
@@ -102,6 +104,9 @@ _destroy (mongoc_cursor_impl_t *impl)
 static void
 _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 {
+   BSON_UNUSED (dst);
+   BSON_UNUSED (src);
+
    fprintf (stderr, "Clone unsupported on change stream cursor.");
    BSON_ASSERT (false);
 }

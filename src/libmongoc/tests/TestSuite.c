@@ -88,6 +88,8 @@ static void
 TestSuite_SeedRand (TestSuite *suite, /* IN */
                     Test *test)       /* IN */
 {
+   BSON_UNUSED (suite);
+
 #ifndef BSON_OS_WIN32
    int fd = open ("/dev/urandom", O_RDONLY);
    int n_read;

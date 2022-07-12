@@ -80,7 +80,7 @@ bulk5_success (mongoc_collection_t *collection)
 }
 
 int
-main (int argc, char *argv[])
+main (void)
 {
    bson_t *options;
    bson_error_t error;

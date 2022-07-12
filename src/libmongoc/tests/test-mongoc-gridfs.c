@@ -87,6 +87,8 @@ _get_gridfs (mock_server_t *server,
    request_t *request;
    mongoc_gridfs_t *gridfs;
 
+   BSON_UNUSED (flags);
+
    /* gridfs ensures two indexes */
    future = future_client_get_gridfs (client, "db", NULL, &error);
 
@@ -1054,6 +1056,8 @@ test_long_seek (void *ctx)
    int64_t cursor_id;
    int i;
 
+   BSON_UNUSED (ctx);
+
    iov.iov_base = buf;
    iov.iov_len = sizeof (buf);
    memset (iov.iov_base, 0, iov.iov_len);
@@ -1178,6 +1182,8 @@ test_missing_chunk (void *ctx)
    const ssize_t buflen = sizeof (buf);
    ssize_t written;
    bool ret;
+
+   BSON_UNUSED (ctx);
 
    iov.iov_base = buf;
    iov.iov_len = sizeof (buf);
@@ -1506,6 +1512,8 @@ test_find_one_empty (void)
 static bool
 responder (request_t *request, void *data)
 {
+   BSON_UNUSED (data);
+
    if (!strcasecmp (request->command_name, "createIndexes")) {
       mock_server_replies_ok_and_destroys (request);
       return true;

@@ -2115,6 +2115,8 @@ test_next_power_of_two (void)
 void
 visit_corrupt (const bson_iter_t *iter, void *data)
 {
+   BSON_UNUSED (iter);
+
    *((bool *) data) = true;
 }
 
@@ -2151,6 +2153,8 @@ visit_unsupported_type (const bson_iter_t *iter,
                         void *data)
 {
    unsupported_type_test_data_t *context;
+
+   BSON_UNUSED (iter);
 
    context = (unsupported_type_test_data_t *) data;
    context->visited = true;
@@ -2376,6 +2380,8 @@ _check_null_binary (bson_t *bson, bool is_legacy)
    const bson_value_t *original;
    bson_value_t copy;
    bson_iter_t iter;
+
+   BSON_UNUSED (is_legacy);
 
    BSON_ASSERT (bson_iter_init_find (&iter, bson, "binary"));
    BSON_ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
