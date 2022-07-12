@@ -4927,8 +4927,8 @@ _test_auto_aws (bool should_succeed)
       opts, "testing", "testing");
 
    {
-      // Attempting to create a key from 'aws' will requires credentials in the
-      // environment immediately Create a client encryption object for it.
+      // Attempting to create a key from 'aws' will require credentials in the
+      // environment immediately. Create a client encryption object for it.
       bson_error_t error;
       mongoc_client_encryption_t *enc =
          mongoc_client_encryption_new (opts, &error);
