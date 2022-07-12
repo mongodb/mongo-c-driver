@@ -4920,7 +4920,7 @@ _test_auto_aws (bool should_succeed)
    mongoc_client_t *cl = test_framework_new_default_client ();
    mongoc_client_encryption_opts_set_keyvault_client (opts, cl);
 
-   // Given it an on-demand 'local' provider
+   // Given it an on-demand 'aws' provider
    bson_t *empty_aws = tmp_bson ("{'aws': {}}");
    mongoc_client_encryption_opts_set_kms_providers (opts, empty_aws);
    mongoc_client_encryption_opts_set_keyvault_namespace (
