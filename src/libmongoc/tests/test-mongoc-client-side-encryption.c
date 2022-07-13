@@ -21,6 +21,7 @@
 
 /* _mongoc_host_list_from_string_with_err */
 #include "mongoc/mongoc-host-list-private.h"
+#include "mongoc/mongoc-cluster-aws-private.h"
 
 /* MONGOC_SERVER_ERR_NS_NOT_FOUND */
 #include "mongoc/mongoc-error-private.h"
@@ -4969,6 +4970,101 @@ test_kms_callback (void *unused)
    mongoc_client_destroy (cl);
 }
 
+static void
+_test_auto_aws (bool should_succeed)
+{
+   // Datakey options for AWS
+   mongoc_client_encryption_datakey_opts_t *dk_opts =
+      mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dk_opts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0' }"));
+
+   // Create a client encryption object
+   mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_t *cl = test_framework_new_default_client ();
+   mongoc_client_encryption_opts_set_keyvault_client (opts, cl);
+
+   // Given it an on-demand 'aws' provider
+   bson_t *empty_aws = tmp_bson ("{'aws': {}}");
+   mongoc_client_encryption_opts_set_kms_providers (opts, empty_aws);
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      opts, "testing", "testing");
+
+   {
+      // Attempting to create a key from 'aws' will require credentials in the
+      // environment immediately. Create a client encryption object for it.
+      bson_error_t error;
+      mongoc_client_encryption_t *enc =
+         mongoc_client_encryption_new (opts, &error);
+      ASSERT_OR_PRINT (enc, error);
+
+      bson_value_t keyid;
+      mongoc_client_encryption_create_datakey (
+         enc, "aws", dk_opts, &keyid, &error);
+      mongoc_client_encryption_destroy (enc);
+
+      if (should_succeed) {
+         bson_value_destroy (&keyid);
+         ASSERT_OR_PRINT (error.code == 0, error);
+      } else {
+         // We should encounter an error while attempting to connect to the EC2
+         // metadata server.
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_CLIENT,
+                                MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                                "");
+      }
+   }
+
+   mongoc_client_encryption_datakey_opts_destroy (dk_opts);
+   mongoc_client_encryption_opts_destroy (opts);
+   mongoc_client_destroy (cl);
+}
+
+static void
+test_auto_aws_fail (void *unused)
+{
+   _test_auto_aws (false);
+}
+
+static void
+test_auto_aws_succeed (void *unused)
+{
+   _test_auto_aws (true);
+}
+
+static int
+_have_aws_creds_env (void *unused)
+{
+   // State variable:
+   //    Zero: Haven't checked yet
+   //    One: We have AWS creds
+   //    Two = We do not have AWS creds
+   static int creds_check_state = 0;
+   if (creds_check_state == 0) {
+      // We need to do a check
+      _mongoc_aws_credentials_t creds = {0};
+      bson_error_t error;
+      bool got_creds = _mongoc_aws_credentials_obtain (NULL, &creds, &error);
+      _mongoc_aws_credentials_cleanup (&creds);
+      if (got_creds) {
+         creds_check_state = 1;
+      } else {
+         creds_check_state = 2;
+      }
+   }
+   return creds_check_state == 1;
+}
+
+static int
+_not_have_aws_creds_env (void *unused)
+{
+   return !_have_aws_creds_env (unused);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -5226,4 +5322,22 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL, // ctx
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms/auto-aws/fail",
+                      test_auto_aws_fail,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8,
+                      _not_have_aws_creds_env);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms/auto-aws/succeed",
+                      test_auto_aws_succeed,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8,
+                      _have_aws_creds_env);
 }
