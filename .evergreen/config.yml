@@ -1030,26 +1030,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-std=c11"
-        export DEBUG="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
-  - func: upload build
-- name: debug-compile-c99
-  tags:
-  - c99
-  - debug-compile
-  - special
-  - stdflags
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        export CFLAGS="-std=c99"
+        export C_STD_VERSION="11"
         export DEBUG="ON"
         export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
