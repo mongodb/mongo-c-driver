@@ -72,7 +72,7 @@ class _Dumper(yamlordereddictloader.Dumper):
 
 
 def yaml_dump(obj):
-    return yaml.dump(obj, Dumper=_Dumper)
+    return yaml.dump(obj, Dumper=_Dumper, default_flow_style=False)
 
 
 def generate(config, path):
