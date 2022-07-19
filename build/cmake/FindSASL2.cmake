@@ -1,4 +1,5 @@
 include (CheckSymbolExists)
+include (CMakePushCheckState)
 
 message (STATUS "Searching for sasl/sasl.h")
 find_path (
@@ -27,12 +28,16 @@ endif ()
 if (SASL_INCLUDE_DIRS AND SASL_LIBRARIES)
     set (SASL_FOUND 1)
 
+    cmake_push_check_state ()
+    list (APPEND CMAKE_REQUIRED_INCLUDES ${SASL_INCLUDE_DIRS})
+    list (APPEND CMAKE_REQUIRED_LIBRARIES ${SASL_LIBRARIES})
     check_symbol_exists (
         sasl_client_done
-        ${SASL_INCLUDE_DIRS}/sasl/sasl.h
-        MONGOC_HAVE_SASL_CLIENT_DONE)
+        sasl/sasl.h
+        HAVE_SASL_CLIENT_DONE)
+    cmake_pop_check_state()
 
-    if (MONGOC_HAVE_SASL_CLIENT_DONE)
+    if (HAVE_SASL_CLIENT_DONE)
         set (MONGOC_HAVE_SASL_CLIENT_DONE 1)
     else ()
         set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
