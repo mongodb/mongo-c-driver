@@ -152,13 +152,14 @@
 #endif // __STDC_VERSION__ >= 201112L
 
 #ifdef _MSC_VER
+// __declspec (align (_N)) only permits integer literals as _N.
 #ifdef _WIN64
 #define BSON_ALIGN_OF_PTR 8
 #else
 #define BSON_ALIGN_OF_PTR 4
 #endif
 #else
-#define BSON_ALIGN_OF_PTR (sizeof (void *))
+#define BSON_ALIGN_OF_PTR (BSON_ALIGNOF (void *))
 #endif
 
 #ifdef BSON_EXTRA_ALIGN
