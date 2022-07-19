@@ -2022,7 +2022,7 @@ bson_new (void)
    bson_impl_inline_t *impl;
    bson_t *bson;
 
-   bson = bson_malloc (sizeof *bson);
+   bson = bson_aligned_alloc (BSON_ALIGNOF (bson_t), sizeof (bson_t));
 
    impl = (bson_impl_inline_t *) bson;
    impl->flags = BSON_FLAG_INLINE;
@@ -2048,8 +2048,10 @@ bson_sized_new (size_t size)
 
    BSON_ASSERT (size <= BSON_MAX_SIZE);
 
-   b = bson_malloc (sizeof *b);
-   impl_a = (bson_impl_alloc_t *) b;
+   {
+      b = bson_aligned_alloc (BSON_ALIGNOF (bson_t), sizeof (bson_t));
+      impl_a = (bson_impl_alloc_t *) b;
+   }
 
    if (size <= BSON_INLINE_DATA_SIZE) {
       bson_init (b);
@@ -2121,7 +2123,7 @@ bson_new_from_buffer (uint8_t **buf,
       realloc_func = bson_realloc_ctx;
    }
 
-   bson = bson_malloc0 (sizeof *bson);
+   bson = bson_aligned_alloc0 (BSON_ALIGNOF (bson_t), sizeof (bson_t));
    impl = (bson_impl_alloc_t *) bson;
 
    if (!*buf) {
