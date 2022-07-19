@@ -141,6 +141,16 @@
 #define BSON_ABS(a) (((a) < 0) ? ((a) * -1) : (a))
 #endif
 
+#if __STDC_VERSION__ >= 201112L
+#define BSON_ALIGNOF(expr) _Alignof(expr)
+#else
+#if defined(_MSC_VER)
+#define BSON_ALIGNOF(expr) __alignof(expr)
+#else
+#define BSON_ALIGNOF(expr) __alignof__(expr)
+#endif
+#endif // __STDC_VERSION__ >= 201112L
+
 #ifdef _MSC_VER
 #ifdef _WIN64
 #define BSON_ALIGN_OF_PTR 8
