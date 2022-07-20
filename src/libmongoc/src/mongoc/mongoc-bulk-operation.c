@@ -56,7 +56,7 @@ mongoc_bulk_operation_new (bool ordered)
 
    bson_init (&bulk->let);
 
-   _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
+   mongoc_array_aligned_init (&bulk->commands, mongoc_write_command_t);
    _mongoc_write_result_init (&bulk->result);
 
    return bulk;
