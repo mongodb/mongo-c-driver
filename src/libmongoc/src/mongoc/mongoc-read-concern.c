@@ -38,7 +38,8 @@ mongoc_read_concern_new (void)
 {
    mongoc_read_concern_t *read_concern;
 
-   read_concern = (mongoc_read_concern_t *) bson_malloc0 (sizeof *read_concern);
+   read_concern = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_read_concern_t),
+                                       sizeof (mongoc_read_concern_t));
 
    bson_init (&read_concern->compiled);
 
