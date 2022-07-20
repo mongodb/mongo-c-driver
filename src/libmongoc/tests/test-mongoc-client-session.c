@@ -335,7 +335,7 @@ _test_session_pool_reap (bool pooled)
       mongoc_server_session_pool_get_existing (client->topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_MATCH (&ss->lsid, &lsid_b);
-   mongoc_server_session_pool_return (ss);
+   mongoc_server_session_pool_return (client->topology->session_pool, ss);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -1561,7 +1561,7 @@ _test_implicit_session_lsid (session_test_fn_t test_fn)
       test->client->topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_CMPINT64 (ss->last_used_usec, >=, start);
-   mongoc_server_session_pool_return (ss);
+   mongoc_server_session_pool_return (test->client->topology->session_pool, ss);
    session_test_destroy (test);
 }
 
@@ -2346,7 +2346,7 @@ test_cursor_implicit_session (void *ctx)
    ss = mongoc_server_session_pool_get_existing (topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&find_lsid, &ss->lsid);
-   mongoc_server_session_pool_return (ss);
+   mongoc_server_session_pool_return (topology->session_pool, ss);
 
    /* "getMore" uses the same lsid as "find" did */
    bson_reinit (&test->sent_lsid);
@@ -2405,7 +2405,7 @@ test_change_stream_implicit_session (void *ctx)
    ss = mongoc_server_session_pool_get_existing (topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &ss->lsid);
-   mongoc_server_session_pool_return (ss);
+   mongoc_server_session_pool_return (topology->session_pool, ss);
 
    /* "getMore" uses the same lsid as "aggregate" did */
    bson_reinit (&test->sent_lsid);
