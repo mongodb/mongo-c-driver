@@ -246,7 +246,7 @@ _test_topology_reconcile_sharded (bool pooled)
 
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_read_prefs, &error);
+      client->topology, MONGOC_SS_READ, primary_read_prefs, NULL, &error);
 
    /* mongos */
    request = mock_server_receives_any_hello (mongos);

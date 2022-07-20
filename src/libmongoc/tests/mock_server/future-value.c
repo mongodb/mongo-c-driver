@@ -169,6 +169,20 @@ future_value_get_const_char_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_bool_ptr (future_value_t *future_value, bool_ptr value)
+{
+   future_value->type = future_value_bool_ptr_type;
+   future_value->value.bool_ptr_value = value;
+}
+
+bool_ptr
+future_value_get_bool_ptr (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_bool_ptr_type);
+   return future_value->value.bool_ptr_value;
+}
+
+void
 future_value_set_bson_error_ptr (future_value_t *future_value, bson_error_ptr value)
 {
    future_value->type = future_value_bson_error_ptr_type;
