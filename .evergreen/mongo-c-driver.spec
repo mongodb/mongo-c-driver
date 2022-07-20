@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.21.1
+%global up_version   1.22.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -44,7 +44,7 @@ BuildRequires: mongodb-server
 BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
-BuildRequires: cmake(mongocrypt) >= 1.3.0
+BuildRequires: cmake(mongocrypt) >= 1.5.0
 %endif
 BuildRequires: perl-interpreter
 # From man pages
@@ -236,6 +236,13 @@ exit $ret
 
 
 %changelog
+* Mon Jul 18 2022 Remi Collet <remi@remirepo.net> - 1.22.0-1
+- update to 1.22.0
+- raise dependency to libmongocrypt 1.5.0
+
+* Wed Jun  8 2022 Remi Collet <remi@remirepo.net> - 1.21.2-1
+- update to 1.21.2 (no change)
+
 * Wed Mar  2 2022 Remi Collet <remi@remirepo.net> - 1.21.1-1
 - update to 1.21.1
 
