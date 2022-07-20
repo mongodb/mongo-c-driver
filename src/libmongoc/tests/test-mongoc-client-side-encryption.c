@@ -2069,19 +2069,22 @@ _reset (mongoc_client_pool_t **pool,
 {
    bson_t *kms_providers;
    mongoc_uri_t *uri;
-   bson_t *extra;
    bson_t *schema;
    bson_t *schema_map;
 
    mongoc_auto_encryption_opts_destroy (*opts);
    *opts = mongoc_auto_encryption_opts_new ();
-   extra = BCON_NEW ("mongocryptdBypassSpawn", BCON_BOOL (true));
-   mongoc_auto_encryption_opts_set_extra (*opts, extra);
-   char *env_cryptSharedLibPath =
-      test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
-   if (env_cryptSharedLibPath) {
-      BSON_APPEND_UTF8 (extra, "cryptSharedLibPath", env_cryptSharedLibPath);
-      bson_free (env_cryptSharedLibPath);
+   {
+      bson_t *const extra =
+         BCON_NEW ("mongocryptdBypassSpawn", BCON_BOOL (true));
+      char *env_cryptSharedLibPath =
+         test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+      if (env_cryptSharedLibPath) {
+         BSON_APPEND_UTF8 (extra, "cryptSharedLibPath", env_cryptSharedLibPath);
+         bson_free (env_cryptSharedLibPath);
+      }
+      mongoc_auto_encryption_opts_set_extra (*opts, extra);
+      bson_destroy (extra);
    }
    mongoc_auto_encryption_opts_set_keyvault_namespace (*opts, "db", "keyvault");
    kms_providers = _make_kms_providers (false /* aws */, true /* local */);
@@ -2137,7 +2140,6 @@ _reset (mongoc_client_pool_t **pool,
    }
    bson_destroy (schema);
    bson_destroy (schema_map);
-   bson_destroy (extra);
    bson_destroy (kms_providers);
 }
 
