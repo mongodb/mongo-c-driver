@@ -220,7 +220,7 @@ bson_aligned_alloc0 (size_t alignment /* IN */, size_t num_bytes /* IN */)
       if (BSON_UNLIKELY (
              !(mem = gMemVtable.aligned_alloc (alignment, num_bytes)))) {
          fprintf (stderr,
-                  "Failure to allocate memory in bson_aligned_alloc()\n");
+                  "Failure to allocate memory in bson_aligned_alloc0()\n");
          abort ();
       }
       memset (mem, 0, num_bytes);
