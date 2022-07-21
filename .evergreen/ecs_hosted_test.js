@@ -33,8 +33,12 @@ TestData = {};
     const smoke = runMongoProgram(program, uri);
     assert.eq(smoke, 0, "Could not auth");
 
-    // Try the auth function
-    assert(external.auth({mechanism: 'MONGODB-AWS'}));
+    // Try the auth function on a new client.
+    (function () {
+        const conn = Mongo("mongodb://127.0.0.1:20000");
+        const external = conn.getDB("$external");
+        assert(external.auth({mechanism: 'MONGODB-AWS'}));
+    }());
 
     MongoRunner.stopMongod(conn);
 }());
