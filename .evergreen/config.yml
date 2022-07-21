@@ -753,7 +753,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o errexit
         # Export the variables we need to construct URIs
         set +o xtrace
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
