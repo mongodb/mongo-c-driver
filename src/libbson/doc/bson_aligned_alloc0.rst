@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``alignment``: The alignment of the allocated bytes of memory. Must be a power of 2.
+* ``alignment``: The alignment of the allocated bytes of memory. Must be a power of 2 and a multiple of ``sizeof (void *)``.
 * ``num_bytes``: The number of bytes to allocate. Must be a multiple of ``alignment``.
 
 Description
