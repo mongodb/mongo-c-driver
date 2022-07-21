@@ -534,8 +534,8 @@ bson_reader_new_from_data (const uint8_t *data, /* IN */
 
    BSON_ASSERT (data);
 
-   real = (bson_reader_data_t *) bson_aligned_alloc0 (
-      BSON_ALIGNOF (bson_reader_handle_t), sizeof (bson_reader_handle_t));
+   real = bson_aligned_alloc0 (BSON_ALIGNOF (bson_reader_data_t),
+                               sizeof (bson_reader_data_t));
    real->type = BSON_READER_DATA;
    real->data = data;
    real->length = length;
