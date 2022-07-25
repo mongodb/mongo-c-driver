@@ -376,6 +376,15 @@ bson_zero_free (void *mem,   /* IN */
 }
 
 
+static void *
+_aligned_alloc_as_malloc (size_t alignment, size_t num_bytes)
+{
+   BSON_UNUSED (alignment);
+
+   return gMemVtable.malloc (num_bytes);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -402,7 +411,7 @@ bson_mem_set_vtable (const bson_mem_vtable_t *vtable)
    BSON_ASSERT (vtable);
 
    if (!vtable->malloc || !vtable->calloc || !vtable->realloc ||
-       !vtable->free || !vtable->aligned_alloc) {
+       !vtable->free) {
       fprintf (stderr,
                "Failure to install BSON vtable, "
                "missing functions.\n");
@@ -410,6 +419,11 @@ bson_mem_set_vtable (const bson_mem_vtable_t *vtable)
    }
 
    gMemVtable = *vtable;
+
+   // Backwards compatibility with code prior to addition of aligned_alloc.
+   if (!gMemVtable.aligned_alloc) {
+      gMemVtable.aligned_alloc = _aligned_alloc_as_malloc;
+   }
 }
 
 void

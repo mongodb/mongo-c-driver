@@ -13,7 +13,8 @@ Synopsis
      void *(*calloc) (size_t n_members, size_t num_bytes);
      void *(*realloc) (void *mem, size_t num_bytes);
      void (*free) (void *mem);
-     void *padding[4];
+     void *(*aligned_alloc) (size_t alignment, size_t num_bytes);
+     void *padding[3];
   } bson_mem_vtable_t;
 
   void
@@ -29,7 +30,8 @@ Description
 
 This function shall install a new memory allocator to be used by Libbson.
 
+For backwards compatibility, if ``vtable->aligned_alloc`` is not set, calls to ``vtable->aligned_alloc`` will use ``vtable->malloc`` instead.
+
 .. warning::
 
   This function *MUST* be called at the beginning of the process. Failure to do so will result in memory being freed by the wrong allocator.
-
