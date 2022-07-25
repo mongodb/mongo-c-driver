@@ -1175,7 +1175,7 @@ tasks:
       script: |-
         set -o errexit
         export CC="clang-3.8"
-        export CFLAGS="-fno-omit-frame-pointer"
+        export CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"

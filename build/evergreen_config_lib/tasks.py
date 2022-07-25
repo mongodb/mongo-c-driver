@@ -241,7 +241,7 @@ all_tasks = [
     SpecialTask('debug-compile-ubsan',
                 compression='zlib',
                 CC='clang-3.8',
-                CFLAGS='-fno-omit-frame-pointer',
+                CFLAGS='-fno-omit-frame-pointer -fno-sanitize-recover=alignment',
                 CHECK_LOG='ON',
                 sanitize=['undefined'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
