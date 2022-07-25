@@ -49,7 +49,8 @@ mongoc_bulk_operation_new (bool ordered)
 {
    mongoc_bulk_operation_t *bulk;
 
-   bulk = (mongoc_bulk_operation_t *) bson_malloc0 (sizeof *bulk);
+   bulk = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_bulk_operation_t),
+                               sizeof (mongoc_bulk_operation_t));
    bulk->flags.bypass_document_validation = false;
    bulk->flags.ordered = ordered;
    bulk->server_id = 0;
