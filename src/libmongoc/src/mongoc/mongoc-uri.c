@@ -442,7 +442,7 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *host_and_port_in)
 }
 
 
-bool
+static bool
 mongoc_uri_parse_srv (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
    if (*str == '\0') {
