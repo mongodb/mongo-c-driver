@@ -378,7 +378,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       uri, MONGOC_URI_HEARTBEATFREQUENCYMS, heartbeat_default);
 
    topology->_shared_descr_._sptr_ = mongoc_shared_ptr_create (
-      bson_malloc0 (sizeof (mongoc_topology_description_t)),
+      bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_topology_description_t),
+                           sizeof (mongoc_topology_description_t)),
       _tpld_destroy_and_free);
    td = mc_tpld_unsafe_get_mutable (topology);
    mongoc_topology_description_init (td, heartbeat);

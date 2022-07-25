@@ -194,7 +194,8 @@ mongoc_topology_description_new_copy (
       return NULL;
    }
 
-   copy = (mongoc_topology_description_t *) bson_malloc0 (sizeof (*copy));
+   copy = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_topology_description_t),
+                               sizeof (mongoc_topology_description_t));
 
    _mongoc_topology_description_copy_to (description, copy);
 
@@ -2149,7 +2150,9 @@ mongoc_topology_description_handle_hello (
    }
 
    if (topology->apm_callbacks.topology_changed) {
-      prev_td = bson_malloc0 (sizeof (mongoc_topology_description_t));
+      prev_td =
+         bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_topology_description_t),
+                              sizeof (mongoc_topology_description_t));
       _mongoc_topology_description_copy_to (topology, prev_td);
    }
 
