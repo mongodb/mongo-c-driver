@@ -757,9 +757,7 @@ functions:
         set +o xtrace
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
-        cd ../drivers-evergreen-tools/.evergreen/auth_aws/
-        . ./activate_venv.sh
-        cd -
+        . ../drivers-evergreen-tools/.evergreen/auth_aws/activate_venv.sh
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
   clone drivers-evergreen-tools:
   - command: shell.exec
