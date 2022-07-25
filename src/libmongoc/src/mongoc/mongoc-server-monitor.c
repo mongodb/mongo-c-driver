@@ -931,7 +931,9 @@ _server_monitor_check_server (
 
    *cancelled = false;
    memset (&error, 0, sizeof (bson_error_t));
-   description = bson_malloc0 (sizeof (mongoc_server_description_t));
+   description =
+      bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_server_description_t),
+                           sizeof (mongoc_server_description_t));
    mongoc_server_description_init (
       description,
       server_monitor->description->connection_address,

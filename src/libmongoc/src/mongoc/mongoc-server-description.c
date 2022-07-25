@@ -813,7 +813,8 @@ mongoc_server_description_new_copy (
       return NULL;
    }
 
-   copy = (mongoc_server_description_t *) bson_malloc0 (sizeof (*copy));
+   copy = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_server_description_t),
+                               sizeof (mongoc_server_description_t));
 
    copy->id = description->id;
    copy->opened = description->opened;
