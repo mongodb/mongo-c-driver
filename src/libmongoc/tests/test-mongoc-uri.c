@@ -809,44 +809,35 @@ test_mongoc_uri_new_with_error (void)
       "Invalid \"zlibcompressionlevel\" of 10: must be between -1 and 9");
 
    memset (&error, 0, sizeof (bson_error_t));
-   ASSERT (!mongoc_uri_new_with_error (
-      "mongodb+srv://", &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "Missing service name in SRV URI");
+   ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Missing service name in SRV URI");
 
    memset (&error, 0, sizeof (bson_error_t));
-   ASSERT (!mongoc_uri_new_with_error (
-      "mongodb+srv://%", &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "Invalid service name in URI");
+   ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://%", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid service name in URI");
 
    memset (&error, 0, sizeof (bson_error_t));
-   ASSERT (!mongoc_uri_new_with_error (
-      "mongodb+srv://x", &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "Invalid service name in URI");
+   ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://x", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid service name in URI");
 
    memset (&error, 0, sizeof (bson_error_t));
-   ASSERT (!mongoc_uri_new_with_error (
-      "mongodb+srv://x.y", &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "Invalid service name in URI");
+   ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://x.y", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid service name in URI");
 
    memset (&error, 0, sizeof (bson_error_t));
-   ASSERT (!mongoc_uri_new_with_error (
-      "mongodb+srv://a.b.c,d.e.f", &error));
+   ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://a.b.c,d.e.f", &error));
    ASSERT_ERROR_CONTAINS (
       error,
       MONGOC_ERROR_COMMAND,
@@ -854,13 +845,11 @@ test_mongoc_uri_new_with_error (void)
       "Multiple service names are prohibited in an SRV URI");
 
    memset (&error, 0, sizeof (bson_error_t));
-   ASSERT (!mongoc_uri_new_with_error (
-      "mongodb+srv://a.b.c:8000", &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "Port numbers are prohibited in an SRV URI");
+   ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://a.b.c:8000", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Port numbers are prohibited in an SRV URI");
 }
 
 
