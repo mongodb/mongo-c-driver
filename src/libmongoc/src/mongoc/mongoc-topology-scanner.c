@@ -537,7 +537,8 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
 {
    mongoc_topology_scanner_node_t *node;
 
-   node = (mongoc_topology_scanner_node_t *) bson_malloc0 (sizeof (*node));
+   node = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_topology_scanner_node_t),
+                               sizeof (mongoc_topology_scanner_node_t));
 
    memcpy (&node->host, host, sizeof (*host));
 
