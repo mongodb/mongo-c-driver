@@ -542,11 +542,11 @@ all_functions = OD([
         EOF
         ''', silent=True),
         shell_mongoc(r'''
-        set -o errexit
         # Export the variables we need to construct URIs
         set +o xtrace
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
+        . ../drivers-evergreen-tools/.evergreen/auth_aws/activate_venv.sh
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
         ''')
     )),
