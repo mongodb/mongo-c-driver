@@ -9,6 +9,21 @@
  */
 enum { AUDIT_POOL_ENABLED = 0 };
 
+/**
+ * To support correct alignment of the item allocated within pool_node::data,
+ * pool_node has the following data layout:
+ *
+ * [ next | owner_pool | (padding) | item ]
+ * ^                   ^           ^
+ * |                   |           |
+ * pool_node *         |           first byte of aligned item
+ *                     pool_node::data
+ *
+ * If alignment of the item is not greater than the alignment of pool_node,
+ * then pool_node::data already satisfies the alignment requirements and no
+ * padding is necessary. The position of the allocated item should be obtained
+ * via _pool_node_data_offset.
+ */
 typedef struct pool_node {
    struct pool_node *next;
    mongoc_ts_pool *owner_pool;
