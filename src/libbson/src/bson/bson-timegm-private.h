@@ -29,17 +29,17 @@ BSON_BEGIN_DECLS
 
 /* avoid system-dependent struct tm definitions */
 struct bson_tm {
-   int64_t tm_sec;    /* seconds after the minute [0-60] */
-   int64_t tm_min;    /* minutes after the hour [0-59] */
-   int64_t tm_hour;   /* hours since midnight [0-23] */
-   int64_t tm_mday;   /* day of the month [1-31] */
-   int64_t tm_mon;    /* months since January [0-11] */
-   int64_t tm_year;   /* years since 1900 */
-   int64_t tm_wday;   /* days since Sunday [0-6] */
-   int64_t tm_yday;   /* days since January 1 [0-365] */
-   int64_t tm_isdst;  /* Daylight Savings Time flag */
-   int64_t tm_gmtoff; /* offset from CUT in seconds */
-   char *tm_zone;     /* timezone abbreviation */
+   int64_t tm_sec;      /* seconds after the minute [0-60] */
+   int64_t tm_min;      /* minutes after the hour [0-59] */
+   int64_t tm_hour;     /* hours since midnight [0-23] */
+   int64_t tm_mday;     /* day of the month [1-31] */
+   int64_t tm_mon;      /* months since January [0-11] */
+   int64_t tm_year;     /* years since 1900 */
+   int64_t tm_wday;     /* days since Sunday [0-6] */
+   int64_t tm_yday;     /* days since January 1 [0-365] */
+   int64_t tm_isdst;    /* Daylight Savings Time flag */
+   int64_t tm_gmtoff;   /* offset from CUT in seconds */
+   const char *tm_zone; /* timezone abbreviation */
 };
 
 int64_t
