@@ -2687,12 +2687,13 @@ mongoc_client_encryption_get_crypt_shared_version (
 const char *
 mongoc_client_get_crypt_shared_version (const mongoc_client_t *const client)
 {
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
    if (!client->topology->crypt) {
       return NULL;
    }
-#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
    return _mongoc_crypt_get_crypt_shared_version (client->topology->crypt);
 #else
+   BSON_UNUSED (client);
    return NULL;
 #endif
 }
