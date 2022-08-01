@@ -5027,18 +5027,22 @@ _test_auto_aws (bool should_succeed)
 static void
 test_auto_aws_fail (void *unused)
 {
+   BSON_UNUSED (unused);
    _test_auto_aws (false);
 }
 
 static void
 test_auto_aws_succeed (void *unused)
 {
+   BSON_UNUSED (unused);
    _test_auto_aws (true);
 }
 
 static int
 _have_aws_creds_env (void *unused)
 {
+   BSON_UNUSED (unused);
+
    // State variable:
    //    Zero: Haven't checked yet
    //    One: We have AWS creds
