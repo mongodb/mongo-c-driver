@@ -4822,7 +4822,7 @@ _test_rewrap_with_separate_client_encryption (const char *src_provider,
          tmp_json (bulk_write_result));
    }
 
-   // 7. Call clientEncryption1.decrypt with the ciphertext. Assert the  return
+   // 7. Call clientEncryption1.decrypt with the ciphertext. Assert the return
    // value is "test".
    {
       bson_value_t decrypted = {0};
@@ -4837,7 +4837,7 @@ _test_rewrap_with_separate_client_encryption (const char *src_provider,
       bson_value_destroy (&decrypted);
    }
 
-   // 8. Call clientEncryption2.decrypt with the ciphertext. Assert the  return
+   // 8. Call clientEncryption2.decrypt with the ciphertext. Assert the return
    // value is "test".
    {
       bson_value_t decrypted = {0};
