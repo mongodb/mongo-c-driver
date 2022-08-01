@@ -56,6 +56,7 @@ Example
     mongoc_client_enable_auto_encryption
     mongoc_client_find_databases_with_opts
     mongoc_client_get_collection
+    mongoc_client_get_crypt_shared_version
     mongoc_client_get_database
     mongoc_client_get_database_names
     mongoc_client_get_database_names_with_opts
@@ -91,5 +92,5 @@ Example
     mongoc_client_watch
     mongoc_client_write_command_with_opts
     mongoc_handshake_data_append
-    
+
 

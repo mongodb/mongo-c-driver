@@ -281,7 +281,7 @@ mongoc_client_enable_auto_encryption (mongoc_client_t *client,
                                       bson_error_t *error);
 
 MONGOC_EXPORT (const char *)
-mongoc_client_get_crypt_shared_version (const mongoc_client_t *lient)
+mongoc_client_get_crypt_shared_version (const mongoc_client_t *client)
    BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (bool)
