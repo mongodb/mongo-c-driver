@@ -3584,7 +3584,18 @@ _bson_iter_validate_document (const bson_iter_t *iter,
       state->phase = BSON_VALIDATE_PHASE_LF_REF_KEY;
    }
 
-   (void) bson_iter_visit_all (&child, &bson_validate_funcs, state);
+   bson_iter_visit_all (&child, &bson_validate_funcs, state);
+
+   if (child.err_off > 0 && state->err_offset < 0) {
+      // Iteration on a direct element of 'child' failed
+      state->err_offset = child.err_off;
+      bson_set_error (&state->error,
+                      BSON_ERROR_INVALID,
+                      BSON_VALIDATE_NONE,
+                      "Iteration failed on element at offset %d",
+                      (int) (iter->off + child.err_off));
+      return true;
+   }
 
    if (state->phase == BSON_VALIDATE_PHASE_LF_ID_KEY ||
        state->phase == BSON_VALIDATE_PHASE_LF_REF_UTF8 ||

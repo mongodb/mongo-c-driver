@@ -1198,6 +1198,14 @@ test_bson_validate (void)
                   9,
                   BSON_VALIDATE_NONE,
                   "corrupt BSON");
+   // bson_iter_visit_all does UTF-8 validation before the validator gets a
+   // chance to do its own checks, so we can't actually use the UTF8 validation
+   // flag, and we can't tell what actually caused the error.
+   VALIDATE_TEST ("invalid-utf8.bson",
+                  BSON_VALIDATE_NONE,
+                  4,
+                  BSON_VALIDATE_NONE,
+                  "Iteration failed on element at offset 4");
    VALIDATE_TEST ("overflow4.bson",
                   BSON_VALIDATE_NONE,
                   9,
