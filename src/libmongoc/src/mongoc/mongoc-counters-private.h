@@ -48,8 +48,14 @@ _mongoc_counters_cleanup (void);
 static BSON_INLINE unsigned
 _mongoc_get_cpu_count (void)
 {
-#if defined(__linux__)
+#if defined(__linux__) && !defined(__ANDROID__)
    return get_nprocs ();
+#elif defined(__ANDROID__) && defined(_SC_NPROCESSORS_CONF)
+   long count = sysconf (_SC_NPROCESSORS_CONF);
+   if (count < 1) {
+      return 1;
+   }
+   return count;
 #elif defined(__hpux__)
    struct pst_dynamic psd;
 
