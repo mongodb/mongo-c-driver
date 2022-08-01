@@ -1651,6 +1651,12 @@ fail:
    return ret;
 }
 
+const char *
+_mongoc_crypt_get_crypt_shared_version (const _mongoc_crypt_t *crypt)
+{
+   return mongocrypt_crypt_shared_lib_version_string (crypt->handle, NULL);
+}
+
 #else
 /* ensure the translation unit is not empty */
 extern int no_mongoc_client_side_encryption;

@@ -2670,3 +2670,29 @@ _mongoc_cse_is_enabled (mongoc_client_t *client)
 }
 
 #endif /* MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION */
+
+
+const char *
+mongoc_client_encryption_get_crypt_shared_version (
+   const mongoc_client_encryption_t *enc)
+{
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   return _mongoc_crypt_get_crypt_shared_version (enc->crypt);
+#else
+   BSON_UNUSED (enc);
+   return NULL;
+#endif
+}
+
+const char *
+mongoc_client_get_crypt_shared_version (const mongoc_client_t *const client)
+{
+   if (!client->topology->crypt) {
+      return NULL;
+   }
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   return _mongoc_crypt_get_crypt_shared_version (client->topology->crypt);
+#else
+   return NULL;
+#endif
+}

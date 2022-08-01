@@ -147,5 +147,8 @@ _mongoc_crypt_rewrap_many_datakey (_mongoc_crypt_t *crypt,
                                    bson_t *doc_out,
                                    bson_error_t *error);
 
+const char *
+_mongoc_crypt_get_crypt_shared_version (const _mongoc_crypt_t *crypt);
+
 #endif /* MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION */
 #endif /* MONGOC_CRYPT_PRIVATE_H */

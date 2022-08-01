@@ -274,6 +274,10 @@ mongoc_client_encryption_datakey_opts_set_keymaterial (
    const uint8_t *data,
    uint32_t len);
 
+MONGOC_EXPORT (const char *)
+mongoc_client_encryption_get_crypt_shared_version (
+   mongoc_client_encryption_t const *enc) BSON_GNUC_WARN_UNUSED_RESULT;
+
 BSON_END_DECLS
 
 #endif /* MONGOC_CLIENT_SIDE_ENCRYPTION_H */
