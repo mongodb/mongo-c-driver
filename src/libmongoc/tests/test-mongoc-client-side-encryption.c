@@ -5014,10 +5014,8 @@ _test_auto_aws (bool should_succeed)
       } else {
          // We should encounter an error while attempting to connect to the EC2
          // metadata server.
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_CLIENT,
-                                MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                                "");
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "");
       }
    }
 
