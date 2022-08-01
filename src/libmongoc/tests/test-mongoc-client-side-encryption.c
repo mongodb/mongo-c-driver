@@ -2601,9 +2601,10 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
    bson_t *kms_providers;
    bson_t *doc_to_insert;
-   bson_t *extra;
+   bson_t *extra = bson_new ();
    bool ret;
    bson_error_t error;
+   bool check_crypt_shared = false;
    mongoc_collection_t *coll;
 
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
@@ -2618,6 +2619,14 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
    } else if (0 == strcmp (auto_encryption_opt, "bypass_query_analysis")) {
       mongoc_auto_encryption_opts_set_bypass_query_analysis (
          auto_encryption_opts, true);
+   } else if (0 == strcmp (auto_encryption_opt, "cryptSharedLibRequired")) {
+      check_crypt_shared = true;
+      char *env_cryptSharedLibPath =
+         test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+      BSON_ASSERT (env_cryptSharedLibPath);
+      BSON_APPEND_UTF8 (extra, "cryptSharedLibPath", env_cryptSharedLibPath);
+      BSON_APPEND_BOOL (extra, "cryptSharedLibRequired", true);
+      bson_free (env_cryptSharedLibPath);
    } else {
       test_error ("Unexpected 'auto_encryption_opt' argument: %s",
                   auto_encryption_opt);
@@ -2625,16 +2634,22 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
 
    /* Create a MongoClient with encryption enabled */
    client_encrypted = test_framework_new_default_client ();
-   extra = BCON_NEW ("mongocryptdSpawnArgs",
-                     "[",
-                     "--pidfilepath=bypass-spawning-mongocryptd.pid",
-                     "--port=27021",
-                     "]");
+   BCON_APPEND (extra,
+                "mongocryptdSpawnArgs",
+                "[",
+                "--pidfilepath=bypass-spawning-mongocryptd.pid",
+                "--port=27021",
+                "]");
    mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra);
    bson_destroy (extra);
    ret = mongoc_client_enable_auto_encryption (
       client_encrypted, auto_encryption_opts, &error);
    ASSERT_OR_PRINT (ret, error);
+
+   if (check_crypt_shared) {
+      BSON_ASSERT (mongoc_client_get_crypt_shared_version (client_encrypted) !=
+                   NULL);
+   }
 
    /* Insert { 'encrypt': 'test' }. Should succeed. */
    coll = mongoc_client_get_collection (client_encrypted, "db", "coll");
@@ -2668,6 +2683,24 @@ test_bypass_spawning_via_bypassQueryAnalysis (void *unused)
    BSON_UNUSED (unused);
 
    test_bypass_spawning_via_helper ("bypass_query_analysis");
+}
+
+static void
+test_bypass_spawning_via_cryptSharedLibRequired (void *unused)
+{
+   BSON_UNUSED (unused);
+   test_bypass_spawning_via_helper ("cryptSharedLibRequired");
+}
+
+static int
+_skip_if_no_crypt_shared (void)
+{
+   char *env = test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+   if (!env) {
+      return 0; // Skip!
+   }
+   bson_free (env);
+   return 1; // Do not skip
 }
 
 static mongoc_client_encryption_t *
@@ -5014,10 +5047,8 @@ _test_auto_aws (bool should_succeed)
       } else {
          // We should encounter an error while attempting to connect to the EC2
          // metadata server.
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_CLIENT,
-                                MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                                "");
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "");
       }
    }
 
@@ -5159,6 +5190,15 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/bypass_spawning_mongocryptd/"
+                      "cryptSharedLibRequired",
+                      test_bypass_spawning_via_cryptSharedLibRequired,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8,
+                      _skip_if_no_crypt_shared);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/valid",
                       test_kms_tls_cert_valid,
