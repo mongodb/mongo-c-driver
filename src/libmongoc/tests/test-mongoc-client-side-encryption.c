@@ -4698,6 +4698,9 @@ _test_rewrap_with_separate_client_encryption (const char *src_provider,
    BSON_ASSERT (src_client);
    BSON_ASSERT (dst_client);
 
+   test_framework_set_ssl_opts (src_client);
+   test_framework_set_ssl_opts (dst_client);
+
    {
       mongoc_client_encryption_opts_set_keyvault_client (ce_opts, src_client);
       mongoc_client_encryption_opts_set_keyvault_namespace (
