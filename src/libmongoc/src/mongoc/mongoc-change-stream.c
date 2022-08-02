@@ -470,8 +470,7 @@ _mongoc_change_stream_new_from_collection (const mongoc_collection_t *coll,
    mongoc_change_stream_t *stream;
    BSON_ASSERT (coll);
 
-   stream = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_change_stream_t),
-                                 sizeof (mongoc_change_stream_t));
+   stream = BSON_ALIGNED_ALLOC0 (mongoc_change_stream_t);
    stream->db = bson_strdup (coll->db);
    stream->coll = bson_strdup (coll->collection);
    stream->read_prefs = mongoc_read_prefs_copy (coll->read_prefs);
@@ -490,8 +489,7 @@ _mongoc_change_stream_new_from_database (const mongoc_database_t *db,
    mongoc_change_stream_t *stream;
    BSON_ASSERT (db);
 
-   stream = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_change_stream_t),
-                                 sizeof (mongoc_change_stream_t));
+   stream = BSON_ALIGNED_ALLOC0 (mongoc_change_stream_t);
    stream->db = bson_strdup (db->name);
    stream->coll = NULL;
    stream->read_prefs = mongoc_read_prefs_copy (db->read_prefs);
@@ -510,8 +508,7 @@ _mongoc_change_stream_new_from_client (mongoc_client_t *client,
    mongoc_change_stream_t *stream;
    BSON_ASSERT (client);
 
-   stream = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_change_stream_t),
-                                 sizeof (mongoc_change_stream_t));
+   stream = BSON_ALIGNED_ALLOC0 (mongoc_change_stream_t);
    stream->db = bson_strdup ("admin");
    stream->coll = NULL;
    stream->read_prefs = mongoc_read_prefs_copy (client->read_prefs);

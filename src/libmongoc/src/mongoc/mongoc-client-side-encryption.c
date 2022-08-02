@@ -533,9 +533,8 @@ mongoc_client_encryption_rewrap_many_datakey_result_t *
 mongoc_client_encryption_rewrap_many_datakey_result_new (void)
 {
    mongoc_client_encryption_rewrap_many_datakey_result_t *const res =
-      bson_aligned_alloc0 (
-         BSON_ALIGNOF (mongoc_client_encryption_rewrap_many_datakey_result_t),
-         sizeof (mongoc_client_encryption_rewrap_many_datakey_result_t));
+      BSON_ALIGNED_ALLOC0 (
+         mongoc_client_encryption_rewrap_many_datakey_result_t);
 
    bson_init (&res->bulk_write_result);
 

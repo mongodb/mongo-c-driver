@@ -1714,7 +1714,7 @@ mock_server_replies_opmsg (request_t *request,
 
    reply->opmsg_flags = flags;
    reply->n_docs = 1;
-   reply->docs = bson_aligned_alloc0 (BSON_ALIGNOF (bson_t), sizeof (bson_t));
+   reply->docs = BSON_ALIGNED_ALLOC0 (bson_t);
    bson_copy_to (doc, &reply->docs[0]);
 
    reply->cursor_id = 0;

@@ -776,8 +776,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (server_session);
 
-   session = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_client_session_t),
-                                  sizeof (mongoc_client_session_t));
+   session = BSON_ALIGNED_ALLOC0 (mongoc_client_session_t);
    session->client = client;
    session->client_generation = client->generation;
    session->server_session = server_session;

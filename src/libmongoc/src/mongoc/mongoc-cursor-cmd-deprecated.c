@@ -63,8 +63,8 @@ static void
 _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 {
    data_cmd_deprecated_t *data_src = (data_cmd_deprecated_t *) src->data;
-   data_cmd_deprecated_t *data_dst = bson_aligned_alloc0 (
-      BSON_ALIGNOF (data_cmd_deprecated_t), sizeof (data_cmd_deprecated_t));
+   data_cmd_deprecated_t *data_dst =
+      BSON_ALIGNED_ALLOC0 (data_cmd_deprecated_t);
    bson_init (&data_dst->reply);
    bson_copy_to (&data_src->cmd, &data_dst->cmd);
    dst->data = data_dst;
@@ -94,8 +94,7 @@ _mongoc_cursor_cmd_deprecated_new (mongoc_client_t *client,
                                     read_prefs /* user prefs */,
                                     NULL /* default prefs */,
                                     NULL);
-   data_cmd_deprecated_t *data = bson_aligned_alloc0 (
-      BSON_ALIGNOF (data_cmd_deprecated_t), sizeof (data_cmd_deprecated_t));
+   data_cmd_deprecated_t *data = BSON_ALIGNED_ALLOC0 (data_cmd_deprecated_t);
    _mongoc_cursor_check_and_copy_to (cursor, "command", cmd, &data->cmd);
    bson_init (&data->reply);
    cursor->impl.prime = _prime;

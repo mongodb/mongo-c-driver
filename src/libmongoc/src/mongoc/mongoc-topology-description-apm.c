@@ -92,9 +92,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
 
    if (td->apm_callbacks.topology_changed) {
       /* prepare to call monitor_changed */
-      prev_td =
-         bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_topology_description_t),
-                              sizeof (mongoc_topology_description_t));
+      prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
       mongoc_topology_description_init (prev_td, td->heartbeat_msec);
    }
 

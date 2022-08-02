@@ -211,8 +211,7 @@ mock_rs_with_auto_hello (int32_t max_wire_version,
                          int n_arbiters)
 {
    int i;
-   mock_rs_t *rs =
-      bson_aligned_alloc0 (BSON_ALIGNOF (mock_rs_t), sizeof (mock_rs_t));
+   mock_rs_t *rs = BSON_ALIGNED_ALLOC0 (mock_rs_t);
 
    ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
                     "max_wire_version %" PRId32

@@ -2271,8 +2271,7 @@ bson_json_reader_new (void *data,               /* IN */
 
    BSON_UNUSED (allow_multiple);
 
-   r = bson_aligned_alloc0 (BSON_ALIGNOF (bson_json_reader_t),
-                            sizeof (bson_json_reader_t));
+   r = BSON_ALIGNED_ALLOC0 (bson_json_reader_t);
    r->json = jsonsl_new (STACK_MAX);
    r->json->error_callback = _error_callback;
    r->json->action_callback_PUSH = _push_callback;

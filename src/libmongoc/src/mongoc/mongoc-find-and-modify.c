@@ -35,8 +35,7 @@ mongoc_find_and_modify_opts_new (void)
 {
    mongoc_find_and_modify_opts_t *opts = NULL;
 
-   opts = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_find_and_modify_opts_t),
-                               sizeof (mongoc_find_and_modify_opts_t));
+   opts = BSON_ALIGNED_ALLOC0 (mongoc_find_and_modify_opts_t);
    bson_init (&opts->extra);
    opts->bypass_document_validation = false;
 

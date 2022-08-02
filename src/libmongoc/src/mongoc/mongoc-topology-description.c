@@ -194,8 +194,7 @@ mongoc_topology_description_new_copy (
       return NULL;
    }
 
-   copy = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_topology_description_t),
-                               sizeof (mongoc_topology_description_t));
+   copy = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
 
    _mongoc_topology_description_copy_to (description, copy);
 
@@ -1376,9 +1375,7 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
       /* TODO this might not be an accurate count in all cases */
       server_id = ++topology->max_server_id;
 
-      description =
-         bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_server_description_t),
-                              sizeof (mongoc_server_description_t));
+      description = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
       mongoc_server_description_init (description, server, server_id);
 
       mongoc_set_add (mc_tpld_servers (topology), server_id, description);
@@ -2151,9 +2148,7 @@ mongoc_topology_description_handle_hello (
    }
 
    if (topology->apm_callbacks.topology_changed) {
-      prev_td =
-         bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_topology_description_t),
-                              sizeof (mongoc_topology_description_t));
+      prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
       _mongoc_topology_description_copy_to (topology, prev_td);
    }
 

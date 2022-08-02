@@ -455,8 +455,7 @@ mongoc_topology_scanner_new (
    int64_t connect_timeout_msec)
 {
    mongoc_topology_scanner_t *ts =
-      bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_topology_scanner_t),
-                           sizeof (mongoc_topology_scanner_t));
+      BSON_ALIGNED_ALLOC0 (mongoc_topology_scanner_t);
 
    ts->async = mongoc_async_new ();
 
@@ -537,8 +536,7 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
 {
    mongoc_topology_scanner_node_t *node;
 
-   node = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_topology_scanner_node_t),
-                               sizeof (mongoc_topology_scanner_node_t));
+   node = BSON_ALIGNED_ALLOC0 (mongoc_topology_scanner_node_t);
 
    memcpy (&node->host, host, sizeof (*host));
 

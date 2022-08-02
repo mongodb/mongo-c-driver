@@ -25,8 +25,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
 {
    mongoc_read_prefs_t *read_prefs;
 
-   read_prefs = bson_aligned_alloc0 (BSON_ALIGNOF (mongoc_read_prefs_t),
-                                     sizeof (mongoc_read_prefs_t));
+   read_prefs = BSON_ALIGNED_ALLOC0 (mongoc_read_prefs_t);
    read_prefs->mode = mode;
    bson_init (&read_prefs->tags);
    read_prefs->max_staleness_seconds = MONGOC_NO_MAX_STALENESS;
