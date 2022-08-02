@@ -1658,11 +1658,14 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       GOTO (fail);
    }
 
+   const bool have_crypt_shared =
+      _mongoc_crypt_get_crypt_shared_version (client->topology->crypt) != NULL;
+
    client->topology->bypass_auto_encryption = opts->bypass_auto_encryption;
    client->topology->bypass_query_analysis = opts->bypass_query_analysis;
 
    if (!client->topology->bypass_auto_encryption &&
-       !client->topology->bypass_query_analysis) {
+       !client->topology->bypass_query_analysis && !have_crypt_shared) {
       if (!client->topology->mongocryptd_bypass_spawn) {
          if (!_spawn_mongocryptd (client->topology->mongocryptd_spawn_path,
                                   client->topology->mongocryptd_spawn_args,
