@@ -1888,23 +1888,34 @@ bson_iter_array (const bson_iter_t *iter, /* IN */
 #define VISIT_MAXKEY VISIT_FIELD (maxkey)
 #define VISIT_MINKEY VISIT_FIELD (minkey)
 
+bool
+bson_iter_visit_all (bson_iter_t *iter,
+                     const bson_visitor_t *visitor,
+                     void *data)
+{
+   return bson_iter_visit_all_v2 (iter, visitor, BSON_ITER_VISIT_DEFAULT, data);
+}
 
 bool
-bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
-                     const bson_visitor_t *visitor, /* IN */
-                     void *data)                    /* IN */
+bson_iter_visit_all_v2 (bson_iter_t *iter,
+                        const bson_visitor_t *visitor,
+                        enum bson_iter_visit_flags flags,
+                        void *data)
 {
    uint32_t bson_type = 0;
    const char *key = NULL;
    bool unsupported;
+   const bool allow_nul = flags & BSON_ITER_VISIT_ALLOW_NUL_IN_UTF8;
 
    BSON_ASSERT (iter);
    BSON_ASSERT (visitor);
 
    while (_bson_iter_next_internal (iter, 0, &key, &bson_type, &unsupported)) {
-      if (*key && !bson_utf8_validate (key, strlen (key), false)) {
-         iter->err_off = iter->off;
-         break;
+      if (flags & BSON_ITER_VISIT_VALIDATE_KEYS) {
+         if (*key && !bson_utf8_validate (key, strlen (key), false)) {
+            iter->err_off = iter->off;
+            break;
+         }
       }
 
       if (VISIT_BEFORE (iter, key, data)) {
@@ -1925,9 +1936,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          utf8 = bson_iter_utf8 (iter, &utf8_len);
 
-         if (!bson_utf8_validate (utf8, utf8_len, true)) {
-            iter->err_off = iter->off;
-            return true;
+         if (flags & BSON_ITER_VISIT_VALIDATE_UTF8) {
+            if (!bson_utf8_validate (utf8, utf8_len, allow_nul)) {
+               iter->err_off = iter->off;
+               return true;
+            }
          }
 
          if (VISIT_UTF8 (iter, key, utf8_len, utf8, data)) {
@@ -2009,9 +2022,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
          const char *options = NULL;
          regex = bson_iter_regex (iter, &options);
 
-         if (!bson_utf8_validate (regex, strlen (regex), true)) {
-            iter->err_off = iter->off;
-            return true;
+         if (flags & BSON_ITER_VISIT_VALIDATE_REGEX) {
+            if (!bson_utf8_validate (regex, strlen (regex), allow_nul)) {
+               iter->err_off = iter->off;
+               return true;
+            }
          }
 
          if (VISIT_REGEX (iter, key, regex, options, data)) {
@@ -2025,9 +2040,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          bson_iter_dbpointer (iter, &collection_len, &collection, &oid);
 
-         if (!bson_utf8_validate (collection, collection_len, true)) {
-            iter->err_off = iter->off;
-            return true;
+         if (flags & BSON_ITER_VISIT_VALIDATE_DBPOINTER) {
+            if (!bson_utf8_validate (collection, collection_len, allow_nul)) {
+               iter->err_off = iter->off;
+               return true;
+            }
          }
 
          if (VISIT_DBPOINTER (
@@ -2041,9 +2058,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          code = bson_iter_code (iter, &code_len);
 
-         if (!bson_utf8_validate (code, code_len, true)) {
-            iter->err_off = iter->off;
-            return true;
+         if (flags & BSON_ITER_VISIT_VALIDATE_CODE) {
+            if (!bson_utf8_validate (code, code_len, allow_nul)) {
+               iter->err_off = iter->off;
+               return true;
+            }
          }
 
          if (VISIT_CODE (iter, key, code_len, code, data)) {
@@ -2056,9 +2075,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          symbol = bson_iter_symbol (iter, &symbol_len);
 
-         if (!bson_utf8_validate (symbol, symbol_len, true)) {
-            iter->err_off = iter->off;
-            return true;
+         if (flags & BSON_ITER_VISIT_VALIDATE_SYMBOL) {
+            if (!bson_utf8_validate (symbol, symbol_len, allow_nul)) {
+               iter->err_off = iter->off;
+               return true;
+            }
          }
 
          if (VISIT_SYMBOL (iter, key, symbol_len, symbol, data)) {
@@ -2074,9 +2095,11 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          code = bson_iter_codewscope (iter, &length, &doclen, &docbuf);
 
-         if (!bson_utf8_validate (code, length, true)) {
-            iter->err_off = iter->off;
-            return true;
+         if (flags & BSON_ITER_VISIT_VALIDATE_CODE) {
+            if (!bson_utf8_validate (code, length, allow_nul)) {
+               iter->err_off = iter->off;
+               return true;
+            }
          }
 
          if (bson_init_static (&b, docbuf, doclen) &&

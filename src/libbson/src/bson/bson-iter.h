@@ -511,7 +511,8 @@ bson_iter_overwrite_double (bson_iter_t *iter, double value);
 
 
 BSON_EXPORT (void)
-bson_iter_overwrite_decimal128 (bson_iter_t *iter, const bson_decimal128_t *value);
+bson_iter_overwrite_decimal128 (bson_iter_t *iter,
+                                const bson_decimal128_t *value);
 
 
 BSON_EXPORT (void)
@@ -536,6 +537,48 @@ BSON_EXPORT (bool)
 bson_iter_visit_all (bson_iter_t *iter,
                      const bson_visitor_t *visitor,
                      void *data);
+
+/**
+ * @brief Flag options to control bson_iter_visit APIs
+ */
+enum bson_iter_visit_flags {
+   BSON_ITER_VISIT_NOFLAGS = 0,
+   /// Validate element keys to be valid UTF-8
+   BSON_ITER_VISIT_VALIDATE_KEYS = 1 << 0,
+   /// Validate UTF-8 elements to be valid UTF-8
+   BSON_ITER_VISIT_VALIDATE_UTF8 = 1 << 1,
+   /// Validate regular expression elements to contain valid UTF-8
+   BSON_ITER_VISIT_VALIDATE_REGEX = 1 << 2,
+   /// Validate code and code_w_scope elements to contain valid UTF-8
+   BSON_ITER_VISIT_VALIDATE_CODE = 1 << 3,
+   /// Validate dbPointer elements to contain valid UTF-8
+   BSON_ITER_VISIT_VALIDATE_DBPOINTER = 1 << 4,
+   /// Validate symbol elements to contain valid UTF-8
+   BSON_ITER_VISIT_VALIDATE_SYMBOL = 1 << 5,
+   /// When checking UTF-8 strings, allow a NUL as a valid codepoint
+   BSON_ITER_VISIT_ALLOW_NUL_IN_UTF8 = 1 << 6,
+   /// Validate all strings in the visited BSON to be valid UTF-8 strings
+   BSON_ITER_VISIT_VALIDATE_STRINGS =
+      BSON_ITER_VISIT_VALIDATE_KEYS | BSON_ITER_VISIT_VALIDATE_UTF8 |
+      BSON_ITER_VISIT_VALIDATE_REGEX | BSON_ITER_VISIT_VALIDATE_CODE |
+      BSON_ITER_VISIT_VALIDATE_DBPOINTER | BSON_ITER_VISIT_VALIDATE_SYMBOL,
+   /// Validate all element values to be valid (does not validate keys)
+   BSON_ITER_VISIT_VALIDATE_VALUES =
+      BSON_ITER_VISIT_VALIDATE_UTF8 | BSON_ITER_VISIT_VALIDATE_REGEX |
+      BSON_ITER_VISIT_VALIDATE_CODE | BSON_ITER_VISIT_VALIDATE_DBPOINTER |
+      BSON_ITER_VISIT_VALIDATE_SYMBOL,
+   /// The default option for bson_iter_visit_all_v2 (validates all keys and
+   /// values, allows NUL in UTF-8 strings)
+   BSON_ITER_VISIT_DEFAULT = BSON_ITER_VISIT_VALIDATE_KEYS |
+                             BSON_ITER_VISIT_VALIDATE_VALUES |
+                             BSON_ITER_VISIT_ALLOW_NUL_IN_UTF8,
+};
+
+BSON_EXPORT (bool)
+bson_iter_visit_all_v2 (bson_iter_t *iter,
+                        const bson_visitor_t *visitor,
+                        enum bson_iter_visit_flags flags,
+                        void *data);
 
 BSON_EXPORT (uint32_t)
 bson_iter_offset (bson_iter_t *iter);
