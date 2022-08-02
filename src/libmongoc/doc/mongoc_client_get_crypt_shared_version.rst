@@ -24,7 +24,7 @@ Parameters
 Returns
 -------
 
-A pointer to a nul-terminated character array string designating the version of
+A pointer to a null-terminated character array string designating the version of
 crypt_shared_ that was loaded for auto-encryption with ``client``. If no
 crypt_shared_ library is loaded, or auto-encryption is not loaded for the given
 ``client``, the returned pointer will be ``NULL``. The pointed-to array must not

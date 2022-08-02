@@ -24,7 +24,7 @@ Parameters
 Returns
 -------
 
-A pointer to a nul-terminated character array string designating the version of
+A pointer to a null-terminated character array string designating the version of
 crypt_shared_ that was loaded for ``enc``. If no crypt_shared_ library is
 loaded, the returned pointer will be ``NULL``. The pointed-to array must not be
 modified or freed. The returned pointer is only valid for the lifetime of
