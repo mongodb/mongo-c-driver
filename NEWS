@@ -1,3 +1,41 @@
+libmongoc 1.22.1
+================
+
+Bug fixes:
+
+  * Fix documentation build when using Sphinx 5.0 or newer
+  * Update patch release of libmongocrypt to 1.5.2: Fix a potential data
+    corruption bug in RewrapManyDataKey when rotating encrypted data encryption
+    keys backed by GCP or Azure key services.
+
+    The following conditions will trigger this bug:
+
+    A GCP-backed or Azure-backed data encryption key being rewrapped requires
+    fetching an access token for decryption of the data encryption key.
+
+    The result of this bug is that the key material for all data encryption keys
+    being rewrapped is replaced by new randomly generated material, destroying
+    the original key material.
+
+    To mitigate potential data corruption, upgrade to this version or higher
+    before using RewrapManyDataKey to rotate Azure-backed or GCP-backed data
+    encryption keys. A backup of the key vault collection should always be taken
+    before key rotation.
+
+Other:
+
+  * Update to Fedora 37 for RPM builds
+  * Dependency build of libmongocrypt re-uses the libbson of the depending
+    libmongoc
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Roberto C. Sánchez
+  * Kevin Albertson
+
+
+
 libmongoc 1.21.2
 ================
 
@@ -9,11 +47,13 @@ Thanks to everyone who contributed to the development of this release.
   * Kevin Albertson
   * Colby Pike
 
+
+
 libmongoc 1.22.0
 ================
 
 Bug fixes:
-  
+
   * Do not auto decrypt before emitting CommandSucceeded events.
 
 Improvements:
@@ -53,7 +93,7 @@ libmongoc 1.21.1
 ================
 
 Bug Fixes:
-  * Use static decls for OpenSSL 1.1 polyfills 
+  * Use static decls for OpenSSL 1.1 polyfills
   * Prevent possible crash in _mongoc_cursor_fetch_stream
 
 Thanks to everyone who contributed to the development of this release.
@@ -540,7 +580,7 @@ mongo-c-driver 1.16.0
 It is my pleasure to announce the MongoDB C Driver 1.16.0.
 
 Features:
-  
+
   * Support Client-side Field Level Encryption.
   * Support ability to pass an index hint to update operations.
   * Add cmake export targets.
@@ -2803,7 +2843,7 @@ Additions to the ABI include:
 
 Additional Notes:
     Existing complex index names may contain a zero instead of a type due to
-a bug in mongoc_collection_keys_to_index_string. As a result those indexes may 
+a bug in mongoc_collection_keys_to_index_string. As a result those indexes may
 be hard to drop from the driver as they have a name you would not expect.
 
 Thanks to everyone who contributed to the development of this point release for
@@ -2869,7 +2909,7 @@ Additions to the ABI include:
 
 Additional Notes:
     Existing complex index names may contain a zero instead of a type due to
-a bug in mongoc_collection_keys_to_index_string. As a result those indexes may 
+a bug in mongoc_collection_keys_to_index_string. As a result those indexes may
 be hard to drop from the driver as they have a name you would not expect.
 
 Thanks to everyone who contributed to the development of this point release for
