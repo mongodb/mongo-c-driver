@@ -776,7 +776,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (server_session);
 
-   session = bson_malloc0 (sizeof (mongoc_client_session_t));
+   session = BSON_ALIGNED_ALLOC0 (mongoc_client_session_t);
    session->client = client;
    session->client_generation = client->generation;
    session->server_session = server_session;
@@ -1673,7 +1673,8 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
    } else {
       /** If the client has been reset, destroy the server session instead of
        * pushing it back into the topology's pool. */
-      mongoc_server_session_pool_drop (session->server_session);
+      mongoc_server_session_pool_drop (session->client->topology->session_pool,
+                                       session->server_session);
    }
 
    txn_opts_cleanup (&session->opts.default_txn_opts);

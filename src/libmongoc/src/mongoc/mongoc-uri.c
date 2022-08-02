@@ -1918,7 +1918,7 @@ mongoc_uri_new_with_error (const char *uri_string, bson_error_t *error)
    mongoc_uri_t *uri;
    int32_t max_staleness_seconds;
 
-   uri = (mongoc_uri_t *) bson_malloc0 (sizeof *uri);
+   uri = BSON_ALIGNED_ALLOC0 (mongoc_uri_t);
    bson_init (&uri->raw);
    bson_init (&uri->options);
    bson_init (&uri->credentials);
@@ -2320,7 +2320,7 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
 
    BSON_ASSERT (uri);
 
-   copy = (mongoc_uri_t *) bson_malloc0 (sizeof (*copy));
+   copy = BSON_ALIGNED_ALLOC0 (mongoc_uri_t);
 
    copy->str = bson_strdup (uri->str);
    copy->is_srv = uri->is_srv;

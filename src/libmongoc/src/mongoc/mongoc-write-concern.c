@@ -39,8 +39,7 @@ mongoc_write_concern_new (void)
 {
    mongoc_write_concern_t *write_concern;
 
-   write_concern =
-      (mongoc_write_concern_t *) bson_malloc0 (sizeof *write_concern);
+   write_concern = BSON_ALIGNED_ALLOC0 (mongoc_write_concern_t);
    write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
    write_concern->fsync_ = MONGOC_WRITE_CONCERN_FSYNC_DEFAULT;
    write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;

@@ -247,7 +247,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
 
    BSON_ASSERT (client);
 
-   cursor = (mongoc_cursor_t *) bson_malloc0 (sizeof *cursor);
+   cursor = BSON_ALIGNED_ALLOC0 (mongoc_cursor_t);
    cursor->client = client;
    cursor->state = UNPRIMED;
    cursor->client_generation = client->generation;
@@ -1393,7 +1393,7 @@ mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 
    BSON_ASSERT (cursor);
 
-   _clone = (mongoc_cursor_t *) bson_malloc0 (sizeof *_clone);
+   _clone = BSON_ALIGNED_ALLOC0 (mongoc_cursor_t);
 
    _clone->client = cursor->client;
    _clone->nslen = cursor->nslen;

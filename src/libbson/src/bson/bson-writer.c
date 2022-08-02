@@ -66,7 +66,7 @@ bson_writer_new (uint8_t **buf,                  /* IN */
 {
    bson_writer_t *writer;
 
-   writer = bson_malloc0 (sizeof *writer);
+   writer = BSON_ALIGNED_ALLOC0 (bson_writer_t);
    writer->buf = buf;
    writer->buflen = buflen;
    writer->offset = offset;

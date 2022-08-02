@@ -24,10 +24,11 @@ To aid in language binding integration, Libbson allows for setting a custom memo
     bson_free
     bson_malloc
     bson_malloc0
+    bson_aligned_alloc
+    bson_aligned_alloc0
     bson_mem_restore_vtable
     bson_mem_set_vtable
     bson_realloc
     bson_realloc_ctx
     bson_realloc_func
     bson_zero_free
-

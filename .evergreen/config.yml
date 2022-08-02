@@ -1180,10 +1180,33 @@ tasks:
       script: |-
         set -o errexit
         export CC="clang-3.8"
-        export CFLAGS="-fno-omit-frame-pointer"
+        export CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
+        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
+        export SANITIZE="undefined"
+        export SNAPPY="OFF"
+        export ZLIB="BUNDLED"
+        export ZSTD="OFF"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
+- name: debug-compile-ubsan-with-extra-alignment
+  tags:
+  - special
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        export CC="clang-3.8"
+        export CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment"
+        export CHECK_LOG="ON"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON"
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
         export SANITIZE="undefined"
         export SNAPPY="OFF"
@@ -17189,7 +17212,7 @@ tasks:
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         . .evergreen/find-cmake.sh
         export CC='${CC}'
-        $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+        $CMAKE -DCMAKE_C_STANDARD=99 -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=OFF -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
   - func: upload build
 - name: test-aws-openssl-regular-latest
@@ -24239,6 +24262,7 @@ buildvariants:
   - debug-compile-scan-build
   - debug-compile-asan-clang
   - debug-compile-ubsan
+  - debug-compile-ubsan-with-extra-alignment
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align

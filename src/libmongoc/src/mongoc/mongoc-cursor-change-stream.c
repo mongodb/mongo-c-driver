@@ -123,7 +123,7 @@ _mongoc_cursor_change_stream_new (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (reply);
 
-   data = bson_malloc0 (sizeof (*data));
+   data = BSON_ALIGNED_ALLOC0 (_data_change_stream_t);
    /* _mongoc_cursor_response_t.reply is already uninitialized and we can trust
     * that reply comes from mongoc_client_read_command_with_opts() */
    BSON_ASSERT (bson_steal (&data->response.reply, reply));

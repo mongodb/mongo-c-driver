@@ -65,7 +65,7 @@ _pop_from_batch (mongoc_cursor_t *cursor)
 static void
 _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 {
-   data_array_t *data_dst = bson_malloc0 (sizeof (data_array_t));
+   data_array_t *data_dst = BSON_ALIGNED_ALLOC0 (data_array_t);
    data_array_t *data_src = (data_array_t *) src->data;
    bson_init (&data_dst->array);
    bson_copy_to (&data_src->cmd, &data_dst->cmd);
@@ -94,7 +94,7 @@ _mongoc_cursor_array_new (mongoc_client_t *client,
 {
    mongoc_cursor_t *cursor = _mongoc_cursor_new_with_opts (
       client, db_and_coll, opts, NULL, NULL, NULL);
-   data_array_t *data = bson_malloc0 (sizeof (*data));
+   data_array_t *data = BSON_ALIGNED_ALLOC0 (data_array_t);
    bson_copy_to (cmd, &data->cmd);
    bson_init (&data->array);
    data->field_name = bson_strdup (field_name);

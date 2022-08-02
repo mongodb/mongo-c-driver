@@ -84,7 +84,7 @@ static void
 _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 {
    data_find_cmd_t *data_src = (data_find_cmd_t *) src->data;
-   data_find_cmd_t *data_dst = bson_malloc0 (sizeof (data_find_cmd_t));
+   data_find_cmd_t *data_dst = BSON_ALIGNED_ALLOC0 (data_find_cmd_t);
    bson_init (&data_dst->response.reply);
    bson_copy_to (&data_src->filter, &data_dst->filter);
    dst->data = data_dst;
@@ -95,7 +95,7 @@ _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 void
 _mongoc_cursor_impl_find_cmd_init (mongoc_cursor_t *cursor, bson_t *filter)
 {
-   data_find_cmd_t *data = bson_malloc0 (sizeof (*data));
+   data_find_cmd_t *data = BSON_ALIGNED_ALLOC0 (data_find_cmd_t);
    BSON_ASSERT (bson_steal (&data->filter, filter));
    bson_init (&data->response.reply);
    cursor->impl.prime = _prime;

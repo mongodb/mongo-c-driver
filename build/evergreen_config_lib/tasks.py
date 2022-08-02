@@ -241,10 +241,18 @@ all_tasks = [
     SpecialTask('debug-compile-ubsan',
                 compression='zlib',
                 CC='clang-3.8',
-                CFLAGS='-fno-omit-frame-pointer',
+                CFLAGS='-fno-omit-frame-pointer -fno-sanitize-recover=alignment',
                 CHECK_LOG='ON',
                 sanitize=['undefined'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
+                PATH='/usr/lib/llvm-3.8/bin:$PATH'),
+    SpecialTask('debug-compile-ubsan-with-extra-alignment',
+                compression='zlib',
+                CC='clang-3.8',
+                CFLAGS='-fno-omit-frame-pointer -fno-sanitize-recover=alignment',
+                CHECK_LOG='ON',
+                sanitize=['undefined'],
+                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON",
                 PATH='/usr/lib/llvm-3.8/bin:$PATH'),
     SpecialTask('debug-compile-scan-build',
                 tags=['clang', 'debug-compile', 'scan-build'],
@@ -975,7 +983,7 @@ aws_compile_task = NamedTask('debug-compile-aws', commands=[shell_mongoc('''
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         . .evergreen/find-cmake.sh
         export CC='${CC}'
-        $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+        $CMAKE -DCMAKE_C_STANDARD=99 -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=OFF -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
 '''), func('upload build')])
 

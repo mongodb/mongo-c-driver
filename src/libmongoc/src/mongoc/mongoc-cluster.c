@@ -865,8 +865,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 
    rtt_msec = (bson_get_monotonic_time () - start) / 1000;
 
-   ret_handshake_sd = (mongoc_server_description_t *) bson_malloc0 (
-      sizeof (mongoc_server_description_t));
+   ret_handshake_sd = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
 
    mongoc_server_description_init (ret_handshake_sd, address, server_id);
    /* send the error from run_command IN to handle_hello */

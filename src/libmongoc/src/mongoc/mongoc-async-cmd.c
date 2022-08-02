@@ -207,7 +207,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    BSON_ASSERT (cmd);
    BSON_ASSERT (dbname);
 
-   acmd = (mongoc_async_cmd_t *) bson_malloc0 (sizeof (*acmd));
+   acmd = BSON_ALIGNED_ALLOC0 (mongoc_async_cmd_t);
    acmd->async = async;
    acmd->dns_result = dns_result;
    acmd->timeout_msec = timeout_msec;

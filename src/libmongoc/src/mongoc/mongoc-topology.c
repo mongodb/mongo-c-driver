@@ -378,7 +378,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       uri, MONGOC_URI_HEARTBEATFREQUENCYMS, heartbeat_default);
 
    topology->_shared_descr_._sptr_ = mongoc_shared_ptr_create (
-      bson_malloc0 (sizeof (mongoc_topology_description_t)),
+      BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t),
       _tpld_destroy_and_free);
    td = mc_tpld_unsafe_get_mutable (topology);
    mongoc_topology_description_init (td, heartbeat);
@@ -1624,8 +1624,6 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
 {
    ENTRY;
 
-   BSON_UNUSED (topology);
-
    /**
     * ! note:
     * At time of writing, this diverges from the spec:
@@ -1639,7 +1637,7 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
     * The next pop operation that encounters an expired session will clear the
     * entire session pool, thus preventing unbounded growth of the pool.
     */
-   mongoc_server_session_pool_return (server_session);
+   mongoc_server_session_pool_return (topology->session_pool, server_session);
 
    EXIT;
 }
@@ -1685,13 +1683,13 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
       const char *key;
       bson_uint32_to_string (i, &key, buf, sizeof buf);
       BSON_APPEND_DOCUMENT (&ar, key, &ss->lsid);
-      mongoc_server_session_pool_drop (ss);
+      mongoc_server_session_pool_drop (topology->session_pool, ss);
    }
 
    if (ss) {
       /* We deleted at least 10'000 sessions, so we will need to return the
        * final session that we didn't drop */
-      mongoc_server_session_pool_return (ss);
+      mongoc_server_session_pool_return (topology->session_pool, ss);
    }
 
    bson_append_array_end (cmd, &ar);
