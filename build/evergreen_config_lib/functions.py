@@ -29,7 +29,12 @@ all_functions = OD([
         shell_mongoc(r'''
         if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
            # This is a GitHub PR or patch build, probably branched from master
-           echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+           if command -v python3 2>/dev/null; then
+              # Prefer python3 if it is available
+              echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+           else
+              echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+           fi
            VERSION=$VERSION_CURRENT-${version_id}
         else
            VERSION=latest
@@ -542,11 +547,11 @@ all_functions = OD([
         EOF
         ''', silent=True),
         shell_mongoc(r'''
-        set -o errexit
         # Export the variables we need to construct URIs
         set +o xtrace
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
+        . ../drivers-evergreen-tools/.evergreen/auth_aws/activate_venv.sh
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
         ''')
     )),

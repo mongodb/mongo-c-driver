@@ -442,32 +442,39 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *host_and_port_in)
 }
 
 
-bool
-mongoc_uri_parse_srv (mongoc_uri_t *uri, const char *str)
+static bool
+mongoc_uri_parse_srv (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
-   char *service;
-
    if (*str == '\0') {
+      MONGOC_URI_ERROR (error, "%s", "Missing service name in SRV URI");
       return false;
    }
 
-   service = bson_strdup (str);
-   mongoc_uri_do_unescape (&service);
-   if (!service) {
-      /* invalid */
-      return false;
-   }
+   {
+      char *service = bson_strdup (str);
 
-   if (!valid_hostname (service) || count_dots (service) < 2) {
+      mongoc_uri_do_unescape (&service);
+
+      if (!service || !valid_hostname (service) || count_dots (service) < 2) {
+         MONGOC_URI_ERROR (error, "%s", "Invalid service name in URI");
+         bson_free (service);
+         return false;
+      }
+
+      bson_strncpy (uri->srv, service, sizeof uri->srv);
+
       bson_free (service);
+   }
+
+   if (strchr (uri->srv, ',')) {
+      MONGOC_URI_ERROR (
+         error, "%s", "Multiple service names are prohibited in an SRV URI");
       return false;
    }
 
-   bson_strncpy (uri->srv, service, sizeof uri->srv);
-   bson_free (service);
-
-   if (strchr (uri->srv, ',') || strchr (uri->srv, ':')) {
-      /* prohibit port number or multiple service names */
+   if (strchr (uri->srv, ':')) {
+      MONGOC_URI_ERROR (
+         error, "%s", "Port numbers are prohibited in an SRV URI");
       return false;
    }
 
@@ -1543,8 +1550,7 @@ mongoc_uri_parse_before_slash (mongoc_uri_t *uri,
    }
 
    if (uri->is_srv) {
-      if (!mongoc_uri_parse_srv (uri, hosts)) {
-         MONGOC_URI_ERROR (error, "%s", "Invalid service name in URI");
+      if (!mongoc_uri_parse_srv (uri, hosts, error)) {
          goto error;
       }
    } else {

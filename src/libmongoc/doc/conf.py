@@ -29,6 +29,11 @@ language = 'en'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 master_doc = 'index'
 
+# Set an empty list of disabled reftypes.
+# Sphinx 5.0 disables "std:doc" by default.
+# Many documentation references use :doc:
+intersphinx_disabled_reftypes = []
+
 # don't fetch libbson's inventory from mongoc.org during build - Debian and
 # Fedora package builds must work offline - maintain a recent copy here
 intersphinx_mapping = {
