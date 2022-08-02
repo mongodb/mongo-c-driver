@@ -13,7 +13,7 @@ Synopsis
       BSON_GNUC_WARN_UNUSED_RESULT;
 
 Obtain the version string of the crypt_shared_ that is loaded for the given
-explicit encryption object. If not crypt_shared_ library is loaded, the returnd
+explicit encryption object. If no crypt_shared_ library is loaded, the returned
 pointer will be ``NULL``.
 
 Parameters
