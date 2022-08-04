@@ -1203,6 +1203,11 @@ test_bson_validate (void)
                   4,
                   BSON_VALIDATE_UTF8,
                   "Invalid utf8 string for key \"a\"");
+   VALIDATE_TEST ("invalid-key.bson",
+                  BSON_VALIDATE_UTF8,
+                  4,
+                  BSON_VALIDATE_NONE,
+                  "corrupt BSON");
    VALIDATE_TEST ("overflow4.bson",
                   BSON_VALIDATE_NONE,
                   9,
