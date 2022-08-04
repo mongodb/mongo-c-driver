@@ -3584,7 +3584,8 @@ _bson_iter_validate_document (const bson_iter_t *iter,
       state->phase = BSON_VALIDATE_PHASE_LF_REF_KEY;
    }
 
-   bson_iter_visit_all (&child, &bson_validate_funcs, state);
+   bson_iter_visit_all_v2 (
+      &child, &bson_validate_funcs, BSON_ITER_VISIT_NOFLAGS, state);
 
    if (child.err_off > 0 && state->err_offset < 0) {
       // Iteration on a direct element of 'child' failed
