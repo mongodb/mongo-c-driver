@@ -116,17 +116,33 @@ test_client_side_encryption_cb (bson_t *scenario)
    "\x4f\x69\x37\x36\x36\x4a\x7a\x58\x5a\x42\x64\x42\x64\x62\x64\x4d\x75\x72" \
    "\x64\x6f\x6e\x4a\x31\x64"
 
+static void
+_set_extra_bypass (bson_t *extra)
+{
+   if (test_framework_getenv_bool ("MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN")) {
+      BSON_APPEND_BOOL (extra, "mongocryptdBypassSpawn", true);
+   }
+}
+
+static void
+_set_extra_crypt_shared (bson_t *extra)
+{
+   char *const path =
+      test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+   if (path) {
+      BSON_APPEND_UTF8 (extra, "cryptSharedLibPath", path);
+      bson_free (path);
+   }
+}
+
 /* Convenience helper to check if spawning mongocryptd should be bypassed */
 static void
 _check_bypass (mongoc_auto_encryption_opts_t *opts)
 {
-   if (test_framework_getenv_bool ("MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN")) {
-      bson_t *extra;
-
-      extra = BCON_NEW ("mongocryptdBypassSpawn", BCON_BOOL (true));
-      mongoc_auto_encryption_opts_set_extra (opts, extra);
-      bson_destroy (extra);
-   }
+   bson_t extra = BSON_INITIALIZER;
+   _set_extra_bypass (&extra);
+   mongoc_auto_encryption_opts_set_extra (opts, &extra);
+   bson_destroy (&extra);
 }
 
 static bson_t *
@@ -2115,16 +2131,11 @@ _reset (mongoc_client_pool_t **pool,
    mongoc_auto_encryption_opts_destroy (*opts);
    *opts = mongoc_auto_encryption_opts_new ();
    {
-      bson_t *const extra =
-         BCON_NEW ("mongocryptdBypassSpawn", BCON_BOOL (true));
-      char *env_cryptSharedLibPath =
-         test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
-      if (env_cryptSharedLibPath) {
-         BSON_APPEND_UTF8 (extra, "cryptSharedLibPath", env_cryptSharedLibPath);
-         bson_free (env_cryptSharedLibPath);
-      }
-      mongoc_auto_encryption_opts_set_extra (*opts, extra);
-      bson_destroy (extra);
+      bson_t extra = BSON_INITIALIZER;
+      _set_extra_bypass (&extra);
+      _set_extra_crypt_shared (&extra);
+      mongoc_auto_encryption_opts_set_extra (*opts, &extra);
+      bson_destroy (&extra);
    }
    mongoc_auto_encryption_opts_set_keyvault_namespace (*opts, "db", "keyvault");
    kms_providers = _make_kms_providers (false /* aws */, true /* local */);
