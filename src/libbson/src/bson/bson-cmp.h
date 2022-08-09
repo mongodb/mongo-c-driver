@@ -118,35 +118,37 @@ BSON_CMP_SET (greater_equal,
 #undef BSON_CMP_SET
 
 
-/* Define in_range functions for *signed* type Type. */
-#define BSON_IN_RANGE_SET_SIGNED(Type, min, max)                            \
-   static BSON_INLINE bool BSON_CONCAT3 (bson_in_range_, Type, _signed) (   \
-      int64_t value)                                                        \
-   {                                                                        \
-      return bson_cmp_greater_equal_ss (value, min) &&                      \
-             bson_cmp_less_equal_ss (value, max);                           \
-   }                                                                        \
-                                                                            \
-   static BSON_INLINE bool BSON_CONCAT3 (bson_in_range_, Type, _unsigned) ( \
-      uint64_t value)                                                       \
-   {                                                                        \
-      return bson_cmp_greater_equal_us (value, min) &&                      \
-             bson_cmp_less_equal_us (value, max);                           \
+/* Return true if the given value is within the range of the corresponding
+ * signed type. The suffix must match the signedness of the given value. */
+#define BSON_IN_RANGE_SET_SIGNED(Type, min, max)                              \
+   static BSON_INLINE bool BSON_CONCAT3 (bson_in_range, _##Type, _signed) (   \
+      int64_t value)                                                          \
+   {                                                                          \
+      return bson_cmp_greater_equal_ss (value, min) &&                        \
+             bson_cmp_less_equal_ss (value, max);                             \
+   }                                                                          \
+                                                                              \
+   static BSON_INLINE bool BSON_CONCAT3 (bson_in_range, _##Type, _unsigned) ( \
+      uint64_t value)                                                         \
+   {                                                                          \
+      return bson_cmp_greater_equal_us (value, min) &&                        \
+             bson_cmp_less_equal_us (value, max);                             \
    }
 
-/* Define in_range functions for *unsigned* type Type. */
-#define BSON_IN_RANGE_SET_UNSIGNED(Type, max)                               \
-   static BSON_INLINE bool BSON_CONCAT3 (bson_in_range_, Type, _signed) (   \
-      int64_t value)                                                        \
-   {                                                                        \
-      return bson_cmp_greater_equal_su (value, 0u) &&                       \
-             bson_cmp_less_equal_su (value, max);                           \
-   }                                                                        \
-                                                                            \
-   static BSON_INLINE bool BSON_CONCAT3 (bson_in_range_, Type, _unsigned) ( \
-      uint64_t value)                                                       \
-   {                                                                        \
-      return bson_cmp_less_equal_uu (value, max);                           \
+/* Return true if the given value is within the range of the corresponding
+ * unsigned type. The suffix must match the signedness of the given value. */
+#define BSON_IN_RANGE_SET_UNSIGNED(Type, max)                                 \
+   static BSON_INLINE bool BSON_CONCAT3 (bson_in_range, _##Type, _signed) (   \
+      int64_t value)                                                          \
+   {                                                                          \
+      return bson_cmp_greater_equal_su (value, 0u) &&                         \
+             bson_cmp_less_equal_su (value, max);                             \
+   }                                                                          \
+                                                                              \
+   static BSON_INLINE bool BSON_CONCAT3 (bson_in_range, _##Type, _unsigned) ( \
+      uint64_t value)                                                         \
+   {                                                                          \
+      return bson_cmp_less_equal_uu (value, max);                             \
    }
 
 BSON_IN_RANGE_SET_SIGNED (signed_char, SCHAR_MIN, SCHAR_MAX)
@@ -181,12 +183,12 @@ BSON_IN_RANGE_SET_UNSIGNED (size_t, SIZE_MAX)
 /* Return true if the value with *signed* type is in the representable range of
  * Type and false otherwise. */
 #define bson_in_range_signed(Type, value) \
-   BSON_CONCAT3 (bson_in_range_, Type, _signed) (value)
+   BSON_CONCAT3 (bson_in_range, _##Type, _signed) (value)
 
 /* Return true if the value with *unsigned* type is in the representable range
  * of Type and false otherwise. */
 #define bson_in_range_unsigned(Type, value) \
-   BSON_CONCAT3 (bson_in_range_, Type, _unsigned) (value)
+   BSON_CONCAT3 (bson_in_range, _##Type, _unsigned) (value)
 
 
 BSON_END_DECLS
