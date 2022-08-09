@@ -163,21 +163,32 @@ BSON_IN_RANGE_SET_UNSIGNED (_unsigned_int, UINT_MAX)
 BSON_IN_RANGE_SET_UNSIGNED (_unsigned_long, ULONG_MAX)
 BSON_IN_RANGE_SET_UNSIGNED (_unsigned_long_long, ULLONG_MAX)
 
-BSON_IN_RANGE_SET_SIGNED (_int8, INT8_MIN, INT8_MAX)
-BSON_IN_RANGE_SET_SIGNED (_int16, INT16_MIN, INT16_MAX)
-BSON_IN_RANGE_SET_SIGNED (_int32, INT32_MIN, INT32_MAX)
-BSON_IN_RANGE_SET_SIGNED (_int64, INT64_MIN, INT64_MAX)
+BSON_IN_RANGE_SET_SIGNED (_int8_t, INT8_MIN, INT8_MAX)
+BSON_IN_RANGE_SET_SIGNED (_int16_t, INT16_MIN, INT16_MAX)
+BSON_IN_RANGE_SET_SIGNED (_int32_t, INT32_MIN, INT32_MAX)
+BSON_IN_RANGE_SET_SIGNED (_int64_t, INT64_MIN, INT64_MAX)
 
-BSON_IN_RANGE_SET_UNSIGNED (_uint8, UINT8_MAX)
-BSON_IN_RANGE_SET_UNSIGNED (_uint16, UINT16_MAX)
-BSON_IN_RANGE_SET_UNSIGNED (_uint32, UINT32_MAX)
-BSON_IN_RANGE_SET_UNSIGNED (_uint64, UINT64_MAX)
+BSON_IN_RANGE_SET_UNSIGNED (_uint8_t, UINT8_MAX)
+BSON_IN_RANGE_SET_UNSIGNED (_uint16_t, UINT16_MAX)
+BSON_IN_RANGE_SET_UNSIGNED (_uint32_t, UINT32_MAX)
+BSON_IN_RANGE_SET_UNSIGNED (_uint64_t, UINT64_MAX)
 
-BSON_IN_RANGE_SET_SIGNED (_ssize, SSIZE_MIN, SSIZE_MAX)
-BSON_IN_RANGE_SET_UNSIGNED (_size, SIZE_MAX)
+BSON_IN_RANGE_SET_SIGNED (_ssize_t, SSIZE_MIN, SSIZE_MAX)
+BSON_IN_RANGE_SET_UNSIGNED (_size_t, SIZE_MAX)
 
 #undef BSON_IN_RANGE_SET_SIGNED
 #undef BSON_IN_RANGE_SET_UNSIGNED
+
+
+/* Return true if the value with *signed* type is in the representable range of
+ * Type and false otherwise. */
+#define bson_in_range_signed(Type, value) \
+   BSON_CONCAT3 (bson_in_range_, Type, _signed) (value)
+
+/* Return true if the value with *unsigned* type is in the representable range
+ * of Type and false otherwise. */
+#define bson_in_range_unsigned(Type, value) \
+   BSON_CONCAT3 (bson_in_range_, Type, _unsigned) (value)
 
 
 BSON_END_DECLS

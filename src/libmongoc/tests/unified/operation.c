@@ -236,7 +236,7 @@ operation_create_datakey (test_t *test,
             _mongoc_array_append_val (&arr, key_alt_name);
          }
 
-         BSON_ASSERT (bson_in_range_uint32_unsigned (arr.len));
+         BSON_ASSERT (bson_in_range_unsigned (uint32_t, arr.len));
 
          mongoc_client_encryption_datakey_opts_set_keyaltnames (
             datakey_opts, arr.data, (uint32_t) arr.len);

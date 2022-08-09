@@ -234,65 +234,65 @@ test_bson_in_range (void)
    const ssize_t ssize_min = SSIZE_MIN;
    const ssize_t ssize_max = SSIZE_MAX;
 
-   BSON_ASSERT (!bson_in_range_int8_signed (int8_min - 1));
-   BSON_ASSERT (bson_in_range_int8_signed (int8_min));
-   BSON_ASSERT (bson_in_range_int8_signed (0));
-   BSON_ASSERT (bson_in_range_int8_signed (int8_max));
-   BSON_ASSERT (!bson_in_range_int8_signed (int8_max + 1));
+   BSON_ASSERT (!bson_in_range_signed (int8_t, int8_min - 1));
+   BSON_ASSERT (bson_in_range_signed (int8_t, int8_min));
+   BSON_ASSERT (bson_in_range_signed (int8_t, 0));
+   BSON_ASSERT (bson_in_range_signed (int8_t, int8_max));
+   BSON_ASSERT (!bson_in_range_signed (int8_t, int8_max + 1));
 
-   BSON_ASSERT (bson_in_range_int8_unsigned (0u));
-   BSON_ASSERT (bson_in_range_int8_unsigned ((uint64_t) int8_max));
-   BSON_ASSERT (!bson_in_range_int8_unsigned ((uint64_t) (int8_max + 1)));
+   BSON_ASSERT (bson_in_range_unsigned (int8_t, 0u));
+   BSON_ASSERT (bson_in_range_unsigned (int8_t, (uint64_t) int8_max));
+   BSON_ASSERT (!bson_in_range_unsigned (int8_t, (uint64_t) (int8_max + 1)));
 
-   BSON_ASSERT (!bson_in_range_uint8_signed (int8_min - 1));
-   BSON_ASSERT (!bson_in_range_uint8_signed (int8_min));
-   BSON_ASSERT (bson_in_range_uint8_signed (0));
-   BSON_ASSERT (bson_in_range_uint8_signed (int8_max));
-   BSON_ASSERT (bson_in_range_uint8_signed (int8_max + 1));
-   BSON_ASSERT (bson_in_range_uint8_signed ((int64_t) uint8_max));
-   BSON_ASSERT (!bson_in_range_uint8_signed ((int64_t) uint8_max + 1));
+   BSON_ASSERT (!bson_in_range_signed (uint8_t, int8_min - 1));
+   BSON_ASSERT (!bson_in_range_signed (uint8_t, int8_min));
+   BSON_ASSERT (bson_in_range_signed (uint8_t, 0));
+   BSON_ASSERT (bson_in_range_signed (uint8_t, int8_max));
+   BSON_ASSERT (bson_in_range_signed (uint8_t, int8_max + 1));
+   BSON_ASSERT (bson_in_range_signed (uint8_t, (int64_t) uint8_max));
+   BSON_ASSERT (!bson_in_range_signed (uint8_t, (int64_t) uint8_max + 1));
 
-   BSON_ASSERT (bson_in_range_uint8_unsigned (0u));
-   BSON_ASSERT (bson_in_range_uint8_unsigned (uint8_max));
-   BSON_ASSERT (!bson_in_range_uint8_unsigned (uint8_max + 1u));
+   BSON_ASSERT (bson_in_range_unsigned (uint8_t, 0u));
+   BSON_ASSERT (bson_in_range_unsigned (uint8_t, uint8_max));
+   BSON_ASSERT (!bson_in_range_unsigned (uint8_t, uint8_max + 1u));
 
-   BSON_ASSERT (!bson_in_range_int32_signed (int32_min - 1));
-   BSON_ASSERT (bson_in_range_int32_signed (int32_min));
-   BSON_ASSERT (bson_in_range_int32_signed (0));
-   BSON_ASSERT (bson_in_range_int32_signed (int32_max));
-   BSON_ASSERT (!bson_in_range_int32_signed (int32_max + 1));
+   BSON_ASSERT (!bson_in_range_signed (int32_t, int32_min - 1));
+   BSON_ASSERT (bson_in_range_signed (int32_t, int32_min));
+   BSON_ASSERT (bson_in_range_signed (int32_t, 0));
+   BSON_ASSERT (bson_in_range_signed (int32_t, int32_max));
+   BSON_ASSERT (!bson_in_range_signed (int32_t, int32_max + 1));
 
-   BSON_ASSERT (bson_in_range_int32_unsigned (0u));
-   BSON_ASSERT (bson_in_range_int32_unsigned ((uint64_t) int32_max));
-   BSON_ASSERT (!bson_in_range_int32_unsigned ((uint64_t) (int32_max + 1)));
+   BSON_ASSERT (bson_in_range_unsigned (int32_t, 0u));
+   BSON_ASSERT (bson_in_range_unsigned (int32_t, (uint64_t) int32_max));
+   BSON_ASSERT (!bson_in_range_unsigned (int32_t, (uint64_t) (int32_max + 1)));
 
-   BSON_ASSERT (!bson_in_range_uint32_signed (int32_min - 1));
-   BSON_ASSERT (!bson_in_range_uint32_signed (int32_min));
-   BSON_ASSERT (bson_in_range_uint32_signed (0));
-   BSON_ASSERT (bson_in_range_uint32_signed (int32_max));
-   BSON_ASSERT (bson_in_range_uint32_signed (int32_max + 1));
-   BSON_ASSERT (bson_in_range_uint32_signed ((int64_t) uint32_max));
-   BSON_ASSERT (!bson_in_range_uint32_signed ((int64_t) uint32_max + 1));
+   BSON_ASSERT (!bson_in_range_signed (uint32_t, int32_min - 1));
+   BSON_ASSERT (!bson_in_range_signed (uint32_t, int32_min));
+   BSON_ASSERT (bson_in_range_signed (uint32_t, 0));
+   BSON_ASSERT (bson_in_range_signed (uint32_t, int32_max));
+   BSON_ASSERT (bson_in_range_signed (uint32_t, int32_max + 1));
+   BSON_ASSERT (bson_in_range_signed (uint32_t, (int64_t) uint32_max));
+   BSON_ASSERT (!bson_in_range_signed (uint32_t, (int64_t) uint32_max + 1));
 
-   BSON_ASSERT (bson_in_range_uint32_unsigned (0u));
-   BSON_ASSERT (bson_in_range_uint32_unsigned (uint32_max));
-   BSON_ASSERT (!bson_in_range_uint32_unsigned (uint32_max + 1u));
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, 0u));
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, uint32_max));
+   BSON_ASSERT (!bson_in_range_unsigned (uint32_t, uint32_max + 1u));
 
-   BSON_ASSERT (bson_in_range_ssize_signed (ssize_min));
-   BSON_ASSERT (bson_in_range_ssize_signed (0));
-   BSON_ASSERT (bson_in_range_ssize_signed (ssize_max));
+   BSON_ASSERT (bson_in_range_signed (ssize_t, ssize_min));
+   BSON_ASSERT (bson_in_range_signed (ssize_t, 0));
+   BSON_ASSERT (bson_in_range_signed (ssize_t, ssize_max));
 
-   BSON_ASSERT (bson_in_range_ssize_unsigned (0u));
-   BSON_ASSERT (bson_in_range_ssize_unsigned ((size_t) ssize_max));
-   BSON_ASSERT (!bson_in_range_ssize_unsigned ((size_t) ssize_max + 1u));
+   BSON_ASSERT (bson_in_range_unsigned (ssize_t, 0u));
+   BSON_ASSERT (bson_in_range_unsigned (ssize_t, (size_t) ssize_max));
+   BSON_ASSERT (!bson_in_range_unsigned (ssize_t, (size_t) ssize_max + 1u));
 
-   BSON_ASSERT (!bson_in_range_size_signed (ssize_min));
-   BSON_ASSERT (bson_in_range_size_signed (0));
-   BSON_ASSERT (bson_in_range_size_signed (ssize_max));
+   BSON_ASSERT (!bson_in_range_signed (size_t, ssize_min));
+   BSON_ASSERT (bson_in_range_signed (size_t, 0));
+   BSON_ASSERT (bson_in_range_signed (size_t, ssize_max));
 
-   BSON_ASSERT (bson_in_range_size_unsigned (0u));
-   BSON_ASSERT (bson_in_range_size_unsigned ((size_t) ssize_max));
-   BSON_ASSERT (bson_in_range_size_unsigned ((size_t) ssize_max + 1u));
+   BSON_ASSERT (bson_in_range_unsigned (size_t, 0u));
+   BSON_ASSERT (bson_in_range_unsigned (size_t, (size_t) ssize_max));
+   BSON_ASSERT (bson_in_range_unsigned (size_t, (size_t) ssize_max + 1u));
 }
 
 void
