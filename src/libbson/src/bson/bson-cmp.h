@@ -183,12 +183,12 @@ BSON_IN_RANGE_SET_UNSIGNED (_size_t, SIZE_MAX)
 /* Return true if the value with *signed* type is in the representable range of
  * Type and false otherwise. */
 #define bson_in_range_signed(Type, value) \
-   BSON_CONCAT3 (bson_in_range_, Type, _signed) (value)
+   BSON_CONCAT3 (bson_in_range, _##Type, _signed) (value)
 
 /* Return true if the value with *unsigned* type is in the representable range
  * of Type and false otherwise. */
 #define bson_in_range_unsigned(Type, value) \
-   BSON_CONCAT3 (bson_in_range_, Type, _unsigned) (value)
+   BSON_CONCAT3 (bson_in_range, _##Type, _unsigned) (value)
 
 
 BSON_END_DECLS
