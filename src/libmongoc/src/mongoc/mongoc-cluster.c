@@ -56,6 +56,8 @@
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-error-private.h"
 
+#include <bson/bson-dsl.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
 
@@ -780,7 +782,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    mongoc_server_description_t *ret_handshake_sd;
    mongoc_server_stream_t *server_stream;
    bool r;
-   bson_iter_t iter;
    mongoc_ssl_opt_t *ssl_opts = NULL;
    mc_shared_tpld td =
       mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
@@ -848,14 +849,16 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    if (!mongoc_cluster_run_command_private (
           cluster, &hello_cmd, &reply, error)) {
       if (negotiate_sasl_supported_mechs) {
-         if (bson_iter_init_find (&iter, &reply, "ok") &&
-             !bson_iter_as_bool (&iter)) {
-            /* hello response returned ok: 0. According to auth spec: "If the
-             * hello of the MongoDB Handshake fails with an error, drivers
-             * MUST treat this an authentication error." */
-            error->domain = MONGOC_ERROR_CLIENT;
-            error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
-         }
+         bsonParse (reply,
+                    find (keyWithType ("ok", bool),
+                          if (falsey, then (do({
+                                 /* hello response returned ok: 0. According to
+                                  * auth spec: "If the hello of the MongoDB
+                                  * Handshake fails with an error, drivers MUST
+                                  * treat this an authentication error." */
+                                 error->domain = MONGOC_ERROR_CLIENT;
+                                 error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
+                              })))));
       }
 
       mongoc_server_stream_cleanup (server_stream);
@@ -1579,6 +1582,9 @@ _mongoc_cluster_scram_handle_reply (mongoc_scram_t *scram,
    const char *tmpstr;
 
    BSON_ASSERT (scram);
+
+   bool is_done = false;
+   bsonParse (*reply, find (key ("done"), storeBool (is_done)));
 
    if (bson_iter_init_find (&iter, reply, "done") &&
        bson_iter_as_bool (&iter)) {

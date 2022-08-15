@@ -41,6 +41,8 @@
 #include "mongoc-error-private.h"
 #include "mongoc-database-private.h"
 
+#include <bson/bson-dsl.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
 
@@ -750,27 +752,22 @@ mongoc_collection_count_with_opts (
    bool success;
    bson_t reply;
    bson_t cmd = BSON_INITIALIZER;
-   bson_t q;
 
    ENTRY;
 
    BSON_ASSERT_PARAM (collection);
 
-   bson_append_utf8 (
-      &cmd, "count", 5, collection->collection, collection->collectionlen);
-   if (query) {
-      bson_append_document (&cmd, "query", 5, query);
-   } else {
-      bson_init (&q);
-      bson_append_document (&cmd, "query", 5, &q);
-      bson_destroy (&q);
-   }
-   if (limit) {
-      bson_append_int64 (&cmd, "limit", 5, limit);
-   }
-   if (skip) {
-      bson_append_int64 (&cmd, "skip", 4, skip);
-   }
+   bsonBuildAppend (
+      cmd,
+      kv ("count",
+          utf8_w_len (collection->collection, collection->collectionlen)),
+      kv ("query",
+          if (query,                // If we have a query,
+              then (bson (*query)), // Copy it
+              else(doc ()))),       // Otherwise, add an empty doc
+      if (limit, then (kv ("limit", i64 (limit)))),
+      if (skip, then (kv ("skip", i64 (skip)))));
+
 
    success = _mongoc_client_command_with_opts (collection->client,
                                                collection->db,
@@ -957,8 +954,8 @@ mongoc_collection_count_documents (mongoc_collection_t *coll,
    _make_aggregate_for_count (coll, filter, opts, &aggregate_cmd);
    bson_init (&aggregate_opts);
    if (opts) {
-      bson_copy_to_excluding_noinit (
-         opts, &aggregate_opts, "skip", "limit", NULL);
+      bsonBuildAppend (aggregate_opts,
+                       insert (*opts, not(key ("skip", "limit"))));
    }
 
    ret = mongoc_collection_read_command_with_opts (
@@ -1180,12 +1177,9 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
    }
 
    if (!bson_empty (&encryptedFields)) {
-      bson_t opts_without_encryptedFields = BSON_INITIALIZER;
-
-      if (opts) {
-         bson_copy_to_excluding_noinit (
-            opts, &opts_without_encryptedFields, "encryptedFields", NULL);
-      }
+      bsonBuildDecl (
+         opts_without_encryptedFields,
+         if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
 
       bool ret = drop_with_opts_with_encryptedFields (
          collection, &opts_without_encryptedFields, &encryptedFields, error);

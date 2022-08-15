@@ -389,35 +389,46 @@ enum {
 #define _bson_thread_local_comdat __attribute__ ((weak)) __thread
 #endif
 
+#ifdef __GNUC__
+// GCC has a bug handling pragma statements that disable warnings within complex
+// nested macro expansions. If we're GCC, just disable -Wshadow outright:
+BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");)
+#endif
+
+#define _bsonDSL_disableWarnings()                     \
+   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic push");) \
+   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");)
+
+#define _bsonDSL_restoreWarnings() \
+   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");)
+
 /**
  * @brief Parse the given BSON document.
  *
  * @param doc A bson_t object to walk. (Not a pointer)
  */
-#define bsonParse(Document, ...)                                       \
-   _bsonDSL_begin ("bsonParse(%s)", _bsonDSL_str (Document));          \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic push");)                 \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");) \
-   bool _bvHalt = false;                                               \
-   bsonParseError = NULL;                                              \
-   const bool _bvContinue = false;                                     \
-   const bool _bvBreak = false;                                        \
-   (void) _bvContinue;                                                 \
-   (void) _bvBreak;                                                    \
-   _bsonDSL_eval (_bsonParse ((Document), __VA_ARGS__));               \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");)                  \
+#define bsonParse(Document, ...)                              \
+   _bsonDSL_begin ("bsonParse(%s)", _bsonDSL_str (Document)); \
+   _bsonDSL_disableWarnings ();                               \
+   bool _bvHalt = false;                                      \
+   bsonParseError = NULL;                                     \
+   const bool _bvContinue = false;                            \
+   const bool _bvBreak = false;                               \
+   (void) _bvContinue;                                        \
+   (void) _bvBreak;                                           \
+   _bsonDSL_eval (_bsonParse ((Document), __VA_ARGS__));      \
+   _bsonDSL_restoreWarnings ();                               \
    _bsonDSL_end
 
 /**
  * @brief Visit each element of a BSON document
  */
-#define bsonVisitEach(Document, ...)                                   \
-   _bsonDSL_begin ("bsonVisitEach(%s)", _bsonDSL_str (Document));      \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic push");)                 \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");) \
-   bool _bvHalt = false;                                               \
-   _bsonDSL_eval (_bsonVisitEach ((Document), __VA_ARGS__));           \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");)                  \
+#define bsonVisitEach(Document, ...)                              \
+   _bsonDSL_begin ("bsonVisitEach(%s)", _bsonDSL_str (Document)); \
+   _bsonDSL_disableWarnings ();                                   \
+   bool _bvHalt = false;                                          \
+   _bsonDSL_eval (_bsonVisitEach ((Document), __VA_ARGS__));      \
+   _bsonDSL_restoreWarnings ();                                   \
    _bsonDSL_end
 
 #ifndef __INTELLISENSE__
@@ -638,14 +649,10 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 /// document are discarded and it is treated as an array of values.
 #define _bsonArrayOperation_insert(OtherArr, ...)                        \
    _bsonDSL_begin ("Insert other array: [%s]", _bsonDSL_str (OtherArr)); \
-   _bsonVisitEach (OtherArr,                /*                    */     \
-                   if (allOf (__VA_ARGS__), /*                    */     \
-                       then (do({                                        \
-                          _bsonBuild_setKeyToArrayIndex (                \
-                             bsonBuildContext.index);                    \
-                          _bsonArrayOperation_iterValue (bsonVisitIter); \
-                          ++_bbCtx.index;                                \
-                       }))));                                            \
+   _bsonVisitEach (                                                      \
+      OtherArr,                                                          \
+      if (allOf (__VA_ARGS__),                                           \
+          then (do(_bsonArrayOperation_iterValue (bsonVisitIter)))));    \
    _bsonDSL_end
 
 #define _bsonArrayAppendValue(ValueOperation)                                 \
@@ -865,6 +872,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    _bsonDSL_begin (                                                           \
       "append to [%s] : %s", _bsonDSL_str (Doc), _bsonDSL_str (__VA_ARGS__)); \
    _bsonBuildAppend (Doc, __VA_ARGS__);                                       \
+   bsonParseError = bsonBuildError;                                           \
    _bsonDSL_end
 
 #define _bsonVisitEach(Doc, ...)                                             \
@@ -1068,7 +1076,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
                                                         type (Type)))
 
 #define _bsonPredicate_Condition_lastElement \
-   (_bson_dsl_iter_is_last_element (bsonVisitIter))
+   (_bson_dsl_iter_is_last_element (&bsonVisitIter))
 
 #define _bsonPredicate_Condition_isNumeric \
    BSON_ITER_HOLDS_NUMBER (&bsonVisitIter)
@@ -1153,17 +1161,18 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    _bsonDSL_eval (_bsonBuildArray (BSON, __VA_ARGS__)); \
    _bsonDSL_end
 
-#define _bsonBuildArray(BSON, ...)                                        \
-   do {                                                                   \
-      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic push");)                 \
-      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");) \
-      struct _bsonBuildContext_t _bbCtx = {                               \
-         .doc = &(BSON),                                                  \
-         .parent = _bsonBuildContextThreadLocalPtr,                       \
-      };                                                                  \
-      _bsonBuildContextThreadLocalPtr = &_bbCtx;                          \
-      _bsonBuildArrayWithCurrentContext (__VA_ARGS__);                    \
-      _bsonBuildContextThreadLocalPtr = _bbCtx.parent;                    \
+#define _bsonBuildArray(BSON, ...)                     \
+   do {                                                \
+      _bsonDSL_disableWarnings ();                     \
+      struct _bsonBuildContext_t _bbCtx = {            \
+         .doc = &(BSON),                               \
+         .parent = _bsonBuildContextThreadLocalPtr,    \
+         .index = 0,                                   \
+      };                                               \
+      _bsonBuildContextThreadLocalPtr = &_bbCtx;       \
+      _bsonBuildArrayWithCurrentContext (__VA_ARGS__); \
+      _bsonBuildContextThreadLocalPtr = _bbCtx.parent; \
+      _bsonDSL_restoreWarnings ();                     \
    } while (0)
 
 /**
@@ -1176,8 +1185,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    _bsonDSL_eval (_bsonBuildAppend (BSON, __VA_ARGS__))
 #define _bsonBuildAppend(BSON, ...)                                    \
    _bsonDSL_begin ("Appending to document '%s'", _bsonDSL_str (BSON)); \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic push");)                 \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");) \
+   _bsonDSL_disableWarnings ();                                        \
    /* Save the dsl context */                                          \
    struct _bsonBuildContext_t _bbCtx = {                               \
       .doc = &(BSON),                                                  \
@@ -1189,7 +1197,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    _bsonBuildAppendWithCurrentContext (__VA_ARGS__);                   \
    /* Restore the dsl context */                                       \
    _bsonBuildContextThreadLocalPtr = _bbCtx.parent;                    \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");)                  \
+   _bsonDSL_restoreWarnings ();                                        \
    _bsonDSL_end
 
 /**
@@ -1272,7 +1280,7 @@ _bson_thread_local_comdat const char *bsonBuildError = NULL;
 _bson_thread_local_comdat const char *bsonParseError = NULL;
 
 #define _bsonDSLDebug(...) \
-   _bson_dsl_debug (__FILE__, __LINE__, __func__, __VA_ARGS__)
+   _bson_dsl_debug (BSON_DSL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
 
 
 static inline bool
@@ -1357,10 +1365,14 @@ _bson_dsl_iter_is_last_element (const bson_iter_t *it)
 
 static int _bson_dsl_indent = 0;
 
-static inline void BSON_GNUC_PRINTF (4, 5) _bson_dsl_debug (
-   const char *file, int line, const char *func, const char *string, ...)
+static inline void BSON_GNUC_PRINTF (5, 6) _bson_dsl_debug (bool do_debug,
+                                                            const char *file,
+                                                            int line,
+                                                            const char *func,
+                                                            const char *string,
+                                                            ...)
 {
-   if (BSON_DSL_DEBUG) {
+   if (do_debug) {
       fprintf (stderr, "%s:%d: [%s] bson_dsl: ", file, line, func);
       for (int i = 0; i < _bson_dsl_indent; ++i) {
          fputs ("  ", stderr);
@@ -1375,7 +1387,7 @@ static inline void BSON_GNUC_PRINTF (4, 5) _bson_dsl_debug (
 }
 
 static inline const char *
-_bsonVisitIterAs_str ()
+_bsonVisitIterAs_cstr ()
 {
    return bson_iter_utf8 (&bsonVisitIter, NULL);
 }

@@ -30,6 +30,8 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-aggregate-private.h"
 
+#include <bson/bson-dsl.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cursor"
 
@@ -311,19 +313,19 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          (void) mongoc_cursor_set_hint (cursor, server_id);
       }
 
-      bson_copy_to_excluding_noinit (opts,
-                                     &cursor->opts,
-                                     "serverId",
-                                     "sessionId",
-                                     "bypassDocumentValidation",
-                                     NULL);
-
+      bsonBuildAppend (
+         cursor->opts,
+         insert (
+            *opts,
+            not(key ("serverId", "sessionId", "bypassDocumentValidation"))));
 
       /* only include bypassDocumentValidation if it's true */
-      if (bson_iter_init_find (&iter, opts, "bypassDocumentValidation") &&
-          bson_iter_as_bool (&iter)) {
-         BSON_APPEND_BOOL (&cursor->opts, "bypassDocumentValidation", true);
-      }
+      bsonParse (*opts,
+                 find (key ("bypassDocumentValidation"),
+                       if (truthy,
+                           then (append (
+                              cursor->opts,
+                              kv ("bypassDocumentValidation", bool (true)))))));
    }
 
    if (_mongoc_client_session_in_txn (cursor->client_session)) {
@@ -774,7 +776,6 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
    mongoc_apm_command_succeeded_t event;
    mongoc_client_t *client;
    bson_t reply;
-   bson_t reply_cursor;
 
    ENTRY;
 
@@ -790,16 +791,14 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
    bson_init (&docs_array);
    _mongoc_cursor_append_docs_array (cursor, &docs_array, response);
 
-   bson_init (&reply);
-   bson_append_int32 (&reply, "ok", 2, 1);
-   bson_append_document_begin (&reply, "cursor", 6, &reply_cursor);
-   bson_append_int64 (&reply_cursor, "id", 2, mongoc_cursor_get_id (cursor));
-   bson_append_utf8 (&reply_cursor, "ns", 2, cursor->ns, cursor->nslen);
-   bson_append_array (&reply_cursor,
-                      first_batch ? "firstBatch" : "nextBatch",
-                      first_batch ? 10 : 9,
-                      &docs_array);
-   bson_append_document_end (&reply, &reply_cursor);
+   bsonBuild (reply,
+              kv ("ok", i32 (1)),
+              kv ("cursor",
+                  doc (kv ("id", i64 (mongoc_cursor_get_id (cursor))),
+                       kv ("ns", utf8_w_len (cursor->ns, cursor->nslen)),
+                       kv (first_batch ? "firstBatch" : "nextBatch",
+                           bsonArray (docs_array)))));
+
    bson_destroy (&docs_array);
 
    mongoc_apm_command_succeeded_init (&event,
@@ -845,8 +844,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
    /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
     * {ok: 0}
     */
-   bson_init (&reply);
-   bson_append_int32 (&reply, "ok", 2, 0);
+   bsonBuild (reply, kv ("ok", i32 (0)));
 
    mongoc_apm_command_failed_init (&event,
                                    duration,
@@ -1601,14 +1599,12 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (reply);
    /* options are passed through by adding them to reply. */
-   bson_copy_to_excluding_noinit (reply,
-                                  &opts,
-                                  "cursor",
-                                  "ok",
-                                  "operationTime",
-                                  "$clusterTime",
-                                  "$gleStats",
-                                  NULL);
+   bsonBuildAppend (
+      *reply,
+      insert (
+         opts,
+         not(key (
+            "cursor", "ok", "operationTime", "$clusterTime", "$gleStats"))));
 
    if (server_id) {
       bson_append_int64 (&opts, "serverId", 8, server_id);

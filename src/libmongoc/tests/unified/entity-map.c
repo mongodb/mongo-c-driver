@@ -23,6 +23,8 @@
 #include "utlist.h"
 #include "util.h"
 
+#include <bson/bson-dsl.h>
+
 #include "common-b64-private.h"
 #include "mongoc-client-side-encryption-private.h"
 
@@ -269,71 +271,118 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
 entity_t *
 entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 {
-   bson_parser_t *parser = NULL;
    entity_t *entity = NULL;
    mongoc_client_t *client = NULL;
    mongoc_uri_t *uri = NULL;
    bool ret = false;
-   bson_iter_t iter;
    mongoc_apm_callbacks_t *callbacks = NULL;
    bson_t *uri_options = NULL;
-   bool *use_multiple_mongoses = NULL;
-   bson_t *observe_events = NULL;
-   bson_t *store_events_as_entities = NULL;
-   bson_t *server_api = NULL;
+   bool use_multiple_mongoses = false;
+   bool use_multiple_mongoses_set = false;
    bool can_reduce_heartbeat = false;
    mongoc_server_api_t *api = NULL;
 
    entity = entity_new ("client");
-   parser = bson_parser_new ();
-   bson_parser_utf8 (parser, "id", &entity->id);
-   bson_parser_doc_optional (parser, "uriOptions", &uri_options);
-   bson_parser_bool_optional (
-      parser, "useMultipleMongoses", &use_multiple_mongoses);
-   bson_parser_array_optional (parser, "observeEvents", &observe_events);
-   bson_parser_array_optional (parser,
-                               "ignoreCommandMonitoringEvents",
-                               &entity->ignore_command_monitoring_events);
-   bson_parser_doc_optional (parser, "serverApi", &server_api);
-   bson_parser_bool_optional (
-      parser, "observeSensitiveCommands", &entity->observe_sensitive_commands);
-   bson_parser_array_optional (
-      parser, "storeEventsAsEntities", &store_events_as_entities);
+   callbacks = mongoc_apm_callbacks_new ();
 
-   if (!bson_parser_parse (parser, bson, error)) {
-      goto done;
-   }
+   bsonParse ( //
+      *bson,
+      // All clients require an ID string
+      find (keyWithType ("id", utf8), storeStrDup (entity->id)),
+      else(error ("A client 'id' string is required")),
+      // Optional 'uriOptions' for the client
+      find (key ("uriOptions"),
+            if (not(type (doc)),
+                then (error ("'uriOptions' must be a document value"))),
+            storeDocDupPtr (uri_options)),
+      // Optional 'useMultipleMongoses' bool
+      find (key ("useMultipleMongoses"),
+            if (not(type (bool)),
+                then (error ("'useMultipleMongoses' must be a bool value"))),
+            do(use_multiple_mongoses_set = true),
+            storeBool (use_multiple_mongoses)),
+      // Events to observe:
+      find (
+         key ("observeEvents"),
+         if (not(type (array)),
+             then (error ("'observeEvents' must be an array"))),
+         visitEach (cond (
+            // Ensure all elements are strings:
+            (not(type (utf8)),
+             error ("Every 'observeEvents' element must be a string")),
+            // Dispatch based on the event name:
+            (strEqual ("commandStartedEvent"),
+             do(mongoc_apm_set_command_started_cb (callbacks,
+                                                   command_started))),
+            (strEqual ("commandFailedEvent"),
+             do(mongoc_apm_set_command_failed_cb (callbacks, command_failed))),
+            (strEqual ("commandSucceededEvent"),
+             do(mongoc_apm_set_command_succeeded_cb (callbacks,
+                                                     command_succeeded))),
+            // Unsupported (but known) event names:
+            (eval (is_unsupported_event_type (
+                bson_iter_utf8 (&bsonVisitIter, NULL))),
+             do(MONGOC_DEBUG ("Skipping unsupported event type '%s'",
+                              bsonAs (cstr)))),
+            // An unknown event name is a hard-error:
+            (true,
+             do(test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
+      // Command events to ignore
+      find (
+         key ("ignoreCommandMonitoringEvents"),
+         if (not(type (array)),
+             then (error ("'ignoreCommandMonitoringEvents' must be an array"))),
+         visitEach (if (not(type (utf8)),
+                        then (error ("Every 'ignoreCommandMonitoringEvents' "
+                                     "element must be a string")))),
+         storeDocDupPtr (entity->ignore_command_monitoring_events)),
+      // Parse the serverApi, if present
+      find (
+         key ("serverApi"),
+         if (not(type (doc)), then (error ("'serverApi' must be a document"))),
+         parse ( // The "version" string is required first:
+            find (keyWithType ("version", utf8), do({
+                     mongoc_server_api_version_t ver;
+                     if (!mongoc_server_api_version_from_string (bsonAs (cstr),
+                                                                 &ver)) {
+                        bsonParseError = "Invalid serverApi.version string";
+                     } else {
+                        api = mongoc_server_api_new (ver);
+                     }
+                  })),
+            else(error ("Missing 'version' property in 'serverApi' object")),
+            // Toggle strictness:
+            find (key ("strict"),
+                  if (not(type (bool)),
+                      then (error ("'serverApi.strict' must be a bool"))),
+                  do(mongoc_server_api_strict (api, bsonAs (bool)))),
+            // Toggle deprecation errors:
+            find (
+               key ("deprecationErrors"),
+               if (not(type (bool)),
+                   then (error ("serverApi.deprecationErrors must be a bool"))),
+               do(mongoc_server_api_deprecation_errors (api, bsonAs (bool)))))),
+      // Toggle observation of sensitive commands
+      find (key ("observeSensitiveCommands"),
+            if (not(type (bool)),
+                then (error ("'observeSensitiveCommands' must be a bool"))),
+            do({
+               bool *p = entity->observe_sensitive_commands =
+                  BSON_ALIGNED_ALLOC0 (bool);
+               *p = bsonAs (bool);
+            })),
+      // Which events should be available as entities:
+      find (key ("storeEventsAsEntities"),
+            if (not(type (array)),
+                then (error ("'storeEventsAsEntities' must be an array"))),
+            visitEach (if (not(type (utf8)),
+                           then (error ("Every 'storeEventsAsEntities' element "
+                                        "must be a string")))),
+            /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
+            error ("'storeEventsAsEntities' is not yet supported")));
 
-   if (server_api) {
-      bson_parser_t *sapi_parser = NULL;
-      char *version = NULL;
-      bool *strict = NULL;
-      bool *deprecation_errors = NULL;
-      mongoc_server_api_version_t api_version;
-
-      sapi_parser = bson_parser_new ();
-      bson_parser_utf8 (sapi_parser, "version", &version);
-      bson_parser_bool_optional (sapi_parser, "strict", &strict);
-      bson_parser_bool_optional (
-         sapi_parser, "deprecationErrors", &deprecation_errors);
-      if (!bson_parser_parse (sapi_parser, server_api, error)) {
-         bson_parser_destroy_with_parsed_fields (sapi_parser);
-         goto done;
-      }
-
-      BSON_ASSERT (
-         mongoc_server_api_version_from_string (version, &api_version));
-      api = mongoc_server_api_new (api_version);
-
-      if (strict) {
-         mongoc_server_api_strict (api, *strict);
-      }
-
-      if (deprecation_errors) {
-         mongoc_server_api_deprecation_errors (api, *deprecation_errors);
-      }
-
-      bson_parser_destroy_with_parsed_fields (sapi_parser);
+   if (bsonParseError) {
+      test_error ("Error while parsing entity object: %s", bsonParseError);
    }
 
    /* Build the client's URI. */
@@ -350,13 +399,13 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
        * fronting multiple servers. Otherwise, the test runner MUST use the URI
        * of the load balancer fronting a single server.
        */
-      if (use_multiple_mongoses == NULL || *use_multiple_mongoses == true) {
+      if (!use_multiple_mongoses_set || use_multiple_mongoses == true) {
          mongoc_uri_destroy (uri);
          uri = test_framework_get_uri_multi_mongos_loadbalanced ();
       }
-   } else if (use_multiple_mongoses != NULL) {
+   } else if (use_multiple_mongoses_set) {
       if (!test_framework_uri_apply_multi_mongos (
-             uri, *use_multiple_mongoses, error)) {
+             uri, use_multiple_mongoses, error)) {
          goto done;
       }
    }
@@ -381,53 +430,19 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;
-   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_client_set_apm_callbacks (client, callbacks, entity);
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec =
          REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
    }
 
-   if (observe_events) {
-      BSON_FOREACH (observe_events, iter)
-      {
-         const char *event_type = bson_iter_utf8 (&iter, NULL);
-
-         if (0 == strcmp (event_type, "commandStartedEvent")) {
-            mongoc_apm_set_command_started_cb (callbacks, command_started);
-         } else if (0 == strcmp (event_type, "commandFailedEvent")) {
-            mongoc_apm_set_command_failed_cb (callbacks, command_failed);
-         } else if (0 == strcmp (event_type, "commandSucceededEvent")) {
-            mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
-         } else if (is_unsupported_event_type (event_type)) {
-            MONGOC_DEBUG ("Skipping observing unsupported event type: %s",
-                          event_type);
-            continue;
-         } else {
-            test_set_error (error, "Unexpected event type: %s", event_type);
-            goto done;
-         }
-      }
-   }
-   mongoc_client_set_apm_callbacks (client, callbacks, entity);
-
-   if (store_events_as_entities) {
-      /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
-      test_set_error (error, "storeEventsAsEntities is not supported");
-      goto done;
-   }
-
    ret = true;
 done:
    mongoc_uri_destroy (uri);
-   bson_parser_destroy (parser);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_server_api_destroy (api);
    bson_destroy (uri_options);
-   bson_free (use_multiple_mongoses);
-   bson_destroy (observe_events);
-   bson_destroy (store_events_as_entities);
-   bson_destroy (server_api);
    if (!ret) {
       entity_destroy (entity);
       return NULL;

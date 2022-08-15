@@ -33,6 +33,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-rpc-private.h"
 
+#include <bson/bson-dsl.h>
 
 static bool
 _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor,
@@ -100,8 +101,9 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
    /* simulate a MongoDB 3.2+ "find" command */
    _mongoc_cursor_prepare_find_command (cursor, filter, &doc);
 
-   bson_copy_to_excluding_noinit (
-      &cursor->opts, &doc, "serverId", "maxAwaitTimeMS", "sessionId", NULL);
+   bsonBuildAppend (
+      cursor->opts,
+      insert (doc, not(key ("serverId", "maxAwaitTimeMS", "sessionId"))));
 
    r = _mongoc_cursor_monitor_command (cursor, server_stream, &doc, "find");
 
