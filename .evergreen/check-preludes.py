@@ -44,6 +44,7 @@ checks = [
         "headers": glob.glob( bson_prefix + "*.h"),
         "exclusions": [
             bson_prefix + "bson-prelude.h",
+            bson_prefix + "bson-dsl.h",
             bson_prefix + "bson.h"
         ],
         "include": "#include \"bson-prelude.h\""

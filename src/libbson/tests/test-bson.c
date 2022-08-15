@@ -21,6 +21,8 @@
 #include <fcntl.h>
 #include <time.h>
 
+#include <bson/bson-dsl.h>
+
 #include "TestSuite.h"
 #include "test-conveniences.h"
 
@@ -2508,6 +2510,108 @@ test_bson_as_json_string (void)
    bson_free (actual);
 }
 
+static void
+test_bson_dsl (void)
+{
+   bsonBuildDecl (
+      meow,
+      kv ("foo", i32 (12)),
+      kv ("bar", cstr ("baz")),
+      kv (
+         "another",
+         array (
+            i32 (1),
+            i32 (2),
+            i32 (3),
+            i32 (4),
+            i32 (5),
+            array (i32 (9), i32 (41)),
+            doc (
+               kv ("sub1", i32 (84)),
+               kv ("sub2",
+                   if (1,
+                       then (doc (
+                          kv ("item", i32 (99)),
+                          kv ("item2", i32 (42)),
+                          kv ("nope",
+                              doc (kv (
+                                 "1", doc (kv ("2", doc (kv ("3", doc ()))))))),
+                          kv ("another nested",
+                              array (i32 (6), i32 (4), i32 (-9))),
+                          kv ("int64", i64 (94412)))),
+                       else(null)))))),
+      if (12, then (kv ("foo", cstr ("bar"))), else(kv ("bar", i32 (88)))));
+   bson_iter_t it;
+   bson_iter_init (&it, &meow);
+   bson_iter_t found;
+   BSON_ASSERT (
+      bson_iter_find_descendant (&it, "another.6.sub2.int64", &found));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&found));
+   ASSERT_CMPINT64 (bson_iter_as_int64 (&found), ==, 94412);
+
+   ASSERT (bsonParseError == NULL);
+   bsonParse (
+      meow, require (keyWithType ("missing-key", int32), nop), do(abort ()));
+   ASSERT (bsonParseError != NULL);
+
+   bson_destroy (&meow);
+   bsonBuild (meow, kv ("top", array (i32 (56), if (1, then (i32 (88))))));
+
+   bsonBuildDecl (another, insert (meow, true));
+   BSON_ASSERT_BSON_EQUAL (&meow, &another);
+
+   bsonParse (
+      meow,
+      find (key ("foo"),
+            if (type (array),
+                then (parse (find (
+                   key ("meow"),
+                   visitEach (parse (find (
+                      key ("bark"),
+                      parse (find (
+                         key ("foo"),
+                         parse (find (
+                            key ("foo"),
+                            parse (find (
+                               key ("foo"),
+                               continue,
+                               parse (find (key ("nope"), nop)))))))))))))))));
+
+   ASSERT (bsonParseError == NULL);
+
+   bsonBuild (another,
+              kv ("foo", cstr ("bar")),
+              kv ("baz", null),
+              kv ("somethingElse",
+                  array (i32 (1729),
+                         cstr ("I am a string"),
+                         doc (kv ("subdoc", null)))));
+
+   bool foundfoo = false;
+   bool foundbar = false;
+   bsonParse (another,
+              find (anyOf (key ("meow"), key ("foo")), do(foundfoo = true)));
+   BSON_ASSERT (foundfoo);
+   BSON_ASSERT (!foundbar);
+
+   bsonVisitEach (another, if (type (doc), then (visitEach ())));
+
+   BSON_ASSERT (!bsonBuildError);
+   bsonBuildAppend (meow, kvl ("f\00oo", 4, null));
+   BSON_ASSERT (bsonBuildError);
+
+   bson_destroy (&meow);
+   bsonBuild (meow, do(bsonBuildError = "I am an error"), do(abort ()));
+   ASSERT_CMPSTR (bsonBuildError, "I am an error");
+
+   bsonBuild (meow, do({ bson_append_null (bsonBuildContext.doc, "yo", -1); }));
+   ASSERT (!bsonBuildError);
+   ASSERT (!bson_empty (&meow));
+
+   bson_destroy (&meow);
+   bson_destroy (&another);
+}
+
 void
 test_bson_install (TestSuite *suite)
 {
@@ -2606,4 +2710,6 @@ test_bson_install (TestSuite *suite)
                   "/bson/append_null_from_utf8_or_symbol",
                   test_bson_append_null_from_utf8_or_symbol);
    TestSuite_Add (suite, "/bson/as_json_string", test_bson_as_json_string);
+
+   TestSuite_Add (suite, "/bson/dsl/basic", test_bson_dsl);
 }
