@@ -306,27 +306,27 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
          key ("observeEvents"),
          if (not(type (array)),
              then (error ("'observeEvents' must be an array"))),
-         visitEach (cond (
+         visitEach (case (
             // Ensure all elements are strings:
-            (not(type (utf8)),
-             error ("Every 'observeEvents' element must be a string")),
+            when (not(type (utf8)),
+                  error ("Every 'observeEvents' element must be a string")),
             // Dispatch based on the event name:
-            (strEqual ("commandStartedEvent"),
-             do(mongoc_apm_set_command_started_cb (callbacks,
-                                                   command_started))),
-            (strEqual ("commandFailedEvent"),
-             do(mongoc_apm_set_command_failed_cb (callbacks, command_failed))),
-            (strEqual ("commandSucceededEvent"),
-             do(mongoc_apm_set_command_succeeded_cb (callbacks,
-                                                     command_succeeded))),
+            when (strEqual ("commandStartedEvent"),
+                  do(mongoc_apm_set_command_started_cb (callbacks,
+                                                        command_started))),
+            when (strEqual ("commandFailedEvent"),
+                  do(mongoc_apm_set_command_failed_cb (callbacks,
+                                                       command_failed))),
+            when (strEqual ("commandSucceededEvent"),
+                  do(mongoc_apm_set_command_succeeded_cb (callbacks,
+                                                          command_succeeded))),
             // Unsupported (but known) event names:
-            (eval (is_unsupported_event_type (
-                bson_iter_utf8 (&bsonVisitIter, NULL))),
-             do(MONGOC_DEBUG ("Skipping unsupported event type '%s'",
-                              bsonAs (cstr)))),
+            when (eval (is_unsupported_event_type (
+                     bson_iter_utf8 (&bsonVisitIter, NULL))),
+                  do(MONGOC_DEBUG ("Skipping unsupported event type '%s'",
+                                   bsonAs (cstr)))),
             // An unknown event name is a hard-error:
-            (true,
-             do(test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
+            else(do(test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
       // Command events to ignore
       find (
          key ("ignoreCommandMonitoringEvents"),

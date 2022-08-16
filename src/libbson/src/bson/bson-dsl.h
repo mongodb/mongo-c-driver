@@ -845,25 +845,31 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    } while (0);                                           \
    _bsonDSL_end
 
-#define _bsonVisitCondBranch1(Pred, ...)               \
-   _bsonDSL_begin ("test: [%s]", _bsonDSL_str (Pred)); \
-   _bvCondMatched = _bsonPredicate (Pred);             \
-   if (_bvCondMatched) {                               \
+#define _bsonVisitCase_when(Pred, ...)                 \
+   _bsonDSL_begin ("when: [%s]", _bsonDSL_str (Pred)); \
+   _bvCaseMatched = _bsonPredicate (Pred);             \
+   if (_bvCaseMatched) {                               \
       _bsonVisit_applyOps (__VA_ARGS__);               \
    }                                                   \
    _bsonDSL_end
 
-#define _bsonVisitCondBranch(Pair, _nil, _count)      \
-   if (!_bvCondMatched) {                             \
-      _bsonVisitCondBranch1 _bsonDSL_nothing () Pair; \
-   } else                                             \
+#define _bsonVisitCase_else(...)      \
+   _bsonDSL_begin ("else:%s", "");    \
+   _bvCaseMatched = true;             \
+   _bsonVisit_applyOps (__VA_ARGS__); \
+   _bsonDSL_end
+
+#define _bsonVisitCase(Pair, _nil, _count) \
+   if (!_bvCaseMatched) {                  \
+      _bsonVisitCase_##Pair;               \
+   } else                                  \
       ((void) 0);
 
-#define _bsonVisitOperation_cond(...)                        \
-   _bsonDSL_begin ("cond:%s", "");                           \
-   bool _bvCondMatched = false;                              \
-   (void) _bvCondMatched;                                    \
-   _bsonDSL_mapMacro (_bsonVisitCondBranch, ~, __VA_ARGS__); \
+#define _bsonVisitOperation_case(...)                  \
+   _bsonDSL_begin ("case:%s", "");                     \
+   bool _bvCaseMatched = false;                        \
+   (void) _bvCaseMatched;                              \
+   _bsonDSL_mapMacro (_bsonVisitCase, ~, __VA_ARGS__); \
    _bsonDSL_end
 
 #define _bsonVisitOperation_append \

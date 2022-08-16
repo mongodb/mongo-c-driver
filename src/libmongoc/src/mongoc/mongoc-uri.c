@@ -1763,22 +1763,23 @@ _mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri, bson_error_t *error)
 
    mongoc_read_mode_t mode = 0;
    const char *pref = NULL;
-   bsonParse (uri->options,
-              find (
-                 // Find the 'readPreference' string
-                 iKeyWithType (MONGOC_URI_READPREFERENCE, utf8),
-                 cond ( // Switch on the string content:
-                    (iStrEqual ("primary"), do(mode = MONGOC_READ_PRIMARY)),
-                    (iStrEqual ("primaryPreferred"),
-                     do(mode = MONGOC_READ_PRIMARY_PREFERRED)),
-                    (iStrEqual ("secondary"), do(mode = MONGOC_READ_SECONDARY)),
-                    (iStrEqual ("secondaryPreferred"),
-                     do(mode = MONGOC_READ_SECONDARY_PREFERRED)),
-                    (iStrEqual ("nearest"), do(mode = MONGOC_READ_NEAREST)),
-                    (true, do({
-                        pref = bsonAs (cstr);
-                        bsonParseError = "Unsupported readPreference value";
-                     })))));
+   bsonParse (
+      uri->options,
+      find (
+         // Find the 'readPreference' string
+         iKeyWithType (MONGOC_URI_READPREFERENCE, utf8),
+         case ( // Switch on the string content:
+            when (iStrEqual ("primary"), do(mode = MONGOC_READ_PRIMARY)),
+            when (iStrEqual ("primaryPreferred"),
+                  do(mode = MONGOC_READ_PRIMARY_PREFERRED)),
+            when (iStrEqual ("secondary"), do(mode = MONGOC_READ_SECONDARY)),
+            when (iStrEqual ("secondaryPreferred"),
+                  do(mode = MONGOC_READ_SECONDARY_PREFERRED)),
+            when (iStrEqual ("nearest"), do(mode = MONGOC_READ_NEAREST)),
+            else(do({
+               pref = bsonAs (cstr);
+               bsonParseError = "Unsupported readPreference value";
+            })))));
 
    if (bsonParseError) {
       const char *prefix = "Error while assigning URI read preference";
@@ -1849,26 +1850,29 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
          iKey ("w"), //
          storeInt32 (w_int),
          storeStrRef (w_str),
-         cond (
+         case (
             // Special W options:
-            (anyOf (eq (int32, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED),
-                    eq (int32, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED)),
-             // These conflict with journalling:
-             if (eval (mongoc_write_concern_get_journal (write_concern)),
-                 then (error ("Journal conflicts with w value"))),
-             do(mongoc_write_concern_set_w (write_concern, bsonAs (int32)))),
+            when (
+               anyOf (eq (int32, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED),
+                      eq (int32, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED)),
+               // These conflict with journalling:
+               if (eval (mongoc_write_concern_get_journal (write_concern)),
+                   then (error ("Journal conflicts with w value"))),
+               do(mongoc_write_concern_set_w (write_concern, bsonAs (int32)))),
             // Other positive 'w' value:
-            (allOf (type (int32), eval (bsonAs (int32) > 0)),
-             do(mongoc_write_concern_set_w (write_concern, bsonAs (int32)))),
+            when (
+               allOf (type (int32), eval (bsonAs (int32) > 0)),
+               do(mongoc_write_concern_set_w (write_concern, bsonAs (int32)))),
             // Special "majority" string:
-            (iStrEqual ("majority"),
-             do(mongoc_write_concern_set_w (write_concern,
-                                            MONGOC_WRITE_CONCERN_W_MAJORITY))),
+            when (iStrEqual ("majority"),
+                  do(mongoc_write_concern_set_w (
+                     write_concern, MONGOC_WRITE_CONCERN_W_MAJORITY))),
             // Other string:
-            (type (utf8),
-             do(mongoc_write_concern_set_wtag (write_concern, bsonAs (cstr)))),
+            when (type (utf8),
+                  do(mongoc_write_concern_set_wtag (write_concern,
+                                                    bsonAs (cstr)))),
             // Invalid value:
-            (true, error ("Unsupported w value")))));
+            else(error ("Unsupported w value")))));
 
    if (bsonParseError) {
       const char *const prefix = "Error while parsing the 'w' URI option";
