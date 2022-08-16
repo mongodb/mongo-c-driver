@@ -332,6 +332,13 @@ typedef signed char bool;
 #define BSON_IF_MSVC(...)
 /** Expands the arguments if compiling with GCC or Clang, otherwise empty */
 #define BSON_IF_GNU_LIKE(...) __VA_ARGS__
+#elif defined(_AIX)
+/** Expands the arguments if compiling with MSVC, otherwise empty */
+#define BSON_IF_MSVC(...)
+/** Expands the arguments if compiling with GCC or Clang, otherwise empty */
+#define BSON_IF_GNU_LIKE(...) 
+/** Expands the arguments if compiling with AIX, otherwise empty */
+#define BSON_IF_GNU_LEGACY_ATOMICS(...) __VA_ARGS__
 #endif
 
 #ifdef BSON_OS_WIN32
