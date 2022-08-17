@@ -1287,7 +1287,8 @@ mongoc_database_create_collection (mongoc_database_t *database,
 
    if (!bson_empty (&encryptedFields)) {
       // Clone 'opts' without the encryptedFields element
-      bsonBuildDecl (
+      bson_t opts_without_encryptedFields = BSON_INITIALIZER;
+      bsonBuildAppend (
          opts_without_encryptedFields,
          if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
 

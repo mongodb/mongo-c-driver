@@ -1750,7 +1750,7 @@ mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri,
       // Append the new properties
       kv (MONGOC_URI_AUTHMECHANISMPROPERTIES, bson (*properties)));
    bson_reinit (&uri->credentials);
-   bsonBuildAppend (uri->credentials, insert (tmp));
+   bsonBuildAppend (uri->credentials, insert (tmp, true));
    bson_destroy (&tmp);
    return bsonBuildError == NULL;
 }

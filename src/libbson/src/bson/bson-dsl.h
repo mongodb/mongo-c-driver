@@ -392,7 +392,7 @@ enum {
 #ifdef __GNUC__
 // GCC has a bug handling pragma statements that disable warnings within complex
 // nested macro expansions. If we're GCC, just disable -Wshadow outright:
-BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");)
+BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #endif
 
 #define _bsonDSL_disableWarnings()                     \
@@ -1212,12 +1212,10 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
  */
 #define bsonBuild(BSON, ...)                                              \
    _bsonDSL_begin ("Build a new document for '%s'", _bsonDSL_str (BSON)); \
-   bson_t _bson_dsl_new_doc_ = BSON_INITIALIZER;                          \
-   bsonBuildAppend (_bson_dsl_new_doc_, __VA_ARGS__);                     \
+   bson_init (&(BSON));                                                   \
+   bsonBuildAppend ((BSON), __VA_ARGS__);                                 \
    if (bsonBuildError) {                                                  \
-      bson_destroy (&_bson_dsl_new_doc_);                                 \
-   } else {                                                               \
-      bson_steal (&(BSON), &_bson_dsl_new_doc_);                          \
+      bson_destroy (&(BSON));                                             \
    }                                                                      \
    _bsonDSL_end
 
@@ -1226,7 +1224,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
  */
 #define bsonBuildDecl(Variable, ...)   \
    bson_t Variable = BSON_INITIALIZER; \
-   bsonBuild (Variable, __VA_ARGS__)
+   bsonBuildAppend (Variable, __VA_ARGS__)
 
 
 #ifdef _MSC_VER
