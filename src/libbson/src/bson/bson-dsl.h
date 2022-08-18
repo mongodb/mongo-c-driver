@@ -822,12 +822,13 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 #define _bsonVisitOperation_storeDocRef(Dest)               \
    _bsonDSL_begin ("storeDocRef(%s)", _bsonDSL_str (Dest)); \
-   (Dest) = _bson_dsl_iter_as_doc (&bsonVisitIter);         \
+   _bson_dsl_iter_as_doc (&(Dest), &bsonVisitIter);         \
    _bsonDSL_end
 
 #define _bsonVisitOperation_storeDocDupPtr(Dest)               \
    _bsonDSL_begin ("storeDocDupPtr(%s)", _bsonDSL_str (Dest)); \
-   bson_t _bvDoc = _bson_dsl_iter_as_doc (&bsonVisitIter);     \
+   bson_t _bvDoc = BSON_INITIALIZER;                           \
+   _bson_dsl_iter_as_doc (&_bvDoc, &bsonVisitIter);            \
    if (_bvDoc.len) {                                           \
       (Dest) = bson_copy (&_bvDoc);                            \
    }                                                           \
@@ -1336,8 +1337,8 @@ _bson_dsl_key_is_anyof (const char *key,
    return false;
 }
 
-static inline bson_t
-_bson_dsl_iter_as_doc (const bson_iter_t *it)
+static inline void
+_bson_dsl_iter_as_doc (bson_t *into, const bson_iter_t *it)
 {
    uint32_t len = 0;
    const uint8_t *dataptr = NULL;
@@ -1346,18 +1347,17 @@ _bson_dsl_iter_as_doc (const bson_iter_t *it)
    } else if (BSON_ITER_HOLDS_DOCUMENT (it)) {
       bson_iter_document (it, &len, &dataptr);
    }
-   bson_t ret = {0};
    if (dataptr) {
-      bson_init_static (&ret, dataptr, len);
+      bson_init_static (into, dataptr, len);
    }
-   return ret;
 }
 
 static inline bool
 _bson_dsl_is_empty_bson (const bson_iter_t *it)
 {
-   bson_t b = _bson_dsl_iter_as_doc (it);
-   return b.len == 5; // Empty documents/arrays have byte-size of five
+   bson_t d = BSON_INITIALIZER;
+   _bson_dsl_iter_as_doc (&d, it);
+   return d.len == 5; // Empty documents/arrays have byte-size of five
 }
 
 static inline bool
