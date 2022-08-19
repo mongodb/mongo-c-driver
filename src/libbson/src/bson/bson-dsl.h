@@ -1,385 +1,23 @@
 #ifndef BSON_BSON_DSL_H_INCLUDED
 #define BSON_BSON_DSL_H_INCLUDED
 
-// clang-format off
 /**
  * @file bson-dsl.h
  * @brief Define a C-preprocessor DSL for working with BSON objects
  *
  * This file defines an embedded DSL for working with BSON objects consisely and
  * correctly.
-
-Each macro takes a set of arguments, often being invocations to other DSL
-meta-macros. The DSL is split into *building* expressions and
-_visiting_/_parsing_ expressions.
-
-########  ##     ## #### ##       ########  #### ##    ##  ######
-##     ## ##     ##  ##  ##       ##     ##  ##  ###   ## ##    ##
-##     ## ##     ##  ##  ##       ##     ##  ##  ####  ## ##
-########  ##     ##  ##  ##       ##     ##  ##  ## ## ## ##   ####
-##     ## ##     ##  ##  ##       ##     ##  ##  ##  #### ##    ##
-##     ## ##     ##  ##  ##       ##     ##  ##  ##   ### ##    ##
-########   #######  #### ######## ########  #### ##    ##  ######
-
-* @see bsonBuild(BSON, DocOperation...)
-
-Construct a new document and assign the result into `BSON`. `BSON` must be a
-modifiable lvalue-expression of type `bson_t`. bson_destroy(&BSON) will be
-called before the assignment, but after the construction. The root operation
-list is equivalent to the `doc()` build operation
-
-* @see bsonBuildAppend(BSON, DocOperation...)
-
-Append new items to `BSON`. `BSON` must be a modifiable lvalue of type`bson_t`.
-This must be a valid `bson_t`. The root operation list is equivalent to the
-`doc()` build operation
-
-* @see bsonBuildDecl(Var, DocOperation...)
-
-Declare a new bson_t `Var` and construct a new document into it. The root
-operation list is equivalent to the `doc()` build operation
-
-Equivalent to:
-
-   bson_t Var = BSON_INITIALIZER;
-   bsonBuildAppend(Var, DocOperation...)
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-DocOperation
-
-   The operands of a doc() build operation. The following are supported:
-
-   kv(CString, ValueOperation)
-
-      Append an element with the given "CString" as a key. `CString` may be
-      any expression that evaluates to a null-terminated string.
-
-   kvl(CharPtr, Len, ValueOperation)
-
-      Append an element with the given string as a key, given as a
-      pointer-to-char and a length.
-
-   insert(OtherBSON, Predicate...)
-
-      `OtherBSON` must evaluate to an lvalue of type `bson_t`. Each element from
-      the OtherBSON document will be copied into the document being built.
-
-      `Predicate` is one or more visitation predicates. Refer to the "Predicate"
-      parameter to find() in the Parsing section below.
-
-   if(Condition, then(DocOperation...))
-   if(Condition, then(DocOperation...), else(DocOperation...))
-
-      Conditionally perform additional document building operations based on
-      `Condition`, which must be a C expression that evaluates to a truthy or
-      falsey value. If the `else()` operand is omitted and `Condition` evaluates
-      to `false`, no action will be performed.
-
-   do(...)
-
-      Evaluate the given C code. The current document being built can be
-      accessed via `bsonBuildContext.doc`. Elements can be added/removed using
-      the regular bson_append APIs.
-
-ValueOperation
-
-   A building operator that specifies the value of the current document or array
-   element. They element's key is set separately.
-
-   null
-
-      Create a BSON null value
-
-   bool(CBoolExpr)
-
-      Create a boolean value. Evaluates the given C expression.
-
-   i32(Integer)
-   i64(Integer)
-
-      Create an integral value. Evaluates the given C expression.
-
-   cstr(CString)
-
-      Create a UTF-8 string from the given null-terminated C string. Evaluates
-      the given C expression.
-
-   utf8_w_len(CharPtr, Len)
-
-      Create a UTF-8 string from the given character pointer and length.
-
-   iter(bson_iter_t)
-
-      Copy the BSON value referred to by the given bson_iter_t. The given
-      argument must evaluate to a valid bson_iter_t lvalue.
-
-   bson(bson_t)
-
-      Duplicate the given bson_t as a document element.
-
-   bsonArray(bson_t)
-
-      Duplicate the given bson_t as an array element.
-
-   doc(DocOperation...)
-
-      Create a sub-document with the given elements (may be empty).
-
-   array(ArrayOperation...)
-
-      Create an array sub-document. Each operand generates some number of array
-      elements.
-
-   if(Condition, then(ValueOperation), else(ValueOperation))
-
-      If The given C expression `Condition` evaluates to `true`, use the
-      `then()` operation, otherwise use the `else()` operation to compute the
-      value.
-
-ArrayOperation
-
-   ArrayOperation includes most ValueOperation operators to generate array
-   values, but defines the following array-specific operations:
-
-   insert(bson_t)
-
-      Copy each value from the given bson_t into the current array position.
-
-   if(Condition, then(ArrayOperation...))
-   if(Condition, then(ArrayOperation...), else(ArrayOperation...))
-
-      If The C expression `Condition` evaluates to `true`, append elements using
-      the `then` clause, otherwise use the `else()` clause (which may be
-      omitted)
-
-
-########     ###    ########   ######  #### ##    ##  ######
-##     ##   ## ##   ##     ## ##    ##  ##  ###   ## ##    ##
-##     ##  ##   ##  ##     ## ##        ##  ####  ## ##
-########  ##     ## ########   ######   ##  ## ## ## ##   ####
-##        ######### ##   ##         ##  ##  ##  #### ##    ##
-##        ##     ## ##    ##  ##    ##  ##  ##   ### ##    ##
-##        ##     ## ##     ##  ######  #### ##    ##  ######
-
-* @see bsonParse(BSON, ParseOperation...)
-
-Parse the elements of the given bson_t document/array. Refer to `ParseOperation`
-below.
-
-* @see bsonVisitEach(BSON, VisitOperation...)
-
-Visit each element of the given bson_t document/array. Refer to `VisitOperation`
-below.
-
---------------------------------------------------------------------------------
-
-The bsonParse()/parse() and bsonVisitEach()/visitEach() DSL functions may seem
-similar, but have two importantly different behaviors:
-
-The parse(...) DSL evaluates each of its operands one time in a definite order
-for the given BSON document, and can be used to quickly find elements matching
-some predicate.
-
-The visit(...) DSL evaluates all of its operands in order for each element in
-the document being visited.
-
-During visiting and parsing, the special global name `bsonVisitIter` will refer
-to a bson_iter_t that points to the element currently being visited/parsed.
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-ParseOperation
-
-   An operation performed once for an entire document being visited. The
-   following are defined:
-
-   find(Predicate, VisitOperation...)
-   require(Predicate, VisitOperation...)
-
-      Find the first element of the document that satisfies the given Predicate
-      expression, which has an additional DSL below. When the element is found,
-      each VisitOperation will be evaluated on the element that was found.
-
-      When using find(), if no element was found, nothing will happen. When
-      using require(), if no element is found, parsing will halt and set
-      bsonParseError.
-
-      When the element is found, the given VisitOperations will be evaluated
-      for the found element. The bsonVisitIter will point to the element that
-      was found.
-
-      The following operations are supported for Predicate:
-
-      key(CString)
-
-         Test an element's key string.
-
-      type(Type)
-
-         Test an element's value type. The type names the same as the suffixes
-         of the BSON_TYPE enumerators, except in all lowercase.
-
-      keyWithType(K, T)
-
-         Equivalent to: allOf(key(K), type(T))
-
-      allOf(Predicate...)
-
-         Matches only if _all_ sub-predicates match (conjunction)
-
-      anyOf(Predicate...)
-
-         Matches if _any_ sub-predicate matches (disjunction)
-
-      not(Predicate...)
-
-         Matches if none of the given predicates match (negation)
-
-      true
-
-         Always matches
-
-      false
-
-         Never matches
-
-      truthy
-
-         Matches if the element's BSON value is truthy (A 'true' bool, non-zero
-         number, or non-null)
-
-      falsey
-
-         Matches if the element's BSON value is not truthy
-
-      strEqual(S)
-
-         Matches if the element's BSON value is a text string and equivalent to
-         the given C string.
-
-      isNumeric
-
-         Matches if the element's type is a number type.
-
-      eval(Code)
-
-         Evaluate the given C expression and treat it as a boolean value. During
-         the evaluation of `Code`, bsonVisitIter points to the element being
-         considered.
-
-         If 'Code' sets bsonParseError, the parse/visit operation will stop.
-
-   else(ParseOperation...) [Parse operation]
-
-      If the previously executed ParseOperation did not match any key, evaluate
-      the given ParseOperations.
-
-   if(Condition, then(ParseOperation...)) [Parse operation]
-   if(Condition, then(ParseOperation...), else(ParseOperation...))
-
-      If the given C expression `Condition` evaluates to `true`, evaluate the
-      `then()` clause, otherwise evaluate the `else()` clause (which may be
-      omitted)
-
-   append(bson_t, DocOperation...) [Parse operation]
-
-      Executes bsonBuildAppend(bson_t, ...). The value of bsonVisitIter is
-      unspecified.
-
-   halt
-
-      Stop the current bsonParse/bsonVisit call immediately.
-
-   error(S)
-
-      Like `halt`, and sets bsonParseError to `S`.
-
-   do(...) [Parse operation]
-
-      Evaluate the given C code. The value of bsonVisitIter is unspecified.
-
-
-VisitOperation
-
-   The following operations are applied to a bson_iter_t given by the
-   bsonVisitIter global name.
-
-   The `store-` operations will check that the element has the appropriate type,
-   otherwise they will assign a default zero-ish value into the destination.
-
-   storeBool(B)
-
-      If the bsonVisitIter is a boolean value, assign that value in the C
-      lvalue-expression given as B.
-
-   storeStrRef(S)
-
-      Store a pointer to the beginning of the element's string in the lvalue S.
-
-   storeStrDup(S)
-
-      strdup() the element's string and store the resulting pointer in S.
-
-   found(IterDest)
-
-      Assign the bsonVisitIter into the bson_iter_t lvalue-expression given as
-      IterDest.
-
-   do(...) [Visit operation]
-
-      Evaluate the given C code. The bsonVisitIter names the currently visited
-      element.
-
-   append(BSON, DocOperation...) [Visit operation]
-
-      Evaluate bsonBuildAppend(BSON, ...). The bsonVisitIter names the currently
-      visited element.
-
-   visitEach(VisitOperation...)
-
-      Evaluate bsonVisitEach() for the current BSON document/array being
-      visited.
-
-   parse(ParseOperation...)
-
-      Evaluate bsonParse() for the current BSON document/array being visited.
-
-   halt
-
-      Stop the entire bsonParse/bsonVisit call immediately.
-
-   break
-
-      Stop the current application of VisitOperations and do not visit any more
-      elements. Only valid within a visitEach() or bsonVisit() context.
-
-   continue
-
-      Stop the current application of VisitOperations and advance to the next
-      element. Only valid within a visitEach() or bsonVisit() context.
-
-   error(S)
-
-      Like `halt`, and sets bsonParseError to `S`.
-
-   if(Predicate, then(VisitOperation...))
-   if(Predicate, then(VisitOperation...), else(VisitOperation...))  [Visit operation]
-
-      If `Predicate` matches the currently visited element, apply the then()
-      clause, otherwise apply the else() clause. `Predicate` has the same
-      meaning as in the `find()` ParseOperation.
-
+ *
+ * For more information about using this DSL, refer to `bson-dsl.md`.
  */
-// clang-format on
 
 #include "bson.h"
 
 enum {
    /// Toggle this value to enable/disable debug output for all bsonDSL
-   /// operations (printed to stderr)
+   /// operations (printed to stderr). You can also set a constant
+   /// BSON_DSL_DEBUG within the scope of a DSL command to selectively debug
+   /// only the commands within that scope.
    BSON_DSL_DEBUG = 0
 };
 
@@ -493,7 +131,9 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 /// Execute arbitrary code
 #define _bsonDocOperation_do(...)                         \
    _bsonDSL_begin ("do(%s)", _bsonDSL_str (__VA_ARGS__)); \
-   __VA_ARGS__;                                           \
+   do {                                                   \
+      __VA_ARGS__;                                        \
+   } while (0);                                           \
    _bsonDSL_end
 
 /// We must defer expansion of the nested doc() to allow "recursive" evaluation
@@ -622,18 +262,18 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 #define _bsonArrayOperation_null _bsonValueOperation (null)
 
 /// Insert the given BSON document into the parent document in-place
-#define _bsonDocOperation_insert(OtherBSON, ...)                              \
+#define _bsonDocOperation_insert(OtherBSON, Pred)                             \
    _bsonDSL_begin ("Insert other document: [%s]", _bsonDSL_str (OtherBSON));  \
    const bool _bvHalt = false; /* Required for _bsonVisitEach() */            \
    _bsonVisitEach (                                                           \
       OtherBSON,                                                              \
-      if (allOf (__VA_ARGS__),                                                \
+      if (Pred,                                                               \
           then (do(_bsonDocOperation_kvl (bson_iter_key (&bsonVisitIter),     \
                                           bson_iter_key_len (&bsonVisitIter), \
                                           iterValue (bsonVisitIter))))));     \
    _bsonDSL_end
 
-#define _bsonDocOperation_insertFromIter(Iter, ...)                    \
+#define _bsonDocOperation_insertFromIter(Iter, Pred)                   \
    _bsonDSL_begin ("Insert document from iterator: [%s]",              \
                    _bsonDSL_str (Iter));                               \
    bson_t _bbDocFromIter = _bson_dsl_iter_as_doc (&(Iter));            \
@@ -641,18 +281,17 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       _bsonDSLDebug (                                                  \
          "NOTE: Skipping insert of non-document value from iterator"); \
    } else {                                                            \
-      _bsonDocOperation_insert (_bbDocFromIter, __VA_ARGS__);          \
+      _bsonDocOperation_insert (_bbDocFromIter, Pred);                 \
    }                                                                   \
    _bsonDSL_end
 
 /// Insert the given BSON document into the parent array. Keys of the given
 /// document are discarded and it is treated as an array of values.
-#define _bsonArrayOperation_insert(OtherArr, ...)                        \
-   _bsonDSL_begin ("Insert other array: [%s]", _bsonDSL_str (OtherArr)); \
-   _bsonVisitEach (                                                      \
-      OtherArr,                                                          \
-      if (allOf (__VA_ARGS__),                                           \
-          then (do(_bsonArrayOperation_iterValue (bsonVisitIter)))));    \
+#define _bsonArrayOperation_insert(OtherArr, Pred)                          \
+   _bsonDSL_begin ("Insert other array: [%s]", _bsonDSL_str (OtherArr));    \
+   _bsonVisitEach (                                                         \
+      OtherArr,                                                             \
+      if (Pred, then (do(_bsonArrayOperation_iterValue (bsonVisitIter))))); \
    _bsonDSL_end
 
 #define _bsonArrayAppendValue(ValueOperation)                                 \
@@ -1225,7 +864,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
  */
 #define bsonBuildDecl(Variable, ...)   \
    bson_t Variable = BSON_INITIALIZER; \
-   bsonBuildAppend (Variable, __VA_ARGS__)
+   bsonBuild (Variable, __VA_ARGS__)
 
 
 #ifdef _MSC_VER
