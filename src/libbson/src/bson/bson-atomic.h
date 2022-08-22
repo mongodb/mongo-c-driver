@@ -47,7 +47,7 @@ enum bson_memory_order {
 #define MSVC_MEMORDER_SUFFIX(X)
 #endif
 
-#if defined(USE_LEGACY_GCC_ATOMICS) || (!defined(__clang__) && __GNUC__ == 4) || defined(_AIX)
+#if defined(USE_LEGACY_GCC_ATOMICS) || (!defined(__clang__) && __GNUC__ == 4) || defined(__xlC__)
 #define BSON_USE_LEGACY_GCC_ATOMICS
 #else
 #undef BSON_USE_LEGACY_GCC_ATOMICS
@@ -61,6 +61,7 @@ enum bson_memory_order {
 #ifdef BSON_USE_LEGACY_GCC_ATOMICS
 #undef BSON_IF_GNU_LIKE
 #define BSON_IF_GNU_LIKE(...)
+#define BSON_IF_MSVC(...)
 #define BSON_IF_GNU_LEGACY_ATOMICS(...) __VA_ARGS__
 #else
 #define BSON_IF_GNU_LEGACY_ATOMICS(...)
