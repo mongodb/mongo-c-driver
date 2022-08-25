@@ -263,10 +263,10 @@ The set of mock KMS servers running in the background and their corresponding in
 
 | Port | CA File | Cert File | Command |
 | --- | --- | --- | --- |
-| 7999 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 7999
-| 8000 | ca.pem | expired.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 8000
-| 8001 | ca.pem | wrong-host.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001
-| 8002 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8002 --require_client_cert
+| 8999 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999
+| 9000 | ca.pem | expired.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000
+| 9001 | ca.pem | wrong-host.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001
+| 9002 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port --require_client_cert 9002
 | 5698 | ca.pem | server.pem | python -u kms_kmip_server.py
 
 The path to `ca.pem` and `client.pem` must be passed through the following environment variables:
