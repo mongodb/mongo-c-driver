@@ -27,7 +27,8 @@ typedef struct mcd_azure_access_token {
  * @return true If 'out' was successfully initialized to a token.
  * @return false Otherwise
  *
- * @note The 'out' token must later be given to @ref mc_azure_auth_token_free
+ * @note The 'out' token must later be given to @ref
+ * mcd_azure_acecss_token_destroy
  */
 bool
 mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
