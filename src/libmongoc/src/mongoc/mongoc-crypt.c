@@ -712,7 +712,7 @@ _try_add_azure_from_env (bson_t *out, bson_error_t *error)
    mcd_azure_imds_request req;
    mcd_azure_imds_request_init (&req);
 
-   // Keep track of a waiting period so we can do backoff in case the IMSD
+   // Keep track of a waiting period so we can do backoff in case the IMDS
    // server tells us to slow down.
    int t_wait = 0;
    mongoc_http_response_t resp;

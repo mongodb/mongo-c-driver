@@ -7,7 +7,7 @@
 void
 _test_oauth_parse (void)
 {
-   // Test that we can correct parse a JSON document from the IMSD sever
+   // Test that we can correctly parse a JSON document from the IMDS sever
    bson_error_t error;
    mcd_azure_access_token token;
    ASSERT (!mcd_azure_access_token_try_init_from_json_str (
@@ -61,7 +61,7 @@ _test_http_req (void)
 }
 
 void
-test_mcd_azure_mid_install (TestSuite *suite)
+test_mcd_azure_imds_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/azure/imds/http/parse", _test_oauth_parse);
    TestSuite_Add (suite, "/azure/imds/http/request", _test_http_req);
