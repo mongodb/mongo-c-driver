@@ -2823,7 +2823,7 @@ test_kms_tls_cert_valid (void *unused)
 
 #if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    /* Certificate verification fails with Secure Channel given
-    * "127.0.0.1:7999" with error: "hostname doesn't match certificate". */
+    * "127.0.0.1:8999" with error: "hostname doesn't match certificate". */
    ASSERT_OR_PRINT (
       _mongoc_host_list_from_string_with_err (&host, "localhost:8999", &error),
       error);
