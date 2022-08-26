@@ -561,10 +561,8 @@ all_variants = [
              '.authentication-tests .openssl',
              '.latest .openssl !.nosasl .server',
              '.latest .nossl',
-             '.5.0 .openssl !.nosasl .server',
-             '.4.4 .openssl !.nosasl .server',
-             '.4.2 .openssl !.nosasl .server',
-             '.4.0 .openssl !.nosasl .server'],
+             '.6.0 .openssl !.nosasl .server',
+             '.5.0 .openssl !.nosasl .server'],
             {'CC': 'gcc'},
             batchtime=days(1)),
     # Note, do not use Ubuntu 16.04 for valgrind, as the system valgrind

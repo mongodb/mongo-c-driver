@@ -24681,10 +24681,8 @@ buildvariants:
   - .authentication-tests .openssl
   - .latest .openssl !.nosasl .server
   - .latest .nossl
+  - .6.0 .openssl !.nosasl .server
   - .5.0 .openssl !.nosasl .server
-  - .4.4 .openssl !.nosasl .server
-  - .4.2 .openssl !.nosasl .server
-  - .4.0 .openssl !.nosasl .server
   batchtime: 1440
 - name: valgrind-ubuntu
   display_name: Valgrind Tests (Ubuntu 18.04)
