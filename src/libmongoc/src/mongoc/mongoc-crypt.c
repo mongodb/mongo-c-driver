@@ -635,16 +635,12 @@ _needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
  * credentials, and what the managedIdentity parameters might be
  *
  * @param kmsprov The input kmsProviders that may have an "azure" property
- * @param out_azure_mid_params An output parameter where azure.managedIdentity
- * might be written
  * @param error An output error
  * @return true If success AND `kmsprov` requests automatic Azure credentials
  * @return false Otherwise. Check error->code for failure.
  */
 static bool
-_check_azure_kms_auto (const bson_t *kmsprov,
-                       bson_t *out_azure_mid_params,
-                       bson_error_t *error)
+_check_azure_kms_auto (const bson_t *kmsprov, bson_error_t *error)
 {
    bson_iter_t iter;
    const bool has_azure = bson_iter_init_find (&iter, kmsprov, "azure");
@@ -657,45 +653,7 @@ _check_azure_kms_auto (const bson_t *kmsprov,
       return false;
    }
 
-   if (bson_empty (&azure_subdoc)) {
-      return true;
-   }
-
-   if (!(bson_iter_init_find (&iter, &azure_subdoc, "clientId") &&
-         BSON_ITER_HOLDS_UTF8 (&iter))) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "kmsProviders.azure.managedIdentity.clientId is required "
-                      "and must be a string");
-      return false;
-   }
-
-   if (!(bson_iter_init_find (&iter, &azure_subdoc, "objectId") &&
-         BSON_ITER_HOLDS_UTF8 (&iter))) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "kmsProviders.azure.managedIdentity.objectId is required "
-                      "and must be a string");
-      return false;
-   }
-
-   if (!(bson_iter_init_find (&iter, &azure_subdoc, "miResId") &&
-         BSON_ITER_HOLDS_UTF8 (&iter))) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "kmsProviders.azure.managedIdentity.miResId is required "
-                      "and must be a string");
-      return false;
-   }
-
-   if (out_azure_mid_params) {
-      // azure_subdoc is a view into kmsprov and is safely copyable
-      *out_azure_mid_params = azure_subdoc;
-   }
-   return true;
+   return bson_empty (&azure_subdoc);
 }
 
 /**
@@ -779,9 +737,7 @@ pct_encode (const char *s)
 
 
 static bool
-_try_add_azure_from_env (bson_t *out,
-                         bson_t const *mid_params,
-                         bson_error_t *error)
+_try_add_azure_from_env (bson_t *out, bson_error_t *error)
 {
    bool okay = false;
 
@@ -905,29 +861,23 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    const bool callback_provided_aws =
       bson_iter_init_find (&iter, &creds, "aws");
 
-   const bool callback_provided_azure =
-      bson_iter_init_find (&iter, &creds, "azure");
-   bson_t azure_mid_params = BSON_INITIALIZER;
-   bool want_auto_azure = false;
    // Whether the callback requested auto-Azure credentials
-   const bool cb_wants_auto_azure =
-      _check_azure_kms_auto (&creds, &azure_mid_params, error);
+   const bool cb_wants_auto_azure = _check_azure_kms_auto (&creds, error);
    if (error->code) {
       // _check_azure_kms_auto failed
       goto fail;
    }
    // Whether the original kmsProviders requested auto-Azure credentials
    const bool orig_wants_auto_azure =
-      !cb_wants_auto_azure && _check_azure_kms_auto (&sm->crypt->kms_providers,
-                                                     &azure_mid_params,
-                                                     error);
+      !cb_wants_auto_azure &&
+      _check_azure_kms_auto (&sm->crypt->kms_providers, error);
    if (error->code) {
       // _check_azure_kms_auto failed
       goto fail;
    }
    const bool wants_auto_azure = cb_wants_auto_azure || orig_wants_auto_azure;
    if (wants_auto_azure) {
-      if (!_try_add_azure_from_env (&creds, &azure_mid_params, error)) {
+      if (!_try_add_azure_from_env (&creds, error)) {
          goto fail;
       }
    }
