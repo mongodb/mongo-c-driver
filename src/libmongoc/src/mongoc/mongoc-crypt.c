@@ -694,48 +694,15 @@ _try_add_aws_from_env (bson_t *out, bson_error_t *error)
    return true;
 }
 
-static char *
-pct_encode (const char *s)
-{
-   // Allocate space to encode 3 char for each input char, plus a null
-   const int outlen = (strlen (s) * 3) + 1;
-   char *const ret = bson_malloc0 (outlen);
-   BSON_ASSERT (ret);
-   int rlen = 0;
-   for (char *out = ret; rlen < outlen && *s; ++s, ++out, ++rlen) {
-      const char c = (*out = *s);
-      if (c >= 'A' && c <= 'Z') {
-         continue;
-      }
-      if (c >= '0' && c <= '9') {
-         continue;
-      }
-      if (c == '-' || c == '_' || c == '.' || c == '!' || c == '!' ||
-          c == '~' || c == '*' || c == '\'' || c == '(' || c == ')') {
-         continue;
-      }
-      if (c < 0 || c > 127) {
-         // Character is outside of the ASCII range. We only care about encoding
-         // ASCII characters here. A more thorough encoding would handle more
-         // characters properly.
-         *out = '?';
-      } else {
-         // Character needs to be escape
-         const uint8_t v = (uint8_t) c;
-         const int hi = v >> 4;
-         const int lo = v & 0x0f;
-         *out++ = '%';
-         *out++ = '0' + hi;
-         *out = '0' + lo; // Don't increment on the final char, the loop guard
-                          // will handle that.
-         rlen += 2;       // We're writing two more characters than expected
-      }
-   }
-   BSON_ASSERT (s[rlen] == 0);
-   return ret;
-}
-
-
+/**
+ * @brief Attempt to load an Azure access token from the environment and append
+ * them to the kmsProviders
+ *
+ * @param out A kmsProviders object to update
+ * @param error An error-out parameter
+ * @return true If there was no error and we loaded credentials
+ * @return false If there was an error obtaining or appending credentials
+ */
 static bool
 _try_add_azure_from_env (bson_t *out, bson_error_t *error)
 {
