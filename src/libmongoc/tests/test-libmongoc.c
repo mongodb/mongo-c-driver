@@ -3049,6 +3049,15 @@ main (int argc, char *argv[])
    test_shared_install (&suite);
    test_ssl_install (&suite);
 
+#define TEST_INSTALL(FuncName)                 \
+   if (1) {                                    \
+      extern void FuncName (TestSuite *suite); \
+      FuncName (&suite);                       \
+   } else                                      \
+      ((void) 0)
+
+   TEST_INSTALL (test_mcd_azure_mid_install);
+
    if (test_framework_is_loadbalanced ()) {
       mongoc_global_mock_service_id = true;
    }
