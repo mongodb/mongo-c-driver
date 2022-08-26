@@ -30,6 +30,7 @@
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-http-private.h"
+#include "mcd-azure.h"
 
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
@@ -785,82 +786,40 @@ _try_add_azure_from_env (bson_t *out,
    bool okay = false;
 
    // First, build the request path
-   bson_iter_t iter;
-   char *req_path = NULL;
-   // The base path, plus two default require parameters:
-   const char *const uri_path_base = "/metadata/identity/oauth2/token"
-                                     "&api-version=2018-02-01"
-                                     ";resource=https%3A%2F%2Fvault.azure.net";
-   // We may need to add additional paramters to disambiguate the request for a
-   // managed identity token
-   const bool has_object_id =
-      bson_iter_init_find (&iter, mid_params, "objectId");
-   if (has_object_id) {
-      // This branch should only be taken after mid_params has been validated by
-      // the caller to either be empty or to contain all requried properties of
-      // appropriate type.
-      // ----
-      // objectId
-      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
-      char *const oid = pct_encode (bson_iter_utf8 (&iter, NULL));
-      // clientId
-      const bool has_cid = bson_iter_init_find (&iter, mid_params, "clientId");
-      BSON_ASSERT (has_cid && BSON_ITER_HOLDS_UTF8 (&iter));
-      char *const cid = pct_encode (bson_iter_utf8 (&iter, NULL));
-      // miResId
-      const const bool has_mrid =
-         bson_iter_init_find (&iter, mid_params, "miResId");
-      BSON_ASSERT (has_mrid && BSON_ITER_HOLDS_UTF8 (&iter));
-      char *const mrid = pct_encode (bson_iter_utf8 (&iter, NULL));
-      req_path = bson_strdup_printf ("%s"
-                                     ";object_id=%s"
-                                     ";client_id=%s"
-                                     ";mi_res_id=%s",
-                                     uri_path_base,
-                                     oid,
-                                     cid,
-                                     mrid);
-      bson_free (oid);
-      bson_free (cid);
-      bson_free (mrid);
-   } else {
-      // The request path is just the base path,
-      req_path = bson_strdup (uri_path_base);
-   }
-
-   // Prepare an HTTP request for the IMDS server
-   mongoc_http_request_t req;
-   _mongoc_http_request_init (&req);
-   req.host = "169.254.169.254:80";
-   req.port = 80;
-   req.method = "GET";
-   req.path = req_path;
-   req.extra_headers = "Metadata: true\r\n"
-                       "Accept: application/json\r\n";
-   req.body = "";
-   req.body_len = 0;
+   mcd_azure_imds_request req;
+   mcd_azure_imds_request_init (&req);
 
    // Keep track of a waiting period so we can do backoff in case the IMSD
    // server tells us to slow down.
    int t_wait = 0;
    mongoc_http_response_t resp;
 
+   // Azure wants us to retry on HTTP 500, but lets not get stuck in a loop on
+   // that.
+   int http500_limit = 10;
    while (1) {
       _mongoc_http_response_init (&resp);
-      const bool req_okay = _mongoc_http_send (&req,
+      const bool req_okay = _mongoc_http_send (&req.req,
                                                10000,
                                                false /* no TLS */,
                                                NULL /* no TLS options */,
                                                &resp,
                                                error);
       if (!req_okay) {
+         _mongoc_http_response_cleanup (&resp);
+         goto req_failed;
          break;
       }
 
       if (resp.status >= 500) {
+         _mongoc_http_response_cleanup (&resp);
+         if (http500_limit == 0) {
+            // Too many 500s. Give up.
+            break;
+         }
          // Try again in 1 second
          _mongoc_usleep (1000 * 1000);
-         _mongoc_http_response_cleanup (&resp);
+         http500_limit--;
          continue;
       }
 
@@ -887,32 +846,14 @@ _try_add_azure_from_env (bson_t *out,
       goto req_failed;
    }
 
-   bson_t resp_data = BSON_INITIALIZER;
-   if (!bson_init_from_json (&resp_data, resp.body, resp.body_len, error)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_PROTOCOL_ERROR,
-                      "Azure IMDS server did not return valid JSON: [[%.*s]]",
-                      resp.body_len,
-                      resp.body);
-      goto json_decode_failed;
+   mcd_azure_access_token tok;
+   if (!mcd_azure_access_token_try_init_from_json_str (
+          &tok, resp.body, resp.body_len, error)) {
+      goto token_parse_failed;
    }
 
-   if (!bson_iter_init_find (&iter, &resp_data, "access_token") ||
-       !BSON_ITER_HOLDS_UTF8 (&iter)) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-         MONGOC_ERROR_PROTOCOL_ERROR,
-         "Azure IMDS server did not return a string 'access_token': [[%.*s]]",
-         resp.body_len,
-         resp.body);
-      goto json_decode_failed;
-   }
-
-   const char *const access_token = bson_iter_utf8 (&iter, NULL);
    bson_t new_azure_creds = BSON_INITIALIZER;
-   if (!BSON_APPEND_UTF8 (&new_azure_creds, "accessToken", access_token) ||
+   if (!BSON_APPEND_UTF8 (&new_azure_creds, "accessToken", tok.access_token) ||
        !BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds)) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
@@ -924,13 +865,13 @@ _try_add_azure_from_env (bson_t *out,
    okay = true;
 
 bson_build_failed:
+   mcd_azure_access_token_destroy (&tok);
+token_parse_failed:
    bson_destroy (&new_azure_creds);
-json_decode_failed:
-   bson_destroy (&resp_data);
 req_failed:
    _mongoc_http_response_cleanup (&resp);
 uri_failed:
-   bson_free (req_path);
+   mcd_azure_imds_request_destroy (&req);
    return okay;
 }
 
@@ -968,12 +909,14 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
       bson_iter_init_find (&iter, &creds, "azure");
    bson_t azure_mid_params = BSON_INITIALIZER;
    bool want_auto_azure = false;
+   // Whether the callback requested auto-Azure credentials
    const bool cb_wants_auto_azure =
       _check_azure_kms_auto (&creds, &azure_mid_params, error);
    if (error->code) {
       // _check_azure_kms_auto failed
       goto fail;
    }
+   // Whether the original kmsProviders requested auto-Azure credentials
    const bool orig_wants_auto_azure =
       !cb_wants_auto_azure && _check_azure_kms_auto (&sm->crypt->kms_providers,
                                                      &azure_mid_params,
