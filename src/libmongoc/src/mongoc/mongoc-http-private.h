@@ -64,4 +64,18 @@ _mongoc_http_send (mongoc_http_request_t *req,
                    mongoc_http_response_t *res,
                    bson_error_t *error);
 
+/**
+ * @brief Render the HTTP request head based on the given HTTP parameters.
+ *
+ * @param req The request to render (required)
+ * @return bson_string_t* A new bson_string_t that contains the HTTP request
+ * head
+ *
+ * @note The request body (if applicable) must be sent separately.
+ * @note The returned bson_string_t must be freed, including the internal
+ * segment.
+ */
+bson_string_t *
+_mongoc_http_render_request_head (const mongoc_http_request_t *req);
+
 #endif /* MONGOC_HTTP_PRIVATE */

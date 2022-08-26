@@ -44,6 +44,49 @@ _mongoc_http_response_cleanup (mongoc_http_response_t *response)
    bson_free (response->body);
 }
 
+bson_string_t *
+_mongoc_http_render_request_head (const mongoc_http_request_t *req)
+{
+   BSON_ASSERT_PARAM (req);
+   char *path = NULL;
+
+   // Default paths
+   if (!req->path) {
+      // Top path:
+      path = bson_strdup ("/");
+   } else if (req->path[0] != '/') {
+      // Path MUST be prefixed with a separator
+      path = bson_strdup_printf ("/%s", req->path);
+   } else {
+      // Just copy the path
+      path = bson_strdup (req->path);
+   }
+
+   bson_string_t *const string = bson_string_new ("");
+   // Set the request line
+   bson_string_append_printf (string, "%s %s HTTP/1.0\r\n", req->method, path);
+   // (We're done with the path string:)
+   bson_free (path);
+
+   /* Always add Host header. */
+   bson_string_append_printf (string, "Host: %s\r\n", req->host);
+   /* Always add Connection: close header to ensure server closes connection. */
+   bson_string_append_printf (string, "Connection: close\r\n");
+   /* Add Content-Length if body is included. */
+   if (req->body_len) {
+      bson_string_append_printf (
+         string, "Content-Length: %d\r\n", req->body_len);
+   }
+   // Add any extra headers
+   if (req->extra_headers) {
+      bson_string_append (string, req->extra_headers);
+   }
+
+   // Final terminator
+   bson_string_append (string, "\r\n");
+   return string;
+}
+
 bool
 _mongoc_http_send (mongoc_http_request_t *req,
                    int timeout_ms,
@@ -124,23 +167,7 @@ _mongoc_http_send (mongoc_http_request_t *req,
       path = bson_strdup (req->path);
    }
 
-   http_request = bson_string_new ("");
-   bson_string_append_printf (
-      http_request, "%s %s HTTP/1.0\r\n", req->method, path);
-   /* Always add Host header. */
-   bson_string_append_printf (http_request, "Host: %s\r\n", req->host);
-   /* Always add Connection: close header to ensure server closes connection. */
-   bson_string_append_printf (http_request, "Connection: close\r\n");
-   /* Add Content-Length if body included. */
-   if (req->body_len) {
-      bson_string_append_printf (
-         http_request, "Content-Length: %d\r\n", req->body_len);
-   }
-   if (req->extra_headers) {
-      bson_string_append (http_request, req->extra_headers);
-   }
-   bson_string_append (http_request, "\r\n");
-
+   http_request = _mongoc_http_render_request_head (req);
    iovec.iov_base = http_request->str;
    iovec.iov_len = http_request->len;
 
