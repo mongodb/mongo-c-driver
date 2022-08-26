@@ -494,6 +494,7 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 set (SOURCES ${SOURCES}
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-array.c
@@ -564,7 +565,6 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-file.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-download.c

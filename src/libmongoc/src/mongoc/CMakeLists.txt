@@ -74,6 +74,7 @@ extra_dist_generated (
 )
 
 set (src_libmongoc_src_mongoc_DIST_noinst_hs
+   mcd-azure.h
    mongoc-aggregate-private.h
    mongoc-apm-private.h
    mongoc-array-private.h
@@ -178,6 +179,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
 )
 
 set (src_libmongoc_src_mongoc_DIST_cs
+   mcd-azure.c
    mongoc-aggregate.c
    mongoc-apm.c
    mongoc-array.c
