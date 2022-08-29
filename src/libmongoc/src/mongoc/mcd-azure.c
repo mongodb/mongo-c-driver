@@ -1,5 +1,7 @@
 #include "./mcd-azure.h"
 
+#include "mongoc-util-private.h"
+
 #define AZURE_API_VERSION "2018-02-01"
 
 static const char *const DEFAULT_METADATA_PATH =
@@ -95,4 +97,64 @@ mcd_azure_access_token_destroy (mcd_azure_access_token *c)
    bson_free (c->access_token);
    bson_free (c->resource);
    bson_free (c->token_type);
+}
+
+bool
+mcd_azure_send_request_with_retries (const mongoc_http_request_t *req,
+                                     mongoc_http_response_t *resp,
+                                     enum mcd_azure_http_flags flags,
+                                     bson_error_t *error)
+{
+   int t_wait_sec = 0;
+   int http_5xx_limit = 10;
+   while (1) {
+      // Zero the response object:
+      _mongoc_http_response_init (resp);
+      // Do the actual request:
+      const bool req_okay = _mongoc_http_send (req,
+                                               10000,
+                                               false, // No TLS
+                                               NULL,  // No TLS options
+                                               resp,
+                                               error);
+      if (!req_okay) {
+         // There was an error sending the request (not an error from the
+         // server)
+         return false;
+      }
+
+      if (resp->status >= 500) {
+         // An error on the server-side.
+         if (http_5xx_limit == 0) {
+            // There have been many 5xx errors in a row. Count this as a
+            // failure. Azure wants us to retry on HTTP 500, but lets not get
+            // stuck in a loop on that.
+            break;
+         }
+         // We'll try again in one second
+         _mongoc_usleep (1000 * 1000);
+         // Subtract from the 5xx limit
+         http_5xx_limit--;
+         continue;
+      }
+
+      const bool too_many_reqs = resp->status == 429;
+      const bool retry_404 =
+         resp->status == 404 && (flags & MCD_AZURE_RETRY_ON_404);
+
+      if (too_many_reqs || retry_404) {
+         // Either the resource does not exist (yet), or the server detected too
+         // many requests. Wait for a moment.
+         _mongoc_usleep (t_wait_sec * 1000 * 1000);
+         // Double the wait time and add two seconds
+         t_wait_sec = (t_wait_sec * 2) + 2;
+         _mongoc_http_response_cleanup (resp);
+         continue;
+      }
+
+      // Other error, too many retries, or a success.
+      break;
+   }
+
+   return true;
 }

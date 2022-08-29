@@ -708,56 +708,16 @@ _try_add_azure_from_env (bson_t *out, bson_error_t *error)
 {
    bool okay = false;
 
-   // First, build the request path
+   // Build and send the request
    mcd_azure_imds_request req;
    mcd_azure_imds_request_init (&req);
-
-   // Keep track of a waiting period so we can do backoff in case the IMDS
-   // server tells us to slow down.
-   int t_wait = 0;
    mongoc_http_response_t resp;
-
-   // Azure wants us to retry on HTTP 500, but lets not get stuck in a loop on
-   // that.
-   int http500_limit = 10;
-   while (1) {
-      _mongoc_http_response_init (&resp);
-      const bool req_okay = _mongoc_http_send (&req.req,
-                                               10000,
-                                               false /* no TLS */,
-                                               NULL /* no TLS options */,
-                                               &resp,
-                                               error);
-      if (!req_okay) {
-         _mongoc_http_response_cleanup (&resp);
-         goto req_failed;
-         break;
-      }
-
-      if (resp.status >= 500) {
-         _mongoc_http_response_cleanup (&resp);
-         if (http500_limit == 0) {
-            // Too many 500s. Give up.
-            break;
-         }
-         // Try again in 1 second
-         _mongoc_usleep (1000 * 1000);
-         http500_limit--;
-         continue;
-      }
-
-      if (t_wait < 30 && (resp.status == 404 || resp.status == 429)) {
-         // Backoff and try again
-         _mongoc_usleep (t_wait * 1000 * 1000);
-         t_wait = (t_wait * 2) + 2;
-         _mongoc_http_response_cleanup (&resp);
-         continue;
-      }
-
-      // Other success or error
-      break;
+   if (!mcd_azure_send_request_with_retries (
+          &req.req, &resp, MCD_AZURE_RETRY_ON_404, error)) {
+      goto req_failed;
    }
 
+   // We only accept an HTTP 200 as a success
    if (resp.status != 200) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
@@ -769,12 +729,14 @@ _try_add_azure_from_env (bson_t *out, bson_error_t *error)
       goto req_failed;
    }
 
+   // Parse the token from the response JSON
    mcd_azure_access_token tok;
    if (!mcd_azure_access_token_try_init_from_json_str (
           &tok, resp.body, resp.body_len, error)) {
       goto token_parse_failed;
    }
 
+   // Build the new KMs credentials
    bson_t new_azure_creds = BSON_INITIALIZER;
    if (!BSON_APPEND_UTF8 (&new_azure_creds, "accessToken", tok.access_token) ||
        !BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds)) {

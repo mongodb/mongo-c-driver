@@ -57,7 +57,7 @@ _mongoc_http_response_cleanup (mongoc_http_response_t *response);
  * Caller must call _mongoc_http_response_cleanup on res.
  */
 bool
-_mongoc_http_send (mongoc_http_request_t *req,
+_mongoc_http_send (mongoc_http_request_t const *req,
                    int timeout_ms,
                    bool use_tls,
                    mongoc_ssl_opt_t *ssl_opts,
