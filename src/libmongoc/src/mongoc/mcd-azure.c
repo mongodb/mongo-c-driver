@@ -144,9 +144,16 @@ mcd_azure_send_request_with_retries (const mongoc_http_request_t *req,
 
       if (too_many_reqs || retry_404) {
          // Either the resource does not exist (yet), or the server detected too
-         // many requests. Wait for a moment.
+         // many requests.
+         if (t_wait_sec > 30) {
+            // We've accumulated too much wait time. Break out.
+            break;
+         }
+         // Wait a second.
          _mongoc_usleep (t_wait_sec * 1000 * 1000);
-         // Double the wait time and add two seconds
+         // Double the wait time and add two seconds. This results in a growth
+         // pattern of:
+         // 0s -> 2s -> 6s -> 14s -> 30s -> <fail>
          t_wait_sec = (t_wait_sec * 2) + 2;
          _mongoc_http_response_cleanup (resp);
          continue;
