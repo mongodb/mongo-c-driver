@@ -72,34 +72,4 @@ mcd_azure_imds_request_init (mcd_azure_imds_request *out);
 void
 mcd_azure_imds_request_destroy (mcd_azure_imds_request *req);
 
-enum mcd_azure_http_flags {
-   MCD_AZURE_HTTP_NO_FLAGS = 0,
-   // Retry a request if we receive an HTTP 404 response.
-   MCD_AZURE_RETRY_ON_404 = 1 << 0
-};
-
-/**
- * @brief Send an Azure HTTP request with automatic retries.
- *
- * @param req The request to send.
- * @param resp The output parameter for the response. Must be later destroyed by
- * the caller.
- * @param flags Flags to control the operation
- * @param error An output for any errors
- * @retval true If the HTTP request was sent and a response was read
- * successfully
- * @retval false If there is an error while sending the request
- *
- * @note A "true" return value DOES NOT imply the the HTTP response also
- * indicates success. The HTTP response must be inspected for server-indicated
- * errors.
- */
-bool
-mcd_azure_send_request_with_retries (const mongoc_http_request_t *req,
-                                     mongoc_http_response_t *resp,
-                                     enum mcd_azure_http_flags flags,
-                                     bson_error_t *error)
-   BSON_GNUC_WARN_UNUSED_RESULT;
-
-
 #endif // MCD_AZURE_H_INCLUDED

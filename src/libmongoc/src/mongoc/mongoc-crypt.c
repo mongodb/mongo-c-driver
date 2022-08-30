@@ -713,8 +713,8 @@ _try_add_azure_from_env (bson_t *out, bson_error_t *error)
    mcd_azure_imds_request req;
    mcd_azure_imds_request_init (&req);
    mongoc_http_response_t resp;
-   if (!mcd_azure_send_request_with_retries (
-          &req.req, &resp, MCD_AZURE_RETRY_ON_404, error)) {
+   _mongoc_http_response_init (&resp);
+   if (!_mongoc_http_send (&req.req, 10 * 1000, false, NULL, &resp, error)) {
       goto req_failed;
    }
 
