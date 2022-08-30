@@ -642,6 +642,8 @@ _needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
 static bool
 _check_azure_kms_auto (const bson_t *kmsprov, bson_error_t *error)
 {
+   bson_set_error (error, 0, 0, " ");
+
    bson_iter_t iter;
    const bool has_azure = bson_iter_init_find (&iter, kmsprov, "azure");
    if (!has_azure) {
