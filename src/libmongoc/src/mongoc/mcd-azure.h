@@ -20,15 +20,16 @@ typedef struct mcd_azure_access_token {
 /**
  * @brief Try to parse an Azure access token from an IMDS metadata JSON response
  *
- * @param out The token to initialize. Should be uninitialized.
+ * @param out The token to initialize. Should be uninitialized. Must later be
+ * destroyed by the caller.
  * @param json The JSON string body
  * @param len The length of 'body'
  * @param error An output parameter for errors
- * @return true If 'out' was successfully initialized to a token.
- * @return false Otherwise
+ * @retval true If 'out' was successfully initialized to a token.
+ * @retval false Otherwise
  *
  * @note The 'out' token must later be given to @ref
- * mcd_azure_acecss_token_destroy
+ * mcd_azure_access_token_destroy
  */
 bool
 mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
@@ -40,14 +41,13 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
 /**
  * @brief Destroy an access token struct
  *
- * @param c The access token to destroy
+ * @param token The access token to destroy
  */
 void
 mcd_azure_access_token_destroy (mcd_azure_access_token *token);
 
 /**
  * @brief An Azure IMDS HTTP request
- *
  */
 typedef struct mcd_azure_imds_request {
    /// The underlying HTTP request object to be sent
@@ -82,12 +82,13 @@ enum mcd_azure_http_flags {
  * @brief Send an Azure HTTP request with automatic retries.
  *
  * @param req The request to send.
- * @param resp The output parameter for the response
+ * @param resp The output parameter for the response. Must be later destroyed by
+ * the caller.
  * @param flags Flags to control the operation
  * @param error An output for any errors
- * @return true If the HTTP request was sent and a response was read
+ * @retval true If the HTTP request was sent and a response was read
  * successfully
- * @return false If there is an error while sending the request
+ * @retval false If there is an error while sending the request
  *
  * @note A "true" return value DOES NOT imply the the HTTP response also
  * indicates success. The HTTP response must be inspected for server-indicated

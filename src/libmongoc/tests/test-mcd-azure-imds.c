@@ -2,7 +2,7 @@
 
 #include "TestSuite.h"
 
-#define STRING(...) #__VA_ARGS__
+#define RAW_STRING(...) #__VA_ARGS__
 
 void
 _test_oauth_parse (void)
@@ -19,13 +19,13 @@ _test_oauth_parse (void)
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_PROTOCOL_ERROR, 64, "");
 
    ASSERT (!mcd_azure_access_token_try_init_from_json_str (
-      &token, STRING ({"access_token" : null}), -1, &error));
+      &token, RAW_STRING ({"access_token" : null}), -1, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_PROTOCOL_ERROR, 64, "");
 
    error = (bson_error_t){0};
    ASSERT (mcd_azure_access_token_try_init_from_json_str (
       &token,
-      STRING ({
+      RAW_STRING ({
          "access_token" : "meow",
          "resource" : "something",
          "token_type" : "Bearer"

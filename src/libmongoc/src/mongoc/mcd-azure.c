@@ -12,6 +12,7 @@ static const char *const DEFAULT_METADATA_PATH =
 void
 mcd_azure_imds_request_init (mcd_azure_imds_request *req)
 {
+   BSON_ASSERT_PARAM (req);
    _mongoc_http_request_init (&req->req);
    // The HTTP host of the IMDS server
    req->req.host = "169.254.169.254";
@@ -30,6 +31,7 @@ mcd_azure_imds_request_init (mcd_azure_imds_request *req)
 void
 mcd_azure_imds_request_destroy (mcd_azure_imds_request *req)
 {
+   BSON_ASSERT_PARAM (req);
    bson_free ((void *) req->req.path);
    *req = (mcd_azure_imds_request){0};
 }
@@ -40,6 +42,8 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
                                                int len,
                                                bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (json);
    bool okay = false;
 
    if (len < 0) {
@@ -135,6 +139,7 @@ mcd_azure_send_request_with_retries (const mongoc_http_request_t *req,
          _mongoc_usleep (1000 * 1000);
          // Subtract from the 5xx limit
          http_5xx_limit--;
+         _mongoc_http_response_cleanup (resp);
          continue;
       }
 

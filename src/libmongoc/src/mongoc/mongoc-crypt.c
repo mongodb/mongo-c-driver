@@ -592,8 +592,8 @@ fail:
  *
  * @param kms_providers The user-provided kmsProviders
  * @param error Output parameter for possible errors.
- * @return true If 'aws' is present and an empty subdocument
- * @return false Otherwise or on error
+ * @retval true If 'aws' is present and an empty subdocument
+ * @retval false Otherwise or on error
  */
 static bool
 _needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
@@ -632,12 +632,12 @@ _needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
 
 /**
  * @brief Check whether the given kmsProviders object requests automatic Azure
- * credentials, and what the managedIdentity parameters might be
+ * credentials
  *
  * @param kmsprov The input kmsProviders that may have an "azure" property
  * @param error An output error
- * @return true If success AND `kmsprov` requests automatic Azure credentials
- * @return false Otherwise. Check error->code for failure.
+ * @retval true If success AND `kmsprov` requests automatic Azure credentials
+ * @retval false Otherwise. Check error->code for failure.
  */
 static bool
 _check_azure_kms_auto (const bson_t *kmsprov, bson_error_t *error)
@@ -645,8 +645,7 @@ _check_azure_kms_auto (const bson_t *kmsprov, bson_error_t *error)
    bson_set_error (error, 0, 0, " ");
 
    bson_iter_t iter;
-   const bool has_azure = bson_iter_init_find (&iter, kmsprov, "azure");
-   if (!has_azure) {
+   if (!bson_iter_init_find (&iter, kmsprov, "azure")) {
       return false;
    }
 
@@ -664,8 +663,8 @@ _check_azure_kms_auto (const bson_t *kmsprov, bson_error_t *error)
  *
  * @param out A kmsProviders object to update
  * @param error An error-out parameter
- * @return true If there was no error and we successfully loaded credentials.
- * @return false If there was an error while updating the BSON data or obtaining
+ * @retval true If there was no error and we successfully loaded credentials.
+ * @retval false If there was an error while updating the BSON data or obtaining
  * credentials.
  */
 static bool
@@ -702,8 +701,8 @@ _try_add_aws_from_env (bson_t *out, bson_error_t *error)
  *
  * @param out A kmsProviders object to update
  * @param error An error-out parameter
- * @return true If there was no error and we loaded credentials
- * @return false If there was an error obtaining or appending credentials
+ * @retval true If there was no error and we loaded credentials
+ * @retval false If there was an error obtaining or appending credentials
  */
 static bool
 _try_add_azure_from_env (bson_t *out, bson_error_t *error)
@@ -738,7 +737,7 @@ _try_add_azure_from_env (bson_t *out, bson_error_t *error)
       goto token_parse_failed;
    }
 
-   // Build the new KMs credentials
+   // Build the new KMS credentials
    bson_t new_azure_creds = BSON_INITIALIZER;
    if (!BSON_APPEND_UTF8 (&new_azure_creds, "accessToken", tok.access_token) ||
        !BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds)) {
@@ -757,7 +756,6 @@ token_parse_failed:
    bson_destroy (&new_azure_creds);
 req_failed:
    _mongoc_http_response_cleanup (&resp);
-uri_failed:
    mcd_azure_imds_request_destroy (&req);
    return okay;
 }
@@ -792,27 +790,6 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    const bool callback_provided_aws =
       bson_iter_init_find (&iter, &creds, "aws");
 
-   // Whether the callback requested auto-Azure credentials
-   const bool cb_wants_auto_azure = _check_azure_kms_auto (&creds, error);
-   if (error->code) {
-      // _check_azure_kms_auto failed
-      goto fail;
-   }
-   // Whether the original kmsProviders requested auto-Azure credentials
-   const bool orig_wants_auto_azure =
-      !cb_wants_auto_azure &&
-      _check_azure_kms_auto (&sm->crypt->kms_providers, error);
-   if (error->code) {
-      // _check_azure_kms_auto failed
-      goto fail;
-   }
-   const bool wants_auto_azure = cb_wants_auto_azure || orig_wants_auto_azure;
-   if (wants_auto_azure) {
-      if (!_try_add_azure_from_env (&creds, error)) {
-         goto fail;
-      }
-   }
-
    if (!callback_provided_aws &&
        _needs_on_demand_aws_kms (&sm->crypt->kms_providers, error)) {
       // The original kmsProviders had an empty "aws" property, and the
@@ -820,6 +797,22 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
       // Attempt instead to load the AWS credentials from the environment:
       if (!_try_add_aws_from_env (&creds, error)) {
          // Error while trying to add AWS credentials
+         goto fail;
+      }
+   }
+
+   // Whether the callback provided Azure credentials
+   const bool cb_provided_azure = bson_iter_init_find (&iter, &creds, "azure");
+   // Whether the original kmsProviders requested auto-Azure credentials:
+   const bool orig_wants_auto_azure =
+      _check_azure_kms_auto (&sm->crypt->kms_providers, error);
+   if (error->code) {
+      // _check_azure_kms_auto failed
+      goto fail;
+   }
+   const bool wants_auto_azure = orig_wants_auto_azure && !cb_provided_azure;
+   if (wants_auto_azure) {
+      if (!_try_add_azure_from_env (&creds, error)) {
          goto fail;
       }
    }
