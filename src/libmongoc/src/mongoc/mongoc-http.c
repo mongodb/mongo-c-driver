@@ -88,7 +88,7 @@ _mongoc_http_render_request_head (const mongoc_http_request_t *req)
 }
 
 bool
-_mongoc_http_send (mongoc_http_request_t const *req,
+_mongoc_http_send (const mongoc_http_request_t *req,
                    int timeout_ms,
                    bool use_tls,
                    mongoc_ssl_opt_t *ssl_opts,
