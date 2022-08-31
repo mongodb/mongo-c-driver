@@ -1,3 +1,18 @@
+libbson 1.23.0
+==============
+
+Improvements:
+
+  * Reducing Warnings of Misaligned Address of Over-Aligned Types
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
+  * Colby Pike
+
+
+
 libbson 1.22.1
 ==============
 
