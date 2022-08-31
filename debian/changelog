@@ -1,8 +1,9 @@
-mongo-c-driver (1.22.1-2) UNRELEASED; urgency=medium
+mongo-c-driver (1.23.0-1) UNRELEASED; urgency=medium
 
+  * New upstream release
   * Explicitly link to libatomic on riscv64 (Closes: #1017345)
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 15 Aug 2022 17:06:22 -0400
+ -- Roberto C. Sanchez <roberto@connexer.com>  Wed, 31 Aug 2022 10:10:19 -0400
 
 mongo-c-driver (1.22.1-1) unstable; urgency=medium
 
