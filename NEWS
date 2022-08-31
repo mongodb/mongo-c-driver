@@ -1,3 +1,28 @@
+libmongoc 1.23.0
+================
+
+Features:
+
+  * Add on-demand Credentials Callback for CSFLE
+  * Support obtaining AWS credentials for CSFLE in the same way as for MONGODB-AWS
+
+Improvements:
+
+  * Reducing Warnings of Misaligned Address of Over-Aligned Types
+
+Bug fixes:
+
+  * Do not spawn mongocryptd if mongo_shared shared library is loaded.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Colby Pike
+  * Kevin Albertson
+  * Roberto C. Sánchez
+
+
+
 libmongoc 1.22.1
 ================
 
