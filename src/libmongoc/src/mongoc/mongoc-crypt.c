@@ -769,10 +769,10 @@ _try_add_azure_from_env (_mongoc_crypt_t *crypt,
       mcd_time_point expires_at = mcd_later (crypt->azure_token_issued_at,
                                              crypt->azure_token.expires_in);
       if (mcd_time_compare (expires_at, one_min_from_now) >= 0) {
-         // The token is still valid for another minute
+         // The token is still valid for at least another minute
       } else {
-         // The token is about to expire. Destroy it. We will then ask IMDS for
-         // a new oen.
+         // The token will expire soon. Destroy it, and below we will below ask
+         // IMDS for a new one.
          mcd_azure_access_token_destroy (&crypt->azure_token);
       }
    }
