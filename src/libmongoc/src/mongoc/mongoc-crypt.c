@@ -792,10 +792,10 @@ _try_add_azure_from_env (_mongoc_crypt_t *crypt,
 
    // Build the new KMS credentials
    bson_t new_azure_creds = BSON_INITIALIZER;
-   const bool okay =
-      (!BSON_APPEND_UTF8 (
-          &new_azure_creds, "accessToken", crypt->azure_token.access_token) ||
-       !BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds));
+   const bool okay = BSON_APPEND_UTF8 (&new_azure_creds,
+                                       "accessToken",
+                                       crypt->azure_token.access_token) &&
+                     BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds);
    bson_destroy (&new_azure_creds);
    if (!okay) {
       bson_set_error (error,
