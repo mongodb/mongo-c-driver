@@ -71,7 +71,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
    // token_type
    found = bson_iter_init_find (&iter, &bson, "token_type");
    const char *const token_type = !found ? NULL : bson_iter_utf8 (&iter, NULL);
-   // expires_on
+   // expires_in
    found = bson_iter_init_find (&iter, &bson, "expires_in");
    uint32_t expires_in_len = 0;
    const char *const expires_in_str =
