@@ -7,6 +7,62 @@
 
 #include <bson/bson.h>
 
+/// Return 'true' iff (left * right) would overflow with int64
+static inline bool
+_mcd_i64_mul_would_overflow (int64_t left, int64_t right)
+{
+   if (right == -1) {
+      // Only one factor will overflow with -1:
+      return left == INT64_MIN;
+   }
+   if (right == 0) {
+      return false;
+   }
+   int64_t max_fac = INT64_MAX / right;
+   int64_t min_fac = INT64_MIN / right;
+   return left > max_fac || left < min_fac;
+}
+
+/// Return 'true' iff (left + right) would overflow with int64
+static inline bool
+_mcd_i64_add_would_overflow (int64_t left, int64_t right)
+{
+   if (right < 0) {
+      // 'right' is negative (subtracting it will add)
+      // Space before we would overflow:
+      int64_t legroom = INT64_MIN - right;
+      // We only overflow if 'left' hasn't given us enough room:
+      return left < legroom;
+   } else if (right > 0) {
+      // 'right' is positive
+      // Space before overflow:
+      int64_t headroom = INT64_MAX - right;
+      // We overflow if 'left' is too high
+      return left > headroom;
+   }
+   return false;
+}
+
+/// Return 'true' iff (left - right) would overflow with int64
+static inline bool
+_mcd_i64_sub_would_overflow (int64_t left, int64_t right)
+{
+   if (right > 0) {
+      // "right" is positive.
+      // The space before we would overflow negative:
+      int64_t legroom = INT64_MIN + right;
+      // We overflow if the LHS is within the legroom:
+      return left < legroom;
+   } else if (right < 0) {
+      // "right" is negative (adding it will subtract)
+      // The space before we would overflow positive:
+      int64_t headroom = INT64_MAX + right;
+      // We overflow if LHS is within the headroom
+      return left > headroom;
+   }
+   return false;
+}
+
 /**
  * @brief Represents an abstract point-in-time.
  *
@@ -58,6 +114,7 @@ inline static mcd_duration
 mcd_milliseconds (int64_t s)
 {
    // 1'000 microseconds per millisecond:
+   BSON_ASSERT (!_mcd_i64_mul_would_overflow (s, 1000));
    return mcd_microseconds (s * 1000);
 }
 
@@ -66,6 +123,7 @@ inline static mcd_duration
 mcd_seconds (int64_t s)
 {
    // 1'000 milliseconds per second:
+   BSON_ASSERT (!_mcd_i64_mul_would_overflow (s, 1000));
    return mcd_milliseconds (s * 1000);
 }
 
@@ -74,6 +132,7 @@ inline static mcd_duration
 mcd_minutes (int64_t m)
 {
    // Sixty seconds per minute:
+   BSON_ASSERT (!_mcd_i64_mul_would_overflow (m, 60));
    return mcd_seconds (m * 60);
 }
 
@@ -82,6 +141,7 @@ mcd_minutes (int64_t m)
 inline static mcd_time_point
 mcd_later (mcd_time_point from, mcd_duration delta)
 {
+   BSON_ASSERT (!_mcd_i64_add_would_overflow (from._rep, delta._rep));
    from._rep += delta._rep;
    return from;
 }
@@ -104,6 +164,7 @@ mcd_later (mcd_time_point from, mcd_duration delta)
 inline static mcd_duration
 mcd_time_difference (mcd_time_point then, mcd_time_point from)
 {
+   BSON_ASSERT (!_mcd_i64_sub_would_overflow (then._rep, from._rep));
    int64_t diff = then._rep - from._rep;
    // Our time_point encodes the time using a microsecond counter.
    return mcd_microseconds (diff);
@@ -114,8 +175,8 @@ mcd_time_difference (mcd_time_point then, mcd_time_point from)
  *
  * A time point "in the past" is "less than" a time point "in the future".
  *
- * @retval -1 If 'left' is before 'right'
- * @retval +1 If 'right' is before 'left'
+ * @retval <0 If 'left' is before 'right'
+ * @retval >0 If 'right' is before 'left'
  * @retval  0 If 'left' and 'right' are equivalent
  */
 inline static int
