@@ -73,8 +73,9 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
    const char *const token_type = !found ? NULL : bson_iter_utf8 (&iter, NULL);
    // expires_on
    found = bson_iter_init_find (&iter, &bson, "expires_in");
+   uint32_t expires_in_len = 0;
    const char *const expires_in_str =
-      !found ? NULL : bson_iter_utf8 (&iter, NULL);
+      !found ? NULL : bson_iter_utf8 (&iter, &expires_in_len);
 
    if (!(access_token && resource && token_type && expires_in_str)) {
       bson_set_error (
@@ -94,9 +95,21 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
       // "expires_in" encodes the number of seconds since the issue time for
       // which the token will be valid. strtoll() will saturate on range errors
       // and return zero on parse errors.
-      long long s = strtoll (expires_in_str, NULL, 0);
-      out->expires_in = mcd_seconds (s);
-      okay = true;
+      char *parse_end;
+      long long s = strtoll (expires_in_str, &parse_end, 0);
+      if (parse_end != expires_in_str + expires_in_len) {
+         // Did not parse the entire string. Bad
+         bson_set_error (
+            error,
+            MONGOC_ERROR_PROTOCOL,
+            65,
+            "Invalid 'expires_in' string \"%.*s\" from IMDS server",
+            expires_in_len,
+            expires_in_str);
+      } else {
+         out->expires_in = mcd_seconds (s);
+         okay = true;
+      }
    }
 
    bson_destroy (&bson);
