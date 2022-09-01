@@ -71,8 +71,12 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
    // token_type
    found = bson_iter_init_find (&iter, &bson, "token_type");
    const char *const token_type = !found ? NULL : bson_iter_utf8 (&iter, NULL);
+   // expires_on
+   found = bson_iter_init_find (&iter, &bson, "expires_in");
+   const char *const expires_in_str =
+      !found ? NULL : bson_iter_utf8 (&iter, NULL);
 
-   if (!(access_token && resource && token_type)) {
+   if (!(access_token && resource && token_type && expires_in_str)) {
       bson_set_error (
          error,
          MONGOC_ERROR_PROTOCOL_ERROR,
@@ -87,6 +91,11 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
          .resource = bson_strdup (resource),
          .token_type = bson_strdup (token_type),
       };
+      // "expires_in" encodes the number of seconds since the issue time for
+      // which the token will be valid. strtoll() will saturate on range errors
+      // and return zero on parse errors.
+      long long s = strtoll (expires_in_str, NULL, 0);
+      out->expires_in = mcd_seconds (s);
       okay = true;
    }
 
@@ -101,4 +110,7 @@ mcd_azure_access_token_destroy (mcd_azure_access_token *c)
    bson_free (c->access_token);
    bson_free (c->resource);
    bson_free (c->token_type);
+   c->access_token = NULL;
+   c->resource = NULL;
+   c->token_type = NULL;
 }

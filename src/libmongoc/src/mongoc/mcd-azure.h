@@ -1,9 +1,13 @@
 #ifndef MCD_AZURE_H_INCLUDED
 #define MCD_AZURE_H_INCLUDED
 
+#include <mongoc-prelude.h>
+
 #include <mongoc/mongoc.h>
 
 #include <mongoc/mongoc-http-private.h>
+
+#include <mcd-time.h>
 
 /**
  * @brief An Azure OAuth2 access token obtained from the Azure API
@@ -15,6 +19,9 @@ typedef struct mcd_azure_access_token {
    char *resource;
    /// The HTTP type of the token
    char *token_type;
+   /// The duration after which it will the token will expires. This is relative
+   /// to the "issue time" of the token.
+   mcd_duration expires_in;
 } mcd_azure_access_token;
 
 /**
@@ -39,7 +46,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
    BSON_GNUC_WARN_UNUSED_RESULT;
 
 /**
- * @brief Destroy an access token struct
+ * @brief Destroy and zero-fill an access token object
  *
  * @param token The access token to destroy
  */

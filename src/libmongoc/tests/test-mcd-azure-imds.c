@@ -28,6 +28,7 @@ _test_oauth_parse (void)
       RAW_STRING ({
          "access_token" : "meow",
          "resource" : "something",
+         "expires_in" : "1234",
          "token_type" : "Bearer"
       }),
       -1,
