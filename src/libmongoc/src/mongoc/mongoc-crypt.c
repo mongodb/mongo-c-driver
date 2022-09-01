@@ -711,7 +711,7 @@ _try_add_aws_from_env (bson_t *out, bson_error_t *error)
  * @retval false If any error occurs.
  */
 static bool
-_request_new_azure_mid_token (mcd_azure_access_token *out, bson_error_t *error)
+_request_new_azure_token (mcd_azure_access_token *out, bson_error_t *error)
 {
    bool okay = false;
    // Build and send the request
@@ -785,7 +785,7 @@ _try_add_azure_from_env (_mongoc_crypt_t *crypt,
       // abstract monotonic "now"
       crypt->azure_token_issued_at = mcd_now ();
       // Get the token:
-      if (_request_new_azure_mid_token (&crypt->azure_token, error)) {
+      if (_request_new_azure_token (&crypt->azure_token, error)) {
          return false;
       }
    }
