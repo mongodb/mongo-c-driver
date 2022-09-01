@@ -31,6 +31,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-http-private.h"
 #include "mcd-azure.h"
+#include "mcd-time.h"
 
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
@@ -43,6 +44,12 @@ struct __mongoc_crypt_t {
    /// credentials.
    bson_t kms_providers;
    mc_kms_credentials_callback creds_cb;
+
+   /// The most recently auto-acquired Azure token, on null if it was destroyed
+   /// or not yet acquired.
+   mcd_azure_access_token azure_token;
+   /// The time point at which the `azure_token` was acquired.
+   mcd_time_point azure_token_issued_at;
 };
 
 static void
@@ -696,26 +703,24 @@ _try_add_aws_from_env (bson_t *out, bson_error_t *error)
 }
 
 /**
- * @brief Attempt to load an Azure access token from the environment and append
- * them to the kmsProviders
+ * @brief Attempt to request a new Azure access token from the IMDS HTTP server
  *
- * @param out A kmsProviders object to update
- * @param error An error-out parameter
- * @retval true If there was no error and we loaded credentials
- * @retval false If there was an error obtaining or appending credentials
+ * @param out The token to populate. Must later be destroyed by the caller.
+ * @param error An output parameter to capture any errors
+ * @retval true Upon successfully obtaining and parsing a token
+ * @retval false If any error occurs.
  */
 static bool
-_try_add_azure_from_env (bson_t *out, bson_error_t *error)
+_request_new_azure_mid_token (mcd_azure_access_token *out, bson_error_t *error)
 {
    bool okay = false;
-
    // Build and send the request
    mcd_azure_imds_request req;
    mcd_azure_imds_request_init (&req);
    mongoc_http_response_t resp;
    _mongoc_http_response_init (&resp);
    if (!_mongoc_http_send (&req.req, 10 * 1000, false, NULL, &resp, error)) {
-      goto req_failed;
+      goto fail;
    }
 
    // We only accept an HTTP 200 as a success
@@ -727,36 +732,78 @@ _try_add_azure_from_env (bson_t *out, bson_error_t *error)
                       "Managed Identity access token: %.*s",
                       resp.body_len,
                       resp.body);
-      goto req_failed;
+      goto fail;
    }
 
    // Parse the token from the response JSON
-   mcd_azure_access_token tok;
    if (!mcd_azure_access_token_try_init_from_json_str (
-          &tok, resp.body, resp.body_len, error)) {
-      goto token_parse_failed;
+          out, resp.body, resp.body_len, error)) {
+      goto fail;
+   }
+
+fail:
+   _mongoc_http_response_cleanup (&resp);
+   mcd_azure_imds_request_destroy (&req);
+   return okay;
+}
+
+/**
+ * @brief Attempt to load an Azure access token from the environment and append
+ * them to the kmsProviders
+ *
+ * @param out A kmsProviders object to update
+ * @param error An error-out parameter
+ * @retval true If there was no error and we loaded credentials
+ * @retval false If there was an error obtaining or appending credentials
+ */
+static bool
+_try_add_azure_from_env (_mongoc_crypt_t *crypt,
+                         bson_t *out,
+                         bson_error_t *error)
+{
+   if (crypt->azure_token.access_token) {
+      // The access-token is non-null, so we may have one cached.
+      mcd_time_point one_min_from_now = mcd_later (mcd_now (), mcd_minutes (1));
+      mcd_time_point expires_at = mcd_later (crypt->azure_token_issued_at,
+                                             crypt->azure_token.expires_in);
+      if (mcd_time_compare (expires_at, one_min_from_now) >= 0) {
+         // The token is still valid for another minute
+      } else {
+         // The token is about to expire. Destroy it. We will then ask IMDS for
+         // a new oen.
+         mcd_azure_access_token_destroy (&crypt->azure_token);
+      }
+   }
+
+   if (crypt->azure_token.access_token == NULL) {
+      // There is no access token in our cache.
+      // Save the current time point as the "issue time" of the token, even
+      // though it will take some time for the HTTP request to hit the metadata
+      // server. This time is only used to track token expiry. IMDS gives us a
+      // number of seconds that the token will be valid relative to its issue
+      // time. Avoid reliance on system clocks by comparing the issue time to an
+      // abstract monotonic "now"
+      crypt->azure_token_issued_at = mcd_now ();
+      // Get the token:
+      if (_request_new_azure_mid_token (&crypt->azure_token, error)) {
+         return false;
+      }
    }
 
    // Build the new KMS credentials
    bson_t new_azure_creds = BSON_INITIALIZER;
-   if (!BSON_APPEND_UTF8 (&new_azure_creds, "accessToken", tok.access_token) ||
-       !BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds)) {
+   const bool okay =
+      (!BSON_APPEND_UTF8 (
+          &new_azure_creds, "accessToken", crypt->azure_token.access_token) ||
+       !BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds));
+   bson_destroy (&new_azure_creds);
+   if (!okay) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                       MONGOC_ERROR_BSON_INVALID,
                       "Failed to build new 'azure' credentials");
-      goto bson_build_failed;
    }
 
-   okay = true;
-
-bson_build_failed:
-   mcd_azure_access_token_destroy (&tok);
-token_parse_failed:
-   bson_destroy (&new_azure_creds);
-req_failed:
-   _mongoc_http_response_cleanup (&resp);
-   mcd_azure_imds_request_destroy (&req);
    return okay;
 }
 
@@ -812,7 +859,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    }
    const bool wants_auto_azure = orig_wants_auto_azure && !cb_provided_azure;
    if (wants_auto_azure) {
-      if (!_try_add_azure_from_env (&creds, error)) {
+      if (!_try_add_azure_from_env (sm->crypt, &creds, error)) {
          goto fail;
       }
    }
@@ -1310,6 +1357,7 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
    _mongoc_ssl_opts_cleanup (&crypt->azure_tls_opt, true /* free_internal */);
    _mongoc_ssl_opts_cleanup (&crypt->gcp_tls_opt, true /* free_internal */);
    bson_destroy (&crypt->kms_providers);
+   mcd_azure_access_token_destroy (&crypt->azure_token);
    bson_free (crypt);
 }
 
