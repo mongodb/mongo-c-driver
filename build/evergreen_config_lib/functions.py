@@ -296,26 +296,46 @@ all_functions = OD([
         export DNS=${DNS}
         export ASAN=${ASAN}
         export CLIENT_SIDE_ENCRYPTION=${CLIENT_SIDE_ENCRYPTION}
-        # Hide credentials.
-        set +o xtrace
-        set +o errexit
+
         # Only set creds if testing with Client Side Encryption.
         # libmongoc may build with CSE enabled (if the host has libmongocrypt installed)
         # and will try to run those tests (which fail on ASAN unless spawning is bypassed).
         if [ -n "$CLIENT_SIDE_ENCRYPTION" ]; then
-          echo "testing with CSE"
-          export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
-          export MONGOC_TEST_AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
+          # Avoid printing credentials in logs.
+          set +o xtrace
 
+          echo "Testing with Client Side Encryption enabled."
+
+          echo "Setting temporary credentials..."
+          pushd ../drivers-evergreen-tools/.evergreen/csfle
+          export AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
+          export AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
+          export AWS_DEFAULT_REGION="us-east-1"
+          . ./activate_venv.sh
+          . ./set-temp-creds.sh
+          popd
+          echo "Setting temporary credentials... done."
+
+          # Ensure temporary credentials were properly set.
+          if [ -z "$CSFLE_AWS_TEMP_ACCESS_KEY_ID" ]; then
+            echo "Failed to set temporary credentials!"
+            exit 1
+          fi
+
+          echo "Setting KMS credentials from the environment..."
+          export MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID="$CSFLE_AWS_TEMP_ACCESS_KEY_ID"
+          export MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY="$CSFLE_AWS_TEMP_SECRET_ACCESS_KEY"
+          export MONGOC_TEST_AWS_TEMP_SESSION_TOKEN="$CSFLE_AWS_TEMP_SESSION_TOKEN"
+          export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+          export MONGOC_TEST_AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
           export MONGOC_TEST_AZURE_TENANT_ID="${client_side_encryption_azure_tenant_id}"
           export MONGOC_TEST_AZURE_CLIENT_ID="${client_side_encryption_azure_client_id}"
           export MONGOC_TEST_AZURE_CLIENT_SECRET="${client_side_encryption_azure_client_secret}"
-
           export MONGOC_TEST_GCP_EMAIL="${client_side_encryption_gcp_email}"
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
-
           export MONGOC_TEST_CSFLE_TLS_CA_FILE=../drivers-evergreen-tools/.evergreen/x509gen/ca.pem
           export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE=../drivers-evergreen-tools/.evergreen/x509gen/client.pem
+          echo "Setting KMS credentials from the environment... done."
         fi
         export LOADBALANCED=${LOADBALANCED}
         export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"
@@ -581,7 +601,7 @@ all_functions = OD([
         export MONGODB_URI="${MONGODB_URI}"
         bash $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
         ''', test=False),
-        OD ([
+        OD([
             ("command", "expansions.update"),
             ("params", OD([("file", "lb-expansion.yml")]))
         ]),
