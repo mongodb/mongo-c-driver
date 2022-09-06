@@ -248,6 +248,14 @@ For GCP:
 * `MONGOC_TEST_GCP_EMAIL=<string>`
 * `MONGOC_TEST_GCP_PRIVATEKEY=<string>`
 
+Tests of Client-Side Field Level Encryption also require temporary credentials to external KMS providers.
+
+For AWS:
+
+* `MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY=<string>`
+* `MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID=<string>`
+* `MONGOC_TEST_AWS_TEMP_SESSION_TOKEN=<string>`
+
 Tests of Client-Side Field Level Encryption spawn an extra process, "mongocryptd", by default. To bypass this spawning,
 start mongocryptd on port 27020 and set the following:
 
