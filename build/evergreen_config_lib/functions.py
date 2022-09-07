@@ -315,7 +315,7 @@ all_functions = OD([
           . ./activate_venv.sh
           echo "Running activate_venv.sh... done."
           echo "Running set-temp-creds.sh..."
-          . ./set-temp-creds.sh
+          PYTHON="$(type -P python)" . ./set-temp-creds.sh
           echo "Running set-temp-creds.sh... done."
           popd
           echo "Setting temporary credentials... done."
