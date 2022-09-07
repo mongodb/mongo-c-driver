@@ -317,6 +317,7 @@ all_functions = OD([
           echo "Running set-temp-creds.sh..."
           PYTHON="$(type -P python)" . ./set-temp-creds.sh
           echo "Running set-temp-creds.sh... done."
+          deactivate
           popd
           echo "Setting temporary credentials... done."
 
@@ -596,6 +597,7 @@ all_functions = OD([
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001 &
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --require_client_cert --port 9002 &
         python -u kms_kmip_server.py &
+        deactivate
         echo "Starting mock KMS servers... done."
         ''', test=False, background=True),
     )),
