@@ -12,7 +12,7 @@ _test_oauth_parse (void)
    mcd_azure_access_token token;
    ASSERT (!mcd_azure_access_token_try_init_from_json_str (
       &token, "invalid json", -1, &error));
-   ASSERT_CMPINT (error.domain, ==, BSON_ERROR_JSON);
+   ASSERT_CMPUINT32 (error.domain, ==, BSON_ERROR_JSON);
 
    ASSERT (!mcd_azure_access_token_try_init_from_json_str (
       &token, "{}", -1, &error));
