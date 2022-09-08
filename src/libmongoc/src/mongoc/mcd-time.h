@@ -3,72 +3,17 @@
 
 #include <mongoc-prelude.h>
 
-#include <inttypes.h>
+#include "./mcd-integer.h"
 
 #include <bson/bson.h>
 
-/// Return 'true' iff (left * right) would overflow with int64
-static inline bool
-_mcd_i64_mul_would_overflow (int64_t left, int64_t right)
-{
-   if (right == -1) {
-      // Only one factor will overflow with -1:
-      return left == INT64_MIN;
-   }
-   if (right == 0) {
-      return false;
-   }
-   int64_t max_fac = INT64_MAX / right;
-   int64_t min_fac = INT64_MIN / right;
-   return left > max_fac || left < min_fac;
-}
-
-/// Return 'true' iff (left + right) would overflow with int64
-static inline bool
-_mcd_i64_add_would_overflow (int64_t left, int64_t right)
-{
-   if (right < 0) {
-      // 'right' is negative (subtracting it will add)
-      // Space before we would overflow:
-      int64_t legroom = INT64_MIN - right;
-      // We only overflow if 'left' hasn't given us enough room:
-      return left < legroom;
-   } else if (right > 0) {
-      // 'right' is positive
-      // Space before overflow:
-      int64_t headroom = INT64_MAX - right;
-      // We overflow if 'left' is too high
-      return left > headroom;
-   }
-   return false;
-}
-
-/// Return 'true' iff (left - right) would overflow with int64
-static inline bool
-_mcd_i64_sub_would_overflow (int64_t left, int64_t right)
-{
-   if (right > 0) {
-      // "right" is positive.
-      // The space before we would overflow negative:
-      int64_t legroom = INT64_MIN + right;
-      // We overflow if the LHS is within the legroom:
-      return left < legroom;
-   } else if (right < 0) {
-      // "right" is negative (adding it will subtract)
-      // The space before we would overflow positive:
-      int64_t headroom = INT64_MAX + right;
-      // We overflow if LHS is within the headroom
-      return left > headroom;
-   }
-   return false;
-}
 
 /**
  * @brief Represents an abstract point-in-time.
  *
- * @note This is an *abstract* time point, with the only guarantee that it is
- * strictly ordered with every other time point and that the difference between
- * any two times will roughly encode actual wall-clock durations.
+ * @note This is an *abstract* time point, with the only guarantee that it
+ * is strictly ordered with every other time point and that the difference
+ * between any two times will roughly encode actual wall-clock durations.
  */
 typedef struct mcd_time_point {
    /// The internal representation of the time.
@@ -81,8 +26,8 @@ typedef struct mcd_time_point {
  * Construct this using one of the duration constructor functions.
  *
  * @note This encodes real wall-time durations, and may include negative
- * durations. It can be compared with other durations and used to offset time
- * points.
+ * durations. It can be compared with other durations and used to offset
+ * time points.
  */
 typedef struct mcd_duration {
    /// An internal representation of the duration
@@ -90,9 +35,9 @@ typedef struct mcd_duration {
 } mcd_duration;
 
 /**
- * @brief Obtain the current time point. This is only an abstract monotonically
- * increasing time, and does not necessarily correlate with any real-world
- * clock.
+ * @brief Obtain the current time point. This is only an abstract
+ * monotonically increasing time, and does not necessarily correlate with
+ * any real-world clock.
  */
 static inline struct mcd_time_point
 mcd_now (void)
@@ -136,8 +81,8 @@ mcd_minutes (int64_t m)
    return mcd_seconds (m * 60);
 }
 
-/// Obtain the time point relative to a base time as if by waiting for `delta`
-/// amount of time (which may be negatve)
+/// Obtain the time point relative to a base time as if by waiting for
+/// `delta` amount of time (which may be negatve)
 inline static mcd_time_point
 mcd_later (mcd_time_point from, mcd_duration delta)
 {
@@ -151,15 +96,15 @@ mcd_later (mcd_time_point from, mcd_duration delta)
  *
  * @param then The target time
  * @param from The base time
- * @return mcd_duration The amount of time you would need to wait starting at
- * 'from' for the time to become 'then' (the result may be a negative
+ * @return mcd_duration The amount of time you would need to wait starting
+ * at 'from' for the time to become 'then' (the result may be a negative
  * duration).
  *
  * Intuition: If "then" is "in the future" relative to "from", you will
- * receive a positive duration, indicating an amount of time to wait beginning
- * at 'from' to reach 'then'. If "then" is actually *before* "from", you will
- * receive a paradoxical *negative* duration, indicating the amount of time
- * needed to time-travel backwards to reach "then."
+ * receive a positive duration, indicating an amount of time to wait
+ * beginning at 'from' to reach 'then'. If "then" is actually *before*
+ * "from", you will receive a paradoxical *negative* duration, indicating
+ * the amount of time needed to time-travel backwards to reach "then."
  */
 inline static mcd_duration
 mcd_time_difference (mcd_time_point then, mcd_time_point from)
@@ -182,7 +127,8 @@ mcd_time_difference (mcd_time_point then, mcd_time_point from)
 inline static int
 mcd_time_compare (mcd_time_point left, mcd_time_point right)
 {
-   // Obtain the amount of time needed to wait from 'right' to reach 'left'
+   // Obtain the amount of time needed to wait from 'right' to reach
+   // 'left'
    int64_t diff = mcd_time_difference (left, right)._rep;
    if (diff < 0) {
       // A negative duration indicates that 'left' is "before" 'right'
