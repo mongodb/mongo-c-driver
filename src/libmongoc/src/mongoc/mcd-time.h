@@ -1,7 +1,23 @@
+/**
+ * Copyright 2022 MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef MCD_TIME_H_INCLUDED
 #define MCD_TIME_H_INCLUDED
 
-#include <mongoc-prelude.h>
+#include "mongoc-prelude.h"
 
 #include "./mcd-integer.h"
 
@@ -39,7 +55,7 @@ typedef struct mcd_duration {
  * monotonically increasing time, and does not necessarily correlate with
  * any real-world clock.
  */
-static inline struct mcd_time_point
+static inline mcd_time_point
 mcd_now (void)
 {
    // Create a time point representing the current time.
@@ -47,7 +63,7 @@ mcd_now (void)
 }
 
 /// Create a duration from a number of microseconds
-inline static mcd_duration
+static inline mcd_duration
 mcd_microseconds (int64_t s)
 {
    // 'mcd_duration' is encoded in a number of microseconds
@@ -55,7 +71,7 @@ mcd_microseconds (int64_t s)
 }
 
 /// Create a duration from a number of milliseconds
-inline static mcd_duration
+static inline mcd_duration
 mcd_milliseconds (int64_t s)
 {
    // 1'000 microseconds per millisecond:
@@ -64,7 +80,7 @@ mcd_milliseconds (int64_t s)
 }
 
 /// Create a duration from a number of seconds
-inline static mcd_duration
+static inline mcd_duration
 mcd_seconds (int64_t s)
 {
    // 1'000 milliseconds per second:
@@ -73,7 +89,7 @@ mcd_seconds (int64_t s)
 }
 
 /// Create a duration from a number of minutes
-inline static mcd_duration
+static inline mcd_duration
 mcd_minutes (int64_t m)
 {
    // Sixty seconds per minute:
@@ -83,7 +99,7 @@ mcd_minutes (int64_t m)
 
 /// Obtain the time point relative to a base time as if by waiting for
 /// `delta` amount of time (which may be negatve)
-inline static mcd_time_point
+static inline mcd_time_point
 mcd_later (mcd_time_point from, mcd_duration delta)
 {
    BSON_ASSERT (!_mcd_i64_add_would_overflow (from._rep, delta._rep));
@@ -106,7 +122,7 @@ mcd_later (mcd_time_point from, mcd_duration delta)
  * "from", you will receive a paradoxical *negative* duration, indicating
  * the amount of time needed to time-travel backwards to reach "then."
  */
-inline static mcd_duration
+static inline mcd_duration
 mcd_time_difference (mcd_time_point then, mcd_time_point from)
 {
    BSON_ASSERT (!_mcd_i64_sub_would_overflow (then._rep, from._rep));
@@ -124,7 +140,7 @@ mcd_time_difference (mcd_time_point then, mcd_time_point from)
  * @retval >0 If 'right' is before 'left'
  * @retval  0 If 'left' and 'right' are equivalent
  */
-inline static int
+static inline int
 mcd_time_compare (mcd_time_point left, mcd_time_point right)
 {
    // Obtain the amount of time needed to wait from 'right' to reach
