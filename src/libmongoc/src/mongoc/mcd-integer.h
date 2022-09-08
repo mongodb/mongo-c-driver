@@ -4,6 +4,7 @@
 #include <mongoc-prelude.h>
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -120,78 +121,46 @@ _mcd_i64_mul_would_overflow (int64_t left, int64_t right)
          /**
          Given: left  <= 0
            and: right <= 0
-          then: left * right <= 0
-          THEN: left * right <  MAX
+          then: left * right >= 0
+          THEN: left * right >  MIN
          */
-         if (right == 0) {
+         if (left == 0) {
             // Multiplication by zero will never overflow
             return false;
          } else {
             /**
-            Given: right <= 0
-              and: right != 0
-             then: right < 0
+            Given: left <= 0
+              and: left != 0
+             then: left <  0
+
+            Define: max_fac        =  MAX / left
+              then: max_fac * left = (MAX / left) * left
+              then: max_fac * left =  MAX
+
+            Given:   left < 0
+              and:    MAX > 0
+              and: max_fac = MAX / left
+             then: max_fac < 0  [pos/neg -> neg]
             */
-            if (right == -1) {
-               /**
-               Given: right        = -1
-                 and: N * -1       = -N
-                then: left * right = -left
+            const int64_t max_fac = INT64_MAX / left;
+            if (right < max_fac) {
+               /*
+               Given:        right <  max_fac
+                 and: left         <  0
+                then: left * right >  max_fac     * left
+                then: left * right > (MAX / left) * left
+                then: left * right >  MAX
                */
-               if (left == INT64_MIN) {
-                  /**
-                  Given: left  = MIN
-                    and: -MIN  = MAX + 1  [By definition of 2's complement]
-                   then: -left = MAX + 1
-                   then: left * right = MAX + 1
-                   THEN: left * right > MAX
-                  */
-                  return true;
-               } else {
-                  /**
-                  Given: left >= MIN
-                    and: left != MIN
-                   then: left >  MIN
-
-                  Given: -MIN  =  MAX + 1 [By definition of 2's complement]
-                    and: left  >  MIN
-                   then: -left <  MAX + 1
-                   THEN: -left <= MAX
-                   */
-                  return false;
-               }
+               return true;
             } else {
-               /**
-               Given: right <   0
-                 and: right != -1
-                then: right <  -1
-
-               Define: min_fac         =  MIN / right
-                 then: min_fac * right = (MIN / right) * right
-                 then: min_fac * right =  MIN
+               /*
+               Given:        right >=  max_fac
+                 and: left         <   0
+                then: left * right <=  max_fac     * left
+                then: left * right <= (MAX / left) * left
+                then: left * right <=  MAX
                */
-               const int64_t min_fac = INT64_MIN / right;
-               if (left < min_fac) {
-                  /**
-                  Given: left         < min_fac
-                    and:        right < 0
-                   then: left * right > min_fac * right
-                    b/c: [Mult by negative flips ordering]
-                   with: MIN          = min_fac * right
-                   THEN: left * right > MIN
-                  */
-                  return false;
-               } else {
-                  /**
-                  Given: left         >= min_fac
-                    and:        right <  0
-                   then: left * right <  min_fac * right
-                    b/c: [Mult by negative flips ordering]
-                   with: MIN          = min_fac * right
-                   THEN: left * right < MIN
-                  */
-                  return true;
-               }
+               return false;
             }
          }
       }
