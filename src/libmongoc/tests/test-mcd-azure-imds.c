@@ -4,7 +4,7 @@
 
 #define RAW_STRING(...) #__VA_ARGS__
 
-void
+static void
 _test_oauth_parse (void)
 {
    // Test that we can correctly parse a JSON document from the IMDS sever
@@ -39,7 +39,7 @@ _test_oauth_parse (void)
    mcd_azure_access_token_destroy (&token);
 }
 
-void
+static void
 _test_http_req (void)
 {
    // Test generating an HTTP request for the IMDS server
