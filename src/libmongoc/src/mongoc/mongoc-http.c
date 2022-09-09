@@ -206,6 +206,42 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    }
 
    http_response_str = (char *) http_response_buf.data;
+   const char *const resp_end_ptr =
+      http_response_str + http_response_buf.datalen;
+
+   const char *proto_leader = "HTTP/1.0 ";
+   ptr = strstr (http_response_str, proto_leader);
+   if (!ptr) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "No HTTP version leader in HTTP response");
+      goto fail;
+   }
+
+   ptr += strlen (proto_leader);
+   ssize_t remain = resp_end_ptr - ptr;
+   if (remain < 4) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Short read in HTTP response");
+      goto fail;
+   }
+
+   char status_buf[4] = {0};
+   memcpy (status_buf, ptr, 3);
+   char *status_endptr;
+   res->status = strtol (status_buf, &status_endptr, 10);
+   if (status_endptr != status_buf + 3) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Invalid HTTP response status string %*.s",
+                      4,
+                      status_buf);
+      goto fail;
+   }
 
    /* Find the end of the headers. */
    ptr = strstr (http_response_str, header_delimiter);
