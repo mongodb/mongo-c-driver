@@ -494,6 +494,7 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 set (SOURCES ${SOURCES}
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-array.c
@@ -564,7 +565,6 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-file.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-download.c
@@ -1061,6 +1061,8 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-with-transaction.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-concern.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-integer.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
    ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
    ${PROJECT_SOURCE_DIR}/tests/unified/entity-map.c

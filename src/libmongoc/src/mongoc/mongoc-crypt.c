@@ -29,6 +29,9 @@
 #include "mongoc-ssl-private.h"
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-http-private.h"
+#include "mcd-azure.h"
+#include "mcd-time.h"
 
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
@@ -41,6 +44,12 @@ struct __mongoc_crypt_t {
    /// credentials.
    bson_t kms_providers;
    mc_kms_credentials_callback creds_cb;
+
+   /// The most recently auto-acquired Azure token, on null if it was destroyed
+   /// or not yet acquired.
+   mcd_azure_access_token azure_token;
+   /// The time point at which the `azure_token` was acquired.
+   mcd_time_point azure_token_issued_at;
 };
 
 static void
@@ -590,8 +599,8 @@ fail:
  *
  * @param kms_providers The user-provided kmsProviders
  * @param error Output parameter for possible errors.
- * @return true If 'aws' is present and an empty subdocument
- * @return false Otherwise or on error
+ * @retval true If 'aws' is present and an empty subdocument
+ * @retval false Otherwise or on error
  */
 static bool
 _needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
@@ -629,13 +638,42 @@ _needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
 }
 
 /**
+ * @brief Check whether the given kmsProviders object requests automatic Azure
+ * credentials
+ *
+ * @param kmsprov The input kmsProviders that may have an "azure" property
+ * @param error An output error
+ * @retval true If success AND `kmsprov` requests automatic Azure credentials
+ * @retval false Otherwise. Check error->code for failure.
+ */
+static bool
+_check_azure_kms_auto (const bson_t *kmsprov, bson_error_t *error)
+{
+   if (error) {
+      *error = (bson_error_t){0};
+   }
+
+   bson_iter_t iter;
+   if (!bson_iter_init_find (&iter, kmsprov, "azure")) {
+      return false;
+   }
+
+   bson_t azure_subdoc;
+   if (!_mongoc_iter_document_as_bson (&iter, &azure_subdoc, error)) {
+      return false;
+   }
+
+   return bson_empty (&azure_subdoc);
+}
+
+/**
  * @brief Attempt to load AWS credentials from the environment and insert them
  * into the given kmsProviders bson document on the "aws" property.
  *
  * @param out A kmsProviders object to update
  * @param error An error-out parameter
- * @return true If there was no error and we successfully loaded credentials.
- * @return false If there was an error while updating the BSON data or obtaining
+ * @retval true If there was no error and we successfully loaded credentials.
+ * @retval false If there was an error while updating the BSON data or obtaining
  * credentials.
  */
 static bool
@@ -664,6 +702,111 @@ _try_add_aws_from_env (bson_t *out, bson_error_t *error)
    // Good!
    _mongoc_aws_credentials_cleanup (&creds);
    return true;
+}
+
+/**
+ * @brief Attempt to request a new Azure access token from the IMDS HTTP server
+ *
+ * @param out The token to populate. Must later be destroyed by the caller.
+ * @param error An output parameter to capture any errors
+ * @retval true Upon successfully obtaining and parsing a token
+ * @retval false If any error occurs.
+ */
+static bool
+_request_new_azure_token (mcd_azure_access_token *out, bson_error_t *error)
+{
+   bool okay = false;
+   // Build and send the request
+   mcd_azure_imds_request req;
+   mcd_azure_imds_request_init (&req);
+   mongoc_http_response_t resp;
+   _mongoc_http_response_init (&resp);
+   if (!_mongoc_http_send (&req.req, 10 * 1000, false, NULL, &resp, error)) {
+      goto fail;
+   }
+
+   // We only accept an HTTP 200 as a success
+   if (resp.status != 200) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_PROTOCOL_ERROR,
+                      "Error from Azure IMDS server while looking for "
+                      "Managed Identity access token: %.*s",
+                      resp.body_len,
+                      resp.body);
+      goto fail;
+   }
+
+   // Parse the token from the response JSON
+   if (!mcd_azure_access_token_try_init_from_json_str (
+          out, resp.body, resp.body_len, error)) {
+      goto fail;
+   }
+
+fail:
+   _mongoc_http_response_cleanup (&resp);
+   mcd_azure_imds_request_destroy (&req);
+   return okay;
+}
+
+/**
+ * @brief Attempt to load an Azure access token from the environment and append
+ * them to the kmsProviders
+ *
+ * @param out A kmsProviders object to update
+ * @param error An error-out parameter
+ * @retval true If there was no error and we loaded credentials
+ * @retval false If there was an error obtaining or appending credentials
+ */
+static bool
+_try_add_azure_from_env (_mongoc_crypt_t *crypt,
+                         bson_t *out,
+                         bson_error_t *error)
+{
+   if (crypt->azure_token.access_token) {
+      // The access-token is non-null, so we may have one cached.
+      mcd_time_point one_min_from_now = mcd_later (mcd_now (), mcd_minutes (1));
+      mcd_time_point expires_at = mcd_later (crypt->azure_token_issued_at,
+                                             crypt->azure_token.expires_in);
+      if (mcd_time_compare (expires_at, one_min_from_now) >= 0) {
+         // The token is still valid for at least another minute
+      } else {
+         // The token will expire soon. Destroy it, and below we will below ask
+         // IMDS for a new one.
+         mcd_azure_access_token_destroy (&crypt->azure_token);
+      }
+   }
+
+   if (crypt->azure_token.access_token == NULL) {
+      // There is no access token in our cache.
+      // Save the current time point as the "issue time" of the token, even
+      // though it will take some time for the HTTP request to hit the metadata
+      // server. This time is only used to track token expiry. IMDS gives us a
+      // number of seconds that the token will be valid relative to its issue
+      // time. Avoid reliance on system clocks by comparing the issue time to an
+      // abstract monotonic "now"
+      crypt->azure_token_issued_at = mcd_now ();
+      // Get the token:
+      if (_request_new_azure_token (&crypt->azure_token, error)) {
+         return false;
+      }
+   }
+
+   // Build the new KMS credentials
+   bson_t new_azure_creds = BSON_INITIALIZER;
+   const bool okay = BSON_APPEND_UTF8 (&new_azure_creds,
+                                       "accessToken",
+                                       crypt->azure_token.access_token) &&
+                     BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds);
+   bson_destroy (&new_azure_creds);
+   if (!okay) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Failed to build new 'azure' credentials");
+   }
+
+   return okay;
 }
 
 static bool
@@ -703,6 +846,22 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
       // Attempt instead to load the AWS credentials from the environment:
       if (!_try_add_aws_from_env (&creds, error)) {
          // Error while trying to add AWS credentials
+         goto fail;
+      }
+   }
+
+   // Whether the callback provided Azure credentials
+   const bool cb_provided_azure = bson_iter_init_find (&iter, &creds, "azure");
+   // Whether the original kmsProviders requested auto-Azure credentials:
+   const bool orig_wants_auto_azure =
+      _check_azure_kms_auto (&sm->crypt->kms_providers, error);
+   if (error->code) {
+      // _check_azure_kms_auto failed
+      goto fail;
+   }
+   const bool wants_auto_azure = orig_wants_auto_azure && !cb_provided_azure;
+   if (wants_auto_azure) {
+      if (!_try_add_azure_from_env (sm->crypt, &creds, error)) {
          goto fail;
       }
    }
@@ -1200,6 +1359,7 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
    _mongoc_ssl_opts_cleanup (&crypt->azure_tls_opt, true /* free_internal */);
    _mongoc_ssl_opts_cleanup (&crypt->gcp_tls_opt, true /* free_internal */);
    bson_destroy (&crypt->kms_providers);
+   mcd_azure_access_token_destroy (&crypt->azure_token);
    bson_free (crypt);
 }
 
