@@ -1,5 +1,7 @@
 #include <mongoc/mcd-azure.h>
 
+#include <mongoc/mongoc-host-list-private.h>
+
 #include "TestSuite.h"
 
 #define RAW_STRING(...) #__VA_ARGS__
@@ -61,9 +63,44 @@ _test_http_req (void)
    bson_string_free (req_str, true);
 }
 
+static const char *
+_get_test_imds_host (void)
+{
+   return getenv ("MCD_TEST_AZURE_IMDS_HOST");
+}
+
+static void
+_test_with_mock_server (void *ctx)
+{
+   BSON_UNUSED (ctx);
+
+   bson_error_t error = {0};
+   struct _mongoc_host_list_t host;
+   _mongoc_host_list_from_string_with_err (
+      &host, _get_test_imds_host (), &error);
+   ASSERT_ERROR_CONTAINS (error, 0, 0, "");
+
+   mcd_azure_access_token token = {0};
+   mcd_azure_access_token_from_imds (&token, host.host, host.port, &error);
+   ASSERT_ERROR_CONTAINS (error, 0, 0, "");
+   mcd_azure_access_token_destroy (&token);
+}
+
+static int
+have_mock_server_env (TestSuite *ctx)
+{
+   return _get_test_imds_host () != NULL;
+}
+
 void
 test_mcd_azure_imds_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/azure/imds/http/parse", _test_oauth_parse);
    TestSuite_Add (suite, "/azure/imds/http/request", _test_http_req);
+   TestSuite_AddFull (suite,
+                      "/azure/imds/http/talk",
+                      _test_with_mock_server,
+                      NULL,
+                      NULL,
+                      have_mock_server_env);
 }
