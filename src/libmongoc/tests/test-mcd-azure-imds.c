@@ -44,7 +44,7 @@ _test_http_req (void)
 {
    // Test generating an HTTP request for the IMDS server
    mcd_azure_imds_request req;
-   mcd_azure_imds_request_init (&req);
+   mcd_azure_imds_request_init (&req, "example.com", 9879);
    bson_string_t *req_str = _mongoc_http_render_request_head (&req.req);
    mcd_azure_imds_request_destroy (&req);
    // Assert that we composed exactly the request that we expected
@@ -53,7 +53,7 @@ _test_http_req (void)
                   "/metadata/identity/oauth2/"
                   "token?api-version=2018-02-01&resource=https%3A%2F%2Fvault."
                   "azure.net HTTP/1.0\r\n"
-                  "Host: 169.254.169.254\r\n"
+                  "Host: example.com:9879\r\n"
                   "Connection: close\r\n"
                   "Metadata: true\r\n"
                   "Accept: application/json\r\n"

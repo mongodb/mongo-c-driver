@@ -26,12 +26,20 @@ static const char *const DEFAULT_METADATA_PATH =
    "&resource=https%3A%2F%2Fvault.azure.net";
 
 void
-mcd_azure_imds_request_init (mcd_azure_imds_request *req)
+mcd_azure_imds_request_init (mcd_azure_imds_request *req,
+                             const char *const opt_imds_host,
+                             int opt_port)
 {
    BSON_ASSERT_PARAM (req);
    _mongoc_http_request_init (&req->req);
    // The HTTP host of the IMDS server
-   req->req.host = "169.254.169.254";
+   req->req.host = req->_owned_host =
+      bson_strdup (opt_imds_host ? opt_imds_host : "169.254.169.254");
+   if (opt_port) {
+      req->req.port = opt_port;
+   } else {
+      req->req.port = 80;
+   }
    // No body
    req->req.body = "";
    // We GET
@@ -41,14 +49,15 @@ mcd_azure_imds_request_init (mcd_azure_imds_request *req)
                             "Accept: application/json\r\n";
    // The default path is suitable. In the future, we may want to add query
    // parameters to disambiguate a managed identity.
-   req->req.path = bson_strdup (DEFAULT_METADATA_PATH);
+   req->req.path = req->_owned_path = bson_strdup (DEFAULT_METADATA_PATH);
 }
 
 void
 mcd_azure_imds_request_destroy (mcd_azure_imds_request *req)
 {
    BSON_ASSERT_PARAM (req);
-   bson_free ((void *) req->req.path);
+   bson_free (req->_owned_path);
+   bson_free (req->_owned_host);
    *req = (mcd_azure_imds_request){0};
 }
 
@@ -142,4 +151,55 @@ mcd_azure_access_token_destroy (mcd_azure_access_token *c)
    c->access_token = NULL;
    c->resource = NULL;
    c->token_type = NULL;
+}
+
+
+bool
+mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
+                                  const char *const opt_imds_host,
+                                  int opt_port,
+                                  bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (out);
+
+   bool okay = false;
+
+   // Clear the output
+   *out = (mcd_azure_access_token){0};
+
+   mongoc_http_response_t resp;
+   _mongoc_http_response_init (&resp);
+
+   mcd_azure_imds_request req = {0};
+   mcd_azure_imds_request_init (&req, opt_imds_host, opt_port);
+
+   if (!_mongoc_http_send (&req.req, 10 * 1000, false, NULL, &resp, error)) {
+      _mongoc_http_response_cleanup (&resp);
+      goto fail;
+   }
+
+   // We only accept an HTTP 200 as a success
+   if (resp.status != 200) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_PROTOCOL_ERROR,
+                      "Error from Azure IMDS server while looking for "
+                      "Managed Identity access token: %.*s",
+                      resp.body_len,
+                      resp.body);
+      goto fail;
+   }
+
+   // Parse the token from the response JSON
+   if (!mcd_azure_access_token_try_init_from_json_str (
+          out, resp.body, resp.body_len, error)) {
+      goto fail;
+   }
+
+   okay = true;
+
+fail:
+   mcd_azure_imds_request_destroy (&req);
+   _mongoc_http_response_cleanup (&resp);
+   return okay;
 }

@@ -715,38 +715,10 @@ _try_add_aws_from_env (bson_t *out, bson_error_t *error)
 static bool
 _request_new_azure_token (mcd_azure_access_token *out, bson_error_t *error)
 {
-   bool okay = false;
-   // Build and send the request
-   mcd_azure_imds_request req;
-   mcd_azure_imds_request_init (&req);
-   mongoc_http_response_t resp;
-   _mongoc_http_response_init (&resp);
-   if (!_mongoc_http_send (&req.req, 10 * 1000, false, NULL, &resp, error)) {
-      goto fail;
-   }
-
-   // We only accept an HTTP 200 as a success
-   if (resp.status != 200) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_PROTOCOL_ERROR,
-                      "Error from Azure IMDS server while looking for "
-                      "Managed Identity access token: %.*s",
-                      resp.body_len,
-                      resp.body);
-      goto fail;
-   }
-
-   // Parse the token from the response JSON
-   if (!mcd_azure_access_token_try_init_from_json_str (
-          out, resp.body, resp.body_len, error)) {
-      goto fail;
-   }
-
-fail:
-   _mongoc_http_response_cleanup (&resp);
-   mcd_azure_imds_request_destroy (&req);
-   return okay;
+   return mcd_azure_access_token_from_imds (out,
+                                            NULL, // Use the default host
+                                            0,    //  Default port as well
+                                            error);
 }
 
 /**
