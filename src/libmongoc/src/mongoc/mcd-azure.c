@@ -32,6 +32,7 @@ mcd_azure_imds_request_init (mcd_azure_imds_request *req)
    _mongoc_http_request_init (&req->req);
    // The HTTP host of the IMDS server
    req->req.host = "169.254.169.254";
+   req->req.port = 80;
    // No body
    req->req.body = "";
    // We GET
