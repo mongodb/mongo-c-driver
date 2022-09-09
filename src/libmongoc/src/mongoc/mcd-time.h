@@ -97,6 +97,13 @@ mcd_minutes (int64_t m)
    return mcd_seconds (m * 60);
 }
 
+/// Convert an abstract duration to a number of milliseconds
+static inline int64_t
+mcd_get_milliseconds (mcd_duration d)
+{
+   return d._rep / 1000;
+}
+
 /// Obtain the time point relative to a base time as if by waiting for
 /// `delta` amount of time (which may be negatve)
 static inline mcd_time_point
@@ -156,6 +163,77 @@ mcd_time_compare (mcd_time_point left, mcd_time_point right)
       // These time points are equivalent
       return 0;
    }
+}
+
+/**
+ * @brief Compare two durations
+ *
+ * A duration D1 is "less than" a duration D2 if time-travelling/waiting for D1
+ * duration would end in the past relative to time-travelling/waiting for D2.
+ *
+ * @retval <0 If left is "less than" right
+ * @retval >0 If left is "greater than" right
+ * @retval  0 If left and right are equivalent
+ */
+static inline int
+mcd_duration_compare (mcd_duration left, mcd_duration right)
+{
+   if (left._rep < right._rep) {
+      return -1;
+   } else if (left._rep > right._rep) {
+      return 1;
+   } else {
+      return 0;
+   }
+}
+
+/// Represents a timer that can be expired
+typedef struct mcd_timer {
+   /// The point in time after which the time will become expired.
+   mcd_time_point expire_at;
+} mcd_timer;
+
+/// Create a time that will expire at the given time
+static inline mcd_timer
+mcd_timer_expire_at (mcd_time_point time)
+{
+   return (mcd_timer){time};
+}
+
+/**
+ * @brief Create a timer that will expire after waiting for the given duration
+ * relative to now
+ *
+ * @note If the duration is less-than zero, the timer will already have expired
+ */
+static inline mcd_timer
+mcd_timer_expire_after (mcd_duration after)
+{
+   return mcd_timer_expire_at (mcd_later (mcd_now (), after));
+}
+
+/**
+ * @brief Obtain the amount of time that one will need to WAIT before the timer
+ * will be an expired state.
+ *
+ * @return mcd_duration A non-negative duration.
+ *
+ * @note If the timer is already expired, returns a zero duration. Will never
+ * return a negative duration.
+ */
+static inline mcd_duration
+mcd_timer_remaining (mcd_timer timer)
+{
+   // Compute the distance until the expiry time relative to now
+   mcd_duration remain = mcd_time_difference (timer.expire_at, mcd_now ());
+   // Compare that duration with a zero duration
+   if (mcd_duration_compare (remain, mcd_microseconds (0)) < 0) {
+      // The "remaining" time is less-than zero, which means the timer is
+      // already expired, so we only need to wait for zero time:
+      return mcd_microseconds (0);
+   }
+   // There is a positive amount of time remaining
+   return remain;
 }
 
 #endif // MCD_TIME_H_INCLUDED
