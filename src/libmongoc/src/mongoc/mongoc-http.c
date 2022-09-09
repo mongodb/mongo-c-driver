@@ -175,7 +175,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       goto fail;
    }
 
-   if (req->body) {
+   if (req->body && req->body_len) {
       iovec.iov_base = (void *) req->body;
       iovec.iov_len = req->body_len;
       if (!_mongoc_stream_writev_full (stream, &iovec, 1, timeout_ms, error)) {
