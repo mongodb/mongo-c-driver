@@ -718,6 +718,7 @@ _request_new_azure_token (mcd_azure_access_token *out, bson_error_t *error)
    return mcd_azure_access_token_from_imds (out,
                                             NULL, // Use the default host
                                             0,    //  Default port as well
+                                            NULL, // No extra headres
                                             error);
 }
 

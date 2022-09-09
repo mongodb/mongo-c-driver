@@ -46,7 +46,7 @@ _test_http_req (void)
 {
    // Test generating an HTTP request for the IMDS server
    mcd_azure_imds_request req;
-   mcd_azure_imds_request_init (&req, "example.com", 9879);
+   mcd_azure_imds_request_init (&req, "example.com", 9879, "");
    bson_string_t *req_str = _mongoc_http_render_request_head (&req.req);
    mcd_azure_imds_request_destroy (&req);
    // Assert that we composed exactly the request that we expected
@@ -70,10 +70,11 @@ _get_test_imds_host (void)
 }
 
 static void
-_test_with_mock_server (void *ctx)
+_run_http_test_case (const char *case_,
+                     mongoc_error_domain_t expect_domain,
+                     mongoc_error_code_t expect_code,
+                     const char *expect_error_message)
 {
-   BSON_UNUSED (ctx);
-
    bson_error_t error = {0};
    struct _mongoc_host_list_t host;
    _mongoc_host_list_from_string_with_err (
@@ -81,9 +82,33 @@ _test_with_mock_server (void *ctx)
    ASSERT_ERROR_CONTAINS (error, 0, 0, "");
 
    mcd_azure_access_token token = {0};
-   mcd_azure_access_token_from_imds (&token, host.host, host.port, &error);
-   ASSERT_ERROR_CONTAINS (error, 0, 0, "");
+   char *const header =
+      bson_strdup_printf ("X-MongoDB-HTTP-TestParams: case=%s\r\n", case_);
+   mcd_azure_access_token_from_imds (
+      &token, host.host, host.port, header, &error);
+   bson_free (header);
    mcd_azure_access_token_destroy (&token);
+   ASSERT_ERROR_CONTAINS (
+      error, expect_domain, expect_code, expect_error_message);
+}
+
+static void
+_test_with_mock_server (void *ctx)
+{
+   BSON_UNUSED (ctx);
+
+   _run_http_test_case ("", 0, 0, ""); // (No error)
+   _run_http_test_case ("404", MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_HTTP, "");
+   _run_http_test_case (
+      "empty-json", MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_BAD_JSON, "");
+   _run_http_test_case (
+      "bad-json", MONGOC_ERROR_CLIENT, MONGOC_ERROR_STREAM_INVALID_TYPE, "");
+
+   _run_http_test_case (
+      "giant", MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "too large");
+
+   _run_http_test_case (
+      "slow", MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Timeout");
 }
 
 static int

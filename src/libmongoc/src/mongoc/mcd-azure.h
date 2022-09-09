@@ -77,6 +77,7 @@ typedef struct mcd_azure_imds_request {
    mongoc_http_request_t req;
    char *_owned_path;
    char *_owned_host;
+   char *_owned_headers;
 } mcd_azure_imds_request;
 
 /**
@@ -85,6 +86,7 @@ typedef struct mcd_azure_imds_request {
  * @param out The object to initialize
  * @param opt_imds_host (Optional) the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
+ * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
  *
  * @note the request must later be destroyed with mcd_azure_imds_request_destroy
  * @note Currently only supports the vault.azure.net resource
@@ -92,7 +94,8 @@ typedef struct mcd_azure_imds_request {
 void
 mcd_azure_imds_request_init (mcd_azure_imds_request *out,
                              const char *opt_imds_host,
-                             int opt_port);
+                             int opt_port,
+                             const char *opt_extra_headers);
 
 /**
  * @brief Destroy an IMDS request created with mcd_azure_imds_request_init()
@@ -110,6 +113,7 @@ mcd_azure_imds_request_destroy (mcd_azure_imds_request *req);
  * destroyed
  * @param opt_imds_host (Optional) Override the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
+ * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
  * @param error Output parameter for errors
  * @retval true Upon success
  * @retval false Otherwise. Sets an error via `error`
@@ -120,6 +124,7 @@ bool
 mcd_azure_access_token_from_imds (mcd_azure_access_token *out,
                                   const char *opt_imds_host,
                                   int opt_port,
+                                  const char *opt_extra_headers,
                                   bson_error_t *error);
 
 #endif // MCD_AZURE_H_INCLUDED

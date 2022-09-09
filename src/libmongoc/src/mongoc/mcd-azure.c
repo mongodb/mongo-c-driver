@@ -28,7 +28,8 @@ static const char *const DEFAULT_METADATA_PATH =
 void
 mcd_azure_imds_request_init (mcd_azure_imds_request *req,
                              const char *const opt_imds_host,
-                             int opt_port)
+                             int opt_port,
+                             const char *const opt_extra_headers)
 {
    BSON_ASSERT_PARAM (req);
    _mongoc_http_request_init (&req->req);
@@ -45,8 +46,10 @@ mcd_azure_imds_request_init (mcd_azure_imds_request *req,
    // We GET
    req->req.method = "GET";
    // 'Metadata: true' is required
-   req->req.extra_headers = "Metadata: true\r\n"
-                            "Accept: application/json\r\n";
+   req->req.extra_headers = req->_owned_headers =
+      bson_strdup_printf ("Metadata: true\r\n"
+                          "Accept: application/json\r\n%s",
+                          opt_extra_headers ? opt_extra_headers : "");
    // The default path is suitable. In the future, we may want to add query
    // parameters to disambiguate a managed identity.
    req->req.path = req->_owned_path = bson_strdup (DEFAULT_METADATA_PATH);
@@ -58,6 +61,7 @@ mcd_azure_imds_request_destroy (mcd_azure_imds_request *req)
    BSON_ASSERT_PARAM (req);
    bson_free (req->_owned_path);
    bson_free (req->_owned_host);
+   bson_free (req->_owned_headers);
    *req = (mcd_azure_imds_request){0};
 }
 
@@ -105,8 +109,8 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
    if (!(access_token && resource && token_type && expires_in_str)) {
       bson_set_error (
          error,
-         MONGOC_ERROR_PROTOCOL_ERROR,
-         64,
+         MONGOC_ERROR_AZURE,
+         MONGOC_ERROR_AZURE_BAD_JSON,
          "One or more required JSON properties are missing/invalid: data: %.*s",
          len,
          json);
@@ -126,8 +130,8 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
          // Did not parse the entire string. Bad
          bson_set_error (
             error,
-            MONGOC_ERROR_PROTOCOL,
-            65,
+            MONGOC_ERROR_AZURE,
+            MONGOC_ERROR_AZURE_BAD_JSON,
             "Invalid 'expires_in' string \"%.*s\" from IMDS server",
             expires_in_len,
             expires_in_str);
@@ -158,6 +162,7 @@ bool
 mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
                                   const char *const opt_imds_host,
                                   int opt_port,
+                                  const char *opt_extra_headers,
                                   bson_error_t *error)
 {
    BSON_ASSERT_PARAM (out);
@@ -171,9 +176,10 @@ mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
    _mongoc_http_response_init (&resp);
 
    mcd_azure_imds_request req = {0};
-   mcd_azure_imds_request_init (&req, opt_imds_host, opt_port);
+   mcd_azure_imds_request_init (
+      &req, opt_imds_host, opt_port, opt_extra_headers);
 
-   if (!_mongoc_http_send (&req.req, 10 * 1000, false, NULL, &resp, error)) {
+   if (!_mongoc_http_send (&req.req, 3 * 1000, false, NULL, &resp, error)) {
       _mongoc_http_response_cleanup (&resp);
       goto fail;
    }
@@ -181,8 +187,8 @@ mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
    // We only accept an HTTP 200 as a success
    if (resp.status != 200) {
       bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_PROTOCOL_ERROR,
+                      MONGOC_ERROR_AZURE,
+                      MONGOC_ERROR_AZURE_HTTP,
                       "Error from Azure IMDS server while looking for "
                       "Managed Identity access token: %.*s",
                       resp.body_len,
