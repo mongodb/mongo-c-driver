@@ -69,7 +69,7 @@ _mongoc_http_render_request_head (const mongoc_http_request_t *req)
    bson_free (path);
 
    /* Always add Host header. */
-   bson_string_append_printf (string, "Host: %s\r\n", req->host);
+   bson_string_append_printf (string, "Host: %s:%d\r\n", req->host, req->port);
    /* Always add Connection: close header to ensure server closes connection. */
    bson_string_append_printf (string, "Connection: close\r\n");
    /* Add Content-Length if body is included. */
