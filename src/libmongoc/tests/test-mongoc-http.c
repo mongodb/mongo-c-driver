@@ -36,8 +36,13 @@ test_mongoc_http (void *unused)
    req.method = "GET";
    req.host = "example.com";
    req.port = 80;
+   // Empty body is okay
+   req.body = "";
+   req.body_len = 0;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
+   ASSERT_CMPINT (res.status, ==, 200);
    ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPINT (res.body_len, >, 0);
    _mongoc_http_response_cleanup (&res);
 
    /* Basic POST request with a body. */
@@ -46,7 +51,9 @@ test_mongoc_http (void *unused)
    req.body_len = 4;
    req.port = 80;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
+   ASSERT_CMPINT (res.status, ==, 200);
    ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPINT (res.body_len, >, 0);
    _mongoc_http_response_cleanup (&res);
 }
 
