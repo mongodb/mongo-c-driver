@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, overload
 if TYPE_CHECKING:
     from typing import Protocol
 
-    class _RequstParams(Protocol):
+    class _RequestParams(Protocol):
 
         def __getitem__(self, key: str) -> str:
             ...
@@ -35,8 +35,8 @@ if TYPE_CHECKING:
             ...
 
     class _Request(Protocol):
-        query: _RequstParams
-        params: _RequstParams
+        query: _RequestParams
+        params: _RequestParams
         headers: _HeadersDict
 
     request: _Request
@@ -64,8 +64,7 @@ def handle_asserts(fn: _HandlerFuncT) -> _HandlerFuncT:
         try:
             return fn()
         except AssertionError as e:
-            traceback.format_exc()
-            print(e.args)
+            traceback.print_exc()
             return bottle.HTTPResponse(status=400,
                                        body=json.dumps({'error':
                                                         list(e.args)}))
