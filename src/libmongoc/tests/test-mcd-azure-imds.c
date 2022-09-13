@@ -18,11 +18,13 @@ _test_oauth_parse (void)
 
    ASSERT (!mcd_azure_access_token_try_init_from_json_str (
       &token, "{}", -1, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_PROTOCOL_ERROR, 64, "");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_BAD_JSON, "");
 
    ASSERT (!mcd_azure_access_token_try_init_from_json_str (
       &token, RAW_STRING ({"access_token" : null}), -1, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_PROTOCOL_ERROR, 64, "");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_BAD_JSON, "");
 
    error = (bson_error_t){0};
    ASSERT (mcd_azure_access_token_try_init_from_json_str (
