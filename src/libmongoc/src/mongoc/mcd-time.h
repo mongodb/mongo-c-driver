@@ -149,7 +149,7 @@ mcd_minutes (int64_t m)
 }
 
 /**
- * @brief Obtain the cound of full milliseconds encoded in the given duration
+ * @brief Obtain the count of full milliseconds encoded in the given duration
  *
  * @param d An abstract duration
  * @return int64_t The number of milliseconds in 'd'
@@ -206,11 +206,11 @@ static inline mcd_duration
 mcd_time_difference (mcd_time_point then, mcd_time_point from)
 {
    if (_mcd_i64_sub_would_overflow (then._rep, from._rep)) {
-      if ((then._rep < 0) == (from._rep < 0)) {
-         // Same sign, would sub to a positive
+      if (from._rep < 0) {
+         // Would overflow past the max
          return MCD_DURATION_MAX;
       } else {
-         // Diff sign, would sub to a negative
+         // Would overflow past the min
          return MCD_DURATION_MIN;
       }
    } else {
