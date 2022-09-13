@@ -102,7 +102,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
  * arguments filled in by the DSL context variables.
  */
 #define _bsonBuildAppendArgs \
-   bsonBuildContext.doc, bsonBuildContext.key, bsonBuildContext.key_len
+   bsonBuildContext.doc, bsonBuildContext.key, (int) bsonBuildContext.key_len
 
 /**
  * The _bsonDocOperation_XYZ macros handle the top-level bsonBuild()
@@ -188,7 +188,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 /// Append a UTF-8 string with an explicit length
 #define _bsonValueOperation_utf8_w_len(String, Len)                   \
-   if (!bson_append_utf8 (_bsonBuildAppendArgs, (String), (Len))) {   \
+   if (!bson_append_utf8 (_bsonBuildAppendArgs, (String), (int)(Len))) {   \
       bsonBuildError =                                                \
          "Error while appending utf8 string: " _bsonDSL_str (String); \
    } else                                                             \
@@ -197,7 +197,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 /// Append a "cstr" as UTF-8
 #define _bsonValueOperation_cstr(String) \
-   _bsonValueOperation_utf8_w_len ((String), strlen (String))
+   _bsonValueOperation_utf8_w_len ((String),  strlen (String))
 #define _bsonArrayOperation_cstr(X) _bsonArrayAppendValue (cstr (X))
 
 /// Append an int32
@@ -294,15 +294,16 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       if (Pred, then (do(_bsonArrayOperation_iterValue (bsonVisitIter))))); \
    _bsonDSL_end
 
-#define _bsonArrayAppendValue(ValueOperation)                                 \
-   _bsonDSL_begin (                                                           \
-      "[%d] => [%s]", bsonBuildContext.index, _bsonDSL_str (ValueOperation)); \
-   /* Set the doc key to the array index as a string: */                      \
-   _bsonBuild_setKeyToArrayIndex (bsonBuildContext.index);                    \
-   /* Append a value: */                                                      \
-   _bsonValueOperation_##ValueOperation;                                      \
-   /* Increment the array index: */                                           \
-   ++_bbCtx.index;                                                            \
+#define _bsonArrayAppendValue(ValueOperation)              \
+   _bsonDSL_begin ("[%d] => [%s]",                         \
+                   (int) bsonBuildContext.index,           \
+                   _bsonDSL_str (ValueOperation));         \
+   /* Set the doc key to the array index as a string: */   \
+   _bsonBuild_setKeyToArrayIndex (bsonBuildContext.index); \
+   /* Append a value: */                                   \
+   _bsonValueOperation_##ValueOperation;                   \
+   /* Increment the array index: */                        \
+   ++_bbCtx.index;                                         \
    _bsonDSL_end
 
 
@@ -370,8 +371,8 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       _bsonValueOperationIf_##Else;                                     \
    }
 
-#define _bsonBuild_setKeyToArrayIndex(Idx)                         \
-   _bbCtx.key_len = sprintf (_bbCtx.strbuf64, "%d", _bbCtx.index); \
+#define _bsonBuild_setKeyToArrayIndex(Idx)                               \
+   _bbCtx.key_len = sprintf (_bbCtx.strbuf64, "%d", (int) _bbCtx.index); \
    _bbCtx.key = _bbCtx.strbuf64
 
 /// Handle an element of array()
@@ -879,9 +880,9 @@ struct _bsonBuildContext_t {
    /// The key that is pending an append
    const char *key;
    /// The length of the string given in 'key'
-   int key_len;
+   size_t key_len;
    /// The index of the array being built (if applicable)
-   int index;
+   size_t index;
    /// A buffer for short strings
    char strbuf64[64];
    /// The parent context (if building a sub-document)
@@ -934,7 +935,7 @@ _bson_dsl_test_strequal (const char *string, bool case_sensitive)
    if (bson_iter_type (&it) == BSON_TYPE_UTF8) {
       uint32_t len;
       const char *s = bson_iter_utf8 (&it, &len);
-      if (len != strlen (string)) {
+      if (len != (uint32_t) strlen (string)) {
          return false;
       }
       if (case_sensitive) {
@@ -948,7 +949,7 @@ _bson_dsl_test_strequal (const char *string, bool case_sensitive)
 
 static inline bool
 _bson_dsl_key_is_anyof (const char *key,
-                        const int keylen,
+                        const size_t keylen,
                         int case_sensitive,
                         ...)
 {
