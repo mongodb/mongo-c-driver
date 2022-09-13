@@ -36,6 +36,11 @@ typedef struct mcd_time_point {
    int64_t _rep;
 } mcd_time_point;
 
+/// The latest representable future point-in-time
+#define MCD_TIME_POINT_MAX ((mcd_time_point){._rep = INT64_MAX})
+/// The oldest representable past point-in-time
+#define MCD_TIME_POINT_MIN ((mcd_time_point){._rep = INT64_MIN})
+
 /**
  * @brief Represents a (possibly negative) duration of time.
  *
@@ -50,6 +55,13 @@ typedef struct mcd_duration {
    int64_t _rep;
 } mcd_duration;
 
+/// The maximum representable duration
+#define MCD_DURATION_MAX ((mcd_duration){._rep = INT64_MAX})
+/// The minimal representable (negative) duration
+#define MCD_DURATION_MIN ((mcd_duration){._rep = INT64_MIN})
+/// A duration representing zero amount of time
+#define MCD_DURATION_ZERO ((mcd_duration){._rep = 0})
+
 /**
  * @brief Obtain the current time point. This is only an abstract
  * monotonically increasing time, and does not necessarily correlate with
@@ -62,56 +74,117 @@ mcd_now (void)
    return (mcd_time_point){._rep = bson_get_monotonic_time ()};
 }
 
-/// Create a duration from a number of microseconds
+/**
+ * @brief Create a duration from a number of microseconds.
+ *
+ * @param s A number of microseconds
+ * @return mcd_duration A duration corresponding to 's' microseconds.
+ *
+ * @note Saturates to the min/max duration if the duration is too great in
+ * magnitude.
+ */
 static inline mcd_duration
 mcd_microseconds (int64_t s)
 {
-   // 'mcd_duration' is encoded in a number of microseconds
+   // 'mcd_duration' is encoded in a number of microseconds, so we don't need to
+   // do bounds checking here.
    return (mcd_duration){._rep = s};
 }
 
-/// Create a duration from a number of milliseconds
+/**
+ * @brief Create a duration from a number of milliseconds.
+ *
+ * @param s A number of milliseconds
+ * @return mcd_duration A duration corresponding to 's' milliseconds.
+ *
+ * @note Saturates to the min/max duration if the duration is too great in
+ * magnitude.
+ */
 static inline mcd_duration
 mcd_milliseconds (int64_t s)
 {
    // 1'000 microseconds per millisecond:
-   BSON_ASSERT (!_mcd_i64_mul_would_overflow (s, 1000));
+   if (_mcd_i64_mul_would_overflow (s, 1000)) {
+      return s < 0 ? MCD_DURATION_MIN : MCD_DURATION_MAX;
+   }
    return mcd_microseconds (s * 1000);
 }
 
-/// Create a duration from a number of seconds
+/**
+ * @brief Create a duration from a number of seconds.
+ *
+ * @param s A number of seconds
+ * @return mcd_duration A duration corresponding to 's' seconds.
+ *
+ * @note Saturates to the min/max duration if the duration is too great in
+ * magnitude.
+ */
 static inline mcd_duration
 mcd_seconds (int64_t s)
 {
    // 1'000 milliseconds per second:
-   BSON_ASSERT (!_mcd_i64_mul_would_overflow (s, 1000));
+   if (_mcd_i64_mul_would_overflow (s, 1000)) {
+      return s < 0 ? MCD_DURATION_MIN : MCD_DURATION_MAX;
+   }
    return mcd_milliseconds (s * 1000);
 }
 
-/// Create a duration from a number of minutes
+/**
+ * @brief Create a duration from a number of minutes.
+ *
+ * @param m A number of minutes
+ * @return mcd_duration A duration corresponding to 's' minutes.
+ *
+ * @note Saturates to the min/max duration if the duration is too great in
+ * magnitude.
+ */
 static inline mcd_duration
 mcd_minutes (int64_t m)
 {
    // Sixty seconds per minute:
-   BSON_ASSERT (!_mcd_i64_mul_would_overflow (m, 60));
+   if (_mcd_i64_mul_would_overflow (m, 60)) {
+      return m < 0 ? MCD_DURATION_MIN : MCD_DURATION_MAX;
+   }
    return mcd_seconds (m * 60);
 }
 
-/// Convert an abstract duration to a number of milliseconds
+/**
+ * @brief Obtain the cound of full milliseconds encoded in the given duration
+ *
+ * @param d An abstract duration
+ * @return int64_t The number of milliseconds in 'd'
+ *
+ * @note Does not round-trip with `mcd_milliseconds(N)` if N-milliseconds is
+ * unrepresentable in the duration type. This only occurs in extreme durations
+ */
 static inline int64_t
 mcd_get_milliseconds (mcd_duration d)
 {
    return d._rep / 1000;
 }
 
-/// Obtain the time point relative to a base time as if by waiting for
-/// `delta` amount of time (which may be negatve)
+/**
+ * @brief Obtain a point-in-time relative to a base time offset by the given
+ * duration (which may be negative).
+ *
+ * @param from The basis of the time offset
+ * @param delta The amount of time to shift the resulting time point
+ * @return mcd_time_point If 'delta' is a positive duration, the result is a
+ * point-in-time *after* 'from'. If 'delta' is a negative duration, the result
+ * is a point-in-time *before* 'from'.
+ *
+ * @note If the resulting point-in-time is unrepresentable, the return value
+ * will be clamped to MCD_TIME_POINT_MIN or MCD_TIME_POINT_MAX.
+ */
 static inline mcd_time_point
 mcd_later (mcd_time_point from, mcd_duration delta)
 {
-   BSON_ASSERT (!_mcd_i64_add_would_overflow (from._rep, delta._rep));
-   from._rep += delta._rep;
-   return from;
+   if (_mcd_i64_add_would_overflow (from._rep, delta._rep)) {
+      return delta._rep < 0 ? MCD_TIME_POINT_MIN : MCD_TIME_POINT_MAX;
+   } else {
+      from._rep += delta._rep;
+      return from;
+   }
 }
 
 /**
@@ -132,10 +205,19 @@ mcd_later (mcd_time_point from, mcd_duration delta)
 static inline mcd_duration
 mcd_time_difference (mcd_time_point then, mcd_time_point from)
 {
-   BSON_ASSERT (!_mcd_i64_sub_would_overflow (then._rep, from._rep));
-   int64_t diff = then._rep - from._rep;
-   // Our time_point encodes the time using a microsecond counter.
-   return mcd_microseconds (diff);
+   if (_mcd_i64_sub_would_overflow (then._rep, from._rep)) {
+      if ((then._rep < 0) == (from._rep < 0)) {
+         // Same sign, would sub to a positive
+         return MCD_DURATION_MAX;
+      } else {
+         // Diff sign, would sub to a negative
+         return MCD_DURATION_MIN;
+      }
+   } else {
+      int64_t diff = then._rep - from._rep;
+      // Our time_point encodes the time using a microsecond counter.
+      return mcd_microseconds (diff);
+   }
 }
 
 /**
@@ -187,6 +269,33 @@ mcd_duration_compare (mcd_duration left, mcd_duration right)
    }
 }
 
+/**
+ * @brief Clamp a duration between two other durations
+ *
+ * @param dur The duration to transform
+ * @param min The minimum duration
+ * @param max The maximum duration
+ * @retval min If `dur` < `min`
+ * @retval max If `dur` > `max`
+ * @retval dur Otherwise
+ */
+static inline mcd_duration
+mcd_duration_clamp (mcd_duration dur, mcd_duration min, mcd_duration max)
+{
+   BSON_ASSERT (mcd_duration_compare (min, max) <= 0 &&
+                "Invalid min-max range given to mcd_duration_clamp()");
+   if (mcd_duration_compare (dur, min) < 0) {
+      // The duration is less than the minimum
+      return min;
+   } else if (mcd_duration_compare (dur, max) > 0) {
+      // The duration is greater than the maximum
+      return max;
+   } else {
+      // The duration is in-bounds
+      return dur;
+   }
+}
+
 /// Represents a timer that can be expired
 typedef struct mcd_timer {
    /// The point in time after which the time will become expired.
@@ -204,7 +313,8 @@ mcd_timer_expire_at (mcd_time_point time)
  * @brief Create a timer that will expire after waiting for the given duration
  * relative to now
  *
- * @note If the duration is less-than zero, the timer will already have expired
+ * @note If the duration is less-than or equal-to zero, the timer will already
+ * have expired
  */
 static inline mcd_timer
 mcd_timer_expire_after (mcd_duration after)
