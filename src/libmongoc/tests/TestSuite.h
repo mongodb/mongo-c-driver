@@ -338,21 +338,22 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CMPSTR(a, b)                                                   \
-   do {                                                                       \
-      /* evaluate once */                                                     \
-      const char *_a = a;                                                     \
-      const char *_b = b;                                                     \
-      if (((_a) != (_b)) && !!strcmp ((_a), (_b))) {                          \
-         fprintf (stderr,                                                     \
-                  "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n %s:%d  %s()\n", \
-                  _a,                                                         \
-                  _b,                                                         \
-                  __FILE__,                                                   \
-                  __LINE__,                                                   \
-                  BSON_FUNC);                                                 \
-         abort ();                                                            \
-      }                                                                       \
+#define ASSERT_CMPSTR(a, b)                                                    \
+   do {                                                                        \
+      /* evaluate once */                                                      \
+      const char *_a = a;                                                      \
+      const char *_b = b;                                                      \
+      if (((_a) != (_b)) && !!strcmp ((_a), (_b))) {                           \
+         fprintf (stderr,                                                      \
+                  "FAIL\n\nAssert Failure:\n  \"%s\"\n  !=\n  \"%s\"\n %s:%d " \
+                  " %s()\n",                                                   \
+                  _a,                                                          \
+                  _b,                                                          \
+                  __FILE__,                                                    \
+                  __LINE__,                                                    \
+                  BSON_FUNC);                                                  \
+         abort ();                                                             \
+      }                                                                        \
    } while (0)
 
 #define ASSERT_CMPJSON(_a, _b)                                 \

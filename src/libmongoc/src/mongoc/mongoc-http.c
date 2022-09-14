@@ -21,6 +21,7 @@
 #include "mongoc-stream-tls.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-buffer-private.h"
+#include "mcd-time.h"
 
 void
 _mongoc_http_request_init (mongoc_http_request_t *request)
@@ -107,6 +108,9 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    char *ptr;
    const char *header_delimiter = "\r\n\r\n";
 
+   const mcd_timer timer =
+      mcd_timer_expire_after (mcd_milliseconds (timeout_ms));
+
    memset (res, 0, sizeof (*res));
    _mongoc_buffer_init (&http_response_buf, NULL, 0, NULL, NULL);
 
@@ -115,7 +119,11 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       goto fail;
    }
 
-   stream = mongoc_client_connect_tcp (timeout_ms, &host_list, error);
+   stream = mongoc_client_connect_tcp (
+      // +1 to prevent passing zero as a timeout
+      mcd_get_milliseconds (mcd_timer_remaining (timer)) + 1,
+      &host_list,
+      error);
    if (!stream) {
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
@@ -153,7 +161,10 @@ _mongoc_http_send (const mongoc_http_request_t *req,
 
       stream = tls_stream;
       if (!mongoc_stream_tls_handshake_block (
-             stream, req->host, timeout_ms, error)) {
+             stream,
+             req->host,
+             mcd_get_milliseconds (mcd_timer_remaining (timer)),
+             error)) {
          goto fail;
       }
    }
@@ -171,25 +182,51 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    iovec.iov_base = http_request->str;
    iovec.iov_len = http_request->len;
 
-   if (!_mongoc_stream_writev_full (stream, &iovec, 1, timeout_ms, error)) {
+   if (!_mongoc_stream_writev_full (
+          stream,
+          &iovec,
+          1,
+          mcd_get_milliseconds (mcd_timer_remaining (timer)),
+          error)) {
       goto fail;
    }
 
    if (req->body && req->body_len) {
       iovec.iov_base = (void *) req->body;
       iovec.iov_len = req->body_len;
-      if (!_mongoc_stream_writev_full (stream, &iovec, 1, timeout_ms, error)) {
+      if (!_mongoc_stream_writev_full (
+             stream,
+             &iovec,
+             1,
+             mcd_get_milliseconds (mcd_timer_remaining (timer)),
+             error)) {
          goto fail;
       }
    }
 
    /* Read until connection close. */
-   do {
+   while (1) {
       bytes_read = _mongoc_buffer_try_append_from_stream (
-         &http_response_buf, stream, 512, timeout_ms);
-   } while (bytes_read > 0 || mongoc_stream_should_retry (stream));
+         &http_response_buf,
+         stream,
+         1024 * 32,
+         mcd_get_milliseconds (mcd_timer_remaining (timer)));
+      if (mongoc_stream_should_retry (stream)) {
+         continue;
+      }
+      if (bytes_read <= 0) {
+         break;
+      }
+      if (http_response_buf.datalen > 1024 * 1024 * 8) {
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "HTTP response message is too large");
+         goto fail;
+      }
+   }
 
-   if (bytes_read < 0 && mongoc_stream_timed_out (stream)) {
+   if (mongoc_stream_timed_out (stream)) {
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
