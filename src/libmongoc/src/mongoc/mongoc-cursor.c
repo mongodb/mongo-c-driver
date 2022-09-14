@@ -791,9 +791,9 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
    _mongoc_cursor_append_docs_array (cursor, &docs_array, response);
 
    bsonBuildDecl (reply,
-                  kv ("ok", i32 (1)),
+                  kv ("ok", int32 (1)),
                   kv ("cursor",
-                      doc (kv ("id", i64 (mongoc_cursor_get_id (cursor))),
+                      doc (kv ("id", int64 (mongoc_cursor_get_id (cursor))),
                            kv ("ns", utf8_w_len (cursor->ns, cursor->nslen)),
                            kv (first_batch ? "firstBatch" : "nextBatch",
                                bsonArray (docs_array)))));
@@ -842,7 +842,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
    /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
     * {ok: 0}
     */
-   bsonBuildDecl (reply, kv ("ok", i32 (0)));
+   bsonBuildDecl (reply, kv ("ok", int32 (0)));
 
    mongoc_apm_command_failed_init (&event,
                                    duration,

@@ -2690,12 +2690,102 @@ test_bson_dsl_predicate (void)
 }
 
 static void
+do_assert_bson_equal (const bson_t *actual,
+                      const bson_t *expected,
+                      const char *file,
+                      int line)
+{
+   char *actual_str = bson_as_canonical_extended_json (actual, NULL);
+   char *expected_str = bson_as_canonical_extended_json (expected, NULL);
+   if (strcmp (actual_str, expected_str) != 0) {
+      test_error ("%s:%d: BSON documents are not equal:\n  Expected: %s\n    "
+                  "Actual: %s\n",
+                  file,
+                  line,
+                  expected_str,
+                  actual_str);
+   }
+   bson_free (actual_str);
+   bson_free (expected_str);
+}
+
+#define ASSERT_BSON_EQUAL(Actual, ...) \
+   do_assert_bson_equal (              \
+      &(Actual), TMP_BSON_FROM_JSON (__VA_ARGS__), __FILE__, __LINE__)
+
+static void
 test_bson_dsl_build (void)
 {
    // Create a very simple empty document
    bsonBuildDecl (doc);
    BSON_ASSERT (!bsonBuildError);
-   BSON_ASSERT (bson_empty (&doc));
+   ASSERT_BSON_EQUAL (doc, {});
+   bson_destroy (&doc);
+
+   bsonBuild (doc, kv ("foo", cstr ("bar")));
+   ASSERT_BSON_EQUAL (doc, {"foo" : "bar"});
+   bson_destroy (&doc);
+
+   bsonBuild (doc, kv ("foo", int32 (92)));
+   ASSERT_BSON_EQUAL (doc, {"foo" : 92});
+   bson_destroy (&doc);
+
+   bsonBuild (doc, kvl ("hello", 1, int32 (9)));
+   ASSERT_BSON_EQUAL (doc, {"h" : 9});
+   bson_destroy (&doc);
+
+   // Conditional insert
+   bsonBuild (doc,
+              if (0, then (kv ("never", null)), else(kv ("truth", int32 (1)))));
+   ASSERT_BSON_EQUAL (doc, {"truth" : 1});
+   bson_destroy (&doc);
+
+   // Insert a subdoc
+   bson_t *subdoc =
+      TMP_BSON_FROM_JSON ({"child" : [ 1, 2, 3 ], "other" : null});
+
+   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, true))));
+   ASSERT_BSON_EQUAL (doc,
+                      {"subdoc" : {"child" : [ 1, 2, 3 ], "other" : null}});
+   bson_destroy (&doc);
+
+   // Conditional insert
+   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, key ("other")))));
+   ASSERT_BSON_EQUAL (doc, {"subdoc" : {"other" : null}});
+   bson_destroy (&doc);
+
+   // Nested DSL docs
+   bsonBuild (doc,
+              kv ("top",
+                  doc (kv ("inner1", array ()),
+                       kv ("inner2", null),
+                       kv ("inner3", array (int32 (1), int32 (2), int32 (3))),
+                       insert (*subdoc, true),
+                       kv ("inner4", doc (kv ("innermost", int32 (42)))))));
+   ASSERT_BSON_EQUAL (doc, {
+      "top" : {
+         "inner1" : [],
+         "inner2" : null,
+         "inner3" : [ 1, 2, 3 ],
+         "child" : [ 1, 2, 3 ],
+         "other" : null,
+         "inner4" : {"innermost" : 42}
+      }
+   });
+
+   // Do not destroy doc, but append to it
+   bsonBuildAppend (doc, kv ("anotherTop", null));
+   ASSERT_BSON_EQUAL (doc, {
+      "top" : {
+         "inner1" : [],
+         "inner2" : null,
+         "inner3" : [ 1, 2, 3 ],
+         "child" : [ 1, 2, 3 ],
+         "other" : null,
+         "inner4" : {"innermost" : 42}
+      },
+      "anotherTop" : null
+   });
    bson_destroy (&doc);
 }
 

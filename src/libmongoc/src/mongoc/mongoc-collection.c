@@ -765,8 +765,8 @@ mongoc_collection_count_with_opts (
           if (query,                // If we have a query,
               then (bson (*query)), // Copy it
               else(doc ()))),       // Otherwise, add an empty doc
-      if (limit, then (kv ("limit", i64 (limit)))),
-      if (skip, then (kv ("skip", i64 (skip)))));
+      if (limit, then (kv ("limit", int64 (limit)))),
+      if (skip, then (kv ("skip", int64 (skip)))));
 
 
    success = _mongoc_client_command_with_opts (collection->client,

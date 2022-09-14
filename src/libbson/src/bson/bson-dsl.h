@@ -201,22 +201,22 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 #define _bsonArrayOperation_cstr(X) _bsonArrayAppendValue (cstr (X))
 
 /// Append an int32
-#define _bsonValueOperation_i32(Integer)                          \
-   if (!bson_append_int32 (_bsonBuildAppendArgs, (Integer))) {    \
-      bsonBuildError =                                            \
-         "Error while appending i32(" _bsonDSL_str (Integer) ")"; \
-   } else                                                         \
+#define _bsonValueOperation_int32(Integer)                          \
+   if (!bson_append_int32 (_bsonBuildAppendArgs, (Integer))) {      \
+      bsonBuildError =                                              \
+         "Error while appending int32(" _bsonDSL_str (Integer) ")"; \
+   } else                                                           \
       ((void) 0)
-#define _bsonArrayOperation_i32(X) _bsonArrayAppendValue (i32 (X))
+#define _bsonArrayOperation_int32(X) _bsonArrayAppendValue (int32 (X))
 
 /// Append an int64
-#define _bsonValueOperation_i64(Integer)                          \
-   if (!bson_append_int64 (_bsonBuildAppendArgs, (Integer))) {    \
-      bsonBuildError =                                            \
-         "Error while appending i64(" _bsonDSL_str (Integer) ")"; \
-   } else                                                         \
+#define _bsonValueOperation_int64(Integer)                          \
+   if (!bson_append_int64 (_bsonBuildAppendArgs, (Integer))) {      \
+      bsonBuildError =                                              \
+         "Error while appending int64(" _bsonDSL_str (Integer) ")"; \
+   } else                                                           \
       ((void) 0)
-#define _bsonArrayOperation_i64(X) _bsonArrayAppendValue (i64 (X))
+#define _bsonArrayOperation_int64(X) _bsonArrayAppendValue (int64 (X))
 
 /// Append the value referenced by a given iterator
 #define _bsonValueOperation_iterValue(Iter)                          \
@@ -740,7 +740,8 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 #define _bsonPredicate_Condition_truthy (bson_iter_as_bool (&bsonVisitIter))
 #define _bsonPredicate_Condition_falsey (!bson_iter_as_bool (&bsonVisitIter))
-#define _bsonPredicate_Condition_empty (_bson_dsl_is_empty_bson (&bsonVisitIter))
+#define _bsonPredicate_Condition_empty \
+   (_bson_dsl_is_empty_bson (&bsonVisitIter))
 
 #define _bsonPredicate_Condition_strEqual(S) (_bson_dsl_test_strequal (S, true))
 #define _bsonPredicate_Condition_iStrEqual(S) \

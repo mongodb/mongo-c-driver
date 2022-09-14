@@ -107,7 +107,7 @@ _make_agg_cmd (const char *ns,
               // If 'ns' contains a dot, insert the string after the dot:
               then (cstr (dot + 1)),
               // Otherwise just an integer 1:
-              else(i32 (1)))));
+              else(int32 (1)))));
    if ((error_hint = "append-aggregate", error = bsonBuildError)) {
       goto fail;
    }
@@ -153,7 +153,7 @@ _make_agg_cmd (const char *ns,
           // 'cursor' as an empty subdocument.
           doc (if (opts->batchSize_is_set &&
                       !(has_write_key && opts->batchSize == 0),
-                   then (kv ("batchSize", i32 (opts->batchSize)))))));
+                   then (kv ("batchSize", int32 (opts->batchSize)))))));
    if ((error_hint = "build-cursor", error = bsonBuildError)) {
       goto fail;
    }

@@ -63,9 +63,9 @@ Result:
 
 ```c
 bsonBuildDecl(e,
-    kv("integer", i32(8)),
+    kv("integer", int32(8)),
     kv("subdoc", doc(kv("foo", cstr("bar")), kv("baz", null))),
-    kv("anArray", array(i32(1), i32(2), null, cstr("I am a string"))));
+    kv("anArray", array(int32(1), int32(2), null, cstr("I am a string"))));
 ```
 
 Result:
@@ -93,8 +93,8 @@ bson_t* make_aggregate(const char* coll,
     kv("pipeline", bsonArray(*pipeline_array)),
     kv("cursor",
        doc(if(batch_size != -1,
-              then(kv("batchSize", i32(batch_size)))))),
-    if(timeout_ms > 0, then(kv("maxTimeMS", i32(timeout_ms))),
+              then(kv("batchSize", int32(batch_size)))))),
+    if(timeout_ms > 0, then(kv("maxTimeMS", int32(timeout_ms))),
     if(comment, then(kv("comment", bson(*comment)))));
   // Check if any of the above failed:
   if (bsonBuildError) {
@@ -243,8 +243,8 @@ Generates a BSON null value.
 Generate a BSON boolean value from the given C boolean expression.
 
 
-#### `i32(int32_t v)`
-#### `i64(int64_t v)`
+#### `int32(int32_t v)`
+#### `int64(int64_t v)`
 
 Generate an integral value from the given C integer expression.
 
@@ -825,15 +825,15 @@ bsonBuildAppend(
   kv("count",
      utf8_w_len(collection->collection, collection->collectionlen)),
   kv("query", if(query, then (bson (*query)), else(doc()))),
-  if(limit, then(kv("limit", o64(limit)))),  // <-- misspelled "i64"
-  if(skip, then(kv("skip", i64(skip)))));
+  if(limit, then(kv("limit", o64(limit)))),  // <-- misspelled "int64"
+  if(skip, then(kv("skip", int64(skip)))));
 ```
 
 results in the following error from GCC:
 
 ```
 error: implicit declaration of function ‘_bsonValueOperation_o64’;
-  did you mean ‘_bsonValueOperation_i64’? [-Werror=implicit-function-declaration]
+  did you mean ‘_bsonValueOperation_int64’? [-Werror=implicit-function-declaration]
 ```
 
 This error message includes a helpful hint as to the spelling error and likely
