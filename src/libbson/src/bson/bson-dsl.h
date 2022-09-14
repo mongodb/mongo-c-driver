@@ -187,17 +187,17 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    _bsonDSL_end
 
 /// Append a UTF-8 string with an explicit length
-#define _bsonValueOperation_utf8_w_len(String, Len)                   \
-   if (!bson_append_utf8 (_bsonBuildAppendArgs, (String), (int)(Len))) {   \
-      bsonBuildError =                                                \
-         "Error while appending utf8 string: " _bsonDSL_str (String); \
-   } else                                                             \
+#define _bsonValueOperation_utf8_w_len(String, Len)                       \
+   if (!bson_append_utf8 (_bsonBuildAppendArgs, (String), (int) (Len))) { \
+      bsonBuildError =                                                    \
+         "Error while appending utf8 string: " _bsonDSL_str (String);     \
+   } else                                                                 \
       ((void) 0)
 #define _bsonArrayOperation_utf8_w_len(X) _bsonArrayAppendValue (utf8_w_len (X))
 
 /// Append a "cstr" as UTF-8
 #define _bsonValueOperation_cstr(String) \
-   _bsonValueOperation_utf8_w_len ((String),  strlen (String))
+   _bsonValueOperation_utf8_w_len ((String), strlen (String))
 #define _bsonArrayOperation_cstr(X) _bsonArrayAppendValue (cstr (X))
 
 /// Append an int32
@@ -407,6 +407,8 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 #define _bsonDSL_Type_timestamp BSON_TYPE_TIMESTAMP
 #define _bsonDSL_Type_int64 BSON_TYPE_INT64
 #define _bsonDSL_Type_decimal128 BSON_TYPE_DECIMAL128
+
+#define _bsonDSL_Type_string __NOTE__No_type_named__string__did_you_mean__utf8
 
 #define _bsonVisitOperation_halt _bvHalt = true
 
@@ -685,6 +687,9 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 #define bsonPredicate(P) _bsonPredicate _bsonDSL_nothing () (P)
 #define _bsonPredicate(P) _bsonPredicate_Condition_##P
 
+#define _bsonPredicate_Condition_ \
+   __NOTE__Missing_name_for_a_predicate_expression
+
 #define _bsonPredicate_Condition_allOf(...) \
    (1 _bsonDSL_mapMacro (_bsonPredicateAnd, ~, __VA_ARGS__))
 #define _bsonPredicate_Condition_anyOf(...) \
@@ -735,7 +740,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 #define _bsonPredicate_Condition_truthy (bson_iter_as_bool (&bsonVisitIter))
 #define _bsonPredicate_Condition_falsey (!bson_iter_as_bool (&bsonVisitIter))
-#define _bsonPredicate_Condition_empty (_bson_dsl_is_empty_bson (bsonVisitIter))
+#define _bsonPredicate_Condition_empty (_bson_dsl_is_empty_bson (&bsonVisitIter))
 
 #define _bsonPredicate_Condition_strEqual(S) (_bson_dsl_test_strequal (S, true))
 #define _bsonPredicate_Condition_iStrEqual(S) \
