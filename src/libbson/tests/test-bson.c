@@ -2520,7 +2520,7 @@ static void
 test_bson_dsl_parse (void)
 {
    // Do nothing:
-   bsonParse (*TMP_BSON_FROM_JSON ({}));
+   bsonParse (*TMP_BSON_FROM_JSON ({}), do());
    BSON_ASSERT (!bsonParseError);
 
    // Generate an error
@@ -2528,7 +2528,7 @@ test_bson_dsl_parse (void)
    ASSERT_CMPSTR (bsonParseError, "failed 1");
 
    // Error is reset on each entry
-   bsonParse (*TMP_BSON_FROM_JSON ({}));
+   bsonParse (*TMP_BSON_FROM_JSON ({}), do());
    BSON_ASSERT (!bsonParseError);
 
    // Find an element
@@ -2545,7 +2545,9 @@ test_bson_dsl_parse (void)
    // We can fail to find too
    found = false;
    bool not_found = false;
-   bsonParse (*simple_foo_bar, find (key ("bad")), else(do(not_found = true)));
+   bsonParse (*simple_foo_bar,
+              find (key ("bad"), do(found = true)),
+              else(do(not_found = true)));
    BSON_ASSERT (!found);
    BSON_ASSERT (not_found);
 
@@ -2633,7 +2635,6 @@ test_bson_dsl_visit (void)
 static void
 test_bson_dsl_predicate (void)
 {
-   int n_matched = 0;
    bson_t *document = TMP_BSON_FROM_JSON ({
       "number1" : 1,
       "number2" : 2.1,
@@ -2678,9 +2679,11 @@ test_bson_dsl_predicate (void)
          visitEach (if (lastElement,
                         then (require (key ("b")), require (type (utf8))),
                         else(require (key ("a")), require (type (null)))))),
-      require (key ("with_last"),
-               visitEach (case (when (key ("a"), require (type (null))),
-                                else(do(abort ()))))),
+      require (
+         key ("with_last"),
+         visitEach (case (when (key ("a"), require (type (null))),
+                          when (key ("b"), require (strEqual ("lastElement"))),
+                          else(do(abort ()))))),
       require (key ("string"),
                case (when (strEqual ("goodbye"), do(abort ())),
                      when (strEqual ("hello"), nop),
@@ -2717,7 +2720,7 @@ static void
 test_bson_dsl_build (void)
 {
    // Create a very simple empty document
-   bsonBuildDecl (doc);
+   bsonBuildDecl (doc, do());
    BSON_ASSERT (!bsonBuildError);
    ASSERT_BSON_EQUAL (doc, {});
    bson_destroy (&doc);
@@ -2888,6 +2891,7 @@ test_bson_install (TestSuite *suite)
                   test_bson_append_null_from_utf8_or_symbol);
    TestSuite_Add (suite, "/bson/as_json_string", test_bson_as_json_string);
 
+   TestSuite_Add (suite, "/bson/dsl/predicate", test_bson_dsl_predicate);
    TestSuite_Add (suite, "/bson/dsl/parse", test_bson_dsl_parse);
    TestSuite_Add (suite, "/bson/dsl/visit", test_bson_dsl_visit);
    TestSuite_Add (suite, "/bson/dsl/build", test_bson_dsl_build);

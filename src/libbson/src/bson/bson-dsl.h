@@ -54,6 +54,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    const bool _bvBreak = false;                               \
    (void) _bvContinue;                                        \
    (void) _bvBreak;                                           \
+   (void) _bvHalt;                                            \
    _bsonDSL_eval (_bsonParse ((Document), __VA_ARGS__));      \
    _bsonDSL_restoreWarnings ();                               \
    _bsonDSL_end
@@ -65,6 +66,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_begin ("bsonVisitEach(%s)", _bsonDSL_str (Document)); \
    _bsonDSL_disableWarnings ();                                   \
    bool _bvHalt = false;                                          \
+   (void) _bvHalt;                                                \
    _bsonDSL_eval (_bsonVisitEach ((Document), __VA_ARGS__));      \
    _bsonDSL_restoreWarnings ();                                   \
    _bsonDSL_end
@@ -600,11 +602,12 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 #define _bsonVisitOperation_continue _bvContinue = true
 #define _bsonVisitOperation_break _bvBreak = _bvContinue = true
 #define _bsonVisitOperation_require(Predicate)                    \
+   _bsonDSL_begin ("require(%s)", _bsonDSL_str (Predicate));      \
    if (!bsonPredicate (Predicate)) {                              \
       bsonParseError =                                            \
          "Element requirement failed: " _bsonDSL_str (Predicate); \
-   } else                                                         \
-      ((void) 0)
+   }                                                              \
+   _bsonDSL_end
 
 #define _bsonVisitOperation_error(S) bsonParseError = (S)
 
@@ -624,6 +627,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       };                                                         \
       _bsonVisitContextThreadLocalPtr = &_bpCtx;                 \
       bool _bpFoundElement = false;                              \
+      (void) _bpFoundElement;                                    \
       _bsonParse_applyOps (__VA_ARGS__);                         \
       /* Restore the dsl context */                              \
       _bsonVisitContextThreadLocalPtr = bsonVisitContext.parent; \
