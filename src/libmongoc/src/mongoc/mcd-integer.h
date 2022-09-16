@@ -19,11 +19,13 @@
 
 #include "mongoc-prelude.h"
 
+#include <bson/bson.h>
+
 #include <stdint.h>
 #include <stdbool.h>
 
 /// Return 'true' iff (left * right) would overflow with int64
-static inline bool
+static BSON_INLINE bool
 _mcd_i64_mul_would_overflow (int64_t left, int64_t right)
 {
    if (right == -1) {
@@ -180,7 +182,7 @@ _mcd_i64_mul_would_overflow (int64_t left, int64_t right)
 }
 
 /// Return 'true' iff (left + right) would overflow with int64
-static inline bool
+static BSON_INLINE bool
 _mcd_i64_add_would_overflow (int64_t left, int64_t right)
 {
    /**
@@ -362,7 +364,7 @@ _mcd_i64_add_would_overflow (int64_t left, int64_t right)
 }
 
 /// Return 'true' iff (left - right) would overflow with int64
-static inline bool
+static BSON_INLINE bool
 _mcd_i64_sub_would_overflow (int64_t left, int64_t right)
 {
    // Lemma: N - M = N + (-M), therefore (N - M) is bounded iff (N + -M)

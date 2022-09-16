@@ -67,7 +67,7 @@ typedef struct mcd_duration {
  * monotonically increasing time, and does not necessarily correlate with
  * any real-world clock.
  */
-static inline mcd_time_point
+static BSON_INLINE mcd_time_point
 mcd_now (void)
 {
    // Create a time point representing the current time.
@@ -83,7 +83,7 @@ mcd_now (void)
  * @note Saturates to the min/max duration if the duration is too great in
  * magnitude.
  */
-static inline mcd_duration
+static BSON_INLINE mcd_duration
 mcd_microseconds (int64_t s)
 {
    // 'mcd_duration' is encoded in a number of microseconds, so we don't need to
@@ -100,7 +100,7 @@ mcd_microseconds (int64_t s)
  * @note Saturates to the min/max duration if the duration is too great in
  * magnitude.
  */
-static inline mcd_duration
+static BSON_INLINE mcd_duration
 mcd_milliseconds (int64_t s)
 {
    // 1'000 microseconds per millisecond:
@@ -119,7 +119,7 @@ mcd_milliseconds (int64_t s)
  * @note Saturates to the min/max duration if the duration is too great in
  * magnitude.
  */
-static inline mcd_duration
+static BSON_INLINE mcd_duration
 mcd_seconds (int64_t s)
 {
    // 1'000 milliseconds per second:
@@ -138,7 +138,7 @@ mcd_seconds (int64_t s)
  * @note Saturates to the min/max duration if the duration is too great in
  * magnitude.
  */
-static inline mcd_duration
+static BSON_INLINE mcd_duration
 mcd_minutes (int64_t m)
 {
    // Sixty seconds per minute:
@@ -157,7 +157,7 @@ mcd_minutes (int64_t m)
  * @note Does not round-trip with `mcd_milliseconds(N)` if N-milliseconds is
  * unrepresentable in the duration type. This only occurs in extreme durations
  */
-static inline int64_t
+static BSON_INLINE int64_t
 mcd_get_milliseconds (mcd_duration d)
 {
    return d._rep / 1000;
@@ -176,7 +176,7 @@ mcd_get_milliseconds (mcd_duration d)
  * @note If the resulting point-in-time is unrepresentable, the return value
  * will be clamped to MCD_TIME_POINT_MIN or MCD_TIME_POINT_MAX.
  */
-static inline mcd_time_point
+static BSON_INLINE mcd_time_point
 mcd_later (mcd_time_point from, mcd_duration delta)
 {
    if (_mcd_i64_add_would_overflow (from._rep, delta._rep)) {
@@ -202,7 +202,7 @@ mcd_later (mcd_time_point from, mcd_duration delta)
  * "from", you will receive a paradoxical *negative* duration, indicating
  * the amount of time needed to time-travel backwards to reach "then."
  */
-static inline mcd_duration
+static BSON_INLINE mcd_duration
 mcd_time_difference (mcd_time_point then, mcd_time_point from)
 {
    if (_mcd_i64_sub_would_overflow (then._rep, from._rep)) {
@@ -229,7 +229,7 @@ mcd_time_difference (mcd_time_point then, mcd_time_point from)
  * @retval >0 If 'right' is before 'left'
  * @retval  0 If 'left' and 'right' are equivalent
  */
-static inline int
+static BSON_INLINE int
 mcd_time_compare (mcd_time_point left, mcd_time_point right)
 {
    // Obtain the amount of time needed to wait from 'right' to reach
@@ -257,7 +257,7 @@ mcd_time_compare (mcd_time_point left, mcd_time_point right)
  * @retval >0 If left is "greater than" right
  * @retval  0 If left and right are equivalent
  */
-static inline int
+static BSON_INLINE int
 mcd_duration_compare (mcd_duration left, mcd_duration right)
 {
    if (left._rep < right._rep) {
@@ -279,7 +279,7 @@ mcd_duration_compare (mcd_duration left, mcd_duration right)
  * @retval max If `dur` > `max`
  * @retval dur Otherwise
  */
-static inline mcd_duration
+static BSON_INLINE mcd_duration
 mcd_duration_clamp (mcd_duration dur, mcd_duration min, mcd_duration max)
 {
    BSON_ASSERT (mcd_duration_compare (min, max) <= 0 &&
@@ -303,7 +303,7 @@ typedef struct mcd_timer {
 } mcd_timer;
 
 /// Create a time that will expire at the given time
-static inline mcd_timer
+static BSON_INLINE mcd_timer
 mcd_timer_expire_at (mcd_time_point time)
 {
    return (mcd_timer){time};
@@ -316,7 +316,7 @@ mcd_timer_expire_at (mcd_time_point time)
  * @note If the duration is less-than or equal-to zero, the timer will already
  * have expired
  */
-static inline mcd_timer
+static BSON_INLINE mcd_timer
 mcd_timer_expire_after (mcd_duration after)
 {
    return mcd_timer_expire_at (mcd_later (mcd_now (), after));
@@ -331,7 +331,7 @@ mcd_timer_expire_after (mcd_duration after)
  * @note If the timer is already expired, returns a zero duration. Will never
  * return a negative duration.
  */
-static inline mcd_duration
+static BSON_INLINE mcd_duration
 mcd_timer_remaining (mcd_timer timer)
 {
    // Compute the distance until the expiry time relative to now

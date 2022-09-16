@@ -77,7 +77,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
 
    if (len < 0) {
       // Detect from a null-terminated string
-      len = strlen (json);
+      len = (int) strlen (json);
    }
 
    // Zero the output
