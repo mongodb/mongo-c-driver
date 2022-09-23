@@ -796,6 +796,22 @@ functions:
         if [ ! -d "drivers-evergreen-tools" ]; then
             git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
         fi
+  prepare csfle venv:
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        echo "Preparing CSFLE venv environment..."
+        cd ./drivers-evergreen-tools/.evergreen/csfle
+        # This function ensures future invocations of activate_venv.sh conducted in
+        # parallel do not race to setup a venv environment; it has already been prepared.
+        # This primarily addresses the situation where the "run tests" and "run kms servers"
+        # functions invoke 'activate_venv.sh' simultaneously.
+        # TODO: remove this function along with the "run kms servers" function.
+        . ./activate_venv.sh
+        deactivate
+        echo "Preparing CSFLE venv environment... done."
   run kms servers:
   - command: shell.exec
     params:
@@ -3087,6 +3103,7 @@ tasks:
       TOPOLOGY: server
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -3160,6 +3177,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -3279,6 +3297,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -3352,6 +3371,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -3471,6 +3491,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -3636,6 +3657,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.4'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -3801,6 +3823,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.2'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6008,6 +6031,7 @@ tasks:
       TOPOLOGY: server
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6062,6 +6086,7 @@ tasks:
       TOPOLOGY: server
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6116,6 +6141,7 @@ tasks:
       TOPOLOGY: server
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6170,6 +6196,7 @@ tasks:
       TOPOLOGY: server
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6349,6 +6376,7 @@ tasks:
       TOPOLOGY: server
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6403,6 +6431,7 @@ tasks:
       TOPOLOGY: server
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6457,6 +6486,7 @@ tasks:
       TOPOLOGY: server
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6511,6 +6541,7 @@ tasks:
       TOPOLOGY: server
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6690,6 +6721,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6744,6 +6776,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6798,6 +6831,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -6852,6 +6886,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -7006,6 +7041,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -7060,6 +7096,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -7114,6 +7151,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -7168,6 +7206,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -7772,6 +7811,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -7826,6 +7866,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -7880,6 +7921,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -7934,6 +7976,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8088,6 +8131,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8142,6 +8186,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8196,6 +8241,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8250,6 +8296,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8429,6 +8476,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8483,6 +8531,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8537,6 +8586,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8591,6 +8641,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8745,6 +8796,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8799,6 +8851,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8853,6 +8906,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -8907,6 +8961,7 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: '6.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -9511,6 +9566,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -9565,6 +9621,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -9619,6 +9676,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -9673,6 +9731,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -9827,6 +9886,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -9881,6 +9941,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -9935,6 +9996,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -9989,6 +10051,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -11018,6 +11081,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.4'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -11072,6 +11136,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.4'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -11126,6 +11191,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.4'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -11180,6 +11246,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.4'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -11334,6 +11401,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.4'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -11388,6 +11456,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.4'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -11442,6 +11511,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.4'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -11496,6 +11566,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.4'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -12525,6 +12596,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.2'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -12579,6 +12651,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.2'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -12633,6 +12706,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.2'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -12687,6 +12761,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.2'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -12841,6 +12916,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.2'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -12895,6 +12971,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.2'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -12949,6 +13026,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.2'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:
@@ -13003,6 +13081,7 @@ tasks:
       TOPOLOGY: server
       VERSION: '4.2'
   - func: clone drivers-evergreen-tools
+  - func: prepare csfle venv
   - func: run kms servers
   - func: run tests
     vars:

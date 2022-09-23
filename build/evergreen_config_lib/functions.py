@@ -587,6 +587,20 @@ all_functions = OD([
         fi
         ''', test=False)
     )),
+    ('prepare csfle venv', Function(
+        shell_exec(r'''
+        echo "Preparing CSFLE venv environment..."
+        cd ./drivers-evergreen-tools/.evergreen/csfle
+        # This function ensures future invocations of activate_venv.sh conducted in
+        # parallel do not race to setup a venv environment; it has already been prepared.
+        # This primarily addresses the situation where the "run tests" and "run kms servers"
+        # functions invoke 'activate_venv.sh' simultaneously.
+        # TODO: remove this function along with the "run kms servers" function.
+        . ./activate_venv.sh
+        deactivate
+        echo "Preparing CSFLE venv environment... done."
+        ''', test=False)
+    )),
     ('run kms servers', Function(
         shell_exec(r'''
         echo "Starting mock KMS servers..."
