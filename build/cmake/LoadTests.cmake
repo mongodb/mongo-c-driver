@@ -26,6 +26,12 @@ endif ()
 # Split lines on newlines
 string (REPLACE "\n" ";" lines "${tests_out}")
 
+# XXX: Allow individual test cases to specify the fixtures they want.
+set (all_fixtures "mongoc/fixtures/fake_imds")
+set (all_env
+    MCD_TEST_AZURE_IMDS_HOST=localhost:14987  # Refer: Fixtures.cmake
+    )
+
 # Generate the test definitions
 foreach (line IN LISTS lines)
     if (NOT line MATCHES "^/")
@@ -44,5 +50,7 @@ foreach (line IN LISTS lines)
         SKIP_REGULAR_EXPRESSION "@@ctest-skipped@@"
         # 45 seconds of timeout on each test.
         TIMEOUT 45
+        FIXTURES_REQUIRED "${all_fixtures}"
+        ENVIRONMENT "${all_env}"
         )
 endforeach ()
