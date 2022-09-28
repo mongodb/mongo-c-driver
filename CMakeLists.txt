@@ -236,6 +236,9 @@ include (MakeDistFiles)
 
 # Enable CTest
 include (CTest)
+if (BUILD_TESTING)
+   include (TestFixtures)
+endif ()
 
 # Ensure the default behavior: don't ignore RPATH settings.
 set (CMAKE_SKIP_BUILD_RPATH OFF)

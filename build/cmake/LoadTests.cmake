@@ -26,6 +26,12 @@ endif ()
 # Split lines on newlines
 string (REPLACE "\n" ";" lines "${tests_out}")
 
+# XXX: Allow individual test cases to specify the fixtures they want.
+set (all_fixtures "mongoc/fixtures/fake_imds")
+set (all_env
+    MCD_TEST_AZURE_IMDS_HOST=localhost:14987  # Refer: Fixtures.cmake
+    )
+
 function (_register_test name ctest_run)
     # Define the test. Use `--ctest-run` to tell it that CTest is in control.
     add_test ("${name}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${ctest_run}" ${ARGN})
@@ -57,6 +63,8 @@ foreach (line IN LISTS lines)
         set_tests_properties ("${test}" PROPERTIES
             TIMEOUT 15
             LABELS "${meta}"
+            ENVIRONMENT "${all_env}"
+            FIXTURES_REQUIRED "${all_fixtures}"
             )
     else ()
         foreach (fxt IN LISTS _MDB_DEFAULT_TEST_FIXTURES)
@@ -65,9 +73,10 @@ foreach (line IN LISTS lines)
             set_tests_properties ("${qualname}" PROPERTIES
                 FIXTURES_REQUIRED "${fxt};${_MDB_TRANSITIVE_FIXTURES_OF_${fxt}}"
                 RESOURCE_LOCK "${fxt}"
-                ENVIRONMENT "MONGOC_TEST_URI=mongodb://localhost:${_MDB_FIXTURE_${fxt}_PORT}"
                 TIMEOUT 15
                 LABELS "${meta}"
+                ENVIRONMENT "${all_env};MONGOC_TEST_URI=mongodb://localhost:${_MDB_FIXTURE_${fxt}_PORT}"
+                FIXTURES_REQUIRED "${all_fixtures}"
                 )
         endforeach ()
     endif ()
