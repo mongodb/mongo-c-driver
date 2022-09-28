@@ -587,7 +587,7 @@ all_functions = OD([
         fi
         ''', test=False)
     )),
-    ('prepare csfle venv', Function(
+    ('run kms servers', Function(
         shell_exec(r'''
         echo "Preparing CSFLE venv environment..."
         cd ./drivers-evergreen-tools/.evergreen/csfle
@@ -599,9 +599,7 @@ all_functions = OD([
         . ./activate_venv.sh
         deactivate
         echo "Preparing CSFLE venv environment... done."
-        ''', test=False)
-    )),
-    ('run kms servers', Function(
+        ''', test=False),
         shell_exec(r'''
         echo "Starting mock KMS servers..."
         cd ./drivers-evergreen-tools/.evergreen/csfle
