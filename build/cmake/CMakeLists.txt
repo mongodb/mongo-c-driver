@@ -15,6 +15,7 @@ set (build_cmake_MODULES
    Sanitizers.cmake
    CCache.cmake
    LLDLinker.cmake
+   TestFixtures.cmake
 )
 
 set_local_dist (build_cmake_DIST_local

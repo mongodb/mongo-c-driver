@@ -102,15 +102,13 @@ _test_with_mock_server (void *ctx)
    _run_http_test_case ("", 0, 0, ""); // (No error)
    _run_http_test_case ("404", MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_HTTP, "");
    _run_http_test_case (
+      "slow", MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Timeout");
+   _run_http_test_case (
       "empty-json", MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_BAD_JSON, "");
    _run_http_test_case (
       "bad-json", MONGOC_ERROR_CLIENT, MONGOC_ERROR_STREAM_INVALID_TYPE, "");
-
    _run_http_test_case (
       "giant", MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "too large");
-
-   _run_http_test_case (
-      "slow", MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Timeout");
 }
 
 static int

@@ -1,19 +1,21 @@
-from __future__ import annotations
-
+import functools
+import json
 import sys
 import time
-import json
 import traceback
-import functools
+from pathlib import Path
+
 import bottle
-from bottle import Bottle, HTTPResponse, request
+from bottle import Bottle, HTTPResponse
 
 imds = Bottle(autojson=True)
 """An Azure IMDS server"""
 
-from typing import TYPE_CHECKING, Any, Callable, Iterable, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterable, cast, overload
 
-if TYPE_CHECKING:
+if not TYPE_CHECKING:
+    from bottle import request
+else:
     from typing import Protocol
 
     class _RequestParams(Protocol):
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
             ...
 
         @overload
-        def get(self, key: str) -> str | None:
+        def get(self, key: str) -> 'str | None':
             ...
 
         @overload
@@ -31,25 +33,30 @@ if TYPE_CHECKING:
 
     class _HeadersDict(dict[str, str]):
 
-        def raw(self, key: str) -> bytes | None:
+        def raw(self, key: str) -> 'bytes | None':
             ...
 
     class _Request(Protocol):
-        query: _RequestParams
-        params: _RequestParams
-        headers: _HeadersDict
 
-    request: _Request
+        @property
+        def query(self) -> _RequestParams:
+            ...
+
+        @property
+        def params(self) -> _RequestParams:
+            ...
+
+        @property
+        def headers(self) -> _HeadersDict:
+            ...
+
+    request = cast('_Request', None)
 
 
-def parse_qs(qs: str) -> dict[str, str]:
+def parse_qs(qs: str) -> 'dict[str, str]':
+    # Re-use the bottle.py query string parser. It's a private function, but
+    # we're using a fixed version of Bottle.
     return dict(bottle._parse_qsl(qs))  # type: ignore
-
-
-def require(cond: bool, message: str):
-    if not cond:
-        print(f'REQUIREMENT FAILED: {message}')
-        raise bottle.HTTPError(400, message)
 
 
 _HandlerFuncT = Callable[
@@ -58,6 +65,7 @@ _HandlerFuncT = Callable[
 
 
 def handle_asserts(fn: _HandlerFuncT) -> _HandlerFuncT:
+    "Convert assertion failures into HTTP 400s"
 
     @functools.wraps(fn)
     def wrapped():
@@ -72,15 +80,8 @@ def handle_asserts(fn: _HandlerFuncT) -> _HandlerFuncT:
     return wrapped
 
 
-def test_flags() -> dict[str, str]:
+def test_params() -> 'dict[str, str]':
     return parse_qs(request.headers.get('X-MongoDB-HTTP-TestParams', ''))
-
-
-def maybe_pause():
-    pause = int(test_flags().get('pause', '0'))
-    if pause:
-        print(f'Pausing for {pause} seconds')
-        time.sleep(pause)
 
 
 @imds.get('/metadata/identity/oauth2/token')
@@ -91,10 +92,7 @@ def get_oauth2_token():
     resource = request.query['resource']
     assert resource == 'https://vault.azure.net', 'Only https://vault.azure.net is supported'
 
-    flags = test_flags()
-    maybe_pause()
-
-    case = flags.get('case')
+    case = test_params().get('case')
     print('Case is:', case)
     if case == '404':
         return HTTPResponse(status=404)
@@ -114,17 +112,18 @@ def get_oauth2_token():
     if case == 'slow':
         return _slow()
 
-    assert case is None or case == '', f'Unknown HTTP test case "{case}"'
+    assert case in (None, ''), 'Unknown HTTP test case "{}"'.format(case)
 
     return {
         'access_token': 'magic-cookie',
-        'expires_in': '60',
+        'expires_in': '70',
         'token_type': 'Bearer',
         'resource': 'https://vault.azure.net',
     }
 
 
 def _gen_giant() -> Iterable[bytes]:
+    "Generate a giant message"
     yield b'{ "item": ['
     for _ in range(1024 * 256):
         yield (b'null, null, null, null, null, null, null, null, null, null, '
@@ -136,6 +135,7 @@ def _gen_giant() -> Iterable[bytes]:
 
 
 def _slow() -> Iterable[bytes]:
+    "Generate a very slow message"
     yield b'{ "item": ['
     for _ in range(1000):
         yield b'null, '
@@ -144,6 +144,8 @@ def _slow() -> Iterable[bytes]:
 
 
 if __name__ == '__main__':
-    print(f'RECOMMENDED: Run this script using bottle.py in the same '
-          f'directory (e.g. [{sys.executable} bottle.py fake_azure:imds])')
+    print(
+        'RECOMMENDED: Run this script using bottle.py (e.g. [{} {}/bottle.py fake_azure:imds])'
+        .format(sys.executable,
+                Path(__file__).resolve().parent))
     imds.run()
