@@ -5,9 +5,11 @@ Extremely basic subprocess control
 import argparse
 import json
 import os
+import random
 import signal
 import subprocess
 import sys
+import time
 import traceback
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -39,7 +41,7 @@ def create_parser() -> argparse.ArgumentParser:
         type=float,
         default=3)
     start.add_argument('child_command',
-                       nargs=argparse.REMAINDER,
+                       nargs='+',
                        help='The command to execute',
                        metavar='<command> [args...]')
 
@@ -59,7 +61,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     ll_run = grp.add_parser('__run')
     ll_run.add_argument('--ctl-dir', type=Path, required=True)
-    ll_run.add_argument('child_command', nargs=argparse.REMAINDER)
+    ll_run.add_argument('child_command', nargs='+')
 
     return parser
 
@@ -70,7 +72,7 @@ if TYPE_CHECKING:
         ('ctl_dir', Path),
         ('cwd', Path),
         ('child_command', Sequence[str]),
-        ('spawn_wait', int),
+        ('spawn_wait', float),
     ])
 
     StopCommandArgs = NamedTuple('StopCommandArgs', [
@@ -116,7 +118,7 @@ class _ChildControl:
         return self._ctl_dir / 'exit.json'
 
     def set_pid(self, pid: int):
-        self.pid_file.write_text(str(pid))
+        write_text(self.pid_file, str(pid))
 
     def get_pid(self) -> 'int | None':
         try:
@@ -126,28 +128,21 @@ class _ChildControl:
         return int(txt)
 
     def set_exit(self, exit: 'str | int | None', error: 'str | None') -> None:
-        self.result_file.write_text(json.dumps({'exit': exit, 'error': error}))
-        self._unlink(self.pid_file)
+        write_text(self.result_file, json.dumps({
+            'exit': exit,
+            'error': error
+        }))
+        remove_file(self.pid_file)
 
     def get_result(self) -> 'None | _ResultType':
         try:
             txt = self.result_file.read_text()
         except FileNotFoundError:
             return None
-        try:
-            return json.loads(txt)
-        except json.JSONDecodeError:
-            return self.get_result()
+        return json.loads(txt)
 
     def clear_result(self) -> None:
-        self._unlink(self.result_file)
-
-    @staticmethod
-    def _unlink(p: Path) -> None:
-        try:
-            p.unlink()
-        except FileNotFoundError:
-            pass
+        remove_file(self.result_file)
 
 
 def _start(args: 'StartCommandArgs') -> int:
@@ -159,7 +154,7 @@ def _start(args: 'StartCommandArgs') -> int:
         '__run',
         '--ctl-dir={}'.format(args.ctl_dir),
         '--',
-        *args.child_command[1:],
+        *args.child_command,
     ]
     args.ctl_dir.mkdir(exist_ok=True, parents=True)
     child = _ChildControl(args.ctl_dir)
@@ -172,13 +167,14 @@ def _start(args: 'StartCommandArgs') -> int:
         ll_run_cmd,
         cwd=args.cwd,
         stderr=subprocess.STDOUT,
-        stdout=args.ctl_dir.joinpath('.runner-output.txt').open('wb'),
+        stdout=args.ctl_dir.joinpath('runner-output.txt').open('wb'),
         stdin=subprocess.DEVNULL)
     expire = datetime.now() + timedelta(seconds=args.spawn_wait)
     # Wait for the PID to appear
     while child.get_pid() is None and child.get_result() is None:
         if expire < datetime.now():
             break
+        time.sleep(0.1)
     # Check that it actually spawned
     if child.get_pid() is None:
         result = child.get_result()
@@ -192,6 +188,7 @@ def _start(args: 'StartCommandArgs') -> int:
     while child.get_result() is None:
         if expire < datetime.now():
             break
+        time.sleep(0.1)
     # A final check to see if it is running
     result = child.get_result()
     if result is not None:
@@ -216,7 +213,7 @@ def _stop(args: 'StopCommandArgs') -> int:
     os.kill(pid, INTERUPT_SIGNAL)
     expire_at = datetime.now() + timedelta(seconds=args.stop_wait)
     while expire_at > datetime.now() and child.get_result() is None:
-        pass
+        time.sleep(0.1)
     result = child.get_result()
     if result is None:
         raise RuntimeError(
@@ -228,7 +225,7 @@ def __run(args: '_RunCommandArgs') -> int:
     this = _ChildControl(args.ctl_dir)
     try:
         pipe = subprocess.Popen(
-            args.child_command[1:],
+            args.child_command,
             stdout=args.ctl_dir.joinpath('child-output.txt').open('wb'),
             stderr=subprocess.STDOUT,
             stdin=subprocess.DEVNULL)
@@ -250,6 +247,38 @@ def __run(args: '_RunCommandArgs') -> int:
     finally:
         this.set_exit(retc, None)
     return 0
+
+
+def write_text(fpath: Path, content: str):
+    """
+    "Atomically" write a new file.
+
+    This writes the given ``content`` into a temporary file, then renames that
+    file into place. This prevents readers from seeing a partial read.
+    """
+    tmp = fpath.with_name(fpath.name + '.tmp')
+    remove_file(tmp)
+    tmp.write_text(content)
+    os.sync()
+    remove_file(fpath)
+    tmp.rename(fpath)
+
+
+def remove_file(fpath: Path):
+    """
+    Safely remove a file.
+
+    Because Win32, deletes are asynchronous, so we rename to a random filename,
+    then delete that file. This ensures the file is "out of the way", even if
+    it takes some time to delete.
+    """
+    delname = fpath.with_name(fpath.name + '.delete-' +
+                              str(random.randint(0, 999999)))
+    try:
+        fpath.rename(delname)
+    except FileNotFoundError:
+        return
+    delname.unlink()
 
 
 def main(argv: 'Sequence[str]') -> int:
