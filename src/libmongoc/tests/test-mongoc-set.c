@@ -9,6 +9,8 @@ test_set_dtor (void *item_, void *ctx_)
 {
    int *destroyed = (int *) ctx_;
 
+   BSON_UNUSED (item_);
+
    (*destroyed)++;
 }
 
@@ -16,6 +18,8 @@ static bool
 test_set_visit_cb (void *item_, void *ctx_)
 {
    int *visited = (int *) ctx_;
+
+   BSON_UNUSED (item_);
 
    (*visited)++;
 
@@ -26,6 +30,8 @@ static bool
 test_set_stop_after_cb (void *item_, void *ctx_)
 {
    int *stop_after = (int *) ctx_;
+
+   BSON_UNUSED (item_);
 
    (*stop_after)--;
 

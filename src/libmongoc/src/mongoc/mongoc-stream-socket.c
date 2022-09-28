@@ -123,6 +123,7 @@ static int
 _mongoc_stream_socket_flush (mongoc_stream_t *stream)
 {
    ENTRY;
+   BSON_UNUSED (stream);
    RETURN (0);
 }
 

@@ -3,7 +3,7 @@
 
 
 int
-main (int argc, char *argv[])
+main (void)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;

@@ -152,6 +152,8 @@ test_loadbalanced_sessions_supported (void *unused)
    mongoc_client_session_t *session;
    bson_error_t error;
 
+   BSON_UNUSED (unused);
+
    client = test_framework_new_default_client ();
    session = mongoc_client_start_session (client, NULL /* opts */, &error);
    ASSERT_OR_PRINT (session, error);
@@ -170,6 +172,8 @@ test_loadbalanced_sessions_do_not_expire (void *unused)
    bson_t *session1_lsid;
    bson_t *session2_lsid;
    mc_tpld_modification tdmod;
+
+   BSON_UNUSED (unused);
 
    client = test_framework_new_default_client ();
    /* Mock a timeout so session expiration applies. */
@@ -226,6 +230,8 @@ test_loadbalanced_client_uri_validation (void *unused)
    mongoc_uri_t *uri;
    bson_error_t error;
 
+   BSON_UNUSED (unused);
+
    uri = mongoc_uri_new ("mongodb://localhost:27017");
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_DIRECTCONNECTION, true);
@@ -250,6 +256,8 @@ test_loadbalanced_connect_single (void *unused)
    bool ok;
    mongoc_server_description_t *monitor_sd;
    stats_t *stats;
+
+   BSON_UNUSED (unused);
 
    client = test_framework_new_default_client ();
    stats = set_client_callbacks (client);
@@ -282,6 +290,8 @@ test_loadbalanced_connect_pooled (void *unused)
    bool ok;
    mongoc_server_description_t *monitor_sd;
    stats_t *stats;
+
+   BSON_UNUSED (unused);
 
    pool = test_framework_new_default_client_pool ();
    stats = set_client_pool_callbacks (pool);
@@ -319,6 +329,8 @@ test_loadbalanced_server_selection_establishes_connection_single (void *unused)
    mongoc_server_description_t *handshake_sd;
    stats_t *stats;
 
+   BSON_UNUSED (unused);
+
    client = test_framework_new_default_client ();
    stats = set_client_callbacks (client);
    monitor_sd = mongoc_client_select_server (
@@ -349,6 +361,8 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
    bool ok;
    stats_t *stats;
    mongoc_server_description_t *monitor_sd;
+
+   BSON_UNUSED (unused);
 
    client = test_framework_new_default_client ();
    stats = set_client_callbacks (client);

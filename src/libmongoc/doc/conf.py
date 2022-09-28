@@ -29,6 +29,11 @@ language = 'en'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 master_doc = 'index'
 
+# Set an empty list of disabled reftypes.
+# Sphinx 5.0 disables "std:doc" by default.
+# Many documentation references use :doc:
+intersphinx_disabled_reftypes = []
+
 # don't fetch libbson's inventory from mongoc.org during build - Debian and
 # Fedora package builds must work offline - maintain a recent copy here
 intersphinx_mapping = {
@@ -50,6 +55,23 @@ html_sidebars = {
     'mongoc_uri_t': [],  # Make more room for the big table.
     'configuring_tls': [],  # Make more room for the big table.
 }
+
+rst_prolog = '''
+.. |qenc:is-experimental| replace::
+
+    is part of the experimental
+    :doc:`Queryable Encryption </queryable-encryption>` API and may be subject
+    to breaking changes in future releases.
+
+.. |qenc:opt-is-experimental| replace::
+
+    This option |qenc:is-experimental|
+
+.. |qenc:api-is-experimental| replace::
+
+    This API |qenc:is-experimental|
+
+'''
 
 
 def add_canonical_link(app, pagename, templatename, context, doctree):

@@ -4,6 +4,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
 #  CC              Which compiler to use
+#  C_STD_VERSION   C standard version to compile with (default: c99)
 #  SSL             OPENSSL, OPENSSL_STATIC, WINDOWS, or OFF
 #  SASL            AUTO, SSPI, CYRUS, or OFF
 #  SRV             Whether to enable SRV: ON or OFF
@@ -21,10 +22,12 @@ CONFIGURE_FLAGS="\
 BUILD_FLAGS="/m"  # Number of concurrent processes. No value=# of cpus
 CMAKE="/cygdrive/c/cmake/bin/cmake"
 CC=${CC:-"Visual Studio 15 2017 Win64"}
+C_STD_VERSION=${CSTD_VERSION:-99}
 SSL=${SSL:-WINDOWS}
 SASL=${SASL:-SSPI}
 
 echo "CC: $CC"
+echo "C_STD_VERSION: $C_STD_VERSION"
 echo "RELEASE: $RELEASE"
 echo "SASL: $SASL"
 
@@ -34,6 +37,8 @@ if [ "$RELEASE" ]; then
    tar xf ../mongoc.tar.gz -C build-dir --strip-components=1
    cd build-dir
 fi
+
+CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_C_STANDARD=$C_STD_VERSION -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=OFF"
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=$SASL"
 
@@ -115,8 +120,7 @@ fi
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
-   # TODO (CDRIVER-4397): add "--branch 1.5.0-rc0" in git clone once libmongocrypt 1.5.0-rc0 is released.
-   git clone https://github.com/mongodb/libmongocrypt
+   git clone https://github.com/mongodb/libmongocrypt --branch 1.5.2
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
    "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" ../

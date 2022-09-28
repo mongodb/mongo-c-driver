@@ -39,7 +39,8 @@
 #define MONGOC_LOG_DOMAIN "stream-tls-openssl-bio"
 
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+   (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
 
 /* Magic vtable to make our BIO shim */
 static BIO_METHOD gMongocStreamTlsOpenSslRawMethods = {
@@ -313,6 +314,10 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
 long
 mongoc_stream_tls_openssl_bio_ctrl (BIO *b, int cmd, long num, void *ptr)
 {
+   BSON_UNUSED (b);
+   BSON_UNUSED (num);
+   BSON_UNUSED (ptr);
+
    switch (cmd) {
    case BIO_CTRL_FLUSH:
       return 1;
@@ -341,6 +346,10 @@ mongoc_stream_tls_openssl_bio_ctrl (BIO *b, int cmd, long num, void *ptr)
 int
 mongoc_stream_tls_openssl_bio_gets (BIO *b, char *buf, int len)
 {
+   BSON_UNUSED (b);
+   BSON_UNUSED (buf);
+   BSON_UNUSED (len);
+
    return -1;
 }
 

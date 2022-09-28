@@ -25,7 +25,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
 {
    mongoc_read_prefs_t *read_prefs;
 
-   read_prefs = (mongoc_read_prefs_t *) bson_malloc0 (sizeof *read_prefs);
+   read_prefs = BSON_ALIGNED_ALLOC0 (mongoc_read_prefs_t);
    read_prefs->mode = mode;
    bson_init (&read_prefs->tags);
    read_prefs->max_staleness_seconds = MONGOC_NO_MAX_STALENESS;
@@ -245,26 +245,27 @@ _apply_read_preferences_mongos (
 
    /* Server Selection Spec says:
     *
-    * For mode 'primary', drivers MUST NOT set the secondaryOk wire protocol flag
-    *   and MUST NOT use $readPreference
+    * For mode 'primary', drivers MUST NOT set the secondaryOk wire protocol
+    * flag and MUST NOT use $readPreference
     *
-    * For mode 'secondary', drivers MUST set the secondaryOk wire protocol flag and
-    *   MUST also use $readPreference
+    * For mode 'secondary', drivers MUST set the secondaryOk wire protocol flag
+    * and MUST also use $readPreference
     *
-    * For mode 'primaryPreferred', drivers MUST set the secondaryOk wire protocol
-    *   flag and MUST also use $readPreference
+    * For mode 'primaryPreferred', drivers MUST set the secondaryOk wire
+    * protocol flag and MUST also use $readPreference
     *
-    * For mode 'secondaryPreferred', drivers MUST set the secondaryOk wire protocol
-    *   flag. If the read preference contains a non-empty tag_sets parameter,
-    *   maxStalenessSeconds is a positive integer, or the hedge parameter is
-    *   non-empty, drivers MUST use $readPreference; otherwise, drivers MUST NOT
-    *   use $readPreference
+    * For mode 'secondaryPreferred', drivers MUST set the secondaryOk wire
+    * protocol flag. If the read preference contains a non-empty tag_sets
+    * parameter, maxStalenessSeconds is a positive integer, or the hedge
+    * parameter is non-empty, drivers MUST use $readPreference; otherwise,
+    * drivers MUST NOT use $readPreference
     *
-    * For mode 'nearest', drivers MUST set the secondaryOk wire protocol flag and
-    *   MUST also use $readPreference
+    * For mode 'nearest', drivers MUST set the secondaryOk wire protocol flag
+    * and MUST also use $readPreference
     */
    if (mode == MONGOC_READ_SECONDARY_PREFERRED &&
-       (bson_empty0 (tags) && max_staleness_seconds <= 0 && bson_empty0 (hedge))) {
+       (bson_empty0 (tags) && max_staleness_seconds <= 0 &&
+        bson_empty0 (hedge))) {
       result->flags |= MONGOC_QUERY_SECONDARY_OK;
 
    } else if (mode != MONGOC_READ_PRIMARY) {
@@ -355,8 +356,8 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
          _apply_read_preferences_mongos (read_prefs, query_bson, result);
       } else {
          /* Server Selection Spec: for topology type single and server types
-          * besides mongos, "clients MUST always set the secondaryOk wire protocol
-          * flag on reads to ensure that any server type can handle the
+          * besides mongos, "clients MUST always set the secondaryOk wire
+          * protocol flag on reads to ensure that any server type can handle the
           * request."
           */
          result->flags |= MONGOC_QUERY_SECONDARY_OK;
@@ -369,8 +370,8 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
       /* Server Selection Spec: for RS topology types, "For all read
        * preferences modes except primary, clients MUST set the secondaryOk wire
        * protocol flag to ensure that any suitable server can handle the
-       * request. Clients MUST  NOT set the secondaryOk wire protocol flag if the
-       * read preference mode is primary.
+       * request. Clients MUST  NOT set the secondaryOk wire protocol flag if
+       * the read preference mode is primary.
        */
       if (read_prefs && read_prefs->mode != MONGOC_READ_PRIMARY) {
          result->flags |= MONGOC_QUERY_SECONDARY_OK;

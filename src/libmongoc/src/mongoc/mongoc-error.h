@@ -49,7 +49,8 @@ typedef enum {
    MONGOC_ERROR_SERVER, /* Error API Version 2 only */
    MONGOC_ERROR_TRANSACTION,
    MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, /* An error coming from libmongocrypt */
-   MONGOC_ERROR_POOL
+   MONGOC_ERROR_POOL,
+   MONGOC_ERROR_AZURE,
 } mongoc_error_domain_t;
 
 
@@ -134,6 +135,10 @@ typedef enum {
    MONGOC_ERROR_POOL_API_TOO_LATE,
 
    MONGOC_ERROR_CLIENT_INVALID_LOAD_BALANCER,
+
+   // Azure errors
+   MONGOC_ERROR_AZURE_HTTP,
+   MONGOC_ERROR_AZURE_BAD_JSON,
 } mongoc_error_code_t;
 
 MONGOC_EXPORT (bool)

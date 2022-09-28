@@ -431,6 +431,8 @@ _test_wc_request (future_t *future, mock_server_t *server, bson_error_t *error)
 {
    request_t *request;
 
+   BSON_UNUSED (error);
+
    request = mock_server_receives_msg (
       server,
       MONGOC_MSG_NONE,
@@ -695,18 +697,21 @@ test_write_concern_inheritance_fam_txn (bool in_session, bool in_txn)
 static void
 test_fam_no_session_no_txn (void *unused)
 {
+   BSON_UNUSED (unused);
    test_write_concern_inheritance_fam_txn (false, false);
 }
 
 static void
 test_fam_session_no_txn (void *unused)
 {
+   BSON_UNUSED (unused);
    test_write_concern_inheritance_fam_txn (true, false);
 }
 
 static void
 test_fam_session_txn (void *unused)
 {
+   BSON_UNUSED (unused);
    test_write_concern_inheritance_fam_txn (true, true);
 }
 

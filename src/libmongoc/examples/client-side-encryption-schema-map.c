@@ -93,13 +93,13 @@ fail:
    if (outfile) {
       fclose (outfile);
    }
-   return true;
+   return ret;
 }
 
 /* This example demonstrates how to use automatic encryption with a client-side
  * schema map using the enterprise version of MongoDB */
 int
-main (int argc, char **argv)
+main (void)
 {
 /* The collection used to store the encryption data keys. */
 #define KEYVAULT_DB "encryption"

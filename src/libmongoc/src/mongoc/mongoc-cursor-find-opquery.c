@@ -102,7 +102,7 @@ _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 void
 _mongoc_cursor_impl_find_opquery_init (mongoc_cursor_t *cursor, bson_t *filter)
 {
-   data_find_opquery_t *data = bson_malloc0 (sizeof (*data));
+   data_find_opquery_t *data = BSON_ALIGNED_ALLOC0 (data_find_opquery_t);
    _mongoc_cursor_response_legacy_init (&data->response_legacy);
    BSON_ASSERT (bson_steal (&data->filter, filter));
    cursor->impl.prime = _prime;

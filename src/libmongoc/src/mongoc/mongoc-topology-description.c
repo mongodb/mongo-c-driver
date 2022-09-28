@@ -53,6 +53,8 @@ _is_data_node (const mongoc_server_description_t *sd)
 static void
 _mongoc_topology_server_dtor (void *server_, void *ctx_)
 {
+   BSON_UNUSED (ctx_);
+
    mongoc_server_description_destroy ((mongoc_server_description_t *) server_);
 }
 
@@ -192,7 +194,7 @@ mongoc_topology_description_new_copy (
       return NULL;
    }
 
-   copy = (mongoc_topology_description_t *) bson_malloc0 (sizeof (*copy));
+   copy = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
 
    _mongoc_topology_description_copy_to (description, copy);
 
@@ -1301,6 +1303,8 @@ _mongoc_topology_description_check_if_has_primary (
    mongoc_topology_description_t *topology,
    const mongoc_server_description_t *server)
 {
+   BSON_UNUSED (server);
+
    _update_rs_type (topology);
 }
 
@@ -1371,8 +1375,7 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
       /* TODO this might not be an accurate count in all cases */
       server_id = ++topology->max_server_id;
 
-      description =
-         (mongoc_server_description_t *) bson_malloc0 (sizeof *description);
+      description = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
       mongoc_server_description_init (description, server, server_id);
 
       mongoc_set_add (mc_tpld_servers (topology), server_id, description);
@@ -1799,6 +1802,8 @@ _mongoc_topology_description_set_topology_type_to_sharded (
    mongoc_topology_description_t *topology,
    const mongoc_server_description_t *server)
 {
+   BSON_UNUSED (server);
+
    _mongoc_topology_description_set_state (topology, MONGOC_TOPOLOGY_SHARDED);
 }
 
@@ -2143,7 +2148,7 @@ mongoc_topology_description_handle_hello (
    }
 
    if (topology->apm_callbacks.topology_changed) {
-      prev_td = bson_malloc0 (sizeof (mongoc_topology_description_t));
+      prev_td = BSON_ALIGNED_ALLOC0 (mongoc_topology_description_t);
       _mongoc_topology_description_copy_to (topology, prev_td);
    }
 

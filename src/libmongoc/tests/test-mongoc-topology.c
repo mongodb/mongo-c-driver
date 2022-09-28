@@ -282,6 +282,8 @@ test_server_selection_try_once_option (void *ctx)
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool;
 
+   BSON_UNUSED (ctx);
+
    /* try_once is on by default for non-pooled, can be turned off */
    client = test_framework_client_new (uri_strings[0], NULL);
    BSON_ASSERT (client->topology->server_selection_try_once);
@@ -365,7 +367,7 @@ _test_server_selection (bool try_once)
 
    /* no primary, selection fails after one try */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, secondary_response);
@@ -396,7 +398,7 @@ _test_server_selection (bool try_once)
 
    /* second selection, now we try hello again */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
 
@@ -420,12 +422,16 @@ _test_server_selection (bool try_once)
 static void
 test_server_selection_try_once (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_server_selection (true);
 }
 
 static void
 test_server_selection_try_once_false (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_server_selection (false);
 }
 
@@ -561,12 +567,16 @@ _test_topology_invalidate_server (bool pooled)
 static void
 test_topology_invalidate_server_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_topology_invalidate_server (false);
 }
 
 static void
 test_topology_invalidate_server_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_topology_invalidate_server (true);
 }
 
@@ -583,6 +593,8 @@ test_invalid_cluster_node (void *ctx)
    const mongoc_server_description_t *sd;
    mc_shared_tpld td = MC_SHARED_TPLD_NULL;
    mc_tpld_modification tdmod;
+
+   BSON_UNUSED (ctx);
 
    /* use client pool, this test is only valid when multi-threaded */
    pool = test_framework_new_default_client_pool ();
@@ -639,6 +651,8 @@ test_max_wire_version_race_condition (void *ctx)
    uint32_t id;
    mc_tpld_modification tdmod;
    bool r;
+
+   BSON_UNUSED (ctx);
 
    /* connect directly and add our user, test is only valid with auth */
    client = test_framework_new_default_client ();
@@ -707,7 +721,7 @@ test_cooldown_standalone (void)
 
    /* first hello fails, selection fails */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
@@ -732,7 +746,7 @@ test_cooldown_standalone (void)
 
    /* third selection doesn't try to call hello: we're still in cooldown */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    mock_server_set_request_timeout_msec (server, 100);
    BSON_ASSERT (!mock_server_receives_any_hello (server)); /* no hello call */
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
@@ -748,7 +762,7 @@ test_cooldown_standalone (void)
 
    /* cooldown ends, now we try hello again, this time succeeding */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server); /* not in cooldown now */
    BSON_ASSERT (request);
    mock_server_replies_simple (request,
@@ -823,7 +837,7 @@ test_cooldown_rs (void)
 
    /* server 0 is a secondary. */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
 
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
@@ -844,7 +858,7 @@ test_cooldown_rs (void)
 
    /* second selection doesn't try hello on server 1: it's in cooldown */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
 
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
@@ -863,7 +877,7 @@ test_cooldown_rs (void)
 
    /* cooldown ends, now we try hello on server 1, this time succeeding */
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
 
    request = mock_server_receives_any_hello (servers[1]);
    BSON_ASSERT (request);
@@ -910,7 +924,7 @@ test_cooldown_retry (void)
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
 
    /* first hello fails */
    request = mock_server_receives_any_hello (server);
@@ -1005,8 +1019,8 @@ _test_select_succeed (bool try_once)
 
    /* start waiting for a primary (NULL read pref) */
    start = bson_get_monotonic_time ();
-   future =
-      future_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
+   future = future_topology_select (
+      client->topology, MONGOC_SS_READ, NULL, NULL, &error);
 
    /* selection succeeds */
    sd = future_get_mongoc_server_description_ptr (future);
@@ -1055,6 +1069,8 @@ test_multiple_selection_errors (void *context)
    bson_t reply;
    bson_error_t error;
 
+   BSON_UNUSED (context);
+
    client = test_framework_client_new (uri, NULL);
    mongoc_client_command_simple (
       client, "test", tmp_bson ("{'ping': 1}"), NULL, &reply, &error);
@@ -1096,6 +1112,8 @@ test_invalid_server_id (void)
 static bool
 auto_ping (request_t *request, void *data)
 {
+   BSON_UNUSED (data);
+
    if (!request->is_command || strcasecmp (request->command_name, "ping")) {
       return false;
    }
@@ -1246,6 +1264,8 @@ test_rtt (void *ctx)
    bson_error_t error;
    mongoc_server_description_t const *sd;
    int64_t rtt_msec;
+
+   BSON_UNUSED (ctx);
 
    if (!TestSuite_CheckMockServerAllowed ()) {
       return;

@@ -27,7 +27,11 @@
 #include "mongoc-host-list-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-ssl-private.h"
+#include "mongoc-cluster-aws-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-http-private.h"
+#include "mcd-azure.h"
+#include "mcd-time.h"
 
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
@@ -35,6 +39,17 @@ struct __mongoc_crypt_t {
    mongoc_ssl_opt_t aws_tls_opt;
    mongoc_ssl_opt_t azure_tls_opt;
    mongoc_ssl_opt_t gcp_tls_opt;
+   /// The kmsProviders that were provided by the user when encryption was
+   /// initiated. We need to remember this in case we need to load on-demand
+   /// credentials.
+   bson_t kms_providers;
+   mc_kms_credentials_callback creds_cb;
+
+   /// The most recently auto-acquired Azure token, on null if it was destroyed
+   /// or not yet acquired.
+   mcd_azure_access_token azure_token;
+   /// The time point at which the `azure_token` was acquired.
+   mcd_time_point azure_token_issued_at;
 };
 
 static void
@@ -44,6 +59,9 @@ _log_callback (mongocrypt_log_level_t mongocrypt_log_level,
                void *ctx)
 {
    mongoc_log_level_t log_level = MONGOC_LOG_LEVEL_ERROR;
+
+   BSON_UNUSED (message_len);
+   BSON_UNUSED (ctx);
 
    switch (mongocrypt_log_level) {
    case MONGOCRYPT_LOG_LEVEL_FATAL:
@@ -308,7 +326,7 @@ _state_need_mongo_markings (_state_machine_t *state_machine,
     * mongocrypt_ctx_mongo_op on the MongoClient connected to mongocryptd. */
    bson_destroy (&reply);
    if (!mongoc_client_command_simple (state_machine->mongocryptd_client,
-                                      "admin",
+                                      state_machine->db_name,
                                       &mongocryptd_cmd_bson,
                                       NULL /* read_prefs */,
                                       &reply,
@@ -575,6 +593,268 @@ fail:
 #undef BUFFER_SIZE
 }
 
+/**
+ * @brief Determine whether the given kmsProviders has an empty 'aws'
+ * subdocument
+ *
+ * @param kms_providers The user-provided kmsProviders
+ * @param error Output parameter for possible errors.
+ * @retval true If 'aws' is present and an empty subdocument
+ * @retval false Otherwise or on error
+ */
+static bool
+_needs_on_demand_aws_kms (bson_t const *kms_providers, bson_error_t *error)
+{
+   bson_iter_t iter;
+   if (!bson_iter_init_find (&iter, kms_providers, "aws")) {
+      // No "aws" subdocument
+      return false;
+   }
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      // "aws" is not a document? Should be validated by libmongocrypt
+      return false;
+   }
+
+   const uint8_t *dataptr;
+   uint32_t datalen;
+   bson_iter_document (&iter, &datalen, &dataptr);
+   bson_t subdoc;
+   if (!bson_init_static (&subdoc, dataptr, datalen)) {
+      // Invalid "aws" document? Should be validated by libmongocrypt
+      return false;
+   }
+
+   if (bson_empty (&subdoc)) {
+      // "aws" is present and is an empty subdocument, which means that the user
+      // requests that the AWS credentials be loaded on-demand from the
+      // environment.
+      return true;
+   } else {
+      // "aws" is present and is non-empty, which means that the user has
+      // already provided credentials for AWS.
+      return false;
+   }
+}
+
+/**
+ * @brief Check whether the given kmsProviders object requests automatic Azure
+ * credentials
+ *
+ * @param kmsprov The input kmsProviders that may have an "azure" property
+ * @param error An output error
+ * @retval true If success AND `kmsprov` requests automatic Azure credentials
+ * @retval false Otherwise. Check error->code for failure.
+ */
+static bool
+_check_azure_kms_auto (const bson_t *kmsprov, bson_error_t *error)
+{
+   if (error) {
+      *error = (bson_error_t){0};
+   }
+
+   bson_iter_t iter;
+   if (!bson_iter_init_find (&iter, kmsprov, "azure")) {
+      return false;
+   }
+
+   bson_t azure_subdoc;
+   if (!_mongoc_iter_document_as_bson (&iter, &azure_subdoc, error)) {
+      return false;
+   }
+
+   return bson_empty (&azure_subdoc);
+}
+
+/**
+ * @brief Attempt to load AWS credentials from the environment and insert them
+ * into the given kmsProviders bson document on the "aws" property.
+ *
+ * @param out A kmsProviders object to update
+ * @param error An error-out parameter
+ * @retval true If there was no error and we successfully loaded credentials.
+ * @retval false If there was an error while updating the BSON data or obtaining
+ * credentials.
+ */
+static bool
+_try_add_aws_from_env (bson_t *out, bson_error_t *error)
+{
+   // Attempt to obtain AWS credentials from the environment.
+   _mongoc_aws_credentials_t creds;
+   if (!_mongoc_aws_credentials_obtain (NULL, &creds, error)) {
+      // Error while obtaining credentials
+      return false;
+   }
+
+   // Build the new "aws" subdoc
+   bson_t aws;
+   bool okay =
+      BSON_APPEND_DOCUMENT_BEGIN (out, "aws", &aws)
+      // Add the accessKeyId and the secretAccessKey
+      && BSON_APPEND_UTF8 (&aws, "accessKeyId", creds.access_key_id)         //
+      && BSON_APPEND_UTF8 (&aws, "secretAccessKey", creds.secret_access_key) //
+      // Add the sessionToken, if we got one:
+      && (!creds.session_token ||
+          BSON_APPEND_UTF8 (&aws, "sessionToken", creds.session_token)) //
+      // Finish the document
+      && bson_append_document_end (out, &aws);
+   BSON_ASSERT (okay && "Failed to build aws credentials document");
+   // Good!
+   _mongoc_aws_credentials_cleanup (&creds);
+   return true;
+}
+
+/**
+ * @brief Attempt to request a new Azure access token from the IMDS HTTP server
+ *
+ * @param out The token to populate. Must later be destroyed by the caller.
+ * @param error An output parameter to capture any errors
+ * @retval true Upon successfully obtaining and parsing a token
+ * @retval false If any error occurs.
+ */
+static bool
+_request_new_azure_token (mcd_azure_access_token *out, bson_error_t *error)
+{
+   return mcd_azure_access_token_from_imds (out,
+                                            NULL, // Use the default host
+                                            0,    //  Default port as well
+                                            NULL, // No extra headers
+                                            error);
+}
+
+/**
+ * @brief Attempt to load an Azure access token from the environment and append
+ * them to the kmsProviders
+ *
+ * @param out A kmsProviders object to update
+ * @param error An error-out parameter
+ * @retval true If there was no error and we loaded credentials
+ * @retval false If there was an error obtaining or appending credentials
+ */
+static bool
+_try_add_azure_from_env (_mongoc_crypt_t *crypt,
+                         bson_t *out,
+                         bson_error_t *error)
+{
+   if (crypt->azure_token.access_token) {
+      // The access-token is non-null, so we may have one cached.
+      mcd_time_point one_min_from_now = mcd_later (mcd_now (), mcd_minutes (1));
+      mcd_time_point expires_at = mcd_later (crypt->azure_token_issued_at,
+                                             crypt->azure_token.expires_in);
+      if (mcd_time_compare (expires_at, one_min_from_now) >= 0) {
+         // The token is still valid for at least another minute
+      } else {
+         // The token will expire soon. Destroy it, and below we will below ask
+         // IMDS for a new one.
+         mcd_azure_access_token_destroy (&crypt->azure_token);
+      }
+   }
+
+   if (crypt->azure_token.access_token == NULL) {
+      // There is no access token in our cache.
+      // Save the current time point as the "issue time" of the token, even
+      // though it will take some time for the HTTP request to hit the metadata
+      // server. This time is only used to track token expiry. IMDS gives us a
+      // number of seconds that the token will be valid relative to its issue
+      // time. Avoid reliance on system clocks by comparing the issue time to an
+      // abstract monotonic "now"
+      crypt->azure_token_issued_at = mcd_now ();
+      // Get the token:
+      if (_request_new_azure_token (&crypt->azure_token, error)) {
+         return false;
+      }
+   }
+
+   // Build the new KMS credentials
+   bson_t new_azure_creds = BSON_INITIALIZER;
+   const bool okay = BSON_APPEND_UTF8 (&new_azure_creds,
+                                       "accessToken",
+                                       crypt->azure_token.access_token) &&
+                     BSON_APPEND_DOCUMENT (out, "azure", &new_azure_creds);
+   bson_destroy (&new_azure_creds);
+   if (!okay) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Failed to build new 'azure' credentials");
+   }
+
+   return okay;
+}
+
+static bool
+_state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
+{
+   bson_t creds = BSON_INITIALIZER;
+   const bson_t empty = BSON_INITIALIZER;
+   bool okay = false;
+
+   if (sm->crypt->creds_cb.fn) {
+      // We have a user-provided credentials callback. Try it.
+      if (!sm->crypt->creds_cb.fn (
+             sm->crypt->creds_cb.userdata, &empty, &creds, error)) {
+         // User-provided callback indicated failure
+         if (!error->code) {
+            // The callback did not set an error, so we'll provide a default
+            // one.
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                            "The user-provided callback for on-demand KMS "
+                            "credentials failed.");
+         }
+         goto fail;
+      }
+      // The user's callback reported success
+   }
+
+   bson_iter_t iter;
+   const bool callback_provided_aws =
+      bson_iter_init_find (&iter, &creds, "aws");
+
+   if (!callback_provided_aws &&
+       _needs_on_demand_aws_kms (&sm->crypt->kms_providers, error)) {
+      // The original kmsProviders had an empty "aws" property, and the
+      // user-provided callback did not fill in a new "aws" property for us.
+      // Attempt instead to load the AWS credentials from the environment:
+      if (!_try_add_aws_from_env (&creds, error)) {
+         // Error while trying to add AWS credentials
+         goto fail;
+      }
+   }
+
+   // Whether the callback provided Azure credentials
+   const bool cb_provided_azure = bson_iter_init_find (&iter, &creds, "azure");
+   // Whether the original kmsProviders requested auto-Azure credentials:
+   const bool orig_wants_auto_azure =
+      _check_azure_kms_auto (&sm->crypt->kms_providers, error);
+   if (error->code) {
+      // _check_azure_kms_auto failed
+      goto fail;
+   }
+   const bool wants_auto_azure = orig_wants_auto_azure && !cb_provided_azure;
+   if (wants_auto_azure) {
+      if (!_try_add_azure_from_env (sm->crypt, &creds, error)) {
+         goto fail;
+      }
+   }
+
+   // Now actually send that data to libmongocrypt
+   mongocrypt_binary_t *const def = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (&creds), creds.len);
+   okay = mongocrypt_ctx_provide_kms_providers (sm->ctx, def);
+   if (!okay) {
+      _ctx_check_error (sm->ctx, error, true);
+   }
+   mongocrypt_binary_destroy (def);
+
+fail:
+   bson_destroy (&creds);
+
+   return okay;
+}
+
+
 static bool
 _state_ready (_state_machine_t *state_machine,
               bson_t *result,
@@ -648,6 +928,11 @@ _state_machine_run (_state_machine_t *state_machine,
          break;
       case MONGOCRYPT_CTX_NEED_KMS:
          if (!_state_need_kms (state_machine, error)) {
+            goto fail;
+         }
+         break;
+      case MONGOCRYPT_CTX_NEED_KMS_CREDENTIALS:
+         if (!_state_need_kms_credentials (state_machine, error)) {
             goto fail;
          }
          break;
@@ -914,6 +1199,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                    bool crypt_shared_lib_required,
                    bool bypass_auto_encryption,
                    bool bypass_query_analysis,
+                   mc_kms_credentials_callback creds_cb,
                    bson_error_t *error)
 {
    _mongoc_crypt_t *crypt;
@@ -926,6 +1212,10 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    /* Create the handle to libmongocrypt. */
    crypt = bson_malloc0 (sizeof (*crypt));
    crypt->handle = mongocrypt_new ();
+
+   // Stash away a copy of the user's kmsProviders in case we need to lazily
+   // load credentials.
+   bson_copy_to (kms_providers, &crypt->kms_providers);
 
    if (!_parse_all_tls_opts (crypt, tls_opts, error)) {
       goto fail;
@@ -984,6 +1274,9 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       }
    }
 
+   // Enable the NEEDS_CREDENTIALS state for on-demand credential loading
+   mongocrypt_setopt_use_need_kms_credentials_state (crypt->handle);
+
    if (!mongocrypt_init (crypt->handle)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;
@@ -994,14 +1287,14 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       const char *s =
          mongocrypt_crypt_shared_lib_version_string (crypt->handle, &len);
       if (!s || len == 0) {
-         // empty/null version string indicates that crypt_shared was not loaded by
-         // libmongocrypt
+         // empty/null version string indicates that crypt_shared was not loaded
+         // by libmongocrypt
          bson_set_error (
             error,
             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
             MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
             "Option 'cryptSharedLibRequired' is 'true', but failed to "
-            "load the crypt_shared runtime libary");
+            "load the crypt_shared runtime library");
          goto fail;
       }
       mongoc_log (MONGOC_LOG_LEVEL_DEBUG,
@@ -1009,6 +1302,8 @@ _mongoc_crypt_new (const bson_t *kms_providers,
                   "crypt_shared library version '%s' was found and loaded",
                   s);
    }
+
+   crypt->creds_cb = creds_cb;
 
    success = true;
 fail:
@@ -1036,6 +1331,8 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
    _mongoc_ssl_opts_cleanup (&crypt->aws_tls_opt, true /* free_internal */);
    _mongoc_ssl_opts_cleanup (&crypt->azure_tls_opt, true /* free_internal */);
    _mongoc_ssl_opts_cleanup (&crypt->gcp_tls_opt, true /* free_internal */);
+   bson_destroy (&crypt->kms_providers);
+   mcd_azure_access_token_destroy (&crypt->azure_token);
    bson_free (crypt);
 }
 
@@ -1132,7 +1429,7 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 const char *algorithm,
                                 const bson_value_t *keyid,
                                 char *keyaltname,
-                                const mongoc_encrypt_query_type_t *query_type,
+                                const char *query_type,
                                 const int64_t *contention_factor,
                                 const bson_value_t *value_in,
                                 bson_value_t *value_out,
@@ -1156,38 +1453,14 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
       goto fail;
    }
 
-   if (NULL != algorithm &&
-       0 == strcmp (algorithm, MONGOC_ENCRYPT_ALGORITHM_INDEXED)) {
-      if (!mongocrypt_ctx_setopt_index_type (state_machine->ctx,
-                                             MONGOCRYPT_INDEX_TYPE_EQUALITY)) {
-         _ctx_check_error (state_machine->ctx, error, true);
-         goto fail;
-      }
-   } else if (NULL != algorithm &&
-              0 == strcmp (algorithm, MONGOC_ENCRYPT_ALGORITHM_UNINDEXED)) {
-      if (!mongocrypt_ctx_setopt_index_type (state_machine->ctx,
-                                             MONGOCRYPT_INDEX_TYPE_NONE)) {
-         _ctx_check_error (state_machine->ctx, error, true);
-         goto fail;
-      }
-   } else {
-      if (!mongocrypt_ctx_setopt_algorithm (
-             state_machine->ctx, algorithm, -1)) {
-         _ctx_check_error (state_machine->ctx, error, true);
-         goto fail;
-      }
+   if (!mongocrypt_ctx_setopt_algorithm (state_machine->ctx, algorithm, -1)) {
+      _ctx_check_error (state_machine->ctx, error, true);
+      goto fail;
    }
 
    if (query_type != NULL) {
-      mongocrypt_query_type_t converted = 0;
-
-      switch (*query_type) {
-      case MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY:
-         converted = MONGOCRYPT_QUERY_TYPE_EQUALITY;
-         break;
-      }
-      if (!mongocrypt_ctx_setopt_query_type (state_machine->ctx, converted)) {
-         _ctx_check_error (state_machine->ctx, error, true);
+      if (!mongocrypt_ctx_setopt_query_type (
+             state_machine->ctx, query_type, -1)) {
          goto fail;
       }
    }
@@ -1509,6 +1782,12 @@ fail:
    _state_machine_destroy (state_machine);
 
    return ret;
+}
+
+const char *
+_mongoc_crypt_get_crypt_shared_version (const _mongoc_crypt_t *crypt)
+{
+   return mongocrypt_crypt_shared_lib_version_string (crypt->handle, NULL);
 }
 
 #else

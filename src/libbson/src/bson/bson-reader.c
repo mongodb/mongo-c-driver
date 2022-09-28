@@ -168,7 +168,7 @@ bson_reader_new_from_handle (void *handle,
    BSON_ASSERT (handle);
    BSON_ASSERT (rf);
 
-   real = bson_malloc0 (sizeof *real);
+   real = BSON_ALIGNED_ALLOC0 (bson_reader_handle_t);
    real->type = BSON_READER_HANDLE;
    real->data = bson_malloc0 (1024);
    real->handle = handle;
@@ -533,7 +533,7 @@ bson_reader_new_from_data (const uint8_t *data, /* IN */
 
    BSON_ASSERT (data);
 
-   real = (bson_reader_data_t *) bson_malloc0 (sizeof *real);
+   real = BSON_ALIGNED_ALLOC0 (bson_reader_data_t);
    real->type = BSON_READER_DATA;
    real->data = data;
    real->length = length;

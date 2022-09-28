@@ -546,6 +546,8 @@ test_srv_polling_mocked (void *unused)
    mongoc_host_list_t *expected;
    bool ret;
 
+   BSON_UNUSED (unused);
+
    mongoc_topology_description_init (&td, 0);
    uri = mongoc_uri_new ("mongodb+srv://server.test.com/?tls=true");
    capture_logs (true);
@@ -634,6 +636,8 @@ test_small_initial_buffer (void *unused)
     * be determined with: dig -t SRV _mongodb._tcp.test1.test.build.10gen.cc */
    size_t small_buffer_size = 30;
 
+   BSON_UNUSED (unused);
+
    memset (&rr_data, 0, sizeof (rr_data));
    ASSERT_OR_PRINT (
       _mongoc_client_get_rr ("_mongodb._tcp.test1.test.build.10gen.cc",
@@ -654,6 +658,12 @@ _mock_rr_resolver_prose_test_9 (const char *service,
                                 size_t initial_buffer_size,
                                 bson_error_t *error)
 {
+   BSON_UNUSED (service);
+   BSON_UNUSED (rr_type);
+   BSON_UNUSED (rr_data);
+   BSON_UNUSED (initial_buffer_size);
+   BSON_UNUSED (error);
+
    test_error ("Expected mock resolver to not be called");
    return true;
 }
@@ -879,12 +889,16 @@ _prose_test_9 (const _prose_test_fns_t *fns)
 static void
 prose_test_9_single (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _prose_test_9 (&_prose_test_single_fns);
 }
 
 static void
 prose_test_9_pooled (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _prose_test_9 (&_prose_test_pooled_fns);
 }
 
@@ -895,12 +909,11 @@ _mock_rr_resolver_prose_test_10 (const char *service,
                                  size_t initial_buffer_size,
                                  bson_error_t *error)
 {
+   BSON_UNUSED (initial_buffer_size);
+
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
    BSON_ASSERT_PARAM (error);
-
-   /* Silence unused parameter warning. */
-   BSON_ASSERT (initial_buffer_size >= 0u);
 
    if (rr_type == MONGOC_RR_SRV) {
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
@@ -977,12 +990,16 @@ _prose_test_10 (const _prose_test_fns_t *fns)
 static void
 prose_test_10_single (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _prose_test_10 (&_prose_test_single_fns);
 }
 
 static void
 prose_test_10_pooled (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _prose_test_10 (&_prose_test_pooled_fns);
 }
 
@@ -993,12 +1010,11 @@ _mock_rr_resolver_prose_test_11 (const char *service,
                                  size_t initial_buffer_size,
                                  bson_error_t *error)
 {
+   BSON_UNUSED (initial_buffer_size);
+
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
    BSON_ASSERT_PARAM (error);
-
-   /* Silence unused parameter warning. */
-   BSON_ASSERT (initial_buffer_size >= 0u);
 
    if (rr_type == MONGOC_RR_SRV) {
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
@@ -1073,12 +1089,16 @@ _prose_test_11 (const _prose_test_fns_t *fns)
 static void
 prose_test_11_single (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _prose_test_11 (&_prose_test_single_fns);
 }
 
 static void
 prose_test_11_pooled (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _prose_test_11 (&_prose_test_pooled_fns);
 }
 
@@ -1089,12 +1109,11 @@ _mock_rr_resolver_prose_test_12 (const char *service,
                                  size_t initial_buffer_size,
                                  bson_error_t *error)
 {
+   BSON_UNUSED (initial_buffer_size);
+
    BSON_ASSERT_PARAM (service);
    BSON_ASSERT_PARAM (rr_data);
    BSON_ASSERT_PARAM (error);
-
-   /* Silence unused parameter warning. */
-   BSON_ASSERT (initial_buffer_size >= 0u);
 
    if (rr_type == MONGOC_RR_SRV) {
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
@@ -1214,12 +1233,16 @@ _prose_test_12 (const _prose_test_fns_t *fns)
 static void
 prose_test_12_single (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _prose_test_12 (&_prose_test_single_fns);
 }
 
 static void
 prose_test_12_pooled (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _prose_test_12 (&_prose_test_pooled_fns);
 }
 

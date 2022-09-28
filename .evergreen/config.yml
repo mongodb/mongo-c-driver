@@ -23,7 +23,12 @@ functions:
         set -o errexit
         if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
            # This is a GitHub PR or patch build, probably branched from master
-           echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+           if command -v python3 2>/dev/null; then
+              # Prefer python3 if it is available
+              echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+           else
+              echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+           fi
            VERSION=$VERSION_CURRENT-${version_id}
         else
            VERSION=latest
@@ -753,11 +758,11 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o errexit
         # Export the variables we need to construct URIs
         set +o xtrace
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
+        . ../drivers-evergreen-tools/.evergreen/auth_aws/activate_venv.sh
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
   clone drivers-evergreen-tools:
   - command: shell.exec
@@ -778,10 +783,10 @@ functions:
         echo "Starting mock KMS servers..."
         cd ./drivers-evergreen-tools/.evergreen/csfle
         . ./activate_venv.sh
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 7999 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 8000 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8002 --require_client_cert &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999 &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000 &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001 &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --require_client_cert --port 9002 &
         python -u kms_kmip_server.py &
         echo "Starting mock KMS servers... done."
   start load balancer:
@@ -1030,26 +1035,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-std=c11"
-        export DEBUG="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
-  - func: upload build
-- name: debug-compile-c99
-  tags:
-  - c99
-  - debug-compile
-  - special
-  - stdflags
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        export CFLAGS="-std=c99"
+        export C_STD_VERSION="11"
         export DEBUG="ON"
         export SANITIZE=""
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1194,10 +1180,33 @@ tasks:
       script: |-
         set -o errexit
         export CC="clang-3.8"
-        export CFLAGS="-fno-omit-frame-pointer"
+        export CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
+        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
+        export SANITIZE="undefined"
+        export SNAPPY="OFF"
+        export ZLIB="BUNDLED"
+        export ZSTD="OFF"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
+- name: debug-compile-ubsan-with-extra-alignment
+  tags:
+  - special
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        export CC="clang-3.8"
+        export CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment"
+        export CHECK_LOG="ON"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON"
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
         export SANITIZE="undefined"
         export SNAPPY="OFF"
@@ -1867,6 +1876,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1899,6 +1909,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL_STATIC"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1931,6 +1942,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="DARWIN"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1963,6 +1975,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="WINDOWS"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1995,6 +2008,7 @@ tasks:
         export SANITIZE="address"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
+        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -17198,7 +17212,7 @@ tasks:
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         . .evergreen/find-cmake.sh
         export CC='${CC}'
-        $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+        $CMAKE -DCMAKE_C_STANDARD=99 -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=OFF -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
   - func: upload build
 - name: test-aws-openssl-regular-latest
@@ -24248,6 +24262,7 @@ buildvariants:
   - debug-compile-scan-build
   - debug-compile-asan-clang
   - debug-compile-ubsan
+  - debug-compile-ubsan-with-extra-alignment
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
@@ -24343,6 +24358,34 @@ buildvariants:
   expansions:
     CC: gcc
   run_on: debian10-test
+  tasks:
+  - release-compile
+  - debug-compile-nosasl-nossl
+  - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .openssl-static
+  - .debug-compile !.sspi .nossl
+  - .latest .openssl !.nosasl .server
+  - .latest .openssl-static !.nosasl .server
+  - .latest .nossl
+- name: gcc102
+  display_name: GCC 10.2 (Debian 11.0)
+  expansions:
+    CC: gcc
+  run_on: debian11-large
+  tasks:
+  - release-compile
+  - debug-compile-nosasl-nossl
+  - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .openssl-static
+  - .debug-compile !.sspi .nossl
+  - .latest .openssl !.nosasl .server
+  - .latest .openssl-static !.nosasl .server
+  - .latest .nossl
+- name: gcc94
+  display_name: GCC 9.4 (Ubuntu 20.04)
+  expansions:
+    CC: gcc
+  run_on: ubuntu2004-large
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
@@ -24638,10 +24681,8 @@ buildvariants:
   - .authentication-tests .openssl
   - .latest .openssl !.nosasl .server
   - .latest .nossl
+  - .6.0 .openssl !.nosasl .server
   - .5.0 .openssl !.nosasl .server
-  - .4.4 .openssl !.nosasl .server
-  - .4.2 .openssl !.nosasl .server
-  - .4.0 .openssl !.nosasl .server
   batchtime: 1440
 - name: valgrind-ubuntu
   display_name: Valgrind Tests (Ubuntu 18.04)
@@ -24673,6 +24714,16 @@ buildvariants:
   tasks:
   - .debug-compile .asan-clang
   - .test-asan !.3.6
+  batchtime: 1440
+- name: asan-ubuntu-without-csfle
+  display_name: ASAN Tests without csfle (Ubuntu 18.04)
+  expansions:
+    CC: clang
+    USE_CRYPT_SHARED: 'OFF'
+  run_on: ubuntu1804-test
+  tasks:
+  - debug-compile-asan-openssl-cse
+  - .test-asan !.3.6 .client-side-encryption
   batchtime: 1440
 - name: asan-ubuntu-ubuntu1604
   display_name: ASAN Tests (Ubuntu 16.04)

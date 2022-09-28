@@ -1034,8 +1034,8 @@ BSON_THREAD_FUN (background_mongoc_topology_select, data)
          future_value_get_mongoc_topology_ptr (future_get_param (future, 0)),
          future_value_get_mongoc_ss_optype_t (future_get_param (future, 1)),
          future_value_get_const_mongoc_read_prefs_ptr (future_get_param (future, 2)),
-         NULL /* chosen read mode, unused here */,
-         future_value_get_bson_error_ptr (future_get_param (future, 3))
+         future_value_get_bool_ptr (future_get_param (future, 3)),
+         future_value_get_bson_error_ptr (future_get_param (future, 4))
       ));
 
    future_resolve (future, return_value);
@@ -2563,10 +2563,11 @@ future_topology_select (
    mongoc_topology_ptr topology,
    mongoc_ss_optype_t optype,
    const_mongoc_read_prefs_ptr read_prefs,
+   bool_ptr must_use_primary,
    bson_error_ptr error)
 {
    future_t *future = future_new (future_value_mongoc_server_description_ptr_type,
-                                  4);
+                                  5);
    
    future_value_set_mongoc_topology_ptr (
       future_get_param (future, 0), topology);
@@ -2577,8 +2578,11 @@ future_topology_select (
    future_value_set_const_mongoc_read_prefs_ptr (
       future_get_param (future, 2), read_prefs);
    
+   future_value_set_bool_ptr (
+      future_get_param (future, 3), must_use_primary);
+   
    future_value_set_bson_error_ptr (
-      future_get_param (future, 3), error);
+      future_get_param (future, 4), error);
    
    future_start (future, background_mongoc_topology_select);
    return future;

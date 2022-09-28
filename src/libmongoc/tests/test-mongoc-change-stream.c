@@ -243,6 +243,8 @@ test_change_stream_live_single_server (void *test_ctx)
    /* Don't use the errmsg field since it contains quotes. */
    const char *not_supported_doc = "{'code' : 40324, 'ok' : 0 }";
 
+   BSON_UNUSED (test_ctx);
+
    ASSERT (client);
 
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -325,6 +327,8 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    bson_t opts = BSON_INITIALIZER;
    bson_t doc0_rt, doc1_rt, doc2_rt;
    const bson_t *resume_token;
+
+   BSON_UNUSED (test_ctx);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -457,6 +461,8 @@ test_change_stream_live_batch_size (void *test_ctx)
    bson_error_t err;
    uint32_t i;
 
+   BSON_UNUSED (test_ctx);
+
    client = test_framework_new_default_client ();
    ASSERT (client);
 
@@ -583,12 +589,16 @@ _test_resume_token_error (const char *id_projection)
 static void
 test_change_stream_live_missing_resume_token (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
+
    _test_resume_token_error ("0");
 }
 
 static void
 test_change_stream_live_invalid_resume_token (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
+
    /* test a few non-document BSON types */
    _test_resume_token_error ("{'$literal': 1}");
    _test_resume_token_error ("{'$literal': true}");
@@ -985,6 +995,8 @@ test_change_stream_live_watch (void *test_ctx)
    bson_t opts = BSON_INITIALIZER;
    bson_error_t err;
 
+   BSON_UNUSED (test_ctx);
+
    mongoc_write_concern_set_wmajority (wc, 30000);
 
    coll = drop_and_get_coll (client, "db", "coll_watch");
@@ -1072,6 +1084,8 @@ test_change_stream_live_read_prefs (void *test_ctx)
    bson_error_t err;
    uint64_t first_cursor_id;
 
+   BSON_UNUSED (test_ctx);
+
    coll = drop_and_get_coll (client, "db", "coll_read_prefs");
    ASSERT (coll);
    ASSERT_OR_PRINT (mongoc_collection_insert_one (
@@ -1157,6 +1171,8 @@ test_change_stream_next_after_error (void *test_ctx)
    const bson_t *bson;
    bson_error_t err;
 
+   BSON_UNUSED (test_ctx);
+
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
    ASSERT_OR_PRINT (
@@ -1205,6 +1221,8 @@ test_change_stream_accepts_array (void *test_ctx)
    bson_error_t err;
    bson_t *opts =
       tmp_bson ("{'maxAwaitTimeMS': 1}"); /* to speed up the test. */
+
+   BSON_UNUSED (test_ctx);
 
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    /* set up apm callbacks to listen for the agg commands. */
@@ -1280,6 +1298,8 @@ test_change_stream_start_at_operation_time (void *test_ctx)
    bson_t opts;
    mongoc_client_session_t *session;
    bson_error_t error;
+
+   BSON_UNUSED (test_ctx);
 
    session = mongoc_client_start_session (client, NULL, &error);
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -1382,6 +1402,8 @@ test_change_stream_resume_at_optime (void *test_ctx)
    mongoc_apm_callbacks_t *callbacks;
    resume_ctx_t ctx = RESUME_INITIALIZER;
 
+   BSON_UNUSED (test_ctx);
+
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, _resume_at_optime_started);
    mongoc_apm_set_command_succeeded_cb (callbacks, _resume_at_optime_succeeded);
@@ -1469,6 +1491,8 @@ test_change_stream_resume_with_post_batch_resume_token (void *test_ctx)
    mongoc_apm_callbacks_t *callbacks;
    resume_ctx_t ctx = RESUME_INITIALIZER;
 
+   BSON_UNUSED (test_ctx);
+
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (
       callbacks, _resume_with_post_batch_resume_token_started);
@@ -1504,6 +1528,8 @@ test_change_stream_database_watch (void *test_ctx)
    bson_t opts;
    bson_error_t error;
 
+   BSON_UNUSED (test_ctx);
+
    db = mongoc_client_get_database (client, "db");
    bson_init (&opts);
 
@@ -1535,6 +1561,8 @@ test_change_stream_client_watch (void *test_ctx)
    const bson_t *doc;
    bson_t opts;
    bson_error_t error;
+
+   BSON_UNUSED (test_ctx);
 
    bson_init (&opts);
 
@@ -2076,6 +2104,8 @@ test_error_null_doc (void *ctx)
    const bson_t *error_doc =
       tmp_bson ("{}"); /* assign to a non-zero address. */
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    stream = mongoc_client_watch (client, tmp_bson ("{}"), NULL);
    /* error_doc starts as non-NULL. */
@@ -2113,6 +2143,8 @@ prose_test_11 (void *ctx)
    bson_t opts = BSON_INITIALIZER;
    const bson_t *resume_token;
    _data_change_stream_t *post_batch_expected;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -2175,6 +2207,8 @@ prose_test_12 (void *ctx)
    bson_iter_t iter, child;
    bson_t expected_token;
    bson_t expected_doc;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -2338,6 +2372,8 @@ prose_test_14 (void *test_ctx)
    const bson_t *doc = NULL;
    mongoc_timestamp_t optime = {0};
    mongoc_apm_callbacks_t *callbacks;
+
+   BSON_UNUSED (test_ctx);
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_succeeded_cb (callbacks,

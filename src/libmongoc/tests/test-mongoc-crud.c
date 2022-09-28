@@ -57,6 +57,8 @@ prose_test_1 (void *ctx)
    bson_t reply;
    bson_error_t error;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    coll = get_test_collection (client, "coll");
 
@@ -119,6 +121,8 @@ prose_test_2 (void *ctx)
    bool ret;
    bson_t reply, reply_errInfo, observed_errInfo;
    bson_error_t error = {0};
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    db = get_test_database (client);

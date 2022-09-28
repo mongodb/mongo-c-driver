@@ -1,3 +1,29 @@
+mongo-c-driver (1.23.0-1) unstable; urgency=medium
+
+  * New upstream release
+  * Explicitly link to libatomic on riscv64 (Closes: #1017345)
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Wed, 31 Aug 2022 10:10:19 -0400
+
+mongo-c-driver (1.22.1-1) unstable; urgency=medium
+
+  * New upstream release (Closes: #1013404)
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 02 Aug 2022 15:03:22 -0400
+
+mongo-c-driver (1.22.0-1) unstable; urgency=medium
+
+  * New upstream release
+  * Update to Standards-Version 4.6.1 (no changes)
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Wed, 29 Jun 2022 17:22:09 -0400
+
+mongo-c-driver (1.21.2-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 07 Jun 2022 16:03:15 -0400
+
 mongo-c-driver (1.21.1-1) unstable; urgency=medium
 
   * New upstream release

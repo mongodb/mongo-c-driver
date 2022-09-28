@@ -223,6 +223,8 @@ _test_cluster_node_disconnect (bool pooled)
 static void
 test_cluster_node_disconnect_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_cluster_node_disconnect (false);
 }
 
@@ -230,6 +232,8 @@ test_cluster_node_disconnect_single (void *ctx)
 static void
 test_cluster_node_disconnect_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_cluster_node_disconnect (true);
 }
 
@@ -409,6 +413,8 @@ _test_write_disconnect (void)
 static void
 test_write_command_disconnect (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_write_disconnect ();
 }
 
@@ -1158,6 +1164,8 @@ auto_hello_callback (request_t *request, void *data, bson_t *hello_response)
 {
    dollar_query_test_t *test;
    bson_t cluster_time;
+
+   BSON_UNUSED (request);
 
    test = (dollar_query_test_t *) data;
 

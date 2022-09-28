@@ -197,6 +197,8 @@ test_getmore_iteration (mongoc_client_t *client)
 static void
 test_getmore_iteration_runner (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    /* Only run on 4.2 or higher */
    if (!test_framework_max_wire_version_at_least (8)) {
       return;
@@ -264,6 +266,8 @@ test_not_primary_keep_pool (mongoc_client_t *client)
 static void
 test_not_primary_keep_pool_runner (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    /* Only run on 4.2 and higher */
    if (!test_framework_max_wire_version_at_least (8)) {
       return;
@@ -336,6 +340,8 @@ test_not_primary_reset_pool_runner (void *ctx)
 {
    int64_t max_wire_version;
 
+   BSON_UNUSED (ctx);
+
    /* Only run if version 4.0 */
    test_framework_get_max_wire_version (&max_wire_version);
    if (max_wire_version != WIRE_VERSION_4_0) {
@@ -404,6 +410,8 @@ test_shutdown_reset_pool (mongoc_client_t *client)
 static void
 test_shutdown_reset_pool_runner (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    /* Only run if version >= 4.0 */
    if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_0)) {
       return;
@@ -471,6 +479,8 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
 static void
 test_interrupted_shutdown_reset_pool_runner (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    /* Only run if version >= 4.0 */
    if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_0)) {
       return;

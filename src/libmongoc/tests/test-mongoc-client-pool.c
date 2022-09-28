@@ -390,6 +390,8 @@ test_client_pool_create_unused_session (void *context)
    bson_error_t error;
    int count = 0;
 
+   BSON_UNUSED (context);
+
    capture_logs (true);
 
    callbacks = mongoc_apm_callbacks_new ();

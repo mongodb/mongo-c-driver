@@ -52,6 +52,8 @@ _update_post_batch_resume_token (mongoc_cursor_t *cursor)
 static mongoc_cursor_state_t
 _prime (mongoc_cursor_t *cursor)
 {
+   BSON_UNUSED (cursor);
+
    fprintf (stderr, "Prime unsupported on change stream cursor.");
    BSON_ASSERT (false);
 
@@ -102,6 +104,9 @@ _destroy (mongoc_cursor_impl_t *impl)
 static void
 _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 {
+   BSON_UNUSED (dst);
+   BSON_UNUSED (src);
+
    fprintf (stderr, "Clone unsupported on change stream cursor.");
    BSON_ASSERT (false);
 }
@@ -118,7 +123,7 @@ _mongoc_cursor_change_stream_new (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (reply);
 
-   data = bson_malloc0 (sizeof (*data));
+   data = BSON_ALIGNED_ALLOC0 (_data_change_stream_t);
    /* _mongoc_cursor_response_t.reply is already uninitialized and we can trust
     * that reply comes from mongoc_client_read_command_with_opts() */
    BSON_ASSERT (bson_steal (&data->response.reply, reply));

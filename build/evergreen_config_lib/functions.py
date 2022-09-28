@@ -29,7 +29,12 @@ all_functions = OD([
         shell_mongoc(r'''
         if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
            # This is a GitHub PR or patch build, probably branched from master
-           echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+           if command -v python3 2>/dev/null; then
+              # Prefer python3 if it is available
+              echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+           else
+              echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+           fi
            VERSION=$VERSION_CURRENT-${version_id}
         else
            VERSION=latest
@@ -542,11 +547,11 @@ all_functions = OD([
         EOF
         ''', silent=True),
         shell_mongoc(r'''
-        set -o errexit
         # Export the variables we need to construct URIs
         set +o xtrace
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
+        . ../drivers-evergreen-tools/.evergreen/auth_aws/activate_venv.sh
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
         ''')
     )),
@@ -562,10 +567,10 @@ all_functions = OD([
         echo "Starting mock KMS servers..."
         cd ./drivers-evergreen-tools/.evergreen/csfle
         . ./activate_venv.sh
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 7999 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 8000 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8002 --require_client_cert &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999 &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000 &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001 &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --require_client_cert --port 9002 &
         python -u kms_kmip_server.py &
         echo "Starting mock KMS servers... done."
         ''', test=False, background=True),

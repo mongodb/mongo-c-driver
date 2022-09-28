@@ -373,6 +373,8 @@ txt_callback (const char *hostname,
    uint8_t len;
    bool ret = false;
 
+   BSON_UNUSED (ns_answer);
+
    total = (uint16_t) ns_rr_rdlen (*rr);
    if (total < 1 || total > 255) {
       DNS_ERROR ("Invalid TXT record size %hu for \"%s\"", total, hostname);
@@ -1651,6 +1653,12 @@ mongoc_client_command (mongoc_client_t *client,
    char *ns = NULL;
    mongoc_cursor_t *cursor;
 
+   BSON_UNUSED (flags);
+   BSON_UNUSED (skip);
+   BSON_UNUSED (limit);
+   BSON_UNUSED (batch_size);
+   BSON_UNUSED (fields);
+
    BSON_ASSERT (client);
    BSON_ASSERT (db_name);
    BSON_ASSERT (query);
@@ -1759,6 +1767,8 @@ _mongoc_client_retryable_read_command_with_stream (
    bool ret;
    bson_t reply_local;
 
+   BSON_UNUSED (server_stream);
+
    if (reply == NULL) {
       reply = &reply_local;
    }
@@ -1824,6 +1834,8 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
                                     bson_error_t *error)
 {
    ENTRY;
+
+   BSON_UNUSED (read_prefs);
 
    parts->assembled.operation_id = ++client->cluster.operation_id;
    if (!mongoc_cmd_parts_assemble (parts, server_stream, error)) {
@@ -2679,6 +2691,8 @@ mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
 mongoc_cursor_t *
 mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
 {
+   BSON_UNUSED (error);
+
    /* existing bug in this deprecated API: error pointer is unused */
    return mongoc_client_find_databases_with_opts (client, NULL);
 }
@@ -3154,6 +3168,8 @@ mongoc_client_get_handshake_description (mongoc_client_t *client,
 {
    mongoc_server_stream_t *server_stream;
    mongoc_server_description_t *sd;
+
+   BSON_UNUSED (opts);
 
    server_stream = mongoc_cluster_stream_for_server (&client->cluster,
                                                      server_id,

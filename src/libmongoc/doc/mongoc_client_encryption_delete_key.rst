@@ -22,7 +22,7 @@ Parameters
 
 * ``client_encryption``: A :symbol:`mongoc_client_encryption_t`.
 * ``keyid``: The UUID (BSON binary subtype 0x04) of the key to delete.
-* ``reply``: Optional. An uninitalized :symbol:`bson:bson_t` set to the delete result. Must be freed by :symbol:`bson_destroy`.
+* ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` set to the delete result. Must be freed by :symbol:`bson_destroy`.
 * ``error``: Optional. :symbol:`bson_error_t`.
 
 Returns
@@ -33,4 +33,4 @@ Returns ``true`` if successful. Returns ``false`` and sets ``error`` otherwise.
 .. seealso::
 
   | :symbol:`mongoc_client_encryption_t`
-  | :symbol:`mongoc_client_encryption_create_key`
+  | :symbol:`mongoc_client_encryption_create_datakey`

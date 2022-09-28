@@ -54,6 +54,9 @@ _check_depth_document (const bson_iter_t *iter,
    check_depth_t *state = (check_depth_t *) data;
    bson_iter_t child;
 
+   BSON_UNUSED (iter);
+   BSON_UNUSED (key);
+
    if (!bson_iter_init (&child, v_document)) {
       fprintf (stderr, "corrupt\n");
       return true; /* cancel */

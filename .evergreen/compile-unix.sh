@@ -4,6 +4,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Supported/used environment variables:
 # Options for this script:
 #       CFLAGS                  Additional compiler flags
+#       C_STD_VERSION           C standard version to compile with (default: 99)
 #       MARCH                   Machine Architecture. Defaults to lowercase uname -m
 #       RELEASE                 Use the fully qualified release archive
 #       DEBUG                   Use debug configure flags
@@ -28,6 +29,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       ZSTD                    Build against system zstd.
 
 # Options for this script.
+C_STD_VERSION=${CSTD_VERSION:-99}
 RELEASE=${RELEASE:-OFF}
 DEBUG=${DEBUG:-OFF}
 TRACING=${TRACING:-OFF}
@@ -46,6 +48,7 @@ ZLIB=${ZLIB:-BUNDLED}
 INSTALL_DIR=$(pwd)/install-dir
 
 echo "CFLAGS: $CFLAGS"
+echo "C_STD_VERSION: $C_STD_VERSION"
 echo "SANITIZE: $SANITIZE"
 echo "MARCH: $MARCH"
 echo "RELEASE: $RELEASE"
@@ -62,6 +65,9 @@ echo "ZSTD: $ZSTD"
 # Get the kernel name, lowercased
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
+
+# Assume we are running in the mongo-c-driver source root directory
+MONGOC_DIR="$PWD"
 
 # Since zstd inconsitently installed on macos-1014.
 # Remove this check in CDRIVER-3483.
@@ -160,6 +166,8 @@ export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
 export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
 export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
 
+CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_C_STANDARD=$C_STD_VERSION -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=OFF"
+
 case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
@@ -206,6 +214,9 @@ CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGO_SANITIZE=$SANITIZE"
 if ! python3 build/mongodl.py --test -C crypt_shared -V 6.0.0-rc8 -o . > /dev/null; then
    echo "No crypt_shared detected for this platform. Disabling MONGOC_TEST_USE_CRYPT_SHARED."
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CRYPT_SHARED=OFF"
+elif [ "$USE_CRYPT_SHARED" = "OFF" ]; then
+   echo "Variant requested disabling csfle. Disabling MONGOC_TEST_USE_CRYPT_SHARED."
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGOC_TEST_USE_CRYPT_SHARED=OFF"
 fi
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS $EXTRA_CONFIGURE_FLAGS"
@@ -227,11 +238,13 @@ pkg-config --modversion libssl || true
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
-   # TODO (CDRIVER-4397): add "--branch 1.5.0-rc0" in git clone once libmongocrypt 1.5.0-rc0 is released.
-   git clone https://github.com/mongodb/libmongocrypt
+   git clone https://github.com/mongodb/libmongocrypt --branch 1.5.2
+
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
-   $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" ../
+   $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" \
+      -DMONGOCRYPT_MONGOC_DIR="$MONGOC_DIR" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+      -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" -DBUILD_TESTING=OFF ../
    make install
    cd ../../
    else
@@ -251,6 +264,11 @@ if [ "$ANALYZE" = "ON" ]; then
    else
       SCAN_BUILD_COMMAND="scan-build-3.9"
    fi
+
+   # Do not include bundled zlib in scan-build analysis.
+   # scan-build `--exclude`` flag is not available on all Evergreen variants.
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=OFF"
+
    $SCAN_BUILD_COMMAND $CMAKE $CONFIGURE_FLAGS .
 
    # Put clang static analyzer results in scan/ and fail build if warnings found.

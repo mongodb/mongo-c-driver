@@ -11,6 +11,8 @@ test_cond_wait (void *unused)
    bson_mutex_t mutex;
    mongoc_cond_t cond;
 
+   BSON_UNUSED (unused);
+
    bson_mutex_init (&mutex);
    mongoc_cond_init (&cond);
 

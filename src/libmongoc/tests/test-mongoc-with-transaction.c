@@ -16,6 +16,9 @@ with_transaction_fail_transient_txn (mongoc_client_session_t *session,
 {
    bson_t labels;
 
+   BSON_UNUSED (ctx);
+   BSON_UNUSED (error);
+
    _mongoc_usleep (session->with_txn_timeout_ms * 1000);
 
    *reply = bson_new ();
@@ -31,6 +34,10 @@ with_transaction_do_nothing (mongoc_client_session_t *session,
                              bson_t **reply,
                              bson_error_t *error)
 {
+   BSON_UNUSED (session);
+   BSON_UNUSED (ctx);
+   BSON_UNUSED (reply);
+   BSON_UNUSED (error);
    return true;
 }
 
@@ -41,6 +48,8 @@ test_with_transaction_timeout (void *ctx)
    mongoc_client_session_t *session;
    bson_error_t error;
    bool res;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
 

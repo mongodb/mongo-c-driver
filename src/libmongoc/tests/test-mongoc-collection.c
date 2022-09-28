@@ -33,6 +33,8 @@ test_aggregate_w_write_concern (void *ctx)
    const bson_t *doc;
    bson_error_t error;
 
+   BSON_UNUSED (ctx);
+
    /* set up */
    good_wc = mongoc_write_concern_new ();
    bad_wc = mongoc_write_concern_new ();
@@ -327,6 +329,8 @@ test_read_prefs_is_valid (void *ctx)
    bson_t *pipeline;
    mongoc_read_prefs_t *read_prefs;
    bson_t reply;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -660,6 +664,8 @@ test_insert_oversize (void *ctx)
    bson_t doc = BSON_INITIALIZER;
    bool r;
    bson_error_t error;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_insert_oversize");
@@ -1085,6 +1091,8 @@ test_decimal128 (void *ctx)
    bson_decimal128_t decimal128;
    bson_decimal128_t read_decimal;
 
+   BSON_UNUSED (ctx);
+
    bson_decimal128_from_string ("-123456789.101112E-120", &decimal128);
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -1235,6 +1243,8 @@ test_update_pipeline (void *ctx)
    bson_t *replacement;
    bool res;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    ASSERT (client);
 
@@ -1294,6 +1304,8 @@ test_update_oversize (void *ctx)
    bson_t child;
    bool r;
    bson_error_t error;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_update_oversize");
@@ -1398,6 +1410,8 @@ test_remove_oversize (void *ctx)
    bson_t doc = BSON_INITIALIZER;
    bool r;
    bson_error_t error;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_remove_oversize");
@@ -1817,6 +1831,8 @@ test_index_geo (void *unused)
    bson_t keys;
    uint32_t id;
 
+   BSON_UNUSED (unused);
+
    mongoc_index_opt_init (&opt);
    mongoc_index_opt_geo_init (&geo_opt);
 
@@ -2219,6 +2235,7 @@ test_count_read_concern_live (void *unused)
    int64_t count;
    bson_t b;
 
+   BSON_UNUSED (unused);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -2653,6 +2670,8 @@ test_aggregate_bypass (void *context)
    bool r;
    int i;
    char *json;
+
+   BSON_UNUSED (context);
 
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
@@ -3151,6 +3170,8 @@ test_aggregate_server_id_option (void *ctx)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    collection = mongoc_client_get_collection (client, "db", "collection");
    q = tmp_bson (NULL);
@@ -3197,6 +3218,8 @@ test_validate (void *ctx)
    bool r;
    const uint32_t expected_err_domain = MONGOC_ERROR_BSON;
    const uint32_t expected_err_code = MONGOC_ERROR_BSON_INVALID;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -3592,6 +3615,8 @@ test_large_return (void *ctx)
    size_t len;
    char *str;
    bool r;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -4036,6 +4061,8 @@ test_command_fq (void *context)
    bson_iter_t iter;
    bson_t *cmd;
    bool r;
+
+   BSON_UNUSED (context);
 
    client = test_framework_new_default_client ();
    ASSERT (client);
@@ -4503,6 +4530,8 @@ test_getmore_read_concern_live (void *ctx)
    bson_error_t error;
    int i = 0;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_read_concern");
 
@@ -4550,6 +4579,8 @@ test_aggregate_secondary (void *ctx)
    bson_error_t error;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "aggregate_secondary");
@@ -4857,6 +4888,8 @@ test_create_index_fail (void *context)
    bool r;
    bson_t reply;
    bson_error_t error;
+
+   BSON_UNUSED (context);
 
    client = test_framework_client_new (
       "mongodb://example.doesntexist/?connectTimeoutMS=10", NULL);
@@ -6061,6 +6094,8 @@ test_fam_no_error_on_retry (void *unused)
    bool ret;
    bson_t reply;
    mongoc_find_and_modify_opts_t *opts;
+
+   BSON_UNUSED (unused);
 
    client = test_framework_new_default_client ();
    ret = mongoc_client_command_simple (

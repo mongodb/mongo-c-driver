@@ -475,6 +475,8 @@ _test_int_modifier (const char *mod)
 static void
 test_maxscan (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_int_modifier ("maxScan");
 }
 
@@ -828,6 +830,8 @@ test_getmore_invalid_reply (void *ctx)
    request_t *request;
    const bson_t *doc;
    bson_error_t error;
+
+   BSON_UNUSED (ctx);
 
    if (!TestSuite_CheckMockServerAllowed ()) {
       return;

@@ -33,9 +33,15 @@ struct _mongoc_cursor_t;
 #define MONGOC_ENCRYPT_ALGORITHM_INDEXED "Indexed"
 #define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
 
+#define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
+
+
 BSON_BEGIN_DECLS
 
 typedef struct _mongoc_auto_encryption_opts_t mongoc_auto_encryption_opts_t;
+
+typedef bool (*mongoc_kms_credentials_provider_callback_fn) (
+   void *userdata, const bson_t *params, bson_t *out, bson_error_t *error);
 
 MONGOC_EXPORT (mongoc_auto_encryption_opts_t *)
 mongoc_auto_encryption_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
@@ -83,6 +89,12 @@ MONGOC_EXPORT (void)
 mongoc_auto_encryption_opts_set_extra (mongoc_auto_encryption_opts_t *opts,
                                        const bson_t *extra);
 
+MONGOC_EXPORT (void)
+mongoc_auto_encryption_opts_set_kms_credential_provider_callback (
+   mongoc_auto_encryption_opts_t *opts,
+   mongoc_kms_credentials_provider_callback_fn fn,
+   void *userdata);
+
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
 typedef struct _mongoc_client_encryption_encrypt_opts_t
@@ -115,6 +127,12 @@ MONGOC_EXPORT (void)
 mongoc_client_encryption_opts_set_tls_opts (
    mongoc_client_encryption_opts_t *opts, const bson_t *tls_opts);
 
+MONGOC_EXPORT (void)
+mongoc_client_encryption_opts_set_kms_credential_provider_callback (
+   mongoc_client_encryption_opts_t *opts,
+   mongoc_kms_credentials_provider_callback_fn fn,
+   void *userdata);
+
 MONGOC_EXPORT (mongoc_client_encryption_rewrap_many_datakey_result_t *)
 mongoc_client_encryption_rewrap_many_datakey_result_new (void)
    BSON_GNUC_WARN_UNUSED_RESULT;
@@ -138,14 +156,6 @@ mongoc_client_encryption_destroy (
 
 MONGOC_EXPORT (bool)
 mongoc_client_encryption_create_datakey (
-   mongoc_client_encryption_t *client_encryption,
-   const char *kms_provider,
-   mongoc_client_encryption_datakey_opts_t *opts,
-   bson_value_t *keyid,
-   bson_error_t *error);
-
-MONGOC_EXPORT (bool)
-mongoc_client_encryption_create_key (
    mongoc_client_encryption_t *client_encryption,
    const char *kms_provider,
    mongoc_client_encryption_datakey_opts_t *opts,
@@ -237,12 +247,9 @@ MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_contention_factor (
    mongoc_client_encryption_encrypt_opts_t *opts, int64_t contention_factor);
 
-typedef enum { MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY } mongoc_encrypt_query_type_t;
-
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_query_type (
-   mongoc_client_encryption_encrypt_opts_t *opts,
-   mongoc_encrypt_query_type_t query_type);
+   mongoc_client_encryption_encrypt_opts_t *opts, const char *query_type);
 
 MONGOC_EXPORT (mongoc_client_encryption_datakey_opts_t *)
 mongoc_client_encryption_datakey_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
@@ -266,6 +273,10 @@ mongoc_client_encryption_datakey_opts_set_keymaterial (
    mongoc_client_encryption_datakey_opts_t *opts,
    const uint8_t *data,
    uint32_t len);
+
+MONGOC_EXPORT (const char *)
+mongoc_client_encryption_get_crypt_shared_version (
+   mongoc_client_encryption_t const *enc) BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS
 

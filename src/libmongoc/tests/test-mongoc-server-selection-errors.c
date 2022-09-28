@@ -13,6 +13,9 @@ cannot_resolve (const mongoc_uri_t *uri,
                 void *user_data,
                 bson_error_t *error)
 {
+   BSON_UNUSED (uri);
+   BSON_UNUSED (user_data);
+
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_NAME_RESOLUTION,
@@ -98,6 +101,8 @@ test_server_selection_error_dns_direct_single (void)
 static void
 test_server_selection_error_dns_direct_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    server_selection_error_dns (
       "mongodb://example-localhost:27017/",
       "No suitable servers found: `serverSelectionTimeoutMS` expired: "
@@ -121,6 +126,8 @@ test_server_selection_error_dns_multi_fail_single (void)
 static void
 test_server_selection_error_dns_multi_fail_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    server_selection_error_dns (
       "mongodb://example-localhost:27017,other-example-localhost:27017/",
       "No suitable servers found: `serverSelectionTimeoutMS` expired:"
@@ -152,12 +159,16 @@ _test_server_selection_error_dns_multi_success (bool pooled)
 static void
 test_server_selection_error_dns_multi_success_single (void *context)
 {
+   BSON_UNUSED (context);
+
    _test_server_selection_error_dns_multi_success (false);
 }
 
 static void
 test_server_selection_error_dns_multi_success_pooled (void *context)
 {
+   BSON_UNUSED (context);
+
    _test_server_selection_error_dns_multi_success (true);
 }
 
@@ -215,12 +226,16 @@ _test_server_selection_uds_auth_failure (bool pooled)
 static void
 test_server_selection_uds_auth_failure_single (void *context)
 {
+   BSON_UNUSED (context);
+
    _test_server_selection_uds_auth_failure (false);
 }
 
 static void
 test_server_selection_uds_auth_failure_pooled (void *context)
 {
+   BSON_UNUSED (context);
+
    _test_server_selection_uds_auth_failure (true);
 }
 
@@ -271,12 +286,16 @@ _test_server_selection_uds_not_found (bool pooled)
 static void
 test_server_selection_uds_not_found_single (void *context)
 {
+   BSON_UNUSED (context);
+
    _test_server_selection_uds_not_found (false);
 }
 
 static void
 test_server_selection_uds_not_found_pooled (void *context)
 {
+   BSON_UNUSED (context);
+
    _test_server_selection_uds_not_found (true);
 }
 

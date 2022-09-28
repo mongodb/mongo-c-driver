@@ -176,10 +176,10 @@ done:
 }
 
 static bool
-operation_create_key (test_t *test,
-                      operation_t *op,
-                      result_t *result,
-                      bson_error_t *error)
+operation_create_datakey (test_t *test,
+                          operation_t *op,
+                          result_t *result,
+                          bson_error_t *error)
 {
    bson_parser_t *parser = bson_parser_new ();
    char *kms_provider = NULL;
@@ -274,7 +274,7 @@ operation_create_key (test_t *test,
    }
 
    {
-      const bool success = mongoc_client_encryption_create_key (
+      const bool success = mongoc_client_encryption_create_datakey (
          ce, kms_provider, datakey_opts, &key_id_value, error);
       bson_val_t *val = NULL;
 
@@ -298,10 +298,10 @@ done:
 }
 
 static bool
-operation_rewrap_many_data_key (test_t *test,
-                                operation_t *op,
-                                result_t *result,
-                                bson_error_t *error)
+operation_rewrap_many_datakey (test_t *test,
+                               operation_t *op,
+                               result_t *result,
+                               bson_error_t *error)
 {
    bson_parser_t *const parser = bson_parser_new ();
    mongoc_client_encryption_rewrap_many_datakey_result_t *const rmd_result =
@@ -350,7 +350,7 @@ operation_rewrap_many_data_key (test_t *test,
 
       bson_t doc = BSON_INITIALIZER;
 
-      {
+      if (bulk_write_result) {
          bson_t *const rewritten =
             rewrite_bulk_write_result (bulk_write_result);
          BSON_APPEND_DOCUMENT (&doc, "bulkWriteResult", rewritten);
@@ -2440,6 +2440,8 @@ assert_session_dirty_helper (test_t *test,
 {
    bool ret = false;
 
+   BSON_UNUSED (test);
+
    if (!op->session) {
       test_set_error (error, "%s", "session unset");
       goto done;
@@ -2689,6 +2691,8 @@ operation_assert_session_transaction_state (test_t *test,
    char *expected = NULL;
    const char *actual;
    mongoc_transaction_state_t state;
+
+   BSON_UNUSED (test);
 
    bp = bson_parser_new ();
    bson_parser_utf8 (bp, "state", &expected);
@@ -2941,6 +2945,9 @@ with_transaction_cb (mongoc_client_session_t *session,
    bson_iter_t iter;
    txn_ctx_t *tctx = NULL;
 
+   BSON_UNUSED (session);
+   BSON_UNUSED (reply);
+
    tctx = (txn_ctx_t *) ctx;
 
    BSON_FOREACH (tctx->ops, iter)
@@ -3028,6 +3035,8 @@ assert_session_pinned (test_t *test,
    bool ret = false;
    bool actual_pinned = false;
 
+   BSON_UNUSED (test);
+
    if (!op->session) {
       test_set_error (error, "%s", "expected session to be set");
       goto done;
@@ -3075,6 +3084,9 @@ operation_loop (test_t *test,
                 result_t *result,
                 bson_error_t *error)
 {
+   BSON_UNUSED (test);
+   BSON_UNUSED (op);
+   BSON_UNUSED (result);
    /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
    test_set_error (error, "Loop operation not implemented");
    return false;
@@ -3086,6 +3098,9 @@ operation_assert_number_connections_checked_out (test_t *test,
                                                  result_t *result,
                                                  bson_error_t *error)
 {
+   BSON_UNUSED (test);
+   BSON_UNUSED (op);
+   BSON_UNUSED (error);
    /* "This operation only applies to drivers that implement connection pooling
     * and should be skipped for drivers that do not."
     * TODO: (CDRIVER-3525) add this assertion when CMAP is implemented. */
@@ -3155,8 +3170,8 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"listDatabases", operation_list_databases},
 
       /* ClientEncryption operations */
-      {"createKey", operation_create_key},
-      {"rewrapManyDataKey", operation_rewrap_many_data_key},
+      {"createDataKey", operation_create_datakey},
+      {"rewrapManyDataKey", operation_rewrap_many_datakey},
       {"deleteKey", operation_delete_key},
       {"getKey", operation_get_key},
       {"getKeys", operation_get_keys},

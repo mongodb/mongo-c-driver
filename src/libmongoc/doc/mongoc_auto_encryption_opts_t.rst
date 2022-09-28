@@ -31,6 +31,7 @@ Synopsis
     mongoc_auto_encryption_opts_set_keyvault_client_pool
     mongoc_auto_encryption_opts_set_keyvault_namespace
     mongoc_auto_encryption_opts_set_kms_providers
+    mongoc_auto_encryption_opts_set_kms_credential_provider_callback
     mongoc_auto_encryption_opts_set_schema_map
     mongoc_auto_encryption_opts_set_bypass_auto_encryption
     mongoc_auto_encryption_opts_set_extra

@@ -240,8 +240,11 @@ mock_mongos_new (int32_t max_wire_version)
 static bool
 hangup (request_t *request, void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    mock_server_hangs_up (request);
    request_destroy (request);
+
    return true;
 }
 
@@ -497,6 +500,8 @@ auto_hello_generate_response (request_t *request,
    char *quotes_replaced;
    bson_error_t error;
 
+   BSON_UNUSED (request);
+
    quotes_replaced = single_quotes_to_double (response_json);
 
    if (!bson_init_from_json (hello_response, quotes_replaced, -1, &error)) {
@@ -633,6 +638,8 @@ mock_server_auto_hello (mock_server_t *server, const char *response_json, ...)
 static bool
 auto_endsessions (request_t *request, void *data)
 {
+   BSON_UNUSED (data);
+
    if (!request->is_command ||
        strcasecmp (request->command_name, "endSessions") != 0) {
       return false;
@@ -913,6 +920,8 @@ mock_server_receives_bulk_msg (mock_server_t *server,
 {
    request_t *request;
    bool r;
+
+   BSON_UNUSED (flags);
 
    request = mock_server_receives_request (server);
 
@@ -1647,6 +1656,9 @@ mock_server_replies (request_t *request,
    bson_error_t error;
    bool r;
 
+   BSON_UNUSED (starting_from);
+   BSON_UNUSED (number_returned);
+
    BSON_ASSERT (request);
 
    if (docs_json) {
@@ -1702,7 +1714,7 @@ mock_server_replies_opmsg (request_t *request,
 
    reply->opmsg_flags = flags;
    reply->n_docs = 1;
-   reply->docs = bson_malloc0 (sizeof (bson_t));
+   reply->docs = BSON_ALIGNED_ALLOC0 (bson_t);
    bson_copy_to (doc, &reply->docs[0]);
 
    reply->cursor_id = 0;
@@ -2192,7 +2204,8 @@ mock_server_reply_multi (request_t *request,
    reply->type = REPLY;
    reply->flags = flags;
    reply->n_docs = n_docs;
-   reply->docs = bson_malloc0 (n_docs * sizeof (bson_t));
+   reply->docs =
+      bson_aligned_alloc0 (BSON_ALIGNOF (bson_t), n_docs * sizeof (bson_t));
 
    for (i = 0; i < n_docs; i++) {
       bson_copy_to (&docs[i], &reply->docs[i]);

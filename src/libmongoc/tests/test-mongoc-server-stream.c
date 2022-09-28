@@ -77,7 +77,7 @@ run_delete_with_hint_and_wc0 (bool expect_error,
       ASSERT_ERROR_CONTAINS (
          error,
          MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
          "The selected server does not support hint for delete");
       ASSERT (!r);
    } else {
@@ -112,6 +112,8 @@ test_server_stream_ties_server_description_pooled (void *unused)
    future_t *future;
    bson_error_t error;
    mongoc_server_description_t *sd;
+
+   BSON_UNUSED (unused);
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -197,6 +199,8 @@ test_server_stream_ties_server_description_single (void *unused)
    bson_error_t error;
    mongoc_server_description_t *sd;
    mc_tpld_modification tdmod;
+
+   BSON_UNUSED (unused);
 
    server = mock_server_new ();
    mock_server_run (server);

@@ -36,7 +36,8 @@ typedef struct _bson_mem_vtable_t {
    void *(*calloc) (size_t n_members, size_t num_bytes);
    void *(*realloc) (void *mem, size_t num_bytes);
    void (*free) (void *mem);
-   void *padding[4];
+   void *(*aligned_alloc) (size_t alignment, size_t num_bytes);
+   void *padding[3];
 } bson_mem_vtable_t;
 
 
@@ -49,6 +50,10 @@ bson_malloc (size_t num_bytes);
 BSON_EXPORT (void *)
 bson_malloc0 (size_t num_bytes);
 BSON_EXPORT (void *)
+bson_aligned_alloc (size_t alignment, size_t num_bytes);
+BSON_EXPORT (void *)
+bson_aligned_alloc0 (size_t alignment, size_t num_bytes);
+BSON_EXPORT (void *)
 bson_realloc (void *mem, size_t num_bytes);
 BSON_EXPORT (void *)
 bson_realloc_ctx (void *mem, size_t num_bytes, void *ctx);
@@ -56,6 +61,12 @@ BSON_EXPORT (void)
 bson_free (void *mem);
 BSON_EXPORT (void)
 bson_zero_free (void *mem, size_t size);
+
+
+#define BSON_ALIGNED_ALLOC(T) \
+   ((T *) (bson_aligned_alloc (BSON_ALIGNOF (T), sizeof (T))))
+#define BSON_ALIGNED_ALLOC0(T) \
+   ((T *) (bson_aligned_alloc0 (BSON_ALIGNOF (T), sizeof (T))))
 
 
 BSON_END_DECLS

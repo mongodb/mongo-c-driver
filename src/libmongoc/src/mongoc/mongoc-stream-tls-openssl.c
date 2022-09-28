@@ -691,6 +691,9 @@ _mongoc_stream_tls_openssl_sni (SSL *ssl, int *ad, void *arg)
 {
    const char *hostname;
 
+   BSON_UNUSED (ad);
+   BSON_UNUSED (arg);
+
    if (ssl == NULL) {
       TRACE ("%s", "No SNI hostname provided");
       return SSL_TLSEXT_ERR_NOACK;

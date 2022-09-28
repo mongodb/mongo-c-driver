@@ -256,10 +256,21 @@ set (CMAKE_MACOSX_RPATH ON)
 # silence a CMake 3.11 warning that the old behavior is deprecated.
 cmake_policy (SET CMP0042 NEW)
 
-# https://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
-# Enable features from POSIX.1-2008 as well as certain BSD and SVID features.
-add_definitions (-D_DEFAULT_SOURCE)
-list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_DEFAULT_SOURCE)
+# https://man7.org/linux/man-pages/man7/feature_test_macros.7.html
+# https://pubs.opengroup.org/onlinepubs/7908799/xsh/compilation.html
+# Enable POSIX features up to POSIX.1-2008 plus the XSI extension and BSD-derived definitions.
+# Both _BSD_SOURCE and _DEFAULT_SOURCE are defined for backwards-compatibility with glibc 2.19 and earlier.
+# _BSD_SOURCE and _DEFAULT_SOURCE are required by `getpagesize`, `h_errno`, etc.
+# _XOPEN_SOURCE=700 is required by `strnlen`, etc.
+add_definitions (-D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE)
+list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE)
+
+# https://opensource.apple.com/source/Libc/Libc-1439.40.11/gen/compat.5.auto.html
+# Non-POSIX extensions are required by `_SC_NPROCESSORS_ONLN`.
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+   add_definitions (-D_DARWIN_C_SOURCE)
+   list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_DARWIN_C_SOURCE)
+endif ()
 
 add_subdirectory (src/common)
 

@@ -247,7 +247,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
 
    BSON_ASSERT (client);
 
-   cursor = (mongoc_cursor_t *) bson_malloc0 (sizeof *cursor);
+   cursor = BSON_ALIGNED_ALLOC0 (mongoc_cursor_t);
    cursor->client = client;
    cursor->state = UNPRIMED;
    cursor->client_generation = client->generation;
@@ -750,6 +750,8 @@ _mongoc_cursor_append_docs_array (mongoc_cursor_t *cursor,
    uint32_t i = 0;
    size_t keylen;
    const bson_t *doc;
+
+   BSON_UNUSED (cursor);
 
    while ((doc = bson_reader_read (response->reader, &eof))) {
       keylen = bson_uint32_to_string (i, &key, str, sizeof str);
@@ -1391,7 +1393,7 @@ mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 
    BSON_ASSERT (cursor);
 
-   _clone = (mongoc_cursor_t *) bson_malloc0 (sizeof *_clone);
+   _clone = BSON_ALIGNED_ALLOC0 (mongoc_cursor_t);
 
    _clone->client = cursor->client;
    _clone->nslen = cursor->nslen;
@@ -1689,6 +1691,8 @@ _mongoc_cursor_response_read (mongoc_cursor_t *cursor,
    uint32_t data_len = 0;
 
    ENTRY;
+
+   BSON_UNUSED (cursor);
 
    if (bson_iter_next (&response->batch_iter) &&
        BSON_ITER_HOLDS_DOCUMENT (&response->batch_iter)) {

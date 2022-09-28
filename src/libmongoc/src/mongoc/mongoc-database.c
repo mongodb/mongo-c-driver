@@ -192,6 +192,12 @@ mongoc_database_command (mongoc_database_t *database,
    char *ns;
    mongoc_cursor_t *cursor;
 
+   BSON_UNUSED (flags);
+   BSON_UNUSED (skip);
+   BSON_UNUSED (limit);
+   BSON_UNUSED (batch_size);
+   BSON_UNUSED (fields);
+
    BSON_ASSERT_PARAM (database);
    BSON_ASSERT_PARAM (command);
 

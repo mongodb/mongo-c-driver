@@ -177,6 +177,8 @@ test_bypass_validation (void *context)
    int r;
    int i;
 
+   BSON_UNUSED (context);
+
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
@@ -456,6 +458,8 @@ _test_invalid_wc_server_error (void *unused)
    bool ret;
    bson_t reply;
    bson_error_t error;
+
+   BSON_UNUSED (unused);
 
    client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);

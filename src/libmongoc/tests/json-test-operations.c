@@ -907,6 +907,8 @@ single_write (mongoc_collection_t *collection,
    bson_error_t error;
    bool r;
 
+   BSON_UNUSED (wc);
+
    name = bson_lookup_utf8 (operation, "name");
    bson_lookup_doc (operation, "arguments", &args);
    append_session (session, &opts);
@@ -1124,6 +1126,8 @@ insert_many (mongoc_collection_t *collection,
    bson_error_t error;
    bool r;
 
+   BSON_UNUSED (wc);
+
    bson_lookup_doc (operation, "arguments", &args);
    bson_lookup_doc (&args, "documents", &docs_array);
    ASSERT (bson_iter_init (&iter, &docs_array));
@@ -1199,6 +1203,11 @@ rename_op (mongoc_collection_t *collection,
    bson_error_t error;
    bool res;
 
+   BSON_UNUSED (test);
+   BSON_UNUSED (session);
+   BSON_UNUSED (wc);
+
+
    bson_lookup_doc (operation, "arguments", &args);
    db = bson_lookup_utf8 (operation, "database");
    to = bson_lookup_utf8 (&args, "to");
@@ -1228,6 +1237,11 @@ drop (mongoc_collection_t *collection,
 {
    bson_error_t error;
    bool res;
+
+   BSON_UNUSED (test);
+   BSON_UNUSED (operation);
+   BSON_UNUSED (session);
+   BSON_UNUSED (wc);
 
    res = mongoc_collection_drop (collection, &error);
 
@@ -1481,6 +1495,8 @@ find_one (mongoc_collection_t *collection,
    mongoc_cursor_t *cursor;
    bson_value_t value;
    bson_error_t error;
+
+   BSON_UNUSED (session);
 
    bson_lookup_doc (operation, "arguments.filter", &filter);
 
@@ -1882,6 +1898,9 @@ gridfs_download (mongoc_database_t *db,
    bson_error_t error;
    mongoc_stream_t *stream;
    char buf[512];
+
+   BSON_UNUSED (test);
+   BSON_UNUSED (session);
 
    bson_lookup_value (operation, "arguments.id", &value);
 

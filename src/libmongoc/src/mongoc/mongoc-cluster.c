@@ -553,18 +553,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
          cluster, cmd, compressor_id, reply, error);
    }
 
-   if (_mongoc_cse_is_enabled (cluster->client)) {
-      bson_destroy (&decrypted);
-      retval = _mongoc_cse_auto_decrypt (
-         cluster->client, cmd->db_name, reply, &decrypted, error);
-      bson_destroy (reply);
-      bson_steal (reply, &decrypted);
-      bson_init (&decrypted);
-      if (!retval) {
-         goto fail_no_events;
-      }
-   }
-
    if (retval && callbacks->succeeded) {
       bson_t fake_reply = BSON_INITIALIZER;
       /*
@@ -610,6 +598,18 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
 
       callbacks->failed (&failed_event);
       mongoc_apm_command_failed_cleanup (&failed_event);
+   }
+
+   if (retval && _mongoc_cse_is_enabled (cluster->client)) {
+      bson_destroy (&decrypted);
+      retval = _mongoc_cse_auto_decrypt (
+         cluster->client, cmd->db_name, reply, &decrypted, error);
+      bson_destroy (reply);
+      bson_steal (reply, &decrypted);
+      bson_init (&decrypted);
+      if (!retval) {
+         goto fail_no_events;
+      }
    }
 
    _handle_not_primary_error (cluster, server_stream, reply);
@@ -865,8 +865,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 
    rtt_msec = (bson_get_monotonic_time () - start) / 1000;
 
-   ret_handshake_sd = (mongoc_server_description_t *) bson_malloc0 (
-      sizeof (mongoc_server_description_t));
+   ret_handshake_sd = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
 
    mongoc_server_description_init (ret_handshake_sd, address, server_id);
    /* send the error from run_command IN to handle_hello */
@@ -1965,6 +1964,8 @@ static void
 _mongoc_cluster_node_dtor (void *data_, void *ctx_)
 {
    mongoc_cluster_node_t *node = (mongoc_cluster_node_t *) data_;
+
+   BSON_UNUSED (ctx_);
 
    _mongoc_cluster_node_destroy (node);
 }

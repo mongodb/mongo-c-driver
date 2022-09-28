@@ -49,14 +49,14 @@ mongoc_bulk_operation_new (bool ordered)
 {
    mongoc_bulk_operation_t *bulk;
 
-   bulk = (mongoc_bulk_operation_t *) bson_malloc0 (sizeof *bulk);
+   bulk = BSON_ALIGNED_ALLOC0 (mongoc_bulk_operation_t);
    bulk->flags.bypass_document_validation = false;
    bulk->flags.ordered = ordered;
    bulk->server_id = 0;
 
    bson_init (&bulk->let);
 
-   _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
+   mongoc_array_aligned_init (&bulk->commands, mongoc_write_command_t);
    _mongoc_write_result_init (&bulk->result);
 
    return bulk;

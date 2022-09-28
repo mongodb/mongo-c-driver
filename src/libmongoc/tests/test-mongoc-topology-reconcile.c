@@ -246,7 +246,7 @@ _test_topology_reconcile_sharded (bool pooled)
 
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    future = future_topology_select (
-      client->topology, MONGOC_SS_READ, primary_read_prefs, &error);
+      client->topology, MONGOC_SS_READ, primary_read_prefs, NULL, &error);
 
    /* mongos */
    request = mock_server_receives_any_hello (mongos);
@@ -363,6 +363,8 @@ test_topology_reconcile_from_handshake (void *ctx)
    mongoc_topology_scanner_node_t *node;
    mc_shared_tpld td = MC_SHARED_TPLD_NULL;
    mongoc_async_cmd_t *cmd;
+
+   BSON_UNUSED (ctx);
 
    bson_mutex_init (&data.mutex);
    data.servers = 0;

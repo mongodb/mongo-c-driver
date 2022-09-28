@@ -500,6 +500,12 @@ mongoc_collection_command (mongoc_collection_t *collection,
    char *ns;
    mongoc_cursor_t *cursor;
 
+   BSON_UNUSED (flags);
+   BSON_UNUSED (skip);
+   BSON_UNUSED (limit);
+   BSON_UNUSED (batch_size);
+   BSON_UNUSED (fields);
+
    BSON_ASSERT_PARAM (collection);
    BSON_ASSERT_PARAM (query);
 
@@ -3509,7 +3515,7 @@ mongoc_collection_find_and_modify_with_opts (
             error,
             MONGOC_ERROR_COMMAND,
             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-            "selected server does not support hint on findAndModify");
+            "The selected server does not support hint for findAndModify");
          GOTO (done);
       }
 

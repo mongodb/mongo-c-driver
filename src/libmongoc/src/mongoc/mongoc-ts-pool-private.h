@@ -23,6 +23,10 @@ typedef int (*_erased_prune_predicate) (const void *self, void *userdata);
  */
 typedef struct mongoc_ts_pool_params {
    /**
+    * @brief The alignment of the objects that are managed by the pool
+    */
+   size_t element_alignment;
+   /**
     * @brief The size of the objects that are managed by the pool
     */
    size_t element_size;
@@ -164,7 +168,7 @@ mongoc_ts_pool_get_existing (mongoc_ts_pool *pool);
  * `mongoc_ts_pool_get` or `mongoc_ts_pool_get_existing`
  */
 void
-mongoc_ts_pool_return (void *item);
+mongoc_ts_pool_return (mongoc_ts_pool *pool, void *item);
 
 /**
  * @brief Obtain the number of elements in the pool.
@@ -203,7 +207,7 @@ mongoc_ts_pool_clear (mongoc_ts_pool *pool);
  * `mongo_ts_pool_get_existing`.
  */
 void
-mongoc_ts_pool_drop (void *item);
+mongoc_ts_pool_drop (mongoc_ts_pool *pool, void *item);
 
 /**
  * @brief Visit each element of the pool, optionally pruning items.
@@ -269,6 +273,7 @@ mongoc_ts_pool_visit_each (mongoc_ts_pool *pool,
       params.constructor = (_erased_constructor_fn) constructor;               \
       params.destructor = (_erased_destructor_fn) destructor;                  \
       params.prune_predicate = (_erased_prune_predicate) prune_predicate;      \
+      params.element_alignment = BSON_ALIGNOF (ElementType);                   \
       params.element_size = sizeof (ElementType);                              \
       ret.pool = mongoc_ts_pool_new (params);                                  \
       return ret;                                                              \
@@ -304,15 +309,15 @@ mongoc_ts_pool_visit_each (mongoc_ts_pool *pool,
    }                                                                           \
                                                                                \
    BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_return (               \
-      ElementType *elem)                                                       \
+      PoolName p, ElementType *elem)                                           \
    {                                                                           \
-      mongoc_ts_pool_return (elem);                                            \
+      mongoc_ts_pool_return (p.pool, elem);                                    \
    }                                                                           \
                                                                                \
    BSON_MAYBE_UNUSED static BSON_INLINE void PoolName##_drop (                 \
-      ElementType *elem)                                                       \
+      PoolName p, ElementType *elem)                                           \
    {                                                                           \
-      mongoc_ts_pool_drop (elem);                                              \
+      mongoc_ts_pool_drop (p.pool, elem);                                      \
    }                                                                           \
                                                                                \
    BSON_MAYBE_UNUSED static BSON_INLINE size_t PoolName##_size (PoolName p)    \

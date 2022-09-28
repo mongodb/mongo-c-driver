@@ -32,7 +32,7 @@ mongoc_server_stream_new (const mongoc_topology_description_t *td,
    BSON_ASSERT (sd);
    BSON_ASSERT (stream);
 
-   server_stream = bson_malloc (sizeof (mongoc_server_stream_t));
+   server_stream = BSON_ALIGNED_ALLOC (mongoc_server_stream_t);
    server_stream->topology_type = td->type;
    bson_copy_to (&td->cluster_time, &server_stream->cluster_time);
    server_stream->sd = sd;         /* becomes owned */

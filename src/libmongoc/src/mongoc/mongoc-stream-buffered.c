@@ -231,6 +231,8 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream, /* IN */
 
    ENTRY;
 
+   BSON_UNUSED (min_bytes);
+
    BSON_ASSERT (buffered);
 
    for (i = 0; i < iovcnt; i++) {

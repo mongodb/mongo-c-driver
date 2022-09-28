@@ -47,6 +47,8 @@ test_new_transaction_unpins (void *ctx)
    bson_t *opts;
    int i;
 
+   BSON_UNUSED (ctx);
+
    uri = test_framework_get_uri ();
    add_multiple_mongoses (uri);
 
@@ -124,6 +126,8 @@ test_non_transaction_unpins (void *ctx)
    mongoc_cursor_t *cursor;
    bson_t *opts;
    int i;
+
+   BSON_UNUSED (ctx);
 
    uri = test_framework_get_uri ();
    add_multiple_mongoses (uri);

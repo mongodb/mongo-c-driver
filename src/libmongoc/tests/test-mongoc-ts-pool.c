@@ -29,7 +29,7 @@ test_ts_pool_simple (void)
    ASSERT_CMPINT (*item, ==, 0);
    *item = 42;
    ASSERT_CMPSIZE_T (mongoc_ts_pool_size (pool), ==, 0);
-   mongoc_ts_pool_return (item);
+   mongoc_ts_pool_return (pool, item);
    ASSERT_CMPSIZE_T (mongoc_ts_pool_size (pool), ==, 1);
 
    item2 = mongoc_ts_pool_get_existing (pool);
@@ -37,7 +37,7 @@ test_ts_pool_simple (void)
    ASSERT_CMPINT (*item2, ==, 42);
    ASSERT_CMPSIZE_T (mongoc_ts_pool_size (pool), ==, 0);
 
-   mongoc_ts_pool_drop (item2);
+   mongoc_ts_pool_drop (pool, item2);
    ASSERT_CMPSIZE_T (mongoc_ts_pool_size (pool), ==, 0);
 
    mongoc_ts_pool_free (pool);
@@ -74,13 +74,13 @@ test_ts_pool_special (void)
    ASSERT_CMPINT (*item, ==, 7);
 
    ASSERT_CMPSIZE_T (int_pool_size (p), ==, 0);
-   int_pool_return (item);
+   int_pool_return (p, item);
    ASSERT_CMPSIZE_T (int_pool_size (p), ==, 1);
 
    item = int_pool_get_existing (p);
    BSON_ASSERT (item);
    *item = 42;
-   int_pool_return (item);
+   int_pool_return (p, item);
    /* The pool will drop integer items that are equal to 42, so the item was not
     * returned to the pool: */
    ASSERT_CMPSIZE_T (int_pool_size (p), ==, 0);

@@ -155,6 +155,8 @@ with_transaction_callback_runner (mongoc_client_session_t *session,
    bool res = false;
    bson_t local_reply;
 
+   BSON_UNUSED (error);
+
    test = &(cb_ctx->callback);
 
    if (bson_has_field (test, "operation")) {
@@ -280,6 +282,8 @@ test_transactions_supported (void *ctx)
    bson_error_t error;
    bool r;
 
+   BSON_UNUSED (ctx);
+
    if (test_framework_is_mongos ()) {
       bson_destroy (&opts);
       return;
@@ -338,6 +342,8 @@ test_in_transaction (void *ctx)
    bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
    bool r;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, 2);
@@ -429,6 +435,8 @@ test_in_transaction (void *ctx)
 static bool
 hangup_except_hello (request_t *request, void *data)
 {
+   BSON_UNUSED (data);
+
    if (!bson_strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) ||
        !bson_strcasecmp (request->command_name, "hello")) {
       /* allow default response */
@@ -698,6 +706,8 @@ test_cursor_primary_read_pref (void *ctx)
    bson_error_t error;
    bool r;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_cursor_primary_read_pref");
 
@@ -746,6 +756,8 @@ test_inherit_from_client (void *ctx)
    const mongoc_session_opt_t *returned_sopt;
    mongoc_transaction_opt_t *topt;
    const mongoc_transaction_opt_t *returned_topt;
+
+   BSON_UNUSED (ctx);
 
    uri = test_framework_get_uri ();
 
@@ -816,6 +828,8 @@ test_transaction_fails_on_unsupported_version_or_sharded_cluster (void *ctx)
    mongoc_client_t *client;
    bool r;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
@@ -846,6 +860,8 @@ test_transaction_recovery_token_cleared (void *ctx)
    mongoc_collection_t *coll;
    mongoc_uri_t *uri;
    bson_t txn_opts;
+
+   BSON_UNUSED (ctx);
 
    uri = test_framework_get_uri ();
    ASSERT_OR_PRINT (
@@ -932,6 +948,8 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    uint32_t actual_id;
    const mongoc_server_description_t *sd = NULL;
    int i;
+
+   BSON_UNUSED (ctx);
 
    uri = test_framework_get_uri ();
    ASSERT_OR_PRINT (
@@ -1131,6 +1149,8 @@ test_max_commit_time_ms_is_reset (void *ctx)
    mongoc_client_session_t *session = NULL;
    bson_error_t error;
    bool r;
+
+   BSON_UNUSED (ctx);
 
    rs = mock_rs_with_auto_hello (WIRE_VERSION_4_2,
                                  true /* has primary */,

@@ -88,6 +88,8 @@ static void
 TestSuite_SeedRand (TestSuite *suite, /* IN */
                     Test *test)       /* IN */
 {
+   BSON_UNUSED (suite);
+
 #ifndef BSON_OS_WIN32
    int fd = open ("/dev/urandom", O_RDONLY);
    int n_read;
@@ -324,6 +326,9 @@ _V_TestSuite_AddFull (TestSuite *suite,
    Test *iter;
 
    if (suite->ctest_run && (0 != strcmp (suite->ctest_run, name))) {
+      if (dtor) {
+         dtor (ctx);
+      }
       return NULL;
    }
 

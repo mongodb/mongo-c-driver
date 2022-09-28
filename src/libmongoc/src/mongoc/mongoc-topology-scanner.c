@@ -112,7 +112,8 @@ _add_hello (mongoc_topology_scanner_t *ts)
    BSON_APPEND_INT32 (&ts->legacy_hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
    BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
 
-   /* Append appropriate server API metadata (such as "serverApi") if selected: */
+   /* Append appropriate server API metadata (such as "serverApi") if selected:
+    */
    if (mongoc_topology_scanner_uses_server_api (ts)) {
       _mongoc_cmd_append_server_api (&ts->hello_cmd, ts->api);
    }
@@ -454,7 +455,7 @@ mongoc_topology_scanner_new (
    int64_t connect_timeout_msec)
 {
    mongoc_topology_scanner_t *ts =
-      (mongoc_topology_scanner_t *) bson_malloc0 (sizeof (*ts));
+      BSON_ALIGNED_ALLOC0 (mongoc_topology_scanner_t);
 
    ts->async = mongoc_async_new ();
 
@@ -535,7 +536,7 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
 {
    mongoc_topology_scanner_node_t *node;
 
-   node = (mongoc_topology_scanner_node_t *) bson_malloc0 (sizeof (*node));
+   node = BSON_ALIGNED_ALLOC0 (mongoc_topology_scanner_node_t);
 
    memcpy (&node->host, host, sizeof (*host));
 
@@ -1496,6 +1497,8 @@ void
 _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
                                            bool val)
 {
+   BSON_UNUSED (val);
+
    BSON_ASSERT (ts->handshake_cmd == NULL);
    ts->loadbalanced = true;
 }

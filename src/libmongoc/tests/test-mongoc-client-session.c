@@ -66,6 +66,8 @@ test_session_no_crypto (void *ctx)
    mongoc_client_t *client;
    bson_error_t error;
 
+   BSON_UNUSED (ctx);
+
    client = test_framework_new_default_client ();
    BSON_ASSERT (!mongoc_client_start_session (client, NULL, &error));
    ASSERT_ERROR_CONTAINS (error,
@@ -151,6 +153,8 @@ _test_session_pool_lifo (bool pooled)
 static void
 test_session_pool_lifo_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_session_pool_lifo (false);
 }
 
@@ -158,6 +162,8 @@ test_session_pool_lifo_single (void *ctx)
 static void
 test_session_pool_lifo_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_session_pool_lifo (true);
 }
 
@@ -253,6 +259,8 @@ _test_session_pool_timeout (bool pooled)
 static void
 test_session_pool_timeout_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_session_pool_timeout (false);
 }
 
@@ -260,6 +268,8 @@ test_session_pool_timeout_single (void *ctx)
 static void
 test_session_pool_timeout_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_session_pool_timeout (true);
 }
 
@@ -325,7 +335,7 @@ _test_session_pool_reap (bool pooled)
       mongoc_server_session_pool_get_existing (client->topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_MATCH (&ss->lsid, &lsid_b);
-   mongoc_server_session_pool_return (ss);
+   mongoc_server_session_pool_return (client->topology->session_pool, ss);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -342,6 +352,8 @@ _test_session_pool_reap (bool pooled)
 static void
 test_session_pool_reap_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_session_pool_reap (false);
 }
 
@@ -349,6 +361,8 @@ test_session_pool_reap_single (void *ctx)
 static void
 test_session_pool_reap_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_session_pool_reap (true);
 }
 
@@ -372,6 +386,8 @@ test_session_id_bad (void *ctx)
    mongoc_client_t *client;
    bson_error_t error;
    bool r;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    for (bad_opt = bad_opts; *bad_opt; bad_opt++) {
@@ -436,12 +452,16 @@ _test_session_supported (bool pooled)
 static void
 test_session_supported_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_session_supported (false);
 }
 
 static void
 test_session_supported_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_session_supported (true);
 }
 
@@ -768,12 +788,16 @@ _test_end_sessions (bool pooled)
 static void
 test_end_sessions_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_end_sessions (false);
 }
 
 static void
 test_end_sessions_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_end_sessions (true);
 }
 
@@ -849,12 +873,16 @@ _test_end_sessions_many (bool pooled)
 static void
 test_end_sessions_many_single (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_end_sessions_many (false);
 }
 
 static void
 test_end_sessions_many_pooled (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    _test_end_sessions_many (true);
 }
 
@@ -892,6 +920,8 @@ test_session_advance_cluster_time (void *ctx)
    mongoc_client_t *client;
    bson_error_t error;
    mongoc_client_session_t *cs;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    cs = mongoc_client_start_session (client, NULL, &error);
@@ -960,6 +990,8 @@ test_session_advance_operation_time (void *ctx)
    bson_error_t error;
    mongoc_client_session_t *cs;
    uint32_t t, i;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    cs = mongoc_client_start_session (client, NULL, &error);
@@ -1248,6 +1280,9 @@ check_session_returned_visit (mongoc_server_session_t *ss,
 {
    match_ctx_t ctx = {{0}};
    struct check_session_returned_t *check_state = check_state_;
+
+   BSON_UNUSED (unused);
+
    ctx.strict_numeric_types = false;
    if (!check_state->found) {
       check_state->found =
@@ -1526,7 +1561,7 @@ _test_implicit_session_lsid (session_test_fn_t test_fn)
       test->client->topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_CMPINT64 (ss->last_used_usec, >=, start);
-   mongoc_server_session_pool_return (ss);
+   mongoc_server_session_pool_return (test->client->topology->session_pool, ss);
    session_test_destroy (test);
 }
 
@@ -2276,6 +2311,8 @@ test_cursor_implicit_session (void *ctx)
    bson_error_t error;
    mongoc_server_session_t *ss;
 
+   BSON_UNUSED (ctx);
+
    test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
    test->expect_explicit_lsid = false;
    topology = test->client->topology;
@@ -2309,7 +2346,7 @@ test_cursor_implicit_session (void *ctx)
    ss = mongoc_server_session_pool_get_existing (topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&find_lsid, &ss->lsid);
-   mongoc_server_session_pool_return (ss);
+   mongoc_server_session_pool_return (topology->session_pool, ss);
 
    /* "getMore" uses the same lsid as "find" did */
    bson_reinit (&test->sent_lsid);
@@ -2341,6 +2378,8 @@ test_change_stream_implicit_session (void *ctx)
    bson_t aggregate_lsid;
    mongoc_server_session_t *ss;
 
+   BSON_UNUSED (ctx);
+
    test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
    test->expect_explicit_lsid = false;
    topology = test->client->topology;
@@ -2366,7 +2405,7 @@ test_change_stream_implicit_session (void *ctx)
    ss = mongoc_server_session_pool_get_existing (topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &ss->lsid);
-   mongoc_server_session_pool_return (ss);
+   mongoc_server_session_pool_return (topology->session_pool, ss);
 
    /* "getMore" uses the same lsid as "aggregate" did */
    bson_reinit (&test->sent_lsid);
@@ -2391,6 +2430,8 @@ test_cmd_error (void *ctx)
 {
    session_test_t *test;
    bson_error_t error;
+
+   BSON_UNUSED (ctx);
 
    test = session_test_new (CORRECT_CLIENT, CAUSAL);
 
@@ -2423,6 +2464,8 @@ test_read_concern (void *ctx)
    mongoc_read_concern_t *rc;
    mongoc_session_opt_t *cs_opts;
    bson_error_t error;
+
+   BSON_UNUSED (ctx);
 
    test = session_test_new (CORRECT_CLIENT, CAUSAL);
    test->expect_explicit_lsid = true;
@@ -2763,6 +2806,8 @@ _test_session_dirty_helper (bool retry_succeeds)
 static void
 test_session_dirty (void *unused)
 {
+   BSON_UNUSED (unused);
+
    _test_session_dirty_helper (true /* retry succceeds */);
    _test_session_dirty_helper (false /* retry succceeds */);
 }
@@ -2774,6 +2819,8 @@ test_sessions_snapshot_prose_test_1 (void *ctx)
    mongoc_session_opt_t *session_opts = NULL;
    bson_error_t error;
    bool r;
+
+   BSON_UNUSED (ctx);
 
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);

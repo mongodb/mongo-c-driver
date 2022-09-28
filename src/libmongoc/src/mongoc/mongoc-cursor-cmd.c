@@ -153,7 +153,7 @@ static void
 _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 {
    data_cmd_t *data_src = (data_cmd_t *) src->data;
-   data_cmd_t *data_dst = bson_malloc0 (sizeof (data_cmd_t));
+   data_cmd_t *data_dst = BSON_ALIGNED_ALLOC0 (data_cmd_t);
    bson_init (&data_dst->response.reply);
    _mongoc_cursor_response_legacy_init (&data_dst->response_legacy);
    bson_copy_to (&data_src->cmd, &data_dst->cmd);
@@ -171,7 +171,7 @@ _mongoc_cursor_cmd_new (mongoc_client_t *client,
                         const mongoc_read_concern_t *read_concern)
 {
    mongoc_cursor_t *cursor;
-   data_cmd_t *data = bson_malloc0 (sizeof (*data));
+   data_cmd_t *data = BSON_ALIGNED_ALLOC0 (data_cmd_t);
 
    cursor = _mongoc_cursor_new_with_opts (
       client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
