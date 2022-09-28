@@ -26,7 +26,7 @@ endif ()
 # Split lines on newlines
 string (REPLACE "\n" ";" lines "${tests_out}")
 
-# XXX: Allow individual test cases to specify the fixtures they want.
+# TODO: Allow individual test cases to specify the fixtures they want.
 set (all_fixtures "mongoc/fixtures/fake_imds")
 set (all_env
     MCD_TEST_AZURE_IMDS_HOST=localhost:14987  # Refer: Fixtures.cmake
