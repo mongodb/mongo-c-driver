@@ -505,7 +505,7 @@ test_client_pool_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/ClientPool/create_client_pool_unused_session",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_client_pool_create_unused_session,
                       NULL /* dtor */,
                       NULL /* ctx */,

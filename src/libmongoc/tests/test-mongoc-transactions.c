@@ -1218,14 +1218,14 @@ test_transactions_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/transactions/supported",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_transactions_supported,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_txns);
    TestSuite_AddFull (suite,
                       "/transactions/in_transaction",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_in_transaction,
                       NULL,
                       NULL,
@@ -1247,14 +1247,14 @@ test_transactions_install (TestSuite *suite)
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/transactions/cursor_primary_read_pref",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_cursor_primary_read_pref,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_txns);
    TestSuite_AddFull (suite,
                       "/transactions/inherit_from_client",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_inherit_from_client,
                       NULL,
                       NULL,
@@ -1263,7 +1263,7 @@ test_transactions_install (TestSuite *suite)
       suite,
       "/transactions/"
       "transaction_fails_on_unsupported_version_or_sharded_cluster",
-      "uses-live-server",
+      "USES_LIVE_SERVER",
       test_transaction_fails_on_unsupported_version_or_sharded_cluster,
       NULL,
       NULL,
@@ -1271,7 +1271,7 @@ test_transactions_install (TestSuite *suite)
       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/transactions/recovery_token_cleared",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_transaction_recovery_token_cleared,
                       NULL,
                       NULL,
@@ -1281,7 +1281,7 @@ test_transactions_install (TestSuite *suite)
                       test_framework_skip_if_not_mongos);
    TestSuite_AddFull (suite,
                       "/transactions/selected_server_pinned_to_mongos",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_selected_server_is_pinned_to_mongos,
                       NULL,
                       NULL,
@@ -1295,7 +1295,7 @@ test_transactions_install (TestSuite *suite)
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/transactions/max_commit_time_ms_is_reset",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_max_commit_time_ms_is_reset,
                       NULL,
                       NULL,

@@ -90,7 +90,7 @@ test_with_transaction_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/with_transaction/timeout_tests",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_with_transaction_timeout,
                       NULL,
                       NULL,

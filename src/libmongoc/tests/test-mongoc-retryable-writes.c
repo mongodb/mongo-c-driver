@@ -687,7 +687,7 @@ test_retryable_writes_install (TestSuite *suite)
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/command_with_opts",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_command_with_opts,
                       NULL,
                       NULL,
@@ -720,7 +720,7 @@ test_retryable_writes_install (TestSuite *suite)
       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/no_crypto",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_retry_no_crypto,
                       NULL,
                       NULL,
@@ -733,7 +733,7 @@ test_retryable_writes_install (TestSuite *suite)
       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/bulk_tracks_new_server",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_bulk_retry_tracks_new_server,
                       NULL /* dtor */,
                       NULL /* ctx */,

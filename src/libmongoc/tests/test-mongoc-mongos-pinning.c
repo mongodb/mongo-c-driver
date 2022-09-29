@@ -191,7 +191,7 @@ test_mongos_pinning_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/mongos_pinning/new_transaction_unpins",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_new_transaction_unpins,
                       NULL,
                       NULL,
@@ -202,7 +202,7 @@ test_mongos_pinning_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/mongos_pinning/non_transaction_unpins",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_non_transaction_unpins,
                       NULL,
                       NULL,

@@ -4267,14 +4267,14 @@ test_client_install (TestSuite *suite)
                                 test_client_cmd_w_server_id_sharded);
    TestSuite_AddFull (suite,
                       "/Client/command_w_server_id/option",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_server_id_option,
                       NULL,
                       NULL,
                       test_framework_skip_if_auth);
    TestSuite_AddFull (suite,
                       "/Client/command_w_write_concern",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_client_cmd_w_write_concern,
                       NULL,
                       NULL,
@@ -4491,7 +4491,7 @@ test_client_install (TestSuite *suite)
                       test_mongoc_client_descriptions_single);
    TestSuite_AddFull (suite,
                       "/Client/descriptions/pooled",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_mongoc_client_descriptions_pooled,
                       NULL,
                       NULL,

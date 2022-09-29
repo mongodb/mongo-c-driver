@@ -290,7 +290,7 @@ TestSuite_AddLive (TestSuite *suite, /* IN */
                    const char *meta, /* IN */
                    TestFunc func)    /* IN */
 {
-   char *meta1 = bson_strdup_printf ("%s%s", meta, " uses-live-server");
+   char *meta1 = bson_strdup_printf ("%s%s", meta, " USES_LIVE_SERVER");
    TestSuite_AddFullWithTestFn (
       suite, name, meta1, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
    bson_free (meta1);
@@ -367,7 +367,7 @@ _TestSuite_AddMockServerTest (
    Test *test;
    va_list ap;
 
-   char *meta1 = bson_strdup_printf ("%s%s", meta, " uses-mock-server");
+   char *meta1 = bson_strdup_printf ("%s%s", meta, " LABELS uses-mock-server");
 
    va_start (ap, func);
    test = _V_TestSuite_AddFull (

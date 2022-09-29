@@ -576,7 +576,7 @@ unsupported_long_db (void)
 void
 test_long_namespace_install (TestSuite *suite)
 {
-   const char *common_meta = "uses-live-server";
+   const char *common_meta = "USES_LIVE_SERVER";
    /* MongoDB 4.4 (wire version 9) introduced support for long namespaces in
     * SERVER-32959 */
    TestSuite_AddFullWithTestFn (

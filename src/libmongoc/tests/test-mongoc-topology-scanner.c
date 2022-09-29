@@ -769,7 +769,7 @@ test_topology_scanner_install (TestSuite *suite)
                                 test_topology_retired_fails_to_initiate);
    TestSuite_AddFull (suite,
                       "/TOPOLOGY/scanner/renegotiate/single",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_topology_scanner_does_not_renegotiate_single,
                       NULL,
                       NULL,
@@ -777,7 +777,7 @@ test_topology_scanner_install (TestSuite *suite)
                       test_framework_skip_if_valgrind);
    TestSuite_AddFull (suite,
                       "/TOPOLOGY/scanner/renegotiate/pooled",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_topology_scanner_does_not_renegotiate_pooled,
                       NULL,
                       NULL,

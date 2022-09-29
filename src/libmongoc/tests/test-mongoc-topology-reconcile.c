@@ -698,7 +698,7 @@ test_topology_reconcile_install (TestSuite *suite)
                                 test_topology_reconcile_sharded_single);
    TestSuite_AddFull (suite,
                       "/TOPOLOGY/reconcile/from_handshake",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_topology_reconcile_from_handshake,
                       NULL,
                       NULL,

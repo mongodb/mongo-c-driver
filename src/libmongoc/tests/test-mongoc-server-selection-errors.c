@@ -327,14 +327,14 @@ test_server_selection_errors_install (TestSuite *suite)
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/server_selection/errors/dns/multi/success/single",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_server_selection_error_dns_multi_success_single,
                       NULL,
                       NULL,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/server_selection/errors/dns/multi/success/pooled",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_server_selection_error_dns_multi_success_pooled,
                       NULL,
                       NULL,

@@ -445,7 +445,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_FIND(prefix, fn)                \
    TestSuite_AddFullWithTestFn (suite,              \
                                 prefix "/find",     \
-                                "uses-live-server", \
+                                "USES_LIVE_SERVER", \
                                 fn,                 \
                                 NULL,               \
                                 _make_find_cursor,  \
@@ -454,7 +454,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_CMD(prefix, fn)                 \
    TestSuite_AddFullWithTestFn (suite,              \
                                 prefix "/cmd",      \
-                                "uses-live-server", \
+                                "USES_LIVE_SERVER", \
                                 fn,                 \
                                 NULL,               \
                                 _make_cmd_cursor,   \
@@ -463,7 +463,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_CMD_DEPRECATED(prefix, fn)               \
    TestSuite_AddFullWithTestFn (suite,                       \
                                 prefix "/cmd_deprecated",    \
-                                "uses-live-server",          \
+                                "USES_LIVE_SERVER",          \
                                 fn,                          \
                                 NULL,                        \
                                 _make_cmd_deprecated_cursor, \
@@ -472,7 +472,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_ARRAY(prefix, fn)               \
    TestSuite_AddFullWithTestFn (suite,              \
                                 prefix "/array",    \
-                                "uses-live-server", \
+                                "USES_LIVE_SERVER", \
                                 fn,                 \
                                 NULL,               \
                                 _make_array_cursor, \
@@ -481,7 +481,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_AGG(prefix, fn)                        \
    TestSuite_AddFullWithTestFn (suite,                     \
                                 prefix "/agg",             \
-                                "uses-live-server",        \
+                                "USES_LIVE_SERVER",        \
                                 fn,                        \
                                 NULL,                      \
                                 _make_cmd_cursor_from_agg, \
@@ -2368,14 +2368,14 @@ test_cursor_install (TestSuite *suite)
                       test_cursor_new_from_aggregate_no_initial);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_find",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_cursor_new_from_find,
                       NULL,
                       NULL,
                       TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_find_batches",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_cursor_new_from_find_batches,
                       NULL,
                       NULL,

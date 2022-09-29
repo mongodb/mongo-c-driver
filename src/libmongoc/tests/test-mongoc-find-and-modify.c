@@ -567,7 +567,7 @@ test_find_and_modify_install (TestSuite *suite)
       test_find_and_modify_write_concern);
    TestSuite_AddFull (suite,
                       "/find_and_modify/find_and_modify/write_concern_failure",
-                      "",
+                      "USES_LIVE_SERVER",
                       test_find_and_modify_write_concern_failure,
                       NULL,
                       NULL,

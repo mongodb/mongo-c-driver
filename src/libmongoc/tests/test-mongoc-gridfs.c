@@ -1600,7 +1600,7 @@ test_gridfs_install (TestSuite *suite)
       suite, "/gridfs_old/write_past_end", "", test_write_past_end);
    TestSuite_AddFull (suite,
                       "/gridfs_old/test_long_seek",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_long_seek,
                       NULL,
                       NULL,
@@ -1609,7 +1609,7 @@ test_gridfs_install (TestSuite *suite)
       suite, "/gridfs_old/remove_by_filename", "", test_remove_by_filename);
    TestSuite_AddFull (suite,
                       "/gridfs_old/missing_chunk",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_missing_chunk,
                       NULL,
                       NULL,

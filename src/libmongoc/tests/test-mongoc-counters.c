@@ -489,7 +489,7 @@ test_counters_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    TestSuite_AddFull (suite,
                       "/counters/op_msg",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_counters_op_msg,
                       NULL,
                       NULL,
@@ -497,7 +497,7 @@ test_counters_install (TestSuite *suite)
                       test_framework_skip_if_compressors);
    TestSuite_AddFull (suite,
                       "/counters/op_compressed",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_counters_op_compressed,
                       NULL,
                       NULL,
@@ -507,14 +507,14 @@ test_counters_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/counters/clients", "", test_counters_clients);
    TestSuite_AddFull (suite,
                       "/counters/streams",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_counters_streams,
                       NULL,
                       NULL,
                       TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/counters/auth",
-                      "uses-live-server",
+                      "USES_LIVE_SERVER",
                       test_counters_auth,
                       NULL,
                       NULL,
