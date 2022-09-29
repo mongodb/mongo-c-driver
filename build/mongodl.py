@@ -39,6 +39,13 @@ DISTRO_VERSION_MAP = {
     'elementary': {
         '6': '20.04'
     },
+    'fedora': {
+        '32': '8',
+        '33': '8',
+        '34': '8',
+        '35': '8',
+        '36': '8'
+    },
 }
 
 DISTRO_ID_TO_TARGET = {
