@@ -2,7 +2,7 @@ add_subdirectory (make_dist)
 
 set (build_cmake_MODULES
    CheckSchedGetCPU.cmake
-   FindMongoD.cmake
+   FindMongoDB.cmake
    FindResSearch.cmake
    FindSASL2.cmake
    FindSnappy.cmake
