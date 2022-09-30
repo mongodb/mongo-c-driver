@@ -393,6 +393,7 @@ test_async_install (TestSuite *suite)
    /* Skip on Windows until CDRIVER-3519 is resolved. */
    TestSuite_AddFull (suite,
                       "/Async/large_hello",
+                      "USES_LIVE_SERVER",
                       test_large_hello,
                       NULL /* dtor */,
                       NULL /* ctx */,
