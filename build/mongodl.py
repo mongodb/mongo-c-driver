@@ -39,6 +39,13 @@ DISTRO_VERSION_MAP = {
     'elementary': {
         '6': '20.04'
     },
+    'fedora': {
+        '32': '8',
+        '33': '8',
+        '34': '8',
+        '35': '8',
+        '36': '8'
+    },
 }
 
 DISTRO_ID_TO_TARGET = {
@@ -101,7 +108,7 @@ def _infer_target_os_rel():
         # the build for RHEL8, which is reasonably compatible with other modern
         # distributions (including Arch).
         return 'rhel80'
-    ver_id_re = re.compile(r'VERSION_ID=("?)(.*?)\1')
+    ver_id_re = re.compile(r'VERSION_ID=("?)(.*)\1')
     mat = ver_id_re.search(content)
     assert mat, 'Unable to detect VERSION_ID from [/etc/os-release] content:\n{}'.format(
         content)
