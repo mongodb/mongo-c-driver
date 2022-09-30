@@ -514,7 +514,6 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/ClientPool/ssl_disabled",
                   "",
-                  "",
                   test_mongoc_client_pool_ssl_disabled);
 #endif
    TestSuite_AddLive (suite,
