@@ -13,16 +13,18 @@ import time
 import traceback
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, NoReturn, Sequence, Union, cast
+from typing import TYPE_CHECKING, NoReturn, Sequence, Union, cast, NewType
 
 if TYPE_CHECKING:
     from typing import (Literal, NamedTuple, TypedDict)
 
 INTERUPT_SIGNAL = signal.SIGINT if os.name != 'nt' else signal.CTRL_C_SIGNAL
 
+PID = NewType('PID', int)
+
 
 def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser('proc-ctl')
+    parser = argparse.ArgumentParser('proc_ctl.py')
     grp = parser.add_subparsers(title='Commands',
                                 dest='command',
                                 metavar='<subcommand>')
@@ -90,7 +92,7 @@ if TYPE_CHECKING:
 
     CommandArgs = Union[StartCommandArgs, StopCommandArgs, _RunCommandArgs]
 
-    _ResultType = TypedDict('_ResultType', {
+    ChildExitResult = TypedDict('_ResultType', {
         'exit': 'str | int | None',
         'error': 'str | None'
     })
@@ -120,12 +122,12 @@ class _ChildControl:
     def set_pid(self, pid: int):
         write_text(self.pid_file, str(pid))
 
-    def get_pid(self) -> 'int | None':
+    def _get_pid(self) -> 'PID | None':
         try:
             txt = self.pid_file.read_text()
         except FileNotFoundError:
             return None
-        return int(txt)
+        return PID(int(txt))
 
     def set_exit(self, exit: 'str | int | None', error: 'str | None') -> None:
         write_text(self.result_file, json.dumps({
@@ -134,7 +136,10 @@ class _ChildControl:
         }))
         remove_file(self.pid_file)
 
-    def get_result(self) -> 'None | _ResultType':
+    def state(self) -> 'None | ChildExitResult | PID':
+        return self._get_pid() or self._get_result()
+
+    def _get_result(self) -> 'None | ChildExitResult':
         try:
             txt = self.result_file.read_text()
         except FileNotFoundError:
@@ -144,65 +149,151 @@ class _ChildControl:
     def clear_result(self) -> None:
         remove_file(self.result_file)
 
+    def signal_stop(self) -> None:
+        pid = self.state()
+        if not isinstance(pid, int):
+            raise ProcessLookupError
+        os.kill(pid, INTERUPT_SIGNAL)
 
-def _start(args: 'StartCommandArgs') -> int:
+
+def wait_stopped(
+    ctl_dir: Path, *,
+    timeout: timedelta = timedelta(seconds=5)) -> 'ChildExitResult':
+    child = _ChildControl(ctl_dir)
+    """
+    Wait for a child process to exit.
+
+    :raise ProcessLookupError: If there is no running process or exit result
+        associated with the given directory.
+    :raise TimeoutError: If the child is still running after the timeout expires.
+    """
+    # Spin around until the state is no longer a PID
+    expire = datetime.now() + (timeout or timedelta())
+    state = child.state()
+    while isinstance(state, int):
+        if expire < datetime.now():
+            raise TimeoutError(f'Process [{state}] is still running')
+        time.sleep(0.05)
+        state = child.state()
+
+    if state is None:
+        # There was never a child here
+        raise ProcessLookupError
+    return state
+
+
+def get_pid_or_exit_result(ctl_dir: Path) -> 'None | ChildExitResult | PID':
+    """
+    Get the state of a child process for the given control directory.
+
+    :returns PID: If there is a child running in this directory.
+    :returns ChildExitResult: If there was a child spawned for this directory,
+        but has since exited.
+    :returns None: If there is no child running nor a record of one having
+        existed.
+    """
+    return _ChildControl(ctl_dir).state()
+
+
+def ensure_not_running(
+    ctl_dir: Path, *,
+    timeout: timedelta = timedelta(seconds=5)) -> 'None | ChildExitResult':
+    """
+    Ensure no child is running for the given control directory.
+
+    If a child is found, it will be asked to stop, and we will wait 'timeout' for it to exit
+
+    :return None: If there was never a child running in this directory.
+    :return ChildExitResult: The exit result of the child process, if it had
+        once been running.
+    :raise TimeoutError: If the process does not exit after the given timeout.
+    """
+    child = _ChildControl(ctl_dir)
+    try:
+        child.signal_stop()
+    except ProcessLookupError:
+        # The process is not running, or was never started
+        r = child.state()
+        assert not isinstance(r, int), (r, ctl_dir, timeout)
+        return r
+    return wait_stopped(ctl_dir, timeout=timeout)
+
+
+class ChildStartupError(RuntimeError):
+    pass
+
+
+def start_process(*, ctl_dir: Path, cwd: Path,
+                  command: Sequence[str]) -> 'PID | ChildExitResult':
+    """
+    Spawn a child process with a result recorder.
+
+    The result of the spawn can later be observed using
+    :func:`get_pid_or_exit_result` called with the same ``ctl_dir``.
+    """
     ll_run_cmd = [
         sys.executable,
         '-u',
         '--',
         __file__,
         '__run',
-        '--ctl-dir={}'.format(args.ctl_dir),
+        '--ctl-dir={}'.format(ctl_dir),
         '--',
-        *args.child_command,
+        *command,
     ]
-    args.ctl_dir.mkdir(exist_ok=True, parents=True)
-    child = _ChildControl(args.ctl_dir)
-    if child.get_pid() is not None:
-        raise RuntimeError('Child process is already running [PID {}]'.format(
-            child.get_pid()))
+    ctl_dir.mkdir(exist_ok=True, parents=True)
+    child = _ChildControl(ctl_dir)
+    state = child.state()
+    if isinstance(state, int):
+        raise RuntimeError(
+            'Child process is already running [PID {}]'.format(state))
     child.clear_result()
-    # Spawn the child controller
-    subprocess.Popen(
-        ll_run_cmd,
-        cwd=args.cwd,
-        stderr=subprocess.STDOUT,
-        stdout=args.ctl_dir.joinpath('runner-output.txt').open('wb'),
-        stdin=subprocess.DEVNULL)
-    expire = datetime.now() + timedelta(seconds=args.spawn_wait)
-    # Wait for the PID to appear
-    while child.get_pid() is None and child.get_result() is None:
+    assert child.state() is None
+
+    # Spawn the child controller process
+    subprocess.Popen(ll_run_cmd,
+                     cwd=cwd,
+                     stderr=subprocess.STDOUT,
+                     stdout=ctl_dir.joinpath('runner-output.txt').open('wb'),
+                     stdin=subprocess.DEVNULL)
+
+    # Wait for a PID or exit result to appear
+    expire = datetime.now() + timedelta(seconds=5)
+    state = child.state()
+    while state is None:
         if expire < datetime.now():
-            break
-        time.sleep(0.1)
+            raise TimeoutError(f'Process [{command}] is not starting')
+        time.sleep(0.05)
+        state = child.state()
+
     # Check that it actually spawned
-    if child.get_pid() is None:
-        result = child.get_result()
-        if result is None:
-            raise RuntimeError('Failed to spawn child runner?')
-        if result['error']:
-            print(result['error'], file=sys.stderr)
-        raise RuntimeError('Child exited immediately [Exited {}]'.format(
-            result['exit']))
-    # Wait to see that it is still running after --spawn-wait seconds
-    while child.get_result() is None:
-        if expire < datetime.now():
-            break
-        time.sleep(0.1)
-    # A final check to see if it is running
-    result = child.get_result()
-    if result is not None:
-        if result['error']:
-            print(result['error'], file=sys.stderr)
-        raise RuntimeError('Child exited prematurely [Exited {}]'.format(
-            result['exit']))
+    if not isinstance(state, int) and state['error']:
+        raise ChildStartupError(
+            f'Error while spawning child process: {state["error"]}')
+    return state
+
+
+def _start(args: 'StartCommandArgs') -> int:
+    expire = datetime.now() + timedelta(seconds=args.spawn_wait)
+    state = start_process(ctl_dir=args.ctl_dir,
+                          cwd=args.cwd,
+                          command=args.child_command)
+    while not isinstance(state, dict) and expire > datetime.now():
+        time.sleep(0.05)
+    if not isinstance(state, int):
+        # The child process exited or failed to spawn
+        if state['error']:
+            print(state['error'], file=sys.stderr)
+        raise ChildStartupError('Child exited prematurely [Exited {}]'.format(
+            state['exit']))
     return 0
 
 
 def _stop(args: 'StopCommandArgs') -> int:
     child = _ChildControl(args.ctl_dir)
-    pid = child.get_pid()
-    if pid is None:
+    try:
+        child.signal_stop()
+    except ProcessLookupError:
         if args.if_not_running == 'fail':
             raise RuntimeError('Child process is not running')
         elif args.if_not_running == 'ignore':
@@ -210,11 +301,8 @@ def _stop(args: 'StopCommandArgs') -> int:
             return 0
         else:
             assert False
-    os.kill(pid, INTERUPT_SIGNAL)
-    expire_at = datetime.now() + timedelta(seconds=args.stop_wait)
-    while expire_at > datetime.now() and child.get_result() is None:
-        time.sleep(0.1)
-    result = child.get_result()
+    result = wait_stopped(args.ctl_dir,
+                          timeout=timedelta(seconds=args.stop_wait))
     if result is None:
         raise RuntimeError(
             'Child process did not exit within the grace period')

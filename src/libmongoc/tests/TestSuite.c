@@ -56,6 +56,7 @@ static TestSuite *gTestSuite;
 #define TEST_TRACE (1 << 4)
 #define TEST_VALGRIND (1 << 5)
 #define TEST_LISTTESTS (1 << 6)
+#define TEST_LISTTESTS_WITHMETA (1 << 7)
 
 MONGOC_PRINTF_FORMAT (1, 2)
 static void
@@ -169,6 +170,8 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          suite->flags |= TEST_HELPTEXT;
       } else if (0 == strcmp ("--list-tests", argv[i])) {
          suite->flags |= TEST_LISTTESTS;
+      } else if (0 == strcmp ("--include-meta", argv[i])) {
+         suite->flags |= TEST_LISTTESTS_WITHMETA;
       } else if ((0 == strcmp ("-s", argv[i])) ||
                  (0 == strcmp ("--silent", argv[i]))) {
          suite->silent = true;
@@ -763,8 +766,12 @@ TestSuite_PrintTests (TestSuite *suite) /* IN */
 
    printf ("\nTests:\n");
    for (iter = suite->tests; iter; iter = iter->next) {
-      printf (
-         "%s%s %s\n", suite->name, iter->name, iter->meta ? iter->meta : "");
+      if (suite->flags & TEST_LISTTESTS_WITHMETA) {
+         printf (
+            "%s%s %s\n", suite->name, iter->name, iter->meta ? iter->meta : "");
+      } else {
+         printf ("%s%s\n", suite->name, iter->name);
+      }
    }
 
    printf ("\n");

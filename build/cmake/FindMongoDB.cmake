@@ -19,16 +19,15 @@ endif ()
 
 include (FindPackageHandleStandardArgs)
 include (CMakeParseArguments)
+include (QuickFixtures)
 
 define_property (GLOBAL PROPERTY MONGODB_FOUND_VERSIONS
     BRIEF_DOCS "Versions of MongoDB that have been found"
     FULL_DOCS "List of versions of MongoDB server executables that have been found"
     )
 
-set(MONGODB_DEFAULT_TEST_FIXTURE_VERSIONS
-    "ALL" CACHE STRING
-    "List of MongoDB server versions against which to generate default test fixtures"
-    )
+set (_MDB_SCRIPT_DIR "${CMAKE_CURRENT_LIST_DIR}")
+set_property (GLOBAL PROPERTY _MDB_UNUSED_PORT 21231)
 
 #[[
     Attempt to discern the MongoDB version of the given MongoDB server
@@ -167,275 +166,315 @@ endfunction ()
 _mongodb_find ()
 
 #[[
-    Generate CTest test fixtures for every MongoDB version that has been found, as
-    determined by the MONGODB_FOUND_VERSIONS global property. The generated fixtures
-    are named as 'default-<version>' for each '<version>' that was found.
-]]
-function (mongodb_setup_default_fixtures)
-    set (versions ${MONGODB_DEFAULT_TEST_FIXTURE_VERSIONS})
-    if (versions STREQUAL "ALL")
-        get_cmake_property (versions MONGODB_FOUND_VERSIONS)
-    endif ()
-    foreach (ver IN LISTS versions)
-        mongodb_create_fixture (
-            "mdb/fixture/default/${ver}" VERSION "${ver}"
-            SERVER_ARGS --setParameter enableTestCommands=1
-            DEFAULT
-            )
-    endforeach ()
-endfunction ()
-
-#[[
-    Create a CTest test fixture that will start, stop, and clean up a MongoDB server
-    instance for other tests.
+    Create a CTest test fixture that will start, stop, and clean up a MongoDB
+    server instance for other tests.
 
         mongodb_create_fixture(
             <name> VERSION <version>
             [DEFAULT]
             [PORT_VARIABLE <port-varname>]
-            [SERVER_ARGS <args> ...]
+            [SERVER_ARGS ...]
         )
 
     <name> and <version> are the only required arguments. VERSION must specify a
-    MongoDB server version that has a known path. There must be a
+    MongoDB server version that has a known path (i.e. There must be a
     MONGODB_<version>_PATH global property that defines the path to a mongod
     executable file. These global properties are set by the FindMongoDB.cmake
     module when it is first imported. The list of available versions can be
-    found in the MONGODB_FOUND_VERSIONS global property.
+    found in the MONGODB_FOUND_VERSIONS global property.)
 
-    <port-varname> is an output variable name. Each generated fixture uses a different
-    TCP port when listening so that fixtures can execute in parallel without contending.
-    This variable will be set in the caller's scope to the integer TCP port that will
-    be used by the test fixture.
+    <port-varname> is an output variable name. Each generated fixture uses a
+    different TCP port when listening so that fixtures can execute in parallel
+    without contending. This variable will be set in the caller's scope to the
+    integer TCP port that will be used by the test fixture.
 
-    <args>... is a list of command-line arguments to supply to the server when it is
-    started. This can be any option *except* '--fork', '--port', '--dbpath', '--logpath',
-    or '--pidfilepath', all of which are already specified for the test fixture.
+    <args>... is a list of command-line arguments to supply to the server when
+    it is started. This can be any option *EXCEPT* '--fork', '--port',
+    '--dbpath', '--logpath', or '--pidfilepath', all of which are already
+    specified for the test fixture.
 
-    The fixture <name> can then be associated with tests via the FIXTURES_REQUIRED
-    test property.
+    The fixture <name> can then be associated with tests via the
+    FIXTURES_REQUIRED test property.
 
     If [DEFAULT] is specified, then the fixture will be added to a default list
     that will be used to populate live-server tests that do not otherwise
-    specify a server test fixture
+    specify a server test fixture.
 ]]
 function (mongodb_create_fixture name)
-    cmake_parse_arguments (ARG
-        "DEFAULT"
-        "PORT_VARIABLE;VERSION"
-        "SERVER_ARGS"
-        ${ARGN}
-        )
+    cmake_parse_arguments (PARSE_ARGV 1 ARG "DEFAULT" "PORT_VARIABLE;VERSION" "SERVER_ARGS")
+    # Require a VERSION
     if (NOT ARG_VERSION)
         message (SEND_ERROR "A VERSION is required")
         return ()
     endif ()
+    # Get the path for that version
     get_cmake_property (path "MONGODB_${ARG_VERSION}_PATH")
     if (NOT path)
         message (SEND_ERROR "Cannot create a test fixture for MongoDB version ${ARG_VERSION}, which is not found")
     endif ()
+    # Get an unused TCP port for this server instance
     get_cmake_property (port "_MDB_UNUSED_PORT")
     math (EXPR next "${port} + 3")
     set_property (GLOBAL PROPERTY _MDB_UNUSED_PORT "${next}")
+    # The directory where it will write its scratch data:
     set(fxt_dir "${PROJECT_BINARY_DIR}/_test-db/${name}")
-    add_test (NAME ${name}/setup
-        COMMAND
-            python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+    # Define the fixture. Refer to mdb-ctl.py for information about these commands.
+    add_test_fixture (
+        "${name}"
+        # Startup:
+        SETUP
+            TIMEOUT 10
+            COMMAND python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
                 --mdb-exe "${path}"
                 start
                     --fixture-dir "${fxt_dir}"
                     --port "${port}"
                     --server-args ${ARG_SERVER_ARGS}
-            )
-    add_test (NAME ${name}/cleanup
-        COMMAND
-            python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+        # Shutdown:
+        CLEANUP
+            TIMEOUT 30
+            COMMAND python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
                 --mdb-exe "${path}"
                 stop
                     --fixture-dir "${fxt_dir}"
-            )
-    set_property (TEST ${name}/setup PROPERTY FIXTURES_SETUP "${name}")
-    set_property (TEST ${name}/cleanup PROPERTY FIXTURES_CLEANUP "${name}")
-    set_property (
-        TEST ${name}/setup ${name}/cleanup
-        PROPERTY TIMEOUT 30)
+        )
+
+    # Send the port to the caller
     if (ARG_PORT_VARIABLE)
         set ("${ARG_PORT_VARIABLE}" "${port}" PARENT_SCOPE)
     endif ()
+
+    # Update the CTest metadata file with this fixture info
     set_property (TARGET __mdb-meta
         APPEND PROPERTY _CTestData_CONTENT
         "# Test fixture '${name}'"
-        "set(_fxt [[${name}]])"
-        "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${port})\n"
+        "set(_fxt [======[${name}]======])"
+        "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${port})"
+        "set(\"_MDB_FIXTURE_\${_fxt}_TOPO\" single)"
+        "set(\"_MDB_FIXTURE_\${_fxt}_SERVER_VERSION\" ${ARG_VERSION})\n"
         )
     set_property(TARGET __mdb-meta APPEND PROPERTY _ALL_FIXTURES "${name}")
+
+    # Add this to the default fixtures, if requested
     if (ARG_DEFAULT)
         set_property (TARGET __mdb-meta APPEND PROPERTY _DEFAULT_FIXTURES "${name}")
     endif ()
 endfunction ()
 
-function (mongodb_create_replset_fixture name)
-    cmake_parse_arguments (ARG
-        "DEFAULT"
-        "PORT_VARIABLE;VERSION;COUNT;REPLSET_NAME;FIXTURES_VARIABLE"
-        "SERVER_ARGS"
-        ${ARGN}
+
+#[==[
+    Define a replicaset as a CTest test fixture.
+
+        mongodb_create_replset_fixture(
+            <name> VERSION <version>
+            [DEFAULT]
+            [REPLSET_NAME <rs-name>]
+            [COUNT <N>]
+            [PORT_VARIABLE <port-varname>]
+            [SERVER_ARGS ...]
         )
+
+    REPLSET_NAME can be used to specify a replicaset name. NOTE: Not all
+    characters are valid in a replicaset name. The default name is a
+    C-identifier based on <name>.
+
+    COUNT specifies the number of servers that should be created for the
+    replicaset. The default is three.
+
+    For other arguments, refer ot mongodb_create_fixture()
+
+]==]
+function (mongodb_create_replset_fixture name)
+    cmake_parse_arguments (PARSE_ARGV 1 ARG "DEFAULT" "PORT_VARIABLE;VERSION;COUNT;REPLSET_NAME" "SERVER_ARGS")
+
+    # Default COUNT is 3
     if (NOT ARG_COUNT)
         set (ARG_COUNT 3)
     endif ()
-    set (children)
+
+    # Default name for the replicaset
+    if (NOT ARG_REPLSET_NAME)
+        string (MAKE_C_IDENTIFIER "${name}" ARG_REPLSET_NAME)
+    endif ()
+
+    # "first_port" will be used as the port of the first-created fixture for the children
     get_cmake_property(first_port _MDB_UNUSED_PORT)
+
+    # Accumulate a list of --node-port=N arguments for initializing the replicaset
     set(port_args)
+    # Accumulate the child fixtures into a list:
+    set (children)
+    # Generate the children fixtures:
     foreach (n RANGE 1 "${ARG_COUNT}")
-        mongodb_create_fixture("${name}/rs${n}"
+        mongodb_create_fixture (
+            "${name}/rs${n}"
             VERSION "${ARG_VERSION}"
             SERVER_ARGS ${ARG_SERVER_ARGS}
                 --replSet "${ARG_REPLSET_NAME}"
                 --setParameter enableTestCommands=1
             PORT_VARIABLE node_port
             )
+        # Append to the lists:
         list (APPEND children "${name}/rs${n}")
         list (APPEND port_args "--node-port=${node_port}")
     endforeach()
+
+    # Generate a fixture setup that will initialize the replicaset
     get_cmake_property(mdb_exe MONGODB_${ARG_VERSION}_PATH)
-    set(init_js "${CMAKE_CURRENT_BINARY_DIR}/_replset-${name}-init.js")
-    string(REPLACE ";" ", " members "${members}")
-    file(WRITE "${init_js}"
-        "var mems = [${members}];
-        rs.initiate({
-            _id: '${ARG_REPLSET_NAME}',
-            members: mems,
-        });
-        var i = 0;
-        for (;;) {
-            if (rs.config().members.length == mems.length)
-                break;
-            sleep(1);
-            ++i;
-            if (i == 10000) {
-                assert(false, 'Members did not connect')
-            }
-        }
-        ")
-    add_test (
-        NAME "${name}"
-        COMMAND
-            python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+    add_test_fixture (
+        "${name}"
+        # Setup and "cleanup" requires all the children to be running:
+        REQUIRES ${children}
+        SETUP
+            # For information on this command, refer to mdb-ctl.py
+            COMMAND python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
                 --mdb-exe "${mdb_exe}"
                 init-rs
                     --replset "${ARG_REPLSET_NAME}"
+                    # Tell the script which ports our children are listening on:
                     ${port_args}
+        # Cleanup is a no-op, but having a cleanup that depends on the children
+        # enforces the children to continue running until we are ready to
+        # "cleanup" the replicaset.
+        CLEANUP COMMAND "${CMAKE_COMMAND}" -E true
         )
-    set_tests_properties ("${name}"
-        PROPERTIES FIXTURES_REQUIRED "${children}"
-        FIXTURES_SETUP "${name}"
-        )
+
+    # Record this fixtures
     set_property(TARGET __mdb-meta APPEND PROPERTY _ALL_FIXTURES "${name}")
+    # If default, add it to the list of defaults
     if (ARG_DEFAULT)
         set_property(TARGET __mdb-meta APPEND PROPERTY _DEFAULT_FIXTURES "${name}")
     endif ()
+    # Append to the CTest metadata about the fixture.
     set_property(TARGET __mdb-meta
         APPEND PROPERTY _CTestData_CONTENT
             "# replSet fixture '${name}'"
-            "set(_fxt [[${name}]])"
+            "set(_fxt [======[${name}]======])"
             "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${first_port})"
-            "set(\"_MDB_TRANSITIVE_FIXTURES_OF_\${_fxt}\" [[${children}]])\n"
+            "set(\"_MDB_FIXTURE_\${_fxt}_TOPO\" replset)"
+            "set(\"_MDB_FIXTURE_\${_fxt}_SERVER_VERSION\" ${ARG_VERSION})\n"
             )
+    # Send the port (of the first node) to the caller
     if (ARG_PORT_VARIABLE)
         set ("${ARG_PORT_VARIABLE}" ${first_port} PARENT_SCOPE)
     endif ()
-    if (ARG_FIXTURES_VARIABLE)
-        set ("${ARG_FIXTURES_VARIABLE}" "${children};${name}" PARENT_SCOPE)
-    endif ()
 endfunction ()
 
-function (mongodb_create_sharded_fixture name)
-    cmake_parse_arguments (ARG
-        "DEFAULT"
-        "PORT_VARIABLE;VERSION;COUNT"
-        "SHARD_ARGS;MONGOS_ARGS"
-        ${ARGN}
+#[==[
+
+    Create a CTest fixture that runs a sharded setup of MongoDB.
+
+        mongodb_create_sharded_fixture(
+            <name> VERSION <version>
+            [DEFAULT]
+            [PORT_VARIABLE <port-varname>]
         )
+
+    These arguments have the same meaning as in mongodb_create_fixture().
+
+    This test fixture generates two replica sets: A "data" and a "config". This
+    fixture then runs 'mongos' against those replset databases.
+
+]==]
+function (mongodb_create_sharded_fixture name)
+    cmake_parse_arguments (PARSE_ARGV 1 ARG "DEFAULT" "PORT_VARIABLE;VERSION" "")
+    # Convert the name to an identifier, as it must be a valid replSet name
+    string (MAKE_C_IDENTIFIER "${name}" id_name)
+    # Define the "data" cluster
     mongodb_create_replset_fixture (
         "${name}/data"
         PORT_VARIABLE data_port
-        REPLSET_NAME "${name}-data"
+        REPLSET_NAME "${id_name}-data"
         COUNT 2
-        FIXTURES_VARIABLE data_fixtures
         SERVER_ARGS --shardsvr
         VERSION "${ARG_VERSION}"
         )
+    # Define the "config" cluster
     mongodb_create_replset_fixture (
         "${name}/config"
         PORT_VARIABLE config_port
-        REPLSET_NAME "${name}-config"
+        REPLSET_NAME "${id_name}-config"
         COUNT 2
-        FIXTURES_VARIABLE config_fixtures
         SERVER_ARGS --configsvr
         VERSION "${ARG_VERSION}"
         )
-    get_cmake_property(mdb_exe MONGODB_${ARG_VERSION}_PATH)
+    # Allocate a new TCP port for the mongos instance
     get_cmake_property (mongos_port "_MDB_UNUSED_PORT")
     math (EXPR next "${mongos_port} + 3")
     set_property (GLOBAL PROPERTY _MDB_UNUSED_PORT "${next}")
-    add_test (
-        NAME "${name}"
-        COMMAND
-            python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+    # Define the setup/cleanup
+    get_cmake_property(mdb_exe MONGODB_${ARG_VERSION}_PATH)
+    add_test_fixture (
+        "${name}"
+        # Setup and cleanup require the data and config fixtures to be running
+        REQUIRES ${name}/data ${name}/config
+        SETUP
+            # Starting up sharding can take some time, but may get stuck if misconfigured.
+            # Timeout after 30s, which should be enough to start up.
+            TIMEOUT 30
+            # For information on this command, refer to mdb-ctl.py
+            COMMAND python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
                 --mdb-exe "${mdb_exe}"
                 init-sharding
-                    --configdb "${name}-config/localhost:${config_port}"
-                    --datadb "${name}-data/localhost:${data_port}"
                     --port "${mongos_port}"
-                    --scratch-dir "${CMAKE_CURRENT_BINARY_DIR}/${name}"
+                    --fixture-dir "${CMAKE_CURRENT_BINARY_DIR}/${name}/mongos"
+                    # The config database:
+                    --configdb "${id_name}-config/localhost:${config_port}"
+                    # The data database:
+                    --datadb "${id_name}-data/localhost:${data_port}"
+        CLEANUP
+            # Shutting down sharding can also take some time, but not as much as starting.
+            TIMEOUT 10
+            COMMAND python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
+                --mdb-exe "${mdb_exe}"
+                stop-sharding --fixture-dir "${CMAKE_CURRENT_BINARY_DIR}/${name}/mongos"
         )
-    set_tests_properties("${name}" PROPERTIES
-        FIXTURES_SETUP "${name}"
-        FIXTURES_REQUIRED "${config_fixtures};${data_fixtures}"
-        )
-    add_test (
-        NAME "${name}/cleanup"
-        COMMAND python -u "${_MDB_SCRIPT_DIR}/../mdb-ctl.py"
-            --mdb-exe "${mdb_exe}"
-            stop-sharding --port "${mongos_port}"
-        )
-    set_tests_properties ("${name}/cleanup" PROPERTIES FIXTURES_CLEANUP "${name}")
+
+    # Update the CTest metadata
     set_property(TARGET __mdb-meta
         APPEND PROPERTY _CTestData_CONTENT
-            "# replSet fixture '${name}'"
-            "set(_fxt [[${name}]])"
+            "# Sharded fixture '${name}'"
+            "set(_fxt [======[${name}]======])"
             "set(\"_MDB_FIXTURE_\${_fxt}_PORT\" ${mongos_port})"
-            "set(\"_MDB_TRANSITIVE_FIXTURES_OF_\${_fxt}\" [[${config_fixtures};${data_fixtures}]])\n"
+            "set(\"_MDB_FIXTURE_\${_fxt}_TOPO\" sharded)"
+            "set(\"_MDB_FIXTURE_\${_fxt}_SERVER_VERSION\" ${ARG_VERSION})\n"
         )
     set_property(TARGET __mdb-meta APPEND PROPERTY _ALL_FIXTURES "${name}")
+    # Add as a default fixture, if requested
     if (ARG_DEFAULT)
         set_property(TARGET __mdb-meta APPEND PROPERTY _DEFAULT_FIXTURES "${name}")
     endif ()
+    # Send the port (of mongos) to the caller
+    if (ARG_PORT_VARIABLE)
+        set ("${ARG_PORT_VARIABLE}" ${mongos_port} PARENT_SCOPE)
+    endif ()
 endfunction ()
-
-set (_MDB_SCRIPT_DIR "${CMAKE_CURRENT_LIST_DIR}")
-set_property (GLOBAL PROPERTY _MDB_UNUSED_PORT 21231)
 
 # The __mdb-meta target is used only for attaching metadata to be used as part of generator expressions
 if (NOT TARGET __mdb-meta)
     add_custom_target (__mdb-meta)
+    # Properties are added to the target to allow them to be used in generator expressions
+    set_target_properties (__mdb-meta PROPERTIES
+        _ALL_FIXTURES ""
+        _DEFAULT_FIXTURES ""
+        _CTestData_CONTENT ""
+        )
+
+    # Generate a MongoDB-CTestData.cmake file containing the values that are
+    # attached to __mdb-meta.
     set (lines
-        [[# THIS FILE IS GENERATED. DO NOT EDIT.]]
-        "set(_MDB_ALL_TEST_FIXTURES     [[$<TARGET_PROPERTY:__mdb-meta,_ALL_FIXTURES>]])"
-        "set(_MDB_DEFAULT_TEST_FIXTURES [[$<TARGET_PROPERTY:__mdb-meta,_DEFAULT_FIXTURES>]])"
+        [=[#[[ This file is generated FindMongoDB.cmake: DO NOT EDIT. ]]]=]
+        "set(_MDB_ALL_TEST_FIXTURES     [==[$<TARGET_PROPERTY:__mdb-meta,_ALL_FIXTURES>]==])"
+        "set(_MDB_DEFAULT_TEST_FIXTURES [==[$<TARGET_PROPERTY:__mdb-meta,_DEFAULT_FIXTURES>]==])"
         ""
+        # Arbitrary content canbe added with the _CTestData_CONTENT property
         "$<JOIN:$<TARGET_PROPERTY:__mdb-meta,_CTestData_CONTENT>,\n>\n"
         )
     string (REPLACE ";" "\n" content "${lines}")
     file (GENERATE
         OUTPUT "${PROJECT_BINARY_DIR}/MongoDB-CTestData.cmake"
         CONTENT "${content}")
-    set_target_properties (__mdb-meta PROPERTIES
-        _ALL_FIXTURES ""
-        _DEFAULT_FIXTURES ""
-        _CTestData_CONTENT ""
-        )
+
     set_property (DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/MongoDB-CTestData.cmake")
 endif ()
 

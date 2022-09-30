@@ -93,17 +93,6 @@ endif ()
 include (Sanitizers)
 
 find_package (MongoDB)
-mongodb_setup_default_fixtures ()
-
-get_property(versions GLOBAL PROPERTY MONGODB_FOUND_VERSIONS)
-foreach (ver IN ITEMS 4.1.6 5.1.1)
-   message (STATUS "Setup for version ${ver}")
-   mongodb_create_replset_fixture(mdb/fixture/replSet/${ver}
-      VERSION "${ver}"
-      REPLSET_NAME rs-${ver}
-      DEFAULT
-      )
-endforeach()
 
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
 
@@ -238,6 +227,7 @@ include (MakeDistFiles)
 include (CTest)
 if (BUILD_TESTING)
    include (TestFixtures)
+   include (build/cmake/TweakMeServerFixtures.cmake)
 endif ()
 
 # Ensure the default behavior: don't ignore RPATH settings.
