@@ -62,6 +62,7 @@ test_http_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/http",
+                      "",
                       test_mongoc_http,
                       NULL /* dtor */,
                       NULL /* ctx */,

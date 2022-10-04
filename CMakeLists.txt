@@ -92,6 +92,8 @@ endif ()
 # Enable sanitizers
 include (Sanitizers)
 
+find_package (MongoDB)
+
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
 
 include (ParseVersion)
@@ -225,6 +227,7 @@ include (MakeDistFiles)
 include (CTest)
 if (BUILD_TESTING)
    include (TestFixtures)
+   include (build/cmake/TweakMeServerFixtures.cmake)
 endif ()
 
 # Ensure the default behavior: don't ignore RPATH settings.

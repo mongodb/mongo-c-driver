@@ -1141,48 +1141,60 @@ test_database_install (TestSuite *suite)
 {
    TestSuite_AddMockServerTest (suite,
                                 "/Database/aggregate/inherit/database",
+                                "",
                                 test_aggregate_inherit_database);
    TestSuite_AddFull (suite,
                       "/Database/create_with_write_concern",
+                      "USES_LIVE_SERVER",
                       test_create_with_write_concern,
                       NULL,
                       NULL,
                       TestSuite_CheckLive);
-   TestSuite_AddLive (suite, "/Database/copy", test_copy);
-   TestSuite_AddLive (suite, "/Database/has_collection", test_has_collection);
-   TestSuite_AddLive (suite, "/Database/command", test_command);
+   TestSuite_AddLive (suite, "/Database/copy", "", test_copy);
+   TestSuite_AddLive (
+      suite, "/Database/has_collection", "", test_has_collection);
+   TestSuite_AddLive (suite, "/Database/command", "", test_command);
    TestSuite_AddMockServerTest (suite,
                                 "/Database/command/read_prefs/simple/single",
+                                "",
                                 test_db_command_simple_read_prefs_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Database/command/read_prefs/simple/pooled",
+                                "",
                                 test_db_command_simple_read_prefs_pooled);
    TestSuite_AddMockServerTest (suite,
                                 "/Database/command/read_prefs/single",
+                                "",
                                 test_db_command_read_prefs_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Database/command/read_prefs/pooled",
+                                "",
                                 test_db_command_read_prefs_pooled);
-   TestSuite_AddLive (suite, "/Database/drop", test_drop);
+   TestSuite_AddLive (suite, "/Database/drop", "", test_drop);
    TestSuite_AddLive (
-      suite, "/Database/create_collection", test_create_collection);
+      suite, "/Database/create_collection", "", test_create_collection);
    TestSuite_AddLive (
-      suite, "/Database/get_collection_info", test_get_collection_info);
+      suite, "/Database/get_collection_info", "", test_get_collection_info);
    TestSuite_AddLive (suite,
                       "/Database/get_collection_info_regex",
+                      "",
                       test_get_collection_info_regex);
    TestSuite_AddLive (suite,
                       "/Database/get_collection_info_with_opts_regex",
+                      "",
                       test_get_collection_info_with_opts_regex);
    TestSuite_AddMockServerTest (suite,
                                 "/Database/get_collection/getmore_cmd",
+                                "",
                                 test_get_collection_info_getmore_cmd);
-   TestSuite_AddLive (suite, "/Database/get_collection", test_get_collection);
    TestSuite_AddLive (
-      suite, "/Database/get_collection_names", test_get_collection_names);
+      suite, "/Database/get_collection", "", test_get_collection);
+   TestSuite_AddLive (
+      suite, "/Database/get_collection_names", "", test_get_collection_names);
    TestSuite_AddMockServerTest (suite,
                                 "/Database/get_collection_names_error",
+                                "",
                                 test_get_collection_names_error);
    TestSuite_Add (
-      suite, "/Database/get_default_database", test_get_default_database);
+      suite, "/Database/get_default_database", "", test_get_default_database);
 }

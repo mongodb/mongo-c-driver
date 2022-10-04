@@ -101,5 +101,5 @@ void
 test_aggregate_install (TestSuite *suite)
 {
    TestSuite_AddMockServerTest (
-      suite, "/Aggregate/query_flags", test_query_flags);
+      suite, "/Aggregate/query_flags", "", test_query_flags);
 }

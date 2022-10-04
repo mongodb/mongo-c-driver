@@ -183,14 +183,20 @@ test_bson_writer_null_realloc_2 (void)
 void
 test_writer_install (TestSuite *suite)
 {
+   TestSuite_Add (suite,
+                  "/bson/writer/custom_realloc",
+                  "",
+                  test_bson_writer_custom_realloc);
    TestSuite_Add (
-      suite, "/bson/writer/custom_realloc", test_bson_writer_custom_realloc);
+      suite, "/bson/writer/shared_buffer", "", test_bson_writer_shared_buffer);
+   TestSuite_Add (suite,
+                  "/bson/writer/empty_sequence",
+                  "",
+                  test_bson_writer_empty_sequence);
    TestSuite_Add (
-      suite, "/bson/writer/shared_buffer", test_bson_writer_shared_buffer);
-   TestSuite_Add (
-      suite, "/bson/writer/empty_sequence", test_bson_writer_empty_sequence);
-   TestSuite_Add (
-      suite, "/bson/writer/null_realloc", test_bson_writer_null_realloc);
-   TestSuite_Add (
-      suite, "/bson/writer/null_realloc_2", test_bson_writer_null_realloc_2);
+      suite, "/bson/writer/null_realloc", "", test_bson_writer_null_realloc);
+   TestSuite_Add (suite,
+                  "/bson/writer/null_realloc_2",
+                  "",
+                  test_bson_writer_null_realloc_2);
 }

@@ -210,7 +210,9 @@ void
 test_ssl_install (TestSuite *suite)
 {
 #ifdef MONGOC_ENABLE_SSL
-   TestSuite_Add (suite, "/ssl_opt/from_bson", test_mongoc_ssl_opts_from_bson);
-   TestSuite_Add (suite, "/ssl_opt/cleanup", test_mongoc_ssl_opts_cleanup_zero);
+   TestSuite_Add (
+      suite, "/ssl_opt/from_bson", "", test_mongoc_ssl_opts_from_bson);
+   TestSuite_Add (
+      suite, "/ssl_opt/cleanup", "", test_mongoc_ssl_opts_cleanup_zero);
 #endif /* MONGOC_ENABLE_SSL */
 }

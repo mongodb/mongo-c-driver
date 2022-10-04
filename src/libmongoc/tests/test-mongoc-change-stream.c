@@ -2620,10 +2620,11 @@ void
 test_change_stream_install (TestSuite *suite)
 {
    TestSuite_AddMockServerTest (
-      suite, "/change_stream/pipeline", test_change_stream_pipeline);
+      suite, "/change_stream/pipeline", "", test_change_stream_pipeline);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/single_server",
+                      "USES_LIVE_SERVER",
                       test_change_stream_live_single_server,
                       NULL,
                       NULL,
@@ -2631,6 +2632,7 @@ test_change_stream_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/track_resume_token",
+                      "USES_LIVE_SERVER",
                       test_change_stream_live_track_resume_token,
                       NULL,
                       NULL,
@@ -2639,6 +2641,7 @@ test_change_stream_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/batch_size",
+                      "USES_LIVE_SERVER",
                       test_change_stream_live_batch_size,
                       NULL,
                       NULL,
@@ -2646,6 +2649,7 @@ test_change_stream_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/missing_resume_token",
+                      "USES_LIVE_SERVER",
                       test_change_stream_live_missing_resume_token,
                       NULL,
                       NULL,
@@ -2653,6 +2657,7 @@ test_change_stream_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/invalid_resume_token",
+                      "USES_LIVE_SERVER",
                       test_change_stream_live_invalid_resume_token,
                       NULL,
                       NULL,
@@ -2660,13 +2665,15 @@ test_change_stream_install (TestSuite *suite)
 
    TestSuite_AddMockServerTest (suite,
                                 "/change_stream/resumable_error",
+                                "",
                                 test_change_stream_resumable_error);
 
    TestSuite_AddMockServerTest (
-      suite, "/change_stream/options", test_change_stream_options);
+      suite, "/change_stream/options", "", test_change_stream_options);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/watch",
+                      "USES_LIVE_SERVER",
                       test_change_stream_live_watch,
                       NULL,
                       NULL,
@@ -2674,6 +2681,7 @@ test_change_stream_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/read_prefs",
+                      "USES_LIVE_SERVER",
                       test_change_stream_live_read_prefs,
                       NULL,
                       NULL,
@@ -2682,10 +2690,12 @@ test_change_stream_install (TestSuite *suite)
 
    TestSuite_Add (suite,
                   "/change_stream/server_selection_fails",
+                  "",
                   test_change_stream_server_selection_fails);
 
    TestSuite_AddFull (suite,
                       "/change_stream/next_after_error",
+                      "USES_LIVE_SERVER",
                       test_change_stream_next_after_error,
                       NULL,
                       NULL,
@@ -2693,14 +2703,16 @@ test_change_stream_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/change_stream/accepts_array",
+                      "USES_LIVE_SERVER",
                       test_change_stream_accepts_array,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_6);
    TestSuite_AddMockServerTest (
-      suite, "/change_stream/getmore_errors", test_getmore_errors);
+      suite, "/change_stream/getmore_errors", "", test_getmore_errors);
    TestSuite_AddFull (suite,
                       "/change_stream/start_at_operation_time",
+                      "USES_LIVE_SERVER",
                       test_change_stream_start_at_operation_time,
                       NULL,
                       NULL,
@@ -2709,6 +2721,7 @@ test_change_stream_install (TestSuite *suite)
                       _skip_if_no_start_at_optime);
    TestSuite_AddFull (suite,
                       "/change_stream/resume_at_optime",
+                      "USES_LIVE_SERVER",
                       test_change_stream_resume_at_optime,
                       NULL,
                       NULL,
@@ -2718,6 +2731,7 @@ test_change_stream_install (TestSuite *suite)
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/change_stream/resume_with_post_batch_resume_token",
+                      "USES_LIVE_SERVER",
                       test_change_stream_resume_with_post_batch_resume_token,
                       NULL,
                       NULL,
@@ -2727,30 +2741,35 @@ test_change_stream_install (TestSuite *suite)
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/change_stream/database",
+                      "USES_LIVE_SERVER",
                       test_change_stream_database_watch,
                       NULL,
                       NULL,
                       _skip_if_no_db_watch);
    TestSuite_AddFull (suite,
                       "/change_stream/client",
+                      "USES_LIVE_SERVER",
                       test_change_stream_client_watch,
                       NULL,
                       NULL,
                       _skip_if_no_client_watch);
    TestSuite_AddMockServerTest (
-      suite, "/change_stream/resume_with_first_doc", test_resume_cases);
+      suite, "/change_stream/resume_with_first_doc", "", test_resume_cases);
    TestSuite_AddMockServerTest (
       suite,
       "/change_stream/resume_with_first_doc/post_batch_resume_token",
+      "",
       test_resume_cases_with_post_batch_resume_token);
    TestSuite_AddFull (suite,
                       "/change_stream/error_null_doc",
+                      "USES_LIVE_SERVER",
                       test_error_null_doc,
                       NULL,
                       NULL,
                       _skip_if_no_client_watch);
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_11",
+                      "USES_LIVE_SERVER",
                       prose_test_11,
                       NULL,
                       NULL,
@@ -2758,6 +2777,7 @@ test_change_stream_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_12",
+                      "USES_LIVE_SERVER",
                       prose_test_12,
                       NULL,
                       NULL,
@@ -2765,6 +2785,7 @@ test_change_stream_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_more_than_7);
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_13",
+                      "USES_LIVE_SERVER",
                       prose_test_13,
                       NULL,
                       NULL,
@@ -2772,15 +2793,16 @@ test_change_stream_install (TestSuite *suite)
                       _skip_if_no_start_at_optime);
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_14",
+                      "USES_LIVE_SERVER",
                       prose_test_14,
                       NULL,
                       NULL,
                       test_framework_skip_if_mongos,
                       test_framework_skip_if_not_rs_version_7);
    TestSuite_AddMockServerTest (
-      suite, "/change_streams/prose_test_17", prose_test_17);
+      suite, "/change_streams/prose_test_17", "", prose_test_17);
    TestSuite_AddMockServerTest (
-      suite, "/change_streams/prose_test_18", prose_test_18);
+      suite, "/change_streams/prose_test_18", "", prose_test_18);
 
    install_json_test_suite (
       suite, JSON_DIR, "/change_streams/legacy", &test_change_stream_spec_cb);

@@ -389,14 +389,14 @@ test_stream_tls_error_install (TestSuite *suite)
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
    !defined(MONGOC_ENABLE_SSL_LIBRESSL)
 #if !defined(__APPLE__)
-   TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
+   TestSuite_Add (suite, "/TLS/hangup", "", test_mongoc_tls_hangup);
 #endif
 
 /* see CDRIVER-2222 this occasionally stalls for a few 100ms on Mac */
 #if !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_Add (
-      suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);
+      suite, "/TLS/handshake_stall", "", test_mongoc_tls_handshake_stall);
 #endif
 #endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
-   TestSuite_Add (suite, "/TLS/load_files", test_mongoc_tls_load_files);
+   TestSuite_Add (suite, "/TLS/load_files", "", test_mongoc_tls_load_files);
 }

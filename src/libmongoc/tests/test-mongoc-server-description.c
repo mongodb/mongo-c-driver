@@ -385,22 +385,27 @@ void
 test_server_description_install (TestSuite *suite)
 {
    TestSuite_Add (
-      suite, "/server_description/equal", test_server_description_equal);
+      suite, "/server_description/equal", "", test_server_description_equal);
    TestSuite_Add (suite,
                   "/server_description/msg_without_isdbgrid",
+                  "",
                   test_server_description_msg_without_isdbgrid);
    TestSuite_Add (suite,
                   "/server_description/ignores_unset_rtt",
+                  "",
                   test_server_description_ignores_rtt);
    TestSuite_Add (
-      suite, "/server_description/hello", test_server_description_hello);
+      suite, "/server_description/hello", "", test_server_description_hello);
    TestSuite_Add (suite,
                   "/server_description/hello_cmd_not_found",
+                  "",
                   test_server_description_hello_cmd_not_found);
    TestSuite_Add (suite,
                   "/server_description/legacy_hello",
+                  "",
                   test_server_description_legacy_hello);
    TestSuite_Add (suite,
                   "/server_description/legacy_hello_ok",
+                  "",
                   test_server_description_legacy_hello_ok);
 }

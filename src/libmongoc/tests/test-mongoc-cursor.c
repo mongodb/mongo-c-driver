@@ -442,21 +442,28 @@ _make_array_cursor (mongoc_collection_t *coll)
    return mongoc_client_find_databases_with_opts (coll->client, NULL);
 }
 
-#define TEST_CURSOR_FIND(prefix, fn)               \
-   TestSuite_AddFullWithTestFn (suite,             \
-                                prefix "/find",    \
-                                fn,                \
-                                NULL,              \
-                                _make_find_cursor, \
+#define TEST_CURSOR_FIND(prefix, fn)                \
+   TestSuite_AddFullWithTestFn (suite,              \
+                                prefix "/find",     \
+                                "USES_LIVE_SERVER", \
+                                fn,                 \
+                                NULL,               \
+                                _make_find_cursor,  \
                                 TestSuite_CheckLive);
 
-#define TEST_CURSOR_CMD(prefix, fn) \
-   TestSuite_AddFullWithTestFn (    \
-      suite, prefix "/cmd", fn, NULL, _make_cmd_cursor, TestSuite_CheckLive);
+#define TEST_CURSOR_CMD(prefix, fn)                 \
+   TestSuite_AddFullWithTestFn (suite,              \
+                                prefix "/cmd",      \
+                                "USES_LIVE_SERVER", \
+                                fn,                 \
+                                NULL,               \
+                                _make_cmd_cursor,   \
+                                TestSuite_CheckLive);
 
 #define TEST_CURSOR_CMD_DEPRECATED(prefix, fn)               \
    TestSuite_AddFullWithTestFn (suite,                       \
                                 prefix "/cmd_deprecated",    \
+                                "USES_LIVE_SERVER",          \
                                 fn,                          \
                                 NULL,                        \
                                 _make_cmd_deprecated_cursor, \
@@ -465,6 +472,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_ARRAY(prefix, fn)               \
    TestSuite_AddFullWithTestFn (suite,              \
                                 prefix "/array",    \
+                                "USES_LIVE_SERVER", \
                                 fn,                 \
                                 NULL,               \
                                 _make_array_cursor, \
@@ -473,6 +481,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_AGG(prefix, fn)                        \
    TestSuite_AddFullWithTestFn (suite,                     \
                                 prefix "/agg",             \
+                                "USES_LIVE_SERVER",        \
                                 fn,                        \
                                 NULL,                      \
                                 _make_cmd_cursor_from_agg, \
@@ -2335,85 +2344,90 @@ void
 test_cursor_install (TestSuite *suite)
 {
    test_common_cursor_functions_install (suite);
-   TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
-   TestSuite_AddLive (suite,
-                      ""
-                      "/Cursor/kill/live",
-                      test_kill_cursor_live);
+   TestSuite_AddLive (suite, "/Cursor/limit", "", test_limit);
+   TestSuite_AddLive (suite, "/Cursor/kill/live", "", test_kill_cursor_live);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/kill/single", test_kill_cursors_single);
+      suite, "/Cursor/kill/single", "", test_kill_cursors_single);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
+      suite, "/Cursor/kill/pooled", "", test_kill_cursors_pooled);
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/client_kill_cursor/with_primary",
+                                "",
                                 test_client_kill_cursor_with_primary);
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/client_kill_cursor/without_primary",
+                                "",
                                 test_client_kill_cursor_without_primary);
    TestSuite_AddLive (
-      suite, "/Cursor/empty_collection", test_cursor_empty_collection);
+      suite, "/Cursor/empty_collection", "", test_cursor_empty_collection);
    TestSuite_AddLive (
-      suite, "/Cursor/new_from_agg", test_cursor_new_from_aggregate);
+      suite, "/Cursor/new_from_agg", "", test_cursor_new_from_aggregate);
    TestSuite_AddLive (suite,
                       "/Cursor/new_from_agg_no_initial",
+                      "",
                       test_cursor_new_from_aggregate_no_initial);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_find",
+                      "USES_LIVE_SERVER",
                       test_cursor_new_from_find,
                       NULL,
                       NULL,
                       TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_find_batches",
+                      "USES_LIVE_SERVER",
                       test_cursor_new_from_find_batches,
                       NULL,
                       NULL,
                       TestSuite_CheckLive);
-   TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/new_tailable_await", test_cursor_new_tailable_await);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/int64_t_maxtimems", test_cursor_int64_t_maxtimems);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/new_ignores_fields", test_cursor_new_ignores_fields);
    TestSuite_AddLive (
-      suite, "/Cursor/new_invalid_filter", test_cursor_new_invalid_filter);
+      suite, "/Cursor/new_invalid", "", test_cursor_new_invalid);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/new_tailable_await", "", test_cursor_new_tailable_await);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/int64_t_maxtimems", "", test_cursor_int64_t_maxtimems);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/new_ignores_fields", "", test_cursor_new_ignores_fields);
    TestSuite_AddLive (
-      suite, "/Cursor/new_invalid_opts", test_cursor_new_invalid_opts);
-   TestSuite_AddLive (suite, "/Cursor/new_static", test_cursor_new_static);
-   TestSuite_AddLive (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/single/primary", test_hint_single_primary);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/mongos", test_cursor_hint_mongos);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/mongos/cmd", test_cursor_hint_mongos_cmd);
+      suite, "/Cursor/new_invalid_filter", "", test_cursor_new_invalid_filter);
    TestSuite_AddLive (
-      suite, "/Cursor/hint/no_warmup/single", test_hint_no_warmup_single);
+      suite, "/Cursor/new_invalid_opts", "", test_cursor_new_invalid_opts);
+   TestSuite_AddLive (suite, "/Cursor/new_static", "", test_cursor_new_static);
    TestSuite_AddLive (
-      suite, "/Cursor/hint/no_warmup/pooled", test_hint_no_warmup_pooled);
-   TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
+      suite, "/Cursor/hint/errors", "", test_cursor_hint_errors);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/n_return/find_cmd", test_n_return_find_cmd);
+      suite, "/Cursor/hint/single/secondary", "", test_hint_single_secondary);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/single/primary", "", test_hint_single_primary);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/pooled/secondary", "", test_hint_pooled_secondary);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/pooled/primary", "", test_hint_pooled_primary);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/mongos", "", test_cursor_hint_mongos);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/mongos/cmd", "", test_cursor_hint_mongos_cmd);
+   TestSuite_AddLive (
+      suite, "/Cursor/hint/no_warmup/single", "", test_hint_no_warmup_single);
+   TestSuite_AddLive (
+      suite, "/Cursor/hint/no_warmup/pooled", "", test_hint_no_warmup_pooled);
+   TestSuite_AddLive (suite, "/Cursor/tailable/alive", "", test_tailable_alive);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/n_return/find_cmd", "", test_n_return_find_cmd);
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/n_return/find_cmd/with_opts",
+                                "",
                                 test_n_return_find_cmd_with_opts);
    TestSuite_AddLive (
-      suite, "/Cursor/empty_final_batch_live", test_empty_final_batch_live);
+      suite, "/Cursor/empty_final_batch_live", "", test_empty_final_batch_live);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/empty_final_batch", test_empty_final_batch);
+      suite, "/Cursor/empty_final_batch", "", test_empty_final_batch);
    TestSuite_AddLive (
-      suite, "/Cursor/error_document/query", test_error_document_query);
+      suite, "/Cursor/error_document/query", "", test_error_document_query);
    TestSuite_AddLive (
-      suite, "/Cursor/error_document/getmore", test_error_document_getmore);
+      suite, "/Cursor/error_document/getmore", "", test_error_document_getmore);
    TestSuite_AddLive (
-      suite, "/Cursor/error_document/command", test_error_document_command);
+      suite, "/Cursor/error_document/command", "", test_error_document_command);
    TestSuite_AddLive (
-      suite, "/Cursor/find_error/is_alive", test_find_error_is_alive);
+      suite, "/Cursor/find_error/is_alive", "", test_find_error_is_alive);
 }

@@ -654,5 +654,5 @@ test_match (void)
 void
 test_bson_match_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/unified/selftest/bson/match", test_match);
+   TestSuite_Add (suite, "/unified/selftest/bson/match", "", test_match);
 }

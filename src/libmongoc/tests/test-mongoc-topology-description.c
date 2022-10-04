@@ -355,20 +355,26 @@ test_topology_description_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite,
                       "/TopologyDescription/readable_writable/single",
+                      "",
                       test_has_readable_writable_server_single);
    TestSuite_AddLive (suite,
                       "/TopologyDescription/readable_writable/pooled",
+                      "",
                       test_has_readable_writable_server_pooled);
-   TestSuite_Add (suite, "/TopologyDescription/get_servers", test_get_servers);
+   TestSuite_Add (
+      suite, "/TopologyDescription/get_servers", "", test_get_servers);
    TestSuite_Add (suite,
                   "/TopologyDescription/topology_version_equal",
+                  "",
                   test_topology_version_equal);
    TestSuite_Add (suite,
                   "/TopologyDescription/new_copy",
+                  "",
                   test_topology_description_new_copy);
    TestSuite_Add (
-      suite, "/TopologyDescription/pool_clear", test_topology_pool_clear);
+      suite, "/TopologyDescription/pool_clear", "", test_topology_pool_clear);
    TestSuite_Add (suite,
                   "/TopologyDescription/pool_clear_by_serviceid",
+                  "",
                   test_topology_pool_clear_by_serviceid);
 }

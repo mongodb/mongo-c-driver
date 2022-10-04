@@ -93,9 +93,10 @@ test_sasl_canonicalize_hostname (void *ctx)
 void
 test_cyrus_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/SASL/properties", test_sasl_properties);
+   TestSuite_Add (suite, "/SASL/properties", "", test_sasl_properties);
    TestSuite_AddFull (suite,
                       "/SASL/canonicalize",
+                      "USES_LIVE_SERVER",
                       test_sasl_canonicalize_hostname,
                       NULL,
                       NULL,

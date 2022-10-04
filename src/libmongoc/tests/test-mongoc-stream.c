@@ -168,7 +168,8 @@ test_stream_writev_full (void)
 void
 test_stream_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Stream/buffered/basic", test_buffered_basic);
-   TestSuite_Add (suite, "/Stream/buffered/oversized", test_buffered_oversized);
-   TestSuite_Add (suite, "/Stream/writev_full", test_stream_writev_full);
+   TestSuite_Add (suite, "/Stream/buffered/basic", "", test_buffered_basic);
+   TestSuite_Add (
+      suite, "/Stream/buffered/oversized", "", test_buffered_oversized);
+   TestSuite_Add (suite, "/Stream/writev_full", "", test_stream_writev_full);
 }

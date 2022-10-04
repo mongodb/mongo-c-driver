@@ -1021,36 +1021,44 @@ test_sdam_monitoring_install (TestSuite *suite)
    TestSuite_AddLive (
       suite,
       "/server_discovery_and_monitoring/monitoring/topology/single",
+      "",
       test_topology_events_single);
    TestSuite_AddLive (
       suite,
       "/server_discovery_and_monitoring/monitoring/topology/pooled",
+      "",
       test_topology_events_pooled);
    TestSuite_AddLive (
       suite,
       "/server_discovery_and_monitoring/monitoring/topology/disabled",
+      "",
       test_topology_events_disabled);
    TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/succeeded",
+      "",
       test_heartbeat_events_single_succeeded);
    TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/failed",
+      "",
       test_heartbeat_events_single_failed);
    TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/succeeded",
+      "",
       test_heartbeat_events_pooled_succeeded);
    _TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
+      "",
       test_heartbeat_events_pooled_failed,
       test_framework_skip_if_time_sensitive,
       NULL);
    TestSuite_AddFull (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/dns",
+      "",
       test_heartbeat_fails_dns_single,
       NULL,
       NULL,
@@ -1058,6 +1066,7 @@ test_sdam_monitoring_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns",
+      "",
       test_heartbeat_fails_dns_pooled,
       NULL,
       NULL,
@@ -1066,6 +1075,7 @@ test_sdam_monitoring_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/no_duplicates",
+      "",
       test_no_duplicates,
       NULL,
       NULL);

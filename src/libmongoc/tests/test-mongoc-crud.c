@@ -173,6 +173,7 @@ test_crud_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/crud/prose_test_1",
+                      "USES_LIVE_SERVER",
                       prose_test_1,
                       NULL, /* dtor */
                       NULL, /* ctx */
@@ -181,6 +182,7 @@ test_crud_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/crud/prose_test_2",
+                      "USES_LIVE_SERVER",
                       prose_test_2,
                       NULL, /* dtor */
                       NULL, /* ctx */

@@ -488,22 +488,28 @@ _test_invalid_wc_server_error (void *unused)
 void
 test_write_command_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite, "/WriteCommand/split_insert", test_split_insert);
    TestSuite_AddLive (
-      suite, "/WriteCommand/bypass_not_sent", test_bypass_not_sent);
+      suite, "/WriteCommand/split_insert", "", test_split_insert);
    TestSuite_AddLive (
-      suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
+      suite, "/WriteCommand/bypass_not_sent", "", test_bypass_not_sent);
+   TestSuite_AddLive (suite,
+                      "/WriteCommand/invalid_write_concern",
+                      "",
+                      test_invalid_write_concern);
    TestSuite_AddFull (suite,
                       "/WriteCommand/bypass_validation",
+                      "USES_LIVE_SERVER",
                       test_bypass_validation,
                       NULL,
                       NULL,
                       TestSuite_CheckLive);
    TestSuite_AddMockServerTest (suite,
                                 "/WriteCommand/insert_disconnect_mid_batch",
+                                "",
                                 test_disconnect_mid_batch);
    TestSuite_AddFull (suite,
                       "/WriteCommand/invalid_wc_server_error",
+                      "USES_LIVE_SERVER",
                       _test_invalid_wc_server_error,
                       NULL,
                       NULL,

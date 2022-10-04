@@ -1218,36 +1218,43 @@ test_transactions_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/transactions/supported",
+                      "USES_LIVE_SERVER",
                       test_transactions_supported,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_txns);
    TestSuite_AddFull (suite,
                       "/transactions/in_transaction",
+                      "USES_LIVE_SERVER",
                       test_in_transaction,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_txns);
    TestSuite_AddMockServerTest (suite,
                                 "/transactions/server_selection_err",
+                                "",
                                 test_server_selection_error,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
                                 "/transactions/network_err",
+                                "",
                                 test_network_error,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
                                 "/transactions/unknown_commit_result",
+                                "",
                                 test_unknown_commit_result,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/transactions/cursor_primary_read_pref",
+                      "USES_LIVE_SERVER",
                       test_cursor_primary_read_pref,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_txns);
    TestSuite_AddFull (suite,
                       "/transactions/inherit_from_client",
+                      "USES_LIVE_SERVER",
                       test_inherit_from_client,
                       NULL,
                       NULL,
@@ -1256,6 +1263,7 @@ test_transactions_install (TestSuite *suite)
       suite,
       "/transactions/"
       "transaction_fails_on_unsupported_version_or_sharded_cluster",
+      "USES_LIVE_SERVER",
       test_transaction_fails_on_unsupported_version_or_sharded_cluster,
       NULL,
       NULL,
@@ -1263,6 +1271,7 @@ test_transactions_install (TestSuite *suite)
       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/transactions/recovery_token_cleared",
+                      "USES_LIVE_SERVER",
                       test_transaction_recovery_token_cleared,
                       NULL,
                       NULL,
@@ -1272,6 +1281,7 @@ test_transactions_install (TestSuite *suite)
                       test_framework_skip_if_not_mongos);
    TestSuite_AddFull (suite,
                       "/transactions/selected_server_pinned_to_mongos",
+                      "USES_LIVE_SERVER",
                       test_selected_server_is_pinned_to_mongos,
                       NULL,
                       NULL,
@@ -1280,10 +1290,12 @@ test_transactions_install (TestSuite *suite)
                       test_framework_skip_if_not_mongos);
    TestSuite_AddMockServerTest (suite,
                                 "/transactions/get_transaction_opts",
+                                "",
                                 test_get_transaction_opts,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/transactions/max_commit_time_ms_is_reset",
+                      "USES_LIVE_SERVER",
                       test_max_commit_time_ms_is_reset,
                       NULL,
                       NULL,

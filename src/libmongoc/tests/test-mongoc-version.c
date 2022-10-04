@@ -20,5 +20,5 @@ test_mongoc_version (void)
 void
 test_version_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Version", test_mongoc_version);
+   TestSuite_Add (suite, "/Version", "", test_mongoc_version);
 }

@@ -268,12 +268,14 @@ test_server_stream_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/server_stream/ties_server_description/pooled",
+                      "",
                       test_server_stream_ties_server_description_pooled,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       NULL);
    TestSuite_AddFull (suite,
                       "/server_stream/ties_server_description/single",
+                      "",
                       test_server_stream_ties_server_description_single,
                       NULL /* dtor */,
                       NULL /* ctx */,

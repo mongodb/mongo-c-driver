@@ -1089,6 +1089,14 @@ if (MONGOC_ENABLE_SASL_CYRUS)
    )
 endif ()
 
+if (DEFINED _MONGOC_FAKE_IMDS_HOST)
+   # This var can be defined in TestFixtures.cmake
+   # Only one file needs to see it:
+   set_property (
+      SOURCE ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
+      APPEND PROPERTY COMPILE_DEFINITIONS "MONGOC_FAKE_IMDS_HOST=\"${_MONGOC_FAKE_IMDS_HOST}\"")
+endif ()
+
 mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)

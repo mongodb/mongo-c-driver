@@ -218,16 +218,21 @@ test_client_versioned_api_install (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "versioned_api");
 
    TestSuite_Add (
-      suite, "/VersionedApi/client", _test_mongoc_server_api_client);
-   TestSuite_Add (
-      suite, "/VersionedApi/client_pool", _test_mongoc_server_api_client_pool);
+      suite, "/VersionedApi/client", "", _test_mongoc_server_api_client);
+   TestSuite_Add (suite,
+                  "/VersionedApi/client_pool",
+                  "",
+                  _test_mongoc_server_api_client_pool);
    TestSuite_Add (suite,
                   "/VersionedApi/client_pool_once",
+                  "",
                   _test_mongoc_server_api_client_pool_once);
-   TestSuite_Add (suite, "/VersionedApi/copy", _test_mongoc_server_api_copy);
    TestSuite_Add (
-      suite, "/VersionedApi/setters", _test_mongoc_server_api_setters);
+      suite, "/VersionedApi/copy", "", _test_mongoc_server_api_copy);
+   TestSuite_Add (
+      suite, "/VersionedApi/setters", "", _test_mongoc_server_api_setters);
    TestSuite_Add (suite,
                   "/VersionedApi/private/client_uses_server_api",
+                  "",
                   _test_mongoc_client_uses_server_api);
 }

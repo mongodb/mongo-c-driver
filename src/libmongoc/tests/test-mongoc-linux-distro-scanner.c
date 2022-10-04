@@ -289,12 +289,15 @@ test_linux_distro_scanner_install (TestSuite *suite)
 #ifdef MONGOC_OS_IS_LINUX
    TestSuite_Add (suite,
                   "/LinuxDistroScanner/test_read_generic_release_file",
+                  "",
                   test_read_generic_release_file);
    TestSuite_Add (suite,
                   "/LinuxDistroScanner/test_read_key_value_file",
+                  "",
                   test_read_key_value_file);
    TestSuite_Add (suite,
                   "/LinuxDistroScanner/test_distro_scanner_reads",
+                  "",
                   test_distro_scanner_reads);
 #endif
 }

@@ -1367,63 +1367,86 @@ test_command_monitoring_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
    TestSuite_AddMockServerTest (
-      suite, "/command_monitoring/get_error", test_get_error);
+      suite, "/command_monitoring/get_error", "", test_get_error);
    TestSuite_AddLive (suite,
                       "/command_monitoring/set_callbacks/single",
+                      "",
                       test_set_callbacks_single);
    TestSuite_AddLive (suite,
                       "/command_monitoring/set_callbacks/pooled",
+                      "",
                       test_set_callbacks_pooled);
    TestSuite_AddLive (suite,
                       "/command_monitoring/set_callbacks/pooled_try_pop",
+                      "",
                       test_set_callbacks_pooled_try_pop);
    /* require aggregation cursor */
-   TestSuite_AddLive (
-      suite, "/command_monitoring/set_callbacks/change", test_change_callbacks);
-   TestSuite_AddLive (
-      suite, "/command_monitoring/set_callbacks/reset", test_reset_callbacks);
+   TestSuite_AddLive (suite,
+                      "/command_monitoring/set_callbacks/change",
+                      "",
+                      test_change_callbacks);
+   TestSuite_AddLive (suite,
+                      "/command_monitoring/set_callbacks/reset",
+                      "",
+                      test_reset_callbacks);
    TestSuite_AddLive (suite,
                       "/command_monitoring/operation_id/bulk/collection/single",
+                      "",
                       test_collection_bulk_op_single);
    TestSuite_AddLive (suite,
                       "/command_monitoring/operation_id/bulk/collection/pooled",
+                      "",
                       test_collection_bulk_op_pooled);
    TestSuite_AddLive (suite,
                       "/command_monitoring/operation_id/bulk/new/single",
+                      "",
                       test_bulk_op_single);
    TestSuite_AddLive (suite,
                       "/command_monitoring/operation_id/bulk/new/pooled",
+                      "",
                       test_bulk_op_pooled);
    TestSuite_AddMockServerTest (
       suite,
       "/command_monitoring/operation_id/query/single/cmd",
+      "",
       test_query_operation_id_single_cmd);
    TestSuite_AddMockServerTest (
       suite,
       "/command_monitoring/operation_id/query/pooled/cmd",
+      "",
       test_query_operation_id_pooled_cmd);
-   TestSuite_AddLive (suite, "/command_monitoring/client_cmd", test_client_cmd);
    TestSuite_AddLive (
-      suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);
-   TestSuite_AddLive (
-      suite, "/command_monitoring/client_cmd/op_ids", test_client_cmd_op_ids);
+      suite, "/command_monitoring/client_cmd", "", test_client_cmd);
+   TestSuite_AddLive (suite,
+                      "/command_monitoring/client_cmd_simple",
+                      "",
+                      test_client_cmd_simple);
+   TestSuite_AddLive (suite,
+                      "/command_monitoring/client_cmd/op_ids",
+                      "",
+                      test_client_cmd_op_ids);
    TestSuite_AddFull (suite,
                       "/command_monitoring/killcursors_deprecated",
+                      "USES_LIVE_SERVER",
                       test_killcursors_deprecated,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddMockServerTest (suite,
                                 "/command_monitoring/failed_reply_mock",
+                                "",
                                 test_command_failed_reply_mock);
    TestSuite_AddMockServerTest (suite,
                                 "/command_monitoring/failed_reply_hangup",
+                                "",
                                 test_command_failed_reply_hangup);
    TestSuite_AddMockServerTest (suite,
                                 "/command_monitoring/service_id/loadbalanced",
+                                "",
                                 test_service_id_loadbalanced);
    TestSuite_AddMockServerTest (
       suite,
       "/command_monitoring/service_id/not_loadbalanced",
+      "",
       test_service_id_not_loadbalanced);
 }

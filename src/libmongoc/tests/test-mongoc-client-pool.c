@@ -475,39 +475,53 @@ test_client_pool_max_pool_size_exceeded (void)
 void
 test_client_pool_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
    TestSuite_Add (
-      suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
+      suite, "/ClientPool/basic", "", test_mongoc_client_pool_basic);
    TestSuite_Add (
-      suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
+      suite, "/ClientPool/try_pop", "", test_mongoc_client_pool_try_pop);
+   TestSuite_Add (suite,
+                  "/ClientPool/pop_timeout",
+                  "",
+                  test_mongoc_client_pool_pop_timeout);
    TestSuite_Add (suite,
                   "/ClientPool/min_size_zero",
+                  "",
                   test_mongoc_client_pool_min_size_zero);
    TestSuite_Add (suite,
                   "/ClientPool/min_size_dispose",
+                  "",
                   test_mongoc_client_pool_min_size_dispose);
-   TestSuite_Add (
-      suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
-   TestSuite_Add (
-      suite, "/ClientPool/set_min_size", test_mongoc_client_pool_set_min_size);
+   TestSuite_Add (suite,
+                  "/ClientPool/set_max_size",
+                  "",
+                  test_mongoc_client_pool_set_max_size);
+   TestSuite_Add (suite,
+                  "/ClientPool/set_min_size",
+                  "",
+                  test_mongoc_client_pool_set_min_size);
 
    TestSuite_Add (
-      suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
+      suite, "/ClientPool/handshake", "", test_mongoc_client_pool_handshake);
 
    TestSuite_AddFull (suite,
                       "/ClientPool/create_client_pool_unused_session",
+                      "USES_LIVE_SERVER",
                       test_client_pool_create_unused_session,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_sessions);
 #ifndef MONGOC_ENABLE_SSL
-   TestSuite_Add (
-      suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
+   TestSuite_Add (suite,
+                  "/ClientPool/ssl_disabled",
+                  "",
+                  test_mongoc_client_pool_ssl_disabled);
 #endif
    TestSuite_AddLive (suite,
                       "/ClientPool/destroy_without_push",
+                      "",
                       test_client_pool_destroy_without_pushing);
    TestSuite_AddLive (suite,
                       "/ClientPool/max_pool_size_exceeded",
+                      "",
                       test_client_pool_max_pool_size_exceeded);
 }

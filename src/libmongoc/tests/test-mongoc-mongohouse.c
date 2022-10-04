@@ -308,6 +308,7 @@ test_mongohouse_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/mongohouse/kill_cursors",
+                      "",
                       test_mongohouse_kill_cursors,
                       NULL,
                       NULL,
@@ -315,6 +316,7 @@ test_mongohouse_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/mongohouse/no_auth",
+                      "",
                       test_mongohouse_no_auth,
                       NULL,
                       NULL,
@@ -322,6 +324,7 @@ test_mongohouse_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/mongohouse/auth",
+                      "",
                       test_mongohouse_auth,
                       NULL,
                       NULL,

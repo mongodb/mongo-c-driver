@@ -308,19 +308,24 @@ test_bson_strcasecmp (void)
 void
 test_string_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/string/new", test_bson_string_new);
-   TestSuite_Add (suite, "/bson/string/append", test_bson_string_append);
-   TestSuite_Add (suite, "/bson/string/append_c", test_bson_string_append_c);
+   TestSuite_Add (suite, "/bson/string/new", "", test_bson_string_new);
+   TestSuite_Add (suite, "/bson/string/append", "", test_bson_string_append);
    TestSuite_Add (
-      suite, "/bson/string/append_printf", test_bson_string_append_printf);
+      suite, "/bson/string/append_c", "", test_bson_string_append_c);
    TestSuite_Add (
-      suite, "/bson/string/append_unichar", test_bson_string_append_unichar);
-   TestSuite_Add (suite, "/bson/string/strdup", test_bson_strdup);
-   TestSuite_Add (suite, "/bson/string/strdup_printf", test_bson_strdup_printf);
-   TestSuite_Add (suite, "/bson/string/strndup", test_bson_strndup);
-   TestSuite_Add (suite, "/bson/string/ascii_strtoll", test_bson_ascii_strtoll);
-   TestSuite_Add (suite, "/bson/string/strncpy", test_bson_strncpy);
-   TestSuite_Add (suite, "/bson/string/snprintf", test_bson_snprintf);
-   TestSuite_Add (suite, "/bson/string/strnlen", test_bson_strnlen);
-   TestSuite_Add (suite, "/bson/string/strcasecmp", test_bson_strcasecmp);
+      suite, "/bson/string/append_printf", "", test_bson_string_append_printf);
+   TestSuite_Add (suite,
+                  "/bson/string/append_unichar",
+                  "",
+                  test_bson_string_append_unichar);
+   TestSuite_Add (suite, "/bson/string/strdup", "", test_bson_strdup);
+   TestSuite_Add (
+      suite, "/bson/string/strdup_printf", "", test_bson_strdup_printf);
+   TestSuite_Add (suite, "/bson/string/strndup", "", test_bson_strndup);
+   TestSuite_Add (
+      suite, "/bson/string/ascii_strtoll", "", test_bson_ascii_strtoll);
+   TestSuite_Add (suite, "/bson/string/strncpy", "", test_bson_strncpy);
+   TestSuite_Add (suite, "/bson/string/snprintf", "", test_bson_snprintf);
+   TestSuite_Add (suite, "/bson/string/strnlen", "", test_bson_strnlen);
+   TestSuite_Add (suite, "/bson/string/strcasecmp", "", test_bson_strcasecmp);
 }

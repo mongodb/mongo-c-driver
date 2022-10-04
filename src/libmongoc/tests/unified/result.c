@@ -600,6 +600,8 @@ test_resultfrombulkwrite (void)
 void
 test_result_install (TestSuite *suite)
 {
-   TestSuite_Add (
-      suite, "/unified/result/resultfrombulkwrite", test_resultfrombulkwrite);
+   TestSuite_Add (suite,
+                  "/unified/result/resultfrombulkwrite",
+                  "",
+                  test_resultfrombulkwrite);
 }

@@ -132,6 +132,6 @@ test_value_decimal128 (void)
 void
 test_value_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/value/basic", test_value_basic);
-   TestSuite_Add (suite, "/bson/value/decimal128", test_value_decimal128);
+   TestSuite_Add (suite, "/bson/value/basic", "", test_value_basic);
+   TestSuite_Add (suite, "/bson/value/decimal128", "", test_value_decimal128);
 }

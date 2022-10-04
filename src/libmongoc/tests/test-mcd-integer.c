@@ -26,5 +26,5 @@ _test_overflow (void)
 void
 test_mcd_integer_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/integer/overflow", _test_overflow);
+   TestSuite_Add (suite, "/integer/overflow", "", _test_overflow);
 }

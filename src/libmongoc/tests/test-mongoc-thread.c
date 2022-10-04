@@ -37,6 +37,7 @@ test_thread_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/Thread/cond_wait",
+                      "",
                       test_cond_wait,
                       NULL /* dtor */,
                       NULL /* ctx */,

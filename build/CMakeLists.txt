@@ -7,6 +7,8 @@ set_local_dist (build_DIST_local
    generate-uninstall.cmd
    generate-uninstall.sh
    mongodl.py
+   proc_ctl.py
+   mdb-ctl.py
 )
 
 set (build_DIST

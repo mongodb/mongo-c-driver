@@ -192,8 +192,10 @@ test_streamable_hello_install (TestSuite *suite)
 {
    TestSuite_AddMockServerTest (suite,
                                 "/streamable/topology_version/update",
+                                "",
                                 test_topology_version_update);
    TestSuite_Add (suite,
                   "/streamable/topology_version/compare",
+                  "",
                   test_topology_version_compare);
 }

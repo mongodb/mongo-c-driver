@@ -226,15 +226,18 @@ test_explicit_read_concern (void)
 void
 test_read_concern_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/ReadConcern/append", test_read_concern_append);
-   TestSuite_Add (suite, "/ReadConcern/basic", test_read_concern_basic);
+   TestSuite_Add (suite, "/ReadConcern/append", "", test_read_concern_append);
+   TestSuite_Add (suite, "/ReadConcern/basic", "", test_read_concern_basic);
    TestSuite_Add (suite,
                   "/ReadConcern/bson_omits_defaults",
+                  "",
                   test_read_concern_bson_omits_defaults);
-   TestSuite_Add (
-      suite, "/ReadConcern/always_mutable", test_read_concern_always_mutable);
+   TestSuite_Add (suite,
+                  "/ReadConcern/always_mutable",
+                  "",
+                  test_read_concern_always_mutable);
    TestSuite_AddMockServerTest (
-      suite, "/ReadConcern/inherited", test_inherited_read_concern);
+      suite, "/ReadConcern/inherited", "", test_inherited_read_concern);
    TestSuite_AddMockServerTest (
-      suite, "/ReadConcern/explicit", test_explicit_read_concern);
+      suite, "/ReadConcern/explicit", "", test_explicit_read_concern);
 }

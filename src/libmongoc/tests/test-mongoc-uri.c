@@ -2743,35 +2743,40 @@ test_casing_options (void)
 void
 test_uri_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Uri/new", test_mongoc_uri_new);
-   TestSuite_Add (suite, "/Uri/new_with_error", test_mongoc_uri_new_with_error);
+   TestSuite_Add (suite, "/Uri/new", "", test_mongoc_uri_new);
    TestSuite_Add (
-      suite, "/Uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
-   TestSuite_Add (suite, "/Uri/compressors", test_mongoc_uri_compressors);
-   TestSuite_Add (suite, "/Uri/unescape", test_mongoc_uri_unescape);
-   TestSuite_Add (suite, "/Uri/read_prefs", test_mongoc_uri_read_prefs);
-   TestSuite_Add (suite, "/Uri/read_concern", test_mongoc_uri_read_concern);
-   TestSuite_Add (suite, "/Uri/write_concern", test_mongoc_uri_write_concern);
+      suite, "/Uri/new_with_error", "", test_mongoc_uri_new_with_error);
    TestSuite_Add (
-      suite, "/HostList/from_string", test_mongoc_host_list_from_string);
+      suite, "/Uri/new_for_host_port", "", test_mongoc_uri_new_for_host_port);
+   TestSuite_Add (suite, "/Uri/compressors", "", test_mongoc_uri_compressors);
+   TestSuite_Add (suite, "/Uri/unescape", "", test_mongoc_uri_unescape);
+   TestSuite_Add (suite, "/Uri/read_prefs", "", test_mongoc_uri_read_prefs);
+   TestSuite_Add (suite, "/Uri/read_concern", "", test_mongoc_uri_read_concern);
+   TestSuite_Add (
+      suite, "/Uri/write_concern", "", test_mongoc_uri_write_concern);
+   TestSuite_Add (
+      suite, "/HostList/from_string", "", test_mongoc_host_list_from_string);
    TestSuite_Add (suite,
                   "/Uri/auth_mechanism_properties",
+                  "",
                   test_mongoc_uri_authmechanismproperties);
-   TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);
-   TestSuite_Add (suite, "/Uri/ssl", test_mongoc_uri_ssl);
-   TestSuite_Add (suite, "/Uri/tls", test_mongoc_uri_tls);
+   TestSuite_Add (suite, "/Uri/functions", "", test_mongoc_uri_functions);
+   TestSuite_Add (suite, "/Uri/ssl", "", test_mongoc_uri_ssl);
+   TestSuite_Add (suite, "/Uri/tls", "", test_mongoc_uri_tls);
    TestSuite_Add (
-      suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
-   TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);
+      suite, "/Uri/compound_setters", "", test_mongoc_uri_compound_setters);
    TestSuite_Add (
-      suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
-   TestSuite_Add (suite, "/Uri/srv", test_mongoc_uri_srv);
-   TestSuite_Add (suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
-   TestSuite_Add (suite, "/Uri/utf8", test_mongoc_uri_utf8);
-   TestSuite_Add (suite, "/Uri/duplicates", test_mongoc_uri_duplicates);
-   TestSuite_Add (suite, "/Uri/int_options", test_mongoc_uri_int_options);
+      suite, "/Uri/long_hostname", "", test_mongoc_uri_long_hostname);
+   TestSuite_Add (
+      suite, "/Uri/local_threshold_ms", "", test_mongoc_uri_local_threshold_ms);
+   TestSuite_Add (suite, "/Uri/srv", "", test_mongoc_uri_srv);
+   TestSuite_Add (suite, "/Uri/dns_options", "", test_mongoc_uri_dns_options);
+   TestSuite_Add (suite, "/Uri/utf8", "", test_mongoc_uri_utf8);
+   TestSuite_Add (suite, "/Uri/duplicates", "", test_mongoc_uri_duplicates);
+   TestSuite_Add (suite, "/Uri/int_options", "", test_mongoc_uri_int_options);
    TestSuite_Add (suite,
                   "/Uri/one_tls_option_enables_tls",
+                  "",
                   test_one_tls_option_enables_tls);
-   TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
+   TestSuite_Add (suite, "/Uri/options_casing", "", test_casing_options);
 }

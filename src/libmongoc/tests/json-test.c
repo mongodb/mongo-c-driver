@@ -2121,6 +2121,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
       va_start (ap, callback);
       _V_TestSuite_AddFull (suite,
                             skip_json,
+                            "LABELS json-test USES_LIVE_SERVER",
                             (void (*) (void *)) callback,
                             (void (*) (void *)) bson_destroy,
                             test,

@@ -254,15 +254,15 @@ test_bson_utf8_non_shortest (void)
 void
 test_utf8_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/utf8/validate", test_bson_utf8_validate);
-   TestSuite_Add (suite, "/bson/utf8/invalid", test_bson_utf8_invalid);
-   TestSuite_Add (suite, "/bson/utf8/nil", test_bson_utf8_nil);
+   TestSuite_Add (suite, "/bson/utf8/validate", "", test_bson_utf8_validate);
+   TestSuite_Add (suite, "/bson/utf8/invalid", "", test_bson_utf8_invalid);
+   TestSuite_Add (suite, "/bson/utf8/nil", "", test_bson_utf8_nil);
    TestSuite_Add (
-      suite, "/bson/utf8/escape_for_json", test_bson_utf8_escape_for_json);
+      suite, "/bson/utf8/escape_for_json", "", test_bson_utf8_escape_for_json);
    TestSuite_Add (
-      suite, "/bson/utf8/get_char_next_char", test_bson_utf8_get_char);
+      suite, "/bson/utf8/get_char_next_char", "", test_bson_utf8_get_char);
    TestSuite_Add (
-      suite, "/bson/utf8/from_unichar", test_bson_utf8_from_unichar);
+      suite, "/bson/utf8/from_unichar", "", test_bson_utf8_from_unichar);
    TestSuite_Add (
-      suite, "/bson/utf8/non_shortest", test_bson_utf8_non_shortest);
+      suite, "/bson/utf8/non_shortest", "", test_bson_utf8_non_shortest);
 }

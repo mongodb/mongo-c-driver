@@ -90,10 +90,11 @@ void
 test_x509_install (TestSuite *suite)
 {
 #if defined(MONGOC_ENABLE_SSL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   TestSuite_Add (suite, "/X509/extract_subject", test_extract_subject);
+   TestSuite_Add (suite, "/X509/extract_subject", "", test_extract_subject);
 #endif
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
-   TestSuite_Add (suite, "/X509/tlsfeature_parsing", test_tlsfeature_parsing);
+   TestSuite_Add (
+      suite, "/X509/tlsfeature_parsing", "", test_tlsfeature_parsing);
 #endif
 }

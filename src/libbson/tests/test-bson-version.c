@@ -20,5 +20,5 @@ test_bson_version (void)
 void
 test_bson_version_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/version", test_bson_version);
+   TestSuite_Add (suite, "/bson/version", "", test_bson_version);
 }

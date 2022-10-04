@@ -553,14 +553,14 @@ END_IGNORE_DEPRECATIONS
 void
 test_matcher_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Matcher/basic", test_mongoc_matcher_basic);
-   TestSuite_Add (suite, "/Matcher/array", test_mongoc_matcher_array);
-   TestSuite_Add (suite, "/Matcher/compare", test_mongoc_matcher_compare);
-   TestSuite_Add (suite, "/Matcher/logic", test_mongoc_matcher_logic_ops);
-   TestSuite_Add (suite, "/Matcher/bad_spec", test_mongoc_matcher_bad_spec);
-   TestSuite_Add (suite, "/Matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
-   TestSuite_Add (suite, "/Matcher/eq/int32", test_mongoc_matcher_eq_int32);
-   TestSuite_Add (suite, "/Matcher/eq/int64", test_mongoc_matcher_eq_int64);
-   TestSuite_Add (suite, "/Matcher/eq/doc", test_mongoc_matcher_eq_doc);
-   TestSuite_Add (suite, "/Matcher/in/basic", test_mongoc_matcher_in_basic);
+   TestSuite_Add (suite, "/Matcher/basic", "", test_mongoc_matcher_basic);
+   TestSuite_Add (suite, "/Matcher/array", "", test_mongoc_matcher_array);
+   TestSuite_Add (suite, "/Matcher/compare", "", test_mongoc_matcher_compare);
+   TestSuite_Add (suite, "/Matcher/logic", "", test_mongoc_matcher_logic_ops);
+   TestSuite_Add (suite, "/Matcher/bad_spec", "", test_mongoc_matcher_bad_spec);
+   TestSuite_Add (suite, "/Matcher/eq/utf8", "", test_mongoc_matcher_eq_utf8);
+   TestSuite_Add (suite, "/Matcher/eq/int32", "", test_mongoc_matcher_eq_int32);
+   TestSuite_Add (suite, "/Matcher/eq/int64", "", test_mongoc_matcher_eq_int64);
+   TestSuite_Add (suite, "/Matcher/eq/doc", "", test_mongoc_matcher_eq_doc);
+   TestSuite_Add (suite, "/Matcher/in/basic", "", test_mongoc_matcher_in_basic);
 }

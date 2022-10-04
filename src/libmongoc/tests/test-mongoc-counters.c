@@ -489,6 +489,7 @@ test_counters_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    TestSuite_AddFull (suite,
                       "/counters/op_msg",
+                      "USES_LIVE_SERVER",
                       test_counters_op_msg,
                       NULL,
                       NULL,
@@ -496,28 +497,31 @@ test_counters_install (TestSuite *suite)
                       test_framework_skip_if_compressors);
    TestSuite_AddFull (suite,
                       "/counters/op_compressed",
+                      "USES_LIVE_SERVER",
                       test_counters_op_compressed,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_compressors,
                       test_framework_skip_if_auth);
-   TestSuite_AddLive (suite, "/counters/cursors", test_counters_cursors);
-   TestSuite_AddLive (suite, "/counters/clients", test_counters_clients);
+   TestSuite_AddLive (suite, "/counters/cursors", "", test_counters_cursors);
+   TestSuite_AddLive (suite, "/counters/clients", "", test_counters_clients);
    TestSuite_AddFull (suite,
                       "/counters/streams",
+                      "USES_LIVE_SERVER",
                       test_counters_streams,
                       NULL,
                       NULL,
                       TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/counters/auth",
+                      "USES_LIVE_SERVER",
                       test_counters_auth,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth,
                       test_framework_skip_if_not_single);
-   TestSuite_AddLive (suite, "/counters/dns", test_counters_dns);
+   TestSuite_AddLive (suite, "/counters/dns", "", test_counters_dns);
    TestSuite_AddMockServerTest (
-      suite, "/counters/streams_timeout", test_counters_streams_timeout);
+      suite, "/counters/streams_timeout", "", test_counters_streams_timeout);
 #endif
 }

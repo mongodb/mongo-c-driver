@@ -129,8 +129,8 @@ test_thrd_yield (void)
 void
 test_atomic_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/atomic/integers", test_integers);
-   TestSuite_Add (suite, "/atomic/pointers", test_pointers);
-   TestSuite_Add (suite, "/atomic/thread_fence", test_thread_fence);
-   TestSuite_Add (suite, "/atomic/thread_yield", test_thrd_yield);
+   TestSuite_Add (suite, "/atomic/integers", "", test_integers);
+   TestSuite_Add (suite, "/atomic/pointers", "", test_pointers);
+   TestSuite_Add (suite, "/atomic/thread_fence", "", test_thread_fence);
+   TestSuite_Add (suite, "/atomic/thread_yield", "", test_thrd_yield);
 }

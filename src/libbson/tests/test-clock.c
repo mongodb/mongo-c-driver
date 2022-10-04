@@ -21,5 +21,5 @@ void
 test_clock_install (TestSuite *suite)
 {
    TestSuite_Add (
-      suite, "/bson/clock/get_monotonic_time", test_get_monotonic_time);
+      suite, "/bson/clock/get_monotonic_time", "", test_get_monotonic_time);
 }

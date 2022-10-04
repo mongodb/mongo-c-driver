@@ -56,6 +56,7 @@ static TestSuite *gTestSuite;
 #define TEST_TRACE (1 << 4)
 #define TEST_VALGRIND (1 << 5)
 #define TEST_LISTTESTS (1 << 6)
+#define TEST_LISTTESTS_WITHMETA (1 << 7)
 
 MONGOC_PRINTF_FORMAT (1, 2)
 static void
@@ -169,6 +170,8 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          suite->flags |= TEST_HELPTEXT;
       } else if (0 == strcmp ("--list-tests", argv[i])) {
          suite->flags |= TEST_LISTTESTS;
+      } else if (0 == strcmp ("--include-meta", argv[i])) {
+         suite->flags |= TEST_LISTTESTS_WITHMETA;
       } else if ((0 == strcmp ("-s", argv[i])) ||
                  (0 == strcmp ("--silent", argv[i]))) {
          suite->silent = true;
@@ -276,20 +279,24 @@ TestSuite_AddHelper (void *ctx)
 void
 TestSuite_Add (TestSuite *suite, /* IN */
                const char *name, /* IN */
+               const char *meta, /* IN */
                TestFunc func)    /* IN */
 {
    TestSuite_AddFullWithTestFn (
-      suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
+      suite, name, meta, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
 }
 
 
 void
 TestSuite_AddLive (TestSuite *suite, /* IN */
-                   const char *name, /* IN */
+                   const char *name,
+                   const char *meta, /* IN */
                    TestFunc func)    /* IN */
 {
+   char *meta1 = bson_strdup_printf ("%s%s", meta, " USES_LIVE_SERVER");
    TestSuite_AddFullWithTestFn (
-      suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
+      suite, name, meta1, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
+   bson_free (meta1);
 }
 
 
@@ -311,6 +318,7 @@ _TestSuite_AddCheck (Test *test, CheckFunc check, const char *name)
 Test *
 _V_TestSuite_AddFull (TestSuite *suite,
                       const char *name,
+                      const char *meta,
                       TestFuncWC func,
                       TestFuncDtor dtor,
                       void *ctx,
@@ -330,6 +338,7 @@ _V_TestSuite_AddFull (TestSuite *suite,
    test = (Test *) calloc (1, sizeof *test);
    test->name = bson_strdup (name);
    test->func = func;
+   test->meta = bson_strdup (meta);
    test->num_checks = 0;
 
    while ((check = va_arg (ap, CheckFunc))) {
@@ -355,38 +364,42 @@ _V_TestSuite_AddFull (TestSuite *suite,
 
 
 void
-_TestSuite_AddMockServerTest (TestSuite *suite,
-                              const char *name,
-                              TestFunc func,
-                              ...)
+_TestSuite_AddMockServerTest (
+   TestSuite *suite, const char *name, const char *meta, TestFunc func, ...)
 {
    Test *test;
    va_list ap;
 
+   char *meta1 = bson_strdup_printf ("%s%s", meta, " LABELS uses-mock-server");
+
    va_start (ap, func);
-   test = _V_TestSuite_AddFull (suite, name, (TestFuncWC) func, NULL, NULL, ap);
+   test = _V_TestSuite_AddFull (
+      suite, name, meta1, (TestFuncWC) func, NULL, NULL, ap);
    va_end (ap);
 
    if (test) {
       _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
    }
+   bson_free (meta1);
 }
 
 
 void
 TestSuite_AddWC (TestSuite *suite,  /* IN */
                  const char *name,  /* IN */
+                 const char *meta,  /* IN */
                  TestFuncWC func,   /* IN */
                  TestFuncDtor dtor, /* IN */
                  void *ctx)         /* IN */
 {
-   TestSuite_AddFull (suite, name, func, dtor, ctx, TestSuite_CheckDummy);
+   TestSuite_AddFull (suite, name, meta, func, dtor, ctx, TestSuite_CheckDummy);
 }
 
 
 void
 _TestSuite_AddFull (TestSuite *suite,  /* IN */
                     const char *name,  /* IN */
+                    const char *meta,  /* IN */
                     TestFuncWC func,   /* IN */
                     TestFuncDtor dtor, /* IN */
                     void *ctx,
@@ -395,7 +408,7 @@ _TestSuite_AddFull (TestSuite *suite,  /* IN */
    va_list ap;
 
    va_start (ap, ctx);
-   _V_TestSuite_AddFull (suite, name, func, dtor, ctx, ap);
+   _V_TestSuite_AddFull (suite, name, meta, func, dtor, ctx, ap);
    va_end (ap);
 }
 
@@ -753,7 +766,12 @@ TestSuite_PrintTests (TestSuite *suite) /* IN */
 
    printf ("\nTests:\n");
    for (iter = suite->tests; iter; iter = iter->next) {
-      printf ("%s%s\n", suite->name, iter->name);
+      if (suite->flags & TEST_LISTTESTS_WITHMETA) {
+         printf (
+            "%s%s %s\n", suite->name, iter->name, iter->meta ? iter->meta : "");
+      } else {
+         printf ("%s%s\n", suite->name, iter->name);
+      }
    }
 
    printf ("\n");
@@ -1182,6 +1200,7 @@ TestSuite_Destroy (TestSuite *suite)
          test->dtor (test->ctx);
       }
       free (test->name);
+      free (test->meta);
       free (test);
    }
 

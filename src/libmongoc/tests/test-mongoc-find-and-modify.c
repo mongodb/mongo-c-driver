@@ -551,30 +551,35 @@ void
 test_find_and_modify_install (TestSuite *suite)
 {
    TestSuite_AddLive (
-      suite, "/find_and_modify/find_and_modify", test_find_and_modify);
+      suite, "/find_and_modify/find_and_modify", "", test_find_and_modify);
    TestSuite_AddMockServerTest (suite,
                                 "/find_and_modify/find_and_modify/bypass/true",
+                                "",
                                 test_find_and_modify_bypass_true);
    TestSuite_AddMockServerTest (suite,
                                 "/find_and_modify/find_and_modify/bypass/false",
+                                "",
                                 test_find_and_modify_bypass_false);
    TestSuite_AddMockServerTest (
       suite,
       "/find_and_modify/find_and_modify/write_concern",
+      "",
       test_find_and_modify_write_concern);
    TestSuite_AddFull (suite,
                       "/find_and_modify/find_and_modify/write_concern_failure",
+                      "USES_LIVE_SERVER",
                       test_find_and_modify_write_concern_failure,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (
-      suite, "/find_and_modify/opts", test_find_and_modify_opts);
+      suite, "/find_and_modify/opts", "", test_find_and_modify_opts);
    TestSuite_AddMockServerTest (suite,
                                 "/find_and_modify/opts/write_concern",
+                                "",
                                 test_find_and_modify_opts_write_concern);
    TestSuite_AddMockServerTest (
-      suite, "/find_and_modify/collation", test_find_and_modify_collation);
+      suite, "/find_and_modify/collation", "", test_find_and_modify_collation);
    TestSuite_AddLive (
-      suite, "/find_and_modify/hint", test_find_and_modify_hint);
+      suite, "/find_and_modify/hint", "", test_find_and_modify_hint);
 }

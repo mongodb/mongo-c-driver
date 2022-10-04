@@ -101,6 +101,8 @@ test_mongos_hedged_reads_read_pref (void)
 void
 test_client_hedged_reads_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (
-      suite, "/Client/hedged_reads/mongos", test_mongos_hedged_reads_read_pref);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/hedged_reads/mongos",
+                                "",
+                                test_mongos_hedged_reads_read_pref);
 }

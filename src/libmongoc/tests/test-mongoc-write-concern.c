@@ -718,38 +718,51 @@ test_fam_session_txn (void *unused)
 void
 test_write_concern_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/WriteConcern/append", test_write_concern_append);
-   TestSuite_Add (suite, "/WriteConcern/basic", test_write_concern_basic);
+   TestSuite_Add (suite, "/WriteConcern/append", "", test_write_concern_append);
+   TestSuite_Add (suite, "/WriteConcern/basic", "", test_write_concern_basic);
    TestSuite_Add (suite,
                   "/WriteConcern/bson_omits_defaults",
+                  "",
                   test_write_concern_bson_omits_defaults);
    TestSuite_Add (suite,
                   "/WriteConcern/bson_includes_false_fsync_and_journal",
+                  "",
                   test_write_concern_bson_includes_false_fsync_and_journal);
    TestSuite_Add (suite,
                   "/WriteConcern/fsync_and_journal_gle_and_validity",
+                  "",
                   test_write_concern_fsync_and_journal_w1_and_validity);
    TestSuite_Add (suite,
                   "/WriteConcern/wtimeout_validity",
+                  "",
                   test_write_concern_wtimeout_validity);
-   TestSuite_Add (
-      suite, "/WriteConcern/from_iterator", test_write_concern_from_iterator);
-   TestSuite_Add (
-      suite, "/WriteConcern/always_mutable", test_write_concern_always_mutable);
+   TestSuite_Add (suite,
+                  "/WriteConcern/from_iterator",
+                  "",
+                  test_write_concern_from_iterator);
+   TestSuite_Add (suite,
+                  "/WriteConcern/always_mutable",
+                  "",
+                  test_write_concern_always_mutable);
    TestSuite_Add (suite,
                   "/WriteConcern/wtimeout_preserved",
+                  "",
                   test_write_concern_wtimeout_preserved);
-   TestSuite_AddMockServerTest (suite, "/WriteConcern", test_write_concern);
-   TestSuite_AddLive (
-      suite, "/WriteConcern/unacknowledged", test_write_concern_unacknowledged);
+   TestSuite_AddMockServerTest (suite, "/WriteConcern", "", test_write_concern);
+   TestSuite_AddLive (suite,
+                      "/WriteConcern/unacknowledged",
+                      "",
+                      test_write_concern_unacknowledged);
    TestSuite_AddFull (suite,
                       "/WriteConcern/inherited_fam",
+                      "USES_LIVE_SERVER",
                       test_fam_no_session_no_txn,
                       NULL,
                       NULL,
                       TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/WriteConcern/inherited_fam_session_no_txn",
+                      "USES_LIVE_SERVER",
                       test_fam_session_no_txn,
                       NULL,
                       NULL,
@@ -757,6 +770,7 @@ test_write_concern_install (TestSuite *suite)
                       test_framework_skip_if_no_txns);
    TestSuite_AddFull (suite,
                       "/WriteConcern/inherited_fam_txn",
+                      "USES_LIVE_SERVER",
                       test_fam_session_txn,
                       NULL,
                       NULL,

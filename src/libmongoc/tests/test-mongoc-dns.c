@@ -1252,12 +1252,14 @@ test_dns_install (TestSuite *suite)
    test_all_spec_tests (suite);
    TestSuite_AddFull (suite,
                       "/initial_dns_seedlist_discovery/srv_polling/mocked",
+                      "",
                       test_srv_polling_mocked,
                       NULL,
                       NULL,
                       NULL);
    TestSuite_AddFull (suite,
                       "/initial_dns_seedlist_discovery/small_initial_buffer",
+                      "",
                       test_small_initial_buffer,
                       NULL,
                       NULL,
@@ -1270,6 +1272,7 @@ test_dns_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/single",
+      "",
       prose_test_9_single,
       NULL,
       NULL,
@@ -1278,6 +1281,7 @@ test_dns_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/pooled",
+      "",
       prose_test_9_pooled,
       NULL,
       NULL,
@@ -1286,6 +1290,7 @@ test_dns_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/single",
+      "",
       prose_test_10_single,
       NULL,
       NULL,
@@ -1294,6 +1299,7 @@ test_dns_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/pooled",
+      "",
       prose_test_10_pooled,
       NULL,
       NULL,
@@ -1302,6 +1308,7 @@ test_dns_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/single",
+      "",
       prose_test_11_single,
       NULL,
       NULL,
@@ -1310,6 +1317,7 @@ test_dns_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/pooled",
+      "",
       prose_test_11_pooled,
       NULL,
       NULL,
@@ -1318,6 +1326,7 @@ test_dns_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/single",
+      "",
       prose_test_12_single,
       NULL,
       NULL,
@@ -1326,6 +1335,7 @@ test_dns_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/pooled",
+      "",
       prose_test_12_pooled,
       NULL,
       NULL,

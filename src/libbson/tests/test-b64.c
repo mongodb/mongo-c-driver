@@ -141,6 +141,6 @@ test_bson_b64_decode (void)
 void
 test_b64_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/b64/encode", test_bson_b64_encode);
-   TestSuite_Add (suite, "/bson/b64/decode", test_bson_b64_decode);
+   TestSuite_Add (suite, "/bson/b64/encode", "", test_bson_b64_encode);
+   TestSuite_Add (suite, "/bson/b64/decode", "", test_bson_b64_decode);
 }

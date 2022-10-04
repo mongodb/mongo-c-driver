@@ -241,15 +241,15 @@ void
 test_error_install (TestSuite *suite)
 {
    TestSuite_AddLive (
-      suite, "/Error/set_api/single", test_set_error_api_single);
+      suite, "/Error/set_api/single", "", test_set_error_api_single);
    TestSuite_AddLive (
-      suite, "/Error/set_api/pooled", test_set_error_api_pooled);
+      suite, "/Error/set_api/pooled", "", test_set_error_api_pooled);
    TestSuite_AddMockServerTest (
-      suite, "/Error/command/default", test_command_error_default);
+      suite, "/Error/command/default", "", test_command_error_default);
    TestSuite_AddMockServerTest (
-      suite, "/Error/command/v1", test_command_error_v1);
+      suite, "/Error/command/v1", "", test_command_error_v1);
    TestSuite_AddMockServerTest (
-      suite, "/Error/command/v2", test_command_error_v2);
-   TestSuite_Add (suite, "/Error/has_label", test_has_label);
-   TestSuite_Add (suite, "/Error/state_change", test_state_change);
+      suite, "/Error/command/v2", "", test_command_error_v2);
+   TestSuite_Add (suite, "/Error/has_label", "", test_has_label);
+   TestSuite_Add (suite, "/Error/state_change", "", test_state_change);
 }

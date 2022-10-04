@@ -494,6 +494,7 @@ test_primary_stepdown_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/Stepdown/getmore",
+                      "USES_LIVE_SERVER",
                       test_getmore_iteration_runner,
                       NULL,
                       NULL,
@@ -502,6 +503,7 @@ test_primary_stepdown_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/Stepdown/not_primary_keep",
+                      "USES_LIVE_SERVER",
                       test_not_primary_keep_pool_runner,
                       NULL,
                       NULL,
@@ -510,6 +512,7 @@ test_primary_stepdown_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/Stepdown/not_primary_reset",
+                      "USES_LIVE_SERVER",
                       test_not_primary_reset_pool_runner,
                       NULL,
                       NULL,
@@ -518,6 +521,7 @@ test_primary_stepdown_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/Stepdown/shutdown_reset_pool",
+                      "USES_LIVE_SERVER",
                       test_shutdown_reset_pool_runner,
                       NULL,
                       NULL,
@@ -526,6 +530,7 @@ test_primary_stepdown_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/Stepdown/interrupt_shutdown",
+                      "USES_LIVE_SERVER",
                       test_interrupted_shutdown_reset_pool_runner,
                       NULL,
                       NULL,

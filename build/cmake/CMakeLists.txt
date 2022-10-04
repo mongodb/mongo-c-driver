@@ -2,6 +2,7 @@ add_subdirectory (make_dist)
 
 set (build_cmake_MODULES
    CheckSchedGetCPU.cmake
+   FindMongoDB.cmake
    FindResSearch.cmake
    FindSASL2.cmake
    FindSnappy.cmake
@@ -15,7 +16,9 @@ set (build_cmake_MODULES
    Sanitizers.cmake
    CCache.cmake
    LLDLinker.cmake
+   QuickFixtures.cmake
    TestFixtures.cmake
+   TweakMeServerFixtures.cmake
 )
 
 set_local_dist (build_cmake_DIST_local
