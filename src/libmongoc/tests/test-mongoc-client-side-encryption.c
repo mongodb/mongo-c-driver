@@ -5365,6 +5365,45 @@ _not_have_aws_creds_env (void *unused)
    return !_have_aws_creds_env (unused);
 }
 
+// Test calling mongoc_collection_drop with a NULL bson_error_t when the state
+// collections do not exist. This is a regression test for CDRIVER-4457.
+static void
+test_drop_qe_null_error (void *unused)
+{
+   bson_error_t error;
+   mongoc_client_t *const client = test_framework_new_default_client ();
+   bson_t *const kmsProviders =
+      _make_kms_providers (false /* with aws */, true /* with local */);
+   bson_t *encryptedFieldsMap;
+   mongoc_client_t *encryptedClient;
+   mongoc_auto_encryption_opts_t *aeOpts;
+   mongoc_collection_t *coll;
+
+   BSON_UNUSED (unused);
+
+   /* Create an encryptedFieldsMap. */
+   encryptedFieldsMap = BCON_NEW ("db.encrypted", "{", "fields", "[", "]", "}");
+   encryptedClient = test_framework_new_default_client ();
+   aeOpts = mongoc_auto_encryption_opts_new ();
+   mongoc_auto_encryption_opts_set_kms_providers (aeOpts, kmsProviders);
+   mongoc_auto_encryption_opts_set_keyvault_namespace (
+      aeOpts, "keyvault", "datakeys");
+   mongoc_auto_encryption_opts_set_encrypted_fields_map (aeOpts,
+                                                         encryptedFieldsMap);
+   ASSERT_OR_PRINT (
+      mongoc_client_enable_auto_encryption (encryptedClient, aeOpts, &error),
+      error);
+   coll = mongoc_client_get_collection (encryptedClient, "db", "encrypted");
+   ASSERT (mongoc_collection_drop (coll, NULL));
+
+   mongoc_collection_destroy (coll);
+   mongoc_auto_encryption_opts_destroy (aeOpts);
+   mongoc_client_destroy (encryptedClient);
+   bson_destroy (encryptedFieldsMap);
+   bson_destroy (kmsProviders);
+   mongoc_client_destroy (client);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -5657,4 +5696,12 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8,
                       _have_aws_creds_env);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/drop_qe_null_error",
+                      test_drop_qe_null_error,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
 }
