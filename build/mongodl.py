@@ -29,6 +29,7 @@ DISTRO_ID_MAP = {
     'fedora': 'rhel',
     'centos': 'rhel',
     'mint': 'ubuntu',
+    'linuxmint': 'ubuntu',
     'opensuse-leap': 'sles',
     'opensuse': 'sles',
     'redhat': 'rhel',
@@ -45,6 +46,17 @@ DISTRO_VERSION_MAP = {
         '34': '8',
         '35': '8',
         '36': '8'
+    },
+    'linuxmint': {
+        '19': '18.04',
+        '19.1': '18.04',
+        '19.2': '18.04',
+        '19.3': '18.04',
+        '20': '20.04',
+        '20.1': '20.04',
+        '20.2': '20.04',
+        '20.3': '20.04',
+        '21': '22.04'
     },
 }
 
