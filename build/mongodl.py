@@ -118,7 +118,7 @@ def _infer_target_os_rel():
         print('Mapping distro "{}" to "{}"'.format(os_id, mapped_id))
         ver_mapper = DISTRO_VERSION_MAP.get(os_id)
         if ver_mapper:
-            mapped_version = ver_mapper[ver_id]
+            mapped_version = ver_mapper.get(ver_id, ver_id)
             print('Mapping version "{}" to "{}"'.format(
                 ver_id, mapped_version))
             ver_id = mapped_version
