@@ -23,6 +23,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 
+#include <bson/bson-dsl.h>
 
 /*--------------------------------------------------------------------------
  *
@@ -92,53 +93,81 @@ _make_agg_cmd (const char *ns,
                bson_t *command,
                bson_error_t *err)
 {
-   const char *dot;
-   bson_iter_t iter;
-   bson_t child;
-   bool has_write_key;
-   bson_iter_t has_write_key_iter;
+   const char *const dot = strstr (ns, ".");
+   const char *error = NULL;
+   const char *error_hint = "";
 
-   bson_init (command);
-
-   dot = strstr (ns, ".");
-
-   if (dot) {
-      /* Note: we're not validating that the collection name's length is one or
-       * more characters, as functions such as mongoc_client_get_collection also
-       * do not validate. */
-      BSON_APPEND_UTF8 (command, "aggregate", dot + 1);
-   } else {
-      BSON_APPEND_INT32 (command, "aggregate", 1);
+   bsonBuild (
+      *command,
+      kv ("aggregate",
+          if (dot,
+              /* Note: we're not validating that the collection name's length is
+                 one or more characters, as functions such as
+                 mongoc_client_get_collection also do not validate. */
+              // If 'ns' contains a dot, insert the string after the dot:
+              then (cstr (dot + 1)),
+              // Otherwise just an integer 1:
+              else(int32 (1)))));
+   if ((error_hint = "append-aggregate", error = bsonBuildError)) {
+      goto fail;
    }
 
    /*
     * The following will allow @pipeline to be either an array of
     * items for the pipeline, or {"pipeline": [...]}.
     */
-   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
-       BSON_ITER_HOLDS_ARRAY (&iter)) {
-      bson_iter_recurse (&iter, &has_write_key_iter);
-      if (!bson_append_iter (command, "pipeline", 8, &iter)) {
-         bson_set_error (err,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Failed to append \"pipeline\" to create command.");
-         return false;
-      }
-   } else {
-      BSON_APPEND_ARRAY (command, "pipeline", pipeline);
-      bson_iter_init (&has_write_key_iter, pipeline);
+   bsonParse (
+      *pipeline,
+      find (keyWithType ("pipeline", array),
+            // There is a "pipeline" array in the document
+            append (*command, kv ("pipeline", iterValue (bsonVisitIter)))),
+      else( // We did not find a "pipeline" array. copy the pipeline as
+            // an array into the command
+         append (*command, kv ("pipeline", array (insert (*pipeline, true))))));
+   if ((error_hint = "append-pipeline", error = bsonParseError)) {
+      goto fail;
    }
 
-   has_write_key = _has_write_key (&has_write_key_iter);
-   bson_append_document_begin (command, "cursor", 6, &child);
-   /* Ignore batchSize=0 for aggregates with $out or $merge */
-   if (opts->batchSize_is_set && !(has_write_key && opts->batchSize == 0)) {
-      BSON_APPEND_INT32 (&child, "batchSize", opts->batchSize);
+   // Check if there is a $merge or $out in the pipeline for the command
+   bool has_write_key = false;
+   bsonParse (*command,
+              find (
+                 // Find the "pipeline" array
+                 keyWithType ("pipeline", array),
+                 parse (
+                    // Find the last element of the pipeline array
+                    find (lastElement,
+                          // If it has an "$out" or "$merge" key, it is a
+                          // writing aggregate command.
+                          parse (find (key ("$out", "$merge"),
+                                       do(has_write_key = true)))))));
+   if ((error_hint = "parse-pipeline", error = bsonParseError)) {
+      goto fail;
    }
 
-   bson_append_document_end (command, &child);
+   bsonBuildAppend (
+      *command,
+      kv ("cursor",
+          // If batchSize is set, and if we are not a writing command with zero
+          // batchSize, append 'batchSize' to the cursor, otherwise leave the
+          // 'cursor' as an empty subdocument.
+          doc (if (opts->batchSize_is_set &&
+                      !(has_write_key && opts->batchSize == 0),
+                   then (kv ("batchSize", int32 (opts->batchSize)))))));
+   if ((error_hint = "build-cursor", error = bsonBuildError)) {
+      goto fail;
+   }
+
    return true;
+
+fail:
+   bson_set_error (err,
+                   MONGOC_ERROR_COMMAND,
+                   MONGOC_ERROR_COMMAND_INVALID_ARG,
+                   "Error while building aggregate command [%s]: %s",
+                   error_hint,
+                   error);
+   return false;
 }
 
 

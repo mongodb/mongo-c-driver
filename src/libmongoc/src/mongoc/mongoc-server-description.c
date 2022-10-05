@@ -25,6 +25,8 @@
 #include "mongoc-util-private.h"
 #include "mongoc-compression-private.h"
 
+#include <bson/bson-dsl.h>
+
 #include <stdio.h>
 
 #define ALPHA 0.2
@@ -572,11 +574,8 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
    }
 
    bson_destroy (&sd->last_hello_response);
-   bson_init (&sd->last_hello_response);
-   bson_copy_to_excluding_noinit (hello_response,
-                                  &sd->last_hello_response,
-                                  "speculativeAuthenticate",
-                                  NULL);
+   bsonBuild (sd->last_hello_response,
+              insert (*hello_response, not(key ("speculativeAuthenticate"))));
    sd->has_hello_response = true;
 
    /* Only reinitialize the topology version if we have a hello response.
