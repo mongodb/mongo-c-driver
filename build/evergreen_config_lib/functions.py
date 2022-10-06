@@ -282,6 +282,10 @@ all_functions = OD([
         export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
         sh .evergreen/integration-tests.sh
         ''', test=False),
+        OD([
+            ("command", "expansions.update"),
+            ("params", OD([("file", "mongoc/mo-expansion.yml")]))
+        ])
     )),
     ('run tests', Function(
         shell_mongoc(r'''
@@ -345,6 +349,7 @@ all_functions = OD([
         export LOADBALANCED=${LOADBALANCED}
         export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"
         export MULTI_MONGOS_LB_URI="${MULTI_MONGOS_LB_URI}"
+        export CRYPT_SHARED_LIB_PATH="${CRYPT_SHARED_LIB_PATH}"
         set -o errexit
         sh .evergreen/run-tests.sh
         '''),
