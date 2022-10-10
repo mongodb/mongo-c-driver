@@ -26,8 +26,8 @@ struct _mongoc_client_t;
 struct _mongoc_client_pool_t;
 struct _mongoc_cursor_t;
 
-typedef struct _mongoc_collection_t mongoc_collection_t;
-typedef struct _mongoc_database_t mongoc_database_t;
+struct _mongoc_collection_t;
+struct _mongoc_database_t;
 
 #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM \
    "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
@@ -314,10 +314,10 @@ mongoc_client_encryption_get_crypt_shared_version (
  * initialized and must be destroyed, regardless of the success status of this
  * function.
  */
-MONGOC_EXPORT (mongoc_collection_t *)
+MONGOC_EXPORT (struct _mongoc_collection_t *)
 mongoc_client_encryption_create_encrypted_collection (
    mongoc_client_encryption_t *enc,
-   mongoc_database_t *database,
+   struct _mongoc_database_t *database,
    const char *name,
    const bson_t *in_options,
    bson_t *opt_out_options,

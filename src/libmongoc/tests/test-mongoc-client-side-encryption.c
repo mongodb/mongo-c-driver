@@ -5455,7 +5455,7 @@ test_auto_datakeys (void *unused)
          keyWithType ("encryptedFields", doc),
          parse (require (keyWithType ("myField", doc), //
                          parse (require (
-                            allOf (key ("keyId"), strEqual ("keepme"))))),
+                            allOf (key ("keyId"), strEqual ("keepme")), nop))),
                 require (keyWithType ("anotherField", doc),
                          parse (require (
                             allOf (keyWithType ("keyId", int32)),
