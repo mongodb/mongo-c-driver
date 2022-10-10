@@ -5479,6 +5479,7 @@ test_auto_datakeys (void *unused)
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "indicated failure");
    bson_destroy (&new_opt);
+   bson_destroy (&in_opt);
 }
 
 void

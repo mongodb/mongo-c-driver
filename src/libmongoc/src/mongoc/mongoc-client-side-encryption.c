@@ -2810,6 +2810,8 @@ _mongoc_cec_fill_auto_datakeys (bson_t *const out,
    if (error) {
       *error = (bson_error_t){0};
    }
+   bson_init (out);
+
    bsonVisitEach (
       *in,
       // Just copy each field that isn't "encryptedFields":
