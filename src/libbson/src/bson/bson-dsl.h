@@ -558,7 +558,9 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
                    _bsonDSL_str (Doc),                   \
                    _bsonDSL_strElide (30, __VA_ARGS__)); \
    _bsonBuildAppend (Doc, __VA_ARGS__);                  \
-   bsonParseError = bsonBuildError;                      \
+   if (bsonBuildError) {                                 \
+      bsonParseError = bsonBuildError;                   \
+   }                                                     \
    _bsonDSL_end
 
 #define _bsonVisitEach(Doc, ...)                                             \
@@ -844,7 +846,9 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
                    _bsonDSL_str (Doc),                   \
                    _bsonDSL_strElide (30, __VA_ARGS__)); \
    _bsonBuildAppend (Doc, __VA_ARGS__);                  \
-   bsonParseError = bsonBuildError;                      \
+   if (bsonBuildError) {                                 \
+      bsonParseError = bsonBuildError;                   \
+   }                                                     \
    _bsonDSL_end
 
 #define _bsonVisit_applyOps _bsonVisit_applyOpsDeferred _bsonDSL_nothing ()
