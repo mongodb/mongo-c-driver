@@ -19,6 +19,8 @@
 #include <signal.h>
 #endif
 
+#include <bson/bson-dsl.h>
+
 #include "mongoc.h"
 #include "mongoc-client-private.h"
 #include "mongoc-client-side-encryption-private.h"
@@ -1976,7 +1978,7 @@ bool
 mongoc_client_encryption_create_datakey (
    mongoc_client_encryption_t *client_encryption,
    const char *kms_provider,
-   mongoc_client_encryption_datakey_opts_t *opts,
+   const mongoc_client_encryption_datakey_opts_t *opts,
    bson_value_t *keyid,
    bson_error_t *error)
 {
@@ -2670,6 +2672,68 @@ _mongoc_cse_is_enabled (mongoc_client_t *client)
       /* CSE is starting up. Wait until that succeeds or fails. */
       bson_thrd_yield ();
    }
+}
+
+/// Context for creating a new datakey using a database and
+struct cec_context {
+   mongoc_client_encryption_t *enc;
+   const mongoc_client_encryption_datakey_opts_t *dk_opts;
+   const char *kms_provider;
+};
+
+/// Automatically create a new datakey. @see auto_datakey_factory
+static bool
+_auto_datakey (struct auto_datakey_context *ctx)
+{
+   struct cec_context *cec = ctx->userdata;
+   return mongoc_client_encryption_create_datakey (cec->enc,
+                                                   cec->kms_provider,
+                                                   cec->dk_opts,
+                                                   ctx->out_keyid,
+                                                   ctx->out_error);
+}
+
+mongoc_collection_t *
+mongoc_client_encryption_create_encrypted_collection (
+   mongoc_client_encryption_t *enc,
+   mongoc_database_t *database,
+   const char *const name,
+   const bson_t *in_options,
+   bson_t *new_options,
+   const char *const kms_provider,
+   const mongoc_client_encryption_datakey_opts_t *dk_opts,
+   bson_error_t *error)
+{
+   bson_t local_new_options = BSON_INITIALIZER;
+   if (!new_options) {
+      // We'll use our own storage for the new options
+      new_options = &local_new_options;
+   }
+
+   // Init the storage. Either inits the caller's copy, or our local version.
+   bson_init (new_options);
+
+   // Context for the creation of a new datakey
+   struct cec_context ctx = {
+      .enc = enc,
+      .dk_opts = dk_opts,
+      .kms_provider = kms_provider,
+   };
+
+   mongoc_collection_t *ret = NULL;
+   // Create the new options, filling out the 'keyId' automatically:
+   if (_mongoc_cec_fill_auto_datakeys (
+          new_options, in_options, _auto_datakey, &ctx, error)) {
+      // We've successfully filled out all null keyIds. Now create the
+      // collection with our new options:
+      ret =
+         mongoc_database_create_collection (database, name, new_options, error);
+   }
+   // Destroy the local options, which may or may not have been used. If unused,
+   // the new options are now owned by the caller.
+   bson_destroy (&local_new_options);
+   // The resulting collection, or NULL on error:
+   return ret;
 }
 
 #endif /* MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION */

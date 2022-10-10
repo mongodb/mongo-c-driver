@@ -26,6 +26,9 @@ struct _mongoc_client_t;
 struct _mongoc_client_pool_t;
 struct _mongoc_cursor_t;
 
+typedef struct _mongoc_collection_t mongoc_collection_t;
+typedef struct _mongoc_database_t mongoc_database_t;
+
 #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM \
    "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
 #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC \
@@ -158,7 +161,7 @@ MONGOC_EXPORT (bool)
 mongoc_client_encryption_create_datakey (
    mongoc_client_encryption_t *client_encryption,
    const char *kms_provider,
-   mongoc_client_encryption_datakey_opts_t *opts,
+   const mongoc_client_encryption_datakey_opts_t *opts,
    bson_value_t *keyid,
    bson_error_t *error);
 
@@ -277,6 +280,50 @@ mongoc_client_encryption_datakey_opts_set_keymaterial (
 MONGOC_EXPORT (const char *)
 mongoc_client_encryption_get_crypt_shared_version (
    mongoc_client_encryption_t const *enc) BSON_GNUC_WARN_UNUSED_RESULT;
+
+/**
+ * @brief Create a new collection with queryable encryption enabled.
+ *
+ * @param enc The client encryption to use for the new collection.
+ * @param database The database in which the collection will be created
+ * @param name The name of the new collection
+ * @param in_options Input options for the created collection (see below)
+ * @param[out] opt_out_options Optional output parameter where the modified
+ * collection options will be written.
+ * @param kms_provider A non-null pointer to a string naming a KMS provider for
+ * generating new datakeys for the encrypted fields within the collection.
+ * @param dk_opts A non-null pointer to a datakey-creation options object used
+ * for generating new datakeys for encrypted fields in the new collection.
+ * @param[out] error An error output parameter.
+ *
+ * @returns A new collection handle, or NULL on error.
+ *
+ * This function is a convenience wrapper around @ref
+ * mongoc_database_create_collection() with the following additional semantics:
+ *
+ * - For each "encryptedFields" element in the `in_options` argument given for
+ * creating the collection, if the `keyId` property of that field is a null
+ * value, a new encryption datakey will be created automatically, and the
+ * datakey's ID will be written in place of the null `keyId` property.
+ * - If `opt_out_options` is not NULL, the resulting options (with all generated
+ * keyId properties filled out) will be written to this pointer. This will be
+ * the BSON options that were given to the underlying call to @ref
+ * mongoc_database_create_collection().
+ *
+ * @note If `opt_out_options` is not NULL, the pointee will always be
+ * initialized and must be destroyed, regardless of the success status of this
+ * function.
+ */
+MONGOC_EXPORT (mongoc_collection_t *)
+mongoc_client_encryption_create_encrypted_collection (
+   mongoc_client_encryption_t *enc,
+   mongoc_database_t *database,
+   const char *name,
+   const bson_t *in_options,
+   bson_t *opt_out_options,
+   const char *const kms_provider,
+   const mongoc_client_encryption_datakey_opts_t *dk_opts,
+   bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS
 
