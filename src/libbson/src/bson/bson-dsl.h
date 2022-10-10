@@ -111,19 +111,23 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
  * items, and any nested doc() items, with XYZ being the doc-building
  * subcommand.
  */
-#define _bsonDocOperation(Command, _ignore, _count) \
-   if (!bsonBuildError) {                           \
-      _bsonDocOperation_##Command;                  \
+#define _bsonDocOperation(Command, _ignore, _count)                   \
+   if (!bsonBuildError) {                                             \
+      _bsonDocOperation_##Command;                                    \
+      if (bsonBuildError) {                                           \
+         _bsonDSLDebug ("Stopping doc() due to bsonBuildError: [%s]", \
+                        bsonBuildError);                              \
+      }                                                               \
    }
 
 #define _bsonValueOperation(P) _bsonValueOperation_##P
 
 /// key-value pair with explicit key length
-#define _bsonDocOperation_kvl(String, Len, Element)                   \
-   _bsonDSL_begin ("\"%s\" => [%s]", String, _bsonDSL_str (Element)); \
-   _bbCtx.key = (String);                                             \
-   _bbCtx.key_len = (Len);                                            \
-   _bsonValueOperation (Element);                                     \
+#define _bsonDocOperation_kvl(String, Len, Element)                            \
+   _bsonDSL_begin ("\"%s\" => [%s]", String, _bsonDSL_strElide (30, Element)); \
+   _bbCtx.key = (String);                                                      \
+   _bbCtx.key_len = (Len);                                                     \
+   _bsonValueOperation (Element);                                              \
    _bsonDSL_end
 
 /// Key-value pair with a C-string
@@ -131,11 +135,14 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    _bsonDocOperation_kvl ((String), strlen ((String)), Element)
 
 /// Execute arbitrary code
-#define _bsonDocOperation_do(...)                         \
-   _bsonDSL_begin ("do(%s)", _bsonDSL_str (__VA_ARGS__)); \
-   do {                                                   \
-      __VA_ARGS__;                                        \
-   } while (0);                                           \
+#define _bsonDocOperation_do(...)                                      \
+   _bsonDSL_begin ("do(%s)", _bsonDSL_strElide (30, __VA_ARGS__));     \
+   do {                                                                \
+      __VA_ARGS__;                                                     \
+   } while (0);                                                        \
+   if (bsonBuildError) {                                               \
+      _bsonDSLDebug ("do() set bsonBuildError: [%s]", bsonBuildError); \
+   }                                                                   \
    _bsonDSL_end
 
 /// We must defer expansion of the nested doc() to allow "recursive" evaluation
@@ -144,7 +151,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 #define _bsonArrayOperation_doc(...) _bsonArrayAppendValue (doc (__VA_ARGS__))
 
 #define _bsonValueOperationDeferred_doc(...)                                   \
-   _bsonDSL_begin ("doc(%s)", _bsonDSL_str (__VA_ARGS__));                     \
+   _bsonDSL_begin ("doc(%s)", _bsonDSL_strElide (30, __VA_ARGS__));            \
    /* Write to this variable as the child: */                                  \
    bson_t _bbChildDoc = BSON_INITIALIZER;                                      \
    if (!bson_append_document_begin (_bsonBuildAppendArgs, &_bbChildDoc)) {     \
@@ -170,7 +177,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    _bsonArrayAppendValue (array (__VA_ARGS__))
 
 #define _bsonValueOperationDeferred_array(...)                                \
-   _bsonDSL_begin ("array(%s)", _bsonDSL_str (__VA_ARGS__));                  \
+   _bsonDSL_begin ("array(%s)", _bsonDSL_strElide (30, __VA_ARGS__));         \
    /* Write to this variable as the child array: */                           \
    bson_t _bbArray = BSON_INITIALIZER;                                        \
    if (!bson_append_array_begin (_bsonBuildAppendArgs, &_bbArray)) {          \
@@ -184,6 +191,8 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
                "Error while finalizing child array: " _bsonDSL_str (          \
                   __VA_ARGS__);                                               \
          }                                                                    \
+      } else {                                                                \
+         _bsonDSLDebug ("Got bsonBuildError: [%s]", bsonBuildError);          \
       }                                                                       \
    }                                                                          \
    _bsonDSL_end
@@ -263,16 +272,21 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       ((void) 0)
 #define _bsonArrayOperation_null _bsonValueOperation (null)
 
+#define _bsonValueOperation_value(Value)                          \
+   _bsonDSL_begin ("value(%s)", _bsonDSL_str (Value));            \
+   if (!bson_append_value (_bsonBuildAppendArgs, &(Value))) {     \
+      bsonBuildError =                                            \
+         "Error while appending value(" _bsonDSL_str (Value) ")"; \
+   }                                                              \
+   _bsonDSL_end
+
 /// Insert the given BSON document into the parent document in-place
-#define _bsonDocOperation_insert(OtherBSON, Pred)                             \
-   _bsonDSL_begin ("Insert other document: [%s]", _bsonDSL_str (OtherBSON));  \
-   const bool _bvHalt = false; /* Required for _bsonVisitEach() */            \
-   _bsonVisitEach (                                                           \
-      OtherBSON,                                                              \
-      if (Pred,                                                               \
-          then (do(_bsonDocOperation_kvl (bson_iter_key (&bsonVisitIter),     \
-                                          bson_iter_key_len (&bsonVisitIter), \
-                                          iterValue (bsonVisitIter))))));     \
+#define _bsonDocOperation_insert(OtherBSON, Pred)                            \
+   _bsonDSL_begin ("Insert other document: [%s]", _bsonDSL_str (OtherBSON)); \
+   const bool _bvHalt = false; /* Required for _bsonVisitEach() */           \
+   _bsonVisitEach (                                                          \
+      OtherBSON,                                                             \
+      if (Pred, then (do(_bsonDocOperation_iterElement (bsonVisitIter)))));  \
    _bsonDSL_end
 
 #define _bsonDocOperation_insertFromIter(Iter, Pred)                   \
@@ -287,6 +301,15 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    }                                                                   \
    _bsonDSL_end
 
+#define _bsonDocOperation_iterElement(Iter)                \
+   _bsonDSL_begin ("Insert element from bson_iter_t [%s]", \
+                   _bsonDSL_str (Iter));                   \
+   bson_iter_t _bbIter = (Iter);                           \
+   _bsonDocOperation_kvl (bson_iter_key (&_bbIter),        \
+                          bson_iter_key_len (&_bbIter),    \
+                          iterValue (_bbIter));            \
+   _bsonDSL_end
+
 /// Insert the given BSON document into the parent array. Keys of the given
 /// document are discarded and it is treated as an array of values.
 #define _bsonArrayOperation_insert(OtherArr, Pred)                          \
@@ -296,16 +319,16 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       if (Pred, then (do(_bsonArrayOperation_iterValue (bsonVisitIter))))); \
    _bsonDSL_end
 
-#define _bsonArrayAppendValue(ValueOperation)              \
-   _bsonDSL_begin ("[%d] => [%s]",                         \
-                   (int) bsonBuildContext.index,           \
-                   _bsonDSL_str (ValueOperation));         \
-   /* Set the doc key to the array index as a string: */   \
-   _bsonBuild_setKeyToArrayIndex (bsonBuildContext.index); \
-   /* Append a value: */                                   \
-   _bsonValueOperation_##ValueOperation;                   \
-   /* Increment the array index: */                        \
-   ++_bbCtx.index;                                         \
+#define _bsonArrayAppendValue(ValueOperation)               \
+   _bsonDSL_begin ("[%d] => [%s]",                          \
+                   (int) bsonBuildContext.index,            \
+                   _bsonDSL_strElide (30, ValueOperation)); \
+   /* Set the doc key to the array index as a string: */    \
+   _bsonBuild_setKeyToArrayIndex (bsonBuildContext.index);  \
+   /* Append a value: */                                    \
+   _bsonValueOperation_##ValueOperation;                    \
+   /* Increment the array index: */                         \
+   ++_bbCtx.index;                                          \
    _bsonDSL_end
 
 
@@ -423,19 +446,19 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 #define _bsonVisit_ifThenElse(Predicate, Then, Else) \
    if (bsonPredicate (Predicate)) {                  \
-      _bsonDSLDebug ("%s", _bsonDSL_str (Then));     \
+      _bsonDSLDebug ("then:");                       \
       _bsonVisit_ifThen_##Then;                      \
    } else {                                          \
-      _bsonDSLDebug ("%s", _bsonDSL_str (Else));     \
+      _bsonDSLDebug ("else:");                       \
       _bsonVisit_ifElse_##Else;                      \
    }
 
-#define _bsonVisit_ifThen(Predicate, Then)       \
-   if (bsonPredicate (Predicate)) {              \
-      _bsonDSLDebug ("%s", _bsonDSL_str (Then)); \
-      _bsonVisit_ifThen_##Then;                  \
-   } else {                                      \
-      _bsonDSLDebug ("[else nothing]");          \
+#define _bsonVisit_ifThen(Predicate, Then) \
+   if (bsonPredicate (Predicate)) {        \
+      _bsonDSLDebug ("then:");             \
+      _bsonVisit_ifThen_##Then;            \
+   } else {                                \
+      _bsonDSLDebug ("[else nothing]");    \
    }
 
 #define _bsonVisit_ifThen_then _bsonVisit_applyOps
@@ -458,7 +481,8 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 #define _bsonVisitOperation_storeDocDup(Dest)               \
    _bsonDSL_begin ("storeDocDup(%s)", _bsonDSL_str (Dest)); \
-   bson_t _bvDoc = _bson_dsl_iter_as_doc (&bsonVisitIter);  \
+   bson_t _bvDoc = BSON_INITIALIZER;                        \
+   _bson_dsl_iter_as_doc (&_bvDoc, &bsonVisitIter);         \
    if (_bvDoc.len) {                                        \
       bson_copy_to (&_bvDoc, &(Dest));                      \
    }                                                        \
@@ -483,11 +507,21 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    (Dest) = bson_iter_int32 (&bsonVisitIter);              \
    _bsonDSL_end
 
-#define _bsonVisitOperation_do(...)                       \
-   _bsonDSL_begin ("do: %s", _bsonDSL_str (__VA_ARGS__)); \
-   do {                                                   \
-      __VA_ARGS__;                                        \
-   } while (0);                                           \
+#define _bsonVisitOperation_do(...)                                \
+   _bsonDSL_begin ("do: %s", _bsonDSL_strElide (30, __VA_ARGS__)); \
+   do {                                                            \
+      __VA_ARGS__;                                                 \
+   } while (0);                                                    \
+   _bsonDSL_end
+
+#define _bsonVisitOperation_appendTo(BSON)                           \
+   _bsonDSL_begin ("appendTo(%s)", _bsonDSL_str (BSON));             \
+   if (!bson_append_iter (&(BSON),                                   \
+                          bson_iter_key (&bsonVisitIter),            \
+                          bson_iter_key_len (&bsonVisitIter),        \
+                          &bsonVisitIter)) {                         \
+      bsonParseError = "Error in appendTo(" _bsonDSL_str (BSON) ")"; \
+   }                                                                 \
    _bsonDSL_end
 
 #define _bsonVisitCase_when(Pred, ...)                 \
@@ -519,16 +553,16 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 #define _bsonVisitOperation_append \
    _bsonVisitOneApplyDeferred_append _bsonDSL_nothing ()
-#define _bsonVisitOneApplyDeferred_append(Doc, ...)                           \
-   _bsonDSL_begin (                                                           \
-      "append to [%s] : %s", _bsonDSL_str (Doc), _bsonDSL_str (__VA_ARGS__)); \
-   _bsonBuildAppend (Doc, __VA_ARGS__);                                       \
-   bsonParseError = bsonBuildError;                                           \
+#define _bsonVisitOneApplyDeferred_append(Doc, ...)      \
+   _bsonDSL_begin ("append to [%s] : %s",                \
+                   _bsonDSL_str (Doc),                   \
+                   _bsonDSL_strElide (30, __VA_ARGS__)); \
+   _bsonBuildAppend (Doc, __VA_ARGS__);                  \
+   bsonParseError = bsonBuildError;                      \
    _bsonDSL_end
 
 #define _bsonVisitEach(Doc, ...)                                             \
-   _bsonDSL_begin (                                                          \
-      "visitEach(%s, %s)", _bsonDSL_str (Doc), _bsonDSL_str (__VA_ARGS__));  \
+   _bsonDSL_begin ("visitEach(%s)", _bsonDSL_str (Doc));                     \
    do {                                                                      \
       /* Reset the context */                                                \
       struct _bsonVisitContext_t _bpCtx = {                                  \
@@ -561,7 +595,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 #define _bsonVisitOperation_visitEach \
    _bsonVisitOperation_visitEachDeferred _bsonDSL_nothing ()
 #define _bsonVisitOperation_visitEachDeferred(...)                             \
-   _bsonDSL_begin ("visitEach(%s)", _bsonDSL_str (__VA_ARGS__));               \
+   _bsonDSL_begin ("visitEach:%s", "");                                        \
    do {                                                                        \
       const uint8_t *data;                                                     \
       uint32_t len;                                                            \
@@ -755,19 +789,19 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    (_bsonPredicate_Condition_type (Type) && bsonAs (Type) == Value)
 
 #define _bsonParseOperation_else _bsonParse_deferredElse _bsonDSL_nothing ()
-#define _bsonParse_deferredElse(...)                           \
-   if (!_bpFoundElement) {                                     \
-      _bsonDSL_begin ("else(%s)", _bsonDSL_str (__VA_ARGS__)); \
-      _bsonParse_applyOps (__VA_ARGS__);                       \
-      _bsonDSL_end;                                            \
-   } else                                                      \
+#define _bsonParse_deferredElse(...)     \
+   if (!_bpFoundElement) {               \
+      _bsonDSL_begin ("else:%s", "");    \
+      _bsonParse_applyOps (__VA_ARGS__); \
+      _bsonDSL_end;                      \
+   } else                                \
       ((void) 0)
 
-#define _bsonParseOperation_do(...)                       \
-   _bsonDSL_begin ("do: %s", _bsonDSL_str (__VA_ARGS__)); \
-   do {                                                   \
-      __VA_ARGS__;                                        \
-   } while (0);                                           \
+#define _bsonParseOperation_do(...)                                \
+   _bsonDSL_begin ("do: %s", _bsonDSL_strElide (30, __VA_ARGS__)); \
+   do {                                                            \
+      __VA_ARGS__;                                                 \
+   } while (0);                                                    \
    _bsonDSL_end
 
 #define _bsonParseOperation_halt _bvHalt = true
@@ -788,10 +822,10 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 #define _bsonParse_ifThenElse(Condition, Then, Else) \
    if ((Condition)) {                                \
-      _bsonDSLDebug ("%s", _bsonDSL_str (Then));     \
+      _bsonDSLDebug ("then:");                       \
       _bsonParse_ifThen_##Then;                      \
    } else {                                          \
-      _bsonDSLDebug ("%s", _bsonDSL_str (Else));     \
+      _bsonDSLDebug ("else:");                       \
       _bsonParse_ifElse_##Else;                      \
    }
 
@@ -803,7 +837,15 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       _bsonDSLDebug ("[else nothing]");          \
    }
 
-#define _bsonParseOperation_append _bsonBuildAppend
+#define _bsonParseOperation_append \
+   _bsonParseOperationDeferred_append _bsonDSL_nothing ()
+#define _bsonParseOperationDeferred_append(Doc, ...)     \
+   _bsonDSL_begin ("append to [%s] : %s",                \
+                   _bsonDSL_str (Doc),                   \
+                   _bsonDSL_strElide (30, __VA_ARGS__)); \
+   _bsonBuildAppend (Doc, __VA_ARGS__);                  \
+   bsonParseError = bsonBuildError;                      \
+   _bsonDSL_end
 
 #define _bsonVisit_applyOps _bsonVisit_applyOpsDeferred _bsonDSL_nothing ()
 #define _bsonVisit_applyOpsDeferred(...)                      \
@@ -811,11 +853,11 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       _bsonDSL_mapMacro (_bsonVisit_applyOp, ~, __VA_ARGS__); \
    } while (0);
 
-#define bsonBuildArray(BSON, ...)                       \
-   _bsonDSL_begin ("bsonBuildArray(%s, %s)",            \
-                   _bsonDSL_str (BSON),                 \
-                   _bsonDSL_str (__VA_ARGS__));         \
-   _bsonDSL_eval (_bsonBuildArray (BSON, __VA_ARGS__)); \
+#define bsonBuildArray(BSON, ...)                        \
+   _bsonDSL_begin ("bsonBuildArray(%s, %s)",             \
+                   _bsonDSL_str (BSON),                  \
+                   _bsonDSL_strElide (30, __VA_ARGS__)); \
+   _bsonDSL_eval (_bsonBuildArray (BSON, __VA_ARGS__));  \
    _bsonDSL_end
 
 #define _bsonBuildArray(BSON, ...)                     \
@@ -1071,6 +1113,11 @@ _bsonVisitIterAs__Bool ()
 // Empty quotes "" are to ensure a string appears. Old MSVC has a bug
 // where empty #__VA_ARGS__ just vanishes.
 #define _bsonDSL_str_1(...) "" #__VA_ARGS__
+
+#define _bsonDSL_strElide(MaxLen, ...)             \
+   (strlen (_bsonDSL_str (__VA_ARGS__)) > (MaxLen) \
+       ? "[...]"                                   \
+       : _bsonDSL_str (__VA_ARGS__))
 
 /// Paste two tokens:
 #define _bsonDSL_paste(a, ...) _bsonDSL_paste_impl (a, __VA_ARGS__)
