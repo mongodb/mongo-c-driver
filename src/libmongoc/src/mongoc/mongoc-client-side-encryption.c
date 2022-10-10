@@ -2674,6 +2674,116 @@ _mongoc_cse_is_enabled (mongoc_client_t *client)
 
 #endif /* MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION */
 
+/// Generate one encryptedField element.
+static void
+_init_1_encryptedField (bson_t *out_field,
+                        const bson_t *in_field,
+                        auto_datakey_factory fac,
+                        void *fac_userdata,
+                        bson_error_t *error)
+{
+   bsonVisitEach (
+      *in_field,
+      // If it is not a "keyId":null element, just copy it to the output.
+      if (not(keyWithType ("keyId", null)),
+          then (appendTo (*out_field), continue)),
+      // Otherwise:
+      do({
+         // Set up factory context
+         bson_value_t new_key = {0};
+         struct auto_datakey_context ctx = {
+            .out_keyid = &new_key,
+            .out_error = error,
+            .userdata = fac_userdata,
+         };
+         // Call the callback to create the new key
+         if (!fac (&ctx)) {
+            bsonParseError = "Factory function indicated failure";
+         } else {
+            // Append to the field
+            BSON_APPEND_VALUE (out_field, "keyId", &new_key);
+         }
+      }));
+}
+
+/// Generate the "encryptedFields" output for auto-datakeys
+static void
+_init_encryptedFields (bson_t *out_efs,
+                       const bson_t *in_efs,
+                       auto_datakey_factory fac,
+                       void *fac_userdata,
+                       bson_error_t *error)
+{
+   // Ref to one encyrptedField
+   bson_t cur_ef;
+   bsonVisitEach (
+      *in_efs,
+      // Each field must be a document element
+      if (not(type (doc)),
+          then (error ("Each 'encryptedFields' element must be a document"))),
+      // Append a new element with the same name as the field:
+      storeDocRef (cur_ef),
+      append (
+         *out_efs,
+         kv (bson_iter_key (&bsonVisitIter),
+             // Construct the encryptedField document from the input:
+             doc (do(_init_1_encryptedField (
+                bsonBuildContext.doc, &cur_ef, fac, fac_userdata, error))))));
+}
+
+bool
+_mongoc_cec_fill_auto_datakeys (bson_t *const out,
+                                const bson_t *const in,
+                                const auto_datakey_factory fac,
+                                void *const fac_userdata,
+                                bson_error_t *const error)
+{
+   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (fac);
+
+   bson_t in_encryptedFields;
+   if (error) {
+      *error = (bson_error_t){0};
+   }
+   bsonVisitEach (
+      *in,
+      // Just copy each field that isn't "encryptedFields":
+      if (not(key ("encryptedFields")), then (appendTo (*out), continue)),
+      // We're now visiting "encryptedFields"
+      if (not(type (doc)),
+          then (error ("encryptedFields option must be a document element"))),
+      // Begin a new "encryptedFields" on the output
+      storeDocRef (in_encryptedFields),
+      append ( //
+         *out,
+         kv ("encryptedFields",
+             doc (do(_init_encryptedFields (bsonBuildContext.doc,
+                                            &in_encryptedFields,
+                                            fac,
+                                            fac_userdata,
+                                            error))))));
+   if (error && error->code == 0) {
+      // The factory/internal code did not set error, so we may have to set it
+      // for an error while BSON parsing/generating.
+      if (bsonParseError) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Error while generating datakeys: %s",
+                         bsonParseError);
+      }
+      if (bsonBuildError) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Error while generating datakeys: %s",
+                         bsonBuildError);
+      }
+   }
+   // DSL errors will be set in case of failure
+   return bsonParseError == NULL && bsonBuildError == NULL;
+}
 
 const char *
 mongoc_client_encryption_get_crypt_shared_version (

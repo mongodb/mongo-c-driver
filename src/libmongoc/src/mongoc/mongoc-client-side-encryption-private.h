@@ -62,4 +62,46 @@ _mongoc_cse_client_pool_enable_auto_encryption (
 bool
 _mongoc_cse_is_enabled (mongoc_client_t *client);
 
+/**
+ * @brief The context for the automatic creation of a datakey
+ */
+struct auto_datakey_context {
+   /// The output destination for the new key ID. Never NULL.
+   bson_value_t *out_keyid;
+   /// An error output destination for the key generation. May be NULL.
+   bson_error_t *out_error;
+   /// The userdata pointer given to @ref _mongoc_cec_fill_auto_datakeys
+   void *userdata;
+};
+
+/**
+ * @brief The type of a datakey-creating callback.
+ *
+ * @param ctx The context of the keyId request. @sa auto_datakey_context
+ * @retval true Upon success
+ * @retval false Otherwise.
+ *
+ * @note Errors should be written out through the context.
+ */
+typedef bool (*auto_datakey_factory) (struct auto_datakey_context *ctx);
+
+/**
+ * @brief Process an options document for CreateEncryptedCollection,
+ * automatically filling null keyId properties with the given factory function.
+ *
+ * @param out The result of the modified options
+ * @param cc_options The input options to update
+ * @param factory A keyId factory. @see auto_datakey_factory
+ * @param userdata The userdata pointer for `factory`
+ * @param error An error output parameter
+ * @retval true On success
+ * @retval false Otherwise
+ */
+bool
+_mongoc_cec_fill_auto_datakeys (bson_t *out,
+                                const bson_t *cc_options,
+                                auto_datakey_factory factory,
+                                void *userdata,
+                                bson_error_t *error);
+
 #endif /* MONGOC_CLIENT_SIDE_ENCRYPTION_PRIVATE_H */
