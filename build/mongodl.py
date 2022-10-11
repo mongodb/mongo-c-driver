@@ -89,16 +89,15 @@ def infer_target():
     if sys.platform == 'darwin':
         return 'macos'
     # Now the tricky bit
-    if Path('/etc/os-release').is_file():
-        return _infer_target_os_rel()
-    elif Path('/usr/lib/os-release').is_file():
-        os_rel_path = 'usr/lib/os-release'
-        return _infer_target_os_rel(os_rel_path)
+    cands = map(Path, ['/etc/os-release', '/usr/lib/os-release'])
+    for c in cands:
+        if c.is_file():
+            return _infer_target_os_rel(c)
     raise RuntimeError("We don't know how to find the default '--target'"
                        " option for this system. Please contribute!")
 
 
-def _infer_target_os_rel(os_rel_path='/etc/os-release'):
+def _infer_target_os_rel(os_rel_path: Path):
     with Path(os_rel_path).open('r', encoding='utf-8') as f:
         content = f.read()
     id_re = re.compile(r'\bID=("?)(.*)\1')
