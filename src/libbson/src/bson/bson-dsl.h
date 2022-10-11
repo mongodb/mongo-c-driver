@@ -981,10 +981,10 @@ _bson_thread_local_comdat const char *bsonBuildError = NULL;
 _bson_thread_local_comdat const char *bsonParseError = NULL;
 
 #define _bsonDSLDebug(...) \
-   _bson_dsl_debug (BSON_DSL_DEBUG, __FILE__, __LINE__, __func__, __VA_ARGS__)
+   _bson_dsl_debug (BSON_DSL_DEBUG, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)
 
 
-static inline bool
+static BSON_INLINE bool
 _bson_dsl_test_strequal (const char *string, bool case_sensitive)
 {
    bson_iter_t it = bsonVisitIter;
@@ -1003,7 +1003,7 @@ _bson_dsl_test_strequal (const char *string, bool case_sensitive)
    return false;
 }
 
-static inline bool
+static BSON_INLINE bool
 _bson_dsl_key_is_anyof (const char *key,
                         const size_t keylen,
                         int case_sensitive,
@@ -1033,7 +1033,7 @@ _bson_dsl_key_is_anyof (const char *key,
    return false;
 }
 
-static inline void
+static BSON_INLINE void
 _bson_dsl_iter_as_doc (bson_t *into, const bson_iter_t *it)
 {
    uint32_t len = 0;
@@ -1048,7 +1048,7 @@ _bson_dsl_iter_as_doc (bson_t *into, const bson_iter_t *it)
    }
 }
 
-static inline bool
+static BSON_INLINE bool
 _bson_dsl_is_empty_bson (const bson_iter_t *it)
 {
    bson_t d = BSON_INITIALIZER;
@@ -1056,7 +1056,7 @@ _bson_dsl_is_empty_bson (const bson_iter_t *it)
    return d.len == 5; // Empty documents/arrays have byte-size of five
 }
 
-static inline bool
+static BSON_INLINE bool
 _bson_dsl_iter_is_last_element (const bson_iter_t *it)
 {
    bson_iter_t dup = *it;
@@ -1065,12 +1065,13 @@ _bson_dsl_iter_is_last_element (const bson_iter_t *it)
 
 static int _bson_dsl_indent = 0;
 
-static inline void BSON_GNUC_PRINTF (5, 6) _bson_dsl_debug (bool do_debug,
-                                                            const char *file,
-                                                            int line,
-                                                            const char *func,
-                                                            const char *string,
-                                                            ...)
+static BSON_INLINE void BSON_GNUC_PRINTF (5, 6)
+   _bson_dsl_debug (bool do_debug,
+                    const char *file,
+                    int line,
+                    const char *func,
+                    const char *string,
+                    ...)
 {
    if (do_debug) {
       fprintf (stderr, "%s:%d: [%s] bson_dsl: ", file, line, func);
@@ -1086,25 +1087,25 @@ static inline void BSON_GNUC_PRINTF (5, 6) _bson_dsl_debug (bool do_debug,
    }
 }
 
-static inline const char *
+static BSON_INLINE const char *
 _bsonVisitIterAs_cstr ()
 {
    return bson_iter_utf8 (&bsonVisitIter, NULL);
 }
 
-static inline int32_t
+static BSON_INLINE int32_t
 _bsonVisitIterAs_int32 ()
 {
    return bson_iter_int32 (&bsonVisitIter);
 }
 
-static inline bool
+static BSON_INLINE bool
 _bsonVisitIterAs_bool ()
 {
    return bson_iter_as_bool (&bsonVisitIter);
 }
 
-static inline bool
+static BSON_INLINE bool
 _bsonVisitIterAs__Bool ()
 {
    return _bsonVisitIterAs_bool ();
