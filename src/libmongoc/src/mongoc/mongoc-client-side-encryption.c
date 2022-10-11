@@ -2674,7 +2674,7 @@ _mongoc_cse_is_enabled (mongoc_client_t *client)
    }
 }
 
-/// Context for creating a new datakey using a database and
+/// Context for creating a new datakey using an existing ClientEncryption state
 struct cec_context {
    mongoc_client_encryption_t *enc;
    const mongoc_client_encryption_datakey_opts_t *dk_opts;
@@ -2767,6 +2767,7 @@ _init_1_encryptedField (bson_t *out_field,
             // Append to the field
             BSON_APPEND_VALUE (out_field, "keyId", &new_key);
          }
+         bson_value_destroy (&new_key);
       }));
 }
 
