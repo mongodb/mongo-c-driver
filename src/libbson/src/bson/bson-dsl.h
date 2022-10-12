@@ -518,7 +518,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    _bsonDSL_begin ("appendTo(%s)", _bsonDSL_str (BSON));             \
    if (!bson_append_iter (&(BSON),                                   \
                           bson_iter_key (&bsonVisitIter),            \
-                          bson_iter_key_len (&bsonVisitIter),        \
+                          (int) bson_iter_key_len (&bsonVisitIter),  \
                           &bsonVisitIter)) {                         \
       bsonParseError = "Error in appendTo(" _bsonDSL_str (BSON) ")"; \
    }                                                                 \
