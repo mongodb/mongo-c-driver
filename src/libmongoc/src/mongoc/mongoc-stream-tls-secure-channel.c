@@ -155,7 +155,7 @@ _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
          FreeContextBuffer (outbuf.pvBuffer);
 
          if (outbuf.cbBuffer != (size_t) written) {
-            TRACE ("failed to send close msg (wrote %zd out of %zd)",
+            TRACE ("failed to send close msg (wrote %zd out of %lu)",
                    written,
                    outbuf.cbBuffer);
          }
@@ -255,7 +255,7 @@ _mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream,
    ENTRY;
 
    BSON_ASSERT (secure_channel);
-   TRACE ("The entire buffer is: %d", buf_len);
+   TRACE ("The entire buffer is: %zu", buf_len);
 
    /* check if the maximum stream sizes were queried */
    if (secure_channel->stream_sizes.cbMaximumMessage == 0) {
@@ -271,7 +271,7 @@ _mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream,
 
    /* check if the buffer is longer than the maximum message length */
    if (buf_len > secure_channel->stream_sizes.cbMaximumMessage) {
-      TRACE ("SHRINKING buf_len from %lu to %lu",
+      TRACE ("SHRINKING buf_len from %zu to %lu",
              buf_len,
              secure_channel->stream_sizes.cbMaximumMessage);
       buf_len = secure_channel->stream_sizes.cbMaximumMessage;
@@ -374,12 +374,12 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
    TRACE ("%s", "Trying to write to the server");
    tls->timeout_msec = timeout_msec;
 
-   TRACE ("count: %d, 0th: %lu", iovcnt, iov[0].iov_len);
+   TRACE ("count: %zu, 0th: %zu", iovcnt, iov[0].iov_len);
 
    for (i = 0; i < iovcnt; i++) {
       iov_pos = 0;
 
-      TRACE ("iov %d size: %lu", i, iov[i].iov_len);
+      TRACE ("iov %zu size: %zu", i, iov[i].iov_len);
       while (iov_pos < iov[i].iov_len) {
          if (buf_head != buf_tail ||
              ((i + 1 < iovcnt) &&
@@ -420,7 +420,7 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
 
             child_ret = _mongoc_stream_tls_secure_channel_write (
                stream, to_write, to_write_len);
-            TRACE ("Child0wrote: %d, was supposed to write: %d",
+            TRACE ("Child0wrote: %zd, was supposed to write: %zu",
                    child_ret,
                    to_write_len);
 
@@ -442,7 +442,7 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
 
       child_ret = _mongoc_stream_tls_secure_channel_write (
          stream, buf_head, buf_tail - buf_head);
-      TRACE ("Child1wrote: %d, was supposed to write: %d",
+      TRACE ("Child1wrote: %zd, was supposed to write: %td",
              child_ret,
              buf_tail - buf_head);
 
@@ -603,7 +603,7 @@ _mongoc_stream_tls_secure_channel_decrypt (
       } else if (sspi_status == SEC_E_INCOMPLETE_MESSAGE) {
          TRACE ("%s", "failed to decrypt data, need more data");
       } else {
-         TRACE ("failed to read data from server: %d", sspi_status);
+         TRACE ("failed to read data from server: %ld", sspi_status);
          secure_channel->recv_unrecoverable_err = true;
       }
    }

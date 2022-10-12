@@ -439,7 +439,7 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
    }
 
    r = mongoc_stream_writev (stream, iov, iovcnt, timeout_msec);
-   TRACE ("writev returned: %ld", r);
+   TRACE ("writev returned: %zd", r);
 
    if (r < 0) {
       if (error) {
