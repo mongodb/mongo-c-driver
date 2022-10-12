@@ -214,6 +214,14 @@ To copy *all* elements from `b`, simply use the bare `true` predicate.
 Like `insert()`, but copies from the bson document/array referred to by `iter`.
 
 
+#### `iterElement()`
+
+> `iterElement(bson_iter_t iter)`
+
+Copy the BSON document element referred to by the given iterator. The element
+will have the same key+value as from the iterator.
+
+
 #### `do()`
 
 > `do(...)`
@@ -286,6 +294,11 @@ Create a sub-document using DSL *DocOperation* commands `ops`.
 
 Create a sub-document of array type using the DSL *ArrayOperation* commands
 `ops`.
+
+
+#### `value(bson_value_t)`
+
+Insert the value denoted by the given `bson_value_t`.
 
 
 #### `if(bool cond, then(ValueOperation), else(ValueOperation))`
@@ -485,6 +498,12 @@ document will need to be destroyed, and is valid to modify.
 
 Evaluate a `bsonBuildAppend(b, ops...)`, with `bsonVisitIter` referring to the
 element being visited.
+
+
+#### `appendTo(bson_t b)`
+
+Append the current element to the BSON document `b`. The element will be copied
+with the same key and value.
 
 
 #### `visitEach(VisitOperation... ops)`

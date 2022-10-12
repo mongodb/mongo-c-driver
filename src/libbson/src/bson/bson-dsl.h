@@ -272,6 +272,8 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       ((void) 0)
 #define _bsonArrayOperation_null _bsonValueOperation (null)
 
+#define _bsonArrayOperation_value(X) _bsonArrayAppendValue (value (X))
+
 #define _bsonValueOperation_value(Value)                          \
    _bsonDSL_begin ("value(%s)", _bsonDSL_str (Value));            \
    if (!bson_append_value (_bsonBuildAppendArgs, &(Value))) {     \
