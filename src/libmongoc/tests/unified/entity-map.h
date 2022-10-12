@@ -59,7 +59,7 @@ typedef struct {
 } entity_map_t;
 
 entity_map_t *
-entity_map_new ();
+entity_map_new (void);
 
 void
 entity_map_destroy (entity_map_t *em);

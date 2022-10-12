@@ -776,7 +776,7 @@ test_framework_get_compressors ()
  *--------------------------------------------------------------------------
  */
 bool
-test_framework_has_compressors ()
+test_framework_has_compressors (void)
 {
    bool retval;
    char *compressors = test_framework_get_compressors ();

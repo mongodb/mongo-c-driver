@@ -34,7 +34,7 @@ static cache_entry_list_t *cache;
 static bson_mutex_t ocsp_cache_mutex;
 
 void
-_mongoc_ocsp_cache_init ()
+_mongoc_ocsp_cache_init (void)
 {
    bson_mutex_init (&ocsp_cache_mutex);
 }
@@ -125,7 +125,7 @@ _mongoc_ocsp_cache_set_resp (OCSP_CERTID *id,
 }
 
 int
-_mongoc_ocsp_cache_length ()
+_mongoc_ocsp_cache_length (void)
 {
    cache_entry_list_t *iter;
    int counter;
@@ -184,7 +184,7 @@ done:
 }
 
 void
-_mongoc_ocsp_cache_cleanup ()
+_mongoc_ocsp_cache_cleanup (void)
 {
    cache_entry_list_t *iter = NULL;
    cache_entry_list_t *next = NULL;

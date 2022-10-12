@@ -29,7 +29,7 @@
 
 
 mongoc_async_t *
-mongoc_async_new ()
+mongoc_async_new (void)
 {
    mongoc_async_t *async = (mongoc_async_t *) bson_malloc0 (sizeof (*async));
 

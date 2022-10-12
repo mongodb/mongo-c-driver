@@ -25,7 +25,7 @@
 typedef struct _mongoc_timeout_t mongoc_timeout_t;
 
 mongoc_timeout_t *
-mongoc_timeout_new ();
+mongoc_timeout_new (void);
 
 mongoc_timeout_t *
 mongoc_timeout_new_timeout_int64 (int64_t timeout_ms);

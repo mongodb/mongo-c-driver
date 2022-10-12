@@ -425,7 +425,7 @@ test_mongoc_scram_auth (void *ctx)
 }
 
 static int
-_skip_if_no_sha256 ()
+_skip_if_no_sha256 (void)
 {
    mongoc_client_t *client;
    bool res;
@@ -476,7 +476,7 @@ skip_if_icu (void)
 }
 
 static void
-_create_saslprep_users ()
+_create_saslprep_users (void)
 {
    mongoc_client_t *client;
    bool res;
@@ -505,7 +505,7 @@ _create_saslprep_users ()
 }
 
 static void
-_drop_saslprep_users ()
+_drop_saslprep_users (void)
 {
    mongoc_client_t *client;
    mongoc_database_t *db;
