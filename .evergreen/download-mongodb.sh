@@ -53,12 +53,12 @@ get_mongodb_download_url_for ()
    _VERSION=$2
 
    # Set VERSION_RAPID to the latest rapid release each quarter.
-   VERSION_RAPID="5.3.1"
+   VERSION_RAPID="6.1.0"
    VERSION_60_LATEST="v6.0-latest"
-   VERSION_60="6.0.0"
-   VERSION_50="5.0.9"
-   VERSION_44="4.4.15"
-   VERSION_42="4.2.21"
+   VERSION_60="6.0.2"
+   VERSION_50="5.0.13"
+   VERSION_44="4.4.17"
+   VERSION_42="4.2.23"
    VERSION_40="4.0.28"
    VERSION_36="3.6.23"
    VERSION_34="3.4.24"
@@ -286,9 +286,7 @@ get_mongodb_download_url_for ()
       ;;
       linux-debian-9*)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-debian92-latest.tgz"
-             MONGODB_RAPID="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-debian92-${VERSION_RAPID}.tgz"
-             MONGODB_60_LATEST="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-debian92-${VERSION_60_LATEST}.tgz"
-             MONGODB_60="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-debian92-${VERSION_60}.tgz"
+             # SERVER-62308 Removed support for Debian 9 in server version 6.0.0-rc5.
              MONGODB_50="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-debian92-${VERSION_50}.tgz"
              MONGODB_44="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-debian92-${VERSION_44}.tgz"
              MONGODB_42="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-debian92-${VERSION_42}.tgz"
