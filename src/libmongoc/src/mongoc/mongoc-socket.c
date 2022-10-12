@@ -557,7 +557,7 @@ static bool
 #ifdef _WIN32
 _mongoc_socket_setnodelay (SOCKET sd) /* IN */
 #else
-_mongoc_socket_setnodelay (int sd) /* IN */
+_mongoc_socket_setnodelay (int sd)   /* IN */
 #endif
 {
 #ifdef _WIN32
@@ -1023,7 +1023,7 @@ mongoc_socket_new (int domain,   /* IN */
    /* Set SO_NOSIGPIPE, to ignore SIGPIPE on writes for platforms where
       setting MSG_NOSIGNAL on writes is not supported (primarily OSX). */
 #ifdef SO_NOSIGPIPE
-   setsockopt(sd, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
+   setsockopt (sd, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof (on));
 #endif
 
    sock = (mongoc_socket_t *) bson_malloc0 (sizeof *sock);
