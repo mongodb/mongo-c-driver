@@ -2798,14 +2798,14 @@ _init_encryptedFields (bson_t *out_efs,
 
 bool
 _mongoc_cec_fill_auto_datakeys (bson_t *const out,
-                                const bson_t *const in,
-                                const auto_datakey_factory fac,
-                                void *const fac_userdata,
+                                const bson_t *const cc_options,
+                                const auto_datakey_factory factory,
+                                void *const userdata,
                                 bson_error_t *const error)
 {
-   BSON_ASSERT_PARAM (in);
+   BSON_ASSERT_PARAM (cc_options);
    BSON_ASSERT_PARAM (out);
-   BSON_ASSERT_PARAM (fac);
+   BSON_ASSERT_PARAM (factory);
 
    bson_t in_encryptedFields;
    if (error) {
@@ -2814,7 +2814,7 @@ _mongoc_cec_fill_auto_datakeys (bson_t *const out,
    bson_init (out);
 
    bsonVisitEach (
-      *in,
+      *cc_options,
       // Just copy each field that isn't "encryptedFields":
       if (not(key ("encryptedFields")), then (appendTo (*out), continue)),
       // We're now visiting "encryptedFields"
@@ -2827,8 +2827,8 @@ _mongoc_cec_fill_auto_datakeys (bson_t *const out,
          kv ("encryptedFields",
              doc (do(_init_encryptedFields (bsonBuildContext.doc,
                                             &in_encryptedFields,
-                                            fac,
-                                            fac_userdata,
+                                            factory,
+                                            userdata,
                                             error))))));
    if (error && error->code == 0) {
       // The factory/internal code did not set error, so we may have to set it
