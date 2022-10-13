@@ -1248,6 +1248,54 @@ fail:
    return ret;
 }
 
+bool
+_mongoc_get_collection_encryptedFields (mongoc_client_t *client,
+                                        const char *dbName,
+                                        const char *collName,
+                                        const bson_t *opts,
+                                        bson_t *encryptedFields,
+                                        bson_error_t *error)
+{
+   bson_init (encryptedFields); // Initially empty
+
+   if (opts) {
+      // We have collection options, which may have encryptedFields in it
+      bool found = false;
+      bsonParse (
+         *opts,
+         find (key ("encryptedFields"),
+               if (not(type (doc)),
+                   then (error ("'encryptedFields' should be a document"))),
+               // Update encryptedFields to be a reference to the subdocument:
+               storeDocRef (*encryptedFields),
+               do(found = true)));
+      if (found) {
+         return true;
+      } else if (bsonParseError) {
+         // Error while parsing
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Invalid createCollection command options: %s",
+                         bsonParseError);
+         return false;
+      } else {
+         // Nothing found in the options
+      }
+   }
+
+   // Look in the encryptedFieldsMap based on this collection name
+   if (!_mongoc_get_encryptedFields_from_map (
+          client, dbName, collName, encryptedFields, error)) {
+      // Error during lookup.
+      return false;
+   }
+
+   // No error. We may or may not have found encryptedFields. The caller
+   // determines this by checking if encryptedFields is empty.
+   return true;
+}
+
 mongoc_collection_t *
 mongoc_database_create_collection (mongoc_database_t *database,
                                    const char *name,
@@ -1255,34 +1303,15 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                    bson_error_t *error)
 {
    bson_t encryptedFields = BSON_INITIALIZER;
-
-   if (opts) {
-      bsonParse (
-         *opts,
-         find (
-            key ("encryptedFields"),
-            if (not(type (doc)),
-                then (error ("'encryptedFields' should be a document object"))),
-            storeDocRef (encryptedFields)));
-      if (bsonParseError) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid createCollection command: %s",
-                         bsonParseError);
-         return NULL;
-      }
-   }
-
-   if (bson_empty (&encryptedFields)) {
-      if (!_mongoc_get_encryptedFields_from_map (
-             database->client,
-             mongoc_database_get_name (database),
-             name,
-             &encryptedFields,
-             error)) {
-         return NULL;
-      }
+   if (!_mongoc_get_collection_encryptedFields (
+          database->client,
+          mongoc_database_get_name (database),
+          name,
+          opts,
+          &encryptedFields,
+          error)) {
+      // Error during fields lookup
+      return false;
    }
 
    if (!bson_empty (&encryptedFields)) {

@@ -5437,49 +5437,42 @@ test_auto_datakeys (void *unused)
    BSON_UNUSED (unused);
    bson_error_t error = {0};
    bsonBuildDecl ( //
-      in_opt,
-      kv ("copyme", int32 (51)),
-      kv ("encryptedFields",
-          doc (kv ("myField", doc (kv ("keyId", cstr ("keepme")))), //
-               kv ("anotherField", doc (kv ("keyId", null))))));
-   bson_t new_opt = BSON_INITIALIZER;
-   bool okay = _mongoc_cec_fill_auto_datakeys (
-      &new_opt, &in_opt, _auto_datakeys, NULL, &error);
-   ASSERT (okay);
+      in_efs,
+      kv ("myField", doc (kv ("keyId", cstr ("keepme")))), //
+      kv ("anotherField", doc (kv ("keyId", null))));
+   bson_t out_efs = BSON_INITIALIZER;
+   bool okay = _mongoc_encryptedFields_fill_auto_datakeys (
+      &out_efs, &in_efs, _auto_datakeys, NULL, &error);
    ASSERT_ERROR_CONTAINS (error, 0, 0, "");
+   ASSERT (okay);
    bsonParse ( //
-      new_opt,
-      require (keyWithType ("copyme", int32),
-               do(ASSERT_CMPINT32 (bsonAs (int32), ==, 51))),
+      out_efs,
       require (
-         keyWithType ("encryptedFields", doc),
-         parse (require (keyWithType ("myField", doc), //
-                         parse (require (
-                            allOf (key ("keyId"), strEqual ("keepme")), nop))),
-                require (keyWithType ("anotherField", doc),
-                         parse (require (
-                            allOf (keyWithType ("keyId", int32)),
-                            do(ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))))));
+         keyWithType ("myField", doc), //
+         parse (require (allOf (key ("keyId"), strEqual ("keepme")), nop))),
+      require (keyWithType ("anotherField", doc),
+               parse (require (allOf (keyWithType ("keyId", int32)),
+                               do(ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
    ASSERT (bsonParseError == NULL);
-   bson_destroy (&new_opt);
+   bson_destroy (&out_efs);
 
    // Do it again, but we will generate an error
-   okay = _mongoc_cec_fill_auto_datakeys (
-      &new_opt, &in_opt, _auto_datakeys_error, NULL, &error);
+   okay = _mongoc_encryptedFields_fill_auto_datakeys (
+      &out_efs, &in_efs, _auto_datakeys_error, NULL, &error);
    ASSERT (!okay);
    ASSERT_ERROR_CONTAINS (error, 42, 1729, "I am an error");
-   bson_destroy (&new_opt);
+   bson_destroy (&out_efs);
 
    // Do it again, but we will generate an error without the factory setting the
    // error
-   okay = _mongoc_cec_fill_auto_datakeys (
-      &new_opt, &in_opt, _auto_datakeys_error_noset, NULL, &error);
+   okay = _mongoc_encryptedFields_fill_auto_datakeys (
+      &out_efs, &in_efs, _auto_datakeys_error_noset, NULL, &error);
    ASSERT (!okay);
    // Generic error, since the factory didn't provide one:
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "indicated failure");
-   bson_destroy (&new_opt);
-   bson_destroy (&in_opt);
+   bson_destroy (&out_efs);
+   bson_destroy (&in_efs);
 }
 
 void

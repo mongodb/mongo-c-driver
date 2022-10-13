@@ -70,7 +70,8 @@ struct auto_datakey_context {
    bson_value_t *out_keyid;
    /// An error output destination for the key generation. May be NULL.
    bson_error_t *out_error;
-   /// The userdata pointer given to @ref _mongoc_cec_fill_auto_datakeys
+   /// The userdata pointer given to @ref
+   /// _mongoc_encryptedFields_fill_auto_datakeys
    void *userdata;
 };
 
@@ -86,22 +87,22 @@ struct auto_datakey_context {
 typedef bool (*auto_datakey_factory) (struct auto_datakey_context *ctx);
 
 /**
- * @brief Process an options document for CreateEncryptedCollection,
- * automatically filling null keyId properties with the given factory function.
+ * @brief Process an encryptedFields document, automatically filling null keyId
+ * properties by calling the given factory function.
  *
- * @param out The result of the modified options
- * @param cc_options The input options to update
+ * @param[out] out_encryptedFields The result of the modified encryptedFields
+ * @param[in] in_encryptedFields The input encryptedOptions
  * @param factory A keyId factory. @see auto_datakey_factory
  * @param userdata The userdata pointer for `factory`
- * @param error An error output parameter
+ * @param[out] error An error output parameter
  * @retval true On success
  * @retval false Otherwise
  */
 bool
-_mongoc_cec_fill_auto_datakeys (bson_t *out,
-                                const bson_t *cc_options,
-                                auto_datakey_factory factory,
-                                void *userdata,
-                                bson_error_t *error);
+_mongoc_encryptedFields_fill_auto_datakeys (bson_t *out_encryptedFields,
+                                            const bson_t *in_encryptedFields,
+                                            auto_datakey_factory factory,
+                                            void *userdata,
+                                            bson_error_t *error);
 
 #endif /* MONGOC_CLIENT_SIDE_ENCRYPTION_PRIVATE_H */

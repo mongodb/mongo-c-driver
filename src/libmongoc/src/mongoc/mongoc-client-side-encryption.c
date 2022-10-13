@@ -28,6 +28,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-trace-private.h"
+#include "mongoc-database-private.h"
 #include "mongoc-util-private.h"
 
 /*--------------------------------------------------------------------------
@@ -2699,38 +2700,77 @@ mongoc_client_encryption_create_encrypted_collection (
    mongoc_database_t *database,
    const char *const name,
    const bson_t *in_options,
-   bson_t *new_options,
+   bson_t *out_options,
    const char *const kms_provider,
    const mongoc_client_encryption_datakey_opts_t *dk_opts,
    bson_error_t *error)
 {
+   mongoc_collection_t *ret = NULL;
+
+   bson_t in_encryptedFields = BSON_INITIALIZER;
+   bson_t new_encryptedFields = BSON_INITIALIZER;
    bson_t local_new_options = BSON_INITIALIZER;
-   if (!new_options) {
+
+   if (!out_options) {
       // We'll use our own storage for the new options
-      new_options = &local_new_options;
+      out_options = &local_new_options;
    }
 
    // Init the storage. Either inits the caller's copy, or our local version.
-   bson_init (new_options);
+   bson_init (out_options);
 
-   // Context for the creation of a new datakey
+   // Look up the encryptedfields that we should use for this collection. They
+   // may be in the given options, or they may be in the encryptedFieldsMap.
+   if (!_mongoc_get_collection_encryptedFields (
+          database->client,
+          mongoc_database_get_name (database),
+          name,
+          in_options,
+          &in_encryptedFields,
+          error)) {
+      // Error finding the encryptedFields
+      goto done;
+   }
+
+   // Add the keyIds to the encryptedFields.
+   // Context for the creation of new datakeys:
    struct cec_context ctx = {
       .enc = enc,
       .dk_opts = dk_opts,
       .kms_provider = kms_provider,
    };
-
-   mongoc_collection_t *ret = NULL;
-   // Create the new options, filling out the 'keyId' automatically:
-   if (_mongoc_cec_fill_auto_datakeys (
-          new_options, in_options, _auto_datakey, &ctx, error)) {
-      // We've successfully filled out all null keyIds. Now create the
-      // collection with our new options:
-      ret =
-         mongoc_database_create_collection (database, name, new_options, error);
+   // Create the final encryptedFields, filling out the 'keyId' automatically:
+   if (!_mongoc_encryptedFields_fill_auto_datakeys (&new_encryptedFields,
+                                                    &in_encryptedFields,
+                                                    _auto_datakey,
+                                                    &ctx,
+                                                    error)) {
+      // Error creating the new datakeys
+      goto done;
    }
+
+   // We've successfully filled out all null keyIds. Now create the collection
+   // with our new options:
+   bsonBuild (*out_options,
+              insert (*in_options, not(key ("encryptedFields"))),
+              kv ("encryptedFields", bson (new_encryptedFields)));
+   if (bsonBuildError) {
+      // Error while building the new options.
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Error while building new createCollection options: %s",
+                      bsonBuildError);
+      goto done;
+   }
+
+   ret = mongoc_database_create_collection (database, name, out_options, error);
+
+done:
+   bson_destroy (&new_encryptedFields);
+   bson_destroy (&in_encryptedFields);
    // Destroy the local options, which may or may not have been used. If unused,
-   // the new options are now owned by the caller.
+   // the new options are now owned by the caller and this is a no-op.
    bson_destroy (&local_new_options);
    // The resulting collection, or NULL on error:
    return ret;
@@ -2797,39 +2837,25 @@ _init_encryptedFields (bson_t *out_efs,
 }
 
 bool
-_mongoc_cec_fill_auto_datakeys (bson_t *const out,
-                                const bson_t *const cc_options,
-                                const auto_datakey_factory factory,
-                                void *const userdata,
-                                bson_error_t *const error)
+_mongoc_encryptedFields_fill_auto_datakeys (
+   bson_t *const out_encryptedFields,
+   const bson_t *const in_encryptedFields,
+   const auto_datakey_factory factory,
+   void *const userdata,
+   bson_error_t *const error)
 {
-   BSON_ASSERT_PARAM (cc_options);
-   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (in_encryptedFields);
+   BSON_ASSERT_PARAM (out_encryptedFields);
    BSON_ASSERT_PARAM (factory);
 
-   bson_t in_encryptedFields;
    if (error) {
       *error = (bson_error_t){0};
    }
-   bson_init (out);
+   bson_init (out_encryptedFields);
 
-   bsonVisitEach (
-      *cc_options,
-      // Just copy each field that isn't "encryptedFields":
-      if (not(key ("encryptedFields")), then (appendTo (*out), continue)),
-      // We're now visiting "encryptedFields"
-      if (not(type (doc)),
-          then (error ("encryptedFields option must be a document element"))),
-      // Begin a new "encryptedFields" on the output
-      storeDocRef (in_encryptedFields),
-      append ( //
-         *out,
-         kv ("encryptedFields",
-             doc (do(_init_encryptedFields (bsonBuildContext.doc,
-                                            &in_encryptedFields,
-                                            factory,
-                                            userdata,
-                                            error))))));
+   _init_encryptedFields (
+      out_encryptedFields, in_encryptedFields, factory, userdata, error);
+
    if (error && error->code == 0) {
       // The factory/internal code did not set error, so we may have to set it
       // for an error while BSON parsing/generating.

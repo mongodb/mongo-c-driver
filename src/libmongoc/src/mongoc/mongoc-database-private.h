@@ -67,6 +67,36 @@ _mongoc_get_encryptedFields_from_server (mongoc_client_t *client,
                                          bson_t *encryptedFields,
                                          bson_error_t *error);
 
+/**
+ * @brief Look up the encryptedFields to use for the given collection.
+ *
+ * If the collection options contains an encryptedFields, those are returned.
+ * If the client has an encryptedFieldsMap entry for the collection within the
+ * given database, those are returned. If neither, an empty document is
+ * returned.
+ *
+ * @param client The client with which to search an encryptedFieldsMap
+ * @param dbName The name of the database where the collection will/does live
+ * @param collName The name of the collection
+ * @param opts (Optional) The collection options, which may contain the
+ * fields
+ * @param[out] encryptedFields An output where a view of the encryptedFields
+ * will be written
+ * @param[out] error An error output
+ * @retval true If there was no error
+ * @retval false Otherwise
+ *
+ * @note Upon returning `true`, check whether `*encryptedFields` is empty to
+ * determine whether fields have been found.
+ */
+bool
+_mongoc_get_collection_encryptedFields (mongoc_client_t *client,
+                                        const char *dbName,
+                                        const char *collName,
+                                        const bson_t *opts,
+                                        bson_t *encryptedFields,
+                                        bson_error_t *error);
+
 /* _mongoc_get_encryptedField_state_collection returns the state collection
  * name. Returns NULL on error. */
 char *
