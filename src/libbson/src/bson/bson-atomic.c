@@ -54,7 +54,7 @@ bson_memory_barrier (void)
 static int8_t gEmulAtomicLock = 0;
 
 static void
-_lock_emul_atomic ()
+_lock_emul_atomic (void)
 {
    int i;
    if (bson_atomic_int8_compare_exchange_weak (
@@ -78,7 +78,7 @@ _lock_emul_atomic ()
 }
 
 static void
-_unlock_emul_atomic ()
+_unlock_emul_atomic (void)
 {
    int64_t rv = bson_atomic_int8_exchange (
       &gEmulAtomicLock, 0, bson_memory_order_release);

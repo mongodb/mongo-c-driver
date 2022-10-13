@@ -475,7 +475,9 @@ mongoc_secure_channel_read (mongoc_stream_tls_t *tls,
    ssize_t length;
 
    errno = 0;
-   TRACE ("Wanting to read: %d, timeout is %d", data_length, tls->timeout_msec);
+   TRACE ("Wanting to read: %zu, timeout is %" PRId32,
+          data_length,
+          tls->timeout_msec);
    /* 4th argument is minimum bytes, while the data_length is the
     * size of the buffer. We are totally fine with just one TLS record (few
     *bytes)
@@ -483,7 +485,7 @@ mongoc_secure_channel_read (mongoc_stream_tls_t *tls,
    length = mongoc_stream_read (
       tls->base_stream, data, data_length, 0, tls->timeout_msec);
 
-   TRACE ("Got %d", length);
+   TRACE ("Got %zd", length);
 
    if (length > 0) {
       return length;
@@ -500,10 +502,10 @@ mongoc_secure_channel_write (mongoc_stream_tls_t *tls,
    ssize_t length;
 
    errno = 0;
-   TRACE ("Wanting to write: %d", data_length);
+   TRACE ("Wanting to write: %zd", data_length);
    length = mongoc_stream_write (
       tls->base_stream, (void *) data, data_length, tls->timeout_msec);
-   TRACE ("Wrote: %d", length);
+   TRACE ("Wrote: %zd", length);
 
 
    return length;

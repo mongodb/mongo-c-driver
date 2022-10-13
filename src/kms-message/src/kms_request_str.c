@@ -30,7 +30,7 @@ bool rfc_3986_tab[256] = {0};
 bool kms_initialized = false;
 
 static void
-tables_init ()
+tables_init (void)
 {
    int i;
 

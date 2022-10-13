@@ -848,7 +848,7 @@ test_get_collection_info_with_opts_regex (void)
 }
 
 static void
-_test_get_collection_info_getmore ()
+_test_get_collection_info_getmore (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;

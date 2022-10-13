@@ -58,7 +58,7 @@
    } while (0)
 
 static void
-reset_all_counters ()
+reset_all_counters (void)
 {
 #define COUNTER(id, category, name, description) RESET (id);
 #include "mongoc/mongoc-counters.defs"
@@ -447,7 +447,7 @@ test_counters_dns (void)
 
 
 static void
-test_counters_streams_timeout ()
+test_counters_streams_timeout (void)
 {
    mock_server_t *server;
    bson_error_t err = {0};

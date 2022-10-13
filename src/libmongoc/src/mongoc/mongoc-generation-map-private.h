@@ -26,7 +26,7 @@
 typedef struct _mongoc_generation_map mongoc_generation_map_t;
 
 mongoc_generation_map_t *
-mongoc_generation_map_new ();
+mongoc_generation_map_new (void);
 
 mongoc_generation_map_t *
 mongoc_generation_map_copy (const mongoc_generation_map_t *gm);

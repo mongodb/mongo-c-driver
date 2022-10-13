@@ -97,7 +97,7 @@ _load_resume_token (bson_t *opts)
 }
 
 int
-main ()
+main (void)
 {
    int exit_code = EXIT_FAILURE;
    const char *uri_string;

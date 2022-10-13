@@ -48,7 +48,7 @@ typedef bool (*hello_callback_func_t) (request_t *request,
 typedef void (*destructor_t) (void *data);
 
 mock_server_t *
-mock_server_new ();
+mock_server_new (void);
 
 mock_server_t *
 mock_server_with_auto_hello (int32_t max_wire_version);

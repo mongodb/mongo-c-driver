@@ -29,7 +29,7 @@
 BSON_BEGIN_DECLS
 
 BIO_METHOD *
-mongoc_stream_tls_openssl_bio_meth_new ();
+mongoc_stream_tls_openssl_bio_meth_new (void);
 
 void
 mongoc_stream_tls_openssl_bio_set_data (BIO *b, void *ptr);
