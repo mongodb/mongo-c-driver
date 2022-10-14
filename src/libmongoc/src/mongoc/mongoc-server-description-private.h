@@ -125,7 +125,7 @@ struct _mongoc_server_description_t {
     * service IDs. The only server generation is mapped from kZeroServiceID */
    mongoc_generation_map_t *_generation_map_;
    bson_oid_t service_id;
-   int32_t server_connection_id;
+   int64_t server_connection_id;
 };
 
 /** Get a mutable pointer to the server's generation map */
