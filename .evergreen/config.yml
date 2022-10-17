@@ -24144,7 +24144,7 @@ task_groups:
           export AZUREKMS_SECRET=${testazurekms_secret}
           export AZUREKMS_DRIVERS_TOOLS=$DRIVER_TOOLS
           export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
-          export AZUREKMS_PUBLICKEYPATH=/tmp/testazurekms_publickey.json
+          export AZUREKMS_PUBLICKEYPATH=/tmp/testazurekms_publickey
           export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
           export AZUREKMS_SCOPE=${testazurekms_scope}
           $DRIVER_TOOLS/.evergreen/csfle/azurekms/create-and-setup-vm.sh
