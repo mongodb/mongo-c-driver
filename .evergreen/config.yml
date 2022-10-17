@@ -24147,7 +24147,7 @@ task_groups:
           export AZUREKMS_PUBLICKEYPATH=/tmp/testazurekms_publickey.json
           export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
           export AZUREKMS_SCOPE=${testazurekms_scope}
-          $DRIVERS_TOOLS/.evergreen/csfle/azurekms/create-and-setup-vm.sh
+          $DRIVER_TOOLS/.evergreen/csfle/azurekms/create-and-setup-vm.sh
     # Load the AZUREKMS_VMNAME expansion.
     - command: expansions.update
       params:
@@ -24161,7 +24161,7 @@ task_groups:
           DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
           export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
           export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
-          $DRIVERS_TOOLS/.evergreen/csfle/azurekms/delete-vm.sh
+          $DRIVER_TOOLS/.evergreen/csfle/azurekms/delete-vm.sh
   tasks:
     - testazurekms-task
 
