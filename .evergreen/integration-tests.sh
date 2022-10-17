@@ -184,6 +184,9 @@ echo $MONGO_SHELL_CONNECTION_FLAGS
 `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())' admin
 `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
 
+# Create mo-expansion.yml. expansions.update expects the file to exist.
+touch mo-expansion.yml
+
 if [ -z "$MONGO_CRYPT_SHARED_DOWNLOAD_URL" ]; then
   echo "There is no crypt_shared library for distro='$DISTRO' and version='$MONGODB_VERSION'".
 else
