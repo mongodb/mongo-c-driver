@@ -24116,7 +24116,61 @@ tasks:
       AUTH: noauth
       LOADBALANCED: loadbalanced
       SSL: nossl
+- name: testazurekms-task
+  commands:
+    - command: shell.exec
+      params:
+        shell: "bash"
+        script: |
+          echo "Not yet implemented"
+          exit 1
+task_groups:
+- name: testazurekms_task_group
+  setup_group_can_fail_task: true
+  setup_group_timeout_secs: 1800 # 30 minutes
+  setup_group:
+    - command: shell.exec
+      params:
+        shell: "bash"
+        script: |
+          # TODO: consider moving DRIVER_TOOLS clone to an Evergreen function and adding an expansion.
+          git clone https://github.com/kevinAlbs/drivers-evergreen-tools.git --branch DRIVERS-2411 drivers-evergreen-tools
+          DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
+          echo '${testazurekms_publickey}' > /tmp/testazurekms_publickey
+          echo '${testazurekms_privatekey}' > /tmp/testazurekms_privatekey
+          export AZUREKMS_CLIENTID=${testazurekms_clientid}
+          export AZUREKMS_TENANTID=${testazurekms_tenantid}
+          export AZUREKMS_SECRET=${testazurekms_secret}
+          export AZUREKMS_DRIVERS_TOOLS=$DRIVER_TOOLS
+          export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
+          export AZUREKMS_PUBLICKEYPATH=/tmp/testazurekms_publickey.json
+          export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
+          export AZUREKMS_SCOPE=${testazurekms_scope}
+          $DRIVERS_TOOLS/.evergreen/csfle/azurekms/create-and-setup-vm.sh
+    # Load the AZUREKMS_VMNAME expansion.
+    - command: expansions.update
+      params:
+        file: testazurekms-expansions.yml
+  teardown_group:
+    - command: shell.exec
+      params:
+        shell: "bash"
+        script: |
+          DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
+          export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
+          export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
+          $DRIVERS_TOOLS/.evergreen/csfle/azurekms/delete-vm.sh
+  tasks:
+    - testazurekms-task
+
 buildvariants:
+- name: testazurekms-variant
+  display_name: "Azure KMS"
+  run_on:
+    - debian11-small
+  tasks:
+    - name: testazurekms_task_group
+      batchtime: 20160 # Use a batchtime of 14 days as suggested by the CSFLE test README
 - name: releng
   display_name: '**Release Archive Creator'
   run_on: ubuntu1804-test
@@ -24878,3 +24932,4 @@ buildvariants:
   run_on: macos-1100-arm64
   tasks:
   - debug-compile-sasl-darwinssl
+
