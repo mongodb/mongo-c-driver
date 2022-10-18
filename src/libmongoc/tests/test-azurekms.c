@@ -5,10 +5,12 @@ main (void)
 {
    char *mongodb_uri = getenv ("MONGODB_URI");
    char *expect_error = getenv ("EXPECT_ERROR");
+   char *keyName = getenv ("KEY_NAME");
+   char *keyVaultEndpoint = getenv ("KEY_VAULT_ENDPOINT");
 
    if (!mongodb_uri) {
-      MONGOC_ERROR (
-         "Error: expecting environment variables to be set: MONGODB_URI");
+      MONGOC_ERROR ("Error: expecting environment variables to be set: "
+                    "MONGODB_URI, KEY_NAME, KEY_VAULT_ENDPOINT");
       return EXIT_FAILURE;
    }
 
@@ -38,11 +40,10 @@ main (void)
 
    mongoc_client_encryption_datakey_opts_t *dkopts;
    dkopts = mongoc_client_encryption_datakey_opts_new ();
-   bson_t *masterkey =
-      BCON_NEW ("keyVaultEndpoint",
-                "https://keyvault-drivers-2411.vault.azure.net/keys/",
-                "keyName",
-                "KEY-NAME");
+   bson_t *masterkey = BCON_NEW ("keyVaultEndpoint",
+                                 BCON_UTF8 (keyVaultEndpoint),
+                                 "keyName",
+                                 BCON_UTF8 (keyName));
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
 
    bson_value_t keyid;
