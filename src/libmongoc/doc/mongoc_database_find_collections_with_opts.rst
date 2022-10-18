@@ -68,8 +68,8 @@ Examples
         printf ("found collection: %s\n", bson_iter_utf8 (&iter, NULL));
      }
 
-     if (mongoc_cursor_error (cursor, &error))
-        fprintf (stderr, "%s\n", error.msg);
+     if (mongoc_cursor_error (cursor, &error)) {
+        fprintf (stderr, "%s\n", error.message);
      }
 
      mongoc_cursor_destroy (cursor);
