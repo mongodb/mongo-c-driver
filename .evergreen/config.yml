@@ -24121,6 +24121,7 @@ tasks:
     - command: shell.exec
       params:
         shell: "bash"
+        type: test
         script: |
           echo "Not yet implemented"
           exit 1
