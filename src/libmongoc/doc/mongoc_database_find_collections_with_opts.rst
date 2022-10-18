@@ -56,6 +56,7 @@ Examples
      const bson_t *doc;
      bson_iter_t iter;
      bson_error_t error;
+     mongoc_cursor_t *cursor;
 
      BSON_APPEND_DOCUMENT_BEGIN (&opts, "filter", &name_filter);
      /* find collections with names like "abbbbc" */
