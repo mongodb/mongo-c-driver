@@ -24139,6 +24139,8 @@ task_groups:
           DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
           echo '${testazurekms_publickey}' > /tmp/testazurekms_publickey
           echo '${testazurekms_privatekey}' > /tmp/testazurekms_privatekey
+          # Set 600 permissions on private key file. Otherwise ssh / scp may error with permissions "are too open".
+          chmod 600 /tmp/testazurekms_privatekey
           export AZUREKMS_CLIENTID=${testazurekms_clientid}
           export AZUREKMS_TENANTID=${testazurekms_tenantid}
           export AZUREKMS_SECRET=${testazurekms_secret}
