@@ -24118,13 +24118,54 @@ tasks:
       SSL: nossl
 - name: testazurekms-task
   commands:
+    - func: fetch source
+    - command: shell.exec
+      params:
+        shell: "bash"
+        type: setup
+        script: |
+          set -o errexit
+          set -o pipefail
+          set -o nounset
+
+          echo "Building test-azurekms ... begin"
+          pushd mongoc
+          ./.evergreen/compile-test-azurekms.sh
+          popd
+          echo "Building test-azurekms ... end"
+
+          echo "Copying files ... begin"
+          export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
+          export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
+          export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
+          DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
+          mkdir testazurekms
+          cp ./mongoc/src/libmongoc/test-azurekms ./mongoc/install/lib/libmongocrypt.* testazurekms
+          tar czf testazurekms.tgz testazurekms/*
+          AZUREKMS_SRC="testazurekms.tgz" \
+          AZUREKMS_DST="~/" \
+            $DRIVER_TOOLS/.evergreen/csfle/azurekms/copy-file.sh
+          echo "Copying files ... end"
+
+          echo "Untarring file ... begin"
+          AZUREKMS_CMD="tar xf testazurekms.tgz" \
+            $DRIVER_TOOLS/.evergreen/csfle/azurekms/run-command.sh
+          echo "Untarring file ... end"
     - command: shell.exec
       params:
         shell: "bash"
         type: test
         script: |
-          echo "Not yet implemented"
-          exit 1
+          set -o errexit
+          set -o pipefail
+          set -o nounset
+
+          export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
+          export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
+          export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
+          DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
+          AZUREKMS_CMD="LD_LIBRARY_PATH=./testazurekms MONGODB_URI='mongodb://localhost:27017' KEY_NAME='${testazurekms_keyname}' KEY_VAULT_ENDPOINT='${testazurekms_keyvaultendpoint}' ./testazurekms/test-azurekms" \
+            $DRIVER_TOOLS/.evergreen/csfle/azurekms/run-command.sh
 task_groups:
 - name: testazurekms_task_group
   setup_group_can_fail_task: true
