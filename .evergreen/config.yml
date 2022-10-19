@@ -24166,6 +24166,38 @@ tasks:
           DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
           AZUREKMS_CMD="LD_LIBRARY_PATH=./testazurekms MONGODB_URI='mongodb://localhost:27017' KEY_NAME='${testazurekms_keyname}' KEY_VAULT_ENDPOINT='${testazurekms_keyvaultendpoint}' ./testazurekms/test-azurekms" \
             $DRIVER_TOOLS/.evergreen/csfle/azurekms/run-command.sh
+- name: testazurekms-fail-task
+  # testazurekms-fail-task runs in a non-Azure environment.
+  # It is expected to fail to obtain Azure credentials.
+  commands:
+    - func: fetch source
+    - command: shell.exec
+      type: setup
+      params:
+        shell: "bash"
+        script: |
+          set -o errexit
+          set -o pipefail
+          set -o nounset
+
+          pushd mongoc
+          ./.evergreen/compile-test-azurekms.sh
+          popd
+    - command: shell.exec
+      type: test
+      params:
+        shell: "bash"
+        script: |
+          set -o errexit
+          set -o pipefail
+          set -o nounset
+
+          LD_LIBRARY_PATH=./install \
+          MONGODB_URI='mongodb://localhost:27017' \
+          KEY_NAME='${testazurekms_keyname}' \
+          KEY_VAULT_ENDPOINT='${testazurekms_keyvaultendpoint}' \
+          EXPECT_ERROR='foobar' \
+            ./mongoc/src/libmongoc/test-azurekms
 task_groups:
 - name: testazurekms_task_group
   setup_group_can_fail_task: true
@@ -24216,6 +24248,8 @@ buildvariants:
     - debian11-small
   tasks:
     - name: testazurekms_task_group
+      batchtime: 20160 # Use a batchtime of 14 days as suggested by the CSFLE test README
+    - name: testazurekms-fail-task
       batchtime: 20160 # Use a batchtime of 14 days as suggested by the CSFLE test README
 - name: releng
   display_name: '**Release Archive Creator'
