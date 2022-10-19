@@ -760,7 +760,7 @@ _try_add_azure_from_env (_mongoc_crypt_t *crypt,
       // abstract monotonic "now"
       crypt->azure_token_issued_at = mcd_now ();
       // Get the token:
-      if (_request_new_azure_token (&crypt->azure_token, error)) {
+      if (!_request_new_azure_token (&crypt->azure_token, error)) {
          return false;
       }
    }

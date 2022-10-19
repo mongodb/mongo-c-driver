@@ -56,6 +56,7 @@ Examples
      const bson_t *doc;
      bson_iter_t iter;
      bson_error_t error;
+     mongoc_cursor_t *cursor;
 
      BSON_APPEND_DOCUMENT_BEGIN (&opts, "filter", &name_filter);
      /* find collections with names like "abbbbc" */
@@ -68,8 +69,8 @@ Examples
         printf ("found collection: %s\n", bson_iter_utf8 (&iter, NULL));
      }
 
-     if (mongoc_cursor_error (cursor, &error))
-        fprintf (stderr, "%s\n", error.msg);
+     if (mongoc_cursor_error (cursor, &error)) {
+        fprintf (stderr, "%s\n", error.message);
      }
 
      mongoc_cursor_destroy (cursor);
