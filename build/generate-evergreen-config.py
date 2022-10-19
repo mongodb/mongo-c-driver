@@ -41,6 +41,8 @@ drivers-evergreen-tools#subdirectory=evergreen_config_generator\
 from evergreen_config_lib.functions import all_functions
 from evergreen_config_lib.tasks import all_tasks
 from evergreen_config_lib.variants import all_variants
+from evergreen_config_lib.taskgroups import all_task_groups
+from evergreen_config_lib.testazurekms import testazurekms_generate
 
 config = OD([
     ('stepback', True),
@@ -66,6 +68,7 @@ config = OD([
         OD([('func', 'backtrace')])
     ]),
     ('tasks', all_tasks),
+    ('task_groups', all_task_groups),
     ('buildvariants', all_variants),
 ])
 
