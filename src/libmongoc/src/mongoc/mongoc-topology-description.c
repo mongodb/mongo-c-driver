@@ -315,13 +315,13 @@ _mongoc_topology_description_has_primary (
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_description_later_election_id --
+ * _mongoc_server_description_later_election_id --
  *
- *
+ *       Checks if the server has a larger electionId than the topology.
  *
  * Returns:
- *       True if the topology description's max replica set version plus
- *       election id is later than the server description's.
+ *       True if the server's electionId is greater or the server's version is
+ *       later than the topologoy max version.
  *
  * Side effects:
  *       None
@@ -329,7 +329,7 @@ _mongoc_topology_description_has_primary (
  *--------------------------------------------------------------------------
  */
 static bool
-_mongoc_topology_description_later_election_id (
+_mongoc_server_description_later_election_id (
    mongoc_topology_description_t *td, const mongoc_server_description_t *sd)
 {
    /* initially max_set_version is -1 and max_election_id is zeroed */
@@ -1642,6 +1642,7 @@ _mongoc_topology_description_update_rs_from_primary (
    if (!_mongoc_topology_description_has_server (
           topology, server->connection_address, NULL))
       return;
+
    /* If server->set_name was null this function wouldn't be called from
     * mongoc_server_description_handle_hello(). static code analyzers however
     * don't know that so we check for it explicitly. */
@@ -1652,13 +1653,13 @@ _mongoc_topology_description_update_rs_from_primary (
          topology->set_name = bson_strdup (server->set_name);
       } else if (strcmp (topology->set_name, server->set_name) != 0) {
          _mongoc_topology_description_remove_server (topology, server);
-         _update_rs_type (topology); // checkifhasprimary()
+         _update_rs_type (topology);
          return;
       }
    }
    /* MongoDB 6.0+ */
    if (server->max_wire_version >= WIRE_VERSION_6_0) {
-      if (_mongoc_topology_description_later_election_id (topology, server)) {
+      if (_mongoc_server_description_later_election_id (topology, server)) {
          _mongoc_topology_description_set_max_election_id (topology, server);
          _mongoc_topology_description_set_max_set_version (topology, server);
 
