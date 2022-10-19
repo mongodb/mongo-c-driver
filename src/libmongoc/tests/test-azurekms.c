@@ -14,11 +14,6 @@ main (void)
       return EXIT_FAILURE;
    }
 
-   if (0 != strcmp (mongodb_uri, "failme")) {
-      MONGOC_ERROR ("Failing test on purpose. Expect task failure.");
-      return EXIT_FAILURE;
-   }
-
    mongoc_init ();
 
    mongoc_client_t *keyvault_client = mongoc_client_new (mongodb_uri);
