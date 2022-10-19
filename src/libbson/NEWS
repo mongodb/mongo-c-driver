@@ -1,3 +1,17 @@
+libbson 1.22.2
+==============
+
+Bug fixes:
+
+- Fix link errors related to atomic operations on RISC-V
+- Fix compile-time errors due to type conflicts on some platforms.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Roberto C. Sánchez
+
+
 libbson 1.23.1
 ==============
 
