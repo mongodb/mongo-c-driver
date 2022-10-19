@@ -44,6 +44,8 @@ from evergreen_config_lib.variants import all_variants
 from evergreen_config_lib.taskgroups import all_task_groups
 from evergreen_config_lib.testazurekms import testazurekms_generate
 
+testazurekms_generate (all_tasks, all_variants, all_task_groups)
+
 config = OD([
     ('stepback', True),
     ('command_type', 'system'),
