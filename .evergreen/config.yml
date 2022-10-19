@@ -24120,9 +24120,9 @@ tasks:
   commands:
     - func: fetch source
     - command: shell.exec
+      type: setup
       params:
         shell: "bash"
-        type: setup
         script: |
           set -o errexit
           set -o pipefail
@@ -24152,9 +24152,9 @@ tasks:
             $DRIVER_TOOLS/.evergreen/csfle/azurekms/run-command.sh
           echo "Untarring file ... end"
     - command: shell.exec
+      type: test
       params:
         shell: "bash"
-        type: test
         script: |
           set -o errexit
           set -o pipefail
