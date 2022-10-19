@@ -3744,7 +3744,6 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    bson_t *docs[N_DOCS];
    int i;
    bson_t reply;
-   bson_t *cmd;
    int64_t count;
    bson_t *filter;
 
@@ -3853,16 +3852,33 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    ASSERT_OR_PRINT (ok, error);
    bson_destroy (&reply);
 
-   cmd = BCON_NEW ("count", "sales");
-   ok = mongoc_database_command_simple (
-      db, cmd, NULL /* read_prefs */, &reply, &error);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_SERVER,
-      323,
-      "Provided apiStrict:true, but the command count is not in API Version 1");
-   ASSERT (!ok);
-   bson_destroy (&reply);
+   {
+      const server_version_t version = test_framework_get_server_version ();
+
+      // count command was added to API version 1 in 6.0 and backported to 5.0.9
+      // and 5.3.2 (see SERVER-63850 and DRIVERS-2228). This test assumes count
+      // command is not in API version 1. Skip until examples are updated
+      // accordingly (see DRIVERS-1846).
+      const bool should_skip =
+         (version >= 106100100) ||                        // [6.0.0, inf)
+         (version >= 105103102 && version < 106100100) || // [5.3.2, 6.0.0)
+         (version >= 105100109 && version < 105101100);   // [5.0.9, 5.1.0)
+
+      if (!should_skip) {
+         bson_t *cmd = BCON_NEW ("count", "sales");
+         ok = mongoc_database_command_simple (
+            db, cmd, NULL /* read_prefs */, &reply, &error);
+         ASSERT_ERROR_CONTAINS (
+            error,
+            MONGOC_ERROR_SERVER,
+            323,
+            "Provided apiStrict:true, but the command count "
+            "is not in API Version 1");
+         ASSERT (!ok);
+         bson_destroy (&reply);
+         bson_destroy (cmd);
+      }
+   }
 #if 0
    /* This block not evaluated, but is inserted into documentation to represent the above reply.
     * Don't delete me! */
@@ -3890,7 +3906,6 @@ _test_sample_versioned_api_example_5_6_7_8 (void)
    /* End Versioned API Example 8 */
 
    bson_destroy (filter);
-   bson_destroy (cmd);
    for (i = 0; i < N_DOCS; i++) {
       bson_destroy (docs[i]);
    }
