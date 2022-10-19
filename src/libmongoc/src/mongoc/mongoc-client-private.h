@@ -100,6 +100,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_SNAPSHOT_READS 13
 /* version corresponding to server 5.1 release */
 #define WIRE_VERSION_5_1 14
+/* version corresponding to server 6.0 release */
+#define WIRE_VERSION_6_0 17
 
 struct _mongoc_collection_t;
 

@@ -315,6 +315,32 @@ _mongoc_topology_description_has_primary (
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_description_later_election_id --
+ *
+ *
+ *
+ * Returns:
+ *       True if the topology description's max replica set version plus
+ *       election id is later than the server description's.
+ *
+ * Side effects:
+ *       None
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_topology_description_later_election_id (
+   mongoc_topology_description_t *td, const mongoc_server_description_t *sd)
+{
+   /* initially max_set_version is -1 and max_election_id is zeroed */
+   return (bson_oid_compare (&sd->election_id, &td->max_election_id) > 0) ||
+          ((bson_oid_compare (&sd->election_id, &td->max_election_id) == 0) &&
+           sd->set_version >= td->max_set_version);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_topology_description_later_election --
  *
  *       Check if we've seen a more recent election in the replica set
@@ -1616,7 +1642,6 @@ _mongoc_topology_description_update_rs_from_primary (
    if (!_mongoc_topology_description_has_server (
           topology, server->connection_address, NULL))
       return;
-
    /* If server->set_name was null this function wouldn't be called from
     * mongoc_server_description_handle_hello(). static code analyzers however
     * don't know that so we check for it explicitly. */
@@ -1627,19 +1652,17 @@ _mongoc_topology_description_update_rs_from_primary (
          topology->set_name = bson_strdup (server->set_name);
       } else if (strcmp (topology->set_name, server->set_name) != 0) {
          _mongoc_topology_description_remove_server (topology, server);
-         _update_rs_type (topology);
+         _update_rs_type (topology); // checkifhasprimary()
          return;
       }
    }
+   /* MongoDB 6.0+ */
+   if (server->max_wire_version >= WIRE_VERSION_6_0) {
+      if (_mongoc_topology_description_later_election_id (topology, server)) {
+         _mongoc_topology_description_set_max_election_id (topology, server);
+         _mongoc_topology_description_set_max_set_version (topology, server);
 
-   if (mongoc_server_description_has_set_version (server) &&
-       mongoc_server_description_has_election_id (server)) {
-      /* Server Discovery And Monitoring Spec: "The client remembers the
-       * greatest electionId reported by a primary, and distrusts primaries
-       * with lesser electionIds. This prevents the client from oscillating
-       * between the old and new primary during a split-brain period."
-       */
-      if (_mongoc_topology_description_later_election (topology, server)) {
+      } else {
          bson_set_error (&error,
                          MONGOC_ERROR_STREAM,
                          MONGOC_ERROR_STREAM_CONNECT,
@@ -1649,17 +1672,37 @@ _mongoc_topology_description_update_rs_from_primary (
          _update_rs_type (topology);
          return;
       }
+      // old comparison rules, namely setVersion is checked before electionId
+   } else {
+      if (mongoc_server_description_has_set_version (server) &&
+          mongoc_server_description_has_election_id (server)) {
+         /* Server Discovery And Monitoring Spec: "The client remembers the
+          * greatest electionId reported by a primary, and distrusts primaries
+          * with lesser electionIds. This prevents the client from oscillating
+          * between the old and new primary during a split-brain period."
+          */
+         if (_mongoc_topology_description_later_election (topology, server)) {
+            // stale primary code return:
+            bson_set_error (&error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_CONNECT,
+                            "member's setVersion or electionId is stale");
+            mongoc_topology_description_invalidate_server (
+               topology, server->id, &error);
+            _update_rs_type (topology);
+            return;
+         }
 
-      /* server's electionId >= topology's max electionId */
-      _mongoc_topology_description_set_max_election_id (topology, server);
+         /* server's electionId >= topology's max electionId */
+         _mongoc_topology_description_set_max_election_id (topology, server);
+      }
+
+      if (mongoc_server_description_has_set_version (server) &&
+          (!_mongoc_topology_description_has_set_version (topology) ||
+           server->set_version > topology->max_set_version)) {
+         _mongoc_topology_description_set_max_set_version (topology, server);
+      }
    }
-
-   if (mongoc_server_description_has_set_version (server) &&
-       (!_mongoc_topology_description_has_set_version (topology) ||
-        server->set_version > topology->max_set_version)) {
-      _mongoc_topology_description_set_max_set_version (topology, server);
-   }
-
    /* 'Server' is the primary! Invalidate other primaries if found */
    data.primary = server;
    data.topology = topology;
