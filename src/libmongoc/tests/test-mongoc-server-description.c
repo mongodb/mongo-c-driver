@@ -440,6 +440,7 @@ test_server_description_hello_type_error (void)
    mongoc_server_description_handle_hello (&sd, tmp_bson (hello), 0, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
    BSON_ASSERT (sd.error.code == MONGOC_ERROR_STREAM_INVALID_TYPE);
+   ASSERT_CMPSTR (sd.error.message, "invalid type sent to hello");
 
    mongoc_server_description_cleanup (&sd);
 }
