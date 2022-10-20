@@ -315,13 +315,14 @@ _mongoc_topology_description_has_primary (
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_server_description_larger_election_id --
+ * _mongoc_server_description_primary_is_not_stale --
  *
- *       Checks if the server has a larger electionId than the topology.
+ *       Checks if a primary server is not stale by comparing the electionId and
+ *       setVersion.
  *
  * Returns:
  *       True if the server's electionId is larger or the server's version is
- *       later than the topologoy max version.
+ *       later than the topology max version.
  *
  * Side effects:
  *       None
@@ -329,7 +330,7 @@ _mongoc_topology_description_has_primary (
  *--------------------------------------------------------------------------
  */
 static bool
-_mongoc_server_description_larger_election_id (
+_mongoc_server_description_primary_is_not_stale (
    mongoc_topology_description_t *td, const mongoc_server_description_t *sd)
 {
    /* initially max_set_version is -1 and max_election_id is zeroed */
@@ -1659,7 +1660,7 @@ _mongoc_topology_description_update_rs_from_primary (
    }
    if (server->max_wire_version >= WIRE_VERSION_6_0) {
       /* MongoDB 6.0+ */
-      if (_mongoc_server_description_larger_election_id (topology, server)) {
+      if (_mongoc_server_description_primary_is_not_stale (topology, server)) {
          _mongoc_topology_description_set_max_election_id (topology, server);
          _mongoc_topology_description_set_max_set_version (topology, server);
 
