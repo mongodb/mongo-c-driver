@@ -38,27 +38,27 @@ def _create_tasks():
           export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
           export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
           export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
-          DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
+          DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
           mkdir testazurekms
           cp ./mongoc/src/libmongoc/test-azurekms ./mongoc/install/lib/libmongocrypt.* testazurekms
           tar czf testazurekms.tgz testazurekms/*
           AZUREKMS_SRC="testazurekms.tgz" \
           AZUREKMS_DST="~/" \
-            $DRIVER_TOOLS/.evergreen/csfle/azurekms/copy-file.sh
+            $DRIVERS_TOOLS/.evergreen/csfle/azurekms/copy-file.sh
           echo "Copying files ... end"
 
           echo "Untarring file ... begin"
           AZUREKMS_CMD="tar xf testazurekms.tgz" \
-            $DRIVER_TOOLS/.evergreen/csfle/azurekms/run-command.sh
+            $DRIVERS_TOOLS/.evergreen/csfle/azurekms/run-command.sh
           echo "Untarring file ... end"
         ''', test=False),
         shell_exec (r'''
           export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
           export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
           export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
-          DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
+          DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
           AZUREKMS_CMD="LD_LIBRARY_PATH=./testazurekms MONGODB_URI='mongodb://localhost:27017' KEY_NAME='${testazurekms_keyname}' KEY_VAULT_ENDPOINT='${testazurekms_keyvaultendpoint}' ./testazurekms/test-azurekms" \
-            $DRIVER_TOOLS/.evergreen/csfle/azurekms/run-command.sh
+            $DRIVERS_TOOLS/.evergreen/csfle/azurekms/run-command.sh
         ''')
     ]
 
@@ -100,7 +100,7 @@ def _create_task_group():
         shell_exec(r'''
             # TODO: update once https://github.com/mongodb-labs/drivers-evergreen-tools/pull/239 is merged.
             git clone https://github.com/kevinAlbs/drivers-evergreen-tools.git --branch DRIVERS-2411 drivers-evergreen-tools
-            DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
+            DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
             echo '${testazurekms_publickey}' > /tmp/testazurekms_publickey
             echo '${testazurekms_privatekey}' > /tmp/testazurekms_privatekey
             # Set 600 permissions on private key file. Otherwise ssh / scp may error with permissions "are too open".
@@ -108,13 +108,13 @@ def _create_task_group():
             export AZUREKMS_CLIENTID=${testazurekms_clientid}
             export AZUREKMS_TENANTID=${testazurekms_tenantid}
             export AZUREKMS_SECRET=${testazurekms_secret}
-            export AZUREKMS_DRIVERS_TOOLS=$DRIVER_TOOLS
+            export AZUREKMS_DRIVERS_TOOLS=$DRIVERS_TOOLS
             export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
             export AZUREKMS_PUBLICKEYPATH=/tmp/testazurekms_publickey
             export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
             export AZUREKMS_SCOPE=${testazurekms_scope}
             export AZUREKMS_VMNAME_PREFIX=CDRIVER
-            $DRIVER_TOOLS/.evergreen/csfle/azurekms/create-and-setup-vm.sh
+            $DRIVERS_TOOLS/.evergreen/csfle/azurekms/create-and-setup-vm.sh
             ''', test=False),
         # Load the AZUREKMS_VMNAME expansion.
         OD([('command', 'expansions.update'),
@@ -125,10 +125,10 @@ def _create_task_group():
 
     task_group.teardown_group = [
         shell_exec(r'''
-            DRIVER_TOOLS=$(pwd)/drivers-evergreen-tools
+            DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
                 export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
                 export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
-                $DRIVER_TOOLS/.evergreen/csfle/azurekms/delete-vm.sh
+                $DRIVERS_TOOLS/.evergreen/csfle/azurekms/delete-vm.sh
             ''', test=False)
     ]
     task_group.tasks = ["testazurekms-task"]
