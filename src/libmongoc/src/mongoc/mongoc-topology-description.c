@@ -315,12 +315,12 @@ _mongoc_topology_description_has_primary (
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_server_description_later_election_id --
+ * _mongoc_server_description_larger_election_id --
  *
  *       Checks if the server has a larger electionId than the topology.
  *
  * Returns:
- *       True if the server's electionId is greater or the server's version is
+ *       True if the server's electionId is larger or the server's version is
  *       later than the topologoy max version.
  *
  * Side effects:
@@ -329,7 +329,7 @@ _mongoc_topology_description_has_primary (
  *--------------------------------------------------------------------------
  */
 static bool
-_mongoc_server_description_later_election_id (
+_mongoc_server_description_larger_election_id (
    mongoc_topology_description_t *td, const mongoc_server_description_t *sd)
 {
    /* initially max_set_version is -1 and max_election_id is zeroed */
@@ -1657,9 +1657,9 @@ _mongoc_topology_description_update_rs_from_primary (
          return;
       }
    }
-   /* MongoDB 6.0+ */
    if (server->max_wire_version >= WIRE_VERSION_6_0) {
-      if (_mongoc_server_description_later_election_id (topology, server)) {
+      /* MongoDB 6.0+ */
+      if (_mongoc_server_description_larger_election_id (topology, server)) {
          _mongoc_topology_description_set_max_election_id (topology, server);
          _mongoc_topology_description_set_max_set_version (topology, server);
 
@@ -1673,8 +1673,8 @@ _mongoc_topology_description_update_rs_from_primary (
          _update_rs_type (topology);
          return;
       }
-      // old comparison rules, namely setVersion is checked before electionId
    } else {
+      // old comparison rules, namely setVersion is checked before electionId
       if (mongoc_server_description_has_set_version (server) &&
           mongoc_server_description_has_election_id (server)) {
          /* Server Discovery And Monitoring Spec: "The client remembers the
