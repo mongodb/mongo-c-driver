@@ -1585,6 +1585,7 @@ _mongoc_change_stream_opts_parse (
    mongoc_change_stream_opts->fullDocumentBeforeChange = NULL;
    memset (&mongoc_change_stream_opts->comment, 0, sizeof (bson_value_t));
    bson_init (&mongoc_change_stream_opts->extra);
+   memset (&mongoc_change_stream_opts->showExpandedEvents, 0, sizeof (bool));
 
    if (!opts) {
       return true;
@@ -1667,6 +1668,16 @@ _mongoc_change_stream_opts_parse (
                client,
                &iter,
                &mongoc_change_stream_opts->comment,
+               error)) {
+            return false;
+         }
+      }
+
+       else if (!strcmp (bson_iter_key (&iter), "showExpandedEvents")) {
+         if (!_mongoc_convert_bool (
+               client,
+               &iter,
+               &mongoc_change_stream_opts->showExpandedEvents,
                error)) {
             return false;
          }
