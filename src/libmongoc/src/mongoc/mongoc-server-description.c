@@ -790,11 +790,10 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
 failure:
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
-   bson_set_error (error,
+   bson_set_error (&sd->error,
                    MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_INVALID_TYPE,
                    "invalid type sent to hello");
-   // gillog: need to set the bson_error_t here!
    EXIT;
 }
 

@@ -417,9 +417,8 @@ test_server_description_connection_id (void)
    mongoc_server_description_cleanup (&sd);
 }
 
-// GILLOG
 static void
-test_server_description_error_mongohouse (void)
+test_server_description_hello_type_error (void)
 {
    mongoc_server_description_t sd;
    bson_error_t error;
@@ -440,7 +439,7 @@ test_server_description_error_mongohouse (void)
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_server_description_handle_hello (&sd, tmp_bson (hello), 0, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
-   printf ("%s%d", "GILLOG:", error.code);
+   BSON_ASSERT (sd.error.code == MONGOC_ERROR_STREAM_INVALID_TYPE);
 
    mongoc_server_description_cleanup (&sd);
 }
@@ -471,6 +470,6 @@ test_server_description_install (TestSuite *suite)
                   "/server_description/connection_id",
                   test_server_description_connection_id);
    TestSuite_Add (suite,
-                  "/server_description/monghouse_hello_error_response",
-                  test_server_description_error_mongohouse);
+                  "/server_description/hello_type_error",
+                  test_server_description_hello_type_error);
 }
