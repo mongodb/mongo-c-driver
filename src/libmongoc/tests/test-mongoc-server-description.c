@@ -417,6 +417,34 @@ test_server_description_connection_id (void)
    mongoc_server_description_cleanup (&sd);
 }
 
+// GILLOG
+static void
+test_server_description_error_mongohouse (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   const char *hello =
+      "{"
+      "  'ok' : { '$numberInt' : '1' },"
+      " 'ismaster' : true,"
+      " 'maxBsonObjectSize' : { '$numberInt' : '16777216' },"
+      " 'maxMessageSizeBytes' : { '$numberInt' : '48000000'},"
+      " 'maxWriteBatchSize' : { '$numberLong' : '565160423'},"
+      " 'logicalSessionTimeoutMinutes' : { '$numberInt' : '30'},"
+      " 'connectionId' : { '$numberLong' : '565160423'},"
+      " 'minWireVersion' : { '$numberInt' : '0'},"
+      " 'maxWireVersion' : { '$numberInt' : '15'},"
+      " 'readOnly' : true"
+      "}";
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_handle_hello (&sd, tmp_bson (hello), 0, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   printf ("%s%d", "GILLOG:", error.code);
+
+   mongoc_server_description_cleanup (&sd);
+}
+
 void
 test_server_description_install (TestSuite *suite)
 {
@@ -442,4 +470,7 @@ test_server_description_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/server_description/connection_id",
                   test_server_description_connection_id);
+   TestSuite_Add (suite,
+                  "/server_description/monghouse_hello_error_response",
+                  test_server_description_error_mongohouse);
 }
