@@ -601,7 +601,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
              * MUST treat this an authentication error." */
             sd->error.domain = MONGOC_ERROR_CLIENT;
             sd->error.code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
-            goto failure;
+            goto authfailure;
          }
       } else if (strcmp ("isWritablePrimary", bson_iter_key (&iter)) == 0 ||
                  strcmp (HANDSHAKE_RESPONSE_LEGACY_HELLO,
@@ -794,6 +794,11 @@ failure:
                    MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_INVALID_TYPE,
                    "invalid type sent to hello");
+   EXIT;
+
+authfailure:
+   sd->type = MONGOC_SERVER_UNKNOWN;
+   sd->round_trip_time_msec = MONGOC_RTT_UNSET;
    EXIT;
 }
 
