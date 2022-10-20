@@ -86,7 +86,8 @@ def _create_variant():
     return Variant(
         name="testazurekms-variant",
         display_name="Azure KMS",
-        run_on="debian11-small", tasks=[
+        # Azure Virtual Machine created is Debian 10.
+        run_on="debian10-small", tasks=[
             "testazurekms_task_group",
             "testazurekms-fail-task"
         ], batchtime=20160)  # Use a batchtime of 14 days as suggested by the CSFLE test README

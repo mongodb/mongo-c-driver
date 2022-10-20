@@ -24986,7 +24986,7 @@ buildvariants:
   - debug-compile-sasl-darwinssl
 - name: testazurekms-variant
   display_name: Azure KMS
-  run_on: debian11-small
+  run_on: debian10-small
   tasks:
   - testazurekms_task_group
   - testazurekms-fail-task
