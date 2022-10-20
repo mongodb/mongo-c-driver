@@ -795,6 +795,7 @@ typefailure:
 authfailure:
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
+
    EXIT;
 }
 
