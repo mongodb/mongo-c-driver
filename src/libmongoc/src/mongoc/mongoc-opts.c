@@ -1586,6 +1586,7 @@ _mongoc_change_stream_opts_parse (
    memset (&mongoc_change_stream_opts->comment, 0, sizeof (bson_value_t));
    bson_init (&mongoc_change_stream_opts->extra);
    mongoc_change_stream_opts->showExpandedEvents = false;
+   // mongoc_change_stream_opts->dropTarget = false;
 
    if (!opts) {
       return true;
@@ -1672,7 +1673,6 @@ _mongoc_change_stream_opts_parse (
             return false;
          }
       }
-
        else if (!strcmp (bson_iter_key (&iter), "showExpandedEvents")) {
          if (!_mongoc_convert_bool (
                client,

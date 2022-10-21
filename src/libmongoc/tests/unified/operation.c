@@ -2154,6 +2154,58 @@ done:
    return ret;
 }
 
+// static bool
+// operation_create_change_stream_index (test_t *test,
+//                                       operation_t *op,
+//                                       result_t *result,
+//                                       bson_error_t *error)
+// {
+// }
+
+static bool
+operation_drop_index (test_t *test,
+                      operation_t *op,
+                      result_t *result,
+                      bson_error_t *error)
+{
+   bool ret = false;
+   entity_t *entity;
+   bson_parser_t *parser = NULL;
+   char *index = NULL;
+   bson_t *opts = NULL;
+   mongoc_collection_t *coll = NULL;
+   bson_error_t op_error = {0};
+
+   parser = bson_parser_new ();
+   bson_parser_allow_extra (parser, true);
+   bson_parser_utf8 (parser, "name", &index);
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   entity = entity_map_get (test->entity_map, op->object, error);
+   if (!entity) {
+      goto done;
+   }
+
+   opts = bson_new ();
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   mongoc_collection_drop_index (coll, index, error);
+   result_from_val_and_reply (result, NULL, NULL, &op_error);
+   ret = true;
+
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+   bson_destroy (opts);
+   return ret;
+}
+
 static bool
 operation_failpoint (test_t *test,
                      operation_t *op,
@@ -3118,8 +3170,10 @@ operation_rename (test_t *test,
    const char *object = op->object;
    bson_parser_t *bp = bson_parser_new ();
    bool ret = false;
+   bool *drop_target = false;
    char *new_name = NULL;
    bson_parser_utf8 (bp, "to", &new_name);
+   bson_parser_bool_optional (bp, "dropTarget", &drop_target);
    bool parse_ok = bson_parser_parse (bp, op->arguments, error);
    bson_parser_destroy (bp);
    if (!parse_ok) {
@@ -3140,9 +3194,10 @@ operation_rename (test_t *test,
          ent->type);
       goto done;
    }
+
    // Rename the collection in the server,
    mongoc_collection_t *coll = ent->value;
-   if (!mongoc_collection_rename (coll, NULL, new_name, false, error)) {
+   if (!mongoc_collection_rename (coll, NULL, new_name, drop_target, error)) {
       goto done;
    }
    result_from_ok (result);
@@ -3213,6 +3268,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"iterateUntilDocumentOrError",
        operation_iterate_until_document_or_error},
       {"close", operation_close},
+      {"dropIndex", operation_drop_index},
 
       /* Test runner operations */
       {"failPoint", operation_failpoint},
