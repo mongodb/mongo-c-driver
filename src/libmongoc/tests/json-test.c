@@ -1461,36 +1461,97 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_t tmp;
 
       bson_iter_bson (&iter, &tmp);
-      bson_copy_to_excluding (
-         &tmp, &kms_providers, "aws", "azure", "gcp", "kmip", NULL);
+      bson_copy_to_excluding (&tmp,
+                              &kms_providers,
+                              "aws",
+                              "awsTemporary",
+                              "awsTemporaryNoSessionToken",
+                              "azure",
+                              "gcp",
+                              "kmip",
+                              NULL);
 
       /* AWS credentials are set from environment variables. */
       if (bson_has_field (&opts, "kmsProviders.aws")) {
-         char *aws_secret_access_key;
-         char *aws_access_key_id;
-
-         aws_secret_access_key =
+         char *const secret_access_key =
             test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
-         aws_access_key_id =
+         char *const access_key_id =
             test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
 
-         if (!aws_secret_access_key || !aws_access_key_id) {
+         if (!secret_access_key || !access_key_id) {
             fprintf (stderr,
                      "Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
-                     "MONGOC_TEST_AWS_ACCESS_KEY_ID environment "
-                     "variables to run Client Side Encryption tests.");
+                     "MONGOC_TEST_AWS_ACCESS_KEY_ID environment variables to "
+                     "run Client Side Encryption tests.\n");
             abort ();
          }
 
-         bson_concat (
-            &kms_providers,
-            tmp_bson (
-               "{ 'aws': { 'secretAccessKey': '%s', 'accessKeyId': '%s' }}",
-               aws_secret_access_key,
-               aws_access_key_id));
+         {
+            bson_t aws = BSON_INITIALIZER;
 
-         bson_free (aws_secret_access_key);
-         bson_free (aws_access_key_id);
+            BSON_ASSERT (
+               BSON_APPEND_UTF8 (&aws, "secretAccessKey", secret_access_key));
+            BSON_ASSERT (BSON_APPEND_UTF8 (&aws, "accessKeyId", access_key_id));
+
+            BSON_APPEND_DOCUMENT (&kms_providers, "aws", &aws);
+
+            bson_destroy (&aws);
+         }
+
+         bson_free (secret_access_key);
+         bson_free (access_key_id);
+      }
+
+      const bool need_aws_with_session_token =
+         bson_has_field (&opts, "kmsProviders.awsTemporary");
+      const bool need_aws_with_temp_creds =
+         need_aws_with_session_token ||
+         bson_has_field (&opts, "kmsProviders.awsTemporaryNoSessionToken");
+
+      if (need_aws_with_temp_creds) {
+         char *const secret_access_key =
+            test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY");
+         char *const access_key_id =
+            test_framework_getenv ("MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID");
+         char *const session_token =
+            test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SESSION_TOKEN");
+
+         if (!secret_access_key || !access_key_id) {
+            fprintf (stderr,
+                     "Set MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY and "
+                     "MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID environment variables "
+                     "to run Client Side Encryption tests.\n");
+            abort ();
+         }
+
+         // Only require session token when requested.
+         if (!session_token && need_aws_with_session_token) {
+            fprintf (stderr,
+                     "Set MONGOC_TEST_AWS_TEMP_SESSION_TOKEN environment "
+                     "variable to run Client Side Encryption tests.\n");
+            abort ();
+         }
+
+         {
+            bson_t aws = BSON_INITIALIZER;
+
+            BSON_ASSERT (
+               BSON_APPEND_UTF8 (&aws, "secretAccessKey", secret_access_key));
+            BSON_ASSERT (BSON_APPEND_UTF8 (&aws, "accessKeyId", access_key_id));
+
+            if (need_aws_with_session_token) {
+               BSON_ASSERT (
+                  BSON_APPEND_UTF8 (&aws, "sessionToken", session_token));
+            }
+
+            BSON_APPEND_DOCUMENT (&kms_providers, "aws", &aws);
+
+            bson_destroy (&aws);
+         }
+
+         bson_free (secret_access_key);
+         bson_free (access_key_id);
+         bson_free (session_token);
       }
 
       if (bson_has_field (&opts, "kmsProviders.azure")) {

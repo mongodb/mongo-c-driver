@@ -104,15 +104,15 @@ if [ "$CLIENT_SIDE_ENCRYPTION" = "on" ]; then
       echo "Could not detect mock KMS server on port $1"
       return 1
    }
-   wait_for_kms_server 7999
-   wait_for_kms_server 8000
-   wait_for_kms_server 8001
-   wait_for_kms_server 8002
+   wait_for_kms_server 8999
+   wait_for_kms_server 9000
+   wait_for_kms_server 9001
+   wait_for_kms_server 9002
    wait_for_kms_server 5698
    echo "Waiting for mock KMS servers to start... done."
    if ! test -d /cygdrive/c; then
       # We have trouble with this test on Windows. only set cryptSharedLibPath on other platforms
-      export MONGOC_TEST_CRYPT_SHARED_LIB_PATH="$(find . -wholename '*src/libmongoc/mongo_crypt_v1.*' -and -regex '.*\(.dll\|.dylib\|.so\)' | head -n1)"
+      export MONGOC_TEST_CRYPT_SHARED_LIB_PATH="$CRYPT_SHARED_LIB_PATH"
       echo "Setting env cryptSharedLibPath: [$MONGOC_TEST_CRYPT_SHARED_LIB_PATH]"
    fi
 fi
@@ -164,4 +164,3 @@ case "$OS" in
 
       ;;
 esac
-

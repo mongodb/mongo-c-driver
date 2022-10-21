@@ -29,7 +29,7 @@
 static char *ca_file;
 
 static int
-ping ()
+ping (void)
 {
    mongoc_client_t *client;
    mongoc_database_t *database;

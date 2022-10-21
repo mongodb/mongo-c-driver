@@ -29,6 +29,7 @@ DISTRO_ID_MAP = {
     'fedora': 'rhel',
     'centos': 'rhel',
     'mint': 'ubuntu',
+    'linuxmint': 'ubuntu',
     'opensuse-leap': 'sles',
     'opensuse': 'sles',
     'redhat': 'rhel',
@@ -38,6 +39,24 @@ DISTRO_ID_MAP = {
 DISTRO_VERSION_MAP = {
     'elementary': {
         '6': '20.04'
+    },
+    'fedora': {
+        '32': '8',
+        '33': '8',
+        '34': '8',
+        '35': '8',
+        '36': '8'
+    },
+    'linuxmint': {
+        '19': '18.04',
+        '19.1': '18.04',
+        '19.2': '18.04',
+        '19.3': '18.04',
+        '20': '20.04',
+        '20.1': '20.04',
+        '20.2': '20.04',
+        '20.3': '20.04',
+        '21': '22.04'
     },
 }
 
@@ -82,29 +101,31 @@ def infer_target():
     if sys.platform == 'darwin':
         return 'macos'
     # Now the tricky bit
-    if Path('/etc/os-release').is_file():
-        return _infer_target_os_rel()
+    cands = map(Path, ['/etc/os-release', '/usr/lib/os-release'])
+    for c in cands:
+        if c.is_file():
+            return _infer_target_os_rel(c)
     raise RuntimeError("We don't know how to find the default '--target'"
                        " option for this system. Please contribute!")
 
 
-def _infer_target_os_rel():
-    with Path('/etc/os-release').open('r', encoding='utf-8') as f:
+def _infer_target_os_rel(os_rel_path: Path):
+    with Path(os_rel_path).open('r', encoding='utf-8') as f:
         content = f.read()
     id_re = re.compile(r'\bID=("?)(.*)\1')
     mat = id_re.search(content)
-    assert mat, 'Unable to detect ID from [/etc/os-release] content:\n{}'.format(
-        content)
+    assert mat, 'Unable to detect ID from [{}] content:\n{}'.format(
+        os_rel_path, content)
     os_id = mat.group(2)
     if os_id == 'arch':
         # There are no Archlinux-specific MongoDB downloads, so we'll just use
         # the build for RHEL8, which is reasonably compatible with other modern
         # distributions (including Arch).
         return 'rhel80'
-    ver_id_re = re.compile(r'VERSION_ID=("?)(.*?)\1')
+    ver_id_re = re.compile(r'VERSION_ID=("?)(.*)\1')
     mat = ver_id_re.search(content)
-    assert mat, 'Unable to detect VERSION_ID from [/etc/os-release] content:\n{}'.format(
-        content)
+    assert mat, 'Unable to detect VERSION_ID from [{}] content:\n{}'.format(
+        os_rel_path, content)
     ver_id = mat.group(2)
     mapped_id = DISTRO_ID_MAP.get(os_id)
     if mapped_id:

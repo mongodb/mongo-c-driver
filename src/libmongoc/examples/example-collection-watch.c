@@ -1,7 +1,7 @@
 #include <mongoc/mongoc.h>
 
 int
-main ()
+main (void)
 {
    bson_t empty = BSON_INITIALIZER;
    const bson_t *doc;

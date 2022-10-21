@@ -8,7 +8,7 @@ typedef struct {
 } my_value;
 
 my_value *
-my_value_new ()
+my_value_new (void)
 {
    my_value *p = bson_malloc0 (sizeof (my_value));
    p->value = 42;

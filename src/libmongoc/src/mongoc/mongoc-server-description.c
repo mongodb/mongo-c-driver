@@ -739,9 +739,9 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
             goto failure;
          bson_oid_copy_unsafe (bson_iter_oid (&iter), &sd->service_id);
       } else if (strcmp ("connectionId", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter))
+         if (!BSON_ITER_HOLDS_INT (&iter))
             goto failure;
-         sd->server_connection_id = bson_iter_int32 (&iter);
+         sd->server_connection_id = bson_iter_as_int64 (&iter);
       }
    }
 

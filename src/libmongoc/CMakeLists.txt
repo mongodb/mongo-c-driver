@@ -494,6 +494,7 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 set (SOURCES ${SOURCES}
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-array.c
@@ -564,7 +565,6 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-file.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-download.c
@@ -856,39 +856,6 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
    )
 endif ()
 
-cmake_dependent_option (
-   MONGOC_TEST_USE_CRYPT_SHARED "If TRUE, download and use a crypt_shared library for client-side-encryption testing. Otherwise will rely on mongocryptd"
-   TRUE ENABLE_TESTS FALSE
-)
-
-if (MONGOC_TEST_USE_CRYPT_SHARED)
-   find_program (_PYTHON3_EXE NAMES python3 py python)
-   mark_as_advanced (_PYTHON3_EXE)
-   if (NOT _PYTHON3_EXE)
-      message (SEND_ERROR
-         "MONGOC_TEST_USE_CRYPT_SHARED is enabled, but we were unable to find a Python 3 interpreter to use mongodl.py. "
-         "Install a Python 3 or set MONGOC_TEST_USE_CRYPT_SHARED to FALSE"
-      )
-   endif ()
-
-   get_filename_component (crypt_shared_dest "${CMAKE_CURRENT_BINARY_DIR}/mongo_crypt_v1${CMAKE_SHARED_LIBRARY_SUFFIX}" ABSOLUTE)
-   # If updating the "--version" for crypt_shared, update the version in compile-unix.sh to match.
-   add_custom_command (
-      OUTPUT "${crypt_shared_dest}"
-      COMMAND
-         "${_PYTHON3_EXE}" -u "${mongo-c-driver_SOURCE_DIR}/build/mongodl.py"
-            --component crypt_shared
-            --version 6.0.0-rc8
-            --edition enterprise
-            --out "${CMAKE_CURRENT_BINARY_DIR}"
-            --only "**/mongo_crypt_v1.*"
-            --strip-path-components 1
-      COMMENT "Downloading crypt_shared"
-      VERBATIM
-   )
-   add_custom_target (get-crypt_shared ALL DEPENDS "${crypt_shared_dest}")
-endif ()
-
 function (mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable (${test} ${ARGN})
@@ -1061,6 +1028,8 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-with-transaction.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-concern.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-integer.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
    ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
    ${PROJECT_SOURCE_DIR}/tests/unified/entity-map.c

@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.22.0
+%global up_version   1.23.1
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -21,7 +21,7 @@
 Name:      mongo-c-driver
 Summary:   Client library written in C for MongoDB
 Version:   %{up_version}%{?up_prever:~%{up_prever}}
-Release:   1%{?dist}
+Release:   2%{?dist}
 # See THIRD_PARTY_NOTICES
 License:   ASL 2.0 and ISC and MIT and zlib
 URL:       https://github.com/%{gh_owner}/%{gh_project}
@@ -44,7 +44,7 @@ BuildRequires: mongodb-server
 BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
-BuildRequires: cmake(mongocrypt) >= 1.5.0
+BuildRequires: cmake(mongocrypt) >= 1.5.2
 %endif
 BuildRequires: perl-interpreter
 # From man pages
@@ -236,6 +236,22 @@ exit $ret
 
 
 %changelog
+* Thu Oct 20 2022 Remi Collet <remi@remirepo.net> - 1.23.1-2
+- update to 1.23.1
+
+* Thu Sep  8 2022 Remi Collet <remi@remirepo.net> - 1.23.0-1
+- update to 1.23.0
+
+* Wed Aug  3 2022 Remi Collet <remi@remirepo.net> - 1.22.1-1
+- update to 1.22.1
+- raise dependency to libmongocrypt 1.5.2
+
+* Mon Aug 01 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 1.22.0-3
+- Rebuilt for ICU 71.1
+
+* Thu Jul 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.22.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
+
 * Mon Jul 18 2022 Remi Collet <remi@remirepo.net> - 1.22.0-1
 - update to 1.22.0
 - raise dependency to libmongocrypt 1.5.0

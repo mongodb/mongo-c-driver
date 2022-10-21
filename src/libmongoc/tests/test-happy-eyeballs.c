@@ -438,7 +438,7 @@ test_happy_eyeballs_dns_cache (void)
 }
 
 void
-test_happy_eyeballs_retirement ()
+test_happy_eyeballs_retirement (void)
 {
    /* test connecting to a retired node that fails to initiate a connection. */
 }

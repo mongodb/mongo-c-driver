@@ -35,10 +35,10 @@ typedef struct {
 } _kms_crypto_t;
 
 int
-kms_crypto_init ();
+kms_crypto_init (void);
 
 void
-kms_crypto_cleanup ();
+kms_crypto_cleanup (void);
 
 bool
 kms_sha256 (void *ctx, const char *input, size_t len, unsigned char *hash_out);

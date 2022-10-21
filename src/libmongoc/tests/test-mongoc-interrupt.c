@@ -24,7 +24,7 @@
 #include "common-thread-private.h"
 
 static int64_t
-_time_ms ()
+_time_ms (void)
 {
    return bson_get_monotonic_time () / 1000;
 }

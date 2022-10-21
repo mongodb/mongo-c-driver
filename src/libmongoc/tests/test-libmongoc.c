@@ -43,250 +43,6 @@
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include "mongoc/mongoc-openssl-private.h"
 #endif
-/* libbson */
-
-
-extern void
-test_atomic_install (TestSuite *suite);
-extern void
-test_bcon_basic_install (TestSuite *suite);
-extern void
-test_bcon_extract_install (TestSuite *suite);
-extern void
-test_bson_corpus_install (TestSuite *suite);
-extern void
-test_bson_install (TestSuite *suite);
-extern void
-test_bson_version_install (TestSuite *suite);
-extern void
-test_clock_install (TestSuite *suite);
-extern void
-test_decimal128_install (TestSuite *suite);
-extern void
-test_endian_install (TestSuite *suite);
-extern void
-test_bson_error_install (TestSuite *suite);
-extern void
-test_iso8601_install (TestSuite *suite);
-extern void
-test_iter_install (TestSuite *suite);
-extern void
-test_json_install (TestSuite *suite);
-extern void
-test_oid_install (TestSuite *suite);
-extern void
-test_reader_install (TestSuite *suite);
-extern void
-test_string_install (TestSuite *suite);
-extern void
-test_utf8_install (TestSuite *suite);
-extern void
-test_value_install (TestSuite *suite);
-extern void
-test_writer_install (TestSuite *suite);
-extern void
-test_b64_install (TestSuite *suite);
-extern void
-test_bson_cmp_install (TestSuite *suite);
-
-/* libmongoc */
-
-extern void
-test_aggregate_install (TestSuite *suite);
-extern void
-test_array_install (TestSuite *suite);
-extern void
-test_async_install (TestSuite *suite);
-extern void
-test_buffer_install (TestSuite *suite);
-extern void
-test_bulk_install (TestSuite *suite);
-extern void
-test_change_stream_install (TestSuite *suite);
-extern void
-test_client_install (TestSuite *suite);
-extern void
-test_client_max_staleness_install (TestSuite *suite);
-extern void
-test_client_hedged_reads_install (TestSuite *suite);
-extern void
-test_client_pool_install (TestSuite *suite);
-extern void
-test_client_cmd_install (TestSuite *suite);
-extern void
-test_client_versioned_api_install (TestSuite *suite);
-extern void
-test_cluster_install (TestSuite *suite);
-extern void
-test_collection_install (TestSuite *suite);
-extern void
-test_collection_find_install (TestSuite *suite);
-extern void
-test_collection_find_with_opts_install (TestSuite *suite);
-extern void
-test_connection_uri_install (TestSuite *suite);
-extern void
-test_command_monitoring_install (TestSuite *suite);
-extern void
-test_cursor_install (TestSuite *suite);
-extern void
-test_database_install (TestSuite *suite);
-extern void
-test_dns_install (TestSuite *suite);
-extern void
-test_error_install (TestSuite *suite);
-extern void
-test_exhaust_install (TestSuite *suite);
-extern void
-test_find_and_modify_install (TestSuite *suite);
-extern void
-test_gridfs_bucket_install (TestSuite *suite);
-extern void
-test_gridfs_file_page_install (TestSuite *suite);
-extern void
-test_gridfs_install (TestSuite *suite);
-extern void
-test_linux_distro_scanner_install (TestSuite *suite);
-extern void
-test_list_install (TestSuite *suite);
-extern void
-test_log_install (TestSuite *suite);
-extern void
-test_matcher_install (TestSuite *suite);
-extern void
-test_mongos_pinning_install (TestSuite *suite);
-extern void
-test_handshake_install (TestSuite *suite);
-extern void
-test_queue_install (TestSuite *suite);
-extern void
-test_primary_stepdown_install (TestSuite *suite);
-extern void
-test_read_concern_install (TestSuite *suite);
-extern void
-test_read_write_concern_install (TestSuite *suite);
-extern void
-test_read_prefs_install (TestSuite *suite);
-extern void
-test_retryable_writes_install (TestSuite *suite);
-extern void
-test_retryable_reads_install (TestSuite *suite);
-extern void
-test_rpc_install (TestSuite *suite);
-extern void
-test_samples_install (TestSuite *suite);
-extern void
-test_scram_install (TestSuite *suite);
-extern void
-test_sdam_install (TestSuite *suite);
-extern void
-test_sdam_monitoring_install (TestSuite *suite);
-extern void
-test_server_selection_install (TestSuite *suite);
-extern void
-test_session_install (TestSuite *suite);
-extern void
-test_server_selection_errors_install (TestSuite *suite);
-extern void
-test_set_install (TestSuite *suite);
-extern void
-test_opts_install (TestSuite *suite);
-extern void
-test_socket_install (TestSuite *suite);
-extern void
-test_speculative_auth_install (TestSuite *suite);
-extern void
-test_stream_install (TestSuite *suite);
-extern void
-test_thread_install (TestSuite *suite);
-extern void
-test_topology_install (TestSuite *suite);
-extern void
-test_topology_description_install (TestSuite *suite);
-extern void
-test_topology_reconcile_install (TestSuite *suite);
-extern void
-test_transactions_install (TestSuite *suite);
-extern void
-test_topology_scanner_install (TestSuite *suite);
-extern void
-test_ts_pool_install (TestSuite *suite);
-extern void
-test_uri_install (TestSuite *suite);
-extern void
-test_usleep_install (TestSuite *suite);
-extern void
-test_util_install (TestSuite *suite);
-extern void
-test_version_install (TestSuite *suite);
-extern void
-test_with_transaction_install (TestSuite *suite);
-extern void
-test_write_command_install (TestSuite *suite);
-extern void
-test_write_concern_install (TestSuite *suite);
-#ifdef MONGOC_ENABLE_SSL
-extern void
-test_stream_tls_install (TestSuite *suite);
-extern void
-test_x509_install (TestSuite *suite);
-extern void
-test_stream_tls_error_install (TestSuite *suite);
-#endif
-#ifdef MONGOC_ENABLE_SASL_CYRUS
-extern void
-test_cyrus_install (TestSuite *suite);
-#endif
-extern void
-test_happy_eyeballs_install (TestSuite *suite);
-extern void
-test_counters_install (TestSuite *suite);
-extern void
-test_crud_install (TestSuite *suite);
-extern void
-test_mongohouse_install (TestSuite *suite);
-extern void
-test_apm_install (TestSuite *suite);
-extern void
-test_client_side_encryption_install (TestSuite *suite);
-extern void
-test_long_namespace_install (TestSuite *suite);
-extern void
-test_server_description_install (TestSuite *suite);
-extern void
-test_aws_install (TestSuite *suite);
-extern void
-test_streamable_hello_install (TestSuite *suite);
-#if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
-extern void
-test_ocsp_cache_install (TestSuite *suite);
-#endif
-extern void
-test_interrupt_install (TestSuite *suite);
-extern void
-test_monitoring_install (TestSuite *suite);
-extern void
-test_http_install (TestSuite *suite);
-extern void
-test_install_unified (TestSuite *suite);
-extern void
-test_timeout_install (TestSuite *suite);
-extern void
-test_bson_match_install (TestSuite *suite);
-extern void
-test_bson_util_install (TestSuite *suite);
-extern void
-test_result_install (TestSuite *suite);
-extern void
-test_loadbalanced_install (TestSuite *suite);
-extern void
-test_server_stream_install (TestSuite *suite);
-extern void
-test_generation_map_install (TestSuite *suite);
-extern void
-test_shared_install (TestSuite *suite);
-extern void
-test_ssl_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -1020,7 +776,7 @@ test_framework_get_compressors ()
  *--------------------------------------------------------------------------
  */
 bool
-test_framework_has_compressors ()
+test_framework_has_compressors (void)
 {
    bool retval;
    char *compressors = test_framework_get_compressors ();
@@ -2923,131 +2679,141 @@ main (int argc, char *argv[])
 
    /* libbson */
 
-   test_atomic_install (&suite);
-   test_bcon_basic_install (&suite);
-   test_bcon_extract_install (&suite);
-   test_bson_corpus_install (&suite);
-   test_bson_error_install (&suite);
-   test_bson_install (&suite);
-   test_bson_version_install (&suite);
-   test_clock_install (&suite);
-   test_decimal128_install (&suite);
-   test_endian_install (&suite);
-   test_iso8601_install (&suite);
-   test_iter_install (&suite);
-   test_json_install (&suite);
-   test_oid_install (&suite);
-   test_reader_install (&suite);
-   test_string_install (&suite);
-   test_utf8_install (&suite);
-   test_value_install (&suite);
-   test_writer_install (&suite);
-   test_b64_install (&suite);
-   test_bson_cmp_install (&suite);
+#define TEST_INSTALL(FuncName)                 \
+   if (1) {                                    \
+      extern void FuncName (TestSuite *suite); \
+      FuncName (&suite);                       \
+   } else                                      \
+      ((void) 0)
+
+   TEST_INSTALL (test_atomic_install);
+   TEST_INSTALL (test_bcon_basic_install);
+   TEST_INSTALL (test_bcon_extract_install);
+   TEST_INSTALL (test_bson_corpus_install);
+   TEST_INSTALL (test_bson_error_install);
+   TEST_INSTALL (test_bson_install);
+   TEST_INSTALL (test_bson_version_install);
+   TEST_INSTALL (test_clock_install);
+   TEST_INSTALL (test_decimal128_install);
+   TEST_INSTALL (test_endian_install);
+   TEST_INSTALL (test_iso8601_install);
+   TEST_INSTALL (test_iter_install);
+   TEST_INSTALL (test_json_install);
+   TEST_INSTALL (test_oid_install);
+   TEST_INSTALL (test_reader_install);
+   TEST_INSTALL (test_string_install);
+   TEST_INSTALL (test_utf8_install);
+   TEST_INSTALL (test_value_install);
+   TEST_INSTALL (test_writer_install);
+   TEST_INSTALL (test_b64_install);
+   TEST_INSTALL (test_bson_cmp_install);
 
    /* libmongoc */
 
-   test_aggregate_install (&suite);
-   test_array_install (&suite);
-   test_async_install (&suite);
-   test_buffer_install (&suite);
-   test_change_stream_install (&suite);
-   test_client_install (&suite);
-   test_client_max_staleness_install (&suite);
-   test_client_hedged_reads_install (&suite);
-   test_client_pool_install (&suite);
-   test_client_cmd_install (&suite);
-   test_client_versioned_api_install (&suite);
-   test_write_command_install (&suite);
-   test_bulk_install (&suite);
-   test_cluster_install (&suite);
-   test_collection_install (&suite);
-   test_collection_find_install (&suite);
-   test_collection_find_with_opts_install (&suite);
-   test_connection_uri_install (&suite);
-   test_command_monitoring_install (&suite);
-   test_cursor_install (&suite);
-   test_database_install (&suite);
-   test_error_install (&suite);
-   test_exhaust_install (&suite);
-   test_find_and_modify_install (&suite);
-   test_gridfs_install (&suite);
-   test_gridfs_bucket_install (&suite);
-   test_gridfs_file_page_install (&suite);
-   test_handshake_install (&suite);
-   test_linux_distro_scanner_install (&suite);
-   test_list_install (&suite);
-   test_log_install (&suite);
-   test_long_namespace_install (&suite);
-   test_matcher_install (&suite);
-   test_mongos_pinning_install (&suite);
-   test_queue_install (&suite);
-   test_primary_stepdown_install (&suite);
-   test_read_concern_install (&suite);
-   test_read_write_concern_install (&suite);
-   test_read_prefs_install (&suite);
-   test_retryable_writes_install (&suite);
-   test_retryable_reads_install (&suite);
-   test_rpc_install (&suite);
-   test_socket_install (&suite);
-   test_opts_install (&suite);
-   test_topology_scanner_install (&suite);
-   test_topology_reconcile_install (&suite);
-   test_transactions_install (&suite);
-   test_samples_install (&suite);
-   test_scram_install (&suite);
-   test_sdam_install (&suite);
-   test_sdam_monitoring_install (&suite);
-   test_server_selection_install (&suite);
-   test_dns_install (&suite);
-   test_server_selection_errors_install (&suite);
-   test_session_install (&suite);
-   test_set_install (&suite);
-   test_speculative_auth_install (&suite);
-   test_stream_install (&suite);
-   test_thread_install (&suite);
-   test_topology_install (&suite);
-   test_topology_description_install (&suite);
-   test_ts_pool_install (&suite);
-   test_uri_install (&suite);
-   test_usleep_install (&suite);
-   test_util_install (&suite);
-   test_version_install (&suite);
-   test_with_transaction_install (&suite);
-   test_write_concern_install (&suite);
+   TEST_INSTALL (test_aggregate_install);
+   TEST_INSTALL (test_array_install);
+   TEST_INSTALL (test_async_install);
+   TEST_INSTALL (test_buffer_install);
+   TEST_INSTALL (test_change_stream_install);
+   TEST_INSTALL (test_client_install);
+   TEST_INSTALL (test_client_max_staleness_install);
+   TEST_INSTALL (test_client_hedged_reads_install);
+   TEST_INSTALL (test_client_pool_install);
+   TEST_INSTALL (test_client_cmd_install);
+   TEST_INSTALL (test_client_versioned_api_install);
+   TEST_INSTALL (test_write_command_install);
+   TEST_INSTALL (test_bulk_install);
+   TEST_INSTALL (test_cluster_install);
+   TEST_INSTALL (test_collection_install);
+   TEST_INSTALL (test_collection_find_install);
+   TEST_INSTALL (test_collection_find_with_opts_install);
+   TEST_INSTALL (test_connection_uri_install);
+   TEST_INSTALL (test_command_monitoring_install);
+   TEST_INSTALL (test_cursor_install);
+   TEST_INSTALL (test_database_install);
+   TEST_INSTALL (test_error_install);
+   TEST_INSTALL (test_exhaust_install);
+   TEST_INSTALL (test_find_and_modify_install);
+   TEST_INSTALL (test_gridfs_install);
+   TEST_INSTALL (test_gridfs_bucket_install);
+   TEST_INSTALL (test_gridfs_file_page_install);
+   TEST_INSTALL (test_handshake_install);
+   TEST_INSTALL (test_linux_distro_scanner_install);
+   TEST_INSTALL (test_list_install);
+   TEST_INSTALL (test_log_install);
+   TEST_INSTALL (test_long_namespace_install);
+   TEST_INSTALL (test_matcher_install);
+   TEST_INSTALL (test_mongos_pinning_install);
+   TEST_INSTALL (test_queue_install);
+   TEST_INSTALL (test_primary_stepdown_install);
+   TEST_INSTALL (test_read_concern_install);
+   TEST_INSTALL (test_read_write_concern_install);
+   TEST_INSTALL (test_read_prefs_install);
+   TEST_INSTALL (test_retryable_writes_install);
+   TEST_INSTALL (test_retryable_reads_install);
+   TEST_INSTALL (test_rpc_install);
+   TEST_INSTALL (test_socket_install);
+   TEST_INSTALL (test_opts_install);
+   TEST_INSTALL (test_topology_scanner_install);
+   TEST_INSTALL (test_topology_reconcile_install);
+   TEST_INSTALL (test_transactions_install);
+   TEST_INSTALL (test_samples_install);
+   TEST_INSTALL (test_scram_install);
+   TEST_INSTALL (test_sdam_install);
+   TEST_INSTALL (test_sdam_monitoring_install);
+   TEST_INSTALL (test_server_selection_install);
+   TEST_INSTALL (test_dns_install);
+   TEST_INSTALL (test_server_selection_errors_install);
+   TEST_INSTALL (test_session_install);
+   TEST_INSTALL (test_set_install);
+   TEST_INSTALL (test_speculative_auth_install);
+   TEST_INSTALL (test_stream_install);
+   TEST_INSTALL (test_thread_install);
+   TEST_INSTALL (test_topology_install);
+   TEST_INSTALL (test_topology_description_install);
+   TEST_INSTALL (test_ts_pool_install);
+   TEST_INSTALL (test_uri_install);
+   TEST_INSTALL (test_usleep_install);
+   TEST_INSTALL (test_util_install);
+   TEST_INSTALL (test_version_install);
+   TEST_INSTALL (test_with_transaction_install);
+   TEST_INSTALL (test_write_concern_install);
 #ifdef MONGOC_ENABLE_SSL
-   test_stream_tls_install (&suite);
-   test_x509_install (&suite);
-   test_stream_tls_error_install (&suite);
-   test_client_side_encryption_install (&suite);
+   TEST_INSTALL (test_stream_tls_install);
+   TEST_INSTALL (test_x509_install);
+   TEST_INSTALL (test_stream_tls_error_install);
+   TEST_INSTALL (test_client_side_encryption_install);
 #endif
 #ifdef MONGOC_ENABLE_SASL_CYRUS
-   test_cyrus_install (&suite);
+   TEST_INSTALL (test_cyrus_install);
 #endif
-   test_happy_eyeballs_install (&suite);
-   test_counters_install (&suite);
-   test_crud_install (&suite);
-   test_mongohouse_install (&suite);
-   test_apm_install (&suite);
-   test_server_description_install (&suite);
-   test_aws_install (&suite);
-   test_streamable_hello_install (&suite);
+   TEST_INSTALL (test_happy_eyeballs_install);
+   TEST_INSTALL (test_counters_install);
+   TEST_INSTALL (test_crud_install);
+   TEST_INSTALL (test_mongohouse_install);
+   TEST_INSTALL (test_apm_install);
+   TEST_INSTALL (test_server_description_install);
+   TEST_INSTALL (test_aws_install);
+   TEST_INSTALL (test_streamable_hello_install);
 #if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
-   test_ocsp_cache_install (&suite);
+   TEST_INSTALL (test_ocsp_cache_install);
 #endif
-   test_interrupt_install (&suite);
-   test_monitoring_install (&suite);
-   test_http_install (&suite);
-   test_install_unified (&suite);
-   test_timeout_install (&suite);
-   test_bson_match_install (&suite);
-   test_bson_util_install (&suite);
-   test_result_install (&suite);
-   test_loadbalanced_install (&suite);
-   test_server_stream_install (&suite);
-   test_generation_map_install (&suite);
-   test_shared_install (&suite);
-   test_ssl_install (&suite);
+   TEST_INSTALL (test_interrupt_install);
+   TEST_INSTALL (test_monitoring_install);
+   TEST_INSTALL (test_http_install);
+   TEST_INSTALL (test_install_unified);
+   TEST_INSTALL (test_timeout_install);
+   TEST_INSTALL (test_bson_match_install);
+   TEST_INSTALL (test_bson_util_install);
+   TEST_INSTALL (test_result_install);
+   TEST_INSTALL (test_loadbalanced_install);
+   TEST_INSTALL (test_server_stream_install);
+   TEST_INSTALL (test_generation_map_install);
+   TEST_INSTALL (test_shared_install);
+   TEST_INSTALL (test_ssl_install);
+
+   TEST_INSTALL (test_mcd_azure_imds_install);
+   TEST_INSTALL (test_mcd_integer_install);
 
    if (test_framework_is_loadbalanced ()) {
       mongoc_global_mock_service_id = true;

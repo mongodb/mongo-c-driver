@@ -5,12 +5,14 @@ set_path ()
 {
    case "$OS" in
       cygwin*)
-         export PATH=$PATH:`pwd`/src/libbson/Debug
-         export PATH=$PATH:`pwd`/src/libbson/Release
-         export PATH=$PATH:`pwd`/install-dir/bin
-         chmod +x src/libmongoc/Debug/* src/libbson/Debug/* || true
-         chmod +x src/libmongoc/Release/* src/libbson/Release/* || true
-         chmod +x `pwd`/install-dir/bin/* || true
+         export PATH="$PATH:$(pwd)/src/libbson/Debug"
+         export PATH="$PATH:$(pwd)/src/libbson/Release"
+         export PATH="$PATH:$(pwd)/install-dir/bin"
+         chmod -f +x src/libmongoc/Debug/* || true
+         chmod -f +x src/libbson/Debug/* || true
+         chmod -f +x src/libmongoc/Release/* || true
+         chmod -f +x src/libbson/Release/* || true
+         chmod -f +x $(pwd)/install-dir/bin/* || true
          ;;
 
       darwin)
