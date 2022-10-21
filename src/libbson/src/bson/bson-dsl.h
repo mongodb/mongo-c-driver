@@ -48,13 +48,10 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define bsonParse(Document, ...)                              \
    _bsonDSL_begin ("bsonParse(%s)", _bsonDSL_str (Document)); \
    _bsonDSL_disableWarnings ();                               \
-   bool _bvHalt = false;                                      \
    bsonParseError = NULL;                                     \
-   const bool _bvContinue = false;                            \
-   const bool _bvBreak = false;                               \
-   (void) _bvContinue;                                        \
-   (void) _bvBreak;                                           \
-   (void) _bvHalt;                                            \
+   BSON_MAYBE_UNUSED bool _bvHalt = false;                    \
+   BSON_MAYBE_UNUSED const bool _bvContinue = false;          \
+   BSON_MAYBE_UNUSED const bool _bvBreak = false;             \
    _bsonDSL_eval (_bsonParse ((Document), __VA_ARGS__));      \
    _bsonDSL_restoreWarnings ();                               \
    _bsonDSL_end
@@ -65,8 +62,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define bsonVisitEach(Document, ...)                              \
    _bsonDSL_begin ("bsonVisitEach(%s)", _bsonDSL_str (Document)); \
    _bsonDSL_disableWarnings ();                                   \
-   bool _bvHalt = false;                                          \
-   (void) _bvHalt;                                                \
+   BSON_MAYBE_UNUSED bool _bvHalt = false;                        \
    _bsonDSL_eval (_bsonVisitEach ((Document), __VA_ARGS__));      \
    _bsonDSL_restoreWarnings ();                                   \
    _bsonDSL_end
@@ -548,8 +544,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 #define _bsonVisitOperation_case(...)                  \
    _bsonDSL_begin ("case:%s", "");                     \
-   bool _bvCaseMatched = false;                        \
-   (void) _bvCaseMatched;                              \
+   BSON_MAYBE_UNUSED bool _bvCaseMatched = false;      \
    _bsonDSL_mapMacro (_bsonVisitCase, ~, __VA_ARGS__); \
    _bsonDSL_end
 
@@ -664,8 +659,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
          .parent = &bsonVisitContext,                            \
       };                                                         \
       _bsonVisitContextThreadLocalPtr = &_bpCtx;                 \
-      bool _bpFoundElement = false;                              \
-      (void) _bpFoundElement;                                    \
+      BSON_MAYBE_UNUSED bool _bpFoundElement = false;            \
       _bsonParse_applyOps (__VA_ARGS__);                         \
       /* Restore the dsl context */                              \
       _bsonVisitContextThreadLocalPtr = bsonVisitContext.parent; \
@@ -685,7 +679,6 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 #define _bsonParseOperation_find(Predicate, ...)               \
    _bsonDSL_begin ("find(%s)", _bsonDSL_str (Predicate));      \
    _bpFoundElement = false;                                    \
-   (void) _bpFoundElement;                                     \
    if (!bson_iter_init (&_bpCtx.iter, bsonVisitContext.doc)) { \
       bsonParseError = "Invalid BSON data [c]";                \
    }                                                           \
