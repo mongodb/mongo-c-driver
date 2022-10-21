@@ -1585,7 +1585,7 @@ _mongoc_change_stream_opts_parse (
    mongoc_change_stream_opts->fullDocumentBeforeChange = NULL;
    memset (&mongoc_change_stream_opts->comment, 0, sizeof (bson_value_t));
    bson_init (&mongoc_change_stream_opts->extra);
-   memset (&mongoc_change_stream_opts->showExpandedEvents, 0, sizeof (bool));
+   mongoc_change_stream_opts->showExpandedEvents = false;
 
    if (!opts) {
       return true;
