@@ -791,7 +791,9 @@ typefailure:
    bson_set_error (&sd->error,
                    MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_INVALID_TYPE,
-                   "invalid type sent to hello");
+                   "unexpected type %s for field %s in hello response",
+                   _mongoc_bson_type_to_str (bson_iter_type (&iter)),
+                   bson_iter_key (&iter));
 authfailure:
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
