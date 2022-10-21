@@ -793,7 +793,6 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
    bson_init (&reply);
    bson_append_int32 (&reply, "ok", 2, 1);
    bson_append_document_begin (&reply, "cursor", 6, &reply_cursor);
-
    bson_append_int64 (&reply_cursor, "id", 2, mongoc_cursor_get_id (cursor));
    bson_append_utf8 (&reply_cursor, "ns", 2, cursor->ns, cursor->nslen);
    bson_append_array (&reply_cursor,
@@ -1264,7 +1263,6 @@ mongoc_cursor_next (mongoc_cursor_t *cursor, const bson_t **bson)
 
    BSON_ASSERT (cursor);
    BSON_ASSERT (bson);
-   size_t len;
 
    TRACE ("cursor_id(%" PRId64 ")", cursor->cursor_id);
 

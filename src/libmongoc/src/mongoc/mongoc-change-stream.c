@@ -440,7 +440,6 @@ _change_stream_init (mongoc_change_stream_t *stream,
    stream->batch_size = stream->opts.batchSize;
    stream->max_await_time_ms = stream->opts.maxAwaitTimeMS;
    stream->show_expanded_events = stream->opts.showExpandedEvents;
-   // stream->drop_target = stream->opts.dropTarget;
 
    /* Accept two forms of user pipeline:
     * 1. A document like: { "pipeline": [...] }
