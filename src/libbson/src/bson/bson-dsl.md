@@ -150,8 +150,8 @@ For more information, refer to [`ArrayOperation`](#ArrayOperation)
 ### *DocOperation*
 
 The *DocOperations* are used to generate elements of a `bson_t` document or
-subdocument thereof. The top-level `bsonBuildAppend()` accepts a list of
-*DocOperations*, as well as the `doc()` *ValueOperation*.
+subdocument thereof. The top-level `bsonBuildAppend()` and the `doc()`
+*ValueOperation* both accept a list of *DocOperations*.
 
 The following *DocOperations* are defined:
 
@@ -160,7 +160,7 @@ The following *DocOperations* are defined:
 > `kvl(const char* str, int len, ValueOperation val)`
 
 The lowest-level *DocOperation*, generates a key-value pair in the document,
-with the string beinging at `str` for `len` characters defining the key, and
+with the string begining at `str` for `len` characters defining the key, and
 `val` defining the value of the element. (See:
 [ValueOperation](#valueoperation))
 
