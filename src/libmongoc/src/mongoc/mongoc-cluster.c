@@ -850,15 +850,15 @@ _stream_run_hello (mongoc_cluster_t *cluster,
           cluster, &hello_cmd, &reply, error)) {
       if (negotiate_sasl_supported_mechs) {
          bsonParse (reply,
-                    find (keyWithType ("ok", bool),
-                          if (falsey, then (do({
-                                 /* hello response returned ok: 0. According to
-                                  * auth spec: "If the hello of the MongoDB
-                                  * Handshake fails with an error, drivers MUST
-                                  * treat this an authentication error." */
-                                 error->domain = MONGOC_ERROR_CLIENT;
-                                 error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
-                              })))));
+                    find (allOf (key ("ok"), falsey), //
+                          do({
+                             /* hello response returned ok: 0. According to
+                              * auth spec: "If the hello of the MongoDB
+                              * Handshake fails with an error, drivers MUST
+                              * treat this an authentication error." */
+                             error->domain = MONGOC_ERROR_CLIENT;
+                             error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
+                          })));
       }
 
       mongoc_server_stream_cleanup (server_stream);
@@ -1586,8 +1586,7 @@ _mongoc_cluster_scram_handle_reply (mongoc_scram_t *scram,
    bool is_done = false;
    bsonParse (*reply, find (key ("done"), storeBool (is_done)));
 
-   if (bson_iter_init_find (&iter, reply, "done") &&
-       bson_iter_as_bool (&iter)) {
+   if (is_done) {
       if (scram->step < 2) {
          /* Prior to step 2, we haven't even received server proof. */
          bson_set_error (error,
