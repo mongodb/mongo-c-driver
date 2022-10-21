@@ -115,8 +115,7 @@ bson_t* make_aggregate(const char* coll,
 
 > `bsonBuild(BSON, DocOperation... ops)`
 
-Calls `bson_init(&BSON)`, followed by `bsonBuildAppend(BSON, ops...)`. If the
-build operation results in an error, calls `bson_destroy(&BSON)`.
+Calls `bson_init(&BSON)`, followed by `bsonBuildAppend(BSON, ops...)`.
 
 
 ## `bsonBuildDecl`

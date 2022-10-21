@@ -911,11 +911,9 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
  */
 #define bsonBuild(BSON, ...)                                              \
    _bsonDSL_begin ("Build a new document for '%s'", _bsonDSL_str (BSON)); \
-   bson_init (&(BSON));                                                   \
-   bsonBuildAppend ((BSON), __VA_ARGS__);                                 \
-   if (bsonBuildError) {                                                  \
-      bson_destroy (&(BSON));                                             \
-   }                                                                      \
+   bson_t *_bbDest = &(BSON);                                             \
+   bson_init (_bbDest);                                                   \
+   bsonBuildAppend (*_bbDest, __VA_ARGS__);                               \
    _bsonDSL_end
 
 /**
