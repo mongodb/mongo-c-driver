@@ -405,6 +405,14 @@ otherwise does nothing. **NOTE** that this is unrelated to the "`if`"
 *ParseOperation*.
 
 
+#### `visitOthers`
+
+> `visitOthers(VisitOperation... ops)`
+
+For each element in the document being parsed that *has not* been visited by any
+previous `find` or `require` operation, evaluate `ops`
+
+
 #### `error`
 
 > `error(const char* S)`

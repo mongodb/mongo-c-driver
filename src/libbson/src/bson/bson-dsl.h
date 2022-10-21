@@ -564,6 +564,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       struct _bsonVisitContext_t _bpCtx = {                                  \
          .doc = &(Doc),                                                      \
          .parent = _bsonVisitContextThreadLocalPtr,                          \
+         .index = 0,                                                         \
       };                                                                     \
       _bsonVisitContextThreadLocalPtr = &_bpCtx;                             \
       bsonParseError = NULL;                                                 \
@@ -577,6 +578,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
              !_bvBreak) {                                                    \
          _bvContinue = false;                                                \
          _bsonVisit_applyOps (__VA_ARGS__);                                  \
+         ++_bpCtx.index;                                                     \
       }                                                                      \
       if (bsonVisitIter.err_off) {                                           \
          bsonParseError = "Invalid BSON data [b]";                           \
@@ -646,18 +648,27 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       }                                                  \
    } while (0);
 
-#define _bsonParse(Doc, ...)                                     \
-   do {                                                          \
-      /* Reset the context */                                    \
-      struct _bsonVisitContext_t _bpCtx = {                      \
-         .doc = &(Doc),                                          \
-         .parent = &bsonVisitContext,                            \
-      };                                                         \
-      _bsonVisitContextThreadLocalPtr = &_bpCtx;                 \
-      BSON_MAYBE_UNUSED bool _bpFoundElement = false;            \
-      _bsonParse_applyOps (__VA_ARGS__);                         \
-      /* Restore the dsl context */                              \
-      _bsonVisitContextThreadLocalPtr = bsonVisitContext.parent; \
+#define _bsonParse(Doc, ...)                                                   \
+   do {                                                                        \
+      /* Reset the context */                                                  \
+      struct _bsonVisitContext_t _bpCtx = {                                    \
+         .doc = &(Doc),                                                        \
+         .parent = &bsonVisitContext,                                          \
+      };                                                                       \
+      _bsonVisitContextThreadLocalPtr = &_bpCtx;                               \
+      /* Keep track of which elements have been visited based on their index*/ \
+      uint64_t _bpVisitBits_static[4] = {0};                                   \
+      BSON_MAYBE_UNUSED uint64_t *_bpVisitBits = _bpVisitBits_static;          \
+      BSON_MAYBE_UNUSED int _bpNumVisitBitInts =                               \
+         sizeof _bpVisitBits_static / sizeof (uint64_t);                       \
+      BSON_MAYBE_UNUSED bool _bpFoundElement = false;                          \
+      _bsonParse_applyOps (__VA_ARGS__);                                       \
+      /* We may have allocated for visit bits */                               \
+      if (_bpVisitBits != _bpVisitBits_static) {                               \
+         bson_free (_bpVisitBits);                                             \
+      }                                                                        \
+      /* Restore the dsl context */                                            \
+      _bsonVisitContextThreadLocalPtr = bsonVisitContext.parent;               \
    } while (0)
 
 #define _bsonParse_applyOps(...) \
@@ -671,47 +682,71 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       }                                      \
    } while (0);
 
-#define _bsonParseOperation_find(Predicate, ...)               \
-   _bsonDSL_begin ("find(%s)", _bsonDSL_str (Predicate));      \
-   _bpFoundElement = false;                                    \
-   if (!bson_iter_init (&_bpCtx.iter, bsonVisitContext.doc)) { \
-      bsonParseError = "Invalid BSON data [c]";                \
-   }                                                           \
-   while (!bsonParseError && bson_iter_next (&_bpCtx.iter)) {  \
-      if (bsonPredicate (Predicate) && !bsonParseError) {      \
-         _bsonVisit_applyOps (__VA_ARGS__);                    \
-         _bpFoundElement = true;                               \
-         break;                                                \
-      }                                                        \
-   }                                                           \
-   if (!_bpFoundElement) {                                     \
-      _bsonDSLDebug ("[not found]");                           \
-   }                                                           \
-   if (bsonVisitIter.err_off) {                                \
-      bsonParseError = "Invalid BSON data [d]";                \
-   }                                                           \
+#define _bsonParseMarkVisited(Index)                                   \
+   if (1) {                                                            \
+      const int nth_int = Index / 64;                                  \
+      const int nth_bit = Index % 64;                                  \
+      while (nth_int >= _bpNumVisitBitInts) {                          \
+         /* Say that five times, fast: */                              \
+         int new_num_visit_bit_ints = _bpNumVisitBitInts * 2;          \
+         uint64_t *new_visit_bit_ints =                                \
+            bson_malloc0 (sizeof (uint64_t) * new_num_visit_bit_ints); \
+         memcpy (new_visit_bit_ints,                                   \
+                 _bpVisitBits,                                         \
+                 sizeof (uint64_t) * _bpNumVisitBitInts);              \
+         if (_bpVisitBits != _bpVisitBits_static) {                    \
+            bson_free (_bpVisitBits);                                  \
+         }                                                             \
+         _bpVisitBits = new_visit_bit_ints;                            \
+         _bpNumVisitBitInts = new_num_visit_bit_ints;                  \
+      }                                                                \
+                                                                       \
+      _bpVisitBits[nth_int] |= (1 << nth_bit);                         \
+   } else                                                              \
+      ((void) 0)
+
+#define _bsonParseDidVisitNth(Index) \
+   _bsonParseDidVisitNth_1 (Index / 64, Index % 64)
+#define _bsonParseDidVisitNth_1(NthInt, NthBit) \
+   (NthInt < _bpNumVisitBitInts && (_bpVisitBits[NthInt] & (1 << NthBit)))
+
+#define _bsonParseOperation_find(Predicate, ...)                   \
+   _bsonDSL_begin ("find(%s)", _bsonDSL_str (Predicate));          \
+   _bpFoundElement = false;                                        \
+   _bsonVisitEach (                                                \
+      *bsonVisitContext.doc,                                       \
+      if (Predicate,                                               \
+          then (do(_bsonParseMarkVisited (bsonVisitContext.index); \
+                   _bpFoundElement = true),                        \
+                __VA_ARGS__,                                       \
+                break)));                                          \
+   if (!_bpFoundElement && !bsonParseError) {                      \
+      _bsonDSLDebug ("[not found]");                               \
+   }                                                               \
    _bsonDSL_end
 
 #define _bsonParseOperation_require(Predicate, ...)                      \
    _bsonDSL_begin ("require(%s)", _bsonDSL_str (Predicate));             \
-   if (!bson_iter_init (&_bpCtx.iter, bsonVisitContext.doc)) {           \
-      bsonParseError = "Invalid BSON data [e]";                          \
-   }                                                                     \
    _bpFoundElement = false;                                              \
-   while (!bsonParseError && bson_iter_next (&_bpCtx.iter)) {            \
-      if (bsonPredicate (Predicate) && !bsonParseError) {                \
-         _bsonVisit_applyOps (__VA_ARGS__);                              \
-         _bpFoundElement = true;                                         \
-         break;                                                          \
-      }                                                                  \
-   }                                                                     \
-   if (bsonVisitIter.err_off) {                                          \
-      bsonParseError = "Invalid BSON data [f]";                          \
-   }                                                                     \
+   _bsonVisitEach (                                                      \
+      *bsonVisitContext.doc,                                             \
+      if (Predicate,                                                     \
+          then (do(_bsonParseMarkVisited (bsonVisitContext.index);       \
+                   _bpFoundElement = true),                              \
+                __VA_ARGS__,                                             \
+                break)));                                                \
    if (!_bpFoundElement && !bsonParseError) {                            \
       bsonParseError =                                                   \
          "Failed to find a required element: " _bsonDSL_str (Predicate); \
    }                                                                     \
+   _bsonDSL_end
+
+#define _bsonParseOperation_visitOthers(...)                                \
+   _bsonDSL_begin ("visitOthers(%s)", _bsonDSL_strElide (30, __VA_ARGS__)); \
+   _bsonVisitEach (                                                         \
+      *bsonVisitContext.doc,                                                \
+      if (not(eval (_bsonParseDidVisitNth (bsonVisitContext.index))),       \
+          then (__VA_ARGS__)));                                             \
    _bsonDSL_end
 
 #define bsonPredicate(P) _bsonPredicate _bsonDSL_nothing () (P)
@@ -935,6 +970,7 @@ struct _bsonVisitContext_t {
    const bson_t *doc;
    bson_iter_t iter;
    const struct _bsonVisitContext_t *parent;
+   int index;
 };
 
 /// A pointer to the current thread's bsonVisit/bsonParse context
