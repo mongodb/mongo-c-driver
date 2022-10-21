@@ -67,20 +67,10 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_restoreWarnings ();                                   \
    _bsonDSL_end
 
-#ifndef __INTELLISENSE__
 #define bsonBuildContext (*_bsonBuildContextThreadLocalPtr)
 #define bsonVisitContext (*_bsonVisitContextThreadLocalPtr)
 #define bsonVisitIter (bsonVisitContext.iter)
 #define bsonParseIter (bsonVisitContext.iter)
-#else
-/// The context of the current build operation
-extern struct _bsonBuildContext_t bsonBuildContext;
-/// The context of the current parse/visit operation
-extern struct _bsonVisitContext_t bsonVisitContext;
-/// An iterator pointing to the current BSON value being visited/parsed.
-extern bson_iter_t bsonVisitIter, bsonParseIter;
-#endif
-
 
 /// Begin any function-like macro by opening a new scope and writing a debug
 /// message.
@@ -121,9 +111,15 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 /// key-value pair with explicit key length
 #define _bsonDocOperation_kvl(String, Len, Element)                            \
    _bsonDSL_begin ("\"%s\" => [%s]", String, _bsonDSL_strElide (30, Element)); \
-   _bbCtx.key = (String);                                                      \
-   _bbCtx.key_len = (Len);                                                     \
-   _bsonValueOperation (Element);                                              \
+   const char *_bbString = (String);                                           \
+   const int _bbStringLen = (int) (Len);                                       \
+   if (bson_in_range_unsigned (int, _bbStringLen)) {                           \
+      _bbCtx.key = _bbString;                                                  \
+      _bbCtx.key_len = _bbStringLen;                                           \
+      _bsonValueOperation (Element);                                           \
+   } else {                                                                    \
+      bsonBuildError = "Out-of-range key string length value";                 \
+   }                                                                           \
    _bsonDSL_end
 
 /// Key-value pair with a C-string
@@ -319,7 +315,7 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
 
 #define _bsonArrayAppendValue(ValueOperation)               \
    _bsonDSL_begin ("[%d] => [%s]",                          \
-                   (int) bsonBuildContext.index,            \
+                   bsonBuildContext.index,                  \
                    _bsonDSL_strElide (30, ValueOperation)); \
    /* Set the doc key to the array index as a string: */    \
    _bsonBuild_setKeyToArrayIndex (bsonBuildContext.index);  \
@@ -394,9 +390,10 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       _bsonValueOperationIf_##Else;                                     \
    }
 
-#define _bsonBuild_setKeyToArrayIndex(Idx)                               \
-   _bbCtx.key_len = sprintf (_bbCtx.strbuf64, "%d", (int) _bbCtx.index); \
-   _bbCtx.key = _bbCtx.strbuf64
+#define _bsonBuild_setKeyToArrayIndex(Idx)                                    \
+   _bbCtx.key_len = snprintf (                                                \
+      _bbCtx.index_key_str, sizeof _bbCtx.index_key_str, "%d", _bbCtx.index); \
+   _bbCtx.key = _bbCtx.index_key_str
 
 /// Handle an element of array()
 #define _bsonArrayOperation(Element, _nil, _count) \
@@ -574,10 +571,8 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
       if (!bson_iter_init (&_bpCtx.iter, &(Doc))) {                          \
          bsonParseError = "Invalid BSON data [a]";                           \
       }                                                                      \
-      bool _bvBreak = false;                                                 \
-      (void) _bvBreak;                                                       \
-      bool _bvContinue = false;                                              \
-      (void) _bvContinue;                                                    \
+      BSON_MAYBE_UNUSED bool _bvBreak = false;                               \
+      BSON_MAYBE_UNUSED bool _bvContinue = false;                            \
       while (bson_iter_next (&_bpCtx.iter) && !_bvHalt && !bsonParseError && \
              !_bvBreak) {                                                    \
          _bvContinue = false;                                                \
@@ -917,23 +912,17 @@ extern bson_iter_t bsonVisitIter, bsonParseIter;
    bsonBuild (Variable, __VA_ARGS__)
 
 
-#ifdef _MSC_VER
-#define _bsonDSL_thread_local __declspec(thread)
-#else
-#define _bsonDSL_thread_local __thread
-#endif
-
 struct _bsonBuildContext_t {
    /// The document that is being built
    bson_t *doc;
    /// The key that is pending an append
    const char *key;
    /// The length of the string given in 'key'
-   size_t key_len;
+   int key_len;
    /// The index of the array being built (if applicable)
-   size_t index;
-   /// A buffer for short strings
-   char strbuf64[64];
+   int index;
+   /// A buffer for formatting key strings
+   char index_key_str[16];
    /// The parent context (if building a sub-document)
    struct _bsonBuildContext_t *parent;
 };
@@ -998,7 +987,7 @@ _bson_dsl_test_strequal (const char *string, bool case_sensitive)
 
 static BSON_INLINE bool
 _bson_dsl_key_is_anyof (const char *key,
-                        const size_t keylen,
+                        const int keylen,
                         int case_sensitive,
                         ...)
 {
