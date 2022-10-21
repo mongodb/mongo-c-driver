@@ -2154,14 +2154,6 @@ done:
    return ret;
 }
 
-// static bool
-// operation_create_change_stream_index (test_t *test,
-//                                       operation_t *op,
-//                                       result_t *result,
-//                                       bson_error_t *error)
-// {
-// }
-
 static bool
 operation_drop_index (test_t *test,
                       operation_t *op,
