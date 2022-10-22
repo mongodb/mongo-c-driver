@@ -51,27 +51,27 @@ bson_memory_barrier (void)
  * Some platforms do not support compiler intrinsics for atomic operations.
  * We emulate that here using a spin lock and regular arithmetic operations
  */
-static int8_t gEmulAtomicLock = 0;
+static int32_t gEmulAtomicLock = 0;
 
 static void
 _lock_emul_atomic ()
 {
    int i;
-   if (bson_atomic_int8_compare_exchange_weak (
+   if (bson_atomic_int32_compare_exchange_weak (
           &gEmulAtomicLock, 0, 1, bson_memory_order_acquire) == 0) {
       /* Successfully took the spinlock */
       return;
    }
    /* Failed. Try taking ten more times, then begin sleeping. */
    for (i = 0; i < 10; ++i) {
-      if (bson_atomic_int8_compare_exchange_weak (
+      if (bson_atomic_int32_compare_exchange_weak (
              &gEmulAtomicLock, 0, 1, bson_memory_order_acquire) == 0) {
          /* Succeeded in taking the lock */
          return;
       }
    }
    /* Still don't have the lock. Spin and yield */
-   while (bson_atomic_int8_compare_exchange_weak (
+   while (bson_atomic_int32_compare_exchange_weak (
              &gEmulAtomicLock, 0, 1, bson_memory_order_acquire) != 0) {
       bson_thrd_yield ();
    }
@@ -80,7 +80,7 @@ _lock_emul_atomic ()
 static void
 _unlock_emul_atomic ()
 {
-   int64_t rv = bson_atomic_int8_exchange (
+   int64_t rv = bson_atomic_int32_exchange (
       &gEmulAtomicLock, 0, bson_memory_order_release);
    BSON_ASSERT (rv == 1 && "Released atomic lock while not holding it");
 }
