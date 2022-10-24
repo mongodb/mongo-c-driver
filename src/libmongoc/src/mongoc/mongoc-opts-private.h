@@ -146,9 +146,9 @@ typedef struct _mongoc_change_stream_opts_t {
    int64_t maxAwaitTimeMS;
    const char *fullDocument;
    const char *fullDocumentBeforeChange;
+   bool showExpandedEvents;
    bson_value_t comment;
    bson_t extra;
-   bool showExpandedEvents;
 } mongoc_change_stream_opts_t;
 
 typedef struct _mongoc_create_index_opts_t {
