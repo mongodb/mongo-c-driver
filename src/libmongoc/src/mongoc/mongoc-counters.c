@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifdef BSON_OS_UNIX
 #include <sys/mman.h>
@@ -111,7 +112,7 @@ mongoc_counters_calc_size (void)
            (n_cpu * n_groups * sizeof (mongoc_counter_slots_t)));
 
 #ifdef BSON_OS_UNIX
-   return BSON_MAX (getpagesize (), size);
+   return BSON_MAX (sysconf(_SC_PAGESIZE), size);
 #else
    return size;
 #endif
