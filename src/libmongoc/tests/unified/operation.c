@@ -3196,6 +3196,7 @@ operation_rename (test_t *test,
    ret = true;
 done:
    bson_free (new_name);
+   bson_free (drop_target);
    return ret;
 }
 
