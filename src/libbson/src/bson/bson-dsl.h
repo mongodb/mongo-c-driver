@@ -640,6 +640,8 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_end
 
 #define _bsonVisitOperation_error(S) bsonParseError = (S)
+#define _bsonVisitOperation_errorf(S, ...) \
+   (bsonParseError = _bson_dsl_errorf (&(S), __VA_ARGS__))
 
 #define _bsonVisit_applyOp(P, _const, _count)            \
    do {                                                  \
@@ -835,6 +837,8 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define _bsonParseOperation_halt _bvHalt = true
 
 #define _bsonParseOperation_error(S) bsonParseError = (S)
+#define _bsonParseOperation_errorf(S, ...) \
+   (bsonParseError = _bson_dsl_errorf (&(S), __VA_ARGS__))
 
 /// Perform conditional parsing
 #define _bsonParseOperation_if(Condition, ...)                      \
@@ -1104,6 +1108,16 @@ static BSON_INLINE void BSON_GNUC_PRINTF (5, 6)
       fputc ('\n', stderr);
       fflush (stderr);
    }
+}
+
+static BSON_INLINE char *BSON_GNUC_PRINTF (2, 3)
+   _bson_dsl_errorf (char **const into, const char *const fmt, ...)
+{
+   va_list args;
+   va_start (args, fmt);
+   *into = bson_strdupv_printf (fmt, args);
+   va_end (args);
+   return *into;
 }
 
 static BSON_INLINE const char *
