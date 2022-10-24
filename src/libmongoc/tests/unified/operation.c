@@ -2169,7 +2169,6 @@ operation_drop_index (test_t *test,
    bson_error_t op_error = {0};
 
    parser = bson_parser_new ();
-   bson_parser_allow_extra (parser, true);
    bson_parser_utf8 (parser, "name", &index);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
