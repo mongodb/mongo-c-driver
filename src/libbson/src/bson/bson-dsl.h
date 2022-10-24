@@ -112,10 +112,10 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define _bsonDocOperation_kvl(String, Len, Element)                            \
    _bsonDSL_begin ("\"%s\" => [%s]", String, _bsonDSL_strElide (30, Element)); \
    const char *_bbString = (String);                                           \
-   const int _bbStringLen = (int) (Len);                                       \
-   if (bson_in_range_unsigned (int, _bbStringLen)) {                           \
+   const uint64_t length = (Len);                                              \
+   if (bson_in_range_unsigned (int, length)) {                                 \
       _bbCtx.key = _bbString;                                                  \
-      _bbCtx.key_len = _bbStringLen;                                           \
+      _bbCtx.key_len = (int) length;                                           \
       _bsonValueOperation (Element);                                           \
    } else {                                                                    \
       bsonBuildError = "Out-of-range key string length value";                 \
@@ -314,7 +314,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_end
 
 #define _bsonArrayAppendValue(ValueOperation)               \
-   _bsonDSL_begin ("[%d] => [%s]",                          \
+   _bsonDSL_begin ("[%zu] => [%s]",                         \
                    bsonBuildContext.index,                  \
                    _bsonDSL_strElide (30, ValueOperation)); \
    /* Set the doc key to the array index as a string: */    \
@@ -390,9 +390,9 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       _bsonValueOperationIf_##Else;                                     \
    }
 
-#define _bsonBuild_setKeyToArrayIndex(Idx)                                    \
-   _bbCtx.key_len = snprintf (                                                \
-      _bbCtx.index_key_str, sizeof _bbCtx.index_key_str, "%d", _bbCtx.index); \
+#define _bsonBuild_setKeyToArrayIndex(Idx)                                     \
+   _bbCtx.key_len = snprintf (                                                 \
+      _bbCtx.index_key_str, sizeof _bbCtx.index_key_str, "%zu", _bbCtx.index); \
    _bbCtx.key = _bbCtx.index_key_str
 
 /// Handle an element of array()
@@ -659,7 +659,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       /* Keep track of which elements have been visited based on their index*/ \
       uint64_t _bpVisitBits_static[4] = {0};                                   \
       BSON_MAYBE_UNUSED uint64_t *_bpVisitBits = _bpVisitBits_static;          \
-      BSON_MAYBE_UNUSED int _bpNumVisitBitInts =                               \
+      BSON_MAYBE_UNUSED size_t _bpNumVisitBitInts =                            \
          sizeof _bpVisitBits_static / sizeof (uint64_t);                       \
       BSON_MAYBE_UNUSED bool _bpFoundElement = false;                          \
       _bsonParse_applyOps (__VA_ARGS__);                                       \
@@ -684,11 +684,11 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 
 #define _bsonParseMarkVisited(Index)                                   \
    if (1) {                                                            \
-      const int nth_int = Index / 64;                                  \
-      const int nth_bit = Index % 64;                                  \
+      const size_t nth_int = Index / 64u;                              \
+      const size_t nth_bit = Index % 64u;                              \
       while (nth_int >= _bpNumVisitBitInts) {                          \
          /* Say that five times, fast: */                              \
-         int new_num_visit_bit_ints = _bpNumVisitBitInts * 2;          \
+         size_t new_num_visit_bit_ints = _bpNumVisitBitInts * 2u;      \
          uint64_t *new_visit_bit_ints =                                \
             bson_malloc0 (sizeof (uint64_t) * new_num_visit_bit_ints); \
          memcpy (new_visit_bit_ints,                                   \
@@ -701,14 +701,15 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
          _bpNumVisitBitInts = new_num_visit_bit_ints;                  \
       }                                                                \
                                                                        \
-      _bpVisitBits[nth_int] |= (1 << nth_bit);                         \
+      _bpVisitBits[nth_int] |= (UINT64_C (1) << nth_bit);              \
    } else                                                              \
       ((void) 0)
 
 #define _bsonParseDidVisitNth(Index) \
-   _bsonParseDidVisitNth_1 (Index / 64, Index % 64)
+   _bsonParseDidVisitNth_1 (Index / 64u, Index % 64u)
 #define _bsonParseDidVisitNth_1(NthInt, NthBit) \
-   (NthInt < _bpNumVisitBitInts && (_bpVisitBits[NthInt] & (1 << NthBit)))
+   (NthInt < _bpNumVisitBitInts &&              \
+    (_bpVisitBits[NthInt] & (UINT64_C (1) << NthBit)))
 
 #define _bsonParseOperation_find(Predicate, ...)                   \
    _bsonDSL_begin ("find(%s)", _bsonDSL_str (Predicate));          \
@@ -955,7 +956,7 @@ struct _bsonBuildContext_t {
    /// The length of the string given in 'key'
    int key_len;
    /// The index of the array being built (if applicable)
-   int index;
+   size_t index;
    /// A buffer for formatting key strings
    char index_key_str[16];
    /// The parent context (if building a sub-document)
@@ -970,7 +971,7 @@ struct _bsonVisitContext_t {
    const bson_t *doc;
    bson_iter_t iter;
    const struct _bsonVisitContext_t *parent;
-   int index;
+   size_t index;
 };
 
 /// A pointer to the current thread's bsonVisit/bsonParse context
@@ -1023,7 +1024,7 @@ _bson_dsl_test_strequal (const char *string, bool case_sensitive)
 
 static BSON_INLINE bool
 _bson_dsl_key_is_anyof (const char *key,
-                        const int keylen,
+                        const size_t keylen,
                         int case_sensitive,
                         ...)
 {
