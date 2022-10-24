@@ -161,10 +161,10 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
                                    "startAtOperationTime");
       }
    } else {
-      /* Change streams spec: "startAtOperationTime, resumeAfter, and
-       * startAfter are all mutually exclusive; if any two are set, the
-       * server will return an error. Drivers MUST NOT throw a custom error,
-       * and MUST defer to the server error." */
+      /* Change streams spec: "startAtOperationTime, resumeAfter, and startAfter
+       * are all mutually exclusive; if any two are set, the server will return
+       * an error. Drivers MUST NOT throw a custom error, and MUST defer to the
+       * server error." */
       if (!bson_empty (&stream->opts.resumeAfter)) {
          BSON_APPEND_DOCUMENT (
             &change_stream_doc, "resumeAfter", &stream->opts.resumeAfter);
@@ -177,8 +177,7 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
          BSON_APPEND_DOCUMENT (
             &change_stream_doc, "startAfter", &stream->opts.startAfter);
 
-         /* Update the cached resume token (take precedence over resumeAfter)
-          */
+         /* Update the cached resume token (take precedence over resumeAfter) */
          _set_resume_token (stream, &stream->opts.startAfter);
       }
 
@@ -463,6 +462,7 @@ _change_stream_init (mongoc_change_stream_t *stream,
          }
       }
    }
+
    if (stream->err.code == 0) {
       (void) _make_cursor (stream);
    }
