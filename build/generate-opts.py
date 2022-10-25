@@ -309,6 +309,7 @@ opts_structs = OrderedDict([
                     'returns the value of the document before the associated '
                     'change.',
         }),
+        ('showExpandedEvents', { 'type': 'bool', 'help': 'Set to ``true`` to return an expanded list of change stream events. Avaiable only on MongoDB versions >=6.0'}),
         comment_option_string_pre_4_4,
     ], fullDocument=None, fullDocumentBeforeChange=None)),
 
