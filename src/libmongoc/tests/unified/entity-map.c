@@ -281,6 +281,8 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    bool use_multiple_mongoses_set = false;
    bool can_reduce_heartbeat = false;
    mongoc_server_api_t *api = NULL;
+   char *errpath = NULL;
+   char *err = NULL;
 
    entity = entity_new ("client");
    callbacks = mongoc_apm_callbacks_new ();
@@ -379,7 +381,12 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                            then (error ("Every 'storeEventsAsEntities' element "
                                         "must be a string")))),
             /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
-            error ("'storeEventsAsEntities' is not yet supported")));
+            error ("'storeEventsAsEntities' is not yet supported")),
+      visitOthers (dupPath (errpath),
+                   errorf (err,
+                           "At [%s]: Unknown key '%s' given in entity options",
+                           errpath,
+                           bson_iter_key (&bsonVisitIter))));
 
    if (bsonParseError) {
       test_error ("Error while parsing entity object: %s", bsonParseError);
