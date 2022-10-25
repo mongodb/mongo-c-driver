@@ -20,11 +20,11 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #ifdef BSON_OS_UNIX
 #include <sys/mman.h>
 #include <sys/shm.h>
+#include <unistd.h>
 #endif
 
 #ifdef _MSC_VER
