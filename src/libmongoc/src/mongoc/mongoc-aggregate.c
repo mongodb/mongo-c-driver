@@ -266,9 +266,7 @@ _mongoc_aggregate (mongoc_client_t *client,
                                     default_rp,
                                     default_rc);
 
-   if (created_command) {
-      bson_destroy (&command);
-   }
+   bson_destroy (&command);
    bson_destroy (&cursor_opts);
 
    if (!parsed_opts) {
