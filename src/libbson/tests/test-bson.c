@@ -2636,10 +2636,13 @@ test_bson_dsl_visit (void)
 
    // Visit subdocs directly
    const char *baz_str = NULL;
+   char *path = NULL;
    bsonVisitEach (
       *TMP_BSON_FROM_JSON ({"foo" : {"bar" : {"baz" : "baz_string"}}}),
-      visitEach (visitEach (storeStrRef (baz_str))));
+      visitEach (visitEach (storeStrRef (baz_str), dupPath (path))));
    ASSERT_CMPSTR (baz_str, "baz_string");
+   ASSERT_CMPSTR (path, "$.foo.bar.baz");
+   bson_free (path);
 }
 
 static void

@@ -422,6 +422,16 @@ string is thread-local and is not freed or allocated. It is recommended to only
 use string literals for `S`.
 
 
+#### `errorf`
+
+> `errorf(char*& E, const char* fmt, ...)`
+
+If `E` is non-`NULL`, it will be freed, then: Generate an error string using
+printf-formatting. The allocated pointer will be written to `E`.
+`bsonParseError` will also be set to point to the same address as `E`. **NOTE:**
+It is the callers's responsibility to eventually free `E`.
+
+
 #### `halt`
 
 The `halt` keyword stops the current `bsonVisit()`/`bsonParse()` in which it
@@ -547,6 +557,23 @@ current element and advance to the next element.
 Assign the given character pointer `S` to `bsonParseError`. **Note** that this
 string is thread-local and is not freed or allocated. It is recommended to only
 use string literals for `S`.
+
+
+#### `errorf(char*& E, const char* fmt, ...)`
+
+If `E` is not `NULL`, `E` will be freed. Then: Generate an error string using
+printf-style formatting. The allocated string will be written to `E`.
+`bsonParseError` will be updated to point to the generate string. **NOTE:** It
+is the caller's responsibility to eventually free `E`.
+
+
+#### `dupPath(char* P)`
+
+If `P` is non-`NULL`, `P` is freed. Then: Create a JSONPath-style string that
+refers to the document element currently being visited. The path will be rooted
+at the document given to the top-most `bsonParse`/`bsonVisit` invocation in the
+calling thread. **NOTE:** It is the caller's responsibility to eventually free
+`P`.
 
 
 #### `if()`
@@ -718,8 +745,9 @@ If `bsonBuildError` becomes non-`NULL` during DSL evaluation, the enclosing
 After a DSL command returns, `bsonParseError`/`bsonBuildError` should be checked
 for `NULL`. If non-`NULL`, the relevant command encountered an error while
 executing. This can happen if the BSON iteration encountered corruption, if any
-build operation failed, if an `error()` DSL command was executed, or if any
-inner C code assigned a non-`NULL` value to the respective error string:
+build operation failed, if an `error()` or `errorf()` DSL command was executed,
+or if any inner C code assigned a non-`NULL` value to the respective error
+string:
 
 ```c
 // These functions add items to bsonBuildContext.doc:
@@ -751,7 +779,8 @@ also generate an error while appending the `subarray` element (e.g. if
 `bsonBuildError` value will be retained after it returns, for inspection by the
 caller.
 
-The `error()` visit/parse command can be used to do terse document validation:
+The `error()` (or `errorf()`) visit/parse command can be used to do terse
+document validation:
 
 ```c++
 struct user_info { char* name; int age; };

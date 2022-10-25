@@ -561,30 +561,30 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_begin ("visitEach(%s)", _bsonDSL_str (Doc));                     \
    do {                                                                      \
       /* Reset the context */                                                \
-      struct _bsonVisitContext_t _bpCtx = {                                  \
+      struct _bsonVisitContext_t _bvCtx = {                                  \
          .doc = &(Doc),                                                      \
          .parent = _bsonVisitContextThreadLocalPtr,                          \
          .index = 0,                                                         \
       };                                                                     \
-      _bsonVisitContextThreadLocalPtr = &_bpCtx;                             \
+      _bsonVisitContextThreadLocalPtr = &_bvCtx;                             \
       bsonParseError = NULL;                                                 \
       /* Iterate over each element of the document */                        \
-      if (!bson_iter_init (&_bpCtx.iter, &(Doc))) {                          \
+      if (!bson_iter_init (&_bvCtx.iter, &(Doc))) {                          \
          bsonParseError = "Invalid BSON data [a]";                           \
       }                                                                      \
       BSON_MAYBE_UNUSED bool _bvBreak = false;                               \
       BSON_MAYBE_UNUSED bool _bvContinue = false;                            \
-      while (bson_iter_next (&_bpCtx.iter) && !_bvHalt && !bsonParseError && \
+      while (bson_iter_next (&_bvCtx.iter) && !_bvHalt && !bsonParseError && \
              !_bvBreak) {                                                    \
          _bvContinue = false;                                                \
          _bsonVisit_applyOps (__VA_ARGS__);                                  \
-         ++_bpCtx.index;                                                     \
+         ++_bvCtx.index;                                                     \
       }                                                                      \
       if (bsonVisitIter.err_off) {                                           \
          bsonParseError = "Invalid BSON data [b]";                           \
       }                                                                      \
       /* Restore the dsl context */                                          \
-      _bsonVisitContextThreadLocalPtr = bsonVisitContext.parent;             \
+      _bsonVisitContextThreadLocalPtr = _bvCtx.parent;                       \
    } while (0);                                                              \
    _bsonDSL_end
 
@@ -595,11 +595,11 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    do {                                                                        \
       const uint8_t *data;                                                     \
       uint32_t len;                                                            \
-      bson_type_t typ = bson_iter_type_unsafe (&bsonVisitContext.iter);        \
+      bson_type_t typ = bson_iter_type_unsafe (&bsonVisitIter);                \
       if (typ == BSON_TYPE_ARRAY)                                              \
-         bson_iter_array (&bsonVisitContext.iter, &len, &data);                \
+         bson_iter_array (&bsonVisitIter, &len, &data);                        \
       else if (typ == BSON_TYPE_DOCUMENT)                                      \
-         bson_iter_document (&bsonVisitContext.iter, &len, &data);             \
+         bson_iter_document (&bsonVisitIter, &len, &data);                     \
       else {                                                                   \
          _bsonDSLDebug ("(Skipping visitEach() of non-array/document value)"); \
          break;                                                                \
@@ -611,22 +611,22 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_end
 
 #define _bsonVisitOperation_nop _bsonDSLDebug ("[nop]")
-#define _bsonVisitOperation_parse(...)                                  \
-   do {                                                                 \
-      const uint8_t *data;                                              \
-      uint32_t len;                                                     \
-      bson_type_t typ = bson_iter_type (&bsonVisitContext.iter);        \
-      if (typ == BSON_TYPE_ARRAY)                                       \
-         bson_iter_array (&bsonVisitContext.iter, &len, &data);         \
-      else if (typ == BSON_TYPE_DOCUMENT)                               \
-         bson_iter_document (&bsonVisitContext.iter, &len, &data);      \
-      else {                                                            \
-         _bsonDSLDebug ("Ignoring doc() for non-document/array value"); \
-         break;                                                         \
-      }                                                                 \
-      bson_t inner;                                                     \
-      bson_init_static (&inner, data, len);                             \
-      _bsonParse (inner, __VA_ARGS__);                                  \
+#define _bsonVisitOperation_parse(...)                                    \
+   do {                                                                   \
+      const uint8_t *data;                                                \
+      uint32_t len;                                                       \
+      bson_type_t typ = bson_iter_type (&bsonVisitIter);                  \
+      if (typ == BSON_TYPE_ARRAY)                                         \
+         bson_iter_array (&bsonVisitIter, &len, &data);                   \
+      else if (typ == BSON_TYPE_DOCUMENT)                                 \
+         bson_iter_document (&bsonVisitIter, &len, &data);                \
+      else {                                                              \
+         _bsonDSLDebug ("Ignoring parse() for non-document/array value"); \
+         break;                                                           \
+      }                                                                   \
+      bson_t inner;                                                       \
+      bson_init_static (&inner, data, len);                               \
+      _bsonParse (inner, __VA_ARGS__);                                    \
    } while (0);
 
 #define _bsonVisitOperation_continue _bvContinue = true
@@ -642,6 +642,10 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define _bsonVisitOperation_error(S) bsonParseError = (S)
 #define _bsonVisitOperation_errorf(S, ...) \
    (bsonParseError = _bson_dsl_errorf (&(S), __VA_ARGS__))
+#define _bsonVisitOperation_dupPath(S)               \
+   _bsonDSL_begin ("dupPath(%s)", _bsonDSL_str (S)); \
+   _bson_dsl_dupPath (&(S));                         \
+   _bsonDSL_end
 
 #define _bsonVisit_applyOp(P, _const, _count)            \
    do {                                                  \
@@ -652,12 +656,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 
 #define _bsonParse(Doc, ...)                                                   \
    do {                                                                        \
-      /* Reset the context */                                                  \
-      struct _bsonVisitContext_t _bpCtx = {                                    \
-         .doc = &(Doc),                                                        \
-         .parent = &bsonVisitContext,                                          \
-      };                                                                       \
-      _bsonVisitContextThreadLocalPtr = &_bpCtx;                               \
+      BSON_MAYBE_UNUSED const bson_t *_bpDoc = &(Doc);                         \
       /* Keep track of which elements have been visited based on their index*/ \
       uint64_t _bpVisitBits_static[4] = {0};                                   \
       BSON_MAYBE_UNUSED uint64_t *_bpVisitBits = _bpVisitBits_static;          \
@@ -669,8 +668,6 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       if (_bpVisitBits != _bpVisitBits_static) {                               \
          bson_free (_bpVisitBits);                                             \
       }                                                                        \
-      /* Restore the dsl context */                                            \
-      _bsonVisitContextThreadLocalPtr = bsonVisitContext.parent;               \
    } while (0)
 
 #define _bsonParse_applyOps(...) \
@@ -717,7 +714,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_begin ("find(%s)", _bsonDSL_str (Predicate));          \
    _bpFoundElement = false;                                        \
    _bsonVisitEach (                                                \
-      *bsonVisitContext.doc,                                       \
+      *_bpDoc,                                                     \
       if (Predicate,                                               \
           then (do(_bsonParseMarkVisited (bsonVisitContext.index); \
                    _bpFoundElement = true),                        \
@@ -732,7 +729,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_begin ("require(%s)", _bsonDSL_str (Predicate));             \
    _bpFoundElement = false;                                              \
    _bsonVisitEach (                                                      \
-      *bsonVisitContext.doc,                                             \
+      *_bpDoc,                                                           \
       if (Predicate,                                                     \
           then (do(_bsonParseMarkVisited (bsonVisitContext.index);       \
                    _bpFoundElement = true),                              \
@@ -747,7 +744,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define _bsonParseOperation_visitOthers(...)                                \
    _bsonDSL_begin ("visitOthers(%s)", _bsonDSL_strElide (30, __VA_ARGS__)); \
    _bsonVisitEach (                                                         \
-      *bsonVisitContext.doc,                                                \
+      *_bpDoc,                                                              \
       if (not(eval (_bsonParseDidVisitNth (bsonVisitContext.index))),       \
           then (__VA_ARGS__)));                                             \
    _bsonDSL_end
@@ -1113,11 +1110,39 @@ static BSON_INLINE void BSON_GNUC_PRINTF (5, 6)
 static BSON_INLINE char *BSON_GNUC_PRINTF (2, 3)
    _bson_dsl_errorf (char **const into, const char *const fmt, ...)
 {
+   if (*into) {
+      bson_free (*into);
+      *into = NULL;
+   }
    va_list args;
    va_start (args, fmt);
    *into = bson_strdupv_printf (fmt, args);
    va_end (args);
    return *into;
+}
+
+static BSON_INLINE void
+_bson_dsl_dupPath (char **into)
+{
+   if (*into) {
+      bson_free (*into);
+      *into = NULL;
+   }
+   char *acc = strdup ("");
+   for (const struct _bsonVisitContext_t *ctx = &bsonVisitContext; ctx;
+        ctx = ctx->parent) {
+      char *prev = acc;
+      if (ctx->parent && BSON_ITER_HOLDS_ARRAY (&ctx->parent->iter)) {
+         // We're an array element
+         acc = bson_strdup_printf ("[%zu]%s", ctx->index, prev);
+      } else {
+         // We're a document element
+         acc = bson_strdup_printf (".%s%s", bson_iter_key (&ctx->iter), prev);
+      }
+      free (prev);
+   }
+   *into = bson_strdup_printf ("$%s", acc);
+   bson_free (acc);
 }
 
 static BSON_INLINE const char *
