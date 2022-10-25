@@ -228,7 +228,7 @@ _mongoc_aggregate (mongoc_client_t *client,
    bson_iter_t ar;
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
-   bson_t command;
+   bson_t command = BSON_INITIALIZER;
    bson_t cursor_opts;
    bool created_command;
    bson_error_t create_cmd_err = {0};
