@@ -762,11 +762,11 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define _bsonPredicate_Condition_anyOf(...) \
    (0 _bsonDSL_mapMacro (_bsonPredicateOr, ~, __VA_ARGS__))
 #define _bsonPredicate_Condition_not(...) \
-   (!(_bsonPredicate_Condition_anyOf _bsonDSL_nothing () (__VA_ARGS__)))
+   (!(0 _bsonDSL_mapMacro (_bsonPredicateOr, ~, __VA_ARGS__)))
 #define _bsonPredicateAnd(Pred, _ignore, _ignore1) \
-   &&(_bsonPredicate_Condition_##Pred)
+   &&_bsonPredicate _bsonDSL_nothing () (Pred)
 #define _bsonPredicateOr(Pred, _ignore, _ignore2) \
-   || (_bsonPredicate_Condition_##Pred)
+   || _bsonPredicate _bsonDSL_nothing () (Pred)
 
 #define _bsonPredicate_Condition_eval(X) (X)
 
