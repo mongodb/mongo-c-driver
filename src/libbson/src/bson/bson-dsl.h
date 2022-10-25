@@ -33,9 +33,12 @@ enum {
 BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #endif
 
-#define _bsonDSL_disableWarnings()                     \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic push");) \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");)
+#define _bsonDSL_disableWarnings()                                        \
+   if (1) {                                                               \
+      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic push");)                 \
+      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");) \
+   } else                                                                 \
+      ((void) 0)
 
 #define _bsonDSL_restoreWarnings() \
    BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");)
@@ -70,7 +73,6 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define bsonBuildContext (*_bsonBuildContextThreadLocalPtr)
 #define bsonVisitContext (*_bsonVisitContextThreadLocalPtr)
 #define bsonVisitIter (bsonVisitContext.iter)
-#define bsonParseIter (bsonVisitContext.iter)
 
 /// Begin any function-like macro by opening a new scope and writing a debug
 /// message.
@@ -90,7 +92,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
  * arguments filled in by the DSL context variables.
  */
 #define _bsonBuildAppendArgs \
-   bsonBuildContext.doc, bsonBuildContext.key, (int) bsonBuildContext.key_len
+   bsonBuildContext.doc, bsonBuildContext.key, bsonBuildContext.key_len
 
 /**
  * The _bsonDocOperation_XYZ macros handle the top-level bsonBuild()
@@ -803,8 +805,8 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define _bsonPredicate_Condition_true true
 #define _bsonPredicate_Condition_false false
 
-#define _bsonPredicate_Condition_truthy (bson_iter_as_bool (&bsonVisitIter))
-#define _bsonPredicate_Condition_falsey (!bson_iter_as_bool (&bsonVisitIter))
+#define _bsonPredicate_Condition_isTrue (bson_iter_as_bool (&bsonVisitIter))
+#define _bsonPredicate_Condition_isFalse (!bson_iter_as_bool (&bsonVisitIter))
 #define _bsonPredicate_Condition_empty \
    (_bson_dsl_is_empty_bson (&bsonVisitIter))
 
@@ -1083,7 +1085,7 @@ _bson_dsl_iter_is_last_element (const bson_iter_t *it)
    return !bson_iter_next (&dup) && dup.err_off == 0;
 }
 
-static int _bson_dsl_indent = 0;
+_bson_thread_local_comdat int _bson_dsl_indent = 0;
 
 static BSON_INLINE void BSON_GNUC_PRINTF (5, 6)
    _bson_dsl_debug (bool do_debug,

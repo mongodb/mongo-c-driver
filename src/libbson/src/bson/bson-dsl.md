@@ -280,8 +280,8 @@ Copy the given `bson_t` document as a subdocument for the element.
 
 #### `bsonArray(bson_t)`
 
-Copy the given `bson_t` document as an array subdocument in the element. (All
-keys the subdocument will be made into integer index keys).
+Copy the given `bson_t` document as an array element. (All keys in the array
+document are expected to be integer index keys, but this is not enforced).
 
 
 #### `doc(DocOperation... ops)`
@@ -674,15 +674,15 @@ Always matches.
 Never matches.
 
 
-#### `truthy`
+#### `isTrue`
 
-Matches is the element is "truthy": A `true` boolean, a non-zero numeric type,
-or other non-null value.
+Matches is the element is "true" according to `bson_iter_as_bool()`: A `true`
+boolean, a non-zero int/double value, or other non-null value.
 
 
-#### `falsey`
+#### `isFalse`
 
-Matches any element that is not `truthy`
+Matches any element that is not `isTrue`.
 
 
 #### `empty`

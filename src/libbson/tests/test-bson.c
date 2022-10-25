@@ -2667,13 +2667,13 @@ test_bson_dsl_predicate (void)
       require (key ("number1"), //
                require (type (int32)),
                require (isNumeric),
-               require (truthy)),
+               require (isTrue)),
       require (key ("number2"), //
                require (isNumeric),
                require (type (double)),
-               require (truthy)),
+               require (isTrue)),
       require (key ("zero"), //
-               require (falsey)),
+               require (isFalse)),
       require (key ("string"), //
                require (type (utf8)),
                require (strEqual ("hello")),

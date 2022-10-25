@@ -322,7 +322,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       /* only include bypassDocumentValidation if it's true */
       bsonParse (*opts,
                  find (key ("bypassDocumentValidation"),
-                       if (truthy,
+                       if (isTrue,
                            then (append (
                               cursor->opts,
                               kv ("bypassDocumentValidation", bool (true)))))));

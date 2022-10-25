@@ -850,7 +850,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
           cluster, &hello_cmd, &reply, error)) {
       if (negotiate_sasl_supported_mechs) {
          bsonParse (reply,
-                    find (allOf (key ("ok"), falsey), //
+                    find (allOf (key ("ok"), isFalse), //
                           do({
                              /* hello response returned ok: 0. According to
                               * auth spec: "If the hello of the MongoDB
