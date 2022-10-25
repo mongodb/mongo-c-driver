@@ -40,8 +40,11 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    } else                                                                 \
       ((void) 0)
 
-#define _bsonDSL_restoreWarnings() \
-   BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");)
+#define _bsonDSL_restoreWarnings()                       \
+   if (1) {                                              \
+      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");) \
+   } else                                                \
+      ((void) 0)
 
 /**
  * @brief Parse the given BSON document.
