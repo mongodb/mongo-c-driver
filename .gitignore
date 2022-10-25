@@ -24,6 +24,10 @@ VERSION_CURRENT
 VERSION_RELEASED
 *.pyc
 
+# VSCode and those with clangd indexing
+.vscode
+.cache
+
 # Windows things
 *.sdf
 *.sln
