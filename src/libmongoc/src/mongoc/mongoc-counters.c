@@ -111,7 +111,7 @@ mongoc_counters_calc_size (void)
            (n_cpu * n_groups * sizeof (mongoc_counter_slots_t)));
 
 #ifdef BSON_OS_UNIX
-   return BSON_MAX (getpagesize (), size);
+   return BSON_MAX (sysconf(_SC_PAGESIZE), size);
 #else
    return size;
 #endif
