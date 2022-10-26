@@ -178,6 +178,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-write-command-private.h
    mongoc-write-command-legacy-private.h
    mongoc-write-concern-private.h
+   service-gcp.h
 )
 
 set (src_libmongoc_src_mongoc_DIST_cs
@@ -292,6 +293,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-cyrus.c
    mongoc-cluster-sspi.c
    mongoc-sspi.c
+   service-gcp.c
 )
 
 set_dist_list (src_libmongoc_src_mongoc_DIST

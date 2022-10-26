@@ -32,6 +32,7 @@
 #include "mongoc-http-private.h"
 #include "mcd-azure.h"
 #include "mcd-time.h"
+#include "service-gcp.h"
 
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
@@ -782,14 +783,65 @@ _try_add_azure_from_env (_mongoc_crypt_t *crypt,
    return okay;
 }
 
+/**
+ * @brief Check whether the given kmsProviders object requests automatic GCP
+ * credentials
+ *
+ * @param kmsprov The input kmsProviders that may have an "gcp" property
+ * @param error An output error
+ * @retval true If success AND `kmsprov` requests automatic GCP credentials
+ * @retval false Otherwise. Check error->code for failure.
+ */
+static bool
+_check_gcp_kms_auto (const bson_t *kmsprov, bson_error_t *error)
+{
+   if (error) {
+      *error = (bson_error_t){0};
+   }
+
+   bson_iter_t iter;
+   if (!bson_iter_init_find (&iter, kmsprov, "gcp")) {
+      return false;
+   }
+
+   bson_t azure_subdoc;
+   if (!_mongoc_iter_document_as_bson (&iter, &azure_subdoc, error)) {
+      return false;
+   }
+
+   return bson_empty (&azure_subdoc);
+}
+
+/**
+ * @brief Attempt to load an GCP access token from the environment and append
+ * them to the kmsProviders
+ *
+ * @param out A kmsProviders object to update
+ * @param error An error-out parameter
+ * @retval true If there was no error and we loaded credentials
+ * @retval false If there was an error obtaining or appending credentials
+ */
+static bool
+_try_add_gcp_from_env (_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error)
+{
+   return false;
+}
+
+// static bool
+// _request_new_gcp_token ( <token type>,
+//                         bson_error_t *error)
+// {
+// }
+
 static bool
 _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
 {
    bson_t creds = BSON_INITIALIZER;
    const bson_t empty = BSON_INITIALIZER;
    bool okay = false;
-
+   printf ("%s\n", "GILLOG IN FUNCTON");
    if (sm->crypt->creds_cb.fn) {
+      printf ("%s\n", "check1");
       // We have a user-provided credentials callback. Try it.
       if (!sm->crypt->creds_cb.fn (
              sm->crypt->creds_cb.userdata, &empty, &creds, error)) {
@@ -811,6 +863,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    bson_iter_t iter;
    const bool callback_provided_aws =
       bson_iter_init_find (&iter, &creds, "aws");
+   printf ("%s%d\n", "check2: ", callback_provided_aws);
 
    if (!callback_provided_aws &&
        _needs_on_demand_aws_kms (&sm->crypt->kms_providers, error)) {
@@ -825,16 +878,37 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
 
    // Whether the callback provided Azure credentials
    const bool cb_provided_azure = bson_iter_init_find (&iter, &creds, "azure");
+   printf ("%s%d\n", "check3: ", cb_provided_azure);
    // Whether the original kmsProviders requested auto-Azure credentials:
    const bool orig_wants_auto_azure =
       _check_azure_kms_auto (&sm->crypt->kms_providers, error);
+   printf ("%s%d\n", "check4: ", orig_wants_auto_azure);
+
    if (error->code) {
       // _check_azure_kms_auto failed
       goto fail;
    }
    const bool wants_auto_azure = orig_wants_auto_azure && !cb_provided_azure;
    if (wants_auto_azure) {
+      printf ("%s\n", "check5: ");
       if (!_try_add_azure_from_env (sm->crypt, &creds, error)) {
+         goto fail;
+      }
+   }
+
+   // Whether the callback provided GCP credentials
+   const bool cb_provided_gcp = bson_iter_init_find (&iter, &creds, "gcp");
+   // Whether the original kmsProviders requested auto-GCP credentials:
+   const bool orig_wants_auto_gcp =
+      _check_gcp_kms_auto (&sm->crypt->kms_providers, error);
+   if (error->code) {
+      // _check_gcp_kms_auto failed
+      goto fail;
+   }
+   const bool wants_auto_gcp = orig_wants_auto_gcp && !cb_provided_gcp;
+   if (wants_auto_gcp) {
+      printf ("%s\n", "check6: ");
+      if (!_try_add_gcp_from_env (sm->crypt, &creds, error)) {
          goto fail;
       }
    }
@@ -1622,6 +1696,7 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
                               bson_t *doc_out,
                               bson_error_t *error)
 {
+   printf ("%s\n", "in statemachine null");
    _state_machine_t *state_machine = NULL;
    bool ret = false;
    bson_t masterkey_w_provider = BSON_INITIALIZER;
