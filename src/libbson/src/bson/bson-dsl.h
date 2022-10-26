@@ -1151,25 +1151,25 @@ _bson_dsl_dupPath (char **into)
 }
 
 static BSON_INLINE const char *
-_bsonVisitIterAs_cstr ()
+_bsonVisitIterAs_cstr (void)
 {
    return bson_iter_utf8 (&bsonVisitIter, NULL);
 }
 
 static BSON_INLINE int32_t
-_bsonVisitIterAs_int32 ()
+_bsonVisitIterAs_int32 (void)
 {
    return bson_iter_int32 (&bsonVisitIter);
 }
 
 static BSON_INLINE bool
-_bsonVisitIterAs_bool ()
+_bsonVisitIterAs_bool (void)
 {
    return bson_iter_as_bool (&bsonVisitIter);
 }
 
 static BSON_INLINE bool
-_bsonVisitIterAs__Bool ()
+_bsonVisitIterAs__Bool (void)
 {
    return _bsonVisitIterAs_bool ();
 }
