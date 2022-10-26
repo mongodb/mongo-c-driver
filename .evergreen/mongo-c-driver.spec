@@ -236,6 +236,9 @@ exit $ret
 
 
 %changelog
+* Wed Oct 26 2022 Gil Alon <gil.alon@mongodb.com>  - 1.23.1-2
+- raise dependency to libmongocrypt 1.6.0
+
 * Thu Oct 20 2022 Remi Collet <remi@remirepo.net> - 1.23.1-2
 - update to 1.23.1
 
