@@ -51,6 +51,7 @@ typedef enum {
    MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, /* An error coming from libmongocrypt */
    MONGOC_ERROR_POOL,
    MONGOC_ERROR_AZURE,
+   MONGOC_ERROR_GCP
 } mongoc_error_domain_t;
 
 
@@ -139,6 +140,10 @@ typedef enum {
    // Azure errors
    MONGOC_ERROR_AZURE_HTTP,
    MONGOC_ERROR_AZURE_BAD_JSON,
+
+   // GCP errors
+   MONGOC_ERROR_GCP_HTTP,
+   MONGOC_ERROR_GCP_BAD_JSON
 } mongoc_error_code_t;
 
 MONGOC_EXPORT (bool)

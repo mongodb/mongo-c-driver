@@ -21,6 +21,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mongoc/mongoc-http-private.h>
+#include <mcd-time.h>
 
 /**
  * @brief A GCP access token obtained from the GCP API
@@ -28,14 +29,41 @@
 typedef struct gcp_service_account_token {
    /// The access token string
    char *access_token;
-   /// The resource of the token (the Azure resource for which it is valid)
-   //    char *resource;
-   //    /// The HTTP type of the token
-   //    char *token_type;
-   //    /// The duration after which it will the token will expires. This is
-   //    relative
-   //    /// to the "issue time" of the token.
-   // gcp_duration expires_in;
+   // The HTTP type of the token
+   char *token_type;
+   // The duration after which it will the token will expires. This is
+   // relative to the "issue time" of the token.
+   mcd_duration expires_in;
 } gcp_service_account_token;
+
+/**
+ * @brief A GCP request
+ */
+typedef struct gcp_request {
+   /// The underlying HTTP request object to be sent
+   mongoc_http_request_t req;
+   char *_owned_path;
+   char *_owned_host;
+   char *_owned_headers;
+} gcp_request;
+
+void
+gcp_request_init (gcp_request *req,
+                  const char *const opt_host,
+                  int opt_port,
+                  const char *const opt_extra_headers);
+
+void
+gcp_request_destroy (gcp_request *req);
+
+void
+gcp_access_token_destroy (gcp_service_account_token *token);
+
+bool
+gcp_access_token_from_api (gcp_service_account_token *out,
+                           const char *opt_host,
+                           int opt_port,
+                           const char *opt_extra_headers,
+                           bson_error_t *error);
 
 #endif /* SERVICE_GCP_H */

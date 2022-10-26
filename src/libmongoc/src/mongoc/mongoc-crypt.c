@@ -51,6 +51,8 @@ struct __mongoc_crypt_t {
    mcd_azure_access_token azure_token;
    /// The time point at which the `azure_token` was acquired.
    mcd_time_point azure_token_issued_at;
+
+   gcp_service_account_token gcp_token;
 };
 
 static void
@@ -804,12 +806,26 @@ _check_gcp_kms_auto (const bson_t *kmsprov, bson_error_t *error)
       return false;
    }
 
-   bson_t azure_subdoc;
-   if (!_mongoc_iter_document_as_bson (&iter, &azure_subdoc, error)) {
+   bson_t gcp_subdoc;
+   if (!_mongoc_iter_document_as_bson (&iter, &gcp_subdoc, error)) {
       return false;
    }
 
-   return bson_empty (&azure_subdoc);
+   return bson_empty (&gcp_subdoc);
+}
+
+/**
+ * @brief Attempt to request a new GCP access token from the HTTP server
+ *
+ * @param out The token to populate. Must later be destroyed by the caller.
+ * @param error An output parameter to capture any errors
+ * @retval true Upon successfully obtaining and parsing a token
+ * @retval false If any error occurs.
+ */
+static bool
+_request_new_gcp_token (gcp_service_account_token *out, bson_error_t *error)
+{
+   return (gcp_access_token_from_api (out, NULL, 0, NULL, error));
 }
 
 /**
@@ -824,14 +840,18 @@ _check_gcp_kms_auto (const bson_t *kmsprov, bson_error_t *error)
 static bool
 _try_add_gcp_from_env (_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error)
 {
-   return false;
+   if (crypt->gcp_token.access_token) {
+      // check expiration time
+      // destroy it if it will expire soon
+   }
+   if (crypt->gcp_token.access_token == NULL) {
+      if (!_request_new_gcp_token (&crypt->gcp_token, error)) {
+         return false;
+      }
+   }
+   // Build the new KMS credentials
+   return true;
 }
-
-// static bool
-// _request_new_gcp_token ( <token type>,
-//                         bson_error_t *error)
-// {
-// }
 
 static bool
 _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
