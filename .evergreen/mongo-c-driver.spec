@@ -44,7 +44,7 @@ BuildRequires: mongodb-server
 BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
-BuildRequires: cmake(mongocrypt) >= 1.5.2
+BuildRequires: cmake(mongocrypt) >= 1.6.0
 %endif
 BuildRequires: perl-interpreter
 # From man pages
