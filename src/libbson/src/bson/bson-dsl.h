@@ -21,11 +21,11 @@ enum {
    BSON_DSL_DEBUG = 0
 };
 
-#ifdef _WIN32
-#define _bson_thread_local_comdat __declspec(thread) __declspec(selectany)
-#else
-#define _bson_thread_local_comdat __attribute__ ((weak)) __thread
-#endif
+#define _bson_thread_local \
+   BSON_IF_GNU_LIKE (__thread) BSON_IF_MSVC (__declspec(thread))
+
+#define _bson_comdat \
+   BSON_IF_WINDOWS (__declspec(selectany)) BSON_IF_POSIX (__attribute__ ((weak)))
 
 #ifdef __GNUC__
 // GCC has a bug handling pragma statements that disable warnings within complex
@@ -970,7 +970,7 @@ struct _bsonBuildContext_t {
 };
 
 /// A pointer to the current thread's bsonBuild context
-_bson_thread_local_comdat struct _bsonBuildContext_t
+_bson_thread_local _bson_comdat struct _bsonBuildContext_t
    *_bsonBuildContextThreadLocalPtr = NULL;
 
 struct _bsonVisitContext_t {
@@ -981,7 +981,7 @@ struct _bsonVisitContext_t {
 };
 
 /// A pointer to the current thread's bsonVisit/bsonParse context
-_bson_thread_local_comdat struct _bsonVisitContext_t const
+_bson_thread_local _bson_comdat struct _bsonVisitContext_t const
    *_bsonVisitContextThreadLocalPtr = NULL;
 
 /**
@@ -990,7 +990,7 @@ _bson_thread_local_comdat struct _bsonVisitContext_t const
  * If NULL, no error occurred. Users can assign a value to this string to
  * indicate failure.
  */
-_bson_thread_local_comdat const char *bsonBuildError = NULL;
+_bson_thread_local _bson_comdat const char *bsonBuildError = NULL;
 
 /**
  * @brief The most recent error from a buildVisit() or bsonParse() DSL command.
@@ -1003,7 +1003,7 @@ _bson_thread_local_comdat const char *bsonBuildError = NULL;
  *
  * Upon entering a new bsonVisit()/bsonParse(), this will be reset to NULL.
  */
-_bson_thread_local_comdat const char *bsonParseError = NULL;
+_bson_thread_local _bson_comdat const char *bsonParseError = NULL;
 
 #define _bsonDSLDebug(...) \
    _bson_dsl_debug (BSON_DSL_DEBUG, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)
@@ -1088,7 +1088,7 @@ _bson_dsl_iter_is_last_element (const bson_iter_t *it)
    return !bson_iter_next (&dup) && dup.err_off == 0;
 }
 
-_bson_thread_local_comdat int _bson_dsl_indent = 0;
+_bson_thread_local _bson_comdat int _bson_dsl_indent = 0;
 
 static BSON_INLINE void BSON_GNUC_PRINTF (5, 6)
    _bson_dsl_debug (bool do_debug,
