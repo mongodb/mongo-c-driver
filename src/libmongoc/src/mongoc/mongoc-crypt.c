@@ -849,8 +849,22 @@ _try_add_gcp_from_env (_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error)
          return false;
       }
    }
+
    // Build the new KMS credentials
-   return true;
+   bson_t new_gcp_creds = BSON_INITIALIZER;
+   const bool okay = BSON_APPEND_UTF8 (&new_gcp_creds,
+                                       "accessToken",
+                                       crypt->gcp_token.access_token) &&
+                     BSON_APPEND_DOCUMENT (out, "gcp", &new_gcp_creds);
+   bson_destroy (&new_gcp_creds);
+   if (!okay) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Failed to build new 'gcp' credentials");
+   }
+
+   return okay;
 }
 
 static bool
@@ -859,9 +873,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    bson_t creds = BSON_INITIALIZER;
    const bson_t empty = BSON_INITIALIZER;
    bool okay = false;
-   printf ("%s\n", "GILLOG IN FUNCTON");
    if (sm->crypt->creds_cb.fn) {
-      printf ("%s\n", "check1");
       // We have a user-provided credentials callback. Try it.
       if (!sm->crypt->creds_cb.fn (
              sm->crypt->creds_cb.userdata, &empty, &creds, error)) {
@@ -883,7 +895,6 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    bson_iter_t iter;
    const bool callback_provided_aws =
       bson_iter_init_find (&iter, &creds, "aws");
-   printf ("%s%d\n", "check2: ", callback_provided_aws);
 
    if (!callback_provided_aws &&
        _needs_on_demand_aws_kms (&sm->crypt->kms_providers, error)) {
@@ -898,11 +909,9 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
 
    // Whether the callback provided Azure credentials
    const bool cb_provided_azure = bson_iter_init_find (&iter, &creds, "azure");
-   printf ("%s%d\n", "check3: ", cb_provided_azure);
    // Whether the original kmsProviders requested auto-Azure credentials:
    const bool orig_wants_auto_azure =
       _check_azure_kms_auto (&sm->crypt->kms_providers, error);
-   printf ("%s%d\n", "check4: ", orig_wants_auto_azure);
 
    if (error->code) {
       // _check_azure_kms_auto failed
@@ -910,7 +919,6 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    }
    const bool wants_auto_azure = orig_wants_auto_azure && !cb_provided_azure;
    if (wants_auto_azure) {
-      printf ("%s\n", "check5: ");
       if (!_try_add_azure_from_env (sm->crypt, &creds, error)) {
          goto fail;
       }
@@ -927,7 +935,6 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    }
    const bool wants_auto_gcp = orig_wants_auto_gcp && !cb_provided_gcp;
    if (wants_auto_gcp) {
-      printf ("%s\n", "check6: ");
       if (!_try_add_gcp_from_env (sm->crypt, &creds, error)) {
          goto fail;
       }
@@ -1716,7 +1723,6 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
                               bson_t *doc_out,
                               bson_error_t *error)
 {
-   printf ("%s\n", "in statemachine null");
    _state_machine_t *state_machine = NULL;
    bool ret = false;
    bson_t masterkey_w_provider = BSON_INITIALIZER;

@@ -24,7 +24,7 @@
 #include <mcd-time.h>
 
 /**
- * @brief A GCP access token obtained from the GCP API
+ * @brief A GCP access token obtained from the GCP metadata server
  */
 typedef struct gcp_service_account_token {
    /// The access token string
@@ -47,6 +47,7 @@ typedef struct gcp_request {
    char *_owned_headers;
 } gcp_request;
 
+
 void
 gcp_request_init (gcp_request *req,
                   const char *const opt_host,
@@ -58,6 +59,27 @@ gcp_request_destroy (gcp_request *req);
 
 void
 gcp_access_token_destroy (gcp_service_account_token *token);
+
+
+/**
+ * @brief Try to parse a GCP access token from a metadata JSON response
+ *
+ * @param out The token to initialize. Should be uninitialized. Must later be
+ * destroyed by the caller.
+ * @param json The JSON string body
+ * @param len The length of 'body'
+ * @param error An output parameter for errors
+ * @retval true If 'out' was successfully initialized to a token.
+ * @retval false Otherwise
+ *
+ * @note The 'out' token must later be given to @ref
+ * gcp_access_token_destroy
+ */
+bool
+gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
+                                      const char *json,
+                                      int len,
+                                      bson_error_t *error);
 
 bool
 gcp_access_token_from_api (gcp_service_account_token *out,

@@ -79,24 +79,3 @@ test_gcp_kms_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/test_gcpkms", test_gcpkms);
 }
-
-// mongoc_http_request_t req;
-// mongoc_http_response_t res;
-// bool r;
-// BSON_UNUSED (unused);
-
-// _mongoc_http_request_init (&req);
-// _mongoc_http_response_init (&res);
-
-/* Basic GET request */
-// req.method = "GET";
-// req.host = "localhost";
-// req.port = 5000;
-// // Empty body is okay
-// req.body = "";
-// req.body_len = 0;
-// r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
-// ASSERT_CMPINT (res.status, ==, 200);
-// ASSERT_OR_PRINT (r, error);
-// ASSERT_CMPINT (res.body_len, >, 0);
-// _mongoc_http_response_cleanup (&res);

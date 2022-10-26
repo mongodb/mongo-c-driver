@@ -43,7 +43,7 @@ gcp_request_init (gcp_request *req,
    req->req.extra_headers = req->_owned_headers = bson_strdup_printf (
       "Metadata-Flavor: Google\n", opt_extra_headers ? opt_extra_headers : "");
 
-   // req->req.path = req->_owned_path = bson_strdup (LOCALPATH);
+   // req->req.path = req->_owned_path = bson_strdup (DEFAULT_PATH);
 }
 
 void
@@ -63,6 +63,54 @@ gcp_access_token_destroy (gcp_service_account_token *token)
    bson_free (token->token_type);
    token->access_token = NULL;
    token->token_type = NULL;
+}
+
+bool
+gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
+                                      const char *json,
+                                      int len,
+                                      bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (json);
+   bool okay = false;
+   // Zero the output
+   *out = (gcp_service_account_token){0};
+
+   // Parse the JSON data
+   bson_t bson;
+   if (!bson_init_from_json (&bson, json, len, error)) {
+      return false;
+   }
+
+   bson_iter_t iter;
+   // access_token
+   bool found = bson_iter_init_find (&iter, &bson, "access_token");
+   const char *const access_token =
+      !found ? NULL : bson_iter_utf8 (&iter, NULL);
+   // token_type
+   found = bson_iter_init_find (&iter, &bson, "token_type");
+   const char *const token_type = !found ? NULL : bson_iter_utf8 (&iter, NULL);
+
+   if (!(access_token && token_type)) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_GCP,
+         MONGOC_ERROR_GCP_BAD_JSON,
+         "One or more required JSON properties are missing/invalid: data: %.*s",
+         len,
+         json);
+      goto done;
+   }
+
+   *out = (gcp_service_account_token){
+      .access_token = bson_strdup (access_token),
+      .token_type = bson_strdup (token_type),
+   };
+   okay = true;
+done:
+   bson_destroy (&bson);
+   return okay;
 }
 
 bool
@@ -101,8 +149,10 @@ gcp_access_token_from_api (gcp_service_account_token *out,
       goto fail;
    }
 
-   printf ("%s\n", resp.body);
-
+   if (!gcp_access_token_try_parse_from_json (
+          out, resp.body, resp.body_len, error)) {
+      goto fail;
+   }
    okay = true;
 
 fail:
