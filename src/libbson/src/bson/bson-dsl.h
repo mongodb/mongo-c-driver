@@ -396,7 +396,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    }
 
 #define _bsonBuild_setKeyToArrayIndex(Idx)                                     \
-   _bbCtx.key_len = snprintf (                                                 \
+   _bbCtx.key_len = bson_snprintf (                                            \
       _bbCtx.index_key_str, sizeof _bbCtx.index_key_str, "%zu", _bbCtx.index); \
    _bbCtx.key = _bbCtx.index_key_str
 
@@ -1133,7 +1133,7 @@ _bson_dsl_dupPath (char **into)
       bson_free (*into);
       *into = NULL;
    }
-   char *acc = strdup ("");
+   char *acc = bson_strdup ("");
    for (const struct _bsonVisitContext_t *ctx = &bsonVisitContext; ctx;
         ctx = ctx->parent) {
       char *prev = acc;
@@ -1144,7 +1144,7 @@ _bson_dsl_dupPath (char **into)
          // We're a document element
          acc = bson_strdup_printf (".%s%s", bson_iter_key (&ctx->iter), prev);
       }
-      free (prev);
+      bson_free (prev);
    }
    *into = bson_strdup_printf ("$%s", acc);
    bson_free (acc);
