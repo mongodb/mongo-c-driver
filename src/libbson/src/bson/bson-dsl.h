@@ -24,8 +24,9 @@ enum {
 #define _bson_thread_local \
    BSON_IF_GNU_LIKE (__thread) BSON_IF_MSVC (__declspec(thread))
 
-#define _bson_comdat \
-   BSON_IF_WINDOWS (__declspec(selectany)) BSON_IF_POSIX (__attribute__ ((weak)))
+#define _bson_comdat                       \
+   BSON_IF_WINDOWS (__declspec(selectany)) \
+   BSON_IF_POSIX (__attribute__ ((weak)))
 
 #ifdef __GNUC__
 // GCC has a bug handling pragma statements that disable warnings within complex
@@ -319,8 +320,8 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_end
 
 #define _bsonArrayAppendValue(ValueOperation)               \
-   _bsonDSL_begin ("[%zu] => [%s]",                         \
-                   bsonBuildContext.index,                  \
+   _bsonDSL_begin ("[%d] => [%s]",                          \
+                  (int) bsonBuildContext.index,                  \
                    _bsonDSL_strElide (30, ValueOperation)); \
    /* Set the doc key to the array index as a string: */    \
    _bsonBuild_setKeyToArrayIndex (bsonBuildContext.index);  \
@@ -395,9 +396,9 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       _bsonValueOperationIf_##Else;                                     \
    }
 
-#define _bsonBuild_setKeyToArrayIndex(Idx)                                     \
-   _bbCtx.key_len = bson_snprintf (                                            \
-      _bbCtx.index_key_str, sizeof _bbCtx.index_key_str, "%zu", _bbCtx.index); \
+#define _bsonBuild_setKeyToArrayIndex(Idx)                                    \
+   _bbCtx.key_len = bson_snprintf (                                           \
+      _bbCtx.index_key_str, sizeof _bbCtx.index_key_str, "%d",(int) _bbCtx.index); \
    _bbCtx.key = _bbCtx.index_key_str
 
 /// Handle an element of array()
@@ -1139,7 +1140,7 @@ _bson_dsl_dupPath (char **into)
       char *prev = acc;
       if (ctx->parent && BSON_ITER_HOLDS_ARRAY (&ctx->parent->iter)) {
          // We're an array element
-         acc = bson_strdup_printf ("[%zu]%s", ctx->index, prev);
+         acc = bson_strdup_printf ("[%d]%s", (int)ctx->index, prev);
       } else {
          // We're a document element
          acc = bson_strdup_printf (".%s%s", bson_iter_key (&ctx->iter), prev);
