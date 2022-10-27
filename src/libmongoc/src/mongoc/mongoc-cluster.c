@@ -2749,6 +2749,12 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
                                   bool *must_use_primary,
                                   bson_error_t *error)
 {
+   BSON_ASSERT (cs || true);
+   BSON_ASSERT_PARAM (topology);
+   BSON_ASSERT (read_prefs || true);
+   BSON_ASSERT_PARAM (must_use_primary);
+   BSON_ASSERT (error || true);
+
    uint32_t server_id;
 
    if (_in_sharded_txn (cs)) {
@@ -2800,6 +2806,12 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
                                    bson_t *reply,
                                    bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT (read_prefs || true);
+   BSON_ASSERT (cs || true);
+   BSON_ASSERT (reply || true);
+   BSON_ASSERT (error || true);
+
    mongoc_server_stream_t *server_stream;
    uint32_t server_id;
    mongoc_topology_t *topology = cluster->client->topology;
@@ -2849,23 +2861,13 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
                                  bson_t *reply,
-                                 bool has_write_stage,
                                  bson_error_t *error)
 {
-   const mongoc_read_prefs_t *prefs_override = read_prefs;
-
-   if (_mongoc_client_session_in_txn (cs)) {
-      prefs_override = cs->txn.opts.read_prefs;
-   }
+   const mongoc_read_prefs_t *const prefs_override =
+      _mongoc_client_session_in_txn (cs) ? cs->txn.opts.read_prefs : read_prefs;
 
    return _mongoc_cluster_stream_for_optype (
-      cluster,
-      /* Narrow down the optype if this is an aggregate op with a write stage */
-      has_write_stage ? MONGOC_SS_AGGREGATE_WITH_WRITE : MONGOC_SS_READ,
-      prefs_override,
-      cs,
-      reply,
-      error);
+      cluster, MONGOC_SS_READ, prefs_override, cs, reply, error);
 }
 
 mongoc_server_stream_t *
@@ -2876,6 +2878,25 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
 {
    return _mongoc_cluster_stream_for_optype (
       cluster, MONGOC_SS_WRITE, NULL, cs, reply, error);
+}
+
+mongoc_server_stream_t *
+mongoc_cluster_stream_for_aggr_with_write (
+   mongoc_cluster_t *cluster,
+   const mongoc_read_prefs_t *read_prefs,
+   mongoc_client_session_t *cs,
+   bson_t *reply,
+   bson_error_t *error)
+{
+   const mongoc_read_prefs_t *const prefs_override =
+      _mongoc_client_session_in_txn (cs) ? cs->txn.opts.read_prefs : read_prefs;
+
+   return _mongoc_cluster_stream_for_optype (cluster,
+                                             MONGOC_SS_AGGREGATE_WITH_WRITE,
+                                             prefs_override,
+                                             cs,
+                                             reply,
+                                             error);
 }
 
 static bool
