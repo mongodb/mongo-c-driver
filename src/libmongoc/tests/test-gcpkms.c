@@ -12,14 +12,10 @@ test_gcpkms (void)
    bson_error_t error;
    char *mongodb_uri = getenv ("MONGODB_URI");
    // char *expect_error = getenv ("EXPECT_ERROR");
-   char *keyName = getenv ("KEY_NAME");
-   char *keyRing = getenv ("KEY_RING");
-   char *location = getenv ("LOCATION");
-   char *projectId = getenv ("PROJECT_ID");
 
    if (!mongodb_uri) {
-      MONGOC_ERROR ("Error: expecting environment variables to be set: "
-                    "MONGODB_URI, KEY_NAME, KEY_VAULT_ENDPOINT");
+      MONGOC_ERROR (
+         "Error: expecting MONGODB_URI environment variable to be set.");
       // return EXIT_FAILURE;
    }
 
@@ -46,13 +42,13 @@ test_gcpkms (void)
    mongoc_client_encryption_datakey_opts_t *dkopts;
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    bson_t *masterkey = BCON_NEW ("keyRing",
-                                 BCON_UTF8 (keyRing),
+                                 BCON_UTF8 ("key-ring-csfle"),
                                  "keyName",
-                                 BCON_UTF8 (keyName),
+                                 BCON_UTF8 ("key-name-csfle"),
                                  "location",
-                                 BCON_UTF8 (location),
+                                 BCON_UTF8 ("global"),
                                  "projectId",
-                                 BCON_UTF8 (projectId));
+                                 BCON_UTF8 ("devprod-drivers"));
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, masterkey);
 
    bson_value_t keyid;
