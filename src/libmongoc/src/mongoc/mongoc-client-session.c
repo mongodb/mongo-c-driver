@@ -25,6 +25,8 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-error-private.h"
 
+#include <bson/bson-dsl.h>
+
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
 
 static void
@@ -257,8 +259,8 @@ retry:
        * actually apply the error label due to reply being NULL */
       _mongoc_client_session_unpin (session);
       if (reply) {
-         bson_copy_to_excluding_noinit (
-            &reply_local, reply, "errorLabels", NULL);
+         bsonBuildAppend (*reply,
+                          insert (reply_local, not(key ("errorLabels"))));
          _mongoc_error_copy_labels_and_upsert (
             &reply_local, reply, UNKNOWN_COMMIT_RESULT);
       }

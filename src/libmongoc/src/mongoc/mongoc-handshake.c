@@ -36,6 +36,8 @@
 #include "mongoc-version.h"
 #include "mongoc-util-private.h"
 
+#include <bson/bson-dsl.h>
+
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init
  *
@@ -517,37 +519,21 @@ bool
 _mongoc_handshake_build_doc_with_application (bson_t *doc, const char *appname)
 {
    const mongoc_handshake_t *md = _mongoc_handshake_get ();
-   bson_t child;
 
-   if (appname) {
-      BSON_APPEND_DOCUMENT_BEGIN (doc, "application", &child);
-      BSON_APPEND_UTF8 (&child, "name", appname);
-      bson_append_document_end (doc, &child);
-   }
-
-   BSON_APPEND_DOCUMENT_BEGIN (doc, "driver", &child);
-   BSON_APPEND_UTF8 (&child, "name", md->driver_name);
-   BSON_APPEND_UTF8 (&child, "version", md->driver_version);
-   bson_append_document_end (doc, &child);
-
-   BSON_APPEND_DOCUMENT_BEGIN (doc, "os", &child);
-
-   BSON_ASSERT (md->os_type);
-   BSON_APPEND_UTF8 (&child, "type", md->os_type);
-
-   if (md->os_name) {
-      BSON_APPEND_UTF8 (&child, "name", md->os_name);
-   }
-
-   if (md->os_version) {
-      BSON_APPEND_UTF8 (&child, "version", md->os_version);
-   }
-
-   if (md->os_architecture) {
-      BSON_APPEND_UTF8 (&child, "architecture", md->os_architecture);
-   }
-
-   bson_append_document_end (doc, &child);
+   bsonBuildAppend (
+      *doc,
+      if (appname,
+          then (kv ("application", doc (kv ("name", cstr (appname)))))),
+      kv ("driver",
+          doc (kv ("name", cstr (md->driver_name)),
+               kv ("version", cstr (md->driver_version)))),
+      kv (
+         "os",
+         doc (kv ("type", cstr (md->os_type)),
+              if (md->os_name, then (kv ("name", cstr (md->os_name)))),
+              if (md->os_version, then (kv ("version", cstr (md->os_version)))),
+              if (md->os_architecture,
+                  then (kv ("architecture", cstr (md->os_architecture)))))));
 
    if (doc->len > HANDSHAKE_MAX_SIZE) {
       /* We've done all we can possibly do to ensure the current
@@ -691,22 +677,12 @@ _mongoc_handshake_parse_sasl_supported_mechs (
    const bson_t *hello,
    mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs)
 {
-   bson_iter_t iter;
    memset (sasl_supported_mechs, 0, sizeof (*sasl_supported_mechs));
-   if (bson_iter_init_find (&iter, hello, "saslSupportedMechs")) {
-      bson_iter_t array_iter;
-      if (BSON_ITER_HOLDS_ARRAY (&iter) &&
-          bson_iter_recurse (&iter, &array_iter)) {
-         while (bson_iter_next (&array_iter)) {
-            if (BSON_ITER_HOLDS_UTF8 (&array_iter)) {
-               const char *mechanism_name = bson_iter_utf8 (&array_iter, NULL);
-               if (0 == strcmp (mechanism_name, "SCRAM-SHA-256")) {
-                  sasl_supported_mechs->scram_sha_256 = true;
-               } else if (0 == strcmp (mechanism_name, "SCRAM-SHA-1")) {
-                  sasl_supported_mechs->scram_sha_1 = true;
-               }
-            }
-         }
-      }
-   }
+   bsonParse (*hello,
+              find (keyWithType ("saslSupportedMechs", array),
+                    visitEach (case (
+                       when (strEqual ("SCRAM-SHA-256"),
+                             do(sasl_supported_mechs->scram_sha_256 = true)),
+                       when (strEqual ("SCRAM-SHA-1"),
+                             do(sasl_supported_mechs->scram_sha_1 = true))))));
 }
