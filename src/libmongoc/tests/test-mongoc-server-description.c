@@ -381,6 +381,73 @@ test_server_description_legacy_hello_ok (void)
    bson_destroy (&hello_response);
 }
 
+static void
+test_server_description_connection_id (void)
+{
+   mongoc_server_description_t sd;
+   bson_t *hello;
+   bson_error_t error;
+
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   hello = BCON_NEW ("minWireVersion",
+                     BCON_INT32 (WIRE_VERSION_MIN),
+                     "maxWireVersion",
+                     BCON_INT32 (WIRE_VERSION_MAX),
+                     "connectionId",
+                     BCON_INT32 (1));
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+   BSON_ASSERT (sd.server_connection_id == 1);
+
+   mongoc_server_description_reset (&sd);
+   bson_destroy (hello);
+   hello = BCON_NEW ("minWireVersion",
+                     BCON_INT32 (WIRE_VERSION_MIN),
+                     "maxWireVersion",
+                     BCON_INT32 (WIRE_VERSION_MAX),
+                     "connectionId",
+                     BCON_INT64 (1));
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+   BSON_ASSERT (sd.server_connection_id == 1);
+
+   bson_destroy (hello);
+   mongoc_server_description_cleanup (&sd);
+}
+
+static void
+test_server_description_hello_type_error (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   const char *hello =
+      "{"
+      "  'ok' : { '$numberInt' : '1' },"
+      " 'ismaster' : true,"
+      " 'maxBsonObjectSize' : { '$numberInt' : '16777216' },"
+      " 'maxMessageSizeBytes' : { '$numberInt' : '48000000'},"
+      " 'maxWriteBatchSize' : { '$numberLong' : '565160423'},"
+      " 'logicalSessionTimeoutMinutes' : { '$numberInt' : '30'},"
+      " 'connectionId' : { '$numberLong' : '565160423'},"
+      " 'minWireVersion' : { '$numberInt' : '0'},"
+      " 'maxWireVersion' : { '$numberInt' : '15'},"
+      " 'readOnly' : true"
+      "}";
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_handle_hello (&sd, tmp_bson (hello), 0, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   BSON_ASSERT (sd.error.code == MONGOC_ERROR_STREAM_INVALID_TYPE);
+   ASSERT_ERROR_CONTAINS (sd.error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_INVALID_TYPE,
+                          "unexpected type");
+
+   mongoc_server_description_cleanup (&sd);
+}
+
 void
 test_server_description_install (TestSuite *suite)
 {
@@ -403,4 +470,10 @@ test_server_description_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/server_description/legacy_hello_ok",
                   test_server_description_legacy_hello_ok);
+   TestSuite_Add (suite,
+                  "/server_description/connection_id",
+                  test_server_description_connection_id);
+   TestSuite_Add (suite,
+                  "/server_description/hello_type_error",
+                  test_server_description_hello_type_error);
 }

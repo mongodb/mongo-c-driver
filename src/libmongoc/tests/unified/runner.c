@@ -1145,7 +1145,7 @@ test_check_event (test_t *test,
       }
 
       if (!*expected_has_server_connection_id && has_server_connection_id) {
-         test_error ("expected no server connectionId, but got %d",
+         test_error ("expected no server connectionId, but got %" PRId64,
                      actual->server_connection_id);
       }
    }

@@ -146,7 +146,7 @@ typedef struct _future_value_t
    } value;
 } future_value_t;
 
-future_value_t *future_value_new ();
+future_value_t *future_value_new (void);
 
 #ifdef __clang__
 #pragma clang diagnostic push

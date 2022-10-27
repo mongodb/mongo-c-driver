@@ -77,7 +77,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  const mongoc_host_list_t *host,
                                  uint32_t server_id,
                                  const bson_oid_t *service_id,
-                                 int32_t server_connection_id,
+                                 int64_t server_connection_id,
                                  bool *is_redacted, /* out */
                                  void *context)
 {
@@ -208,7 +208,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    const mongoc_host_list_t *host,
                                    uint32_t server_id,
                                    const bson_oid_t *service_id,
-                                   int32_t server_connection_id,
+                                   int64_t server_connection_id,
                                    bool force_redaction,
                                    void *context)
 {
@@ -271,7 +271,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 const mongoc_host_list_t *host,
                                 uint32_t server_id,
                                 const bson_oid_t *service_id,
-                                int32_t server_connection_id,
+                                int64_t server_connection_id,
                                 bool force_redaction,
                                 void *context)
 {
@@ -390,7 +390,12 @@ int32_t
 mongoc_apm_command_started_get_server_connection_id (
    const mongoc_apm_command_started_t *event)
 {
-   return event->server_connection_id;
+   if (event->server_connection_id > INT32_MAX ||
+       event->server_connection_id < INT32_MIN) {
+      return MONGOC_NO_SERVER_CONNECTION_ID;
+   }
+
+   return (int32_t) event->server_connection_id;
 }
 
 
@@ -477,7 +482,12 @@ int32_t
 mongoc_apm_command_succeeded_get_server_connection_id (
    const mongoc_apm_command_succeeded_t *event)
 {
-   return event->server_connection_id;
+   if (event->server_connection_id > INT32_MAX ||
+       event->server_connection_id < INT32_MIN) {
+      return MONGOC_NO_SERVER_CONNECTION_ID;
+   }
+
+   return (int32_t) event->server_connection_id;
 }
 
 
@@ -568,7 +578,12 @@ int32_t
 mongoc_apm_command_failed_get_server_connection_id (
    const mongoc_apm_command_failed_t *event)
 {
-   return event->server_connection_id;
+   if (event->server_connection_id > INT32_MAX ||
+       event->server_connection_id < INT32_MIN) {
+      return MONGOC_NO_SERVER_CONNECTION_ID;
+   }
+
+   return (int32_t) event->server_connection_id;
 }
 
 

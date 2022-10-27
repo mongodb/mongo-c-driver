@@ -970,7 +970,7 @@ typedef struct {
 } coll_or_db_opts_t;
 
 static coll_or_db_opts_t *
-coll_or_db_opts_new ()
+coll_or_db_opts_new (void)
 {
    return bson_malloc0 (sizeof (coll_or_db_opts_t));
 }

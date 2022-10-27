@@ -31,7 +31,7 @@ bson_match (const bson_val_t *expected,
 typedef struct _bson_matcher_t bson_matcher_t;
 
 bson_matcher_t *
-bson_matcher_new ();
+bson_matcher_new (void);
 
 typedef bool (*special_fn) (bson_matcher_t *matcher,
                             const bson_t *assertion,

@@ -56,7 +56,7 @@ typedef int (*mongoc_async_cmd_setup_t) (mongoc_stream_t *stream,
 
 
 mongoc_async_t *
-mongoc_async_new ();
+mongoc_async_new (void);
 
 void
 mongoc_async_destroy (mongoc_async_t *async);

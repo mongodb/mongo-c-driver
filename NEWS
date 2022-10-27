@@ -1,3 +1,32 @@
+libmongoc 1.22.2
+================
+
+  * Fix connectivity to Atlas Data Lake
+  * Additional bugfixes from libbson 1.22.2
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+  * Kevin Albertson
+  * Roberto C. Sánchez
+
+
+
+libmongoc 1.23.1
+================
+
+Bug fixes:
+
+  * Fix connectivity to Atlas Data Lake 
+  * Fix crash when dropping a malformed Queryable Encryption collection.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+  * Kevin Albertson
+
+
+
 libmongoc 1.23.0
 ================
 

@@ -246,17 +246,27 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    const char *const resp_end_ptr =
       http_response_str + http_response_buf.datalen;
 
-   const char *proto_leader = "HTTP/1.0 ";
-   ptr = strstr (http_response_str, proto_leader);
+
+   const char *proto_leader_10 = "HTTP/1.0 ";
+   const char *proto_leader_11 = "HTTP/1.1 ";
+   ptr = strstr (http_response_str, proto_leader_10);
    if (!ptr) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "No HTTP version leader in HTTP response");
+      ptr = strstr (http_response_str, proto_leader_11);
+   }
+
+   if (!ptr) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_STREAM,
+         MONGOC_ERROR_STREAM_SOCKET,
+         "No HTTP version leader in HTTP response. Expected '%s' or '%s'",
+         proto_leader_10,
+         proto_leader_11);
       goto fail;
    }
 
-   ptr += strlen (proto_leader);
+   /* Both protocol leaders have the same length. */
+   ptr += strlen (proto_leader_10);
    ssize_t remain = resp_end_ptr - ptr;
    if (remain < 4) {
       bson_set_error (error,

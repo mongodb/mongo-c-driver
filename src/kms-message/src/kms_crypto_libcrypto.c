@@ -39,13 +39,13 @@ EVP_MD_CTX_free (EVP_MD_CTX *ctx)
 #endif
 
 int
-kms_crypto_init ()
+kms_crypto_init (void)
 {
    return 0;
 }
 
 void
-kms_crypto_cleanup ()
+kms_crypto_cleanup (void)
 {
 }
 

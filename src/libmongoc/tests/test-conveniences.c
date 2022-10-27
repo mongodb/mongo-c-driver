@@ -1651,7 +1651,7 @@ huge_string_length (mongoc_client_t *client)
 
 
 static void
-init_four_mb_string ()
+init_four_mb_string (void)
 {
    test_conveniences_init ();
 

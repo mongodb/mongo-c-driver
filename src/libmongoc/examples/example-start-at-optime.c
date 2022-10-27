@@ -2,7 +2,7 @@
 #include <mongoc/mongoc.h>
 
 int
-main ()
+main (void)
 {
    int exit_code = EXIT_FAILURE;
    const char *uri_string;

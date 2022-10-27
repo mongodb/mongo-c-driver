@@ -23,7 +23,7 @@
 typedef struct _sync_queue_t sync_queue_t;
 
 sync_queue_t *
-q_new ();
+q_new (void);
 
 void
 q_put (sync_queue_t *q, void *item);
