@@ -2298,11 +2298,13 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
        * into account.
        */
 
+      _mongoc_bson_init_if_set (reply);
+
+      // Add a transient transaction label if applicable.
+      _mongoc_add_transient_txn_error (cs, reply);
+
       /* Update the topology */
       tdmod = mc_tpld_modify_begin (topology);
-
-      /* Add a transient transaction label if applicable. */
-      _mongoc_bson_init_with_transient_txn_error (cs, reply);
 
       /* When establishing a new connection in load balanced mode, drivers MUST
        * NOT perform SDAM error handling for any errors that occur before the
@@ -2811,7 +2813,10 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
       cs, topology, optype, read_prefs, &must_use_primary, error);
 
    if (!server_id) {
-      _mongoc_bson_init_with_transient_txn_error (cs, reply);
+      if (reply) {
+         bson_init (reply);
+         _mongoc_add_transient_txn_error (cs, reply);
+      }
       RETURN (NULL);
    }
 
@@ -2821,7 +2826,10 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
          cs, topology, optype, read_prefs, &must_use_primary, error);
 
       if (!server_id) {
-         _mongoc_bson_init_with_transient_txn_error (cs, reply);
+         if (reply) {
+            bson_init (reply);
+            _mongoc_add_transient_txn_error (cs, reply);
+         }
          RETURN (NULL);
       }
    }

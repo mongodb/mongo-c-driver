@@ -576,10 +576,10 @@ _mongoc_bson_array_copy_labels_to (const bson_t *reply, bson_t *dst)
 
 /*--------------------------------------------------------------------------
  *
- * _mongoc_bson_init_with_transient_txn_error --
+ * _mongoc_add_transient_txn_error --
  *
- *       If @reply is not NULL, initialize it. If @cs is not NULL and in a
- *       transaction, add errorLabels: ["TransientTransactionError"] to @cs.
+ *       If @cs is not NULL and in a transaction, add errorLabels:
+ *       ["TransientTransactionError"] to @cs.
  *
  *       Transactions Spec: TransientTransactionError includes "server
  *       selection error encountered running any command besides
@@ -594,21 +594,19 @@ _mongoc_bson_array_copy_labels_to (const bson_t *reply, bson_t *dst)
  */
 
 void
-_mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
-                                            bson_t *reply)
+_mongoc_add_transient_txn_error (const mongoc_client_session_t *cs,
+                                 bson_t *reply)
 {
-   bson_t labels;
-
    if (!reply) {
       return;
    }
 
-   bson_init (reply);
-
    if (_mongoc_client_session_in_txn (cs)) {
-      BSON_APPEND_ARRAY_BEGIN (reply, "errorLabels", &labels);
-      BSON_APPEND_UTF8 (&labels, "0", TRANSIENT_TXN_ERR);
-      bson_append_array_end (reply, &labels);
+      bson_t labels = BSON_INITIALIZER;
+      _mongoc_bson_array_copy_labels_to (reply, &labels);
+      _mongoc_bson_array_add_label (&labels, TRANSIENT_TXN_ERR);
+      BSON_APPEND_ARRAY (reply, "errorLabels", &labels);
+      bson_destroy (&labels);
    }
 }
 
