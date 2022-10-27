@@ -2597,6 +2597,16 @@ test_bson_dsl_parse (void)
                   then (find (key ("foo"), do(b = bsonAs (int32)))),
                   else(find (key ("bar"), do(b = bsonAs (int32))))));
    ASSERT_CMPINT (b, ==, 2);
+
+   bson_t tmp = BSON_INITIALIZER;
+   for (int i = 0; i < 1024; ++i) {
+      BSON_APPEND_BOOL (&tmp, ".", true);
+   }
+   BSON_APPEND_BOOL (&tmp, "final", true);
+   int unvisited = 0;
+   bsonParse (tmp, find (key ("final"), nop), visitOthers (do(++unvisited)));
+   ASSERT_CMPINT (unvisited, ==, 1024);
+   bson_destroy (&tmp);
 }
 
 static void
@@ -2626,10 +2636,13 @@ test_bson_dsl_visit (void)
 
    // Visit subdocs directly
    const char *baz_str = NULL;
+   char *path = NULL;
    bsonVisitEach (
       *TMP_BSON_FROM_JSON ({"foo" : {"bar" : {"baz" : "baz_string"}}}),
-      visitEach (visitEach (storeStrRef (baz_str))));
+      visitEach (visitEach (storeStrRef (baz_str), dupPath (path))));
    ASSERT_CMPSTR (baz_str, "baz_string");
+   ASSERT_CMPSTR (path, "$.foo.bar.baz");
+   bson_free (path);
 }
 
 static void
@@ -2645,20 +2658,22 @@ test_bson_dsl_predicate (void)
       "empty_string" : "",
       "empty_array" : [],
       "empty_doc" : {},
-      "with_last" : {"a" : null, "b" : "lastElement"}
+      "with_last" : {"a" : null, "b" : "lastElement"},
+      "unhandled" : 12
    });
+   bool saw_other = false;
    bsonParse ( //
       *document,
       require (key ("number1"), //
                require (type (int32)),
                require (isNumeric),
-               require (truthy)),
+               require (isTrue)),
       require (key ("number2"), //
                require (isNumeric),
                require (type (double)),
-               require (truthy)),
+               require (isTrue)),
       require (key ("zero"), //
-               require (falsey)),
+               require (isFalse)),
       require (key ("string"), //
                require (type (utf8)),
                require (strEqual ("hello")),
@@ -2689,7 +2704,11 @@ test_bson_dsl_predicate (void)
                      when (strEqual ("hello"), nop),
                      // Not eached since the prior case matched:
                      when (strEqual ("hello"), do(abort ())),
-                     else(do(abort ())))));
+                     else(do(abort ())))),
+      visitOthers (if (key ("unhandled"),
+                       then (do(saw_other = true)),
+                       else(do(abort ())))));
+   BSON_ASSERT (saw_other);
 }
 
 static void

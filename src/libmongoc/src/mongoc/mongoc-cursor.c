@@ -313,19 +313,13 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          (void) mongoc_cursor_set_hint (cursor, server_id);
       }
 
+      // Selectively copy the options:
       bsonBuildAppend (
          cursor->opts,
-         insert (
-            *opts,
-            not(key ("serverId", "sessionId", "bypassDocumentValidation"))));
-
-      /* only include bypassDocumentValidation if it's true */
-      bsonParse (*opts,
-                 find (key ("bypassDocumentValidation"),
-                       if (truthy,
-                           then (append (
-                              cursor->opts,
-                              kv ("bypassDocumentValidation", bool (true)))))));
+         insert (*opts,
+                 not(key ("serverId", "sessionId"),
+                     // Drop bypassDocumentValidation if it isn't true:
+                     allOf (key ("bypassDocumentValidation"), isFalse))));
    }
 
    if (_mongoc_client_session_in_txn (cursor->client_session)) {

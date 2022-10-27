@@ -115,8 +115,7 @@ bson_t* make_aggregate(const char* coll,
 
 > `bsonBuild(BSON, DocOperation... ops)`
 
-Calls `bson_init(&BSON)`, followed by `bsonBuildAppend(BSON, ops...)`. If the
-build operation results in an error, calls `bson_destroy(&BSON)`.
+Calls `bson_init(&BSON)`, followed by `bsonBuildAppend(BSON, ops...)`.
 
 
 ## `bsonBuildDecl`
@@ -151,8 +150,8 @@ For more information, refer to [`ArrayOperation`](#ArrayOperation)
 ### *DocOperation*
 
 The *DocOperations* are used to generate elements of a `bson_t` document or
-subdocument thereof. The top-level `bsonBuildAppend()` accepts a list of
-*DocOperations*, as well as the `doc()` *ValueOperation*.
+subdocument thereof. The top-level `bsonBuildAppend()` and the `doc()`
+*ValueOperation* both accept a list of *DocOperations*.
 
 The following *DocOperations* are defined:
 
@@ -161,7 +160,7 @@ The following *DocOperations* are defined:
 > `kvl(const char* str, int len, ValueOperation val)`
 
 The lowest-level *DocOperation*, generates a key-value pair in the document,
-with the string beinging at `str` for `len` characters defining the key, and
+with the string begining at `str` for `len` characters defining the key, and
 `val` defining the value of the element. (See:
 [ValueOperation](#valueoperation))
 
@@ -212,6 +211,14 @@ To copy *all* elements from `b`, simply use the bare `true` predicate.
 > `insertFromIter(bson_iter_t iter, Predicate cond)`
 
 Like `insert()`, but copies from the bson document/array referred to by `iter`.
+
+
+#### `iterElement()`
+
+> `iterElement(bson_iter_t iter)`
+
+Copy the BSON document element referred to by the given iterator. The element
+will have the same key+value as from the iterator.
 
 
 #### `do()`
@@ -273,8 +280,8 @@ Copy the given `bson_t` document as a subdocument for the element.
 
 #### `bsonArray(bson_t)`
 
-Copy the given `bson_t` document as an array subdocument in the element. (All
-keys the subdocument will be made into integer index keys).
+Copy the given `bson_t` document as an array element. (All keys in the array
+document are expected to be integer index keys, but this is not enforced).
 
 
 #### `doc(DocOperation... ops)`
@@ -286,6 +293,11 @@ Create a sub-document using DSL *DocOperation* commands `ops`.
 
 Create a sub-document of array type using the DSL *ArrayOperation* commands
 `ops`.
+
+
+#### `value(bson_value_t)`
+
+Insert the value denoted by the given `bson_value_t`.
 
 
 #### `if(bool cond, then(ValueOperation), else(ValueOperation))`
@@ -393,6 +405,14 @@ otherwise does nothing. **NOTE** that this is unrelated to the "`if`"
 *ParseOperation*.
 
 
+#### `visitOthers`
+
+> `visitOthers(VisitOperation... ops)`
+
+For each element in the document being parsed that *has not* been visited by any
+previous `find` or `require` operation, evaluate `ops`
+
+
 #### `error`
 
 > `error(const char* S)`
@@ -400,6 +420,16 @@ otherwise does nothing. **NOTE** that this is unrelated to the "`if`"
 Assign the given character pointer `S` to `bsonParseError`. **Note** that this
 string is thread-local and is not freed or allocated. It is recommended to only
 use string literals for `S`.
+
+
+#### `errorf`
+
+> `errorf(char*& E, const char* fmt, ...)`
+
+If `E` is non-`NULL`, it will be freed, then: Generate an error string using
+printf-formatting. The allocated pointer will be written to `E`.
+`bsonParseError` will also be set to point to the same address as `E`. **NOTE:**
+It is the callers's responsibility to eventually free `E`.
 
 
 #### `halt`
@@ -487,6 +517,12 @@ Evaluate a `bsonBuildAppend(b, ops...)`, with `bsonVisitIter` referring to the
 element being visited.
 
 
+#### `appendTo(bson_t b)`
+
+Append the current element to the BSON document `b`. The element will be copied
+with the same key and value.
+
+
 #### `visitEach(VisitOperation... ops)`
 
 If `bsonVisitIter` refers to a document or array element `A`, apply
@@ -521,6 +557,23 @@ current element and advance to the next element.
 Assign the given character pointer `S` to `bsonParseError`. **Note** that this
 string is thread-local and is not freed or allocated. It is recommended to only
 use string literals for `S`.
+
+
+#### `errorf(char*& E, const char* fmt, ...)`
+
+If `E` is not `NULL`, `E` will be freed. Then: Generate an error string using
+printf-style formatting. The allocated string will be written to `E`.
+`bsonParseError` will be updated to point to the generate string. **NOTE:** It
+is the caller's responsibility to eventually free `E`.
+
+
+#### `dupPath(char* P)`
+
+If `P` is non-`NULL`, `P` is freed. Then: Create a JSONPath-style string that
+refers to the document element currently being visited. The path will be rooted
+at the document given to the top-most `bsonParse`/`bsonVisit` invocation in the
+calling thread. **NOTE:** It is the caller's responsibility to eventually free
+`P`.
 
 
 #### `if()`
@@ -621,15 +674,15 @@ Always matches.
 Never matches.
 
 
-#### `truthy`
+#### `isTrue`
 
-Matches is the element is "truthy": A `true` boolean, a non-zero numeric type,
-or other non-null value.
+Matches is the element is "true" according to `bson_iter_as_bool()`: A `true`
+boolean, a non-zero int/double value, or other non-null value.
 
 
-#### `falsey`
+#### `isFalse`
 
-Matches any element that is not `truthy`
+Matches any element that is not `isTrue`.
 
 
 #### `empty`
@@ -692,8 +745,9 @@ If `bsonBuildError` becomes non-`NULL` during DSL evaluation, the enclosing
 After a DSL command returns, `bsonParseError`/`bsonBuildError` should be checked
 for `NULL`. If non-`NULL`, the relevant command encountered an error while
 executing. This can happen if the BSON iteration encountered corruption, if any
-build operation failed, if an `error()` DSL command was executed, or if any
-inner C code assigned a non-`NULL` value to the respective error string:
+build operation failed, if an `error()` or `errorf()` DSL command was executed,
+or if any inner C code assigned a non-`NULL` value to the respective error
+string:
 
 ```c
 // These functions add items to bsonBuildContext.doc:
@@ -725,7 +779,8 @@ also generate an error while appending the `subarray` element (e.g. if
 `bsonBuildError` value will be retained after it returns, for inspection by the
 caller.
 
-The `error()` visit/parse command can be used to do terse document validation:
+The `error()` (or `errorf()`) visit/parse command can be used to do terse
+document validation:
 
 ```c++
 struct user_info { char* name; int age; };
