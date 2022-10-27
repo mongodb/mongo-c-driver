@@ -116,7 +116,6 @@ _handle_not_primary_error (mongoc_cluster_t *cluster,
 static void
 _handle_network_error (mongoc_cluster_t *cluster,
                        mongoc_server_stream_t *server_stream,
-                       bool handshake_complete,
                        const bson_error_t *why)
 {
    mongoc_topology_t *topology;
@@ -135,7 +134,7 @@ _handle_network_error (mongoc_cluster_t *cluster,
 
    _mongoc_topology_handle_app_error (topology,
                                       server_id,
-                                      handshake_complete,
+                                      true, // handshake_complete
                                       type,
                                       NULL,
                                       why,
@@ -314,8 +313,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
                                     cluster->iov.len,
                                     cluster->sockettimeoutms,
                                     error)) {
-      _handle_network_error (
-         cluster, cmd->server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, cmd->server_stream, error);
 
       /* add info about the command to writev_full's error message */
       RUN_CMD_ERR_DECORATE;
@@ -331,8 +329,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
                    MONGOC_ERROR_STREAM_SOCKET,
                    "socket error or timeout");
 
-      _handle_network_error (
-         cluster, cmd->server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, cmd->server_stream, error);
       GOTO (done);
    }
 
@@ -340,15 +337,13 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    msg_len = BSON_UINT32_FROM_LE (msg_len);
    if ((msg_len < reply_header_size) ||
        (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
-      _handle_network_error (
-         cluster, cmd->server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, cmd->server_stream, error);
       GOTO (done);
    }
 
    if (!_mongoc_rpc_scatter_reply_header_only (
           &rpc, reply_header_buf, reply_header_size)) {
-      _handle_network_error (
-         cluster, cmd->server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, cmd->server_stream, error);
       GOTO (done);
    }
    doc_len = (size_t) msg_len - reply_header_size;
@@ -370,8 +365,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
          RUN_CMD_ERR (MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "socket error or timeout");
-         _handle_network_error (
-            cluster, cmd->server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, cmd->server_stream, error);
          GOTO (done);
       }
       if (!_mongoc_rpc_scatter (&rpc, reply_buf, msg_len)) {
@@ -414,8 +408,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
          RUN_CMD_ERR (MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "socket error or timeout");
-         _handle_network_error (
-            cluster, cmd->server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, cmd->server_stream, error);
          GOTO (done);
       }
       _mongoc_rpc_swab_from_le (&rpc);
@@ -3302,8 +3295,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       MONGOC_DEBUG (
          "Could not read 4 bytes, stream probably closed or timed out");
       mongoc_counter_protocol_ingress_error_inc ();
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       RETURN (false);
    }
 
@@ -3318,8 +3310,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Corrupt or malicious reply received.");
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -3332,8 +3323,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                                            msg_len - 4,
                                            cluster->sockettimeoutms,
                                            error)) {
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -3346,8 +3336,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Failed to decode reply from server.");
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -3506,8 +3495,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    if (!ok) {
       /* add info about the command to writev_full's error message */
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       server_stream->stream = NULL;
       bson_free (output);
       network_error_reply (reply, cmd);
@@ -3521,8 +3509,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          &buffer, server_stream->stream, 4, cluster->sockettimeoutms, error);
       if (!ok) {
          RUN_CMD_ERR_DECORATE;
-         _handle_network_error (
-            cluster, server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, server_stream, error);
          server_stream->stream = NULL;
          bson_free (output);
          network_error_reply (reply, cmd);
@@ -3540,8 +3527,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
             "Message size %d is not within expected range 16-%d bytes",
             msg_len,
             server_stream->sd->max_msg_size);
-         _handle_network_error (
-            cluster, server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, server_stream, error);
          server_stream->stream = NULL;
          bson_free (output);
          network_error_reply (reply, cmd);
@@ -3556,8 +3542,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                                               error);
       if (!ok) {
          RUN_CMD_ERR_DECORATE;
-         _handle_network_error (
-            cluster, server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, server_stream, error);
          server_stream->stream = NULL;
          bson_free (output);
          network_error_reply (reply, cmd);
@@ -3584,8 +3569,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
             RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                          "Could not decompress message from server");
-            _handle_network_error (
-               cluster, server_stream, true /* handshake complete */, error);
+            _handle_network_error (cluster, server_stream, error);
             server_stream->stream = NULL;
             bson_free (output);
             network_error_reply (reply, cmd);
