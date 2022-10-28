@@ -96,7 +96,7 @@ _mongoc_write_error_is_retryable (bson_error_t *error)
    }
 }
 
-static void
+void
 _mongoc_write_error_append_retryable_label (bson_t *reply)
 {
    bson_t reply_local = BSON_INITIALIZER;
