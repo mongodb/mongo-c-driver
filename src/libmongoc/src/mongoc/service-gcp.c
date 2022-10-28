@@ -35,10 +35,9 @@ gcp_request_init (gcp_request *req,
    _mongoc_http_request_init (&req->req);
 
    // The HTTP host of the Google metadata server
-   // req->req.host = req->_owned_host = bson_strdup (opt_host ? opt_host :
-   // HOST);
-   req->req.host = "localhost";
-   req->req.port = 5000;
+   req->req.host = req->_owned_host = bson_strdup (opt_host ? opt_host : HOST);
+   // req->req.host = "localhost";
+   // req->req.port = 5000;
    // Empty body
    req->req.body = "";
    // We GET
@@ -47,7 +46,9 @@ gcp_request_init (gcp_request *req,
    req->req.extra_headers = req->_owned_headers = bson_strdup_printf (
       "Metadata-Flavor: Google\n", opt_extra_headers ? opt_extra_headers : "");
 
-   // req->req.path = req->_owned_path = bson_strdup (DEFAULT_METADATA_PATH);
+   req->req.path = req->_owned_path = bson_strdup (DEFAULT_METADATA_PATH);
+
+   printf ("%s%s\n", "GILLOG: ", req->req.path);
 }
 
 void
@@ -96,20 +97,20 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
    found = bson_iter_init_find (&iter, &bson, "token_type");
    const char *const token_type = !found ? NULL : bson_iter_utf8 (&iter, NULL);
    // expires_in
-   found = bson_iter_init_find (&iter, &bson, "expires_in");
+   // found = bson_iter_init_find (&iter, &bson, "expires_in");
 
-   int64_t expires_in_int;
-   if (found) {
-      expires_in_int = bson_iter_int32 (&iter);
-   } else {
-      bson_set_error (error,
-                      MONGOC_ERROR_GCP,
-                      MONGOC_ERROR_GCP_BAD_JSON,
-                      "One or more required JSON properties are "
-                      "missing/invalid: data: %.*s",
-                      len,
-                      json);
-   }
+   // int64_t expires_in_int;
+   // if (found) {
+   //    expires_in_int = bson_iter_int32 (&iter);
+   // } else {
+   //    bson_set_error (error,
+   //                    MONGOC_ERROR_GCP,
+   //                    MONGOC_ERROR_GCP_BAD_JSON,
+   //                    "One or more required JSON properties are "
+   //                    "missing/invalid: data: %.*s",
+   //                    len,
+   //                    json);
+   // }
 
    if (!(access_token && token_type)) {
       bson_set_error (error,
@@ -127,7 +128,7 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
       .token_type = bson_strdup (token_type),
    };
 
-   out->expires_in = mcd_seconds (expires_in_int);
+   // out->expires_in = mcd_seconds (expires_in_int);
    okay = true;
 done:
    bson_destroy (&bson);

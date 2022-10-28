@@ -1980,7 +1980,6 @@ mongoc_client_encryption_create_datakey (
    bson_value_t *keyid,
    bson_error_t *error)
 {
-   printf ("%s\n", "in create datakey");
    bool ret = false;
    bson_t datakey = BSON_INITIALIZER;
    bson_t insert_opts = BSON_INITIALIZER;

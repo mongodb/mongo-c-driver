@@ -2811,7 +2811,6 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_generation_map_install);
    TEST_INSTALL (test_shared_install);
    TEST_INSTALL (test_ssl_install);
-   TEST_INSTALL (test_gcp_kms_install);
 
    TEST_INSTALL (test_mcd_azure_imds_install);
    TEST_INSTALL (test_mcd_integer_install);

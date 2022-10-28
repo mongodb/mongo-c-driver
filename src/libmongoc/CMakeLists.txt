@@ -933,7 +933,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-parser.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-val.c
    ${PROJECT_SOURCE_DIR}/tests/debug-stream.c
-   ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c
    ${PROJECT_SOURCE_DIR}/tests/json-test-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/json-test-operations.c
    ${PROJECT_SOURCE_DIR}/tests/json-test.c
@@ -1061,6 +1060,7 @@ endif ()
 mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
+mongoc_add_test (test-gcpkms FALSE ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c)
 
 if (ENABLE_TESTS)
    # "make test" doesn't compile tests, so we create "make check" which compiles

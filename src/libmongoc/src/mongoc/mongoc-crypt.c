@@ -51,8 +51,6 @@ struct __mongoc_crypt_t {
    mcd_azure_access_token azure_token;
    /// The time point at which the `azure_token` was acquired.
    mcd_time_point azure_token_issued_at;
-
-   gcp_service_account_token gcp_token;
 };
 
 static void
@@ -838,7 +836,7 @@ _request_new_gcp_token (gcp_service_account_token *out, bson_error_t *error)
  * @retval false If there was an error obtaining or appending credentials
  */
 static bool
-_try_add_gcp_from_env (_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error)
+_try_add_gcp_from_env (bson_t *out, bson_error_t *error)
 {
    // Not caching gcp tokens, so we will always request a new one from the gcp
    // server.
@@ -932,7 +930,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    }
    const bool wants_auto_gcp = orig_wants_auto_gcp && !cb_provided_gcp;
    if (wants_auto_gcp) {
-      if (!_try_add_gcp_from_env (sm->crypt, &creds, error)) {
+      if (!_try_add_gcp_from_env (&creds, error)) {
          goto fail;
       }
    }

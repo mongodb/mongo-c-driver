@@ -33,7 +33,7 @@ typedef struct gcp_service_account_token {
    char *token_type;
    // The duration after which it will the token will expires. This is
    // relative to the "issue time" of the token.
-   mcd_duration expires_in;
+   // mcd_duration expires_in;
 } gcp_service_account_token;
 
 /**
