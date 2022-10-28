@@ -53,7 +53,6 @@ struct __mongoc_crypt_t {
    mcd_time_point azure_token_issued_at;
 
    gcp_service_account_token gcp_token;
-   mcd_time_point gcp_token_issued_at;
 };
 
 static void
@@ -841,28 +840,18 @@ _request_new_gcp_token (gcp_service_account_token *out, bson_error_t *error)
 static bool
 _try_add_gcp_from_env (_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error)
 {
-   if (crypt->gcp_token.access_token) {
-      mcd_time_point one_min_from_now = mcd_later (mcd_now (), mcd_minutes (1));
-      mcd_time_point expires_at =
-         mcd_later (crypt->gcp_token_issued_at, crypt->gcp_token.expires_in);
-      if (mcd_time_compare (expires_at, one_min_from_now) >= 0) {
-      } else {
-         gcp_access_token_destroy (&crypt->gcp_token);
-      }
-   }
-
-   if (crypt->gcp_token.access_token == NULL) {
-      crypt->gcp_token_issued_at = mcd_now ();
-      if (!_request_new_gcp_token (&crypt->gcp_token, error)) {
-         return false;
-      }
+   // Not caching gcp tokens, so we will always request a new one from the gcp
+   // server.
+   gcp_service_account_token gcp_token;
+   if (!_request_new_gcp_token (&gcp_token, error)) {
+      return false;
    }
 
    // Build the new KMS credentials
    bson_t new_gcp_creds = BSON_INITIALIZER;
    const bool okay = BSON_APPEND_UTF8 (&new_gcp_creds,
                                        "accessToken",
-                                       crypt->gcp_token.access_token) &&
+                                       gcp_token.access_token) &&
                      BSON_APPEND_DOCUMENT (out, "gcp", &new_gcp_creds);
    bson_destroy (&new_gcp_creds);
    if (!okay) {
