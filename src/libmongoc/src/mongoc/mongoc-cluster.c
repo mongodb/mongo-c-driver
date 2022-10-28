@@ -2261,7 +2261,7 @@ _try_get_server_stream (mongoc_cluster_t *cluster,
    }
 }
 
-mongoc_server_stream_t *
+static mongoc_server_stream_t *
 _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                    uint32_t server_id,
                                    bool reconnect_ok,
