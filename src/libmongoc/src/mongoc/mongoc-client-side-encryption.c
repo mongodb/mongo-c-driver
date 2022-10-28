@@ -2739,12 +2739,27 @@ mongoc_client_encryption_create_encrypted_collection (
       .dk_opts = dk_opts,
       .kms_provider = kms_provider,
    };
-   // Create the final encryptedFields, filling out the 'keyId' automatically:
-   if (!_mongoc_encryptedFields_fill_auto_datakeys (&new_encryptedFields,
-                                                    &in_encryptedFields,
-                                                    _auto_datakey,
-                                                    &ctx,
-                                                    error)) {
+   bson_t fields_ref;
+   bsonVisitEach (
+      in_encryptedFields,
+      case (
+         // We only care about the "fields" array
+         when (not(key ("fields")), appendTo (new_encryptedFields)),
+         // Automaticall fill in the "keyId" no each field:
+         else(storeDocRef (fields_ref), do({
+                 bson_t new_fields = BSON_INITIALIZER;
+                 // Create the new fields, filling out the 'keyId'
+                 // automatically:
+                 if (!_mongoc_encryptedFields_fill_auto_datakeys (
+                        &new_fields, &fields_ref, _auto_datakey, &ctx, error)) {
+                    bsonParseError = "Error creating datakeys";
+                 } else {
+                    BSON_APPEND_ARRAY (
+                       &new_encryptedFields, "fields", &new_fields);
+                    bson_destroy (&new_fields);
+                 }
+              }))));
+   if (bsonParseError) {
       // Error creating the new datakeys
       goto done;
    }
@@ -2813,48 +2828,47 @@ _init_1_encryptedField (bson_t *out_field,
 
 /// Generate the "encryptedFields" output for auto-datakeys
 static void
-_init_encryptedFields (bson_t *out_efs,
-                       const bson_t *in_efs,
+_init_encryptedFields (bson_t *out_fields,
+                       const bson_t *in_fields,
                        auto_datakey_factory fac,
                        void *fac_userdata,
                        bson_error_t *error)
 {
    // Ref to one encyrptedField
-   bson_t cur_ef;
+   bson_t cur_field;
    bsonVisitEach (
-      *in_efs,
+      *in_fields,
       // Each field must be a document element
       if (not(type (doc)),
           then (error ("Each 'encryptedFields' element must be a document"))),
       // Append a new element with the same name as the field:
-      storeDocRef (cur_ef),
+      storeDocRef (cur_field),
       append (
-         *out_efs,
-         kv (bson_iter_key (&bsonVisitIter),
-             // Construct the encryptedField document from the input:
-             doc (do(_init_1_encryptedField (
-                bsonBuildContext.doc, &cur_ef, fac, fac_userdata, error))))));
+         *out_fields,
+         kv (
+            bson_iter_key (&bsonVisitIter),
+            // Construct the encryptedField document from the input:
+            doc (do(_init_1_encryptedField (
+               bsonBuildContext.doc, &cur_field, fac, fac_userdata, error))))));
 }
 
 bool
-_mongoc_encryptedFields_fill_auto_datakeys (
-   bson_t *const out_encryptedFields,
-   const bson_t *const in_encryptedFields,
-   const auto_datakey_factory factory,
-   void *const userdata,
-   bson_error_t *const error)
+_mongoc_encryptedFields_fill_auto_datakeys (bson_t *const out_fields,
+                                            const bson_t *const in_fields,
+                                            const auto_datakey_factory factory,
+                                            void *const userdata,
+                                            bson_error_t *const error)
 {
-   BSON_ASSERT_PARAM (in_encryptedFields);
-   BSON_ASSERT_PARAM (out_encryptedFields);
+   BSON_ASSERT_PARAM (in_fields);
+   BSON_ASSERT_PARAM (out_fields);
    BSON_ASSERT_PARAM (factory);
 
    if (error) {
       *error = (bson_error_t){0};
    }
-   bson_init (out_encryptedFields);
+   bson_init (out_fields);
 
-   _init_encryptedFields (
-      out_encryptedFields, in_encryptedFields, factory, userdata, error);
+   _init_encryptedFields (out_fields, in_fields, factory, userdata, error);
 
    if (error && error->code == 0) {
       // The factory/internal code did not set error, so we may have to set it

@@ -87,11 +87,12 @@ struct auto_datakey_context {
 typedef bool (*auto_datakey_factory) (struct auto_datakey_context *ctx);
 
 /**
- * @brief Process an encryptedFields document, automatically filling null keyId
- * properties by calling the given factory function.
+ * @brief Process an array of encryptedFields.fields, automatically filling null
+ * keyId elements by calling the given factory function.
  *
- * @param[out] out_encryptedFields The result of the modified encryptedFields
- * @param[in] in_encryptedFields The input encryptedOptions
+ * @param[out] out_fields The modified encryptedFields.fields. Must be destroyed
+ * by the caller.
+ * @param[in] in_fields The input encryptedFields.fields
  * @param factory A keyId factory. @see auto_datakey_factory
  * @param userdata The userdata pointer for `factory`
  * @param[out] error An error output parameter
@@ -99,8 +100,8 @@ typedef bool (*auto_datakey_factory) (struct auto_datakey_context *ctx);
  * @retval false Otherwise
  */
 bool
-_mongoc_encryptedFields_fill_auto_datakeys (bson_t *out_encryptedFields,
-                                            const bson_t *in_encryptedFields,
+_mongoc_encryptedFields_fill_auto_datakeys (bson_t *out_fields,
+                                            const bson_t *in_fields,
                                             auto_datakey_factory factory,
                                             void *userdata,
                                             bson_error_t *error);

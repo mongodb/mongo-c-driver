@@ -5436,43 +5436,44 @@ test_auto_datakeys (void *unused)
 {
    BSON_UNUSED (unused);
    bson_error_t error = {0};
-   bsonBuildDecl ( //
-      in_efs,
-      kv ("myField", doc (kv ("keyId", cstr ("keepme")))), //
-      kv ("anotherField", doc (kv ("keyId", null))));
-   bson_t out_efs = BSON_INITIALIZER;
+   bson_t in_fields = BSON_INITIALIZER;
+   bsonBuildArray ( //
+      in_fields,
+      doc (kv ("keyId", cstr ("keepme"))), //
+      doc (kv ("keyId", null)));
+   bson_t out_fields = BSON_INITIALIZER;
    bool okay = _mongoc_encryptedFields_fill_auto_datakeys (
-      &out_efs, &in_efs, _auto_datakeys, NULL, &error);
+      &out_fields, &in_fields, _auto_datakeys, NULL, &error);
    ASSERT_ERROR_CONTAINS (error, 0, 0, "");
    ASSERT (okay);
    bsonParse ( //
-      out_efs,
+      out_fields,
       require (
-         keyWithType ("myField", doc), //
+         keyWithType ("0", doc), //
          parse (require (allOf (key ("keyId"), strEqual ("keepme")), nop))),
-      require (keyWithType ("anotherField", doc),
+      require (keyWithType ("1", doc),
                parse (require (allOf (keyWithType ("keyId", int32)),
                                do(ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
    ASSERT (bsonParseError == NULL);
-   bson_destroy (&out_efs);
+   bson_destroy (&out_fields);
 
    // Do it again, but we will generate an error
    okay = _mongoc_encryptedFields_fill_auto_datakeys (
-      &out_efs, &in_efs, _auto_datakeys_error, NULL, &error);
+      &out_fields, &in_fields, _auto_datakeys_error, NULL, &error);
    ASSERT (!okay);
    ASSERT_ERROR_CONTAINS (error, 42, 1729, "I am an error");
-   bson_destroy (&out_efs);
+   bson_destroy (&out_fields);
 
    // Do it again, but we will generate an error without the factory setting the
    // error
    okay = _mongoc_encryptedFields_fill_auto_datakeys (
-      &out_efs, &in_efs, _auto_datakeys_error_noset, NULL, &error);
+      &out_fields, &in_fields, _auto_datakeys_error_noset, NULL, &error);
    ASSERT (!okay);
    // Generic error, since the factory didn't provide one:
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "indicated failure");
-   bson_destroy (&out_efs);
-   bson_destroy (&in_efs);
+   bson_destroy (&out_fields);
+   bson_destroy (&in_fields);
 }
 
 void
