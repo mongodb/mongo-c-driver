@@ -270,7 +270,8 @@ _mongoc_error_is_not_primary (bson_error_t *error)
    case MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK:
    case MONGOC_SERVER_ERR_LEGACYNOTPRIMARY:
       return true;
-      /* All errors where no code was found are marked as MONGOC_ERROR_QUERY_FAILURE */
+      /* All errors where no code was found are marked as
+       * MONGOC_ERROR_QUERY_FAILURE */
    case MONGOC_ERROR_QUERY_FAILURE:
       return NULL != strstr (error->message, "not master");
    default:
@@ -291,7 +292,8 @@ _mongoc_error_is_recovering (bson_error_t *error)
    case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
    case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
       return true;
-   /* All errors where no code was found are marked as MONGOC_ERROR_QUERY_FAILURE */
+   /* All errors where no code was found are marked as
+    * MONGOC_ERROR_QUERY_FAILURE */
    case MONGOC_ERROR_QUERY_FAILURE:
       return NULL != strstr (error->message, "not master or secondary") ||
              NULL != strstr (error->message, "node is recovering");
@@ -324,4 +326,15 @@ _mongoc_error_is_network (const bson_error_t *error)
    }
 
    return false;
+}
+
+bool
+_mongoc_error_is_auth (const bson_error_t *error)
+{
+   if (!error) {
+      return false;
+   }
+
+   return error->domain == MONGOC_ERROR_CLIENT &&
+          error->code == MONGOC_ERROR_CLIENT_AUTHENTICATE;
 }
