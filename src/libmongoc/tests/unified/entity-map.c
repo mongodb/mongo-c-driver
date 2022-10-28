@@ -370,7 +370,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                 then (error ("'observeSensitiveCommands' must be a bool"))),
             do({
                bool *p = entity->observe_sensitive_commands =
-                  BSON_ALIGNED_ALLOC0 (bool);
+                  bson_malloc (sizeof (bool));
                *p = bsonAs (bool);
             })),
       // Which events should be available as entities:
