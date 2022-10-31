@@ -2357,6 +2357,11 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT (cs || true);
+   BSON_ASSERT (reply || true);
+   BSON_ASSERT (error || true);
+
    mongoc_server_stream_t *server_stream = NULL;
    bson_error_t err_local = {0};
 
