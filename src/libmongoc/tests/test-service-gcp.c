@@ -49,6 +49,7 @@ _test_gcp_parse (void)
                                             &error));
    ASSERT_ERROR_CONTAINS (error, 0, 0, "");
    ASSERT_CMPSTR (token.access_token, "helloworld");
+   ASSERT_CMPSTR (token.token_type, "bearer");
 
    gcp_access_token_destroy (&token);
 }
@@ -58,9 +59,21 @@ static void
 _test_gcp_http_request (void)
 {
    // Test that we correctly build a http request for the GCP metadata server
+   gcp_request req;
+   gcp_request_init (&req, "helloworld.com", 1234, NULL);
+   bson_string_t *req_str = _mongoc_http_render_request_head (&req.req);
+   gcp_request_destroy (&req);
+   ASSERT_CMPSTR (
+      req_str->str,
+      "GET "
+      "/computeMetadata/v1/instance/service-accounts/default/token HTTP/1.0\r\n"
+      "Host: helloworld.com:1234\r\n"
+      "Connection: close\r\n"
+      "Metadata-Flavor: Google\r\n"
+      "\r\n");
+   bson_string_free (req_str, true);
 }
 
-// see different responses from the server
 void
 test_service_gcp_install (TestSuite *suite)
 {
