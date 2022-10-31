@@ -1,3 +1,19 @@
+/**
+ * Copyright 2022 MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <mongoc/mongoc.h>
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -56,7 +72,6 @@ main (void)
    bool got = mongoc_client_encryption_create_datakey (
       ce, "gcp", dkopts, &keyid, &error);
    if (NULL != expect_error) {
-      printf ("%s\n", "gillog inside expect error not null");
       if (got) {
          MONGOC_ERROR ("Expected an error to contain %s, but got success",
                        expect_error);
@@ -69,7 +84,6 @@ main (void)
          return EXIT_FAILURE;
       }
    } else {
-      printf ("%s\n", "gillog inside expect error null");
       if (!got) {
          printf ("%s\n", "gillog inside got error");
          MONGOC_ERROR ("Expected to create data key, but got error: %s",
@@ -89,9 +103,3 @@ main (void)
    mongoc_client_destroy (keyvault_client);
    mongoc_cleanup ();
 }
-
-// void
-// test_gcp_kms_install (TestSuite *suite)
-// {
-//    TestSuite_Add (suite, "/test_gcpkms", test_gcpkms);
-// }

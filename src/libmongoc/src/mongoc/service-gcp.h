@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef SERVICE_GCP_H_INCLUDED
 #define SERVICE_GCP_H_INCLUDED
 
@@ -22,6 +23,8 @@
 
 #include <mongoc/mongoc-http-private.h>
 #include <mcd-time.h>
+#include <mongoc-host-list-private.h>
+#include <mongoc/mongoc-client-private.h>
 
 /**
  * @brief A GCP access token obtained from the GCP metadata server
@@ -31,9 +34,6 @@ typedef struct gcp_service_account_token {
    char *access_token;
    // The HTTP type of the token
    char *token_type;
-   // The duration after which it will the token will expires. This is
-   // relative to the "issue time" of the token.
-   // mcd_duration expires_in;
 } gcp_service_account_token;
 
 /**

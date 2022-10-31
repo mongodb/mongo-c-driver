@@ -21,9 +21,7 @@
 #define HOST "metadata.google.internal"
 
 static const char *const DEFAULT_METADATA_PATH =
-   "/" HOST "/computeMetadata/v1/instance/service-accounts/default/token";
-
-#define ITER_TYPE(i) ((bson_type_t) * ((i)->raw + (i)->type))
+   "/computeMetadata/v1/instance/service-accounts/default/token";
 
 void
 gcp_request_init (gcp_request *req,
@@ -36,19 +34,23 @@ gcp_request_init (gcp_request *req,
 
    // The HTTP host of the Google metadata server
    req->req.host = req->_owned_host = bson_strdup (opt_host ? opt_host : HOST);
-   // req->req.host = "localhost";
-   // req->req.port = 5000;
+
+   if (opt_port) {
+      req->req.port = opt_port;
+   } else {
+      req->req.port = 80;
+   }
+
    // Empty body
    req->req.body = "";
    // We GET
    req->req.method = "GET";
 
-   req->req.extra_headers = req->_owned_headers = bson_strdup_printf (
-      "Metadata-Flavor: Google\n", opt_extra_headers ? opt_extra_headers : "");
+   req->req.extra_headers = req->_owned_headers =
+      bson_strdup_printf ("Metadata-Flavor: Google\r\n%s",
+                          opt_extra_headers ? opt_extra_headers : "");
 
    req->req.path = req->_owned_path = bson_strdup (DEFAULT_METADATA_PATH);
-
-   printf ("%s%s\n", "GILLOG: ", req->req.path);
 }
 
 void
@@ -79,6 +81,7 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
    BSON_ASSERT_PARAM (out);
    BSON_ASSERT_PARAM (json);
    bool okay = false;
+
    // Zero the output
    *out = (gcp_service_account_token){0};
 
@@ -96,21 +99,6 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
    // token_type
    found = bson_iter_init_find (&iter, &bson, "token_type");
    const char *const token_type = !found ? NULL : bson_iter_utf8 (&iter, NULL);
-   // expires_in
-   // found = bson_iter_init_find (&iter, &bson, "expires_in");
-
-   // int64_t expires_in_int;
-   // if (found) {
-   //    expires_in_int = bson_iter_int32 (&iter);
-   // } else {
-   //    bson_set_error (error,
-   //                    MONGOC_ERROR_GCP,
-   //                    MONGOC_ERROR_GCP_BAD_JSON,
-   //                    "One or more required JSON properties are "
-   //                    "missing/invalid: data: %.*s",
-   //                    len,
-   //                    json);
-   // }
 
    if (!(access_token && token_type)) {
       bson_set_error (error,
@@ -153,6 +141,7 @@ gcp_access_token_from_api (gcp_service_account_token *out,
 
    gcp_request req = {0};
    gcp_request_init (&req, opt_host, opt_port, opt_extra_headers);
+
    if (!_mongoc_http_send (&req.req, 3 * 1000, false, NULL, &resp, error)) {
       _mongoc_http_response_cleanup (&resp);
       goto fail;
