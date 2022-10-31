@@ -2362,9 +2362,6 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    BSON_ASSERT (reply || true);
    BSON_ASSERT (error || true);
 
-   mongoc_server_stream_t *server_stream = NULL;
-   bson_error_t err_local = {0};
-
    ENTRY;
 
    BSON_ASSERT (cluster);
@@ -2378,12 +2375,10 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       RETURN (NULL);
    }
 
-   if (!error) {
-      error = &err_local;
-   }
 
-   server_stream = _mongoc_cluster_stream_for_server (
-      cluster, server_id, reconnect_ok, cs, reply, error);
+   mongoc_server_stream_t *const server_stream =
+      _mongoc_cluster_stream_for_server (
+         cluster, server_id, reconnect_ok, cs, reply, error);
 
    if (_in_sharded_txn (cs)) {
       _mongoc_client_session_pin (cs, server_id);
@@ -2801,6 +2796,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
                                    mongoc_ss_optype_t optype,
                                    const mongoc_read_prefs_t *read_prefs,
                                    mongoc_client_session_t *cs,
+                                   bool is_retryable,
                                    bson_t *reply,
                                    bson_error_t *error)
 {
@@ -2844,14 +2840,73 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
       }
    }
 
-   /* connect or reconnect to server if necessary */
-   server_stream = _mongoc_cluster_stream_for_server (
-      cluster, server_id, true /* reconnect_ok */, cs, reply, error);
+   bson_t first_reply;
+   bson_error_t first_error = {0};
+
+   server_stream = _mongoc_cluster_stream_for_server (cluster,
+                                                      server_id,
+                                                      true /* reconnect_ok */,
+                                                      cs,
+                                                      &first_reply,
+                                                      &first_error);
+
    if (server_stream) {
       server_stream->must_use_primary = must_use_primary;
+      RETURN (server_stream);
    }
 
-   RETURN (server_stream);
+   // Important: authentication errors are also considered retryable even if
+   // they not considered a network error.
+   const bool retryable_error = _mongoc_error_is_network (&first_error) ||
+                                _mongoc_error_is_auth (&first_error);
+
+   if (is_retryable && retryable_error) {
+      bson_t retry_reply;
+      bson_error_t retry_error = {0};
+
+      server_stream =
+         _mongoc_cluster_stream_for_server (cluster,
+                                            server_id,
+                                            true /* reconnect_ok */,
+                                            cs,
+                                            &retry_reply,
+                                            &retry_error);
+
+      if (server_stream) {
+         server_stream->must_use_primary = must_use_primary;
+         server_stream->retry_attempted = true;
+         bson_destroy (&first_reply);
+         RETURN (server_stream);
+      }
+
+      if (optype != MONGOC_SS_READ) {
+         // Retryable Writes Spec: When the driver encounters a network error
+         // establishing an initial connection to a server, it MUST add a
+         // RetryableWriteError label to that error if the MongoClient
+         // performing the operation has the retryWrites configuration option
+         // set to true.
+         _mongoc_write_error_append_retryable_label (&first_reply);
+      }
+
+      bson_destroy (&retry_reply);
+   }
+
+   // Retryable Writes Spec: If the driver cannot select a server for the retry
+   // attempt [...], retrying is not possible and drivers MUST raise the
+   // original retryable error.
+   {
+      if (reply) {
+         bson_steal (reply, &first_reply);
+      } else {
+         bson_destroy (&first_reply);
+      }
+
+      if (error) {
+         *error = first_error;
+      }
+   }
+
+   RETURN (NULL);
 }
 
 mongoc_server_stream_t *
@@ -2864,8 +2919,14 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    const mongoc_read_prefs_t *const prefs_override =
       _mongoc_client_session_in_txn (cs) ? cs->txn.opts.read_prefs : read_prefs;
 
+   // Retryable Reads Spec: This boolean option determines whether retryable
+   // behavior will be applied to all read operations executed within the
+   // MongoClient.
+   const bool is_retryable = mongoc_uri_get_option_as_bool (
+      cluster->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
+
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_READ, prefs_override, cs, reply, error);
+      cluster, MONGOC_SS_READ, prefs_override, cs, is_retryable, reply, error);
 }
 
 mongoc_server_stream_t *
@@ -2874,8 +2935,11 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
+   const bool is_retryable = mongoc_uri_get_option_as_bool (
+      cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
+
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_WRITE, NULL, cs, reply, error);
+      cluster, MONGOC_SS_WRITE, NULL, cs, is_retryable, reply, error);
 }
 
 mongoc_server_stream_t *
@@ -2889,10 +2953,14 @@ mongoc_cluster_stream_for_aggr_with_write (
    const mongoc_read_prefs_t *const prefs_override =
       _mongoc_client_session_in_txn (cs) ? cs->txn.opts.read_prefs : read_prefs;
 
+   const bool is_retryable = mongoc_uri_get_option_as_bool (
+      cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
+
    return _mongoc_cluster_stream_for_optype (cluster,
                                              MONGOC_SS_AGGREGATE_WITH_WRITE,
                                              prefs_override,
                                              cs,
+                                             is_retryable,
                                              reply,
                                              error);
 }
