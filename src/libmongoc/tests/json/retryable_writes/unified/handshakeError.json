@@ -274,6 +274,1814 @@
           ]
         }
       ]
+    },
+    {
+      "description": "UpdateOne succeeds after retryable handshake error",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "closeConnection": true
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "updateOne",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "update": {
+              "$inc": {
+                "x": 1
+              }
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "update": "coll",
+                  "updates": [
+                    {
+                      "q": {
+                        "_id": 1
+                      },
+                      "u": {
+                        "$inc": {
+                          "x": 1
+                        }
+                      },
+                      "upsert": {
+                        "$$unsetOrMatches": false
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
+                      }
+                    }
+                  ]
+                },
+                "commandName": "update",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "UpdateOne succeeds after retryable handshake error ShutdownInProgress",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "errorCode": 91
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "updateOne",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "update": {
+              "$inc": {
+                "x": 1
+              }
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "update": "coll",
+                  "updates": [
+                    {
+                      "q": {
+                        "_id": 1
+                      },
+                      "u": {
+                        "$inc": {
+                          "x": 1
+                        }
+                      },
+                      "upsert": {
+                        "$$unsetOrMatches": false
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
+                      }
+                    }
+                  ]
+                },
+                "commandName": "update",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "ReplaceOne succeeds after retryable handshake error",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "closeConnection": true
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "replaceOne",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "replacement": {
+              "x": 111
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "update": "coll",
+                  "updates": [
+                    {
+                      "q": {
+                        "_id": 1
+                      },
+                      "u": {
+                        "x": 111
+                      },
+                      "upsert": {
+                        "$$unsetOrMatches": false
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
+                      }
+                    }
+                  ]
+                },
+                "commandName": "update",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 111
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "ReplaceOne succeeds after retryable handshake error ShutdownInProgress",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "errorCode": 91
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "replaceOne",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "replacement": {
+              "x": 111
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "update": "coll",
+                  "updates": [
+                    {
+                      "q": {
+                        "_id": 1
+                      },
+                      "u": {
+                        "x": 111
+                      },
+                      "upsert": {
+                        "$$unsetOrMatches": false
+                      },
+                      "multi": {
+                        "$$unsetOrMatches": false
+                      }
+                    }
+                  ]
+                },
+                "commandName": "update",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 111
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "DeleteOne succeeds after retryable handshake error",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "closeConnection": true
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "deleteOne",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "delete": "coll",
+                  "deletes": [
+                    {
+                      "q": {
+                        "_id": 1
+                      },
+                      "limit": 1
+                    }
+                  ]
+                },
+                "commandName": "delete",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": []
+        }
+      ]
+    },
+    {
+      "description": "DeleteOne succeeds after retryable handshake error ShutdownInProgress",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "errorCode": 91
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "deleteOne",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "delete": "coll",
+                  "deletes": [
+                    {
+                      "q": {
+                        "_id": 1
+                      },
+                      "limit": 1
+                    }
+                  ]
+                },
+                "commandName": "delete",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": []
+        }
+      ]
+    },
+    {
+      "description": "FindOneAndDelete succeeds after retryable handshake error",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "closeConnection": true
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "findOneAndDelete",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "findAndModify": "coll",
+                  "query": {
+                    "_id": 1
+                  },
+                  "remove": true
+                },
+                "commandName": "findAndModify",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": []
+        }
+      ]
+    },
+    {
+      "description": "FindOneAndDelete succeeds after retryable handshake error ShutdownInProgress",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "errorCode": 91
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "findOneAndDelete",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "findAndModify": "coll",
+                  "query": {
+                    "_id": 1
+                  },
+                  "remove": true
+                },
+                "commandName": "findAndModify",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": []
+        }
+      ]
+    },
+    {
+      "description": "FindOneAndReplace succeeds after retryable handshake error",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "closeConnection": true
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "findOneAndReplace",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "replacement": {
+              "x": 111
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "findAndModify": "coll",
+                  "query": {
+                    "_id": 1
+                  },
+                  "update": {
+                    "x": 111
+                  }
+                },
+                "commandName": "findAndModify",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 111
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "FindOneAndReplace succeeds after retryable handshake error ShutdownInProgress",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "errorCode": 91
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "findOneAndReplace",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "replacement": {
+              "x": 111
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "findAndModify": "coll",
+                  "query": {
+                    "_id": 1
+                  },
+                  "update": {
+                    "x": 111
+                  }
+                },
+                "commandName": "findAndModify",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 111
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "FindOneAndUpdate succeeds after retryable handshake error",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "closeConnection": true
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "findOneAndUpdate",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "update": {
+              "$inc": {
+                "x": 1
+              }
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "findAndModify": "coll",
+                  "query": {
+                    "_id": 1
+                  },
+                  "update": {
+                    "$inc": {
+                      "x": 1
+                    }
+                  }
+                },
+                "commandName": "findAndModify",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "FindOneAndUpdate succeeds after retryable handshake error ShutdownInProgress",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "errorCode": 91
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "findOneAndUpdate",
+          "object": "collection0",
+          "arguments": {
+            "filter": {
+              "_id": 1
+            },
+            "update": {
+              "$inc": {
+                "x": 1
+              }
+            }
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "findAndModify": "coll",
+                  "query": {
+                    "_id": 1
+                  },
+                  "update": {
+                    "$inc": {
+                      "x": 1
+                    }
+                  }
+                },
+                "commandName": "findAndModify",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "InsertMany succeeds after retryable handshake error",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "closeConnection": true
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "insertMany",
+          "object": "collection0",
+          "arguments": {
+            "documents": [
+              {
+                "_id": 2,
+                "x": 12
+              }
+            ]
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "insert": "coll",
+                  "documents": [
+                    {
+                      "_id": 2,
+                      "x": 12
+                    }
+                  ]
+                },
+                "commandName": "insert",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 11
+            },
+            {
+              "_id": 2,
+              "x": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "InsertMany succeeds after retryable handshake error ShutdownInProgress",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "errorCode": 91
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "insertMany",
+          "object": "collection0",
+          "arguments": {
+            "documents": [
+              {
+                "_id": 2,
+                "x": 12
+              }
+            ]
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "insert": "coll",
+                  "documents": [
+                    {
+                      "_id": 2,
+                      "x": 12
+                    }
+                  ]
+                },
+                "commandName": "insert",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 11
+            },
+            {
+              "_id": 2,
+              "x": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "BulkWrite succeeds after retryable handshake error",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "closeConnection": true
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "bulkWrite",
+          "object": "collection0",
+          "arguments": {
+            "requests": [
+              {
+                "insertOne": {
+                  "document": {
+                    "_id": 2,
+                    "x": 12
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "insert": "coll",
+                  "documents": [
+                    {
+                      "_id": 2,
+                      "x": 12
+                    }
+                  ]
+                },
+                "commandName": "insert",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 11
+            },
+            {
+              "_id": 2,
+              "x": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "BulkWrite succeeds after retryable handshake error ShutdownInProgress",
+      "operations": [
+        {
+          "name": "failPoint",
+          "object": "testRunner",
+          "arguments": {
+            "client": "client0",
+            "failPoint": {
+              "configureFailPoint": "failCommand",
+              "mode": {
+                "times": 2
+              },
+              "data": {
+                "failCommands": [
+                  "saslContinue",
+                  "ping"
+                ],
+                "errorCode": 91
+              }
+            }
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "database0",
+          "arguments": {
+            "commandName": "ping",
+            "command": {
+              "ping": 1
+            }
+          },
+          "expectError": {
+            "isError": true
+          }
+        },
+        {
+          "name": "bulkWrite",
+          "object": "collection0",
+          "arguments": {
+            "requests": [
+              {
+                "insertOne": {
+                  "document": {
+                    "_id": 2,
+                    "x": 12
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "eventType": "cmap",
+          "events": [
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            },
+            {
+              "connectionCheckOutStartedEvent": {}
+            }
+          ]
+        },
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "ping": 1
+                },
+                "databaseName": "retryable-handshake-tests"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "insert": "coll",
+                  "documents": [
+                    {
+                      "_id": 2,
+                      "x": 12
+                    }
+                  ]
+                },
+                "commandName": "insert",
+                "databaseName": "retryable-handshake-tests"
+              }
+            }
+          ]
+        }
+      ],
+      "outcome": [
+        {
+          "collectionName": "coll",
+          "databaseName": "retryable-handshake-tests",
+          "documents": [
+            {
+              "_id": 1,
+              "x": 11
+            },
+            {
+              "_id": 2,
+              "x": 12
+            }
+          ]
+        }
+      ]
     }
   ]
 }
