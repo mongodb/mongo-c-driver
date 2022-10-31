@@ -115,9 +115,8 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
       .access_token = bson_strdup (access_token),
       .token_type = bson_strdup (token_type),
    };
-
-   // out->expires_in = mcd_seconds (expires_in_int);
    okay = true;
+
 done:
    bson_destroy (&bson);
    return okay;

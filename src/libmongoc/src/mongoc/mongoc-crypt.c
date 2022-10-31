@@ -868,6 +868,7 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    bson_t creds = BSON_INITIALIZER;
    const bson_t empty = BSON_INITIALIZER;
    bool okay = false;
+
    if (sm->crypt->creds_cb.fn) {
       // We have a user-provided credentials callback. Try it.
       if (!sm->crypt->creds_cb.fn (
@@ -907,7 +908,6 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    // Whether the original kmsProviders requested auto-Azure credentials:
    const bool orig_wants_auto_azure =
       _check_azure_kms_auto (&sm->crypt->kms_providers, error);
-
    if (error->code) {
       // _check_azure_kms_auto failed
       goto fail;
