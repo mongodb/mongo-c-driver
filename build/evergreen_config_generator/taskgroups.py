@@ -46,3 +46,4 @@ class TaskGroup(ConfigObject):
             if getattr(self, i, None):
                 v[i] = getattr(self, i)
         return v
+        

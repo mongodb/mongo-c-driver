@@ -9,8 +9,6 @@ _test_gcp_parse (void)
    bson_error_t error;
    gcp_service_account_token token;
 
-   // out parameter cannot be null
-
    // server output must be json data
    ASSERT (!gcp_access_token_try_parse_from_json (
       &token, "invalid json", -1, &error));
@@ -74,9 +72,64 @@ _test_gcp_http_request (void)
    bson_string_free (req_str, true);
 }
 
+static const char *
+_get_test_host (void)
+{
+   return getenv ("MCD_TEST_AZURE_IMDS_HOST");
+}
+
+static void
+_run_http_test_case (const char *case_,
+                     mongoc_error_domain_t expect_domain,
+                     mongoc_error_code_t expect_code,
+                     const char *expect_error_message)
+{
+   bson_error_t error = {0};
+   struct _mongoc_host_list_t host;
+   _mongoc_host_list_from_string_with_err (&host, _get_test_host (), &error);
+   ASSERT_ERROR_CONTAINS (error, 0, 0, "");
+
+   gcp_service_account_token token = {0};
+   char *const header =
+      bson_strdup_printf ("X-MongoDB-HTTP-TestParams: case=%s\r\n", case_);
+   gcp_access_token_from_api (&token, host.host, host.port, header, &error);
+   bson_free (header);
+   gcp_access_token_destroy (&token);
+   ASSERT_ERROR_CONTAINS (
+      error, expect_domain, expect_code, expect_error_message);
+}
+
+static void
+_test_with_mock_server (void *ctx)
+{
+   BSON_UNUSED (ctx);
+   _run_http_test_case ("", 0, 0, ""); // (No error)
+   _run_http_test_case ("404", MONGOC_ERROR_GCP, MONGOC_ERROR_GCP_HTTP, "");
+   _run_http_test_case (
+      "slow", MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Timeout");
+   _run_http_test_case (
+      "empty-json", MONGOC_ERROR_GCP, MONGOC_ERROR_GCP_BAD_JSON, "");
+   _run_http_test_case (
+      "bad-json", MONGOC_ERROR_CLIENT, MONGOC_ERROR_STREAM_INVALID_TYPE, "");
+   _run_http_test_case (
+      "giant", MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "too large");
+}
+
+static int
+have_mock_server_env (TestSuite *ctx)
+{
+   return _get_test_host () != NULL;
+}
+
 void
 test_service_gcp_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/gcp/http/parse", _test_gcp_parse);
    TestSuite_Add (suite, "/gcp/http/request", _test_gcp_http_request);
+   TestSuite_AddFull (suite,
+                      "/gcp/http/talk",
+                      _test_with_mock_server,
+                      NULL,
+                      NULL,
+                      have_mock_server_env);
 }

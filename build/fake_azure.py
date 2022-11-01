@@ -83,6 +83,35 @@ def handle_asserts(fn: _HandlerFuncT) -> _HandlerFuncT:
 def test_params() -> 'dict[str, str]':
     return parse_qs(request.headers.get('X-MongoDB-HTTP-TestParams', ''))
 
+@imds.get('/computeMetadata/v1/instance/service-accounts/default/token')
+@handle_asserts
+def get_gcp_token():
+    metadata_header = request.headers.get("Metadata-Flavor")
+    assert metadata_header == 'Google'
+
+    case = test_params().get('case')
+    print('Case is:', case)
+    if case == '404': 
+        return HTTPResponse(status=404)
+    
+    if case == 'bad-json':
+        return b'{"access-token": }'
+    
+    if case == 'empty-json':
+        return b'{}'
+
+    if case == 'giant':
+        return _gen_giant()
+
+    if case == 'slow':
+        return _slow()
+
+    assert case in (None, ''), 'Unknown HTTP test case "{}"'.format(case)
+    
+    return {
+        'access_token' : 'google-cookie',
+        'token_type' : 'Bearer'
+    }
 
 @imds.get('/metadata/identity/oauth2/token')
 @handle_asserts
