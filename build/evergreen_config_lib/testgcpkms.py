@@ -77,7 +77,7 @@ def _create_variant():
         return Variant(
         name="testgcpkms-variant",
         display_name="GCP KMS",
-        # Azure Virtual Machine created is Debian 10.
+        # GCP Virtual Machine created is Debian 10.
         run_on="debian10-small", tasks=[
             "testgcpkms_task_group",
             "testgcpkms-fail-task"

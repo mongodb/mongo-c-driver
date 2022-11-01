@@ -32,4 +32,4 @@ $CMAKE -DCMAKE_C_STANDARD=99 \
     -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
     .
 $CMAKE --build . --target test-gcpkms
-echo "Compile test-azurekms ... end"
+echo "Compile test-gcpkms ... end"
