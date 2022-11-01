@@ -26,7 +26,7 @@ def _create_tasks():
 
     passtask.commands = [
         func("fetch source"),
-        shell_exec (r''' 
+        shell_exec (r'''
             echo "Building test-gcpkms ... begin"
             pushd mongoc
             ./.evergreen/compile-test-gcpkms.sh
@@ -41,20 +41,18 @@ def _create_tasks():
             cp ./mongoc/src/libmongoc/test-gcpkms ./mongoc/install/lib/libmongocrypt.* testgcpkms
             tar czf testgcpkms.tgz testgcpkms/*
             GCPKMS_SRC="testgcpkms.tgz" GCPKMS_DST=$GCPKMS_INSTANCENAME: $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/copy-file.sh
-            echo "Copying files ... end"
-            
+            echo "Copying files ... end"            
             echo "Untarring file ... begin"
             GCPKMS_CMD="tar xf testgcpkms.tgz" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
             echo "Untarring file ... end"
            ''', test=False),
-        shell_exec (r'''
+           shell_exec (r'''
             export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}
             export GCPKMS_ZONE=${GCPKMS_ZONE}
             export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
             GCPKMS_CMD="LD_LIBRARY_PATH=./testgcpkms MONGODB_URI='mongodb://localhost:27017' ./testgcpkms/test-gcpkms" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
-            ''')
-    ]
+            ''')]
 
     failtask = NamedTask(task_name="testgcpkms-fail-task")
     failtask.commands = [
@@ -69,8 +67,8 @@ def _create_tasks():
             export GCPKMS_ZONE=${GCPKMS_ZONE}
             export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
             LD_LIBRARY_PATH=./install MONGODB_URI='mongodb://localhost:27017' EXPECT_ERROR='Failed to connect to: metadata.google.internal' ./mongoc/src/libmongoc/test-gcpkms
-          ''')
-    ]
+          ''')]
+    
     return [passtask, failtask]
 
 def _create_variant():
@@ -81,7 +79,7 @@ def _create_variant():
         run_on="debian10-small", tasks=[
             "testgcpkms_task_group",
             "testgcpkms-fail-task"
-        ], batchtime=20160)  # Use a batchtime of 14 days as suggested by the CSFLE test README
+            ], batchtime=20160)  # Use a batchtime of 14 days as suggested by the CSFLE test README
 
 def _create_task_group():
     task_group = TaskGroup(name="testgcpkms_task_group")
@@ -102,11 +100,10 @@ def _create_task_group():
             OD([('command', 'expansions.update'),
             ('params', OD([
                 ('file', 'testgcpkms-expansions.yml'),
-            ]))])
-    ]
+            ]))])]
     
     task_group.teardown_group = [
-        shell_exec(r''' 
+        shell_exec(r'''
             DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
             export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}
