@@ -37,6 +37,7 @@ def _create_tasks():
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}
             export GCPKMS_ZONE=${GCPKMS_ZONE}
             export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
+            DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
             mkdir testgcpkms
             cp ./mongoc/src/libmongoc/test-gcpkms ./mongoc/install/lib/libmongocrypt.* testgcpkms
             tar czf testgcpkms.tgz testgcpkms/*
@@ -51,6 +52,7 @@ def _create_tasks():
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}
             export GCPKMS_ZONE=${GCPKMS_ZONE}
             export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
+            DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
             GCPKMS_CMD="LD_LIBRARY_PATH=./testgcpkms MONGODB_URI='mongodb://localhost:27017' ./testgcpkms/test-gcpkms" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
             ''')]
 
