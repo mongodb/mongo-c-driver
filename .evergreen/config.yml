@@ -24116,6 +24116,96 @@ tasks:
       AUTH: noauth
       LOADBALANCED: loadbalanced
       SSL: nossl
+- name: testgcpkms-task
+  commands:
+  - func: fetch source
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        echo "Building test-gcpkms ... begin"
+        pushd mongoc
+        ./.evergreen/compile-test-gcpkms.sh
+        popd
+        echo "Building test-gcpkms ... end"
+        echo "Copying files ... begin"
+        export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
+        export GCPKMS_PROJECT=${GCPKMS_PROJECT}
+        export GCPKMS_ZONE=${GCPKMS_ZONE}
+        export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
+        mkdir testgcpkms
+        cp ./mongoc/src/libmongoc/test-gcpkms ./mongoc/install/lib/libmongocrypt.* testgcpkms
+        tar czf testgcpkms.tgz testgcpkms/*
+        GCPKMS_SRC="testgcpkms.tgz" GCPKMS_DST=$GCPKMS_INSTANCENAME: $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/copy-file.sh
+        echo "Copying files ... end"
+        echo "Untarring file ... begin"
+        GCPKMS_CMD="tar xf testgcpkms.tgz" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
+        echo "Untarring file ... end"
+  - command: shell.exec
+    type: test
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
+        export GCPKMS_PROJECT=${GCPKMS_PROJECT}
+        export GCPKMS_ZONE=${GCPKMS_ZONE}
+        export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
+        GCPKMS_CMD="LD_LIBRARY_PATH=./testgcpkms MONGODB_URI='mongodb://localhost:27017' ./testgcpkms/test-gcpkms" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
+- name: testgcpkms-fail-task
+  commands:
+  - func: fetch source
+  - command: shell.exec
+    params:
+      shell: bash
+      script: "set -o errexit\npushd mongoc\n./.evergreen/compile-test-gcpkms.sh\n\
+        popd "
+  - command: shell.exec
+    type: test
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
+        export GCPKMS_PROJECT=${GCPKMS_PROJECT}
+        export GCPKMS_ZONE=${GCPKMS_ZONE}
+        export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
+        LD_LIBRARY_PATH=./install MONGODB_URI='mongodb://localhost:27017' EXPECT_ERROR='Failed to connect to: metadata.google.internal' ./mongoc/src/libmongoc/test-gcpkms
+task_groups:
+- name: testgcpkms_task_group
+  setup_group:
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
+        DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
+        echo '${testgcpkms_key_file}' > /tmp/testgcpkms_key_file.json
+        export GCPKMS_KEYFILE=/tmp/testgcpkms_key_file.json
+        export GCPKMS_DRIVERS_TOOLS=$DRIVERS_TOOLS
+        export GCPKMS_SERVICEACCOUNT="${testgcpkms_service_account}"
+        $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/create-and-setup-instance.sh
+  - command: expansions.update
+    params:
+      file: testgcpkms-expansions.yml
+  teardown_group:
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
+        export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
+        export GCPKMS_PROJECT=${GCPKMS_PROJECT}
+        export GCPKMS_ZONE=${GCPKMS_ZONE}
+        export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
+        $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/delete-instance.sh
+  setup_group_can_fail_task: true
+  setup_group_timeout_secs: 1800
+  tasks:
+  - testgcpkms-task
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'
@@ -24878,3 +24968,10 @@ buildvariants:
   run_on: macos-1100-arm64
   tasks:
   - debug-compile-sasl-darwinssl
+- name: testgcpkms-variant
+  display_name: GCP KMS
+  run_on: debian10-small
+  tasks:
+  - testgcpkms_task_group
+  - testgcpkms-fail-task
+  batchtime: 20160

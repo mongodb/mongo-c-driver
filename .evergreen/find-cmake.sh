@@ -3,6 +3,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 find_cmake ()
 {
+  CMAKE=${CMAKE:-}
+  IGNORE_SYSTEM_CMAKE=${IGNORE_SYSTEM_CMAKE:-}
   if [ ! -z "$CMAKE" ]; then
     return 0
   elif [ -f "/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake" ]; then

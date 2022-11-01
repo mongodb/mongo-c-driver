@@ -85,7 +85,6 @@ main (void)
       }
    } else {
       if (!got) {
-         printf ("%s\n", "gillog inside got error");
          MONGOC_ERROR ("Expected to create data key, but got error: %s",
                        error.message);
          return EXIT_FAILURE;

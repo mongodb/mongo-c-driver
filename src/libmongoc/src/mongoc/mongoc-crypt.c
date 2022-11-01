@@ -852,6 +852,7 @@ _try_add_gcp_from_env (bson_t *out, bson_error_t *error)
                                        gcp_token.access_token) &&
                      BSON_APPEND_DOCUMENT (out, "gcp", &new_gcp_creds);
    bson_destroy (&new_gcp_creds);
+   gcp_access_token_destroy (&gcp_token);
    if (!okay) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
