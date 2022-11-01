@@ -788,7 +788,6 @@ static void
 test_cooldown_rs (void)
 {
    mock_server_t *servers[2]; /* two secondaries, no primary */
-   char *uri_str;
    int i;
    mongoc_client_t *client;
    mongoc_read_prefs_t *primary_pref;
@@ -804,12 +803,25 @@ test_cooldown_rs (void)
       mock_server_run (servers[i]);
    }
 
-   uri_str = bson_strdup_printf ("mongodb://localhost:%hu/?replicaSet=rs"
-                                 "&serverSelectionTimeoutMS=100"
-                                 "&connectTimeoutMS=100",
-                                 mock_server_get_port (servers[0]));
+   {
+      char *uri_str =
+         bson_strdup_printf ("mongodb://localhost:%hu/?replicaSet=rs"
+                             "&serverSelectionTimeoutMS=100"
+                             "&connectTimeoutMS=100",
+                             mock_server_get_port (servers[0]));
 
-   client = test_framework_client_new (uri_str, NULL);
+      mongoc_uri_t *const uri = mongoc_uri_new_with_error (uri_str, &error);
+      ASSERT_OR_PRINT (uri, error);
+
+      // Prevent retryable handshakes from interfering with mock server hangups.
+      mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
+
+      client = test_framework_client_new_from_uri (uri, NULL);
+
+      bson_free (uri_str);
+      mongoc_uri_destroy (uri);
+   }
+
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    secondary_response =
@@ -894,7 +906,6 @@ test_cooldown_rs (void)
    mongoc_client_destroy (client);
    bson_free (secondary_response);
    bson_free (primary_response);
-   bson_free (uri_str);
    mock_server_destroy (servers[0]);
    mock_server_destroy (servers[1]);
 }

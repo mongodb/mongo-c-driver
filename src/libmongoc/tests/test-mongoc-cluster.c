@@ -1372,7 +1372,9 @@ _test_cluster_hello_fails (bool hangup)
    mock_server_run (mock_server);
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    /* increase heartbeatFrequencyMS to prevent background server selection. */
-   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
+   /* prevent retryable handshakes from interfering with mock server hangups */
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
    mongoc_client_pool_set_error_api (pool, 2);
    mongoc_uri_destroy (uri);
@@ -1437,8 +1439,14 @@ test_cluster_command_error (void)
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+
+   {
+      mongoc_uri_t *const uri = mongoc_uri_copy (mock_server_get_uri (server));
+      mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
+      client = test_framework_client_new_from_uri (uri, NULL);
+      mongoc_uri_destroy (uri);
+   }
+
    future = future_client_command_simple (client,
                                           "db",
                                           tmp_bson ("{'ping': 1}"),
