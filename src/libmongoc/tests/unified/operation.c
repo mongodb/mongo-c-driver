@@ -769,7 +769,9 @@ operation_list_collections (test_t *test,
          goto done;
       }
    }
-   bson_concat (opts, op->arguments);
+   if (op->arguments) {
+      bson_concat (opts, op->arguments);
+   }
 
    db = entity_map_get_database (test->entity_map, op->object, error);
    if (!db) {
