@@ -48,8 +48,7 @@
    if (!(Cond))      \
    abort ()
 
-static const char Base64[] =
-   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char Base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char Pad64 = '=';
 
 /* (From RFC1521 and draft-ietf-dnssec-secext-03.txt)
@@ -115,10 +114,7 @@ static const char Pad64 = '=';
  */
 
 int
-kms_message_b64_ntop (uint8_t const *src,
-                      size_t srclength,
-                      char *target,
-                      size_t targsize)
+kms_message_b64_ntop (uint8_t const *src, size_t srclength, char *target, size_t targsize)
 {
    size_t datalength = 0;
    uint8_t input[3];
@@ -367,8 +363,8 @@ b64_pton_do (char const *src, uint8_t *target, size_t targsize)
          if (ch != Pad64)
             return (-1);
          ch = *src++; /* Skip the = */
-      /* Fall through to "single trailing =" case. */
-      /* FALLTHROUGH */
+         /* Fall through to "single trailing =" case. */
+         /* FALLTHROUGH */
 
       case 3: /* Valid, means two bytes of info */
          /*
@@ -469,8 +465,8 @@ b64_pton_len (char const *src)
          if (ch != Pad64)
             return (-1);
          ch = *src++; /* Skip the = */
-      /* Fall through to "single trailing =" case. */
-      /* FALLTHROUGH */
+         /* Fall through to "single trailing =" case. */
+         /* FALLTHROUGH */
 
       case 3: /* Valid, means two bytes of info */
          /*

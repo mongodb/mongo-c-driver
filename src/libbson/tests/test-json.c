@@ -31,20 +31,16 @@ test_bson_json_allow_multiple (void)
    bson_oid_t oid_expected;
    int i;
    /* nested JSON tests code that reuses parser stack frames, CDRIVER-2524 */
-   char *multiple_json =
-      "{\"a\": 1}"
-      "{\"b\": {\"$dbPointer\": "
-      "  {\"$ref\": \"c\", \"$id\": {\"$oid\": \"12341234123412abcdababcd\"}}}}"
-      "{\"c\": {\"x\": 1}}";
+   char *multiple_json = "{\"a\": 1}"
+                         "{\"b\": {\"$dbPointer\": "
+                         "  {\"$ref\": \"c\", \"$id\": {\"$oid\": \"12341234123412abcdababcd\"}}}}"
+                         "{\"c\": {\"x\": 1}}";
 
    bson_oid_init_from_string (&oid_expected, "12341234123412abcdababcd");
 
    for (i = 0; i < 2; i++) {
-      reader = bson_json_reader_new (multiple_json,
-                                     &test_bson_json_read_cb_helper,
-                                     NULL,
-                                     i == 1 /* allow_multiple */,
-                                     0);
+      reader =
+         bson_json_reader_new (multiple_json, &test_bson_json_read_cb_helper, NULL, i == 1 /* allow_multiple */, 0);
 
       BSON_ASSERT (reader);
 
@@ -105,11 +101,9 @@ test_bson_as_json_x1000 (void)
    BSON_ASSERT (bson_append_bool (b, "true", -1, true));
    BSON_ASSERT (bson_append_bool (b, "false", -1, false));
    BSON_ASSERT (bson_append_time_t (b, "date", -1, time (NULL)));
-   BSON_ASSERT (
-      bson_append_timestamp (b, "timestamp", -1, (uint32_t) time (NULL), 1234));
+   BSON_ASSERT (bson_append_timestamp (b, "timestamp", -1, (uint32_t) time (NULL), 1234));
    BSON_ASSERT (bson_append_regex (b, "regex", -1, "^abcd", "xi"));
-   BSON_ASSERT (
-      bson_append_dbpointer (b, "dbpointer", -1, "mycollection", &oid));
+   BSON_ASSERT (bson_append_dbpointer (b, "dbpointer", -1, "mycollection", &oid));
    BSON_ASSERT (bson_append_minkey (b, "minkey", -1));
    BSON_ASSERT (bson_append_maxkey (b, "maxkey", -1));
    BSON_ASSERT (bson_append_symbol (b, "symbol", -1, "var a = {};", -1));
@@ -122,8 +116,7 @@ test_bson_as_json_x1000 (void)
 
    {
       const uint8_t binary[] = {0, 1, 2, 3, 4};
-      BSON_ASSERT (bson_append_binary (
-         b, "binary", -1, BSON_SUBTYPE_BINARY, binary, sizeof binary));
+      BSON_ASSERT (bson_append_binary (b, "binary", -1, BSON_SUBTYPE_BINARY, binary, sizeof binary));
    }
 
    for (i = 0; i < 1000; i++) {
@@ -158,38 +151,21 @@ test_bson_as_json_multi (void)
    BSON_ASSERT (bson_append_double (b, "Double", -1, -1.0));
 
    {
-      const uint8_t binary[] = {0xa3,
-                                0x4c,
-                                0x38,
-                                0xf7,
-                                0xc3,
-                                0xab,
-                                0xed,
-                                0xc8,
-                                0xa3,
-                                0x78,
-                                0x14,
-                                0xa9,
-                                0x92,
-                                0xab,
-                                0x8d,
-                                0xb6};
-      BSON_ASSERT (bson_append_binary (
-         b, "Binary", -1, BSON_SUBTYPE_UUID_DEPRECATED, binary, sizeof binary));
+      const uint8_t binary[] = {
+         0xa3, 0x4c, 0x38, 0xf7, 0xc3, 0xab, 0xed, 0xc8, 0xa3, 0x78, 0x14, 0xa9, 0x92, 0xab, 0x8d, 0xb6};
+      BSON_ASSERT (bson_append_binary (b, "Binary", -1, BSON_SUBTYPE_UUID_DEPRECATED, binary, sizeof binary));
    }
 
    {
       const uint8_t binary[] = {1, 2, 3, 4, 5};
-      BSON_ASSERT (bson_append_binary (
-         b, "BinaryUserDefined", -1, BSON_SUBTYPE_USER, binary, sizeof binary));
+      BSON_ASSERT (bson_append_binary (b, "BinaryUserDefined", -1, BSON_SUBTYPE_USER, binary, sizeof binary));
    }
 
    BSON_ASSERT (bson_append_code (b, "Code", -1, "function() {}"));
 
    {
       bson_t *scope = bson_new ();
-      BSON_ASSERT (bson_append_code_with_scope (
-         b, "CodeWithScope", -1, "function() {}", scope));
+      BSON_ASSERT (bson_append_code_with_scope (b, "CodeWithScope", -1, "function() {}", scope));
       bson_destroy (scope);
    }
 
@@ -214,18 +190,15 @@ test_bson_as_json_multi (void)
    BSON_ASSERT (bson_append_timestamp (b, "Timestamp", -1, 42, 1));
    BSON_ASSERT (bson_append_regex (b, "Regex", -1, "pattern", ""));
    BSON_ASSERT (bson_append_date_time (b, "DatetimeEpoch", -1, 0));
-   BSON_ASSERT (bson_append_date_time (
-      b, "DatetimePositive", -1, (int64_t) 2147483647LL));
-   BSON_ASSERT (bson_append_date_time (
-      b, "DatetimeNegative", -1, (int64_t) -2147483648LL));
+   BSON_ASSERT (bson_append_date_time (b, "DatetimePositive", -1, (int64_t) 2147483647LL));
+   BSON_ASSERT (bson_append_date_time (b, "DatetimeNegative", -1, (int64_t) -2147483648LL));
    BSON_ASSERT (bson_append_bool (b, "True", -1, true));
    BSON_ASSERT (bson_append_bool (b, "False", -1, false));
 
    {
       bson_oid_t oid;
       bson_oid_init_from_string (&oid, "57e193d7a9cc81b4027498b1");
-      BSON_ASSERT (
-         bson_append_dbpointer (b, "DBPointer", -1, "collection", &oid));
+      BSON_ASSERT (bson_append_dbpointer (b, "DBPointer", -1, "collection", &oid));
    }
 
    {
@@ -254,40 +227,39 @@ test_bson_as_json_multi (void)
    str = bson_as_json (b, &len);
 
    /* Based on multi-type-deprecated.json from BSON Corpus Tests. */
-   ASSERT_CMPSTR (
-      str,
-      "{"
-      " \"_id\" : { \"$oid\" : \"57e193d7a9cc81b4027498b5\" },"
-      " \"Symbol\" : \"symbol\","
-      " \"String\" : \"string\","
-      " \"Int32\" : 42,"
-      " \"Int64\" : 42,"
-      " \"Double\" : -1.0,"
-      " \"Binary\" : { \"$binary\" : \"o0w498Or7cijeBSpkquNtg==\", \"$type\" : "
-      "\"03\" },"
-      " \"BinaryUserDefined\" : { \"$binary\" : \"AQIDBAU=\", \"$type\" : "
-      "\"80\" },"
-      " \"Code\" : { \"$code\" : \"function() {}\" },"
-      " \"CodeWithScope\" : { \"$code\" : \"function() {}\", \"$scope\" : { } "
-      "},"
-      " \"Subdocument\" : { \"foo\" : \"bar\" },"
-      " \"Array\" : [ 1, 2, 3, 4, 5 ],"
-      " \"Timestamp\" : { \"$timestamp\" : { \"t\" : 42, \"i\" : 1 } },"
-      " \"Regex\" : { \"$regex\" : \"pattern\", \"$options\" : \"\" },"
-      " \"DatetimeEpoch\" : { \"$date\" : 0 },"
-      " \"DatetimePositive\" : { \"$date\" : 2147483647 },"
-      " \"DatetimeNegative\" : { \"$date\" : -2147483648 },"
-      " \"True\" : true,"
-      " \"False\" : false,"
-      " \"DBPointer\" : { \"$ref\" : \"collection\", \"$id\" : "
-      "\"57e193d7a9cc81b4027498b1\" },"
-      " \"DBRef\" : { \"$ref\" : \"collection\", \"$id\" : { \"$oid\" : "
-      "\"57fd71e96e32ab4225b723fb\" }, \"$db\" : \"database\" },"
-      " \"Minkey\" : { \"$minKey\" : 1 },"
-      " \"Maxkey\" : { \"$maxKey\" : 1 },"
-      " \"Null\" : null,"
-      " \"Undefined\" : { \"$undefined\" : true },"
-      " \"Decimal128\" : { \"$numberDecimal\" : \"11\" } }");
+   ASSERT_CMPSTR (str,
+                  "{"
+                  " \"_id\" : { \"$oid\" : \"57e193d7a9cc81b4027498b5\" },"
+                  " \"Symbol\" : \"symbol\","
+                  " \"String\" : \"string\","
+                  " \"Int32\" : 42,"
+                  " \"Int64\" : 42,"
+                  " \"Double\" : -1.0,"
+                  " \"Binary\" : { \"$binary\" : \"o0w498Or7cijeBSpkquNtg==\", \"$type\" : "
+                  "\"03\" },"
+                  " \"BinaryUserDefined\" : { \"$binary\" : \"AQIDBAU=\", \"$type\" : "
+                  "\"80\" },"
+                  " \"Code\" : { \"$code\" : \"function() {}\" },"
+                  " \"CodeWithScope\" : { \"$code\" : \"function() {}\", \"$scope\" : { } "
+                  "},"
+                  " \"Subdocument\" : { \"foo\" : \"bar\" },"
+                  " \"Array\" : [ 1, 2, 3, 4, 5 ],"
+                  " \"Timestamp\" : { \"$timestamp\" : { \"t\" : 42, \"i\" : 1 } },"
+                  " \"Regex\" : { \"$regex\" : \"pattern\", \"$options\" : \"\" },"
+                  " \"DatetimeEpoch\" : { \"$date\" : 0 },"
+                  " \"DatetimePositive\" : { \"$date\" : 2147483647 },"
+                  " \"DatetimeNegative\" : { \"$date\" : -2147483648 },"
+                  " \"True\" : true,"
+                  " \"False\" : false,"
+                  " \"DBPointer\" : { \"$ref\" : \"collection\", \"$id\" : "
+                  "\"57e193d7a9cc81b4027498b1\" },"
+                  " \"DBRef\" : { \"$ref\" : \"collection\", \"$id\" : { \"$oid\" : "
+                  "\"57fd71e96e32ab4225b723fb\" }, \"$db\" : \"database\" },"
+                  " \"Minkey\" : { \"$minKey\" : 1 },"
+                  " \"Maxkey\" : { \"$maxKey\" : 1 },"
+                  " \"Null\" : null,"
+                  " \"Undefined\" : { \"$undefined\" : true },"
+                  " \"Decimal128\" : { \"$numberDecimal\" : \"11\" } }");
 
    bson_free (str);
    bson_destroy (b);
@@ -447,18 +419,15 @@ test_bson_as_json_code (void)
    bson_reinit (&code);
 
    /* empty scope */
-   BSON_ASSERT (
-      BSON_APPEND_CODE_WITH_SCOPE (&code, "c", "function () {}", &scope));
+   BSON_ASSERT (BSON_APPEND_CODE_WITH_SCOPE (&code, "c", "function () {}", &scope));
    str = bson_as_json (&code, NULL);
-   ASSERT_CMPSTR (
-      str, "{ \"c\" : { \"$code\" : \"function () {}\", \"$scope\" : { } } }");
+   ASSERT_CMPSTR (str, "{ \"c\" : { \"$code\" : \"function () {}\", \"$scope\" : { } } }");
 
    bson_free (str);
    bson_reinit (&code);
 
    BSON_APPEND_INT32 (&scope, "x", 1);
-   BSON_ASSERT (
-      BSON_APPEND_CODE_WITH_SCOPE (&code, "c", "function () {}", &scope));
+   BSON_ASSERT (BSON_APPEND_CODE_WITH_SCOPE (&code, "c", "function () {}", &scope));
    str = bson_as_json (&code, NULL);
    ASSERT_CMPSTR (str,
                   "{ \"c\" : { \"$code\" : \"function () {}\", \"$scope\" "
@@ -762,9 +731,7 @@ rand_r (unsigned int *seed)
 #endif
 
 static char *
-rand_str (size_t maxlen,
-          unsigned int *seed /* IN / OUT */,
-          char *buf /* IN / OUT */)
+rand_str (size_t maxlen, unsigned int *seed /* IN / OUT */, char *buf /* IN / OUT */)
 {
    size_t len = RAND_R (seed) % (maxlen - 1);
    size_t i;
@@ -808,16 +775,10 @@ test_bson_json_read_buffering (void)
             bsons[docs_idx] = bson_new ();
             n_elems = RAND_R (&seed) % 5;
             for (elem_idx = 0; elem_idx < n_elems; elem_idx++) {
-               bson_append_utf8 (bsons[docs_idx],
-                                 rand_str (sizeof key, &seed, key),
-                                 -1,
-                                 rand_str (sizeof val, &seed, val),
-                                 -1);
+               bson_append_utf8 (
+                  bsons[docs_idx], rand_str (sizeof key, &seed, key), -1, rand_str (sizeof val, &seed, val), -1);
 
-               bson_append_int32 (bsons[docs_idx],
-                                  rand_str (sizeof key, &seed, key),
-                                  -1,
-                                  RAND_R (&seed) % INT32_MAX);
+               bson_append_int32 (bsons[docs_idx], rand_str (sizeof key, &seed, key), -1, RAND_R (&seed) % INT32_MAX);
             }
 
             /* append the BSON document's JSON representation to "json" */
@@ -827,12 +788,10 @@ test_bson_json_read_buffering (void)
             bson_free (json_tmp);
          }
 
-         reader = bson_json_data_reader_new (
-            true /* "allow_multiple" is unused */,
-            (size_t) RAND_R (&seed) % 100 /* bufsize*/);
+         reader = bson_json_data_reader_new (true /* "allow_multiple" is unused */,
+                                             (size_t) RAND_R (&seed) % 100 /* bufsize*/);
 
-         bson_json_data_reader_ingest (
-            reader, (uint8_t *) json->str, json->len);
+         bson_json_data_reader_ingest (reader, (uint8_t *) json->str, json->len);
 
          for (docs_idx = 0; docs_idx < n_docs; docs_idx++) {
             bson_reinit (&bson_out);
@@ -847,8 +806,7 @@ test_bson_json_read_buffering (void)
          }
 
          /* finished parsing */
-         ASSERT_CMPINT (
-            0, ==, bson_json_reader_read (reader, &bson_out, &error));
+         ASSERT_CMPINT (0, ==, bson_json_reader_read (reader, &bson_out, &error));
 
          bson_json_reader_destroy (reader);
          bson_string_truncate (json, 0);
@@ -906,8 +864,7 @@ _test_bson_json_read_compare (const char *json, int size, ...)
 static void
 test_bson_json_read (void)
 {
-   char *json = bson_strdup_printf (
-      "%s { \"after\": \"b\" } { \"twice\" : true }", json_with_all_types ());
+   char *json = bson_strdup_printf ("%s { \"after\": \"b\" } { \"twice\" : true }", json_with_all_types ());
 
    bson_oid_t oid;
    bson_t *first, *second, *third;
@@ -930,12 +887,11 @@ test_bson_json_read_invalid_base64 (void)
    bson_error_t error = {0};
 
    BSON_ASSERT (!bson_new_from_json ((uint8_t *) bad_json, -1, &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      BSON_ERROR_JSON,
-      BSON_JSON_ERROR_READ_INVALID_PARAM,
-      "Invalid input string \"\x30\x30\x30\x30\xcd\x8d\x79\", looking for "
-      "base64-encoded binary");
+   ASSERT_ERROR_CONTAINS (error,
+                          BSON_ERROR_JSON,
+                          BSON_JSON_ERROR_READ_INVALID_PARAM,
+                          "Invalid input string \"\x30\x30\x30\x30\xcd\x8d\x79\", looking for "
+                          "base64-encoded binary");
 }
 
 static void
@@ -944,8 +900,7 @@ test_bson_json_read_raw_utf8 (void)
    bson_t *bson;
    bson_iter_t iter;
 
-   bson = bson_new_from_json (
-      (const uint8_t *) "{\"" EU "\": \"" EU "\"}", -1, NULL);
+   bson = bson_new_from_json ((const uint8_t *) "{\"" EU "\": \"" EU "\"}", -1, NULL);
    ASSERT (bson);
    ASSERT (bson_iter_init_find (&iter, bson, EU));
    ASSERT_CMPSTR (bson_iter_key (&iter), EU);
@@ -963,18 +918,12 @@ test_bson_json_read_corrupt_utf8 (void)
    bson_error_t error = {0};
 
    BSON_ASSERT (!bson_new_from_json ((uint8_t *) bad_key, -1, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_CORRUPT_JS,
-                          "invalid bytes in UTF8 string");
+   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "invalid bytes in UTF8 string");
 
    memset (&error, 0, sizeof error);
 
    BSON_ASSERT (!bson_new_from_json ((uint8_t *) bad_value, -1, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_CORRUPT_JS,
-                          "invalid bytes in UTF8 string");
+   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "invalid bytes in UTF8 string");
 }
 
 
@@ -983,26 +932,24 @@ static void
 test_bson_json_read_corrupt_document (void)
 {
    /* like {a: {a: "\x80"}}, the value is invalid UTF-8 */
-   const char bad_doc[] = "\x16\x00\x00\x00" /* length */
-                          "\x03\x61\x00"     /* subdoc field with key "a" */
-                          "\x0e\x00\x00\x00" /* length of subdoc in bytes */
+   const char bad_doc[] = "\x16\x00\x00\x00"                     /* length */
+                          "\x03\x61\x00"                         /* subdoc field with key "a" */
+                          "\x0e\x00\x00\x00"                     /* length of subdoc in bytes */
                           "\x02\x61\x00\x02\x00\x00\x00\x80\x00" /* a: "\x80" */
-                          "\x00"; /* terminator */
+                          "\x00";                                /* terminator */
 
    /* like {a: ["\x80"]}, the inner value is invalid UTF-8 */
-   const char bad_array[] = "\x16\x00\x00\x00" /* length */
-                            "\x04\x61\x00"     /* array field with key "a" */
-                            "\x0e\x00\x00\x00" /* length of array in bytes */
-                            "\x02\x30\x00"     /* key "0" */
+   const char bad_array[] = "\x16\x00\x00\x00"         /* length */
+                            "\x04\x61\x00"             /* array field with key "a" */
+                            "\x0e\x00\x00\x00"         /* length of array in bytes */
+                            "\x02\x30\x00"             /* key "0" */
                             "\x02\x00\x00\x00\x80\x00" /* string "\x80" */
                             "\x00";                    /* terminator */
 
    bson_t bson;
-   BSON_ASSERT (
-      bson_init_static (&bson, (uint8_t *) bad_doc, sizeof (bad_doc)));
+   BSON_ASSERT (bson_init_static (&bson, (uint8_t *) bad_doc, sizeof (bad_doc)));
    BSON_ASSERT (!bson_as_json (&bson, NULL));
-   BSON_ASSERT (
-      bson_init_static (&bson, (uint8_t *) bad_array, sizeof (bad_array)));
+   BSON_ASSERT (bson_init_static (&bson, (uint8_t *) bad_array, sizeof (bad_array)));
    BSON_ASSERT (!bson_as_json (&bson, NULL));
 }
 
@@ -1029,29 +976,27 @@ test_bson_json_read_dbpointer (void)
    bool r;
 
    /* must have both $ref and $id, $id must be ObjectId */
-   const char *invalid[] = {
-      "{\"p\": {\"$dbPointer\": {\"$ref\": \"db.collection\"}}",
-      "$dbPointer requires both $id and $ref",
+   const char *invalid[] = {"{\"p\": {\"$dbPointer\": {\"$ref\": \"db.collection\"}}",
+                            "$dbPointer requires both $id and $ref",
 
-      "{\"p\": {\"$dbPointer\": {\"$ref\": \"db.collection\", \"$id\": 1}}",
-      "$dbPointer.$id must be like {\"$oid\": ...\"}",
+                            "{\"p\": {\"$dbPointer\": {\"$ref\": \"db.collection\", \"$id\": 1}}",
+                            "$dbPointer.$id must be like {\"$oid\": ...\"}",
 
-      "{\"p\": {\"$dbPointer\": {\"$id\": {"
-      "\"$oid\": \"57e193d7a9cc81b4027498b1\"}}}}",
-      "$dbPointer requires both $id and $ref",
+                            "{\"p\": {\"$dbPointer\": {\"$id\": {"
+                            "\"$oid\": \"57e193d7a9cc81b4027498b1\"}}}}",
+                            "$dbPointer requires both $id and $ref",
 
-      "{\"p\": {\"$dbPointer\": {}}}",
-      "Empty $dbPointer",
+                            "{\"p\": {\"$dbPointer\": {}}}",
+                            "Empty $dbPointer",
 
-      NULL};
+                            NULL};
 
    const char **p;
 
    for (p = invalid; *p; p += 2) {
       r = bson_init_from_json (&b, *p, -1, &error);
       BSON_ASSERT (!r);
-      ASSERT_ERROR_CONTAINS (
-         error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, *(p + 1));
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, *(p + 1));
    }
 }
 
@@ -1065,8 +1010,7 @@ test_bson_json_read_legacy_regex (void)
    const char *pattern;
    const char *flags;
 
-   r = bson_init_from_json (
-      &b, "{\"a\": {\"$regex\": \"abc\", \"$options\": \"ix\"}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"a\": {\"$regex\": \"abc\", \"$options\": \"ix\"}}", -1, &error);
    ASSERT_OR_PRINT (r, error);
    BCON_EXTRACT (&b, "a", BCONE_REGEX (pattern, flags));
    ASSERT_CMPSTR (pattern, "abc");
@@ -1084,10 +1028,8 @@ test_bson_json_read_legacy_regex (void)
 
    r = bson_init_from_json (&b, "{\"a\": {\"$options\": \"ix\"}}", -1, &error);
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Missing \"$regex\" after \"$options\"");
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Missing \"$regex\" after \"$options\"");
 }
 
 
@@ -1100,16 +1042,14 @@ test_bson_json_read_regex_options_order (void)
    const char *pattern;
    const char *flags;
 
-   r = bson_init_from_json (
-      &b, "{\"a\": {\"$regex\": \"\", \"$options\": \"ism\"}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"a\": {\"$regex\": \"\", \"$options\": \"ism\"}}", -1, &error);
    ASSERT_OR_PRINT (r, error);
    BCON_EXTRACT (&b, "a", BCONE_REGEX (pattern, flags));
    ASSERT_CMPSTR (flags, "ims");
 
    bson_destroy (&b);
 
-   r = bson_init_from_json (
-      &b, "{\"a\": {\"$regex\": \"\", \"$options\": \"misl\"}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"a\": {\"$regex\": \"\", \"$options\": \"misl\"}}", -1, &error);
    ASSERT_OR_PRINT (r, error);
    BCON_EXTRACT (&b, "a", BCONE_REGEX (pattern, flags));
    ASSERT_CMPSTR (flags, "ilms");
@@ -1128,11 +1068,7 @@ test_bson_json_read_binary (void)
    uint32_t len;
    const uint8_t *binary;
 
-   r = bson_init_from_json (
-      &b,
-      "{\"b\": {\"$binary\": {\"base64\": \"Zm9v\", \"subType\": \"05\"}}}",
-      -1,
-      &error);
+   r = bson_init_from_json (&b, "{\"b\": {\"$binary\": {\"base64\": \"Zm9v\", \"subType\": \"05\"}}}", -1, &error);
    ASSERT_OR_PRINT (r, error);
 
    BCON_EXTRACT (&b, "b", BCONE_BIN (subtype, binary, len));
@@ -1142,11 +1078,7 @@ test_bson_json_read_binary (void)
 
    bson_destroy (&b);
 
-   r = bson_init_from_json (
-      &b,
-      "{\"b\": {\"$binary\": {\"subType\": \"05\", \"base64\": \"Zm9v\"}}}",
-      -1,
-      &error);
+   r = bson_init_from_json (&b, "{\"b\": {\"$binary\": {\"subType\": \"05\", \"base64\": \"Zm9v\"}}}", -1, &error);
    ASSERT_OR_PRINT (r, error);
    BCON_EXTRACT (&b, "b", BCONE_BIN (subtype, binary, len));
    ASSERT_CMPINT ((int) subtype, ==, 5);
@@ -1156,24 +1088,18 @@ test_bson_json_read_binary (void)
    bson_destroy (&b);
 
    /* no base64 */
-   r = bson_init_from_json (
-      &b, "{\"b\": {\"$binary\": {\"subType\": \"5\"}}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"b\": {\"$binary\": {\"subType\": \"5\"}}}", -1, &error);
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Missing \"base64\" after \"subType\"");
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Missing \"base64\" after \"subType\"");
 
    memset (&error, 0, sizeof error);
 
    /* no subType */
-   r = bson_init_from_json (
-      &b, "{\"b\": {\"$binary\": {\"base64\": \"Zm9v\"}}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"b\": {\"$binary\": {\"base64\": \"Zm9v\"}}}", -1, &error);
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Missing \"subType\" after \"base64\"");
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Missing \"subType\" after \"base64\"");
 }
 
 
@@ -1274,17 +1200,11 @@ test_bson_json_read_empty (void)
 
    bson_ptr = bson_new_from_json ((uint8_t *) "", 0, &error);
    BSON_ASSERT (!bson_ptr);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Empty JSON string");
+   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Empty JSON string");
 
    memset (&error, 0, sizeof error);
    bson_init_from_json (&bson, "", 0, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Empty JSON string");
+   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Empty JSON string");
 }
 
 static void
@@ -1296,17 +1216,15 @@ test_bson_json_read_missing_complex (void)
       }\n\
    }";
 
-   test_bson_json_error (
-      json, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM);
+   test_bson_json_error (json, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM);
 }
 
 static void
 test_bson_json_read_invalid_binary (void)
 {
    bson_error_t error;
-   const char *json =
-      "{ "
-      " \"bin\" : { \"$binary\" : \"invalid\", \"$type\" : \"80\" } }";
+   const char *json = "{ "
+                      " \"bin\" : { \"$binary\" : \"invalid\", \"$type\" : \"80\" } }";
    bson_t b;
    bool r;
 
@@ -1322,8 +1240,7 @@ test_bson_json_read_invalid_json (void)
    }";
    bson_t *b;
 
-   test_bson_json_error (
-      json, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS);
+   test_bson_json_error (json, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS);
 
    b = bson_new_from_json ((uint8_t *) "1", 1, NULL);
    BSON_ASSERT (!b);
@@ -1359,8 +1276,7 @@ test_bson_json_read_bad_cb (void)
    int r;
    bson_t bson = BSON_INITIALIZER;
 
-   reader = bson_json_reader_new (
-      NULL, &test_bson_json_read_bad_cb_helper, NULL, false, 0);
+   reader = bson_json_reader_new (NULL, &test_bson_json_read_bad_cb_helper, NULL, false, 0);
 
    r = bson_json_reader_read (reader, &bson, &error);
 
@@ -1389,8 +1305,7 @@ test_bson_json_read_invalid (void)
    int r;
    bson_t bson = BSON_INITIALIZER;
 
-   reader = bson_json_reader_new (
-      NULL, test_bson_json_read_invalid_helper, NULL, false, 0);
+   reader = bson_json_reader_new (NULL, test_bson_json_read_invalid_helper, NULL, false, 0);
 
    r = bson_json_reader_read (reader, &bson, &error);
 
@@ -1410,8 +1325,7 @@ test_bson_json_number_long (void)
    bson_t b;
    bool r;
 
-   r = bson_init_from_json (
-      &b, "{\"key\": {\"$numberLong\": \"4611686018427387904\"}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"key\": {\"$numberLong\": \"4611686018427387904\"}}", -1, &error);
    if (!r)
       fprintf (stderr, "%s\n", error.message);
    BSON_ASSERT (r);
@@ -1421,14 +1335,11 @@ test_bson_json_number_long (void)
    BSON_ASSERT (bson_iter_int64 (&iter) == 4611686018427387904LL);
    bson_destroy (&b);
 
-   BSON_ASSERT (!bson_init_from_json (
-      &b, "{\"key\": {\"$numberLong\": \"461168601abcd\"}}", -1, &error));
-   BSON_ASSERT (!bson_init_from_json (
-      &b, "{\"key\": {\"$numberLong\": \"461168601abcd\"}}", -1, &error));
+   BSON_ASSERT (!bson_init_from_json (&b, "{\"key\": {\"$numberLong\": \"461168601abcd\"}}", -1, &error));
+   BSON_ASSERT (!bson_init_from_json (&b, "{\"key\": {\"$numberLong\": \"461168601abcd\"}}", -1, &error));
 
    /* INT64_MAX */
-   r = bson_init_from_json (
-      &b, "{\"x\": {\"$numberLong\": \"9223372036854775807\"}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"x\": {\"$numberLong\": \"9223372036854775807\"}}", -1, &error);
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
@@ -1436,8 +1347,7 @@ test_bson_json_number_long (void)
    bson_destroy (&b);
 
    /* INT64_MIN */
-   r = bson_init_from_json (
-      &b, "{\"x\": {\"$numberLong\": \"-9223372036854775808\"}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"x\": {\"$numberLong\": \"-9223372036854775808\"}}", -1, &error);
    ASSERT_OR_PRINT (r, error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
@@ -1446,37 +1356,28 @@ test_bson_json_number_long (void)
    bson_destroy (&b);
 
    /* INT64_MAX + 1 */
-   r = bson_init_from_json (
-      &b, "{\"x\": {\"$numberLong\": \"9223372036854775808\"}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"x\": {\"$numberLong\": \"9223372036854775808\"}}", -1, &error);
 
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Number \"9223372036854775808\" is out of range");
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Number \"9223372036854775808\" is out of range");
 
    memset (&error, 0, sizeof error);
 
    /* INT64_MIN - 1 */
-   r = bson_init_from_json (
-      &b, "{\"x\": {\"$numberLong\": \"-9223372036854775809\"}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"x\": {\"$numberLong\": \"-9223372036854775809\"}}", -1, &error);
 
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Number \"-9223372036854775809\" is out of range");
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Number \"-9223372036854775809\" is out of range");
 
    memset (&error, 0, sizeof error);
 
-   r = bson_init_from_json (
-      &b, "{\"x\": {\"$numberLong\": \"10000000000000000000\"}}", -1, &error);
+   r = bson_init_from_json (&b, "{\"x\": {\"$numberLong\": \"10000000000000000000\"}}", -1, &error);
 
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Number \"10000000000000000000\" is out of range");
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Number \"10000000000000000000\" is out of range");
 
    memset (&error, 0, sizeof error);
 
@@ -1484,10 +1385,8 @@ test_bson_json_number_long (void)
    r = bson_init_from_json (&b, "{\"x\": -10000000000000000000}", -1, &error);
 
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Number \"-10000000000000000000\" is out of range");
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Number \"-10000000000000000000\" is out of range");
 }
 
 static void
@@ -1524,26 +1423,21 @@ test_bson_json_code (void)
    bson_t *scope1 = BCON_NEW ("var", BCON_INT32 (1));
    bson_t *bson_code_w_scope = BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope1));
 
-   const char *json_code_w_scope_special =
-      "{\"a\": {\"$code\": \"b\", "
-      "         \"$scope\": {\"var2\": {\"$numberLong\": \"2\"}}}}";
+   const char *json_code_w_scope_special = "{\"a\": {\"$code\": \"b\", "
+                                           "         \"$scope\": {\"var2\": {\"$numberLong\": \"2\"}}}}";
    bson_t *scope2 = BCON_NEW ("var2", BCON_INT64 (2));
-   bson_t *bson_code_w_scope_special =
-      BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope2));
+   bson_t *bson_code_w_scope_special = BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope2));
 
-   const char *json_2_codes_w_scope =
-      "{\"a\": {\"$code\": \"b\", "
-      "         \"$scope\": {\"var\": 1}},"
-      " \"c\": {\"$code\": \"d\", "
-      "         \"$scope\": {\"var2\": {\"$numberLong\": \"2\"}}}}";
-   bson_t *bson_2_codes_w_scope = BCON_NEW (
-      "a", BCON_CODEWSCOPE ("b", scope1), "c", BCON_CODEWSCOPE ("d", scope2));
+   const char *json_2_codes_w_scope = "{\"a\": {\"$code\": \"b\", "
+                                      "         \"$scope\": {\"var\": 1}},"
+                                      " \"c\": {\"$code\": \"d\", "
+                                      "         \"$scope\": {\"var2\": {\"$numberLong\": \"2\"}}}}";
+   bson_t *bson_2_codes_w_scope = BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope1), "c", BCON_CODEWSCOPE ("d", scope2));
 
-   const char *json_code_then_regular =
-      "{\"a\": {\"$code\": \"b\", "
-      "         \"$scope\": {\"var\": 1}},"
-      " \"c\": {\"key1\": \"value\", "
-      "         \"subdoc\": {\"key2\": \"value2\"}}}";
+   const char *json_code_then_regular = "{\"a\": {\"$code\": \"b\", "
+                                        "         \"$scope\": {\"var\": 1}},"
+                                        " \"c\": {\"key1\": \"value\", "
+                                        "         \"subdoc\": {\"key2\": \"value2\"}}}";
 
    bson_t *bson_code_then_regular = BCON_NEW ("a",
                                               BCON_CODEWSCOPE ("b", scope1),
@@ -1560,20 +1454,17 @@ test_bson_json_code (void)
 
    const char *json_code_w_scope_reverse = "{\"a\": {\"$scope\": {\"var\": 1}, "
                                            "         \"$code\": \"b\"}}";
-   bson_t *bson_code_w_scope_reverse =
-      BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope1));
+   bson_t *bson_code_w_scope_reverse = BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope1));
 
    const char *json_code_w_scope_nest = "{\"a\": {\"$code\": \"b\", "
                                         "         \"$scope\": {\"var\": {}}}}";
    bson_t *scope3 = BCON_NEW ("var", "{", "}");
-   bson_t *bson_code_w_scope_nest =
-      BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope3));
+   bson_t *bson_code_w_scope_nest = BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope3));
 
-   const char *json_code_w_scope_nest_deep =
-      "{\"a\": {\"$code\": \"b\", "
-      "         \"$scope\": {\"arr\": [1, 2], \"d\": {},"
-      "                      \"n\": {\"$numberLong\": \"1\"},"
-      "                      \"d2\": {\"x\": 1, \"d3\": {\"z\": 3}}}}}";
+   const char *json_code_w_scope_nest_deep = "{\"a\": {\"$code\": \"b\", "
+                                             "         \"$scope\": {\"arr\": [1, 2], \"d\": {},"
+                                             "                      \"n\": {\"$numberLong\": \"1\"},"
+                                             "                      \"d2\": {\"x\": 1, \"d3\": {\"z\": 3}}}}}";
 
    bson_t *scope_deep = BCON_NEW ("arr",
                                   "[",
@@ -1596,22 +1487,18 @@ test_bson_json_code (void)
                                   "}",
                                   "}");
 
-   bson_t *bson_code_w_scope_nest_deep =
-      BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope_deep));
+   bson_t *bson_code_w_scope_nest_deep = BCON_NEW ("a", BCON_CODEWSCOPE ("b", scope_deep));
 
    const char *json_code_w_empty_scope = "{\"a\": {\"$code\": \"b\", "
                                          "         \"$scope\": {}}}";
    bson_t *empty = bson_new ();
-   bson_t *bson_code_w_empty_scope =
-      BCON_NEW ("a", BCON_CODEWSCOPE ("b", empty));
+   bson_t *bson_code_w_empty_scope = BCON_NEW ("a", BCON_CODEWSCOPE ("b", empty));
 
-   const char *json_code_in_scope =
-      "{\"a\": {\"$code\": \"b\", "
-      "         \"$scope\": {\"x\": {\"$code\": \"c\"}}}}";
+   const char *json_code_in_scope = "{\"a\": {\"$code\": \"b\", "
+                                    "         \"$scope\": {\"x\": {\"$code\": \"c\"}}}}";
 
    bson_t *code_in_scope = BCON_NEW ("x", "{", "$code", BCON_UTF8 ("c"), "}");
-   bson_t *bson_code_in_scope =
-      BCON_NEW ("a", BCON_CODEWSCOPE ("b", code_in_scope));
+   bson_t *bson_code_in_scope = BCON_NEW ("a", BCON_CODEWSCOPE ("b", code_in_scope));
 
    typedef struct {
       const char *json;
@@ -1678,25 +1565,18 @@ test_bson_json_code_errors (void)
       {"{\"a\": {\"$scope\": {}}", "Missing $code after $scope"},
       {"{\"a\": {\"$scope\": {}, \"$x\": 1}", "Invalid key \"$x\""},
       {"{\"a\": {\"$scope\": {\"a\": 1}}", "Missing $code after $scope"},
-      {"{\"a\": {\"$code\": \"\", \"$scope\": \"a\"}}",
-       "Invalid read of \"a\""},
-      {"{\"a\": {\"$code\": \"\", \"$scope\": 1}}",
-       "Unexpected integer 1 in state \"IN_BSON_TYPE_SCOPE_STARTMAP\""},
+      {"{\"a\": {\"$code\": \"\", \"$scope\": \"a\"}}", "Invalid read of \"a\""},
+      {"{\"a\": {\"$code\": \"\", \"$scope\": 1}}", "Unexpected integer 1 in state \"IN_BSON_TYPE_SCOPE_STARTMAP\""},
       {"{\"a\": {\"$code\": \"\", \"$scope\": []}}", "Invalid read of \"[\""},
-      {"{\"a\": {\"$code\": \"\", \"x\": 1}}",
-       "Invalid key \"x\".  Looking for values for type \"code\""},
+      {"{\"a\": {\"$code\": \"\", \"x\": 1}}", "Invalid key \"x\".  Looking for values for type \"code\""},
       {"{\"a\": {\"$code\": \"\", \"$x\": 1}}", "Invalid key \"$x\""},
-      {"{\"a\": {\"$code\": \"\", \"$numberLong\": \"1\"}}",
-       "Invalid key \"$numberLong\""},
+      {"{\"a\": {\"$code\": \"\", \"$numberLong\": \"1\"}}", "Invalid key \"$numberLong\""},
    };
 
    for (i = 0; i < sizeof (tests) / (sizeof (code_error_test_t)); i++) {
       r = bson_init_from_json (&b, tests[i].json, -1, &error);
       BSON_ASSERT (!r);
-      ASSERT_ERROR_CONTAINS (error,
-                             BSON_ERROR_JSON,
-                             BSON_JSON_ERROR_READ_INVALID_PARAM,
-                             tests[i].error_message);
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, tests[i].error_message);
    }
 }
 
@@ -1719,102 +1599,63 @@ test_bson_json_dbref (void)
 {
    bson_error_t error;
 
-   const char *json_with_objectid_id =
-      "{ \"key\": {"
-      "\"$ref\": \"collection\","
-      "\"$id\": {\"$oid\": \"000000000000000000000000\"}}}";
+   const char *json_with_objectid_id = "{ \"key\": {"
+                                       "\"$ref\": \"collection\","
+                                       "\"$id\": {\"$oid\": \"000000000000000000000000\"}}}";
 
-   bson_t *bson_with_objectid_id = BCON_NEW ("key",
-                                             "{",
-                                             "$ref",
-                                             BCON_UTF8 ("collection"),
-                                             "$id",
-                                             BCON_OID (oid_zero ()),
-                                             "}");
+   bson_t *bson_with_objectid_id =
+      BCON_NEW ("key", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_OID (oid_zero ()), "}");
 
    const char *json_with_int_id = "{ \"key\": {"
                                   "\"$ref\": \"collection\","
                                   "\"$id\": 1}}";
 
-   bson_t *bson_with_int_id = BCON_NEW (
-      "key", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_INT32 (1), "}");
+   bson_t *bson_with_int_id = BCON_NEW ("key", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_INT32 (1), "}");
 
    const char *json_with_subdoc_id = "{ \"key\": {"
                                      "\"$ref\": \"collection\","
                                      "\"$id\": {\"a\": 1}}}";
 
-   bson_t *bson_with_subdoc_id = BCON_NEW ("key",
-                                           "{",
-                                           "$ref",
-                                           BCON_UTF8 ("collection"),
-                                           "$id",
-                                           "{",
-                                           "a",
-                                           BCON_INT32 (1),
-                                           "}",
-                                           "}");
+   bson_t *bson_with_subdoc_id =
+      BCON_NEW ("key", "{", "$ref", BCON_UTF8 ("collection"), "$id", "{", "a", BCON_INT32 (1), "}", "}");
 
    const char *json_with_metadata = "{ \"key\": {"
                                     "\"$ref\": \"collection\","
                                     "\"$id\": 1,"
                                     "\"meta\": true}}";
 
-   bson_t *bson_with_metadata = BCON_NEW ("key",
-                                          "{",
-                                          "$ref",
-                                          BCON_UTF8 ("collection"),
-                                          "$id",
-                                          BCON_INT32 (1),
-                                          "meta",
-                                          BCON_BOOL (true),
-                                          "}");
+   bson_t *bson_with_metadata =
+      BCON_NEW ("key", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_INT32 (1), "meta", BCON_BOOL (true), "}");
 
    const char *json_with_db = "{ \"key\": {"
                               "\"$ref\": \"collection\","
                               "\"$id\": 1,"
                               "\"$db\": \"database\"}}";
 
-   bson_t *bson_with_db = BCON_NEW ("key",
-                                    "{",
-                                    "$ref",
-                                    BCON_UTF8 ("collection"),
-                                    "$id",
-                                    BCON_INT32 (1),
-                                    "$db",
-                                    BCON_UTF8 ("database"),
-                                    "}");
+   bson_t *bson_with_db = BCON_NEW (
+      "key", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_INT32 (1), "$db", BCON_UTF8 ("database"), "}");
 
    /* Note: the following examples are not valid DBRefs but are intended to test
     * that the Extended JSON parser leaves such documents as-is. */
    const char *json_with_missing_ref = "{\"key\": {\"$id\": 1}}";
 
-   bson_t *bson_with_missing_ref =
-      BCON_NEW ("key", "{", "$id", BCON_INT32 (1), "}");
+   bson_t *bson_with_missing_ref = BCON_NEW ("key", "{", "$id", BCON_INT32 (1), "}");
 
    const char *json_with_missing_id = "{\"key\": {\"$ref\": \"collection\"}}";
 
-   bson_t *bson_with_missing_id =
-      BCON_NEW ("key", "{", "$ref", BCON_UTF8 ("collection"), "}");
+   bson_t *bson_with_missing_id = BCON_NEW ("key", "{", "$ref", BCON_UTF8 ("collection"), "}");
 
    const char *json_with_int_ref = "{\"key\": {\"$ref\": 1, \"$id\": 1}}";
 
-   bson_t *bson_with_int_ref =
-      BCON_NEW ("key", "{", "$ref", BCON_INT32 (1), "$id", BCON_INT32 (1), "}");
+   bson_t *bson_with_int_ref = BCON_NEW ("key", "{", "$ref", BCON_INT32 (1), "$id", BCON_INT32 (1), "}");
 
    const char *json_with_int_db = "{ \"key\": {"
                                   "\"$ref\": \"collection\","
                                   "\"$id\": 1,"
                                   "\"$db\": 1}}";
 
-   bson_t *bson_with_int_db = BCON_NEW ("key",
-                                        "{",
-                                        "$ref",
-                                        BCON_UTF8 ("collection"),
-                                        "$id",
-                                        BCON_INT32 (1),
-                                        "$db",
-                                        BCON_INT32 (1),
-                                        "}");
+   bson_t *bson_with_int_db =
+      BCON_NEW ("key", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_INT32 (1), "$db", BCON_INT32 (1), "}");
 
    bson_t b;
    bool r;
@@ -1946,10 +1787,7 @@ test_bson_json_uescape_bad (void)
 
    r = bson_init_from_json (&b, "{ \"bad\": \"\\u1\"}", -1, &error);
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_CORRUPT_JS,
-                          "UESCAPE_TOOSHORT");
+   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "UESCAPE_TOOSHORT");
 }
 
 
@@ -1961,8 +1799,7 @@ test_bson_json_int32 (void)
    bson_error_t error;
 
    /* INT32_MAX */
-   ASSERT_OR_PRINT (
-      bson_init_from_json (&b, "{ \"x\": 2147483647 }", -1, &error), error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 2147483647 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
@@ -1970,8 +1807,7 @@ test_bson_json_int32 (void)
    bson_destroy (&b);
 
    /* INT32_MIN */
-   ASSERT_OR_PRINT (
-      bson_init_from_json (&b, "{ \"x\": -2147483648 }", -1, &error), error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": -2147483648 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
@@ -1979,8 +1815,7 @@ test_bson_json_int32 (void)
    bson_destroy (&b);
 
    /* INT32_MAX + 1 */
-   ASSERT_OR_PRINT (
-      bson_init_from_json (&b, "{ \"x\": 2147483648 }", -1, &error), error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 2147483648 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
@@ -1988,8 +1823,7 @@ test_bson_json_int32 (void)
    bson_destroy (&b);
 
    /* INT32_MIN - 1 */
-   ASSERT_OR_PRINT (
-      bson_init_from_json (&b, "{ \"x\": -2147483649 }", -1, &error), error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": -2147483649 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
@@ -2006,20 +1840,15 @@ test_bson_json_int64 (void)
    bson_error_t error;
 
    /* INT64_MAX */
-   ASSERT_OR_PRINT (
-      bson_init_from_json (&b, "{ \"x\": 9223372036854775807 }", -1, &error),
-      error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 9223372036854775807 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
-   ASSERT_CMPINT64 (
-      bson_iter_int64 (&iter), ==, (int64_t) 9223372036854775807LL);
+   ASSERT_CMPINT64 (bson_iter_int64 (&iter), ==, (int64_t) 9223372036854775807LL);
    bson_destroy (&b);
 
    /* INT64_MIN */
-   ASSERT_OR_PRINT (
-      bson_init_from_json (&b, "{ \"x\": -9223372036854775808 }", -1, &error),
-      error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": -9223372036854775808 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
@@ -2027,42 +1856,30 @@ test_bson_json_int64 (void)
    bson_destroy (&b);
 
    /* INT64_MAX + 1 */
-   BSON_ASSERT (
-      !bson_init_from_json (&b, "{ \"x\": 9223372036854775808 }", -1, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Number \"9223372036854775808\" is out of range");
+   BSON_ASSERT (!bson_init_from_json (&b, "{ \"x\": 9223372036854775808 }", -1, &error));
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Number \"9223372036854775808\" is out of range");
 
    memset (&error, 0, sizeof error);
 
    /* INT64_MIN - 1 */
-   BSON_ASSERT (
-      !bson_init_from_json (&b, "{ \"x\": -9223372036854775809 }", -1, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Number \"-9223372036854775809\" is out of range");
+   BSON_ASSERT (!bson_init_from_json (&b, "{ \"x\": -9223372036854775809 }", -1, &error));
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Number \"-9223372036854775809\" is out of range");
 
    memset (&error, 0, sizeof error);
 
-   BSON_ASSERT (
-      !bson_init_from_json (&b, "{ \"x\": 10000000000000000000 }", -1, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Number \"10000000000000000000\" is out of range");
+   BSON_ASSERT (!bson_init_from_json (&b, "{ \"x\": 10000000000000000000 }", -1, &error));
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Number \"10000000000000000000\" is out of range");
 
    memset (&error, 0, sizeof error);
 
    /* INT64_MIN - 2 */
-   BSON_ASSERT (!bson_init_from_json (
-      &b, "{ \"x\": -10000000000000000000 }", -1, &error));
+   BSON_ASSERT (!bson_init_from_json (&b, "{ \"x\": -10000000000000000000 }", -1, &error));
 
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Number \"-10000000000000000000\" is out of range");
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "Number \"-10000000000000000000\" is out of range");
 }
 
 
@@ -2073,40 +1890,35 @@ test_bson_json_double (void)
    bson_error_t error;
    bson_iter_t iter;
 
-   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 1 }", -1, &error),
-                    error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 1 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
    ASSERT_CMPINT32 (bson_iter_int32 (&iter), ==, (int32_t) 1);
    bson_destroy (&b);
 
-   ASSERT_OR_PRINT (
-      bson_init_from_json (&b, "{ \"x\": 4294967296 }", -1, &error), error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 4294967296 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
    ASSERT_CMPINT64 (bson_iter_int64 (&iter), ==, (int64_t) 4294967296);
    bson_destroy (&b);
 
-   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 1.0 }", -1, &error),
-                    error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 1.0 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_DOUBLE (&iter));
    ASSERT_CMPDOUBLE (bson_iter_double (&iter), ==, 1.0);
    bson_destroy (&b);
 
-   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 0.0 }", -1, &error),
-                    error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": 0.0 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_DOUBLE (&iter));
    ASSERT_CMPDOUBLE (bson_iter_double (&iter), ==, 0.0);
    bson_destroy (&b);
 
-   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": -0.0 }", -1, &error),
-                    error);
+   ASSERT_OR_PRINT (bson_init_from_json (&b, "{ \"x\": -0.0 }", -1, &error), error);
 
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_DOUBLE (&iter));
@@ -2133,10 +1945,7 @@ test_bson_json_double_overflow (void)
    for (p = nums; *p; p++) {
       j = bson_strdup_printf ("{ \"d\" : %s }", *p);
       BSON_ASSERT (!bson_init_from_json (&b, j, -1, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             BSON_ERROR_JSON,
-                             BSON_JSON_ERROR_READ_INVALID_PARAM,
-                             "out of range");
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "out of range");
 
       bson_free (j);
       memset (&error, 0, sizeof error);
@@ -2144,10 +1953,7 @@ test_bson_json_double_overflow (void)
       /* same test with canonical Extended JSON */
       j = bson_strdup_printf ("{ \"d\" : { \"$numberDouble\" : \"%s\" } }", *p);
       BSON_ASSERT (!bson_init_from_json (&b, j, -1, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             BSON_ERROR_JSON,
-                             BSON_JSON_ERROR_READ_INVALID_PARAM,
-                             "out of range");
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, "out of range");
 
       bson_free (j);
    }
@@ -2190,19 +1996,13 @@ test_bson_json_nan (void)
 
    for (j = bad; *j; j++) {
       BSON_ASSERT (!bson_init_from_json (&b, *j, -1, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             BSON_ERROR_JSON,
-                             BSON_JSON_ERROR_READ_CORRUPT_JS,
-                             "Got parse error at");
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "Got parse error at");
       memset (&error, 0, sizeof error);
    }
 
    for (j = partial; *j; j++) {
       BSON_ASSERT (!bson_init_from_json (&b, *j, -1, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             BSON_ERROR_JSON,
-                             BSON_JSON_ERROR_READ_CORRUPT_JS,
-                             "Incomplete JSON");
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "Incomplete JSON");
       memset (&error, 0, sizeof error);
    }
 }
@@ -2215,15 +2015,9 @@ test_bson_json_infinity (void)
    double d;
 
    /* should parse any capitalization of Infinity */
-   const char *infs[] = {"{ \"d\": Infinity }",
-                         "{ \"d\": infinity }",
-                         "{ \"d\": inFINIty }",
-                         NULL};
+   const char *infs[] = {"{ \"d\": Infinity }", "{ \"d\": infinity }", "{ \"d\": inFINIty }", NULL};
 
-   const char *negs[] = {"{ \"d\": -Infinity }",
-                         "{ \"d\": -infinity }",
-                         "{ \"d\": -inFINIty }",
-                         NULL};
+   const char *negs[] = {"{ \"d\": -Infinity }", "{ \"d\": -infinity }", "{ \"d\": -inFINIty }", NULL};
 
    const char *bad[] = {"{ \"d\": Infinityy }",
                         "{ \"d\": Infinit }",
@@ -2257,19 +2051,13 @@ test_bson_json_infinity (void)
 
    for (j = bad; *j; j++) {
       BSON_ASSERT (!bson_init_from_json (&b, *j, -1, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             BSON_ERROR_JSON,
-                             BSON_JSON_ERROR_READ_CORRUPT_JS,
-                             "Got parse error at");
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "Got parse error at");
       memset (&error, 0, sizeof error);
    }
 
    for (j = partial; *j; j++) {
       BSON_ASSERT (!bson_init_from_json (&b, *j, -1, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             BSON_ERROR_JSON,
-                             BSON_JSON_ERROR_READ_CORRUPT_JS,
-                             "Incomplete JSON");
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "Incomplete JSON");
       memset (&error, 0, sizeof error);
    }
 }
@@ -2480,8 +2268,7 @@ test_bson_json_date_error (const char *json, const char *msg)
       fprintf (stderr, "parsing %s should fail\n", json);
    }
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (
-      error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, msg);
+   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, msg);
 }
 
 static void
@@ -2490,71 +2277,39 @@ test_bson_json_date (void)
    /* to make a timestamp, "python3 -m pip install iso8601" and in Python 3:
     * iso8601.parse_date("2016-12-13T12:34:56.123Z").timestamp() * 1000
     */
-   test_bson_json_date_check (
-      "{ \"dt\" : { \"$date\" : \"2016-12-13T12:34:56.123Z\" } }",
-      1481632496123);
-   test_bson_json_date_check (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T00:00:00.000Z\" } }", 0);
-   test_bson_json_date_check (
-      "{ \"dt\" : { \"$date\" : \"1969-12-31T16:00:00.000-0800\" } }", 0);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : \"2016-12-13T12:34:56.123Z\" } }", 1481632496123);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : \"1970-01-01T00:00:00.000Z\" } }", 0);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : \"1969-12-31T16:00:00.000-0800\" } }", 0);
 
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+01:00\" } }",
-      "Could not parse");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:30:\" } }",
-      "reached end of date while looking for seconds");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:+01:00\" } }",
-      "seconds is required");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:30:00.\" } }",
-      "reached end of date while looking for milliseconds");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.+01:00\" } }",
-      "milliseconds is required");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"foo-01-01T00:00:00.000Z\" } }",
-      "year must be an integer");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-foo-01T00:00:00.000Z\" } }",
-      "month must be an integer");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-fooT00:00:00.000Z\" } }",
-      "day must be an integer");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01Tfoo:00:00.000Z\" } }",
-      "hour must be an integer");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T00:foo:00.000Z\" } }",
-      "minute must be an integer");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T00:00:foo.000Z\" } }",
-      "seconds must be an integer");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000\" } }",
-      "timezone is required");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000X\" } }",
-      "timezone is required");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+1\" } }",
-      "could not parse timezone");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+xx00\" } }",
-      "could not parse timezone");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+2400\" } }",
-      "timezone hour must be at most 23");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000-2400\" } }",
-      "timezone hour must be at most 23");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+0060\" } }",
-      "timezone minute must be at most 59");
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000-0060\" } }",
-      "timezone minute must be at most 59");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+01:00\" } }", "Could not parse");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:30:\" } }",
+                              "reached end of date while looking for seconds");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:+01:00\" } }", "seconds is required");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:30:00.\" } }",
+                              "reached end of date while looking for milliseconds");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.+01:00\" } }",
+                              "milliseconds is required");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"foo-01-01T00:00:00.000Z\" } }", "year must be an integer");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-foo-01T00:00:00.000Z\" } }", "month must be an integer");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-fooT00:00:00.000Z\" } }", "day must be an integer");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01Tfoo:00:00.000Z\" } }", "hour must be an integer");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T00:foo:00.000Z\" } }",
+                              "minute must be an integer");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T00:00:foo.000Z\" } }",
+                              "seconds must be an integer");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000\" } }", "timezone is required");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000X\" } }", "timezone is required");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+1\" } }", "could not parse timezone");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+xx00\" } }",
+                              "could not parse timezone");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+2400\" } }",
+                              "timezone hour must be at most 23");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000-2400\" } }",
+                              "timezone hour must be at most 23");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000+0060\" } }",
+                              "timezone minute must be at most 59");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : \"1970-01-01T01:00:00.000-0060\" } }",
+                              "timezone minute must be at most 59");
 }
 
 
@@ -2562,50 +2317,38 @@ static void
 test_bson_json_date_legacy (void)
 {
    test_bson_json_date_check ("{ \"dt\" : { \"$date\" : 0 } }", 0);
-   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : 1356351330500 } }",
-                              1356351330500);
-   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : -62135593139000 } }",
-                              -62135593139000);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : 1356351330500 } }", 1356351330500);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : -62135593139000 } }", -62135593139000);
 
    /* INT64_MAX */
-   test_bson_json_date_check (
-      "{ \"dt\" : { \"$date\" : 9223372036854775807 } }", INT64_MAX);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : 9223372036854775807 } }", INT64_MAX);
 
    /* INT64_MIN */
-   test_bson_json_date_check (
-      "{ \"dt\" : { \"$date\" : -9223372036854775808 } }", INT64_MIN);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : -9223372036854775808 } }", INT64_MIN);
 
    /* INT64_MAX + 1 */
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : 9223372036854775808 } }",
-      "Number \"9223372036854775808\" is out of range");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : 9223372036854775808 } }",
+                              "Number \"9223372036854775808\" is out of range");
 
    /* INT64_MIN - 1 */
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : -9223372036854775809 } }",
-      "Number \"-9223372036854775809\" is out of range");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : -9223372036854775809 } }",
+                              "Number \"-9223372036854775809\" is out of range");
 
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : 10000000000000000000 } }",
-      "Number \"10000000000000000000\" is out of range");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : 10000000000000000000 } }",
+                              "Number \"10000000000000000000\" is out of range");
 
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : -10000000000000000000 } }",
-      "Number \"-10000000000000000000\" is out of range");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : -10000000000000000000 } }",
+                              "Number \"-10000000000000000000\" is out of range");
 }
 
 
 static void
 test_bson_json_date_numberlong (void)
 {
-   test_bson_json_date_check (
-      "{ \"dt\" : { \"$date\" : {\"$numberLong\": \"0\" } } }", 0);
-   test_bson_json_date_check (
-      "{ \"dt\" : { \"$date\" : {\"$numberLong\": \"1356351330500\" } } }",
-      1356351330500);
-   test_bson_json_date_check (
-      "{ \"dt\" : { \"$date\" : { \"$numberLong\" : \"-62135593139000\" } } }",
-      -62135593139000);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : {\"$numberLong\": \"0\" } } }", 0);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : {\"$numberLong\": \"1356351330500\" } } }", 1356351330500);
+   test_bson_json_date_check ("{ \"dt\" : { \"$date\" : { \"$numberLong\" : \"-62135593139000\" } } }",
+                              -62135593139000);
 
    /* INT64_MAX */
    test_bson_json_date_check ("{ \"dt\" : { \"$date\" : { \"$numberLong\" "
@@ -2623,20 +2366,17 @@ test_bson_json_date_numberlong (void)
                               "Number \"9223372036854775808\" is out of range");
 
    /* INT64_MIN - 1 */
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : { \"$numberLong\" "
-      ": \"-9223372036854775809\" } } }",
-      "Number \"-9223372036854775809\" is out of range");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : { \"$numberLong\" "
+                              ": \"-9223372036854775809\" } } }",
+                              "Number \"-9223372036854775809\" is out of range");
 
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : { \"$numberLong\" "
-      ": \"10000000000000000000\" } } }",
-      "Number \"10000000000000000000\" is out of range");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : { \"$numberLong\" "
+                              ": \"10000000000000000000\" } } }",
+                              "Number \"10000000000000000000\" is out of range");
 
-   test_bson_json_date_error (
-      "{ \"dt\" : { \"$date\" : { \"$numberLong\" "
-      ": \"-10000000000000000000\" } } }",
-      "Number \"-10000000000000000000\" is out of range");
+   test_bson_json_date_error ("{ \"dt\" : { \"$date\" : { \"$numberLong\" "
+                              ": \"-10000000000000000000\" } } }",
+                              "Number \"-10000000000000000000\" is out of range");
 }
 
 
@@ -2649,14 +2389,9 @@ test_bson_json_timestamp (void)
 
    bson_init (&compare);
 
-   BSON_APPEND_TIMESTAMP (
-      &compare, "ts", (uint32_t) 1486785977, (uint32_t) 1234);
+   BSON_APPEND_TIMESTAMP (&compare, "ts", (uint32_t) 1486785977, (uint32_t) 1234);
 
-   r = bson_init_from_json (
-      &b,
-      "{\"ts\": {\"$timestamp\": {\"t\": 1486785977, \"i\": 1234}}}",
-      -1,
-      &error);
+   r = bson_init_from_json (&b, "{\"ts\": {\"$timestamp\": {\"t\": 1486785977, \"i\": 1234}}}", -1, &error);
 
    if (!r) {
       fprintf (stderr, "%s\n", error.message);
@@ -2725,16 +2460,12 @@ test_bson_json_errors (void)
 {
    typedef const char *test_bson_json_error_t[2];
    test_bson_json_error_t tests[] = {
-      {"{\"x\": {\"$numberLong\": 1}}",
-       "Invalid state for integer read: INT64"},
+      {"{\"x\": {\"$numberLong\": 1}}", "Invalid state for integer read: INT64"},
       {"{\"x\": {\"$binary\": 1}}", "Unexpected integer 1 in type \"binary\""},
-      {"{\"x\": {\"$numberInt\": true}}",
-       "Invalid read of boolean in state IN_BSON_TYPE"},
-      {"{\"x\": {\"$dbPointer\": true}}",
-       "Invalid read of boolean in state IN_BSON_TYPE_DBPOINTER_STARTMAP"},
+      {"{\"x\": {\"$numberInt\": true}}", "Invalid read of boolean in state IN_BSON_TYPE"},
+      {"{\"x\": {\"$dbPointer\": true}}", "Invalid read of boolean in state IN_BSON_TYPE_DBPOINTER_STARTMAP"},
       {"[{\"$code\": {}}]", "Unexpected nested object value for \"$code\" key"},
-      {"{\"x\": {\"$numberInt\": \"8589934592\"}}",
-       "Invalid input string \"8589934592\", looking for INT32"},
+      {"{\"x\": {\"$numberInt\": \"8589934592\"}}", "Invalid input string \"8589934592\", looking for INT32"},
       {0},
    };
 
@@ -2743,8 +2474,7 @@ test_bson_json_errors (void)
 
    for (p = tests; *(p[0]); p++) {
       BSON_ASSERT (!bson_new_from_json ((const uint8_t *) (*p)[0], -1, &error));
-      ASSERT_ERROR_CONTAINS (
-         error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, (*p)[1]);
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, (*p)[1]);
    }
 }
 
@@ -2771,15 +2501,11 @@ test_bson_json_null_in_str (void)
    const char bad_json[] = "{\"a\":\"\0\"}";
    const char cdriver2305[] = "{\"\0";
    bson_error_t err;
-   ASSERT (!bson_new_from_json (
-      (const uint8_t *) bad_json, sizeof (bad_json) - 1, &err));
-   ASSERT_ERROR_CONTAINS (
-      err, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "Got parse error");
+   ASSERT (!bson_new_from_json ((const uint8_t *) bad_json, sizeof (bad_json) - 1, &err));
+   ASSERT_ERROR_CONTAINS (err, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "Got parse error");
    memset (&err, 0, sizeof err);
-   ASSERT (!bson_new_from_json (
-      (const uint8_t *) cdriver2305, sizeof (cdriver2305) - 1, &err));
-   ASSERT_ERROR_CONTAINS (
-      err, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "Got parse error");
+   ASSERT (!bson_new_from_json ((const uint8_t *) cdriver2305, sizeof (cdriver2305) - 1, &err));
+   ASSERT_ERROR_CONTAINS (err, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "Got parse error");
 }
 
 static char *
@@ -2807,8 +2533,7 @@ _test_json_produces_multiple (const char *json_in, int err_expected, ...)
    int ret;
    va_list ap;
    char *json = _single_to_double (json_in);
-   bson_json_reader_t *reader =
-      bson_json_data_reader_new (false /* ignored */, 512 /* buffer size */);
+   bson_json_reader_t *reader = bson_json_data_reader_new (false /* ignored */, 512 /* buffer size */);
 
    va_start (ap, err_expected);
 
@@ -2822,8 +2547,7 @@ _test_json_produces_multiple (const char *json_in, int err_expected, ...)
       if (bson_compare (&bson_in, bson_expected) != 0) {
          char *expect = bson_as_json (bson_expected, NULL);
          char *in = bson_as_json (&bson_in, NULL);
-         fprintf (
-            stderr, "Got %s, but expected %s for input %s\n", expect, in, json);
+         fprintf (stderr, "Got %s, but expected %s for input %s\n", expect, in, json);
          bson_free (expect);
          bson_free (in);
          abort ();
@@ -2863,46 +2587,32 @@ test_bson_as_json_multi_object (void)
 
 
    /* Test the desired multiple document behavior */
-   TEST_JSON_PRODUCES_MULTIPLE ("{'a': 1} {'b': 1}",
-                                0,
-                                BCON_NEW ("a", BCON_INT32 (1)),
-                                BCON_NEW ("b", BCON_INT32 (1)));
+   TEST_JSON_PRODUCES_MULTIPLE ("{'a': 1} {'b': 1}", 0, BCON_NEW ("a", BCON_INT32 (1)), BCON_NEW ("b", BCON_INT32 (1)));
 
-   TEST_JSON_PRODUCES_MULTIPLE (
-      "{}{}{}", 0, bson_new (), bson_new (), bson_new ());
+   TEST_JSON_PRODUCES_MULTIPLE ("{}{}{}", 0, bson_new (), bson_new (), bson_new ());
 
    /* Test strange behavior we may consider changing */
 
    /* Combines both documents into one? */
-   TEST_JSON_PRODUCES_MULTIPLE (
-      "{'a': 1}, {'b': 1}",
-      0,
-      BCON_NEW ("a", BCON_INT32 (1), "b", BCON_INT32 (1)));
+   TEST_JSON_PRODUCES_MULTIPLE ("{'a': 1}, {'b': 1}", 0, BCON_NEW ("a", BCON_INT32 (1), "b", BCON_INT32 (1)));
 
-   TEST_JSON_PRODUCES_MULTIPLE (
-      "{},{'a': 1}", 0, BCON_NEW ("a", BCON_INT32 (1)));
+   TEST_JSON_PRODUCES_MULTIPLE ("{},{'a': 1}", 0, BCON_NEW ("a", BCON_INT32 (1)));
 
-   TEST_JSON_PRODUCES_MULTIPLE (
-      "{},{},{'a': 1}", 0, BCON_NEW ("a", BCON_INT32 (1)));
+   TEST_JSON_PRODUCES_MULTIPLE ("{},{},{'a': 1}", 0, BCON_NEW ("a", BCON_INT32 (1)));
 
-   TEST_JSON_PRODUCES_MULTIPLE (
-      "[],{'a': 1}", 0, BCON_NEW ("a", BCON_INT32 (1)));
+   TEST_JSON_PRODUCES_MULTIPLE ("[],{'a': 1}", 0, BCON_NEW ("a", BCON_INT32 (1)));
 
    /* We support a root level array */
    TEST_JSON_PRODUCES_MULTIPLE ("[]", 0, bson_new ());
 
-   TEST_JSON_PRODUCES_MULTIPLE (
-      "[{'x': 0}]", 0, BCON_NEW ("0", "{", "x", BCON_INT32 (0), "}"));
+   TEST_JSON_PRODUCES_MULTIPLE ("[{'x': 0}]", 0, BCON_NEW ("0", "{", "x", BCON_INT32 (0), "}"));
 
    /* Yet this fails */
    TEST_JSON_PRODUCES_MULTIPLE ("[],[{'a': 1}]", 1, NULL);
 }
 
 static void
-test_bson_as_json_with_opts (bson_t *bson,
-                             bson_json_mode_t mode,
-                             int max_len,
-                             const char *expected)
+test_bson_as_json_with_opts (bson_t *bson, bson_json_mode_t mode, int max_len, const char *expected)
 {
    bson_json_opts_t *opts = bson_json_opts_new (mode, max_len);
    size_t json_len;
@@ -2932,9 +2642,7 @@ truncate_string (const char *str, size_t len)
 }
 
 static void
-run_bson_as_json_with_opts_tests (bson_t *bson,
-                                  bson_json_mode_t mode,
-                                  const char *expected)
+run_bson_as_json_with_opts_tests (bson_t *bson, bson_json_mode_t mode, const char *expected)
 {
    size_t len = strlen (expected);
    char *truncated;
@@ -2965,12 +2673,8 @@ test_bson_as_json_with_opts_double (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_DOUBLE (b, "v", 1.0));
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$numberDouble\" : \"1.0\" } }");
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 1.0 }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$numberDouble\" : \"1.0\" } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 1.0 }");
 
    bson_destroy (b);
 }
@@ -2983,10 +2687,8 @@ test_bson_as_json_with_opts_utf8 (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_UTF8 (b, "v", "abcdef"));
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : \"abcdef\" }");
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : \"abcdef\" }");
 
    bson_destroy (b);
 }
@@ -3004,13 +2706,9 @@ test_bson_as_json_with_opts_document (void)
    BSON_ASSERT (BSON_APPEND_UTF8 (b, "w", "abcdef"));
 
    run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"v\" : \"abcdef\" }, \"w\" : \"abcdef\" }");
+      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"v\" : \"abcdef\" }, \"w\" : \"abcdef\" }");
    run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"v\" : \"abcdef\" }, \"w\" : \"abcdef\" }");
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"v\" : \"abcdef\" }, \"w\" : \"abcdef\" }");
 
    bson_destroy (b);
    bson_destroy (&nested);
@@ -3028,14 +2726,8 @@ test_bson_as_json_with_opts_array (void)
    BSON_ASSERT (bson_append_array_end (b, &nested));
    BSON_ASSERT (BSON_APPEND_UTF8 (b, "w", "abcdef"));
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : [ \"abcdef\" ], \"w\" : \"abcdef\" }");
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : [ \"abcdef\" ], \"w\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : [ \"abcdef\" ], \"w\" : \"abcdef\" }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : [ \"abcdef\" ], \"w\" : \"abcdef\" }");
 
    bson_destroy (b);
    bson_destroy (&nested);
@@ -3050,17 +2742,15 @@ test_bson_as_json_with_opts_binary (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_BINARY (b, "v", 0, data, sizeof data));
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$binary\" : { \"base64\" : "
-      "\"AQIDBA==\", \"subType\" : \"00\" } } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_CANONICAL,
+                                     "{ \"v\" : { \"$binary\" : { \"base64\" : "
+                                     "\"AQIDBA==\", \"subType\" : \"00\" } } }");
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"$binary\" : { \"base64\" : "
-      "\"AQIDBA==\", \"subType\" : \"00\" } } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_RELAXED,
+                                     "{ \"v\" : { \"$binary\" : { \"base64\" : "
+                                     "\"AQIDBA==\", \"subType\" : \"00\" } } }");
 
    bson_destroy (b);
 }
@@ -3073,11 +2763,9 @@ test_bson_as_json_with_opts_undefined (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_UNDEFINED (b, "v"));
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$undefined\" : true } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$undefined\" : true } }");
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$undefined\" : true } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$undefined\" : true } }");
 
    bson_destroy (b);
 }
@@ -3093,14 +2781,10 @@ test_bson_as_json_with_opts_oid (void)
    BSON_ASSERT (BSON_APPEND_OID (b, "v", &oid));
 
    run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"$oid\" : \"12341234123412abcdababcd\" } }");
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$oid\" : \"12341234123412abcdababcd\" } }");
 
    run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$oid\" : \"12341234123412abcdababcd\" } }");
+      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$oid\" : \"12341234123412abcdababcd\" } }");
 
    bson_destroy (b);
 }
@@ -3113,11 +2797,9 @@ test_bson_as_json_with_opts_bool (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_BOOL (b, "v", false));
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : false }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : false }");
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : false }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : false }");
 
    bson_destroy (b);
 }
@@ -3131,14 +2813,10 @@ test_bson_as_json_with_opts_date_time (void)
    BSON_ASSERT (BSON_APPEND_DATE_TIME (b, "v", 1602572588123));
 
    run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"$date\" : \"2020-10-13T07:03:08.123Z\" } }");
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$date\" : \"2020-10-13T07:03:08.123Z\" } }");
 
    run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$date\" : { \"$numberLong\" : \"1602572588123\" } } }");
+      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$date\" : { \"$numberLong\" : \"1602572588123\" } } }");
 
    bson_destroy (b);
 }
@@ -3151,11 +2829,9 @@ test_bson_as_json_with_opts_null (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_NULL (b, "v"));
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : null }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : null }");
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : null }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : null }");
 
    bson_destroy (b);
 }
@@ -3168,17 +2844,15 @@ test_bson_as_json_with_opts_regex (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_REGEX (b, "v", "^abc", "i"));
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"$regularExpression\" : { \"pattern\" : \"^abc\", "
-      "\"options\" : \"i\" } } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_RELAXED,
+                                     "{ \"v\" : { \"$regularExpression\" : { \"pattern\" : \"^abc\", "
+                                     "\"options\" : \"i\" } } }");
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$regularExpression\" : { \"pattern\" : \"^abc\", "
-      "\"options\" : \"i\" } } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_CANONICAL,
+                                     "{ \"v\" : { \"$regularExpression\" : { \"pattern\" : \"^abc\", "
+                                     "\"options\" : \"i\" } } }");
 
    bson_destroy (b);
 }
@@ -3193,17 +2867,15 @@ test_bson_as_json_with_opts_dbpointer (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_DBPOINTER (b, "v", "coll", &oid));
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"$dbPointer\" : { \"$ref\" : \"coll\", \"$id\" : { "
-      "\"$oid\" : \"12341234123412abcdababcd\" } } } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_RELAXED,
+                                     "{ \"v\" : { \"$dbPointer\" : { \"$ref\" : \"coll\", \"$id\" : { "
+                                     "\"$oid\" : \"12341234123412abcdababcd\" } } } }");
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$dbPointer\" : { \"$ref\" : \"coll\", \"$id\" : { "
-      "\"$oid\" : \"12341234123412abcdababcd\" } } } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_CANONICAL,
+                                     "{ \"v\" : { \"$dbPointer\" : { \"$ref\" : \"coll\", \"$id\" : { "
+                                     "\"$oid\" : \"12341234123412abcdababcd\" } } } }");
 
    bson_destroy (b);
 }
@@ -3216,15 +2888,9 @@ test_bson_as_json_with_opts_code (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_CODE (b, "v", "function(){}"));
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"$code\" : \"function(){}\" } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$code\" : \"function(){}\" } }");
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$code\" : \"function(){}\" } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$code\" : \"function(){}\" } }");
 
    bson_destroy (b);
 }
@@ -3237,11 +2903,9 @@ test_bson_as_json_with_opts_symbol (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_SYMBOL (b, "v", "symbol"));
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$symbol\" : \"symbol\" } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$symbol\" : \"symbol\" } }");
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$symbol\" : \"symbol\" } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$symbol\" : \"symbol\" } }");
 
    bson_destroy (b);
 }
@@ -3258,17 +2922,15 @@ test_bson_as_json_with_opts_codewscope (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_CODE_WITH_SCOPE (b, "v", "function(){}", scope));
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"$code\" : \"function(){}\", "
-      "\"$scope\" : { \"v\" : \"abcdef\" } } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_RELAXED,
+                                     "{ \"v\" : { \"$code\" : \"function(){}\", "
+                                     "\"$scope\" : { \"v\" : \"abcdef\" } } }");
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$code\" : \"function(){}\", "
-      "\"$scope\" : { \"v\" : \"abcdef\" } } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_CANONICAL,
+                                     "{ \"v\" : { \"$code\" : \"function(){}\", "
+                                     "\"$scope\" : { \"v\" : \"abcdef\" } } }");
 
    bson_destroy (b);
    bson_destroy (scope);
@@ -3282,13 +2944,9 @@ test_bson_as_json_with_opts_int32 (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_INT32 (b, "v", 461394000));
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 461394000 }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 461394000 }");
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$numberInt\" : \"461394000\" } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$numberInt\" : \"461394000\" } }");
 
    bson_destroy (b);
 }
@@ -3301,13 +2959,9 @@ test_bson_as_json_with_opts_int64 (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_INT64 (b, "v", 461394000));
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 461394000 }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : 461394000 }");
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$numberLong\" : \"461394000\" } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$numberLong\" : \"461394000\" } }");
 
    bson_destroy (b);
 }
@@ -3321,14 +2975,10 @@ test_bson_as_json_with_opts_timestamp (void)
    BSON_ASSERT (BSON_APPEND_TIMESTAMP (b, "v", 461394000, 2));
 
    run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"$timestamp\" : { \"t\" : 461394000, \"i\" : 2 } } }");
+      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$timestamp\" : { \"t\" : 461394000, \"i\" : 2 } } }");
 
    run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$timestamp\" : { \"t\" : 461394000, \"i\" : 2 } } }");
+      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$timestamp\" : { \"t\" : 461394000, \"i\" : 2 } } }");
 
    bson_destroy (b);
 }
@@ -3341,11 +2991,9 @@ test_bson_as_json_with_opts_minkey (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_MINKEY (b, "v"));
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$minKey\" : 1 } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$minKey\" : 1 } }");
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$minKey\" : 1 } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$minKey\" : 1 } }");
 
    bson_destroy (b);
 }
@@ -3358,11 +3006,9 @@ test_bson_as_json_with_opts_maxkey (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_MAXKEY (b, "v"));
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$maxKey\" : 1 } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_RELAXED, "{ \"v\" : { \"$maxKey\" : 1 } }");
 
-   run_bson_as_json_with_opts_tests (
-      b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$maxKey\" : 1 } }");
+   run_bson_as_json_with_opts_tests (b, BSON_JSON_MODE_CANONICAL, "{ \"v\" : { \"$maxKey\" : 1 } }");
 
    bson_destroy (b);
 }
@@ -3379,17 +3025,15 @@ test_bson_as_json_with_opts_decimal128 (void)
    b = bson_new ();
    BSON_ASSERT (BSON_APPEND_DECIMAL128 (b, "v", &dec));
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_RELAXED,
-      "{ \"v\" : { \"$numberDecimal\" : "
-      "\"5192296858534827628530496329220095\" } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_RELAXED,
+                                     "{ \"v\" : { \"$numberDecimal\" : "
+                                     "\"5192296858534827628530496329220095\" } }");
 
-   run_bson_as_json_with_opts_tests (
-      b,
-      BSON_JSON_MODE_CANONICAL,
-      "{ \"v\" : { \"$numberDecimal\" : "
-      "\"5192296858534827628530496329220095\" } }");
+   run_bson_as_json_with_opts_tests (b,
+                                     BSON_JSON_MODE_CANONICAL,
+                                     "{ \"v\" : { \"$numberDecimal\" : "
+                                     "\"5192296858534827628530496329220095\" } }");
 
    bson_destroy (b);
 }
@@ -3416,8 +3060,7 @@ test_bson_as_json_with_opts_all_types (void)
    BCON_APPEND (&b, "utf8", "bar");
    BCON_APPEND (&b, "document", "{", "x", BCON_INT32 (1), "}");
    BCON_APPEND (&b, "array", "[", BCON_INT32 (1), "]");
-   BCON_APPEND (
-      &b, "binary", BCON_BIN (BSON_SUBTYPE_BINARY, (uint8_t *) "abc", 3));
+   BCON_APPEND (&b, "binary", BCON_BIN (BSON_SUBTYPE_BINARY, (uint8_t *) "abc", 3));
    BCON_APPEND (&b, "undefined", BCON_UNDEFINED);
    BCON_APPEND (&b, "oid", BCON_OID (&oid));
    BCON_APPEND (&b, "false", BCON_BOOL (false));
@@ -3440,8 +3083,7 @@ test_bson_as_json_with_opts_all_types (void)
    full_relaxed = bson_as_relaxed_extended_json (&b, NULL);
 
    run_bson_as_json_with_opts_tests (&b, BSON_JSON_MODE_RELAXED, full_relaxed);
-   run_bson_as_json_with_opts_tests (
-      &b, BSON_JSON_MODE_CANONICAL, full_canonical);
+   run_bson_as_json_with_opts_tests (&b, BSON_JSON_MODE_CANONICAL, full_canonical);
 
    bson_free (full_canonical);
    bson_free (full_relaxed);
@@ -3460,179 +3102,93 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/as_json/int64", test_bson_as_json_int64);
    TestSuite_Add (suite, "/bson/as_json/double", test_bson_as_json_double);
 #if defined(NAN) && defined(INFINITY)
-   TestSuite_Add (suite,
-                  "/bson/as_json/double/nonfinite",
-                  test_bson_as_json_double_nonfinite);
+   TestSuite_Add (suite, "/bson/as_json/double/nonfinite", test_bson_as_json_double_nonfinite);
 #endif
    TestSuite_Add (suite, "/bson/as_json/code", test_bson_as_json_code);
-   TestSuite_Add (
-      suite, "/bson/as_json/date_time", test_bson_as_json_date_time);
+   TestSuite_Add (suite, "/bson/as_json/date_time", test_bson_as_json_date_time);
    TestSuite_Add (suite, "/bson/as_json/regex", test_bson_as_json_regex);
    TestSuite_Add (suite, "/bson/as_json/symbol", test_bson_as_json_symbol);
    TestSuite_Add (suite, "/bson/as_json/utf8", test_bson_as_json_utf8);
-   TestSuite_Add (
-      suite, "/bson/as_json/dbpointer", test_bson_as_json_dbpointer);
-   TestSuite_Add (suite,
-                  "/bson/as_canonical_extended_json/dbpointer",
-                  test_bson_as_canonical_extended_json_dbpointer);
-   TestSuite_Add (
-      suite, "/bson/as_json/stack_overflow", test_bson_as_json_stack_overflow);
+   TestSuite_Add (suite, "/bson/as_json/dbpointer", test_bson_as_json_dbpointer);
+   TestSuite_Add (suite, "/bson/as_canonical_extended_json/dbpointer", test_bson_as_canonical_extended_json_dbpointer);
+   TestSuite_Add (suite, "/bson/as_json/stack_overflow", test_bson_as_json_stack_overflow);
    TestSuite_Add (suite, "/bson/as_json/corrupt", test_bson_corrupt);
    TestSuite_Add (suite, "/bson/as_json/corrupt_utf8", test_bson_corrupt_utf8);
-   TestSuite_Add (
-      suite, "/bson/as_json/corrupt_binary", test_bson_corrupt_binary);
+   TestSuite_Add (suite, "/bson/as_json/corrupt_binary", test_bson_corrupt_binary);
    TestSuite_Add (suite, "/bson/as_json_spacing", test_bson_as_json_spacing);
    TestSuite_Add (suite, "/bson/array_as_json", test_bson_array_as_json);
-   TestSuite_Add (
-      suite, "/bson/json/allow_multiple", test_bson_json_allow_multiple);
-   TestSuite_Add (
-      suite, "/bson/json/read/buffering", test_bson_json_read_buffering);
+   TestSuite_Add (suite, "/bson/json/allow_multiple", test_bson_json_allow_multiple);
+   TestSuite_Add (suite, "/bson/json/read/buffering", test_bson_json_read_buffering);
    TestSuite_Add (suite, "/bson/json/read", test_bson_json_read);
    TestSuite_Add (suite, "/bson/json/inc", test_bson_json_inc);
    TestSuite_Add (suite, "/bson/json/array", test_bson_json_array);
-   TestSuite_Add (
-      suite, "/bson/json/array/single", test_bson_json_array_single);
+   TestSuite_Add (suite, "/bson/json/array/single", test_bson_json_array_single);
    TestSuite_Add (suite, "/bson/json/array/int64", test_bson_json_array_int64);
-   TestSuite_Add (
-      suite, "/bson/json/array/subdoc", test_bson_json_array_subdoc);
+   TestSuite_Add (suite, "/bson/json/array/subdoc", test_bson_json_array_subdoc);
    TestSuite_Add (suite, "/bson/json/date", test_bson_json_date);
    TestSuite_Add (suite, "/bson/json/date/legacy", test_bson_json_date_legacy);
-   TestSuite_Add (
-      suite, "/bson/json/date/long", test_bson_json_date_numberlong);
+   TestSuite_Add (suite, "/bson/json/date/long", test_bson_json_date_numberlong);
    TestSuite_Add (suite, "/bson/json/timestamp", test_bson_json_timestamp);
    TestSuite_Add (suite, "/bson/json/read/empty", test_bson_json_read_empty);
-   TestSuite_Add (suite,
-                  "/bson/json/read/missing_complex",
-                  test_bson_json_read_missing_complex);
-   TestSuite_Add (suite,
-                  "/bson/json/read/invalid_binary",
-                  test_bson_json_read_invalid_binary);
-   TestSuite_Add (
-      suite, "/bson/json/read/invalid_json", test_bson_json_read_invalid_json);
+   TestSuite_Add (suite, "/bson/json/read/missing_complex", test_bson_json_read_missing_complex);
+   TestSuite_Add (suite, "/bson/json/read/invalid_binary", test_bson_json_read_invalid_binary);
+   TestSuite_Add (suite, "/bson/json/read/invalid_json", test_bson_json_read_invalid_json);
    TestSuite_Add (suite, "/bson/json/read/bad_cb", test_bson_json_read_bad_cb);
-   TestSuite_Add (
-      suite, "/bson/json/read/invalid", test_bson_json_read_invalid);
-   TestSuite_Add (suite,
-                  "/bson/json/read/invalid_base64",
-                  test_bson_json_read_invalid_base64);
-   TestSuite_Add (
-      suite, "/bson/json/read/raw_utf8", test_bson_json_read_raw_utf8);
-   TestSuite_Add (
-      suite, "/bson/json/read/corrupt_utf8", test_bson_json_read_corrupt_utf8);
-   TestSuite_Add (suite,
-                  "/bson/json/read/corrupt_document",
-                  test_bson_json_read_corrupt_document);
-   TestSuite_Add (
-      suite, "/bson/json/read/decimal128", test_bson_json_read_decimal128);
-   TestSuite_Add (
-      suite, "/bson/json/read/dbpointer", test_bson_json_read_dbpointer);
-   TestSuite_Add (
-      suite, "/bson/json/read/legacy_regex", test_bson_json_read_legacy_regex);
-   TestSuite_Add (suite,
-                  "/bson/json/read/regex_options_order",
-                  test_bson_json_read_regex_options_order);
+   TestSuite_Add (suite, "/bson/json/read/invalid", test_bson_json_read_invalid);
+   TestSuite_Add (suite, "/bson/json/read/invalid_base64", test_bson_json_read_invalid_base64);
+   TestSuite_Add (suite, "/bson/json/read/raw_utf8", test_bson_json_read_raw_utf8);
+   TestSuite_Add (suite, "/bson/json/read/corrupt_utf8", test_bson_json_read_corrupt_utf8);
+   TestSuite_Add (suite, "/bson/json/read/corrupt_document", test_bson_json_read_corrupt_document);
+   TestSuite_Add (suite, "/bson/json/read/decimal128", test_bson_json_read_decimal128);
+   TestSuite_Add (suite, "/bson/json/read/dbpointer", test_bson_json_read_dbpointer);
+   TestSuite_Add (suite, "/bson/json/read/legacy_regex", test_bson_json_read_legacy_regex);
+   TestSuite_Add (suite, "/bson/json/read/regex_options_order", test_bson_json_read_regex_options_order);
    TestSuite_Add (suite, "/bson/json/read/binary", test_bson_json_read_binary);
-   TestSuite_Add (suite,
-                  "/bson/json/read/legacy_binary",
-                  test_bson_json_read_legacy_binary);
-   TestSuite_Add (
-      suite, "/bson/json/read/file", test_json_reader_new_from_file);
-   TestSuite_Add (
-      suite, "/bson/json/read/bad_path", test_json_reader_new_from_bad_path);
-   TestSuite_Add (
-      suite, "/bson/json/read/$numberLong", test_bson_json_number_long);
-   TestSuite_Add (suite,
-                  "/bson/json/read/$numberLong/zero",
-                  test_bson_json_number_long_zero);
+   TestSuite_Add (suite, "/bson/json/read/legacy_binary", test_bson_json_read_legacy_binary);
+   TestSuite_Add (suite, "/bson/json/read/file", test_json_reader_new_from_file);
+   TestSuite_Add (suite, "/bson/json/read/bad_path", test_json_reader_new_from_bad_path);
+   TestSuite_Add (suite, "/bson/json/read/$numberLong", test_bson_json_number_long);
+   TestSuite_Add (suite, "/bson/json/read/$numberLong/zero", test_bson_json_number_long_zero);
    TestSuite_Add (suite, "/bson/json/read/code", test_bson_json_code);
-   TestSuite_Add (
-      suite, "/bson/json/read/code/errors", test_bson_json_code_errors);
+   TestSuite_Add (suite, "/bson/json/read/code/errors", test_bson_json_code_errors);
    TestSuite_Add (suite, "/bson/json/read/dbref", test_bson_json_dbref);
    TestSuite_Add (suite, "/bson/json/read/uescape", test_bson_json_uescape);
-   TestSuite_Add (
-      suite, "/bson/json/read/uescape/key", test_bson_json_uescape_key);
-   TestSuite_Add (
-      suite, "/bson/json/read/uescape/bad", test_bson_json_uescape_bad);
+   TestSuite_Add (suite, "/bson/json/read/uescape/key", test_bson_json_uescape_key);
+   TestSuite_Add (suite, "/bson/json/read/uescape/bad", test_bson_json_uescape_bad);
    TestSuite_Add (suite, "/bson/json/read/int32", test_bson_json_int32);
    TestSuite_Add (suite, "/bson/json/read/int64", test_bson_json_int64);
    TestSuite_Add (suite, "/bson/json/read/double", test_bson_json_double);
-   TestSuite_Add (
-      suite, "/bson/json/read/double/overflow", test_bson_json_double_overflow);
+   TestSuite_Add (suite, "/bson/json/read/double/overflow", test_bson_json_double_overflow);
    TestSuite_Add (suite, "/bson/json/read/double/nan", test_bson_json_nan);
-   TestSuite_Add (
-      suite, "/bson/json/read/double/infinity", test_bson_json_infinity);
+   TestSuite_Add (suite, "/bson/json/read/double/infinity", test_bson_json_infinity);
    TestSuite_Add (suite, "/bson/json/read/null", test_bson_json_null);
-   TestSuite_Add (
-      suite, "/bson/json/read/empty_final", test_bson_json_empty_final_object);
-   TestSuite_Add (
-      suite, "/bson/as_json/decimal128", test_bson_as_json_decimal128);
-   TestSuite_Add (
-      suite, "/bson/json/read/$numberDecimal", test_bson_json_number_decimal);
+   TestSuite_Add (suite, "/bson/json/read/empty_final", test_bson_json_empty_final_object);
+   TestSuite_Add (suite, "/bson/as_json/decimal128", test_bson_as_json_decimal128);
+   TestSuite_Add (suite, "/bson/json/read/$numberDecimal", test_bson_json_number_decimal);
    TestSuite_Add (suite, "/bson/json/errors", test_bson_json_errors);
    TestSuite_Add (suite, "/bson/integer/width", test_bson_integer_width);
-   TestSuite_Add (
-      suite, "/bson/json/read/null_in_str", test_bson_json_null_in_str);
-   TestSuite_Add (
-      suite, "/bson/as_json/multi_object", test_bson_as_json_multi_object);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/double",
-                  test_bson_as_json_with_opts_double);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/utf8", test_bson_as_json_with_opts_utf8);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/document",
-                  test_bson_as_json_with_opts_document);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/array",
-                  test_bson_as_json_with_opts_array);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/binary",
-                  test_bson_as_json_with_opts_binary);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/undefined",
-                  test_bson_as_json_with_opts_undefined);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/oid", test_bson_as_json_with_opts_oid);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/bool", test_bson_as_json_with_opts_bool);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/date_time",
-                  test_bson_as_json_with_opts_date_time);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/null", test_bson_as_json_with_opts_null);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/regex",
-                  test_bson_as_json_with_opts_regex);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/dbpointer",
-                  test_bson_as_json_with_opts_dbpointer);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/code", test_bson_as_json_with_opts_code);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/symbol",
-                  test_bson_as_json_with_opts_symbol);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/codewscope",
-                  test_bson_as_json_with_opts_codewscope);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/int32",
-                  test_bson_as_json_with_opts_int32);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/int64",
-                  test_bson_as_json_with_opts_int64);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/timestamp",
-                  test_bson_as_json_with_opts_timestamp);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/minkey",
-                  test_bson_as_json_with_opts_minkey);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/maxkey",
-                  test_bson_as_json_with_opts_maxkey);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/decimal128",
-                  test_bson_as_json_with_opts_decimal128);
-   TestSuite_Add (suite,
-                  "/bson/as_json_with_opts/all_types",
-                  test_bson_as_json_with_opts_all_types);
+   TestSuite_Add (suite, "/bson/json/read/null_in_str", test_bson_json_null_in_str);
+   TestSuite_Add (suite, "/bson/as_json/multi_object", test_bson_as_json_multi_object);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/double", test_bson_as_json_with_opts_double);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/utf8", test_bson_as_json_with_opts_utf8);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/document", test_bson_as_json_with_opts_document);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/array", test_bson_as_json_with_opts_array);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/binary", test_bson_as_json_with_opts_binary);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/undefined", test_bson_as_json_with_opts_undefined);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/oid", test_bson_as_json_with_opts_oid);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/bool", test_bson_as_json_with_opts_bool);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/date_time", test_bson_as_json_with_opts_date_time);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/null", test_bson_as_json_with_opts_null);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/regex", test_bson_as_json_with_opts_regex);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/dbpointer", test_bson_as_json_with_opts_dbpointer);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/code", test_bson_as_json_with_opts_code);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/symbol", test_bson_as_json_with_opts_symbol);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/codewscope", test_bson_as_json_with_opts_codewscope);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/int32", test_bson_as_json_with_opts_int32);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/int64", test_bson_as_json_with_opts_int64);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/timestamp", test_bson_as_json_with_opts_timestamp);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/minkey", test_bson_as_json_with_opts_minkey);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/maxkey", test_bson_as_json_with_opts_maxkey);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/decimal128", test_bson_as_json_with_opts_decimal128);
+   TestSuite_Add (suite, "/bson/as_json_with_opts/all_types", test_bson_as_json_with_opts_all_types);
 }

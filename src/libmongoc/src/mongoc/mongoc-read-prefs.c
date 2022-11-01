@@ -43,8 +43,7 @@ mongoc_read_prefs_get_mode (const mongoc_read_prefs_t *read_prefs)
 
 
 void
-mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs,
-                            mongoc_read_mode_t mode)
+mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs, mongoc_read_mode_t mode)
 {
    BSON_ASSERT (read_prefs);
    BSON_ASSERT (mode <= MONGOC_READ_NEAREST);
@@ -99,8 +98,7 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs, const bson_t *tag)
 
 
 int64_t
-mongoc_read_prefs_get_max_staleness_seconds (
-   const mongoc_read_prefs_t *read_prefs)
+mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_prefs)
 {
    BSON_ASSERT (read_prefs);
 
@@ -109,8 +107,7 @@ mongoc_read_prefs_get_max_staleness_seconds (
 
 
 void
-mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t *read_prefs,
-                                             int64_t max_staleness_seconds)
+mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t *read_prefs, int64_t max_staleness_seconds)
 {
    BSON_ASSERT (read_prefs);
 
@@ -128,8 +125,7 @@ mongoc_read_prefs_get_hedge (const mongoc_read_prefs_t *read_prefs)
 
 
 void
-mongoc_read_prefs_set_hedge (mongoc_read_prefs_t *read_prefs,
-                             const bson_t *hedge)
+mongoc_read_prefs_set_hedge (mongoc_read_prefs_t *read_prefs, const bson_t *hedge)
 {
    BSON_ASSERT (read_prefs);
 
@@ -152,15 +148,13 @@ mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
     * Tags, maxStalenessSeconds, and hedge are not supported with PRIMARY mode.
     */
    if (read_prefs->mode == MONGOC_READ_PRIMARY) {
-      if (!bson_empty (&read_prefs->tags) ||
-          read_prefs->max_staleness_seconds != MONGOC_NO_MAX_STALENESS ||
+      if (!bson_empty (&read_prefs->tags) || read_prefs->max_staleness_seconds != MONGOC_NO_MAX_STALENESS ||
           !bson_empty (&read_prefs->hedge)) {
          return false;
       }
    }
 
-   if (read_prefs->max_staleness_seconds != MONGOC_NO_MAX_STALENESS &&
-       read_prefs->max_staleness_seconds <= 0) {
+   if (read_prefs->max_staleness_seconds != MONGOC_NO_MAX_STALENESS && read_prefs->max_staleness_seconds <= 0) {
       return false;
    }
 
@@ -222,10 +216,9 @@ _mongoc_read_mode_as_str (mongoc_read_mode_t mode)
  * The driver must have discovered the server is a mongos.
  */
 static void
-_apply_read_preferences_mongos (
-   const mongoc_read_prefs_t *read_prefs,
-   const bson_t *query_bson,
-   mongoc_assemble_query_result_t *result /* OUT */)
+_apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
+                                const bson_t *query_bson,
+                                mongoc_assemble_query_result_t *result /* OUT */)
 {
    mongoc_read_mode_t mode;
    const bson_t *tags = NULL;
@@ -236,8 +229,7 @@ _apply_read_preferences_mongos (
 
    mode = mongoc_read_prefs_get_mode (read_prefs);
    if (read_prefs) {
-      max_staleness_seconds =
-         mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
+      max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
 
       tags = mongoc_read_prefs_get_tags (read_prefs);
       hedge = mongoc_read_prefs_get_hedge (read_prefs);
@@ -264,8 +256,7 @@ _apply_read_preferences_mongos (
     * and MUST also use $readPreference
     */
    if (mode == MONGOC_READ_SECONDARY_PREFERRED &&
-       (bson_empty0 (tags) && max_staleness_seconds <= 0 &&
-        bson_empty0 (hedge))) {
+       (bson_empty0 (tags) && max_staleness_seconds <= 0 && bson_empty0 (hedge))) {
       result->flags |= MONGOC_QUERY_SECONDARY_OK;
 
    } else if (mode != MONGOC_READ_PRIMARY) {
@@ -283,12 +274,10 @@ _apply_read_preferences_mongos (
       if (bson_has_field (query_bson, "$query")) {
          bson_concat (result->assembled_query, query_bson);
       } else {
-         bson_append_document (
-            result->assembled_query, "$query", 6, query_bson);
+         bson_append_document (result->assembled_query, "$query", 6, query_bson);
       }
 
-      bson_append_document_begin (
-         result->assembled_query, "$readPreference", 15, &child);
+      bson_append_document_begin (result->assembled_query, "$readPreference", 15, &child);
       mode_str = _mongoc_read_mode_as_str (mode);
       bson_append_utf8 (&child, "mode", 4, mode_str, -1);
       if (!bson_empty0 (tags)) {
@@ -296,8 +285,7 @@ _apply_read_preferences_mongos (
       }
 
       if (max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
-         bson_append_int64 (
-            &child, "maxStalenessSeconds", 19, max_staleness_seconds);
+         bson_append_int64 (&child, "maxStalenessSeconds", 19, max_staleness_seconds);
       }
 
       if (!bson_empty0 (hedge)) {
@@ -410,14 +398,10 @@ assemble_query_result_cleanup (mongoc_assemble_query_result_t *result)
 }
 
 bool
-_mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs,
-                             bson_error_t *error)
+_mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs, bson_error_t *error)
 {
    if (read_prefs && !mongoc_read_prefs_is_valid (read_prefs)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Invalid mongoc_read_prefs_t");
+      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid mongoc_read_prefs_t");
       return false;
    }
    return true;

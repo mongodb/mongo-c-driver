@@ -16,8 +16,7 @@ test_buffered_basic (void)
    ssize_t r;
    char buf[16236];
 
-   stream =
-      mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
    BSON_ASSERT (stream);
 
    /* buffered assumes ownership of stream */
@@ -30,11 +29,7 @@ test_buffered_basic (void)
    if (r != iov.iov_len) {
       char msg[100];
 
-      bson_snprintf (msg,
-                     100,
-                     "Expected %lld got %llu",
-                     (long long) r,
-                     (unsigned long long) iov.iov_len);
+      bson_snprintf (msg, 100, "Expected %lld got %llu", (long long) r, (unsigned long long) iov.iov_len);
       ASSERT_CMPSTR (msg, "failed");
    }
 
@@ -52,8 +47,7 @@ test_buffered_oversized (void)
    ssize_t r;
    char buf[16236];
 
-   stream =
-      mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
    BSON_ASSERT (stream);
 
    /* buffered assumes ownership of stream */
@@ -66,11 +60,7 @@ test_buffered_oversized (void)
    if (r != iov.iov_len) {
       char msg[100];
 
-      bson_snprintf (msg,
-                     100,
-                     "Expected %lld got %llu",
-                     (long long) r,
-                     (unsigned long long) iov.iov_len);
+      bson_snprintf (msg, 100, "Expected %lld got %llu", (long long) r, (unsigned long long) iov.iov_len);
       ASSERT_CMPSTR (msg, "failed");
    }
 
@@ -85,10 +75,7 @@ typedef struct {
 } failing_stream_t;
 
 static ssize_t
-failing_stream_writev (mongoc_stream_t *stream,
-                       mongoc_iovec_t *iov,
-                       size_t iovcnt,
-                       int32_t timeout_msec)
+failing_stream_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
    failing_stream_t *fstream = (failing_stream_t *) stream;
 

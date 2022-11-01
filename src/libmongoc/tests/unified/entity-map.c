@@ -98,8 +98,7 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
       } else if (0 == strcmp ("appname", key)) {
          mongoc_uri_set_appname (uri, bson_iter_utf8 (&iter, NULL));
       } else {
-         test_set_error (
-            error, "Unimplemented test runner support for URI option: %s", key);
+         test_set_error (error, "Unimplemented test runner support for URI option: %s", key);
          goto done;
       }
    }
@@ -175,8 +174,7 @@ should_ignore_event (entity_t *client_entity, event_t *event)
       }
    }
 
-   if (client_entity->observe_sensitive_commands &&
-       *client_entity->observe_sensitive_commands) {
+   if (client_entity->observe_sensitive_commands && *client_entity->observe_sensitive_commands) {
       return false;
    }
 
@@ -192,17 +190,13 @@ command_started (const mongoc_apm_command_started_t *started)
 
    entity = (entity_t *) mongoc_apm_command_started_get_context (started);
    event = event_new ("commandStartedEvent");
-   event->command =
-      bson_copy (mongoc_apm_command_started_get_command (started));
-   event->command_name =
-      bson_strdup (mongoc_apm_command_started_get_command_name (started));
+   event->command = bson_copy (mongoc_apm_command_started_get_command (started));
+   event->command_name = bson_strdup (mongoc_apm_command_started_get_command_name (started));
 
-   event->database_name =
-      bson_strdup (mongoc_apm_command_started_get_database_name (started));
+   event->database_name = bson_strdup (mongoc_apm_command_started_get_database_name (started));
 
    if (mongoc_apm_command_started_get_service_id (started)) {
-      bson_oid_copy (mongoc_apm_command_started_get_service_id (started),
-                     &event->service_id);
+      bson_oid_copy (mongoc_apm_command_started_get_service_id (started), &event->service_id);
    }
 
    event->server_connection_id = started->server_connection_id;
@@ -224,12 +218,10 @@ command_failed (const mongoc_apm_command_failed_t *failed)
    entity = (entity_t *) mongoc_apm_command_failed_get_context (failed);
    event = event_new ("commandFailedEvent");
    event->reply = bson_copy (mongoc_apm_command_failed_get_reply (failed));
-   event->command_name =
-      bson_strdup (mongoc_apm_command_failed_get_command_name (failed));
+   event->command_name = bson_strdup (mongoc_apm_command_failed_get_command_name (failed));
 
    if (mongoc_apm_command_failed_get_service_id (failed)) {
-      bson_oid_copy (mongoc_apm_command_failed_get_service_id (failed),
-                     &event->service_id);
+      bson_oid_copy (mongoc_apm_command_failed_get_service_id (failed), &event->service_id);
    }
 
    event->server_connection_id = failed->server_connection_id;
@@ -249,14 +241,11 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
 
    entity = (entity_t *) mongoc_apm_command_succeeded_get_context (succeeded);
    event = event_new ("commandSucceededEvent");
-   event->reply =
-      bson_copy (mongoc_apm_command_succeeded_get_reply (succeeded));
-   event->command_name =
-      bson_strdup (mongoc_apm_command_succeeded_get_command_name (succeeded));
+   event->reply = bson_copy (mongoc_apm_command_succeeded_get_reply (succeeded));
+   event->command_name = bson_strdup (mongoc_apm_command_succeeded_get_command_name (succeeded));
 
    if (mongoc_apm_command_succeeded_get_service_id (succeeded)) {
-      bson_oid_copy (mongoc_apm_command_succeeded_get_service_id (succeeded),
-                     &event->service_id);
+      bson_oid_copy (mongoc_apm_command_succeeded_get_service_id (succeeded), &event->service_id);
    }
 
    event->server_connection_id = succeeded->server_connection_id;
@@ -291,102 +280,80 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
       *bson,
       // All clients require an ID string
       find (keyWithType ("id", utf8), storeStrDup (entity->id)),
-      else(error ("A client 'id' string is required")),
+      else (error ("A client 'id' string is required")),
       // Optional 'uriOptions' for the client
       find (key ("uriOptions"),
-            if (not(type (doc)),
-                then (error ("'uriOptions' must be a document value"))),
+            if (not(type (doc)), then (error ("'uriOptions' must be a document value"))),
             storeDocDupPtr (uri_options)),
       // Optional 'useMultipleMongoses' bool
       find (key ("useMultipleMongoses"),
-            if (not(type (bool)),
-                then (error ("'useMultipleMongoses' must be a bool value"))),
-            do(use_multiple_mongoses_set = true),
+            if (not(type (bool)), then (error ("'useMultipleMongoses' must be a bool value"))),
+            do (use_multiple_mongoses_set = true),
             storeBool (use_multiple_mongoses)),
       // Events to observe:
       find (
          key ("observeEvents"),
-         if (not(type (array)),
-             then (error ("'observeEvents' must be an array"))),
+         if (not(type (array)), then (error ("'observeEvents' must be an array"))),
          visitEach (case (
             // Ensure all elements are strings:
-            when (not(type (utf8)),
-                  error ("Every 'observeEvents' element must be a string")),
+            when (not(type (utf8)), error ("Every 'observeEvents' element must be a string")),
             // Dispatch based on the event name:
             when (strEqual ("commandStartedEvent"),
-                  do(mongoc_apm_set_command_started_cb (callbacks,
-                                                        command_started))),
-            when (strEqual ("commandFailedEvent"),
-                  do(mongoc_apm_set_command_failed_cb (callbacks,
-                                                       command_failed))),
+                  do (mongoc_apm_set_command_started_cb (callbacks, command_started))),
+            when (strEqual ("commandFailedEvent"), do (mongoc_apm_set_command_failed_cb (callbacks, command_failed))),
             when (strEqual ("commandSucceededEvent"),
-                  do(mongoc_apm_set_command_succeeded_cb (callbacks,
-                                                          command_succeeded))),
+                  do (mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded))),
             // Unsupported (but known) event names:
-            when (eval (is_unsupported_event_type (
-                     bson_iter_utf8 (&bsonVisitIter, NULL))),
-                  do(MONGOC_DEBUG ("Skipping unsupported event type '%s'",
-                                   bsonAs (cstr)))),
+            when (eval (is_unsupported_event_type (bson_iter_utf8 (&bsonVisitIter, NULL))),
+                  do (MONGOC_DEBUG ("Skipping unsupported event type '%s'", bsonAs (cstr)))),
             // An unknown event name is a hard-error:
-            else(do(test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
+            else (do (test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
       // Command events to ignore
-      find (
-         key ("ignoreCommandMonitoringEvents"),
-         if (not(type (array)),
-             then (error ("'ignoreCommandMonitoringEvents' must be an array"))),
-         visitEach (if (not(type (utf8)),
-                        then (error ("Every 'ignoreCommandMonitoringEvents' "
-                                     "element must be a string")))),
-         storeDocDupPtr (entity->ignore_command_monitoring_events)),
+      find (key ("ignoreCommandMonitoringEvents"),
+            if (not(type (array)), then (error ("'ignoreCommandMonitoringEvents' must be an array"))),
+            visitEach (if (not(type (utf8)),
+                           then (error ("Every 'ignoreCommandMonitoringEvents' "
+                                        "element must be a string")))),
+            storeDocDupPtr (entity->ignore_command_monitoring_events)),
       // Parse the serverApi, if present
-      find (
-         key ("serverApi"),
-         if (not(type (doc)), then (error ("'serverApi' must be a document"))),
-         parse ( // The "version" string is required first:
-            find (keyWithType ("version", utf8), do({
-                     mongoc_server_api_version_t ver;
-                     if (!mongoc_server_api_version_from_string (bsonAs (cstr),
-                                                                 &ver)) {
-                        bsonParseError = "Invalid serverApi.version string";
-                     } else {
-                        api = mongoc_server_api_new (ver);
-                     }
-                  })),
-            else(error ("Missing 'version' property in 'serverApi' object")),
-            // Toggle strictness:
-            find (key ("strict"),
-                  if (not(type (bool)),
-                      then (error ("'serverApi.strict' must be a bool"))),
-                  do(mongoc_server_api_strict (api, bsonAs (bool)))),
-            // Toggle deprecation errors:
-            find (
-               key ("deprecationErrors"),
-               if (not(type (bool)),
-                   then (error ("serverApi.deprecationErrors must be a bool"))),
-               do(mongoc_server_api_deprecation_errors (api, bsonAs (bool)))))),
+      find (key ("serverApi"),
+            if (not(type (doc)), then (error ("'serverApi' must be a document"))),
+            parse ( // The "version" string is required first:
+               find (keyWithType ("version", utf8), do ({
+                        mongoc_server_api_version_t ver;
+                        if (!mongoc_server_api_version_from_string (bsonAs (cstr), &ver)) {
+                           bsonParseError = "Invalid serverApi.version string";
+                        } else {
+                           api = mongoc_server_api_new (ver);
+                        }
+                     })),
+               else (error ("Missing 'version' property in 'serverApi' object")),
+               // Toggle strictness:
+               find (key ("strict"),
+                     if (not(type (bool)), then (error ("'serverApi.strict' must be a bool"))),
+                     do (mongoc_server_api_strict (api, bsonAs (bool)))),
+               // Toggle deprecation errors:
+               find (key ("deprecationErrors"),
+                     if (not(type (bool)), then (error ("serverApi.deprecationErrors must be a bool"))),
+                     do (mongoc_server_api_deprecation_errors (api, bsonAs (bool)))))),
       // Toggle observation of sensitive commands
       find (key ("observeSensitiveCommands"),
-            if (not(type (bool)),
-                then (error ("'observeSensitiveCommands' must be a bool"))),
-            do({
-               bool *p = entity->observe_sensitive_commands =
-                  bson_malloc (sizeof (bool));
+            if (not(type (bool)), then (error ("'observeSensitiveCommands' must be a bool"))),
+            do ({
+               bool *p = entity->observe_sensitive_commands = bson_malloc (sizeof (bool));
                *p = bsonAs (bool);
             })),
       // Which events should be available as entities:
       find (key ("storeEventsAsEntities"),
-            if (not(type (array)),
-                then (error ("'storeEventsAsEntities' must be an array"))),
+            if (not(type (array)), then (error ("'storeEventsAsEntities' must be an array"))),
             visitEach (if (not(type (utf8)),
                            then (error ("Every 'storeEventsAsEntities' element "
                                         "must be a string")))),
             /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
             error ("'storeEventsAsEntities' is not yet supported")),
-      visitOthers (dupPath (errpath),
-                   errorf (err,
-                           "At [%s]: Unknown key '%s' given in entity options",
-                           errpath,
-                           bson_iter_key (&bsonVisitIter))));
+      visitOthers (
+         dupPath (errpath),
+         errorf (err, "At [%s]: Unknown key '%s' given in entity options", errpath, bson_iter_key (&bsonVisitIter))));
 
    if (bsonParseError) {
       test_error ("Error while parsing entity object: %s", bsonParseError);
@@ -411,8 +378,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
          uri = test_framework_get_uri_multi_mongos_loadbalanced ();
       }
    } else if (use_multiple_mongoses_set) {
-      if (!test_framework_uri_apply_multi_mongos (
-             uri, use_multiple_mongoses, error)) {
+      if (!test_framework_uri_apply_multi_mongos (uri, use_multiple_mongoses, error)) {
          goto done;
       }
    }
@@ -429,8 +395,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
-      mongoc_uri_set_option_as_int32 (
-         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, REDUCED_HEARTBEAT_FREQUENCY_MS);
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, REDUCED_HEARTBEAT_FREQUENCY_MS);
    }
 
    client = test_framework_client_new_from_uri (uri, api);
@@ -440,8 +405,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    mongoc_client_set_apm_callbacks (client, callbacks, entity);
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
-      client->topology->min_heartbeat_frequency_msec =
-         REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
+      client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
    }
 
    ret = true;
@@ -465,19 +429,15 @@ _entity_client_encryption_getenv (const char *name, bson_error_t *error)
    BSON_ASSERT_PARAM (name);
 
    if (!(res = _mongoc_getenv (name))) {
-      test_set_error (
-         error, "missing required environment variable '%s'", name);
+      test_set_error (error, "missing required environment variable '%s'", name);
    }
 
    return res;
 }
 
 static bool
-_append_kms_provider_value_or_getenv (bson_t *bson,
-                                      const char *key,
-                                      const char *value,
-                                      const char *env_name,
-                                      bson_error_t *error)
+_append_kms_provider_value_or_getenv (
+   bson_t *bson, const char *key, const char *value, const char *env_name, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (bson);
    BSON_ASSERT_PARAM (env_name);
@@ -515,8 +475,7 @@ _validate_string_or_placeholder (const bson_iter_t *iter, bson_error_t *error)
    /* Otherwise, must be a document with a single '$$placeholder' field. */
    if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
       bson_val_t *const bson_val = bson_val_from_iter (iter);
-      bson_val_t *const expected =
-         bson_val_from_json ("{'$$placeholder': { '$exists': true }}");
+      bson_val_t *const expected = bson_val_from_json ("{'$$placeholder': { '$exists': true }}");
       bool is_match = false;
 
       BSON_ASSERT (bson_val);
@@ -538,11 +497,8 @@ _validate_string_or_placeholder (const bson_iter_t *iter, bson_error_t *error)
 }
 
 static bool
-_parse_kms_provider_aws (bson_t *kms_providers,
-                         bson_t *tls_opts,
-                         const char *provider,
-                         bson_t *kms_doc,
-                         bson_error_t *error)
+_parse_kms_provider_aws (
+   bson_t *kms_providers, bson_t *tls_opts, const char *provider, bson_t *kms_doc, bson_error_t *error)
 {
    bson_t child;
    bson_iter_t iter;
@@ -561,17 +517,11 @@ _parse_kms_provider_aws (bson_t *kms_providers,
       }
 
       if (strcmp (key, "accessKeyId") == 0) {
-         if (!_append_kms_provider_value_or_getenv (
-                &child, key, value, "MONGOC_TEST_AWS_ACCESS_KEY_ID", error)) {
+         if (!_append_kms_provider_value_or_getenv (&child, key, value, "MONGOC_TEST_AWS_ACCESS_KEY_ID", error)) {
             return false;
          }
       } else if (strcmp (key, "secretAccessKey") == 0) {
-         if (!_append_kms_provider_value_or_getenv (
-                &child,
-                key,
-                value,
-                "MONGOC_TEST_AWS_SECRET_ACCESS_KEY",
-                error)) {
+         if (!_append_kms_provider_value_or_getenv (&child, key, value, "MONGOC_TEST_AWS_SECRET_ACCESS_KEY", error)) {
             return false;
          }
       } else {
@@ -586,11 +536,8 @@ _parse_kms_provider_aws (bson_t *kms_providers,
 }
 
 static bool
-_parse_kms_provider_azure (bson_t *kms_providers,
-                           bson_t *tls_opts,
-                           const char *provider,
-                           bson_t *kms_doc,
-                           bson_error_t *error)
+_parse_kms_provider_azure (
+   bson_t *kms_providers, bson_t *tls_opts, const char *provider, bson_t *kms_doc, bson_error_t *error)
 {
    bson_t child;
    bson_iter_t iter;
@@ -609,18 +556,15 @@ _parse_kms_provider_azure (bson_t *kms_providers,
       }
 
       if (strcmp (key, "tenantId") == 0) {
-         if (!_append_kms_provider_value_or_getenv (
-                &child, key, value, "MONGOC_TEST_AZURE_TENANT_ID", error)) {
+         if (!_append_kms_provider_value_or_getenv (&child, key, value, "MONGOC_TEST_AZURE_TENANT_ID", error)) {
             return false;
          }
       } else if (strcmp (key, "clientId") == 0) {
-         if (!_append_kms_provider_value_or_getenv (
-                &child, key, value, "MONGOC_TEST_AZURE_CLIENT_ID", error)) {
+         if (!_append_kms_provider_value_or_getenv (&child, key, value, "MONGOC_TEST_AZURE_CLIENT_ID", error)) {
             return false;
          }
       } else if (strcmp (key, "clientSecret") == 0) {
-         if (!_append_kms_provider_value_or_getenv (
-                &child, key, value, "MONGOC_TEST_AZURE_CLIENT_SECRET", error)) {
+         if (!_append_kms_provider_value_or_getenv (&child, key, value, "MONGOC_TEST_AZURE_CLIENT_SECRET", error)) {
             return false;
          }
       } else {
@@ -635,11 +579,8 @@ _parse_kms_provider_azure (bson_t *kms_providers,
 }
 
 static bool
-_parse_kms_provider_gcp (bson_t *kms_providers,
-                         bson_t *tls_opts,
-                         const char *provider,
-                         bson_t *kms_doc,
-                         bson_error_t *error)
+_parse_kms_provider_gcp (
+   bson_t *kms_providers, bson_t *tls_opts, const char *provider, bson_t *kms_doc, bson_error_t *error)
 {
    bson_t child;
    bson_iter_t iter;
@@ -658,13 +599,11 @@ _parse_kms_provider_gcp (bson_t *kms_providers,
       }
 
       if (strcmp (key, "email") == 0) {
-         if (!_append_kms_provider_value_or_getenv (
-                &child, key, value, "MONGOC_TEST_GCP_EMAIL", error)) {
+         if (!_append_kms_provider_value_or_getenv (&child, key, value, "MONGOC_TEST_GCP_EMAIL", error)) {
             return false;
          }
       } else if (strcmp (key, "privateKey") == 0) {
-         if (!_append_kms_provider_value_or_getenv (
-                &child, key, value, "MONGOC_TEST_GCP_PRIVATEKEY", error)) {
+         if (!_append_kms_provider_value_or_getenv (&child, key, value, "MONGOC_TEST_GCP_PRIVATEKEY", error)) {
             return false;
          }
       } else if (strcmp (key, "endpoint") == 0) {
@@ -683,11 +622,8 @@ _parse_kms_provider_gcp (bson_t *kms_providers,
 }
 
 static bool
-_parse_kms_provider_kmip (bson_t *kms_providers,
-                          bson_t *tls_opts,
-                          const char *provider,
-                          bson_t *kms_doc,
-                          bson_error_t *error)
+_parse_kms_provider_kmip (
+   bson_t *kms_providers, bson_t *tls_opts, const char *provider, bson_t *kms_doc, bson_error_t *error)
 {
    bson_t child;
    bson_iter_t iter;
@@ -714,22 +650,13 @@ _parse_kms_provider_kmip (bson_t *kms_providers,
          /* Configure tlsOptions to enable KMIP TLS connections. */
          {
             bson_t tls_child;
-            BSON_ASSERT (
-               BSON_APPEND_DOCUMENT_BEGIN (tls_opts, provider, &tls_child));
+            BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (tls_opts, provider, &tls_child));
             if (!_append_kms_provider_value_or_getenv (
-                   &tls_child,
-                   "tlsCAFile",
-                   NULL,
-                   "MONGOC_TEST_CSFLE_TLS_CA_FILE",
-                   error)) {
+                   &tls_child, "tlsCAFile", NULL, "MONGOC_TEST_CSFLE_TLS_CA_FILE", error)) {
                return false;
             }
             if (!_append_kms_provider_value_or_getenv (
-                   &tls_child,
-                   "tlsCertificateKeyFile",
-                   NULL,
-                   "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE",
-                   error)) {
+                   &tls_child, "tlsCertificateKeyFile", NULL, "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE", error)) {
                return false;
             }
             BSON_ASSERT (bson_append_document_end (tls_opts, &tls_child));
@@ -746,11 +673,8 @@ _parse_kms_provider_kmip (bson_t *kms_providers,
 }
 
 static bool
-_parse_kms_provider_local (bson_t *kms_providers,
-                           bson_t *tls_opts,
-                           const char *provider,
-                           bson_t *kms_doc,
-                           bson_error_t *error)
+_parse_kms_provider_local (
+   bson_t *kms_providers, bson_t *tls_opts, const char *provider, bson_t *kms_doc, bson_error_t *error)
 {
    bson_t child;
    bson_iter_t iter;
@@ -774,14 +698,11 @@ _parse_kms_provider_local (bson_t *kms_providers,
          } else {
             /* LOCAL_MASTERKEY in base64 encoding as defined in Client Side
              * Encryption Tests spec. */
-            const char local_masterkey[] =
-               "Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6N"
-               "mdWMDFBMUN3YkQ5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZG"
-               "JkTXVyZG9uSjFk";
+            const char local_masterkey[] = "Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6N"
+                                           "mdWMDFBMUN3YkQ5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZG"
+                                           "JkTXVyZG9uSjFk";
             uint8_t data[96];
-            BSON_ASSERT (mcommon_b64_pton (local_masterkey,
-                                           data,
-                                           sizeof (local_masterkey)) == 96);
+            BSON_ASSERT (mcommon_b64_pton (local_masterkey, data, sizeof (local_masterkey)) == 96);
             BSON_APPEND_BINARY (&child, "key", BSON_SUBTYPE_BINARY, data, 96);
          }
       } else {
@@ -796,26 +717,20 @@ _parse_kms_provider_local (bson_t *kms_providers,
 }
 
 static bool
-_parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts,
-                              bson_t *kms_from_file,
-                              bson_error_t *error)
+_parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts, bson_t *kms_from_file, bson_error_t *error)
 {
    /* Map provider to corresponding KMS parser. */
    typedef struct _prov_map_t {
       const char *provider;
-      bool (*parse) (bson_t *kms_providers,
-                     bson_t *tls_opts,
-                     const char *provider,
-                     bson_t *kms_doc,
-                     bson_error_t *error);
+      bool (*parse) (
+         bson_t *kms_providers, bson_t *tls_opts, const char *provider, bson_t *kms_doc, bson_error_t *error);
    } prov_map_t;
 
-   const prov_map_t prov_map[] = {
-      {.provider = "aws", .parse = _parse_kms_provider_aws},
-      {.provider = "azure", .parse = _parse_kms_provider_azure},
-      {.provider = "gcp", .parse = _parse_kms_provider_gcp},
-      {.provider = "kmip", .parse = _parse_kms_provider_kmip},
-      {.provider = "local", .parse = _parse_kms_provider_local}};
+   const prov_map_t prov_map[] = {{.provider = "aws", .parse = _parse_kms_provider_aws},
+                                  {.provider = "azure", .parse = _parse_kms_provider_azure},
+                                  {.provider = "gcp", .parse = _parse_kms_provider_gcp},
+                                  {.provider = "kmip", .parse = _parse_kms_provider_kmip},
+                                  {.provider = "local", .parse = _parse_kms_provider_local}};
 
    const size_t prov_map_size = sizeof (prov_map) / sizeof (prov_map[0]);
 
@@ -832,15 +747,13 @@ _parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts,
       bool found = false;
 
       if (!bson_init_from_value (&kms_doc, bson_iter_value (&iter))) {
-         test_set_error (
-            error, "kmsProviders field '%s' is not a valid document", provider);
+         test_set_error (error, "kmsProviders field '%s' is not a valid document", provider);
          goto done;
       }
 
       for (i = 0u; i < prov_map_size; ++i) {
          if (strcmp (provider, prov_map[i].provider) == 0) {
-            found = prov_map[i].parse (
-               &kms_providers, &tls_opts, provider, &kms_doc, error);
+            found = prov_map[i].parse (&kms_providers, &tls_opts, provider, &kms_doc, error);
             goto parsed;
          }
       }
@@ -868,14 +781,11 @@ done:
 }
 
 entity_t *
-entity_client_encryption_new (entity_map_t *entity_map,
-                              bson_t *bson,
-                              bson_error_t *error)
+entity_client_encryption_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
 {
    entity_t *const entity = entity_new ("clientEncryption");
    bson_parser_t *const parser = bson_parser_new ();
-   mongoc_client_encryption_opts_t *const ce_opts =
-      mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_t *const ce_opts = mongoc_client_encryption_opts_new ();
 
    bson_t *ce_opts_bson = NULL;
 
@@ -903,8 +813,7 @@ entity_client_encryption_new (entity_map_t *entity_map,
       }
 
       {
-         entity_t *const client_entity =
-            entity_map_get (entity_map, client_id, error);
+         entity_t *const client_entity = entity_map_get (entity_map, client_id, error);
          mongoc_client_t *client = NULL;
 
          if (!client_entity) {
@@ -922,8 +831,7 @@ entity_client_encryption_new (entity_map_t *entity_map,
          const char *coll = NULL;
 
          if (!dot) {
-            test_set_error (
-               error, "keyVaultNamespace does not have required dot separator");
+            test_set_error (error, "keyVaultNamespace does not have required dot separator");
             goto ce_opts_done;
          }
 
@@ -932,13 +840,11 @@ entity_client_encryption_new (entity_map_t *entity_map,
          coll = dot + 1; /* "datakeys" */
 
          if (strchr (coll, '.') != NULL) {
-            test_set_error (
-               error, "keyVaultNamespace contains more than one dot separator");
+            test_set_error (error, "keyVaultNamespace contains more than one dot separator");
             goto ce_opts_done;
          }
 
-         mongoc_client_encryption_opts_set_keyvault_namespace (
-            ce_opts, db, coll);
+         mongoc_client_encryption_opts_set_keyvault_namespace (ce_opts, db, coll);
       }
 
       if (!_parse_and_set_kms_providers (ce_opts, kms, error)) {
@@ -1015,9 +921,7 @@ done:
 }
 
 entity_t *
-entity_database_new (entity_map_t *entity_map,
-                     bson_t *bson,
-                     bson_error_t *error)
+entity_database_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
 {
    bson_parser_t *parser = NULL;
    entity_t *entity = NULL;
@@ -1081,9 +985,7 @@ done:
 }
 
 entity_t *
-entity_collection_new (entity_map_t *entity_map,
-                       bson_t *bson,
-                       bson_error_t *error)
+entity_collection_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
 {
    bson_parser_t *parser = NULL;
    entity_t *entity = NULL;
@@ -1160,8 +1062,7 @@ session_opts_new (bson_t *bson, bson_error_t *error)
    bp = bson_parser_new ();
    bson_parser_bool_optional (bp, "causalConsistency", &causal_consistency);
    bson_parser_bool_optional (bp, "snapshot", &snapshot);
-   bson_parser_doc_optional (
-      bp, "defaultTransactionOptions", &default_transaction_opts);
+   bson_parser_doc_optional (bp, "defaultTransactionOptions", &default_transaction_opts);
    if (!bson_parser_parse (bp, bson, error)) {
       goto done;
    }
@@ -1313,8 +1214,7 @@ entity_bucket_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
       mongoc_write_concern_append (wc, opts);
    }
 
-   entity->value =
-      mongoc_gridfs_bucket_new (database, opts, NULL /* read prefs */, error);
+   entity->value = mongoc_gridfs_bucket_new (database, opts, NULL /* read prefs */, error);
    if (!entity->value) {
       goto done;
    }
@@ -1365,10 +1265,7 @@ entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    entity_type = bson_iter_key (&iter);
    bson_iter_bson (&iter, &entity_bson);
    if (bson_iter_next (&iter)) {
-      test_set_error (error,
-                      "Extra field in entity: %s: %s",
-                      bson_iter_key (&iter),
-                      tmp_json (bson));
+      test_set_error (error, "Extra field in entity: %s: %s", bson_iter_key (&iter), tmp_json (bson));
       goto done;
    }
 
@@ -1385,8 +1282,7 @@ entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    } else if (0 == strcmp (entity_type, "bucket")) {
       entity = entity_bucket_new (entity_map, &entity_bson, error);
    } else {
-      test_set_error (
-         error, "Unknown entity type: %s: %s", entity_type, tmp_json (bson));
+      test_set_error (error, "Unknown entity type: %s: %s", entity_type, tmp_json (bson));
       goto done;
    }
 
@@ -1397,8 +1293,7 @@ entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    LL_FOREACH (entity_map->entities, entity_iter)
    {
       if (0 == strcmp (entity_iter->id, entity->id)) {
-         test_set_error (
-            error, "Attempting to create duplicate entity: '%s'", entity->id);
+         test_set_error (error, "Attempting to create duplicate entity: '%s'", entity->id);
          entity_destroy (entity);
          goto done;
       }
@@ -1470,9 +1365,7 @@ entity_destroy (entity_t *entity)
       mongoc_cursor_destroy (findcursor->cursor);
       bson_free (findcursor);
    } else {
-      test_error ("Attempting to destroy unrecognized entity type: %s, id: %s",
-                  entity->type,
-                  entity->id);
+      test_error ("Attempting to destroy unrecognized entity type: %s, id: %s", entity->type, entity->id);
    }
 
    LL_FOREACH_SAFE (entity->events, event, tmp)
@@ -1519,10 +1412,7 @@ entity_map_delete (entity_map_t *em, const char *id, bson_error_t *error)
 }
 
 static entity_t *
-_entity_map_get_by_type (entity_map_t *entity_map,
-                         const char *id,
-                         const char *type,
-                         bson_error_t *error)
+_entity_map_get_by_type (entity_map_t *entity_map, const char *id, const char *type, bson_error_t *error)
 {
    entity_t *entity = NULL;
 
@@ -1532,19 +1422,14 @@ _entity_map_get_by_type (entity_map_t *entity_map,
    }
 
    if (0 != strcmp (entity->type, type)) {
-      test_set_error (error,
-                      "Unexpected entity type. Expected: %s, got %s",
-                      type,
-                      entity->type);
+      test_set_error (error, "Unexpected entity type. Expected: %s, got %s", type, entity->type);
       return NULL;
    }
    return entity;
 }
 
 mongoc_client_t *
-entity_map_get_client (entity_map_t *entity_map,
-                       const char *id,
-                       bson_error_t *error)
+entity_map_get_client (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
    entity_t *entity = _entity_map_get_by_type (entity_map, id, "client", error);
    if (!entity) {
@@ -1554,12 +1439,9 @@ entity_map_get_client (entity_map_t *entity_map,
 }
 
 mongoc_client_encryption_t *
-entity_map_get_client_encryption (entity_map_t *entity_map,
-                                  const char *id,
-                                  bson_error_t *error)
+entity_map_get_client_encryption (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
-   entity_t *entity =
-      _entity_map_get_by_type (entity_map, id, "clientEncryption", error);
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "clientEncryption", error);
    if (!entity) {
       return NULL;
    }
@@ -1567,12 +1449,9 @@ entity_map_get_client_encryption (entity_map_t *entity_map,
 }
 
 mongoc_database_t *
-entity_map_get_database (entity_map_t *entity_map,
-                         const char *id,
-                         bson_error_t *error)
+entity_map_get_database (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
-   entity_t *entity =
-      _entity_map_get_by_type (entity_map, id, "database", error);
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "database", error);
    if (!entity) {
       return NULL;
    }
@@ -1580,12 +1459,9 @@ entity_map_get_database (entity_map_t *entity_map,
 }
 
 mongoc_collection_t *
-entity_map_get_collection (entity_map_t *entity_map,
-                           const char *id,
-                           bson_error_t *error)
+entity_map_get_collection (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
-   entity_t *entity =
-      _entity_map_get_by_type (entity_map, id, "collection", error);
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "collection", error);
    if (!entity) {
       return NULL;
    }
@@ -1593,12 +1469,9 @@ entity_map_get_collection (entity_map_t *entity_map,
 }
 
 mongoc_change_stream_t *
-entity_map_get_changestream (entity_map_t *entity_map,
-                             const char *id,
-                             bson_error_t *error)
+entity_map_get_changestream (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
-   entity_t *entity =
-      _entity_map_get_by_type (entity_map, id, "changestream", error);
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "changestream", error);
    if (!entity) {
       return NULL;
    }
@@ -1606,12 +1479,9 @@ entity_map_get_changestream (entity_map_t *entity_map,
 }
 
 entity_findcursor_t *
-entity_map_get_findcursor (entity_map_t *entity_map,
-                           const char *id,
-                           bson_error_t *error)
+entity_map_get_findcursor (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
-   entity_t *entity =
-      _entity_map_get_by_type (entity_map, id, "findcursor", error);
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "findcursor", error);
    if (!entity) {
       return NULL;
    }
@@ -1619,9 +1489,7 @@ entity_map_get_findcursor (entity_map_t *entity_map,
 }
 
 bson_val_t *
-entity_map_get_bson (entity_map_t *entity_map,
-                     const char *id,
-                     bson_error_t *error)
+entity_map_get_bson (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
    entity_t *entity = _entity_map_get_by_type (entity_map, id, "bson", error);
    if (!entity) {
@@ -1631,20 +1499,14 @@ entity_map_get_bson (entity_map_t *entity_map,
 }
 
 mongoc_client_session_t *
-entity_map_get_session (entity_map_t *entity_map,
-                        const char *id,
-                        bson_error_t *error)
+entity_map_get_session (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
-   entity_t *entity =
-      _entity_map_get_by_type (entity_map, id, "session", error);
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "session", error);
    if (!entity) {
       return NULL;
    }
    if (!entity->value) {
-      test_set_error (
-         error,
-         "entity: %s is an ended session that is no longer valid to use",
-         id);
+      test_set_error (error, "entity: %s is an ended session that is no longer valid to use", id);
       return NULL;
    }
    return (mongoc_client_session_t *) entity->value;
@@ -1660,19 +1522,14 @@ entity_map_get_lsid (entity_map_t *em, char *session_id, bson_error_t *error)
       return NULL;
    }
    if (!entity->lsid) {
-      test_set_error (error,
-                      "entity %s of type %s does not have an lsid",
-                      session_id,
-                      entity->type);
+      test_set_error (error, "entity %s of type %s does not have an lsid", session_id, entity->type);
       return NULL;
    }
    return entity->lsid;
 }
 
 mongoc_gridfs_bucket_t *
-entity_map_get_bucket (entity_map_t *entity_map,
-                       const char *id,
-                       bson_error_t *error)
+entity_map_get_bucket (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
    entity_t *entity = _entity_map_get_by_type (entity_map, id, "bucket", error);
    if (!entity) {
@@ -1682,11 +1539,7 @@ entity_map_get_bucket (entity_map_t *entity_map,
 }
 
 static bool
-_entity_map_add (entity_map_t *em,
-                 const char *id,
-                 const char *type,
-                 void *value,
-                 bson_error_t *error)
+_entity_map_add (entity_map_t *em, const char *id, const char *type, void *value, bson_error_t *error)
 {
    bson_error_t tmperr;
    entity_t *entity = NULL;
@@ -1709,16 +1562,14 @@ entity_map_add_changestream (entity_map_t *em,
                              mongoc_change_stream_t *changestream,
                              bson_error_t *error)
 {
-   return _entity_map_add (
-      em, id, "changestream", (void *) changestream, error);
+   return _entity_map_add (em, id, "changestream", (void *) changestream, error);
 }
 
 void
-entity_findcursor_iterate_until_document_or_error (
-   entity_findcursor_t *findcursor,
-   const bson_t **document,
-   bson_error_t *error,
-   const bson_t **error_document)
+entity_findcursor_iterate_until_document_or_error (entity_findcursor_t *findcursor,
+                                                   const bson_t **document,
+                                                   bson_error_t *error,
+                                                   const bson_t **error_document)
 {
    *document = NULL;
 
@@ -1729,34 +1580,26 @@ entity_findcursor_iterate_until_document_or_error (
    }
 
    while (!mongoc_cursor_next (findcursor->cursor, document)) {
-      if (mongoc_cursor_error_document (
-             findcursor->cursor, error, error_document)) {
+      if (mongoc_cursor_error_document (findcursor->cursor, error, error_document)) {
          return;
       }
    }
 }
 
 bool
-entity_map_add_findcursor (entity_map_t *em,
-                           const char *id,
-                           mongoc_cursor_t *cursor,
-                           const bson_t *first_result,
-                           bson_error_t *error)
+entity_map_add_findcursor (
+   entity_map_t *em, const char *id, mongoc_cursor_t *cursor, const bson_t *first_result, bson_error_t *error)
 {
    entity_findcursor_t *findcursor;
 
-   findcursor =
-      (entity_findcursor_t *) bson_malloc0 (sizeof (entity_findcursor_t));
+   findcursor = (entity_findcursor_t *) bson_malloc0 (sizeof (entity_findcursor_t));
    findcursor->cursor = cursor;
    findcursor->first_result = first_result;
    return _entity_map_add (em, id, "findcursor", (void *) findcursor, error);
 }
 
 bool
-entity_map_add_bson (entity_map_t *em,
-                     const char *id,
-                     bson_val_t *val,
-                     bson_error_t *error)
+entity_map_add_bson (entity_map_t *em, const char *id, bson_val_t *val, bson_error_t *error)
 {
    return _entity_map_add (em, id, "bson", (void *) bson_val_copy (val), error);
 }
@@ -1781,9 +1624,7 @@ special_session_lsid (bson_matcher_t *matcher,
    bson_iter_next (&iter);
 
    if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-      test_set_error (error,
-                      "unexpected $$sessionLsid does not contain utf8: %s",
-                      tmp_json (assertion));
+      test_set_error (error, "unexpected $$sessionLsid does not contain utf8: %s", tmp_json (assertion));
       goto done;
    }
 
@@ -1824,9 +1665,7 @@ special_matches_entity (bson_matcher_t *matcher,
    BSON_ASSERT (bson_iter_next (&iter));
 
    if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-      test_set_error (error,
-                      "unexpected $$matchesEntity does not contain utf8: %s",
-                      tmp_json (assertion));
+      test_set_error (error, "unexpected $$matchesEntity does not contain utf8: %s", tmp_json (assertion));
       goto done;
    }
 
@@ -1846,22 +1685,16 @@ done:
 }
 
 bool
-entity_map_match (entity_map_t *em,
-                  const bson_val_t *expected,
-                  const bson_val_t *actual,
-                  bool array_of_root_docs,
-                  bson_error_t *error)
+entity_map_match (
+   entity_map_t *em, const bson_val_t *expected, const bson_val_t *actual, bool array_of_root_docs, bson_error_t *error)
 {
    bson_matcher_t *matcher;
    bool ret;
 
    matcher = bson_matcher_new ();
-   bson_matcher_add_special (
-      matcher, "$$sessionLsid", special_session_lsid, em);
-   bson_matcher_add_special (
-      matcher, "$$matchesEntity", special_matches_entity, em);
-   ret = bson_matcher_match (
-      matcher, expected, actual, "", array_of_root_docs, error);
+   bson_matcher_add_special (matcher, "$$sessionLsid", special_session_lsid, em);
+   bson_matcher_add_special (matcher, "$$matchesEntity", special_matches_entity, em);
+   ret = bson_matcher_match (matcher, expected, actual, "", array_of_root_docs, error);
    bson_matcher_destroy (matcher);
    return ret;
 }
@@ -1886,8 +1719,7 @@ event_list_to_string (event_t *events)
          bson_string_append_printf (str, " sent %s", tmp_json (eiter->command));
       }
       if (eiter->reply) {
-         bson_string_append_printf (
-            str, " received %s", tmp_json (eiter->reply));
+         bson_string_append_printf (str, " received %s", tmp_json (eiter->reply));
       }
       bson_string_append (str, "\n");
    }
@@ -1907,8 +1739,7 @@ entity_map_end_session (entity_map_t *em, char *session_id, bson_error_t *error)
    }
 
    if (0 != strcmp (entity->type, "session")) {
-      test_set_error (
-         error, "expected session for %s but got %s", session_id, entity->type);
+      test_set_error (error, "expected session for %s but got %s", session_id, entity->type);
       goto done;
    }
 
@@ -1920,9 +1751,7 @@ done:
 }
 
 char *
-entity_map_get_session_client_id (entity_map_t *em,
-                                  char *session_id,
-                                  bson_error_t *error)
+entity_map_get_session_client_id (entity_map_t *em, char *session_id, bson_error_t *error)
 {
    char *ret = NULL;
    entity_t *entity = NULL;
@@ -1933,8 +1762,7 @@ entity_map_get_session_client_id (entity_map_t *em,
    }
 
    if (0 != strcmp (entity->type, "session")) {
-      test_set_error (
-         error, "expected session for %s but got %s", session_id, entity->type);
+      test_set_error (error, "expected session for %s but got %s", session_id, entity->type);
       goto done;
    }
 

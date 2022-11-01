@@ -36,30 +36,24 @@ kms_encrypt_request_new (const uint8_t *plaintext,
       goto done;
    }
 
-   if (!(kms_request_add_header_field (
-            request, "Content-Type", "application/x-amz-json-1.1") &&
-         kms_request_add_header_field (
-            request, "X-Amz-Target", "TrentService.Encrypt"))) {
+   if (!(kms_request_add_header_field (request, "Content-Type", "application/x-amz-json-1.1") &&
+         kms_request_add_header_field (request, "X-Amz-Target", "TrentService.Encrypt"))) {
       goto done;
    }
 
    b64_len = (plaintext_length / 3 + 1) * 4 + 1;
    if (!(b64 = malloc (b64_len))) {
-      KMS_ERROR (request,
-                 "Could not allocate %d bytes for base64-encoding payload",
-                 (int) b64_len);
+      KMS_ERROR (request, "Could not allocate %d bytes for base64-encoding payload", (int) b64_len);
       goto done;
    }
 
-   if (kms_message_b64_ntop (
-          (const uint8_t *) plaintext, plaintext_length, b64, b64_len) == -1) {
+   if (kms_message_b64_ntop ((const uint8_t *) plaintext, plaintext_length, b64, b64_len) == -1) {
       KMS_ERROR (request, "Could not base64-encode plaintext");
       goto done;
    }
 
    payload = kms_request_str_new ();
-   kms_request_str_appendf (
-      payload, "{\"Plaintext\": \"%s\", \"KeyId\": \"%s\"}", b64, key_id);
+   kms_request_str_appendf (payload, "{\"Plaintext\": \"%s\", \"KeyId\": \"%s\"}", b64, key_id);
    kms_request_append_payload (request, payload->str, payload->len);
 
 done:

@@ -35,8 +35,7 @@ BSON_BEGIN_DECLS
 
 #define MONGOC_SCRAM_B64_ENCODED_SIZE(n) (2 * n)
 
-#define MONGOC_SCRAM_B64_HASH_MAX_SIZE \
-   MONGOC_SCRAM_B64_ENCODED_SIZE (MONGOC_SCRAM_HASH_MAX_SIZE)
+#define MONGOC_SCRAM_B64_HASH_MAX_SIZE MONGOC_SCRAM_B64_ENCODED_SIZE (MONGOC_SCRAM_HASH_MAX_SIZE)
 
 typedef struct _mongoc_scram_cache_t {
    /* pre-secrets */
@@ -88,14 +87,10 @@ void
 _mongoc_scram_set_user (mongoc_scram_t *scram, const char *user);
 
 void
-_mongoc_scram_set_server_key (mongoc_scram_t *scram,
-                              const uint8_t *server_key,
-                              size_t len);
+_mongoc_scram_set_server_key (mongoc_scram_t *scram, const uint8_t *server_key, size_t len);
 
 void
-_mongoc_scram_set_salted_password (mongoc_scram_t *scram,
-                                   const uint8_t *salted_password,
-                                   size_t len);
+_mongoc_scram_set_salted_password (mongoc_scram_t *scram, const uint8_t *salted_password, size_t len);
 
 void
 _mongoc_scram_destroy (mongoc_scram_t *scram);

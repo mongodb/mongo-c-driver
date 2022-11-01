@@ -32,8 +32,7 @@ kms_request_opt_destroy (kms_request_opt_t *request)
 }
 
 void
-kms_request_opt_set_connection_close (kms_request_opt_t *opt,
-                                      bool connection_close)
+kms_request_opt_set_connection_close (kms_request_opt_t *opt, bool connection_close)
 {
    opt->connection_close = connection_close;
 }
@@ -41,10 +40,7 @@ kms_request_opt_set_connection_close (kms_request_opt_t *opt,
 
 void
 kms_request_opt_set_crypto_hooks (kms_request_opt_t *opt,
-                                  bool (*sha256) (void *ctx,
-                                                  const char *input,
-                                                  size_t len,
-                                                  unsigned char *hash_out),
+                                  bool (*sha256) (void *ctx, const char *input, size_t len, unsigned char *hash_out),
                                   bool (*sha256_hmac) (void *ctx,
                                                        const char *key_input,
                                                        size_t key_len,

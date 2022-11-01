@@ -26,27 +26,23 @@
  * those were superseded by write commands in 2.6. */
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
 /* define a count function for each counter. */
-#define COUNTER(id, category, name, description)                               \
-   int32_t prev_##id;                                                          \
-   int32_t count_##id (void)                                                   \
-   {                                                                           \
-      int32_t _sum = 0;                                                        \
-      uint32_t _i;                                                             \
-      for (_i = 0; _i < _mongoc_get_cpu_count (); _i++) {                      \
-         const int64_t *counter =                                              \
-            &BSON_CONCAT (__mongoc_counter_, id)                               \
-                .cpus[_i]                                                      \
-                .slots[BSON_CONCAT (COUNTER_, id) % SLOTS_PER_CACHELINE];      \
-         _sum += bson_atomic_int64_fetch (counter, bson_memory_order_seq_cst); \
-      }                                                                        \
-      return _sum;                                                             \
+#define COUNTER(id, category, name, description)                                                                   \
+   int32_t prev_##id;                                                                                              \
+   int32_t count_##id (void)                                                                                       \
+   {                                                                                                               \
+      int32_t _sum = 0;                                                                                            \
+      uint32_t _i;                                                                                                 \
+      for (_i = 0; _i < _mongoc_get_cpu_count (); _i++) {                                                          \
+         const int64_t *counter =                                                                                  \
+            &BSON_CONCAT (__mongoc_counter_, id).cpus[_i].slots[BSON_CONCAT (COUNTER_, id) % SLOTS_PER_CACHELINE]; \
+         _sum += bson_atomic_int64_fetch (counter, bson_memory_order_seq_cst);                                     \
+      }                                                                                                            \
+      return _sum;                                                                                                 \
    }
 #include "mongoc/mongoc-counters.defs"
 #undef COUNTER
 
-#define RESET(id)               \
-   bson_atomic_int32_exchange ( \
-      &prev_##id, count_##id (), bson_memory_order_seq_cst)
+#define RESET(id) bson_atomic_int32_exchange (&prev_##id, count_##id (), bson_memory_order_seq_cst)
 
 #define DIFF_AND_RESET(id, cmp, expected)     \
    do {                                       \
@@ -76,8 +72,7 @@ _client_new_disable_ss (bool use_compression)
 
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
-   mongoc_uri_set_option_as_int32 (
-      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
    if (use_compression) {
       char *compressors = test_framework_get_compressors ();
       mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_COMPRESSORS, compressors);
@@ -106,8 +101,7 @@ _drop_and_populate_coll (mongoc_client_t *client)
    coll = mongoc_client_get_collection (client, "test", "test");
    mongoc_collection_drop (coll, NULL); /* don't care if ns not found. */
    for (i = 0; i < 3; i++) {
-      ret =
-         mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &err);
+      ret = mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &err);
       ASSERT_OR_PRINT (ret, err);
    }
    return coll;
@@ -119,8 +113,7 @@ _ping (mongoc_client_t *client)
 {
    bool ret;
    bson_error_t err;
-   ret = mongoc_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
+   ret = mongoc_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
    ASSERT_OR_PRINT (ret, err);
 }
 
@@ -146,8 +139,7 @@ test_counters_op_msg (void *ctx)
    DIFF_AND_RESET (op_egress_total, ==, 4);
    DIFF_AND_RESET (op_ingress_msg, ==, 4);
    DIFF_AND_RESET (op_ingress_total, ==, 4);
-   cursor =
-      mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL, NULL);
    while (mongoc_cursor_next (cursor, &bson))
       ;
    mongoc_cursor_destroy (cursor);
@@ -201,8 +193,7 @@ test_counters_cursors (void)
 
    client = _client_new_disable_ss (false);
    coll = _drop_and_populate_coll (client);
-   cursor = mongoc_collection_find_with_opts (
-      coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
+   cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
    DIFF_AND_RESET (cursors_active, ==, 1);
    while (mongoc_cursor_next (cursor, &bson))
       ;
@@ -223,8 +214,7 @@ test_counters_clients (void)
    uri = test_framework_get_uri ();
 
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
-   mongoc_uri_set_option_as_int32 (
-      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
    reset_all_counters ();
    client = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client);
@@ -304,8 +294,7 @@ test_counters_streams (void *ctx)
       mongoc_ssl_opt_t opts = *default_opts;
       mongoc_stream_t *ssl_buffered_stream_socket;
 
-      ssl_buffered_stream_socket = mongoc_stream_tls_new_with_hostname (
-         buffered_stream_sock, NULL, &opts, 0);
+      ssl_buffered_stream_socket = mongoc_stream_tls_new_with_hostname (buffered_stream_sock, NULL, &opts, 0);
       DIFF_AND_RESET (streams_active, ==, 1);
       DIFF_AND_RESET (streams_disposed, ==, 0);
       mongoc_stream_destroy (ssl_buffered_stream_socket);
@@ -321,11 +310,9 @@ test_counters_streams (void *ctx)
    }
 /* check a file stream. */
 #ifdef WIN32
-   file_stream = mongoc_stream_file_new_for_path (
-      BINARY_DIR "/temp.dat", O_CREAT | O_WRONLY | O_TRUNC, _S_IWRITE);
+   file_stream = mongoc_stream_file_new_for_path (BINARY_DIR "/temp.dat", O_CREAT | O_WRONLY | O_TRUNC, _S_IWRITE);
 #else
-   file_stream = mongoc_stream_file_new_for_path (
-      BINARY_DIR "/temp.dat", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+   file_stream = mongoc_stream_file_new_for_path (BINARY_DIR "/temp.dat", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
 #endif
    BSON_ASSERT (file_stream);
    DIFF_AND_RESET (streams_active, ==, 1);
@@ -336,8 +323,7 @@ test_counters_streams (void *ctx)
    mongoc_stream_destroy (file_stream);
    DIFF_AND_RESET (streams_active, ==, -1);
    DIFF_AND_RESET (streams_disposed, ==, 1);
-   file_stream =
-      mongoc_stream_file_new_for_path (BINARY_DIR "/temp.dat", O_RDONLY, 0);
+   file_stream = mongoc_stream_file_new_for_path (BINARY_DIR "/temp.dat", O_RDONLY, 0);
    BSON_ASSERT (file_stream);
    DIFF_AND_RESET (streams_active, ==, 1);
    DIFF_AND_RESET (streams_disposed, ==, 0);
@@ -392,8 +378,7 @@ test_counters_auth (void *ctx)
 {
    char *host_and_port = test_framework_get_host_and_port ();
    char *uri_str = test_framework_get_uri_str ();
-   char *uri_str_bad = bson_strdup_printf (
-      "mongodb://%s:%s@%s/", "bad_user", "bad_pass", host_and_port);
+   char *uri_str_bad = bson_strdup_printf ("mongodb://%s:%s@%s/", "bad_user", "bad_pass", host_and_port);
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    bool ret;
@@ -403,14 +388,12 @@ test_counters_auth (void *ctx)
 
    uri = mongoc_uri_new (uri_str);
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
-   mongoc_uri_set_option_as_int32 (
-      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
    reset_all_counters ();
    client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    BSON_ASSERT (client);
-   ret = mongoc_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
+   ret = mongoc_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
    ASSERT_OR_PRINT (ret, err);
    DIFF_AND_RESET (auth_success, ==, 1);
    DIFF_AND_RESET (auth_failure, ==, 0);
@@ -467,10 +450,8 @@ test_counters_streams_timeout (void)
    sd = mongoc_client_select_server (client, true, NULL, &err);
    mongoc_server_description_destroy (sd);
    reset_all_counters ();
-   future = future_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
-   request = mock_server_receives_msg (
-      server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+   future = future_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
+   request = mock_server_receives_msg (server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
    _mongoc_usleep (350);
    request_destroy (request);
    ret = future_get_bool (future);
@@ -503,12 +484,7 @@ test_counters_install (TestSuite *suite)
                       test_framework_skip_if_auth);
    TestSuite_AddLive (suite, "/counters/cursors", test_counters_cursors);
    TestSuite_AddLive (suite, "/counters/clients", test_counters_clients);
-   TestSuite_AddFull (suite,
-                      "/counters/streams",
-                      test_counters_streams,
-                      NULL,
-                      NULL,
-                      TestSuite_CheckLive);
+   TestSuite_AddFull (suite, "/counters/streams", test_counters_streams, NULL, NULL, TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/counters/auth",
                       test_counters_auth,
@@ -517,7 +493,6 @@ test_counters_install (TestSuite *suite)
                       test_framework_skip_if_no_auth,
                       test_framework_skip_if_not_single);
    TestSuite_AddLive (suite, "/counters/dns", test_counters_dns);
-   TestSuite_AddMockServerTest (
-      suite, "/counters/streams_timeout", test_counters_streams_timeout);
+   TestSuite_AddMockServerTest (suite, "/counters/streams_timeout", test_counters_streams_timeout);
 #endif
 }

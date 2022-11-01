@@ -38,28 +38,22 @@
 #include <src/kms_kv_list.h>
 #include <src/kms_port.h>
 
-#define ASSERT_CONTAINS(_a, _b)                                              \
-   do {                                                                      \
-      kms_request_str_t *_a_str = kms_request_str_new_from_chars ((_a), -1); \
-      kms_request_str_t *_b_str = kms_request_str_new_from_chars ((_b), -1); \
-      kms_request_str_t *_a_lower = kms_request_str_new ();                  \
-      kms_request_str_t *_b_lower = kms_request_str_new ();                  \
-      kms_request_str_append_lowercase (_a_lower, (_a_str));                 \
-      kms_request_str_append_lowercase (_b_lower, (_b_str));                 \
-      if (NULL == strstr ((_a_lower->str), (_b_lower->str))) {               \
-         fprintf (stderr,                                                    \
-                  "%s:%d %s(): [%s] does not contain [%s]\n",                \
-                  __FILE__,                                                  \
-                  __LINE__,                                                  \
-                  __FUNCTION__,                                              \
-                  _a,                                                        \
-                  _b);                                                       \
-         abort ();                                                           \
-      }                                                                      \
-      kms_request_str_destroy (_a_str);                                      \
-      kms_request_str_destroy (_b_str);                                      \
-      kms_request_str_destroy (_a_lower);                                    \
-      kms_request_str_destroy (_b_lower);                                    \
+#define ASSERT_CONTAINS(_a, _b)                                                                                  \
+   do {                                                                                                          \
+      kms_request_str_t *_a_str = kms_request_str_new_from_chars ((_a), -1);                                     \
+      kms_request_str_t *_b_str = kms_request_str_new_from_chars ((_b), -1);                                     \
+      kms_request_str_t *_a_lower = kms_request_str_new ();                                                      \
+      kms_request_str_t *_b_lower = kms_request_str_new ();                                                      \
+      kms_request_str_append_lowercase (_a_lower, (_a_str));                                                     \
+      kms_request_str_append_lowercase (_b_lower, (_b_str));                                                     \
+      if (NULL == strstr ((_a_lower->str), (_b_lower->str))) {                                                   \
+         fprintf (stderr, "%s:%d %s(): [%s] does not contain [%s]\n", __FILE__, __LINE__, __FUNCTION__, _a, _b); \
+         abort ();                                                                                               \
+      }                                                                                                          \
+      kms_request_str_destroy (_a_str);                                                                          \
+      kms_request_str_destroy (_b_str);                                                                          \
+      kms_request_str_destroy (_a_lower);                                                                        \
+      kms_request_str_destroy (_b_lower);                                                                        \
    } while (0)
 
 const char *aws_test_suite_dir = "aws-sig-v4-test-suite";
@@ -89,8 +83,7 @@ ends_with (const char *str, const char *suffix)
 {
    size_t str_len = strlen (str);
    size_t suf_len = strlen (suffix);
-   if (str_len >= suf_len &&
-       0 == strncmp (&str[str_len - suf_len], suffix, suf_len)) {
+   if (str_len >= suf_len && 0 == strncmp (&str[str_len - suf_len], suffix, suf_len)) {
       return true;
    }
 
@@ -273,9 +266,7 @@ read_req (const char *path)
    /* like "GET /path HTTP/1.1" */
    line_len = test_getline (&line, &len, f);
    method = kms_strndup (line, strchr (line, ' ') - line);
-   uri_path =
-      kms_strndup (line + strlen (method) + 1,
-                   line_len - strlen (method) - 1 - strlen (" HTTP/1.1\n"));
+   uri_path = kms_strndup (line + strlen (method) + 1, line_len - strlen (method) - 1 - strlen (" HTTP/1.1\n"));
 
    request = kms_request_new (method, uri_path, NULL);
    request->auto_content_length = false;
@@ -283,8 +274,7 @@ read_req (const char *path)
    kms_request_set_region (request, "us-east-1");
    kms_request_set_service (request, "service");
    kms_request_set_access_key_id (request, "AKIDEXAMPLE");
-   kms_request_set_secret_key (request,
-                               "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
+   kms_request_set_secret_key (request, "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
 
    while ((line_len = test_getline (&line, &len, f)) != -1) {
       if (strchr (line, ':')) {
@@ -303,8 +293,7 @@ read_req (const char *path)
          /* TODO: is this a test quirk or HTTP specified behavior? */
          kms_request_append_header_field_value (request, "\n", 1);
          /* omit this line's newline */
-         kms_request_append_header_field_value (
-            request, line, (size_t) (line_len - 1));
+         kms_request_append_header_field_value (request, line, (size_t) (line_len - 1));
       }
    }
 
@@ -375,10 +364,7 @@ compare_strs (const char *test_name, const char *expect, const char *actual)
    }
 
 void
-test_compare (kms_request_t *request,
-              char *(*func) (kms_request_t *),
-              const char *dir_path,
-              const char *suffix)
+test_compare (kms_request_t *request, char *(*func) (kms_request_t *), const char *dir_path, const char *suffix)
 {
    char *test_name = last_segment (dir_path);
    char *expect;
@@ -487,8 +473,7 @@ done:
 void
 example_signature_test (void)
 {
-   const char *expect =
-      "c4afb1cc5771d871763a393e44b703571b55cc28424d1a5e86da6ed3c154a4b9";
+   const char *expect = "c4afb1cc5771d871763a393e44b703571b55cc28424d1a5e86da6ed3c154a4b9";
    kms_request_t *request;
    unsigned char signing[32];
    char *sig;
@@ -498,8 +483,7 @@ example_signature_test (void)
 
    kms_request_set_region (request, "us-east-1");
    kms_request_set_service (request, "iam");
-   kms_request_set_secret_key (request,
-                               "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
+   kms_request_set_secret_key (request, "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
 
    KMS_ASSERT (kms_request_get_signing_key (request, signing));
    sig = hexlify (signing, 32);
@@ -642,8 +626,7 @@ multibyte_test (void)
    KMS_ASSERT (kms_request_set_region (request, EU));
    KMS_ASSERT (kms_request_set_service (request, EU));
    kms_request_set_access_key_id (request, "AKIDEXAMPLE");
-   kms_request_set_secret_key (request,
-                               "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
+   kms_request_set_secret_key (request, "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
 
    KMS_ASSERT (kms_request_add_header_field (request, EU, EU));
    KMS_ASSERT (kms_request_append_header_field_value (request, "asdf" EU, 7));
@@ -681,29 +664,26 @@ connection_close_test (void)
 }
 
 /* the ciphertext blob from a response to an "Encrypt" API call */
-const char ciphertext_blob[] =
-   "\x01\x02\x02\x00\x78\xf3\x8e\xd8\xd4\xc6\xba\xfb\xa1\xcf\xc1\x1e\x68\xf2"
-   "\xa1\x91\x9e\x36\x4d\x74\xa2\xc4\x9e\x30\x67\x08\x53\x33\x0d\xcd\xe0\xc9"
-   "\x1b\x01\x60\x30\xd4\x73\x9e\x90\x1f\xa7\x43\x55\x84\x26\xf9\xd5\xf0\xb1"
-   "\x00\x00\x00\x64\x30\x62\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x07\x06\xa0"
-   "\x55\x30\x53\x02\x01\x00\x30\x4e\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x07"
-   "\x01\x30\x1e\x06\x09\x60\x86\x48\x01\x65\x03\x04\x01\x2e\x30\x11\x04\x0c"
-   "\xa2\xc7\x12\x1c\x25\x38\x0e\xec\x08\x1f\x23\x09\x02\x01\x10\x80\x21\x61"
-   "\x03\xcd\xcb\xe2\xac\x36\x4f\x73\xdb\x1b\x73\x2e\x33\xda\x45\x51\xf4\xcd"
-   "\xc0\xff\xd2\xe1\xb9\xc4\xc2\x0e\xbf\x53\x90\x46\x18\x42";
+const char ciphertext_blob[] = "\x01\x02\x02\x00\x78\xf3\x8e\xd8\xd4\xc6\xba\xfb\xa1\xcf\xc1\x1e\x68\xf2"
+                               "\xa1\x91\x9e\x36\x4d\x74\xa2\xc4\x9e\x30\x67\x08\x53\x33\x0d\xcd\xe0\xc9"
+                               "\x1b\x01\x60\x30\xd4\x73\x9e\x90\x1f\xa7\x43\x55\x84\x26\xf9\xd5\xf0\xb1"
+                               "\x00\x00\x00\x64\x30\x62\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x07\x06\xa0"
+                               "\x55\x30\x53\x02\x01\x00\x30\x4e\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x07"
+                               "\x01\x30\x1e\x06\x09\x60\x86\x48\x01\x65\x03\x04\x01\x2e\x30\x11\x04\x0c"
+                               "\xa2\xc7\x12\x1c\x25\x38\x0e\xec\x08\x1f\x23\x09\x02\x01\x10\x80\x21\x61"
+                               "\x03\xcd\xcb\xe2\xac\x36\x4f\x73\xdb\x1b\x73\x2e\x33\xda\x45\x51\xf4\xcd"
+                               "\xc0\xff\xd2\xe1\xb9\xc4\xc2\x0e\xbf\x53\x90\x46\x18\x42";
 
 void
 decrypt_request_test (void)
 {
-   kms_request_t *request = kms_decrypt_request_new (
-      (uint8_t *) ciphertext_blob, sizeof (ciphertext_blob) - 1, NULL);
+   kms_request_t *request = kms_decrypt_request_new ((uint8_t *) ciphertext_blob, sizeof (ciphertext_blob) - 1, NULL);
 
    set_test_date (request);
    kms_request_set_region (request, "us-east-1");
    kms_request_set_service (request, "service");
    kms_request_set_access_key_id (request, "AKIDEXAMPLE");
-   kms_request_set_secret_key (request,
-                               "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
+   kms_request_set_secret_key (request, "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
 
    test_compare_creq (request, "test/decrypt");
    test_compare_sreq (request, "test/decrypt");
@@ -715,15 +695,13 @@ void
 encrypt_request_test (void)
 {
    char *plaintext = "foobar";
-   kms_request_t *request = kms_encrypt_request_new (
-      (uint8_t *) plaintext, strlen (plaintext), "alias/1", NULL);
+   kms_request_t *request = kms_encrypt_request_new ((uint8_t *) plaintext, strlen (plaintext), "alias/1", NULL);
 
    set_test_date (request);
    kms_request_set_region (request, "us-east-1");
    kms_request_set_service (request, "service");
    kms_request_set_access_key_id (request, "AKIDEXAMPLE");
-   kms_request_set_secret_key (request,
-                               "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
+   kms_request_set_secret_key (request, "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY");
 
    test_compare_creq (request, "test/encrypt");
    test_compare_sreq (request, "test/encrypt");
@@ -808,13 +786,10 @@ kms_response_parser_test (void)
    kms_response_destroy (response);
 
    /* the parser resets after returning a response. */
-   ASSERT (
-      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "Content-Length: 15\r\n", 20));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "Content-Length: 15\r\n", 20));
    ASSERT (kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
-   ASSERT (
-      kms_response_parser_feed (parser, (uint8_t *) "This is a test.", 15));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "This is a test.", 15));
    ASSERT (0 == kms_response_parser_wants_bytes (parser, 123));
    response = kms_response_parser_get_response (parser);
    ASSERT (response->status == 200)
@@ -825,110 +800,89 @@ kms_response_parser_test (void)
 
    /* We fail to parse invalid HTTP */
    parser = kms_response_parser_new ();
-   ASSERT (!kms_response_parser_feed (
-      parser, (uint8_t *) "To Whom it May Concern\r\n", 24));
+   ASSERT (!kms_response_parser_feed (parser, (uint8_t *) "To Whom it May Concern\r\n", 24));
    kms_response_parser_destroy (parser);
 
    /* We fail on HTTP other than 1.1 */
    parser = kms_response_parser_new ();
-   ASSERT (!kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/6.1 200 OK\r\n", 17));
+   ASSERT (!kms_response_parser_feed (parser, (uint8_t *) "HTTP/6.1 200 OK\r\n", 17));
    kms_response_parser_destroy (parser);
 
    /* We fail if there is no status */
    parser = kms_response_parser_new ();
-   ASSERT (!kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 CREATED\r\n", 18));
+   ASSERT (!kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 CREATED\r\n", 18));
    kms_response_parser_destroy (parser);
 
    /* We do not fail when parsing a non-200 status code,
     * as the content may provide a useful error message. */
    parser = kms_response_parser_new ();
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 100 CONTINUE\r\n", 23));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 100 CONTINUE\r\n", 23));
    ASSERT (kms_response_parser_status (parser) == 100);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 201 CREATED\r\n", 22));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 201 CREATED\r\n", 22));
    ASSERT (kms_response_parser_status (parser) == 201);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 301 MOVED PERMANENTLY\r\n", 32));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 301 MOVED PERMANENTLY\r\n", 32));
    ASSERT (kms_response_parser_status (parser) == 301);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 400 BAD REQUEST\r\n", 26));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 400 BAD REQUEST\r\n", 26));
    ASSERT (kms_response_parser_status (parser) == 400);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 404 NOT FOUND\r\n", 24));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 404 NOT FOUND\r\n", 24));
    ASSERT (kms_response_parser_status (parser) == 404);
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "HTTP/1.1 500 INTERNAL SERVER ERROR\r\n", 36));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 500 INTERNAL SERVER ERROR\r\n", 36));
    ASSERT (kms_response_parser_status (parser) == 500);
    kms_response_parser_destroy (parser);
 
    /* We fail if the header doesn't have a colon in it */
    parser = kms_response_parser_new ();
-   ASSERT (
-      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
    ASSERT (kms_response_parser_status (parser) == 200);
-   ASSERT (!kms_response_parser_feed (
-      parser, (uint8_t *) "Content-Length= 15\r\n", 20));
-   ASSERT (strstr (kms_response_parser_error (parser),
-                   "Could not parse header, no colon found."));
+   ASSERT (!kms_response_parser_feed (parser, (uint8_t *) "Content-Length= 15\r\n", 20));
+   ASSERT (strstr (kms_response_parser_error (parser), "Could not parse header, no colon found."));
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (
-      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
    ASSERT (kms_response_parser_status (parser) == 200);
-   ASSERT (
-      !kms_response_parser_feed (parser, (uint8_t *) "Anything else\r\n", 15));
-   ASSERT (strstr (kms_response_parser_error (parser),
-                   "Could not parse header, no colon found."));
+   ASSERT (!kms_response_parser_feed (parser, (uint8_t *) "Anything else\r\n", 15));
+   ASSERT (strstr (kms_response_parser_error (parser), "Could not parse header, no colon found."));
    kms_response_parser_destroy (parser);
 
    /* An empty body is ok. */
    parser = kms_response_parser_new ();
-   ASSERT (
-      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
    ASSERT (kms_response_parser_status (parser) == 200);
    ASSERT (kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
    kms_response_parser_destroy (parser);
 
    /* Extra content is not ok. */
    parser = kms_response_parser_new ();
-   ASSERT (
-      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
    ASSERT (kms_response_parser_status (parser) == 200);
    ASSERT (kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
    ASSERT (!kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
-   ASSERT (strstr (kms_response_parser_error (parser),
-                   "Unexpected extra HTTP content"));
+   ASSERT (strstr (kms_response_parser_error (parser), "Unexpected extra HTTP content"));
    kms_response_parser_destroy (parser);
 
    parser = kms_response_parser_new ();
-   ASSERT (
-      kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "HTTP/1.1 200 OK\r\n", 17));
    ASSERT (kms_response_parser_status (parser) == 200);
-   ASSERT (kms_response_parser_feed (
-      parser, (uint8_t *) "Content-Length: 5\r\n", 19));
+   ASSERT (kms_response_parser_feed (parser, (uint8_t *) "Content-Length: 5\r\n", 19));
    ASSERT (kms_response_parser_feed (parser, (uint8_t *) "\r\n", 2));
    ASSERT (!kms_response_parser_feed (parser, (uint8_t *) "abcdefghi", 9));
-   ASSERT (strstr (kms_response_parser_error (parser),
-                   "Unexpected: exceeded content length"));
+   ASSERT (strstr (kms_response_parser_error (parser), "Unexpected: exceeded content length"));
    kms_response_parser_destroy (parser);
 }
 

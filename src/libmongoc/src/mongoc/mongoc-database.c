@@ -72,12 +72,9 @@ _mongoc_database_new (mongoc_client_t *client,
 
    db = (mongoc_database_t *) bson_malloc0 (sizeof *db);
    db->client = client;
-   db->write_concern = write_concern ? mongoc_write_concern_copy (write_concern)
-                                     : mongoc_write_concern_new ();
-   db->read_concern = read_concern ? mongoc_read_concern_copy (read_concern)
-                                   : mongoc_read_concern_new ();
-   db->read_prefs = read_prefs ? mongoc_read_prefs_copy (read_prefs)
-                               : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   db->write_concern = write_concern ? mongoc_write_concern_copy (write_concern) : mongoc_write_concern_new ();
+   db->read_concern = read_concern ? mongoc_read_concern_copy (read_concern) : mongoc_read_concern_new ();
+   db->read_prefs = read_prefs ? mongoc_read_prefs_copy (read_prefs) : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    db->name = bson_strdup (name);
 
@@ -174,11 +171,8 @@ mongoc_database_copy (mongoc_database_t *database)
 
    BSON_ASSERT_PARAM (database);
 
-   RETURN (_mongoc_database_new (database->client,
-                                 database->name,
-                                 database->read_prefs,
-                                 database->read_concern,
-                                 database->write_concern));
+   RETURN (_mongoc_database_new (
+      database->client, database->name, database->read_prefs, database->read_concern, database->write_concern));
 }
 
 mongoc_cursor_t *
@@ -213,8 +207,7 @@ mongoc_database_command (mongoc_database_t *database,
     */
 
    /* flags, skip, limit, batch_size, fields are unused */
-   cursor = _mongoc_cursor_cmd_deprecated_new (
-      database->client, ns, command, read_prefs);
+   cursor = _mongoc_cursor_cmd_deprecated_new (database->client, ns, command, read_prefs);
    bson_free (ns);
    return cursor;
 }
@@ -276,11 +269,8 @@ mongoc_database_read_command_with_opts (mongoc_database_t *database,
 
 
 bool
-mongoc_database_write_command_with_opts (mongoc_database_t *database,
-                                         const bson_t *command,
-                                         const bson_t *opts,
-                                         bson_t *reply,
-                                         bson_error_t *error)
+mongoc_database_write_command_with_opts (
+   mongoc_database_t *database, const bson_t *command, const bson_t *opts, bson_t *reply, bson_error_t *error)
 {
    return _mongoc_client_command_with_opts (database->client,
                                             database->name,
@@ -298,13 +288,12 @@ mongoc_database_write_command_with_opts (mongoc_database_t *database,
 
 
 bool
-mongoc_database_read_write_command_with_opts (
-   mongoc_database_t *database,
-   const bson_t *command,
-   const mongoc_read_prefs_t *read_prefs /* IGNORED */,
-   const bson_t *opts,
-   bson_t *reply,
-   bson_error_t *error)
+mongoc_database_read_write_command_with_opts (mongoc_database_t *database,
+                                              const bson_t *command,
+                                              const mongoc_read_prefs_t *read_prefs /* IGNORED */,
+                                              const bson_t *opts,
+                                              bson_t *reply,
+                                              bson_error_t *error)
 {
    return _mongoc_client_command_with_opts (database->client,
                                             database->name,
@@ -371,9 +360,7 @@ mongoc_database_drop (mongoc_database_t *database, bson_error_t *error)
 
 
 bool
-mongoc_database_drop_with_opts (mongoc_database_t *database,
-                                const bson_t *opts,
-                                bson_error_t *error)
+mongoc_database_drop_with_opts (mongoc_database_t *database, const bson_t *opts, bson_error_t *error)
 {
    bool ret;
    bson_t cmd;
@@ -402,9 +389,7 @@ mongoc_database_drop_with_opts (mongoc_database_t *database,
 
 
 bool
-mongoc_database_remove_user (mongoc_database_t *database,
-                             const char *username,
-                             bson_error_t *error)
+mongoc_database_remove_user (mongoc_database_t *database, const char *username, bson_error_t *error)
 {
    bson_t cmd;
    bool ret;
@@ -424,8 +409,7 @@ mongoc_database_remove_user (mongoc_database_t *database,
 
 
 bool
-mongoc_database_remove_all_users (mongoc_database_t *database,
-                                  bson_error_t *error)
+mongoc_database_remove_all_users (mongoc_database_t *database, bson_error_t *error)
 {
    bson_t cmd;
    bool ret;
@@ -537,8 +521,7 @@ mongoc_database_get_read_prefs (const mongoc_database_t *database) /* IN */
  */
 
 void
-mongoc_database_set_read_prefs (mongoc_database_t *database,
-                                const mongoc_read_prefs_t *read_prefs)
+mongoc_database_set_read_prefs (mongoc_database_t *database, const mongoc_read_prefs_t *read_prefs)
 {
    BSON_ASSERT_PARAM (database);
 
@@ -595,8 +578,7 @@ mongoc_database_get_read_concern (const mongoc_database_t *database)
  */
 
 void
-mongoc_database_set_read_concern (mongoc_database_t *database,
-                                  const mongoc_read_concern_t *read_concern)
+mongoc_database_set_read_concern (mongoc_database_t *database, const mongoc_read_concern_t *read_concern)
 {
    BSON_ASSERT_PARAM (database);
 
@@ -653,8 +635,7 @@ mongoc_database_get_write_concern (const mongoc_database_t *database)
  */
 
 void
-mongoc_database_set_write_concern (mongoc_database_t *database,
-                                   const mongoc_write_concern_t *write_concern)
+mongoc_database_set_write_concern (mongoc_database_t *database, const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT_PARAM (database);
 
@@ -687,9 +668,7 @@ mongoc_database_set_write_concern (mongoc_database_t *database,
  * Returns: %true if @name exists, otherwise %false. @error may be set.
  */
 bool
-mongoc_database_has_collection (mongoc_database_t *database,
-                                const char *name,
-                                bson_error_t *error)
+mongoc_database_has_collection (mongoc_database_t *database, const char *name, bson_error_t *error)
 {
    bson_iter_t col_iter;
    bool ret = false;
@@ -714,9 +693,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
 
    cursor = mongoc_database_find_collections_with_opts (database, &opts);
    while (mongoc_cursor_next (cursor, &doc)) {
-      if (bson_iter_init (&col_iter, doc) &&
-          bson_iter_find (&col_iter, "name") &&
-          BSON_ITER_HOLDS_UTF8 (&col_iter) &&
+      if (bson_iter_init (&col_iter, doc) && bson_iter_find (&col_iter, "name") && BSON_ITER_HOLDS_UTF8 (&col_iter) &&
           (cur_name = bson_iter_utf8 (&col_iter, NULL))) {
          if (!strcmp (cur_name, name)) {
             ret = true;
@@ -736,9 +713,7 @@ cleanup:
 
 
 mongoc_cursor_t *
-mongoc_database_find_collections (mongoc_database_t *database,
-                                  const bson_t *filter,
-                                  bson_error_t *error)
+mongoc_database_find_collections (mongoc_database_t *database, const bson_t *filter, bson_error_t *error)
 {
    bson_t opts = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
@@ -747,10 +722,7 @@ mongoc_database_find_collections (mongoc_database_t *database,
 
    if (filter) {
       if (!BSON_APPEND_DOCUMENT (&opts, "filter", filter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Invalid 'filter' parameter.");
+         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Invalid 'filter' parameter.");
          bson_destroy (&opts);
          return NULL;
       }
@@ -771,8 +743,7 @@ mongoc_database_find_collections (mongoc_database_t *database,
 
 
 mongoc_cursor_t *
-mongoc_database_find_collections_with_opts (mongoc_database_t *database,
-                                            const bson_t *opts)
+mongoc_database_find_collections_with_opts (mongoc_database_t *database, const bson_t *opts)
 {
    mongoc_cursor_t *cursor;
    bson_t cmd = BSON_INITIALIZER;
@@ -783,8 +754,7 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database,
 
    /* Enumerate Collections Spec: "run listCollections on the primary node in
     * replicaset mode" */
-   cursor = _mongoc_cursor_cmd_new (
-      database->client, database->name, &cmd, opts, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_cmd_new (database->client, database->name, &cmd, opts, NULL, NULL, NULL);
    if (cursor->error.domain == 0) {
       _mongoc_cursor_prime (cursor);
    }
@@ -795,18 +765,14 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database,
 
 
 char **
-mongoc_database_get_collection_names (mongoc_database_t *database,
-                                      bson_error_t *error)
+mongoc_database_get_collection_names (mongoc_database_t *database, bson_error_t *error)
 {
-   return mongoc_database_get_collection_names_with_opts (
-      database, NULL, error);
+   return mongoc_database_get_collection_names_with_opts (database, NULL, error);
 }
 
 
 char **
-mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
-                                                const bson_t *opts,
-                                                bson_error_t *error)
+mongoc_database_get_collection_names_with_opts (mongoc_database_t *database, const bson_t *opts, bson_error_t *error)
 {
    bson_t opts_copy;
    bson_iter_t col;
@@ -836,8 +802,8 @@ mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
    _mongoc_array_init (&strv_buf, sizeof (char *));
 
    while (mongoc_cursor_next (cursor, &doc)) {
-      if (bson_iter_init (&col, doc) && bson_iter_find (&col, "name") &&
-          BSON_ITER_HOLDS_UTF8 (&col) && (name = bson_iter_utf8 (&col, NULL))) {
+      if (bson_iter_init (&col, doc) && bson_iter_find (&col, "name") && BSON_ITER_HOLDS_UTF8 (&col) &&
+          (name = bson_iter_utf8 (&col, NULL))) {
          namecopy = bson_strdup (name);
          _mongoc_array_append_val (&strv_buf, namecopy);
       }
@@ -862,10 +828,7 @@ mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
 }
 
 static mongoc_collection_t *
-create_collection (mongoc_database_t *database,
-                   const char *name,
-                   const bson_t *opts,
-                   bson_error_t *error)
+create_collection (mongoc_database_t *database, const char *name, const bson_t *opts, bson_error_t *error)
 {
    mongoc_collection_t *collection = NULL;
    bson_iter_t iter;
@@ -876,11 +839,8 @@ create_collection (mongoc_database_t *database,
    BSON_ASSERT_PARAM (name);
 
    if (strchr (name, '$')) {
-      bson_set_error (error,
-                      MONGOC_ERROR_NAMESPACE,
-                      MONGOC_ERROR_NAMESPACE_INVALID,
-                      "The namespace \"%s\" is invalid.",
-                      name);
+      bson_set_error (
+         error, MONGOC_ERROR_NAMESPACE, MONGOC_ERROR_NAMESPACE_INVALID, "The namespace \"%s\" is invalid.", name);
       return NULL;
    }
 
@@ -905,11 +865,10 @@ create_collection (mongoc_database_t *database,
             return NULL;
          }
          if (!capped) {
-            bson_set_error (
-               error,
-               MONGOC_ERROR_COMMAND,
-               MONGOC_ERROR_COMMAND_INVALID_ARG,
-               "The \"size\" parameter requires {\"capped\": true}");
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The \"size\" parameter requires {\"capped\": true}");
             return NULL;
          }
       }
@@ -923,22 +882,20 @@ create_collection (mongoc_database_t *database,
             return NULL;
          }
          if (!capped) {
-            bson_set_error (
-               error,
-               MONGOC_ERROR_COMMAND,
-               MONGOC_ERROR_COMMAND_INVALID_ARG,
-               "The \"max\" parameter requires {\"capped\": true}");
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The \"max\" parameter requires {\"capped\": true}");
             return NULL;
          }
       }
 
       if (bson_iter_init_find (&iter, opts, "storageEngine")) {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-            bson_set_error (
-               error,
-               MONGOC_ERROR_COMMAND,
-               MONGOC_ERROR_COMMAND_INVALID_ARG,
-               "The \"storageEngine\" parameter must be a document");
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The \"storageEngine\" parameter must be a document");
 
             return NULL;
          }
@@ -955,11 +912,10 @@ create_collection (mongoc_database_t *database,
 
             if (bson_iter_find (&iter, "configString")) {
                if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-                  bson_set_error (
-                     error,
-                     MONGOC_ERROR_COMMAND,
-                     MONGOC_ERROR_COMMAND_INVALID_ARG,
-                     "The \"configString\" parameter must be a string");
+                  bson_set_error (error,
+                                  MONGOC_ERROR_COMMAND,
+                                  MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                  "The \"configString\" parameter must be a string");
                   return NULL;
                }
             } else {
@@ -990,12 +946,8 @@ create_collection (mongoc_database_t *database,
                                          database->write_concern,
                                          NULL, /* reply */
                                          error)) {
-      collection = _mongoc_collection_new (database->client,
-                                           database->name,
-                                           name,
-                                           database->read_prefs,
-                                           database->read_concern,
-                                           database->write_concern);
+      collection = _mongoc_collection_new (
+         database->client, database->name, name, database->read_prefs, database->read_concern, database->write_concern);
    }
 
    bson_destroy (&cmd);
@@ -1004,11 +956,10 @@ create_collection (mongoc_database_t *database,
 }
 
 char *
-_mongoc_get_encryptedField_state_collection (
-   const bson_t *encryptedFields,
-   const char *data_collection,
-   const char *state_collection_suffix,
-   bson_error_t *error)
+_mongoc_get_encryptedField_state_collection (const bson_t *encryptedFields,
+                                             const char *data_collection,
+                                             const char *state_collection_suffix,
+                                             bson_error_t *error)
 {
    bson_iter_t iter;
    const char *fieldName = NULL;
@@ -1040,8 +991,7 @@ _mongoc_get_encryptedField_state_collection (
       }
       return bson_strdup (bson_iter_utf8 (&iter, NULL));
    }
-   return bson_strdup_printf (
-      "enxcol_.%s.%s", data_collection, state_collection_suffix);
+   return bson_strdup_printf ("enxcol_.%s.%s", data_collection, state_collection_suffix);
 }
 
 static bool
@@ -1056,23 +1006,13 @@ create_encField_state_collection (mongoc_database_t *database,
    bool ok = false;
    bson_t opts = BSON_INITIALIZER;
 
-   state_collection = _mongoc_get_encryptedField_state_collection (
-      encryptedFields, data_collection, state_collection_suffix, error);
+   state_collection =
+      _mongoc_get_encryptedField_state_collection (encryptedFields, data_collection, state_collection_suffix, error);
    if (!state_collection) {
       goto fail;
    }
 
-   BCON_APPEND (&opts,
-                "clusteredIndex",
-                "{",
-                "key",
-                "{",
-                "_id",
-                BCON_INT32 (1),
-                "}",
-                "unique",
-                BCON_BOOL (true),
-                "}");
+   BCON_APPEND (&opts, "clusteredIndex", "{", "key", "{", "_id", BCON_INT32 (1), "}", "unique", BCON_BOOL (true), "}");
 
    collection = create_collection (database, state_collection, &opts, error);
    if (collection == NULL) {
@@ -1097,13 +1037,9 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
    mongoc_collection_t *dataCollection = NULL;
    bool ok = false;
    bson_t *cc_opts = NULL;
-   bool state_collections_ok =
-      create_encField_state_collection (
-         database, encryptedFields, name, "esc", error) &&
-      create_encField_state_collection (
-         database, encryptedFields, name, "ecc", error) &&
-      create_encField_state_collection (
-         database, encryptedFields, name, "ecoc", error);
+   bool state_collections_ok = create_encField_state_collection (database, encryptedFields, name, "esc", error) &&
+                               create_encField_state_collection (database, encryptedFields, name, "ecc", error) &&
+                               create_encField_state_collection (database, encryptedFields, name, "ecoc", error);
    if (!state_collections_ok) {
       // Failed to create one or more state collections
       goto fail;
@@ -1112,10 +1048,8 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
    /* Create data collection. */
    cc_opts = bson_copy (opts);
    if (!BSON_APPEND_DOCUMENT (cc_opts, "encryptedFields", encryptedFields)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "unable to append encryptedFields");
+      bson_set_error (
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "unable to append encryptedFields");
       goto fail;
    }
    dataCollection = create_collection (database, name, cc_opts, error);
@@ -1142,8 +1076,7 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
                                  "}",
                                  "]");
 
-      ok = mongoc_database_write_command_with_opts (
-         database, create_indexes, NULL /* opts */, NULL /* reply */, error);
+      ok = mongoc_database_write_command_with_opts (database, create_indexes, NULL /* opts */, NULL /* reply */, error);
       bson_destroy (create_indexes);
       bson_free (index_name);
       bson_destroy (keys);
@@ -1164,11 +1097,8 @@ fail:
 }
 
 bool
-_mongoc_get_encryptedFields_from_map (mongoc_client_t *client,
-                                      const char *dbName,
-                                      const char *collName,
-                                      bson_t *encryptedFields,
-                                      bson_error_t *error)
+_mongoc_get_encryptedFields_from_map (
+   mongoc_client_t *client, const char *dbName, const char *collName, bson_t *encryptedFields, bson_error_t *error)
 {
    const bson_t *efMap = client->topology->encrypted_fields_map;
 
@@ -1197,11 +1127,8 @@ _mongoc_get_encryptedFields_from_map (mongoc_client_t *client,
 }
 
 bool
-_mongoc_get_encryptedFields_from_server (mongoc_client_t *client,
-                                         const char *dbName,
-                                         const char *collName,
-                                         bson_t *encryptedFields,
-                                         bson_error_t *error)
+_mongoc_get_encryptedFields_from_server (
+   mongoc_client_t *client, const char *dbName, const char *collName, bson_t *encryptedFields, bson_error_t *error)
 {
    mongoc_database_t *db = mongoc_client_get_database (client, dbName);
    bson_t *opts = BCON_NEW ("filter", "{", "name", BCON_UTF8 (collName), "}");
@@ -1220,10 +1147,8 @@ _mongoc_get_encryptedFields_from_server (mongoc_client_t *client,
       /* Check if the collInfo has options.encryptedFields. */
       bson_iter_t iter;
       if (!bson_iter_init (&iter, collInfo)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "unable to iterate listCollections result");
+         bson_set_error (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "unable to iterate listCollections result");
          goto fail;
       }
 
@@ -1257,13 +1182,10 @@ mongoc_database_create_collection (mongoc_database_t *database,
    bson_t encryptedFields = BSON_INITIALIZER;
 
    if (opts) {
-      bsonParse (
-         *opts,
-         find (
-            key ("encryptedFields"),
-            if (not(type (doc)),
-                then (error ("'encryptedFields' should be a document object"))),
-            storeDocRef (encryptedFields)));
+      bsonParse (*opts,
+                 find (key ("encryptedFields"),
+                       if (not(type (doc)), then (error ("'encryptedFields' should be a document object"))),
+                       storeDocRef (encryptedFields)));
       if (bsonParseError) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -1276,27 +1198,17 @@ mongoc_database_create_collection (mongoc_database_t *database,
 
    if (bson_empty (&encryptedFields)) {
       if (!_mongoc_get_encryptedFields_from_map (
-             database->client,
-             mongoc_database_get_name (database),
-             name,
-             &encryptedFields,
-             error)) {
+             database->client, mongoc_database_get_name (database), name, &encryptedFields, error)) {
          return NULL;
       }
    }
 
    if (!bson_empty (&encryptedFields)) {
       // Clone 'opts' without the encryptedFields element
-      bsonBuildDecl (
-         opts_without_encryptedFields,
-         if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+      bsonBuildDecl (opts_without_encryptedFields, if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
 
-      mongoc_collection_t *ret =
-         create_collection_with_encryptedFields (database,
-                                                 name,
-                                                 &opts_without_encryptedFields,
-                                                 &encryptedFields,
-                                                 error);
+      mongoc_collection_t *ret = create_collection_with_encryptedFields (
+         database, name, &opts_without_encryptedFields, &encryptedFields, error);
 
       bson_destroy (&opts_without_encryptedFields);
       return ret;
@@ -1307,8 +1219,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
 
 
 mongoc_collection_t *
-mongoc_database_get_collection (mongoc_database_t *database,
-                                const char *collection)
+mongoc_database_get_collection (mongoc_database_t *database, const char *collection)
 {
    BSON_ASSERT_PARAM (database);
    BSON_ASSERT_PARAM (collection);
@@ -1332,9 +1243,7 @@ mongoc_database_get_name (mongoc_database_t *database)
 
 
 mongoc_change_stream_t *
-mongoc_database_watch (const mongoc_database_t *db,
-                       const bson_t *pipeline,
-                       const bson_t *opts)
+mongoc_database_watch (const mongoc_database_t *db, const bson_t *pipeline, const bson_t *opts)
 {
    return _mongoc_change_stream_new_from_database (db, pipeline, opts);
 }

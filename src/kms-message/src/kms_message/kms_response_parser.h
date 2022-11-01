@@ -33,9 +33,7 @@ KMS_MSG_EXPORT (int)
 kms_response_parser_wants_bytes (kms_response_parser_t *parser, int32_t max);
 
 KMS_MSG_EXPORT (bool)
-kms_response_parser_feed (kms_response_parser_t *parser,
-                          uint8_t *buf,
-                          uint32_t len);
+kms_response_parser_feed (kms_response_parser_t *parser, uint8_t *buf, uint32_t len);
 
 KMS_MSG_EXPORT (kms_response_t *)
 kms_response_parser_get_response (kms_response_parser_t *parser);

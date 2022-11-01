@@ -24,10 +24,7 @@
 typedef struct _mock_rs_t mock_rs_t;
 
 mock_rs_t *
-mock_rs_with_auto_hello (int32_t max_wire_version,
-                           bool has_primary,
-                           int n_secondaries,
-                           int n_arbiters);
+mock_rs_with_auto_hello (int32_t max_wire_version, bool has_primary, int n_secondaries, int n_arbiters);
 
 
 void
@@ -61,23 +58,14 @@ mock_rs_receives_query (mock_rs_t *rs,
                         const char *fields_json);
 
 request_t *
-mock_rs_receives_command (mock_rs_t *rs,
-                          const char *database_name,
-                          mongoc_query_flags_t flags,
-                          const char *command_json,
-                          ...);
+mock_rs_receives_command (
+   mock_rs_t *rs, const char *database_name, mongoc_query_flags_t flags, const char *command_json, ...);
 
 request_t *
-mock_rs_receives_insert (mock_rs_t *rs,
-                         const char *ns,
-                         mongoc_insert_flags_t flags,
-                         const char *doc_json);
+mock_rs_receives_insert (mock_rs_t *rs, const char *ns, mongoc_insert_flags_t flags, const char *doc_json);
 
 request_t *
-mock_rs_receives_getmore (mock_rs_t *rs,
-                          const char *ns,
-                          int32_t n_return,
-                          int64_t cursor_id);
+mock_rs_receives_getmore (mock_rs_t *rs, const char *ns, int32_t n_return, int64_t cursor_id);
 
 request_t *
 mock_rs_receives_kill_cursors (mock_rs_t *rs, int64_t cursor_id);
@@ -85,8 +73,7 @@ mock_rs_receives_kill_cursors (mock_rs_t *rs, int64_t cursor_id);
 request_t *
 _mock_rs_receives_msg (mock_rs_t *rs, uint32_t flags, ...);
 
-#define mock_rs_receives_msg(_rs, _flags, ...) \
-   _mock_rs_receives_msg (_rs, _flags, __VA_ARGS__, NULL)
+#define mock_rs_receives_msg(_rs, _flags, ...) _mock_rs_receives_msg (_rs, _flags, __VA_ARGS__, NULL)
 
 void
 mock_rs_replies (request_t *request,

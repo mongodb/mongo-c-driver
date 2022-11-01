@@ -90,14 +90,10 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
                                     const char *collection,
                                     mongoc_client_session_t *cs);
 
-#define DNS_ERROR(_msg, ...)                               \
-   do {                                                    \
-      bson_set_error (error,                               \
-                      MONGOC_ERROR_STREAM,                 \
-                      MONGOC_ERROR_STREAM_NAME_RESOLUTION, \
-                      _msg,                                \
-                      __VA_ARGS__);                        \
-      GOTO (done);                                         \
+#define DNS_ERROR(_msg, ...)                                                                               \
+   do {                                                                                                    \
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, _msg, __VA_ARGS__); \
+      GOTO (done);                                                                                         \
    } while (0)
 
 
@@ -109,20 +105,15 @@ typedef bool (*mongoc_rr_callback_t) (const char *hostname,
                                       bson_error_t *error);
 
 static bool
-srv_callback (const char *hostname,
-              PDNS_RECORD pdns,
-              mongoc_rr_data_t *rr_data,
-              bson_error_t *error)
+srv_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
    mongoc_host_list_t new_host;
 
    if (rr_data && rr_data->hosts) {
-      _mongoc_host_list_remove_host (
-         &(rr_data->hosts), pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort);
+      _mongoc_host_list_remove_host (&(rr_data->hosts), pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort);
    }
 
-   if (!_mongoc_host_list_from_hostport_with_err (
-          &new_host, pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (&new_host, pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, error)) {
       return false;
    }
    _mongoc_host_list_upsert (&rr_data->hosts, &new_host);
@@ -132,10 +123,7 @@ srv_callback (const char *hostname,
 
 /* rr_data is unused, but here to match srv_callback signature */
 static bool
-txt_callback (const char *hostname,
-              PDNS_RECORD pdns,
-              mongoc_rr_data_t *rr_data,
-              bson_error_t *error)
+txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
    DWORD i;
    bson_string_t *txt;
@@ -178,10 +166,7 @@ txt_callback (const char *hostname,
  */
 
 static bool
-_mongoc_get_rr_dnsapi (const char *hostname,
-                       mongoc_rr_type_t rr_type,
-                       mongoc_rr_data_t *rr_data,
-                       bson_error_t *error)
+_mongoc_get_rr_dnsapi (const char *hostname, mongoc_rr_type_t rr_type, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
    const char *rr_type_name;
    WORD nst;
@@ -209,33 +194,16 @@ _mongoc_get_rr_dnsapi (const char *hostname,
       callback = txt_callback;
    }
 
-   res = DnsQuery_UTF8 (hostname,
-                        nst,
-                        DNS_QUERY_BYPASS_CACHE,
-                        NULL /* IP Address */,
-                        &pdns,
-                        0 /* reserved */);
+   res = DnsQuery_UTF8 (hostname, nst, DNS_QUERY_BYPASS_CACHE, NULL /* IP Address */, &pdns, 0 /* reserved */);
 
    if (res) {
-      DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                    FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
+      DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
 
-      if (FormatMessage (flags,
-                         0,
-                         res,
-                         MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-                         (LPTSTR) &lpMsgBuf,
-                         0,
-                         0)) {
-         DNS_ERROR ("Failed to look up %s record \"%s\": %s",
-                    rr_type_name,
-                    hostname,
-                    (char *) lpMsgBuf);
+      if (FormatMessage (flags, 0, res, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, 0)) {
+         DNS_ERROR ("Failed to look up %s record \"%s\": %s", rr_type_name, hostname, (char *) lpMsgBuf);
       }
 
-      DNS_ERROR ("Failed to look up %s record \"%s\": Unknown error",
-                 rr_type_name,
-                 hostname);
+      DNS_ERROR ("Failed to look up %s record \"%s\": Unknown error", rr_type_name, hostname);
    }
 
    if (!pdns) {
@@ -293,11 +261,8 @@ done:
 
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
 
-typedef bool (*mongoc_rr_callback_t) (const char *hostname,
-                                      ns_msg *ns_answer,
-                                      ns_rr *rr,
-                                      mongoc_rr_data_t *rr_data,
-                                      bson_error_t *error);
+typedef bool (*mongoc_rr_callback_t) (
+   const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data_t *rr_data, bson_error_t *error);
 
 static const char *
 _mongoc_hstrerror (int code)
@@ -318,11 +283,7 @@ _mongoc_hstrerror (int code)
 }
 
 static bool
-srv_callback (const char *hostname,
-              ns_msg *ns_answer,
-              ns_rr *rr,
-              mongoc_rr_data_t *rr_data,
-              bson_error_t *error)
+srv_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
    const uint8_t *data;
    char name[1024];
@@ -337,20 +298,13 @@ srv_callback (const char *hostname,
     * 2-byte boundary. */
    memcpy (&port, data + 4, sizeof (port));
    port = ntohs (port);
-   size = dn_expand (ns_msg_base (*ns_answer),
-                     ns_msg_end (*ns_answer),
-                     data + 6,
-                     name,
-                     sizeof (name));
+   size = dn_expand (ns_msg_base (*ns_answer), ns_msg_end (*ns_answer), data + 6, name, sizeof (name));
 
    if (size < 1) {
-      DNS_ERROR ("Invalid record in SRV answer for \"%s\": \"%s\"",
-                 hostname,
-                 _mongoc_hstrerror (h_errno));
+      DNS_ERROR ("Invalid record in SRV answer for \"%s\": \"%s\"", hostname, _mongoc_hstrerror (h_errno));
    }
 
-   if (!_mongoc_host_list_from_hostport_with_err (
-          &new_host, name, port, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (&new_host, name, port, error)) {
       GOTO (done);
    }
    _mongoc_host_list_upsert (&rr_data->hosts, &new_host);
@@ -360,11 +314,7 @@ done:
 }
 
 static bool
-txt_callback (const char *hostname,
-              ns_msg *ns_answer,
-              ns_rr *rr,
-              mongoc_rr_data_t *rr_data,
-              bson_error_t *error)
+txt_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
    char s[256];
    const uint8_t *data;
@@ -484,17 +434,13 @@ _mongoc_get_rr_search (const char *hostname,
 #ifdef MONGOC_HAVE_RES_NSEARCH
       /* thread-safe */
       res_ninit (&state);
-      size =
-         res_nsearch (&state, hostname, ns_c_in, nst, search_buf, buffer_size);
+      size = res_nsearch (&state, hostname, ns_c_in, nst, search_buf, buffer_size);
 #elif defined(MONGOC_HAVE_RES_SEARCH)
       size = res_search (hostname, ns_c_in, nst, search_buf, buffer_size);
 #endif
 
       if (size < 0) {
-         DNS_ERROR ("Failed to look up %s record \"%s\": %s",
-                    rr_type_name,
-                    hostname,
-                    _mongoc_hstrerror (h_errno));
+         DNS_ERROR ("Failed to look up %s record \"%s\": %s", rr_type_name, hostname, _mongoc_hstrerror (h_errno));
       }
    } while (size >= buffer_size);
 
@@ -608,8 +554,7 @@ _mongoc_client_get_rr (const char *hostname,
 #ifdef MONGOC_HAVE_DNSAPI
    return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
-   return _mongoc_get_rr_search (
-      hostname, rr_type, rr_data, initial_buffer_size, error);
+   return _mongoc_get_rr_search (hostname, rr_type, rr_data, initial_buffer_size, error);
 #else
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,
@@ -642,9 +587,7 @@ _mongoc_client_get_rr (const char *hostname,
  */
 
 mongoc_stream_t *
-mongoc_client_connect_tcp (int32_t connecttimeoutms,
-                           const mongoc_host_list_t *host,
-                           bson_error_t *error)
+mongoc_client_connect_tcp (int32_t connecttimeoutms, const mongoc_host_list_t *host, bson_error_t *error)
 {
    mongoc_socket_t *sock = NULL;
    struct addrinfo hints;
@@ -672,11 +615,8 @@ mongoc_client_connect_tcp (int32_t connecttimeoutms,
    if (s != 0) {
       mongoc_counter_dns_failure_inc ();
       TRACE ("Failed to resolve %s", host->host);
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                      "Failed to resolve %s",
-                      host->host);
+      bson_set_error (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Failed to resolve %s", host->host);
       RETURN (NULL);
    }
 
@@ -686,8 +626,7 @@ mongoc_client_connect_tcp (int32_t connecttimeoutms,
       /*
        * Create a new non-blocking socket.
        */
-      if (!(sock = mongoc_socket_new (
-               rp->ai_family, rp->ai_socktype, rp->ai_protocol))) {
+      if (!(sock = mongoc_socket_new (rp->ai_family, rp->ai_socktype, rp->ai_protocol))) {
          continue;
       }
 
@@ -695,9 +634,7 @@ mongoc_client_connect_tcp (int32_t connecttimeoutms,
        * Try to connect to the peer.
        */
       expire_at = bson_get_monotonic_time () + (connecttimeoutms * 1000L);
-      if (0 !=
-          mongoc_socket_connect (
-             sock, rp->ai_addr, (mongoc_socklen_t) rp->ai_addrlen, expire_at)) {
+      if (0 != mongoc_socket_connect (sock, rp->ai_addr, (mongoc_socklen_t) rp->ai_addrlen, expire_at)) {
          mongoc_socket_destroy (sock);
          sock = NULL;
          continue;
@@ -744,10 +681,8 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
 {
 #ifdef _WIN32
    ENTRY;
-   bson_set_error (error,
-                   MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_CONNECT,
-                   "UNIX domain sockets not supported on win32.");
+   bson_set_error (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "UNIX domain sockets not supported on win32.");
    RETURN (NULL);
 #else
    struct sockaddr_un saddr;
@@ -765,20 +700,14 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
    sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
 
    if (sock == NULL) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to create socket.");
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to create socket.");
       RETURN (NULL);
    }
 
-   if (-1 == mongoc_socket_connect (
-                sock, (struct sockaddr *) &saddr, sizeof saddr, -1)) {
+   if (-1 == mongoc_socket_connect (sock, (struct sockaddr *) &saddr, sizeof saddr, -1)) {
       mongoc_socket_destroy (sock);
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_CONNECT,
-                      "Failed to connect to UNIX domain socket.");
+      bson_set_error (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to connect to UNIX domain socket.");
       RETURN (NULL);
    }
 
@@ -812,8 +741,8 @@ mongoc_client_connect (bool buffered,
    }
 #endif
 
-   connecttimeoutms = mongoc_uri_get_option_as_int32 (
-      uri, MONGOC_URI_CONNECTTIMEOUTMS, MONGOC_DEFAULT_CONNECTTIMEOUTMS);
+   connecttimeoutms =
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
    switch (host->family) {
    case AF_UNSPEC:
@@ -827,11 +756,8 @@ mongoc_client_connect (bool buffered,
       base_stream = mongoc_client_connect_unix (host, error);
       break;
    default:
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_INVALID_TYPE,
-                      "Invalid address family: 0x%02x",
-                      host->family);
+      bson_set_error (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_TYPE, "Invalid address family: 0x%02x", host->family);
       break;
    }
 
@@ -846,20 +772,15 @@ mongoc_client_connect (bool buffered,
       if (use_ssl || (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
          mongoc_stream_t *original = base_stream;
 
-         base_stream = mongoc_stream_tls_new_with_hostname (
-            base_stream, host->host, ssl_opts, true);
+         base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host, ssl_opts, true);
 
          if (!base_stream) {
             mongoc_stream_destroy (original);
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "Failed initialize TLS state.");
+            bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed initialize TLS state.");
             return NULL;
          }
 
-         if (!mongoc_stream_tls_handshake_block (
-                base_stream, host->host, connecttimeoutms, error)) {
+         if (!mongoc_stream_tls_handshake_block (base_stream, host->host, connecttimeoutms, error)) {
             mongoc_stream_destroy (base_stream);
             return NULL;
          }
@@ -912,8 +833,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 
 #endif
 
-   return mongoc_client_connect (
-      true, use_ssl, ssl_opts_void, uri, host, error);
+   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, error);
 }
 
 /*
@@ -940,9 +860,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
  */
 
 mongoc_stream_t *
-_mongoc_client_create_stream (mongoc_client_t *client,
-                              const mongoc_host_list_t *host,
-                              bson_error_t *error)
+_mongoc_client_create_stream (mongoc_client_t *client, const mongoc_host_list_t *host, bson_error_t *error)
 {
    BSON_ASSERT (client);
    BSON_ASSERT (host);
@@ -979,8 +897,7 @@ _mongoc_client_recv (mongoc_client_t *client,
    BSON_ASSERT (buffer);
    BSON_ASSERT (server_stream);
 
-   return mongoc_cluster_try_recv (
-      &client->cluster, rpc, buffer, server_stream, error);
+   return mongoc_cluster_try_recv (&client->cluster, rpc, buffer, server_stream, error);
 }
 
 
@@ -1030,36 +947,28 @@ mongoc_client_new (const char *uri_string)
 #ifdef MONGOC_ENABLE_SSL
 /* Only called internally. Caller must ensure opts->internal is valid. */
 void
-_mongoc_client_set_internal_tls_opts (mongoc_client_t *client,
-                                      _mongoc_internal_tls_opts_t *internal)
+_mongoc_client_set_internal_tls_opts (mongoc_client_t *client, _mongoc_internal_tls_opts_t *internal)
 {
    if (!client->use_ssl) {
       return;
    }
-   client->ssl_opts.internal =
-      bson_malloc (sizeof (_mongoc_internal_tls_opts_t));
-   memcpy (client->ssl_opts.internal,
-           internal,
-           sizeof (_mongoc_internal_tls_opts_t));
+   client->ssl_opts.internal = bson_malloc (sizeof (_mongoc_internal_tls_opts_t));
+   memcpy (client->ssl_opts.internal, internal, sizeof (_mongoc_internal_tls_opts_t));
 }
 
 void
-mongoc_client_set_ssl_opts (mongoc_client_t *client,
-                            const mongoc_ssl_opt_t *opts)
+mongoc_client_set_ssl_opts (mongoc_client_t *client, const mongoc_ssl_opt_t *opts)
 {
    BSON_ASSERT (client);
    BSON_ASSERT (opts);
 
-   _mongoc_ssl_opts_cleanup (&client->ssl_opts,
-                             false /* don't free internal opts */);
+   _mongoc_ssl_opts_cleanup (&client->ssl_opts, false /* don't free internal opts */);
 
    client->use_ssl = true;
-   _mongoc_ssl_opts_copy_to (
-      opts, &client->ssl_opts, false /* don't overwrite internal opts */);
+   _mongoc_ssl_opts_copy_to (opts, &client->ssl_opts, false /* don't overwrite internal opts */);
 
    if (client->topology->single_threaded) {
-      mongoc_topology_scanner_set_ssl_opts (client->topology->scanner,
-                                            &client->ssl_opts);
+      mongoc_topology_scanner_set_ssl_opts (client->topology->scanner, &client->ssl_opts);
    }
 }
 #endif
@@ -1080,8 +989,7 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 
 
 mongoc_client_t *
-mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
-                                       bson_error_t *error)
+mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *error)
 {
    mongoc_client_t *client;
    mongoc_topology_t *topology;
@@ -1093,11 +1001,10 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
 
 #ifndef MONGOC_ENABLE_SSL
    if (mongoc_uri_get_tls (uri)) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_COMMAND_INVALID_ARG,
-         "Can't create SSL client, SSL not enabled in this build.");
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Can't create SSL client, SSL not enabled in this build.");
       RETURN (NULL);
    }
 #endif
@@ -1153,8 +1060,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    read_prefs = mongoc_uri_get_read_prefs_t (client->uri);
    client->read_prefs = mongoc_read_prefs_copy (read_prefs);
 
-   appname =
-      mongoc_uri_get_option_as_utf8 (client->uri, MONGOC_URI_APPNAME, NULL);
+   appname = mongoc_uri_get_option_as_utf8 (client->uri, MONGOC_URI_APPNAME, NULL);
    if (appname && client->topology->single_threaded) {
       /* the appname should have already been validated */
       BSON_ASSERT (mongoc_client_set_appname (client, appname));
@@ -1270,9 +1176,7 @@ mongoc_client_get_uri (const mongoc_client_t *client)
  */
 
 mongoc_client_session_t *
-mongoc_client_start_session (mongoc_client_t *client,
-                             const mongoc_session_opt_t *opts,
-                             bson_error_t *error)
+mongoc_client_start_session (mongoc_client_t *client, const mongoc_session_opt_t *opts, bson_error_t *error)
 {
    mongoc_server_session_t *ss;
    mongoc_client_session_t *cs;
@@ -1291,13 +1195,11 @@ mongoc_client_start_session (mongoc_client_t *client,
    } while (mongoc_set_get (client->client_sessions, csid));
 
    /* causal consistency and snapshot cannot both be set. */
-   if (opts && mongoc_session_opts_get_causal_consistency (opts) &&
-       mongoc_session_opts_get_snapshot (opts)) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_CLIENT,
-         MONGOC_ERROR_CLIENT_SESSION_FAILURE,
-         "Only one of causal consistency and snapshot can be enabled.");
+   if (opts && mongoc_session_opts_get_causal_consistency (opts) && mongoc_session_opts_get_snapshot (opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                      "Only one of causal consistency and snapshot can be enabled.");
       _mongoc_client_push_server_session (client, ss);
       RETURN (NULL);
    }
@@ -1339,11 +1241,7 @@ mongoc_client_get_database (mongoc_client_t *client, const char *name)
    BSON_ASSERT (client);
    BSON_ASSERT (name);
 
-   return _mongoc_database_new (client,
-                                name,
-                                client->read_prefs,
-                                client->read_concern,
-                                client->write_concern);
+   return _mongoc_database_new (client, name, client->read_prefs, client->read_concern, client->write_concern);
 }
 
 
@@ -1409,20 +1307,14 @@ mongoc_client_get_default_database (mongoc_client_t *client)
  */
 
 mongoc_collection_t *
-mongoc_client_get_collection (mongoc_client_t *client,
-                              const char *db,
-                              const char *collection)
+mongoc_client_get_collection (mongoc_client_t *client, const char *db, const char *collection)
 {
    BSON_ASSERT (client);
    BSON_ASSERT (db);
    BSON_ASSERT (collection);
 
-   return _mongoc_collection_new (client,
-                                  db,
-                                  collection,
-                                  client->read_prefs,
-                                  client->read_concern,
-                                  client->write_concern);
+   return _mongoc_collection_new (
+      client, db, collection, client->read_prefs, client->read_concern, client->write_concern);
 }
 
 
@@ -1450,10 +1342,7 @@ mongoc_client_get_collection (mongoc_client_t *client,
  */
 
 mongoc_gridfs_t *
-mongoc_client_get_gridfs (mongoc_client_t *client,
-                          const char *db,
-                          const char *prefix,
-                          bson_error_t *error)
+mongoc_client_get_gridfs (mongoc_client_t *client, const char *db, const char *prefix, bson_error_t *error)
 {
    BSON_ASSERT (client);
    BSON_ASSERT (db);
@@ -1508,8 +1397,7 @@ mongoc_client_get_write_concern (const mongoc_client_t *client)
  */
 
 void
-mongoc_client_set_write_concern (mongoc_client_t *client,
-                                 const mongoc_write_concern_t *write_concern)
+mongoc_client_set_write_concern (mongoc_client_t *client, const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT (client);
 
@@ -1517,9 +1405,7 @@ mongoc_client_set_write_concern (mongoc_client_t *client,
       if (client->write_concern) {
          mongoc_write_concern_destroy (client->write_concern);
       }
-      client->write_concern = write_concern
-                                 ? mongoc_write_concern_copy (write_concern)
-                                 : mongoc_write_concern_new ();
+      client->write_concern = write_concern ? mongoc_write_concern_copy (write_concern) : mongoc_write_concern_new ();
    }
 }
 
@@ -1566,8 +1452,7 @@ mongoc_client_get_read_concern (const mongoc_client_t *client)
  */
 
 void
-mongoc_client_set_read_concern (mongoc_client_t *client,
-                                const mongoc_read_concern_t *read_concern)
+mongoc_client_set_read_concern (mongoc_client_t *client, const mongoc_read_concern_t *read_concern)
 {
    BSON_ASSERT (client);
 
@@ -1575,9 +1460,7 @@ mongoc_client_set_read_concern (mongoc_client_t *client,
       if (client->read_concern) {
          mongoc_read_concern_destroy (client->read_concern);
       }
-      client->read_concern = read_concern
-                                ? mongoc_read_concern_copy (read_concern)
-                                : mongoc_read_concern_new ();
+      client->read_concern = read_concern ? mongoc_read_concern_copy (read_concern) : mongoc_read_concern_new ();
    }
 }
 
@@ -1624,8 +1507,7 @@ mongoc_client_get_read_prefs (const mongoc_client_t *client)
  */
 
 void
-mongoc_client_set_read_prefs (mongoc_client_t *client,
-                              const mongoc_read_prefs_t *read_prefs)
+mongoc_client_set_read_prefs (mongoc_client_t *client, const mongoc_read_prefs_t *read_prefs)
 {
    BSON_ASSERT (client);
 
@@ -1633,9 +1515,8 @@ mongoc_client_set_read_prefs (mongoc_client_t *client,
       if (client->read_prefs) {
          mongoc_read_prefs_destroy (client->read_prefs);
       }
-      client->read_prefs = read_prefs
-                              ? mongoc_read_prefs_copy (read_prefs)
-                              : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+      client->read_prefs =
+         read_prefs ? mongoc_read_prefs_copy (read_prefs) : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    }
 }
 
@@ -1671,8 +1552,7 @@ mongoc_client_command (mongoc_client_t *client,
       db_name = ns;
    }
 
-   cursor =
-      _mongoc_cursor_cmd_deprecated_new (client, db_name, query, read_prefs);
+   cursor = _mongoc_cursor_cmd_deprecated_new (client, db_name, query, read_prefs);
 
    bson_free (ns);
    return cursor;
@@ -1680,12 +1560,11 @@ mongoc_client_command (mongoc_client_t *client,
 
 
 static bool
-_mongoc_client_retryable_write_command_with_stream (
-   mongoc_client_t *client,
-   mongoc_cmd_parts_t *parts,
-   mongoc_server_stream_t *server_stream,
-   bson_t *reply,
-   bson_error_t *error)
+_mongoc_client_retryable_write_command_with_stream (mongoc_client_t *client,
+                                                    mongoc_cmd_parts_t *parts,
+                                                    mongoc_server_stream_t *server_stream,
+                                                    bson_t *reply,
+                                                    bson_error_t *error)
 {
    mongoc_server_stream_t *retry_server_stream = NULL;
    bson_iter_t txn_number_iter;
@@ -1698,29 +1577,23 @@ _mongoc_client_retryable_write_command_with_stream (
 
    /* increment the transaction number for the first attempt of each retryable
     * write command */
-   BSON_ASSERT (bson_iter_init_find (
-      &txn_number_iter, parts->assembled.command, "txnNumber"));
-   bson_iter_overwrite_int64 (
-      &txn_number_iter, ++parts->assembled.session->server_session->txn_number);
+   BSON_ASSERT (bson_iter_init_find (&txn_number_iter, parts->assembled.command, "txnNumber"));
+   bson_iter_overwrite_int64 (&txn_number_iter, ++parts->assembled.session->server_session->txn_number);
 
 retry:
-   ret = mongoc_cluster_run_command_monitored (
-      &client->cluster, &parts->assembled, reply, error);
+   ret = mongoc_cluster_run_command_monitored (&client->cluster, &parts->assembled, reply, error);
 
-   _mongoc_write_error_handle_labels (
-      ret, error, reply, server_stream->sd->max_wire_version);
+   _mongoc_write_error_handle_labels (ret, error, reply, server_stream->sd->max_wire_version);
 
    if (is_retryable) {
-      _mongoc_write_error_update_if_unsupported_storage_engine (
-         ret, error, reply);
+      _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply);
    }
 
    /* If a retryable error is encountered and the write is retryable, select
     * a new writable stream and retry. If server selection fails or the selected
     * server does not support retryable writes, fall through and allow the
     * original error to be reported. */
-   if (is_retryable &&
-       _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
+   if (is_retryable && _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
@@ -1730,11 +1603,10 @@ retry:
          mongoc_server_stream_cleanup (retry_server_stream);
       }
 
-      retry_server_stream = mongoc_cluster_stream_for_writes (
-         &client->cluster, parts->assembled.session, NULL, &ignored_error);
+      retry_server_stream =
+         mongoc_cluster_stream_for_writes (&client->cluster, parts->assembled.session, NULL, &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream && retry_server_stream->sd->max_wire_version >= WIRE_VERSION_RETRY_WRITES) {
          parts->assembled.server_stream = retry_server_stream;
          bson_destroy (reply);
          GOTO (retry);
@@ -1755,12 +1627,11 @@ retry:
 
 
 static bool
-_mongoc_client_retryable_read_command_with_stream (
-   mongoc_client_t *client,
-   mongoc_cmd_parts_t *parts,
-   mongoc_server_stream_t *server_stream,
-   bson_t *reply,
-   bson_error_t *error)
+_mongoc_client_retryable_read_command_with_stream (mongoc_client_t *client,
+                                                   mongoc_cmd_parts_t *parts,
+                                                   mongoc_server_stream_t *server_stream,
+                                                   bson_t *reply,
+                                                   bson_error_t *error)
 {
    mongoc_server_stream_t *retry_server_stream = NULL;
    bool is_retryable = true;
@@ -1778,15 +1649,13 @@ _mongoc_client_retryable_read_command_with_stream (
    BSON_ASSERT (parts->is_retryable_read);
 
 retry:
-   ret = mongoc_cluster_run_command_monitored (
-      &client->cluster, &parts->assembled, reply, error);
+   ret = mongoc_cluster_run_command_monitored (&client->cluster, &parts->assembled, reply, error);
 
    /* If a retryable error is encountered and the read is retryable, select
     * a new readable stream and retry. If server selection fails or the selected
     * server does not support retryable reads, fall through and allow the
     * original error to be reported. */
-   if (is_retryable && _mongoc_read_error_get_type (ret, error, reply) ==
-                          MONGOC_READ_ERR_RETRY) {
+   if (is_retryable && _mongoc_read_error_get_type (ret, error, reply) == MONGOC_READ_ERR_RETRY) {
       bson_error_t ignored_error;
 
       /* each read command may be retried at most once */
@@ -1796,16 +1665,14 @@ retry:
          mongoc_server_stream_cleanup (retry_server_stream);
       }
 
-      retry_server_stream =
-         mongoc_cluster_stream_for_reads (&client->cluster,
-                                          parts->read_prefs,
-                                          parts->assembled.session,
-                                          NULL,
-                                          /* Not aggregate-with-write */ false,
-                                          &ignored_error);
+      retry_server_stream = mongoc_cluster_stream_for_reads (&client->cluster,
+                                                             parts->read_prefs,
+                                                             parts->assembled.session,
+                                                             NULL,
+                                                             /* Not aggregate-with-write */ false,
+                                                             &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_READS) {
+      if (retry_server_stream && retry_server_stream->sd->max_wire_version >= WIRE_VERSION_RETRY_READS) {
          parts->assembled.server_stream = retry_server_stream;
          bson_destroy (reply);
          GOTO (retry);
@@ -1844,17 +1711,14 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
    };
 
    if (parts->is_retryable_write) {
-      RETURN (_mongoc_client_retryable_write_command_with_stream (
-         client, parts, server_stream, reply, error));
+      RETURN (_mongoc_client_retryable_write_command_with_stream (client, parts, server_stream, reply, error));
    }
 
    if (parts->is_retryable_read) {
-      RETURN (_mongoc_client_retryable_read_command_with_stream (
-         client, parts, server_stream, reply, error));
+      RETURN (_mongoc_client_retryable_read_command_with_stream (client, parts, server_stream, reply, error));
    }
 
-   RETURN (mongoc_cluster_run_command_monitored (
-      &client->cluster, &parts->assembled, reply, error));
+   RETURN (mongoc_cluster_run_command_monitored (&client->cluster, &parts->assembled, reply, error));
 }
 
 
@@ -1891,17 +1755,15 @@ mongoc_client_command_simple (mongoc_client_t *client,
     * configuration. The generic command method SHOULD allow an optional read
     * preference argument."
     */
-   server_stream =
-      mongoc_cluster_stream_for_reads (cluster,
-                                       read_prefs,
-                                       NULL,
-                                       reply,
-                                       /* Not aggregate-with-write */ false,
-                                       error);
+   server_stream = mongoc_cluster_stream_for_reads (cluster,
+                                                    read_prefs,
+                                                    NULL,
+                                                    reply,
+                                                    /* Not aggregate-with-write */ false,
+                                                    error);
 
    if (server_stream) {
-      ret = _mongoc_client_command_with_stream (
-         client, &parts, read_prefs, server_stream, reply, error);
+      ret = _mongoc_client_command_with_stream (client, &parts, read_prefs, server_stream, reply, error);
    } else {
       /* reply initialized by mongoc_cluster_stream_for_reads */
       ret = false;
@@ -1991,16 +1853,12 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    cs = read_write_opts.client_session;
 
    if (!command_name) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Empty command document");
+      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Empty command document");
       GOTO (done);
    }
 
    if (_mongoc_client_session_in_txn (read_write_opts.client_session)) {
-      if ((mode == MONGOC_CMD_READ || mode == MONGOC_CMD_RAW) &&
-          !IS_PREF_PRIMARY (user_prefs)) {
+      if ((mode == MONGOC_CMD_READ || mode == MONGOC_CMD_RAW) && !IS_PREF_PRIMARY (user_prefs)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -2016,8 +1874,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
          GOTO (done);
       }
 
-      if (read_write_opts.writeConcern &&
-          strcmp (command_name, "commitTransaction") != 0 &&
+      if (read_write_opts.writeConcern && strcmp (command_name, "commitTransaction") != 0 &&
           strcmp (command_name, "abortTransaction") != 0) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -2041,28 +1898,21 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 
    if (read_write_opts.serverId) {
       /* "serverId" passed in opts */
-      server_stream =
-         mongoc_cluster_stream_for_server (cluster,
-                                           read_write_opts.serverId,
-                                           true /* reconnect ok */,
-                                           cs,
-                                           reply_ptr,
-                                           error);
+      server_stream = mongoc_cluster_stream_for_server (
+         cluster, read_write_opts.serverId, true /* reconnect ok */, cs, reply_ptr, error);
 
       if (server_stream && server_stream->sd->type != MONGOC_SERVER_MONGOS) {
          parts.user_query_flags |= MONGOC_QUERY_SECONDARY_OK;
       }
    } else if (parts.is_write_command) {
-      server_stream =
-         mongoc_cluster_stream_for_writes (cluster, cs, reply_ptr, error);
+      server_stream = mongoc_cluster_stream_for_writes (cluster, cs, reply_ptr, error);
    } else {
-      server_stream =
-         mongoc_cluster_stream_for_reads (cluster,
-                                          prefs,
-                                          cs,
-                                          reply_ptr,
-                                          /* Not aggregate-with-write */ false,
-                                          error);
+      server_stream = mongoc_cluster_stream_for_reads (cluster,
+                                                       prefs,
+                                                       cs,
+                                                       reply_ptr,
+                                                       /* Not aggregate-with-write */ false,
+                                                       error);
    }
 
    if (!server_stream) {
@@ -2072,18 +1922,15 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    }
 
    wire_version = server_stream->sd->max_wire_version;
-   if (!mongoc_cmd_parts_append_read_write (
-          &parts, &read_write_opts, wire_version, error)) {
+   if (!mongoc_cmd_parts_append_read_write (&parts, &read_write_opts, wire_version, error)) {
       GOTO (done);
    }
 
    if (mode & MONGOC_CMD_WRITE) {
-      wc_wire_version = !strcasecmp (command_name, "findandmodify")
-                           ? WIRE_VERSION_FAM_WRITE_CONCERN
-                           : WIRE_VERSION_CMD_WRITE_CONCERN;
+      wc_wire_version =
+         !strcasecmp (command_name, "findandmodify") ? WIRE_VERSION_FAM_WRITE_CONCERN : WIRE_VERSION_CMD_WRITE_CONCERN;
 
-      if (read_write_opts.write_concern_owned &&
-          wire_version < wc_wire_version) {
+      if (read_write_opts.write_concern_owned && wire_version < wc_wire_version) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
@@ -2096,11 +1943,9 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       }
 
       /* use default write concern unless it's in opts */
-      if (!mongoc_write_concern_is_default (default_wc) &&
-          !read_write_opts.write_concern_owned &&
+      if (!mongoc_write_concern_is_default (default_wc) && !read_write_opts.write_concern_owned &&
           wire_version >= wc_wire_version) {
-         if (!mongoc_cmd_parts_set_write_concern (
-                &parts, default_wc, wire_version, error)) {
+         if (!mongoc_cmd_parts_set_write_concern (&parts, default_wc, wire_version, error)) {
             GOTO (done);
          }
       }
@@ -2108,14 +1953,12 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 
    /* use default read concern for read command, unless it's in opts */
    if ((mode & MONGOC_CMD_READ) && bson_empty (&read_write_opts.readConcern)) {
-      if (!mongoc_cmd_parts_set_read_concern (
-             &parts, default_rc, wire_version, error)) {
+      if (!mongoc_cmd_parts_set_read_concern (&parts, default_rc, wire_version, error)) {
          GOTO (done);
       }
    }
 
-   ret = _mongoc_client_command_with_stream (
-      client, &parts, user_prefs, server_stream, reply_ptr, error);
+   ret = _mongoc_client_command_with_stream (client, &parts, user_prefs, server_stream, reply_ptr, error);
 
    reply_initialized = true;
 
@@ -2191,14 +2034,13 @@ mongoc_client_write_command_with_opts (mongoc_client_t *client,
 
 
 bool
-mongoc_client_read_write_command_with_opts (
-   mongoc_client_t *client,
-   const char *db_name,
-   const bson_t *command,
-   const mongoc_read_prefs_t *read_prefs /* IGNORED */,
-   const bson_t *opts,
-   bson_t *reply,
-   bson_error_t *error)
+mongoc_client_read_write_command_with_opts (mongoc_client_t *client,
+                                            const char *db_name,
+                                            const bson_t *command,
+                                            const mongoc_read_prefs_t *read_prefs /* IGNORED */,
+                                            const bson_t *opts,
+                                            bson_t *reply,
+                                            bson_error_t *error)
 {
    return _mongoc_client_command_with_opts (client,
                                             db_name,
@@ -2240,14 +2082,13 @@ mongoc_client_command_with_opts (mongoc_client_t *client,
 
 
 bool
-mongoc_client_command_simple_with_server_id (
-   mongoc_client_t *client,
-   const char *db_name,
-   const bson_t *command,
-   const mongoc_read_prefs_t *read_prefs,
-   uint32_t server_id,
-   bson_t *reply,
-   bson_error_t *error)
+mongoc_client_command_simple_with_server_id (mongoc_client_t *client,
+                                             const char *db_name,
+                                             const bson_t *command,
+                                             const mongoc_read_prefs_t *read_prefs,
+                                             uint32_t server_id,
+                                             bson_t *reply,
+                                             bson_error_t *error)
 {
    mongoc_server_stream_t *server_stream;
    mongoc_cmd_parts_t parts;
@@ -2263,16 +2104,14 @@ mongoc_client_command_simple_with_server_id (
       RETURN (false);
    }
 
-   server_stream = mongoc_cluster_stream_for_server (
-      &client->cluster, server_id, true /* reconnect ok */, NULL, reply, error);
+   server_stream =
+      mongoc_cluster_stream_for_server (&client->cluster, server_id, true /* reconnect ok */, NULL, reply, error);
 
    if (server_stream) {
-      mongoc_cmd_parts_init (
-         &parts, client, db_name, MONGOC_QUERY_NONE, command);
+      mongoc_cmd_parts_init (&parts, client, db_name, MONGOC_QUERY_NONE, command);
       parts.read_prefs = read_prefs;
 
-      ret = _mongoc_client_command_with_stream (
-         client, &parts, read_prefs, server_stream, reply, error);
+      ret = _mongoc_client_command_with_stream (client, &parts, read_prefs, server_stream, reply, error);
 
       mongoc_cmd_parts_cleanup (&parts);
       mongoc_server_stream_cleanup (server_stream);
@@ -2285,9 +2124,7 @@ mongoc_client_command_simple_with_server_id (
 
 
 static void
-_mongoc_client_prepare_killcursors_command (int64_t cursor_id,
-                                            const char *collection,
-                                            bson_t *command)
+_mongoc_client_prepare_killcursors_command (int64_t cursor_id, const char *collection, bson_t *command)
 {
    bson_t child;
 
@@ -2315,24 +2152,17 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
    BSON_ASSERT (cursor_id);
 
    /* don't attempt reconnect if server unavailable, and ignore errors */
-   server_stream = mongoc_cluster_stream_for_server (
-      &client->cluster, server_id, false /* reconnect_ok */, NULL, NULL, NULL);
+   server_stream =
+      mongoc_cluster_stream_for_server (&client->cluster, server_id, false /* reconnect_ok */, NULL, NULL, NULL);
 
    if (!server_stream) {
       return;
    }
 
-   if (db && collection &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_KILLCURSORS_CMD) {
-      _mongoc_client_killcursors_command (
-         &client->cluster, server_stream, cursor_id, db, collection, cs);
+   if (db && collection && server_stream->sd->max_wire_version >= WIRE_VERSION_KILLCURSORS_CMD) {
+      _mongoc_client_killcursors_command (&client->cluster, server_stream, cursor_id, db, collection, cs);
    } else {
-      _mongoc_client_op_killcursors (&client->cluster,
-                                     server_stream,
-                                     cursor_id,
-                                     operation_id,
-                                     db,
-                                     collection);
+      _mongoc_client_op_killcursors (&client->cluster, server_stream, cursor_id, operation_id, db, collection);
    }
 
    mongoc_server_stream_cleanup (server_stream);
@@ -2385,12 +2215,11 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
 
 
 static void
-_mongoc_client_monitor_op_killcursors_succeeded (
-   mongoc_cluster_t *cluster,
-   int64_t duration,
-   mongoc_server_stream_t *server_stream,
-   int64_t cursor_id,
-   int64_t operation_id)
+_mongoc_client_monitor_op_killcursors_succeeded (mongoc_cluster_t *cluster,
+                                                 int64_t duration,
+                                                 mongoc_server_stream_t *server_stream,
+                                                 int64_t cursor_id,
+                                                 int64_t operation_id)
 {
    mongoc_client_t *client;
    bson_t doc;
@@ -2433,12 +2262,11 @@ _mongoc_client_monitor_op_killcursors_succeeded (
 
 
 static void
-_mongoc_client_monitor_op_killcursors_failed (
-   mongoc_cluster_t *cluster,
-   int64_t duration,
-   mongoc_server_stream_t *server_stream,
-   const bson_error_t *error,
-   int64_t operation_id)
+_mongoc_client_monitor_op_killcursors_failed (mongoc_cluster_t *cluster,
+                                              int64_t duration,
+                                              mongoc_server_stream_t *server_stream,
+                                              const bson_error_t *error,
+                                              int64_t operation_id)
 {
    mongoc_client_t *client;
    bson_t doc;
@@ -2506,28 +2334,18 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
    rpc.kill_cursors.n_cursors = 1;
 
    if (has_ns) {
-      _mongoc_client_monitor_op_killcursors (
-         cluster, server_stream, cursor_id, operation_id, db, collection);
+      _mongoc_client_monitor_op_killcursors (cluster, server_stream, cursor_id, operation_id, db, collection);
    }
 
-   r = mongoc_cluster_legacy_rpc_sendv_to_server (
-      cluster, &rpc, server_stream, &error);
+   r = mongoc_cluster_legacy_rpc_sendv_to_server (cluster, &rpc, server_stream, &error);
 
    if (has_ns) {
       if (r) {
          _mongoc_client_monitor_op_killcursors_succeeded (
-            cluster,
-            bson_get_monotonic_time () - started,
-            server_stream,
-            cursor_id,
-            operation_id);
+            cluster, bson_get_monotonic_time () - started, server_stream, cursor_id, operation_id);
       } else {
          _mongoc_client_monitor_op_killcursors_failed (
-            cluster,
-            bson_get_monotonic_time () - started,
-            server_stream,
-            &error,
-            operation_id);
+            cluster, bson_get_monotonic_time () - started, server_stream, &error, operation_id);
       }
    }
 }
@@ -2547,8 +2365,7 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
    ENTRY;
 
    _mongoc_client_prepare_killcursors_command (cursor_id, collection, &command);
-   mongoc_cmd_parts_init (
-      &parts, cluster->client, db, MONGOC_QUERY_SECONDARY_OK, &command);
+   mongoc_cmd_parts_init (&parts, cluster->client, db, MONGOC_QUERY_SECONDARY_OK, &command);
    parts.assembled.operation_id = ++cluster->operation_id;
    mongoc_cmd_parts_set_session (&parts, cs);
 
@@ -2556,8 +2373,7 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
       /* Find, getMore And killCursors Commands Spec: "The result from the
        * killCursors command MAY be safely ignored."
        */
-      (void) mongoc_cluster_run_command_monitored (
-         cluster, &parts.assembled, NULL, NULL);
+      (void) mongoc_cluster_run_command_monitored (cluster, &parts.assembled, NULL, NULL);
    }
 
    mongoc_cmd_parts_cleanup (&parts);
@@ -2594,8 +2410,7 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
 void
 mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
 {
-   mongoc_topology_t *const topology =
-      BSON_ASSERT_PTR_INLINE (client)->topology;
+   mongoc_topology_t *const topology = BSON_ASSERT_PTR_INLINE (client)->topology;
    mongoc_server_description_t const *selected_server;
    mongoc_read_prefs_t *read_prefs;
    bson_error_t error;
@@ -2612,25 +2427,16 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
    }
 
    /* see if there's a known writable server - do no I/O or retries */
-   selected_server =
-      mongoc_topology_description_select (td.ptr,
-                                          MONGOC_SS_WRITE,
-                                          read_prefs,
-                                          NULL /* chosen read mode */,
-                                          topology->local_threshold_msec);
+   selected_server = mongoc_topology_description_select (
+      td.ptr, MONGOC_SS_WRITE, read_prefs, NULL /* chosen read mode */, topology->local_threshold_msec);
 
    if (selected_server) {
       server_id = selected_server->id;
    }
 
    if (server_id) {
-      _mongoc_client_kill_cursor (client,
-                                  server_id,
-                                  cursor_id,
-                                  0 /* operation_id */,
-                                  NULL /* db */,
-                                  NULL /* collection */,
-                                  NULL /* session */);
+      _mongoc_client_kill_cursor (
+         client, server_id, cursor_id, 0 /* operation_id */, NULL /* db */, NULL /* collection */, NULL /* session */);
    } else {
       MONGOC_INFO ("No server available for mongoc_client_kill_cursor");
    }
@@ -2648,9 +2454,7 @@ mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
 
 
 char **
-mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
-                                            const bson_t *opts,
-                                            bson_error_t *error)
+mongoc_client_get_database_names_with_opts (mongoc_client_t *client, const bson_t *opts, bson_error_t *error)
 {
    bson_iter_t iter;
    const char *name;
@@ -2669,8 +2473,7 @@ mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
    bson_destroy (&cmd);
 
    while (mongoc_cursor_next (cursor, &doc)) {
-      if (bson_iter_init (&iter, doc) && bson_iter_find (&iter, "name") &&
-          BSON_ITER_HOLDS_UTF8 (&iter) &&
+      if (bson_iter_init (&iter, doc) && bson_iter_find (&iter, "name") && BSON_ITER_HOLDS_UTF8 (&iter) &&
           (name = bson_iter_utf8 (&iter, NULL))) {
          ret = (char **) bson_realloc (ret, sizeof (char *) * (i + 2));
          ret[i] = bson_strdup (name);
@@ -2699,8 +2502,7 @@ mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
 
 
 mongoc_cursor_t *
-mongoc_client_find_databases_with_opts (mongoc_client_t *client,
-                                        const bson_t *opts)
+mongoc_client_find_databases_with_opts (mongoc_client_t *client, const bson_t *opts)
 {
    bson_t cmd = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
@@ -2743,8 +2545,7 @@ mongoc_client_get_server_status (mongoc_client_t *client,         /* IN */
    BSON_ASSERT (client);
 
    BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
-   ret = mongoc_client_command_simple (
-      client, "admin", &cmd, read_prefs, reply, error);
+   ret = mongoc_client_command_simple (client, "admin", &cmd, read_prefs, reply, error);
    bson_destroy (&cmd);
 
    return ret;
@@ -2752,9 +2553,7 @@ mongoc_client_get_server_status (mongoc_client_t *client,         /* IN */
 
 
 void
-mongoc_client_set_stream_initiator (mongoc_client_t *client,
-                                    mongoc_stream_initiator_t initiator,
-                                    void *user_data)
+mongoc_client_set_stream_initiator (mongoc_client_t *client, mongoc_stream_initiator_t initiator, void *user_data)
 {
    BSON_ASSERT (client);
 
@@ -2769,20 +2568,16 @@ mongoc_client_set_stream_initiator (mongoc_client_t *client,
    client->initiator_data = user_data;
 
    if (client->topology->single_threaded) {
-      mongoc_topology_scanner_set_stream_initiator (
-         client->topology->scanner, initiator, user_data);
+      mongoc_topology_scanner_set_stream_initiator (client->topology->scanner, initiator, user_data);
    }
 }
 
 
 bool
-_mongoc_client_set_apm_callbacks_private (mongoc_client_t *client,
-                                          mongoc_apm_callbacks_t *callbacks,
-                                          void *context)
+_mongoc_client_set_apm_callbacks_private (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context)
 {
    if (callbacks) {
-      memcpy (
-         &client->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
+      memcpy (&client->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
    } else {
       memset (&client->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
    }
@@ -2791,13 +2586,12 @@ _mongoc_client_set_apm_callbacks_private (mongoc_client_t *client,
 
    /* A client pool sets APM callbacks for the entire pool. */
    if (client->topology->single_threaded) {
-      mongoc_topology_set_apm_callbacks (
-         client->topology,
-         /* We are safe to modify the shared_descr directly, since we are
-          * single-threaded */
-         mc_tpld_unsafe_get_mutable (client->topology),
-         callbacks,
-         context);
+      mongoc_topology_set_apm_callbacks (client->topology,
+                                         /* We are safe to modify the shared_descr directly, since we are
+                                          * single-threaded */
+                                         mc_tpld_unsafe_get_mutable (client->topology),
+                                         callbacks,
+                                         context);
    }
 
    return true;
@@ -2805,9 +2599,7 @@ _mongoc_client_set_apm_callbacks_private (mongoc_client_t *client,
 
 
 bool
-mongoc_client_set_apm_callbacks (mongoc_client_t *client,
-                                 mongoc_apm_callbacks_t *callbacks,
-                                 void *context)
+mongoc_client_set_apm_callbacks (mongoc_client_t *client, mongoc_apm_callbacks_t *callbacks, void *context)
 {
    if (!client->topology->single_threaded) {
       MONGOC_ERROR ("Cannot set callbacks on a pooled client, use "
@@ -2819,14 +2611,12 @@ mongoc_client_set_apm_callbacks (mongoc_client_t *client,
 }
 
 mongoc_server_description_t *
-mongoc_client_get_server_description (mongoc_client_t *client,
-                                      uint32_t server_id)
+mongoc_client_get_server_description (mongoc_client_t *client, uint32_t server_id)
 {
    mongoc_server_description_t *ret;
    mc_shared_tpld td = mc_tpld_take_ref (client->topology);
    mongoc_server_description_t const *sd =
-      mongoc_topology_description_server_by_id_const (
-         td.ptr, server_id, NULL /* <- the error info isn't useful */);
+      mongoc_topology_description_server_by_id_const (td.ptr, server_id, NULL /* <- the error info isn't useful */);
    ret = mongoc_server_description_new_copy (sd);
    mc_tpld_drop_ref (&td);
    return ret;
@@ -2834,22 +2624,18 @@ mongoc_client_get_server_description (mongoc_client_t *client,
 
 
 mongoc_server_description_t **
-mongoc_client_get_server_descriptions (const mongoc_client_t *client,
-                                       size_t *n /* OUT */)
+mongoc_client_get_server_descriptions (const mongoc_client_t *client, size_t *n /* OUT */)
 {
-   mc_shared_tpld td =
-      mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (client)->topology);
+   mc_shared_tpld td = mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (client)->topology);
    mongoc_server_description_t **const sds =
-      mongoc_topology_description_get_servers (td.ptr,
-                                               BSON_ASSERT_PTR_INLINE (n));
+      mongoc_topology_description_get_servers (td.ptr, BSON_ASSERT_PTR_INLINE (n));
    mc_tpld_drop_ref (&td);
    return sds;
 }
 
 
 void
-mongoc_server_descriptions_destroy_all (mongoc_server_description_t **sds,
-                                        size_t n)
+mongoc_server_descriptions_destroy_all (mongoc_server_description_t **sds, size_t n)
 {
    size_t i;
 
@@ -2882,8 +2668,7 @@ mongoc_client_select_server (mongoc_client_t *client,
       return NULL;
    }
 
-   sd = mongoc_topology_select (
-      client->topology, optype, prefs, NULL /* chosen read mode */, error);
+   sd = mongoc_topology_select (client->topology, optype, prefs, NULL /* chosen read mode */, error);
    if (!sd) {
       return NULL;
    }
@@ -2895,8 +2680,7 @@ mongoc_client_select_server (mongoc_client_t *client,
 
    /* check failed, retry once */
    mongoc_server_description_destroy (sd);
-   sd = mongoc_topology_select (
-      client->topology, optype, prefs, NULL /* chosen read mode */, error);
+   sd = mongoc_topology_select (client->topology, optype, prefs, NULL /* chosen read mode */, error);
    if (sd) {
       return sd;
    }
@@ -2913,8 +2697,7 @@ mongoc_client_set_error_api (mongoc_client_t *client, int32_t version)
       return false;
    }
 
-   if (version != MONGOC_ERROR_API_VERSION_LEGACY &&
-       version != MONGOC_ERROR_API_VERSION_2) {
+   if (version != MONGOC_ERROR_API_VERSION_LEGACY && version != MONGOC_ERROR_API_VERSION_2) {
       MONGOC_ERROR ("Unsupported Error API Version: %" PRId32, version);
       return false;
    }
@@ -2980,24 +2763,19 @@ _mongoc_client_lookup_session (const mongoc_client_t *client,
       RETURN (true);
    }
 
-   bson_set_error (error,
-                   MONGOC_ERROR_COMMAND,
-                   MONGOC_ERROR_COMMAND_INVALID_ARG,
-                   "Invalid sessionId");
+   bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid sessionId");
 
    RETURN (false);
 }
 
 void
-_mongoc_client_unregister_session (mongoc_client_t *client,
-                                   mongoc_client_session_t *session)
+_mongoc_client_unregister_session (mongoc_client_t *client, mongoc_client_session_t *session)
 {
    mongoc_set_rm (client->client_sessions, session->client_session_id);
 }
 
 void
-_mongoc_client_push_server_session (mongoc_client_t *client,
-                                    mongoc_server_session_t *server_session)
+_mongoc_client_push_server_session (mongoc_client_t *client, mongoc_server_session_t *server_session)
 {
    _mongoc_topology_push_server_session (client->topology, server_session);
 }
@@ -3031,8 +2809,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
 
    while (!mongoc_server_session_pool_is_empty (t->session_pool)) {
       prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
-      server_id = mongoc_topology_select_server_id (
-         t, MONGOC_SS_READ, prefs, NULL /* chosen read mode */, &error);
+      server_id = mongoc_topology_select_server_id (t, MONGOC_SS_READ, prefs, NULL /* chosen read mode */, &error);
 
       mongoc_read_prefs_destroy (prefs);
       if (!server_id) {
@@ -3040,8 +2817,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
          return;
       }
 
-      stream = mongoc_cluster_stream_for_server (
-         cluster, server_id, false /* reconnect_ok */, NULL, NULL, &error);
+      stream = mongoc_cluster_stream_for_server (cluster, server_id, false /* reconnect_ok */, NULL, NULL, &error);
 
       if (!stream) {
          MONGOC_WARNING ("Couldn't send \"endSessions\": %s", error.message);
@@ -3050,22 +2826,18 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
 
       /* end sessions in chunks */
       while (_mongoc_topology_end_sessions_cmd (t, &cmd)) {
-         mongoc_cmd_parts_init (
-            &parts, client, "admin", MONGOC_QUERY_SECONDARY_OK, &cmd);
+         mongoc_cmd_parts_init (&parts, client, "admin", MONGOC_QUERY_SECONDARY_OK, &cmd);
          parts.assembled.operation_id = ++cluster->operation_id;
          parts.prohibit_lsid = true;
 
          r = mongoc_cmd_parts_assemble (&parts, stream, &error);
          if (!r) {
-            MONGOC_WARNING ("Couldn't construct \"endSessions\" command: %s",
-                            error.message);
+            MONGOC_WARNING ("Couldn't construct \"endSessions\" command: %s", error.message);
          } else {
-            r = mongoc_cluster_run_command_monitored (
-               cluster, &parts.assembled, NULL, &error);
+            r = mongoc_cluster_run_command_monitored (cluster, &parts.assembled, NULL, &error);
 
             if (!r) {
-               MONGOC_WARNING ("Couldn't send \"endSessions\": %s",
-                               error.message);
+               MONGOC_WARNING ("Couldn't send \"endSessions\": %s", error.message);
             }
          }
 
@@ -3107,17 +2879,13 @@ mongoc_client_reset (mongoc_client_t *client)
 }
 
 mongoc_change_stream_t *
-mongoc_client_watch (mongoc_client_t *client,
-                     const bson_t *pipeline,
-                     const bson_t *opts)
+mongoc_client_watch (mongoc_client_t *client, const bson_t *pipeline, const bson_t *opts)
 {
    return _mongoc_change_stream_new_from_client (client, pipeline, opts);
 }
 
 bool
-mongoc_client_enable_auto_encryption (mongoc_client_t *client,
-                                      mongoc_auto_encryption_opts_t *opts,
-                                      bson_error_t *error)
+mongoc_client_enable_auto_encryption (mongoc_client_t *client, mongoc_auto_encryption_opts_t *opts, bson_error_t *error)
 {
    if (!client->topology->single_threaded) {
       bson_set_error (error,
@@ -3131,19 +2899,16 @@ mongoc_client_enable_auto_encryption (mongoc_client_t *client,
 }
 
 bool
-mongoc_client_set_server_api (mongoc_client_t *client,
-                              const mongoc_server_api_t *api,
-                              bson_error_t *error)
+mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t *api, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (client);
    BSON_ASSERT_PARAM (api);
 
    if (client->is_pooled) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_CLIENT,
-         MONGOC_ERROR_CLIENT_API_FROM_POOL,
-         "Cannot set server api on a client checked out from a pool");
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_API_FROM_POOL,
+                      "Cannot set server api on a client checked out from a pool");
       return false;
    }
 
@@ -3161,22 +2926,15 @@ mongoc_client_set_server_api (mongoc_client_t *client,
 }
 
 mongoc_server_description_t *
-mongoc_client_get_handshake_description (mongoc_client_t *client,
-                                         uint32_t server_id,
-                                         bson_t *opts,
-                                         bson_error_t *error)
+mongoc_client_get_handshake_description (mongoc_client_t *client, uint32_t server_id, bson_t *opts, bson_error_t *error)
 {
    mongoc_server_stream_t *server_stream;
    mongoc_server_description_t *sd;
 
    BSON_UNUSED (opts);
 
-   server_stream = mongoc_cluster_stream_for_server (&client->cluster,
-                                                     server_id,
-                                                     true /* reconnect */,
-                                                     NULL /* client session */,
-                                                     NULL /* reply */,
-                                                     error);
+   server_stream = mongoc_cluster_stream_for_server (
+      &client->cluster, server_id, true /* reconnect */, NULL /* client session */, NULL /* reply */, error);
    if (!server_stream) {
       return NULL;
    }

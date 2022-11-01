@@ -41,8 +41,7 @@ test_create_bucket (void)
 
    /* read concern */
    read_concern = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (read_concern,
-                                  MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   mongoc_read_concern_set_level (read_concern, MONGOC_READ_CONCERN_LEVEL_LOCAL);
    mongoc_read_concern_append (read_concern, opts);
 
    /* other opts */
@@ -89,18 +88,13 @@ _get_index_count (mongoc_collection_t *collection)
 /* Util that downloads a file content into the given buffer. Returns num bytes
  * read. */
 static size_t
-_download_file_into_buf (mongoc_gridfs_bucket_t *bucket,
-                         const bson_value_t *file_id,
-                         char *buf,
-                         size_t len)
+_download_file_into_buf (mongoc_gridfs_bucket_t *bucket, const bson_value_t *file_id, char *buf, size_t len)
 {
    bson_error_t error;
    size_t nread;
-   mongoc_stream_t *down =
-      mongoc_gridfs_bucket_open_download_stream (bucket, file_id, &error);
+   mongoc_stream_t *down = mongoc_gridfs_bucket_open_download_stream (bucket, file_id, &error);
    ASSERT_OR_PRINT (down, error);
-   nread =
-      mongoc_stream_read (down, buf, len, 1 /* min read */, 0 /* No timeout */);
+   nread = mongoc_stream_read (down, buf, len, 1 /* min read */, 0 /* No timeout */);
    mongoc_stream_destroy (down);
    ASSERT (nread > 0);
    return nread;
@@ -108,16 +102,12 @@ _download_file_into_buf (mongoc_gridfs_bucket_t *bucket,
 
 /* Util for uploading a file with the given string as content */
 static void
-_upload_file_from_str (mongoc_gridfs_bucket_t *bucket,
-                       const char *filename,
-                       const char *content,
-                       const bson_t *opts,
-                       bson_value_t *file_id)
+_upload_file_from_str (
+   mongoc_gridfs_bucket_t *bucket, const char *filename, const char *content, const bson_t *opts, bson_value_t *file_id)
 {
    bson_error_t error;
    size_t nwritten;
-   mongoc_stream_t *up = mongoc_gridfs_bucket_open_upload_stream (
-      bucket, filename, opts, file_id, &error);
+   mongoc_stream_t *up = mongoc_gridfs_bucket_open_upload_stream (bucket, filename, opts, file_id, &error);
    ASSERT_OR_PRINT (up, error);
    nwritten = mongoc_stream_write (up, (void *) content, strlen (content), 0);
    ASSERT_CMPINT (nwritten, ==, strlen (content));
@@ -154,9 +144,7 @@ _test_upload_and_download (bson_t *create_index_cmd)
    if (create_index_cmd) {
       bson_error_t error;
 
-      ASSERT_OR_PRINT (mongoc_database_write_command_with_opts (
-                          db, create_index_cmd, NULL, NULL, &error),
-                       error);
+      ASSERT_OR_PRINT (mongoc_database_write_command_with_opts (db, create_index_cmd, NULL, NULL, &error), error);
    }
 
    opts = bson_new ();
@@ -187,38 +175,32 @@ test_upload_and_download (void)
    _test_upload_and_download (NULL);
 
    /* Test files index with float and same options */
-   _test_upload_and_download (
-      tmp_bson ("{'createIndexes': '%s',"
-                " 'indexes': [{'key': {'filename': 1.0, 'uploadDate': 1}, "
-                "'name': 'filename_1_uploadDate_1'}]}",
-                "fs.files"));
+   _test_upload_and_download (tmp_bson ("{'createIndexes': '%s',"
+                                        " 'indexes': [{'key': {'filename': 1.0, 'uploadDate': 1}, "
+                                        "'name': 'filename_1_uploadDate_1'}]}",
+                                        "fs.files"));
 
    /* Files index with float and different options */
-   _test_upload_and_download (
-      tmp_bson ("{'createIndexes': '%s',"
-                " 'indexes': [{'key': {'filename': 1.0, 'uploadDate': 1}, "
-                "'name': 'different_name'}]}",
-                "fs.files"));
+   _test_upload_and_download (tmp_bson ("{'createIndexes': '%s',"
+                                        " 'indexes': [{'key': {'filename': 1.0, 'uploadDate': 1}, "
+                                        "'name': 'different_name'}]}",
+                                        "fs.files"));
 
    /* Chunks index with float and same options */
-   _test_upload_and_download (
-      tmp_bson ("{'createIndexes': '%s',"
-                " 'indexes': [{'key': {'files_id': 1.0, 'n': 1}, 'name': "
-                "'files_id_1_n_1', 'unique': true}]}",
-                "fs.chunks"));
+   _test_upload_and_download (tmp_bson ("{'createIndexes': '%s',"
+                                        " 'indexes': [{'key': {'files_id': 1.0, 'n': 1}, 'name': "
+                                        "'files_id_1_n_1', 'unique': true}]}",
+                                        "fs.chunks"));
 
    /* Chunks index with float and different options */
-   _test_upload_and_download (
-      tmp_bson ("{'createIndexes': '%s',"
-                " 'indexes': [{'key': {'files_id': 1.0, 'n': 1}, 'name': "
-                "'different_name', 'unique': true}]}",
-                "fs.chunks"));
+   _test_upload_and_download (tmp_bson ("{'createIndexes': '%s',"
+                                        " 'indexes': [{'key': {'files_id': 1.0, 'n': 1}, 'name': "
+                                        "'different_name', 'unique': true}]}",
+                                        "fs.chunks"));
 }
 
 bool
-hex_to_bytes (const char *hex_str,
-              size_t *size /* OUT */,
-              uint8_t **bytes /* OUT */)
+hex_to_bytes (const char *hex_str, size_t *size /* OUT */, uint8_t **bytes /* OUT */)
 {
    size_t len;
    uint8_t *result;
@@ -276,9 +258,8 @@ convert_hex_to_binary (bson_t *doc)
       value = bson_iter_value (&iter);
 
       if (strcmp (key, "data") == 0) {
-         hex_doc =
-            bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                                bson_iter_value (&iter)->value.v_doc.data_len);
+         hex_doc = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
+                                       bson_iter_value (&iter)->value.v_doc.data_len);
 
          ASSERT (bson_iter_init_find (&inner, hex_doc, "$hex"));
 
@@ -286,21 +267,17 @@ convert_hex_to_binary (bson_t *doc)
          r = hex_to_bytes (str, &hex_len, &hex_bytes);
 
          if (r) {
-            BSON_APPEND_BINARY (
-               result, key, BSON_SUBTYPE_BINARY, hex_bytes, (uint32_t) hex_len);
+            BSON_APPEND_BINARY (result, key, BSON_SUBTYPE_BINARY, hex_bytes, (uint32_t) hex_len);
             bson_free (hex_bytes);
          } else {
-            BSON_APPEND_BINARY (
-               result, key, BSON_SUBTYPE_BINARY, (const uint8_t *) str, 0);
+            BSON_APPEND_BINARY (result, key, BSON_SUBTYPE_BINARY, (const uint8_t *) str, 0);
          }
 
          bson_destroy (hex_doc);
 
-      } else if (value->value_type == BSON_TYPE_DOCUMENT ||
-                 value->value_type == BSON_TYPE_ARRAY) {
-         sub_doc =
-            bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                                bson_iter_value (&iter)->value.v_doc.data_len);
+      } else if (value->value_type == BSON_TYPE_DOCUMENT || value->value_type == BSON_TYPE_ARRAY) {
+         sub_doc = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
+                                       bson_iter_value (&iter)->value.v_doc.data_len);
 
          sub_doc_result = convert_hex_to_binary (sub_doc);
          bson_destroy (sub_doc);
@@ -349,18 +326,15 @@ setup_gridfs_collections (mongoc_database_t *db, bson_t *data)
 
    if (bson_iter_init_find (&iter, data, "files")) {
       bson_t *docs =
-         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                             bson_iter_value (&iter)->value.v_doc.data_len);
+         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
       bson_iter_init (&inner, docs);
       while (bson_iter_next (&inner)) {
-         bson_t *doc =
-            bson_new_from_data (bson_iter_value (&inner)->value.v_doc.data,
-                                bson_iter_value (&inner)->value.v_doc.data_len);
+         bson_t *doc = bson_new_from_data (bson_iter_value (&inner)->value.v_doc.data,
+                                           bson_iter_value (&inner)->value.v_doc.data_len);
          r = mongoc_collection_insert_one (files, doc, NULL, NULL, NULL);
          ASSERT (r);
-         r = mongoc_collection_insert_one (
-            expected_files, doc, NULL, NULL, NULL);
+         r = mongoc_collection_insert_one (expected_files, doc, NULL, NULL, NULL);
          ASSERT (r);
          bson_destroy (doc);
       }
@@ -370,19 +344,16 @@ setup_gridfs_collections (mongoc_database_t *db, bson_t *data)
 
    if (bson_iter_init_find (&iter, data, "chunks")) {
       bson_t *docs =
-         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                             bson_iter_value (&iter)->value.v_doc.data_len);
+         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
       bson_iter_init (&inner, docs);
       while (bson_iter_next (&inner)) {
-         bson_t *doc =
-            bson_new_from_data (bson_iter_value (&inner)->value.v_doc.data,
-                                bson_iter_value (&inner)->value.v_doc.data_len);
+         bson_t *doc = bson_new_from_data (bson_iter_value (&inner)->value.v_doc.data,
+                                           bson_iter_value (&inner)->value.v_doc.data_len);
          bson_t *chunk = convert_hex_to_binary (doc);
          r = mongoc_collection_insert_one (chunks, chunk, NULL, NULL, NULL);
          ASSERT (r);
-         r = mongoc_collection_insert_one (
-            expected_chunks, chunk, NULL, NULL, NULL);
+         r = mongoc_collection_insert_one (expected_chunks, chunk, NULL, NULL, NULL);
          ASSERT (r);
          bson_destroy (doc);
          bson_destroy (chunk);
@@ -407,15 +378,13 @@ gridfs_spec_run_commands (mongoc_database_t *db, bson_t *commands)
    bool r;
 
    ASSERT (bson_iter_init_find (&iter, commands, "data"));
-   data = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                              bson_iter_value (&iter)->value.v_doc.data_len);
+   data = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
    bson_iter_init (&iter, data);
 
    while (bson_iter_next (&iter)) {
       command =
-         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                             bson_iter_value (&iter)->value.v_doc.data_len);
+         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
       hex_command = convert_hex_to_binary (command);
 
@@ -458,11 +427,9 @@ gridfs_replace_result (bson_t *doc, bson_value_t *replacement)
             BSON_APPEND_VALUE (result, key, value);
          }
 
-      } else if (value->value_type == BSON_TYPE_DOCUMENT ||
-                 value->value_type == BSON_TYPE_ARRAY) {
-         sub_doc =
-            bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                                bson_iter_value (&iter)->value.v_doc.data_len);
+      } else if (value->value_type == BSON_TYPE_DOCUMENT || value->value_type == BSON_TYPE_ARRAY) {
+         sub_doc = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
+                                       bson_iter_value (&iter)->value.v_doc.data_len);
 
          sub_doc_result = gridfs_replace_result (sub_doc, replacement);
          bson_destroy (sub_doc);
@@ -507,33 +474,27 @@ gridfs_compare_collections (mongoc_database_t *db)
    bson_init (&filter);
 
    /* Compare files collections */
-   actual_cursor =
-      mongoc_collection_find_with_opts (files, &filter, NULL, NULL);
-   expected_cursor =
-      mongoc_collection_find_with_opts (expected_files, &filter, NULL, NULL);
+   actual_cursor = mongoc_collection_find_with_opts (files, &filter, NULL, NULL);
+   expected_cursor = mongoc_collection_find_with_opts (expected_files, &filter, NULL, NULL);
 
    while (mongoc_cursor_next (expected_cursor, &expected_doc)) {
       ASSERT (mongoc_cursor_next (actual_cursor, &actual_doc));
 
       ASSERT (bson_iter_init_find (&actual_iter, actual_doc, "_id"));
       ASSERT (bson_iter_init_find (&expected_iter, expected_doc, "_id"));
-      ASSERT (bson_oid_compare (bson_iter_oid (&actual_iter),
-                                bson_iter_oid (&expected_iter)) == 0);
+      ASSERT (bson_oid_compare (bson_iter_oid (&actual_iter), bson_iter_oid (&expected_iter)) == 0);
 
       ASSERT (bson_iter_init_find (&actual_iter, actual_doc, "length"));
       ASSERT (bson_iter_init_find (&expected_iter, expected_doc, "length"));
-      ASSERT (bson_iter_as_int64 (&actual_iter) ==
-              bson_iter_as_int64 (&expected_iter));
+      ASSERT (bson_iter_as_int64 (&actual_iter) == bson_iter_as_int64 (&expected_iter));
 
       ASSERT (bson_iter_init_find (&actual_iter, actual_doc, "chunkSize"));
       ASSERT (bson_iter_init_find (&expected_iter, expected_doc, "chunkSize"));
-      ASSERT (bson_iter_int32 (&actual_iter) ==
-              bson_iter_int32 (&expected_iter));
+      ASSERT (bson_iter_int32 (&actual_iter) == bson_iter_int32 (&expected_iter));
 
       ASSERT (bson_iter_init_find (&actual_iter, actual_doc, "filename"));
       ASSERT (bson_iter_init_find (&expected_iter, expected_doc, "filename"));
-      ASSERT (strcmp (bson_iter_utf8 (&actual_iter, NULL),
-                      bson_iter_utf8 (&expected_iter, NULL)) == 0);
+      ASSERT (strcmp (bson_iter_utf8 (&actual_iter, NULL), bson_iter_utf8 (&expected_iter, NULL)) == 0);
    }
 
    /* Make sure the actual doesn't have extra docs */
@@ -544,10 +505,8 @@ gridfs_compare_collections (mongoc_database_t *db)
 
 
    /* Compare chunks collections */
-   actual_cursor =
-      mongoc_collection_find_with_opts (chunks, &filter, NULL, NULL);
-   expected_cursor =
-      mongoc_collection_find_with_opts (expected_chunks, &filter, NULL, NULL);
+   actual_cursor = mongoc_collection_find_with_opts (chunks, &filter, NULL, NULL);
+   expected_cursor = mongoc_collection_find_with_opts (expected_chunks, &filter, NULL, NULL);
 
 
    while (mongoc_cursor_next (expected_cursor, &expected_doc)) {
@@ -555,13 +514,11 @@ gridfs_compare_collections (mongoc_database_t *db)
 
       ASSERT (bson_iter_init_find (&actual_iter, actual_doc, "files_id"));
       ASSERT (bson_iter_init_find (&expected_iter, expected_doc, "files_id"));
-      ASSERT (bson_oid_compare (bson_iter_oid (&actual_iter),
-                                bson_iter_oid (&expected_iter)) == 0);
+      ASSERT (bson_oid_compare (bson_iter_oid (&actual_iter), bson_iter_oid (&expected_iter)) == 0);
 
       ASSERT (bson_iter_init_find (&actual_iter, actual_doc, "n"));
       ASSERT (bson_iter_init_find (&expected_iter, expected_doc, "n"));
-      ASSERT (bson_iter_int32 (&actual_iter) ==
-              bson_iter_int32 (&expected_iter));
+      ASSERT (bson_iter_int32 (&actual_iter) == bson_iter_int32 (&expected_iter));
 
       ASSERT (bson_iter_init_find (&actual_iter, actual_doc, "data"));
       ASSERT (bson_iter_init_find (&expected_iter, expected_doc, "data"));
@@ -585,10 +542,7 @@ gridfs_compare_collections (mongoc_database_t *db)
 }
 
 void
-gridfs_spec_delete_operation (mongoc_database_t *db,
-                              mongoc_gridfs_bucket_t *bucket,
-                              bson_t *act,
-                              bson_t *assert)
+gridfs_spec_delete_operation (mongoc_database_t *db, mongoc_gridfs_bucket_t *bucket, bson_t *act, bson_t *assert)
 {
    bson_iter_t iter;
    bson_t *arguments;
@@ -597,8 +551,7 @@ gridfs_spec_delete_operation (mongoc_database_t *db,
 
    ASSERT (bson_iter_init_find (&iter, act, "arguments"));
    arguments =
-      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                          bson_iter_value (&iter)->value.v_doc.data_len);
+      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
    ASSERT (bson_iter_init_find (&iter, arguments, "id"));
    value = bson_iter_value (&iter);
@@ -617,10 +570,7 @@ gridfs_spec_delete_operation (mongoc_database_t *db,
 }
 
 void
-gridfs_spec_download_operation (mongoc_database_t *db,
-                                mongoc_gridfs_bucket_t *bucket,
-                                bson_t *act,
-                                bson_t *assert)
+gridfs_spec_download_operation (mongoc_database_t *db, mongoc_gridfs_bucket_t *bucket, bson_t *act, bson_t *assert)
 {
    bson_iter_t iter;
    bson_t *arguments;
@@ -640,8 +590,7 @@ gridfs_spec_download_operation (mongoc_database_t *db,
 
    ASSERT (bson_iter_init_find (&iter, act, "arguments"));
    arguments =
-      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                          bson_iter_value (&iter)->value.v_doc.data_len);
+      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
    if (bson_iter_init_find (&iter, assert, "error")) {
       expected_error = bson_iter_utf8 (&iter, NULL);
@@ -663,8 +612,7 @@ gridfs_spec_download_operation (mongoc_database_t *db,
 
    ret = mongoc_stream_read (stream, buf, 100, 0, 0);
 
-   if (strcmp (expected_error, "ChunkIsMissing") == 0 ||
-       strcmp (expected_error, "ChunkIsWrongSize") == 0) {
+   if (strcmp (expected_error, "ChunkIsMissing") == 0 || strcmp (expected_error, "ChunkIsWrongSize") == 0) {
       ASSERT (ret < 0);
       r = mongoc_gridfs_bucket_stream_error (stream, &error);
       ASSERT (r);
@@ -677,8 +625,8 @@ gridfs_spec_download_operation (mongoc_database_t *db,
    mongoc_stream_close (stream);
 
    ASSERT (bson_iter_init_find (&iter, assert, "result"));
-   hex_doc = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                                 bson_iter_value (&iter)->value.v_doc.data_len);
+   hex_doc =
+      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
    ASSERT (bson_iter_init_find (&iter, hex_doc, "$hex"));
    str = bson_iter_utf8 (&iter, NULL);
@@ -717,10 +665,7 @@ gridfs_spec_download_by_name_operation (mongoc_database_t *db,
 }
 
 void
-gridfs_spec_upload_operation (mongoc_database_t *db,
-                              mongoc_gridfs_bucket_t *bucket,
-                              bson_t *act,
-                              bson_t *assert)
+gridfs_spec_upload_operation (mongoc_database_t *db, mongoc_gridfs_bucket_t *bucket, bson_t *act, bson_t *assert)
 {
    bson_iter_t iter;
    bson_t *arguments;
@@ -738,15 +683,14 @@ gridfs_spec_upload_operation (mongoc_database_t *db,
 
    ASSERT (bson_iter_init_find (&iter, act, "arguments"));
    arguments =
-      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                          bson_iter_value (&iter)->value.v_doc.data_len);
+      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
    ASSERT (bson_iter_init_find (&iter, arguments, "filename"));
    filename = bson_iter_utf8 (&iter, NULL);
 
    ASSERT (bson_iter_init_find (&iter, arguments, "source"));
-   hex_doc = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                                 bson_iter_value (&iter)->value.v_doc.data_len);
+   hex_doc =
+      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
    ASSERT (bson_iter_init_find (&iter, hex_doc, "$hex"));
    str = bson_iter_utf8 (&iter, NULL);
@@ -758,11 +702,10 @@ gridfs_spec_upload_operation (mongoc_database_t *db,
    }
 
    ASSERT (bson_iter_init_find (&iter, arguments, "options"));
-   options = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                                 bson_iter_value (&iter)->value.v_doc.data_len);
+   options =
+      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
-   stream = mongoc_gridfs_bucket_open_upload_stream (
-      bucket, filename, options, &file_id, NULL);
+   stream = mongoc_gridfs_bucket_open_upload_stream (bucket, filename, options, &file_id, NULL);
 
    ASSERT (stream);
 
@@ -783,9 +726,7 @@ gridfs_spec_upload_operation (mongoc_database_t *db,
    bson_destroy (arguments);
 }
 void
-run_gridfs_spec_test (mongoc_database_t *db,
-                      mongoc_gridfs_bucket_t *bucket,
-                      bson_t *test)
+run_gridfs_spec_test (mongoc_database_t *db, mongoc_gridfs_bucket_t *bucket, bson_t *test)
 {
    bson_iter_t iter;
    bson_iter_t inner;
@@ -795,17 +736,15 @@ run_gridfs_spec_test (mongoc_database_t *db,
    const char *operation;
 
    ASSERT (bson_iter_init_find (&iter, test, "act"));
-   act = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                             bson_iter_value (&iter)->value.v_doc.data_len);
+   act = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
    ASSERT (bson_iter_init_find (&iter, test, "assert"));
-   assert = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                                bson_iter_value (&iter)->value.v_doc.data_len);
+   assert =
+      bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
    if (bson_iter_init_find (&iter, test, "arrange")) {
       arrange =
-         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                             bson_iter_value (&iter)->value.v_doc.data_len);
+         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
       gridfs_spec_run_commands (db, arrange);
       bson_destroy (arrange);
    }
@@ -851,8 +790,8 @@ test_gridfs_cb (bson_t *scenario)
 
    /* Insert the data */
    if (bson_iter_init_find (&iter, scenario, "data")) {
-      data = bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                                 bson_iter_value (&iter)->value.v_doc.data_len);
+      data =
+         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
       setup_gridfs_collections (db, data);
       bson_destroy (data);
    }
@@ -860,14 +799,12 @@ test_gridfs_cb (bson_t *scenario)
    /* Run the tests */
    if (bson_iter_init_find (&iter, scenario, "tests")) {
       tests =
-         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
-                             bson_iter_value (&iter)->value.v_doc.data_len);
+         bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data, bson_iter_value (&iter)->value.v_doc.data_len);
 
       bson_iter_init (&inner, tests);
       while (bson_iter_next (&inner)) {
-         test =
-            bson_new_from_data (bson_iter_value (&inner)->value.v_doc.data,
-                                bson_iter_value (&inner)->value.v_doc.data_len);
+         test = bson_new_from_data (bson_iter_value (&inner)->value.v_doc.data,
+                                    bson_iter_value (&inner)->value.v_doc.data_len);
          run_gridfs_spec_test (db, gridfs, test);
          bson_destroy (test);
       }
@@ -904,17 +841,14 @@ test_upload_error (void *ctx)
    client = test_framework_new_default_client ();
    db = mongoc_client_get_database (client, dbname);
    gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
-   source = mongoc_stream_file_new_for_path (
-      BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
+   source = mongoc_stream_file_new_for_path (BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
    BSON_ASSERT (source);
-   r = mongoc_gridfs_bucket_upload_from_stream (
-      gridfs, "test1", source, NULL /* opts */, NULL /* file id */, &error);
+   r = mongoc_gridfs_bucket_upload_from_stream (gridfs, "test1", source, NULL /* opts */, NULL /* file id */, &error);
    ASSERT_OR_PRINT (r, error);
 
    /* create a read-only user */
    (void) mongoc_database_remove_user (db, "fake_user", NULL);
-   r = mongoc_database_add_user (
-      db, "fake_user", "password", tmp_bson ("{'0': 'read'}"), NULL, &error);
+   r = mongoc_database_add_user (db, "fake_user", "password", tmp_bson ("{'0': 'read'}"), NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    mongoc_stream_close (source);
@@ -931,15 +865,12 @@ test_upload_error (void *ctx)
    test_framework_set_ssl_opts (client);
    mongoc_uri_destroy (uri);
 
-   source = mongoc_stream_file_new_for_path (
-      BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
+   source = mongoc_stream_file_new_for_path (BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
    BSON_ASSERT (source);
    db = mongoc_client_get_database (client, dbname);
    gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
-   mongoc_gridfs_bucket_upload_from_stream (
-      gridfs, "test1", source, NULL /* opts */, NULL /* file id */, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "");
+   mongoc_gridfs_bucket_upload_from_stream (gridfs, "test1", source, NULL /* opts */, NULL /* file id */, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "");
 
    mongoc_stream_close (source);
    mongoc_stream_destroy (source);
@@ -974,10 +905,8 @@ test_find_w_session (void *ctx)
    ASSERT_OR_PRINT (r, error);
    cursor = mongoc_gridfs_bucket_find (gridfs, tmp_bson ("{}"), &opts);
    BSON_ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CURSOR,
-                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                          "Cannot pass sessionId as an option");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Cannot pass sessionId as an option");
    bson_destroy (&opts);
    mongoc_cursor_destroy (cursor);
    mongoc_gridfs_bucket_destroy (gridfs);
@@ -993,8 +922,7 @@ test_find (void *ctx)
    mongoc_client_t *const client = test_framework_new_default_client ();
    char *const dbname = gen_collection_name ("test_find");
    mongoc_database_t *const db = mongoc_client_get_database (client, dbname);
-   mongoc_gridfs_bucket_t *const gridfs =
-      mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
+   mongoc_gridfs_bucket_t *const gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
    mongoc_cursor_t *cursor;
    bson_error_t error = {0};
    bson_t const *found;
@@ -1002,31 +930,14 @@ test_find (void *ctx)
    char buffer[256] = {0};
    bool ok;
    bson_value_t const *found_id;
-   const bson_t *const find_opts =
-      tmp_bson ("{'limit': 1, 'skip': 2, 'sort': {'metadata.testOrder': -1}}");
+   const bson_t *const find_opts = tmp_bson ("{'limit': 1, 'skip': 2, 'sort': {'metadata.testOrder': -1}}");
 
    BSON_UNUSED (ctx);
 
-   _upload_file_from_str (gridfs,
-                          "file1",
-                          "First file",
-                          tmp_bson ("{'metadata': {'testOrder': 1}}"),
-                          NULL);
-   _upload_file_from_str (gridfs,
-                          "file2",
-                          "Second file",
-                          tmp_bson ("{'metadata': {'testOrder': 2}}"),
-                          NULL);
-   _upload_file_from_str (gridfs,
-                          "file3",
-                          "Third file",
-                          tmp_bson ("{'metadata': {'testOrder': 3}}"),
-                          NULL);
-   _upload_file_from_str (gridfs,
-                          "file4",
-                          "Fourth file",
-                          tmp_bson ("{'metadata': {'testOrder': 4}}"),
-                          NULL);
+   _upload_file_from_str (gridfs, "file1", "First file", tmp_bson ("{'metadata': {'testOrder': 1}}"), NULL);
+   _upload_file_from_str (gridfs, "file2", "Second file", tmp_bson ("{'metadata': {'testOrder': 2}}"), NULL);
+   _upload_file_from_str (gridfs, "file3", "Third file", tmp_bson ("{'metadata': {'testOrder': 3}}"), NULL);
+   _upload_file_from_str (gridfs, "file4", "Fourth file", tmp_bson ("{'metadata': {'testOrder': 4}}"), NULL);
 
    cursor = mongoc_gridfs_bucket_find (gridfs, tmp_bson ("{}"), find_opts);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -1070,35 +981,23 @@ test_gridfs_bucket_opts (void)
    ASSERT_OR_PRINT (gridfs, error);
    ASSERT_CMPSTR (gridfs->bucket_name, "fs");
    ASSERT_CMPINT32 (gridfs->chunk_size, ==, 255 * 1024);
-   BSON_ASSERT (!mongoc_read_concern_get_level (
-      mongoc_collection_get_read_concern (gridfs->chunks)));
-   BSON_ASSERT (!mongoc_read_concern_get_level (
-      mongoc_collection_get_read_concern (gridfs->files)));
-   ASSERT_CMPINT (mongoc_write_concern_get_w (
-                     mongoc_collection_get_write_concern (gridfs->chunks)),
+   BSON_ASSERT (!mongoc_read_concern_get_level (mongoc_collection_get_read_concern (gridfs->chunks)));
+   BSON_ASSERT (!mongoc_read_concern_get_level (mongoc_collection_get_read_concern (gridfs->files)));
+   ASSERT_CMPINT (mongoc_write_concern_get_w (mongoc_collection_get_write_concern (gridfs->chunks)),
                   ==,
                   MONGOC_WRITE_CONCERN_W_DEFAULT);
-   ASSERT_CMPINT (mongoc_write_concern_get_w (
-                     mongoc_collection_get_write_concern (gridfs->files)),
+   ASSERT_CMPINT (mongoc_write_concern_get_w (mongoc_collection_get_write_concern (gridfs->files)),
                   ==,
                   MONGOC_WRITE_CONCERN_W_DEFAULT);
    mongoc_gridfs_bucket_destroy (gridfs);
 
    /* check out-of-range chunk sizes */
-   gridfs = mongoc_gridfs_bucket_new (
-      db, tmp_bson ("{'chunkSizeBytes': -1}"), NULL, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "should be greater than 0");
+   gridfs = mongoc_gridfs_bucket_new (db, tmp_bson ("{'chunkSizeBytes': -1}"), NULL, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "should be greater than 0");
    mongoc_gridfs_bucket_destroy (gridfs);
 
-   gridfs = mongoc_gridfs_bucket_new (
-      db, tmp_bson ("{'chunkSizeBytes': 2147483648}"), NULL, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "out of range");
+   gridfs = mongoc_gridfs_bucket_new (db, tmp_bson ("{'chunkSizeBytes': 2147483648}"), NULL, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "out of range");
    mongoc_gridfs_bucket_destroy (gridfs);
 
    rc = mongoc_read_concern_new ();
@@ -1113,18 +1012,14 @@ test_gridfs_bucket_opts (void)
    ASSERT_OR_PRINT (gridfs, error);
    ASSERT_CMPSTR (gridfs->bucket_name, "abc");
    ASSERT_CMPINT32 (gridfs->chunk_size, ==, 123);
-   ASSERT_CMPSTR (mongoc_read_concern_get_level (
-                     mongoc_collection_get_read_concern (gridfs->chunks)),
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (mongoc_collection_get_read_concern (gridfs->chunks)),
                   MONGOC_READ_CONCERN_LEVEL_AVAILABLE);
-   ASSERT_CMPSTR (mongoc_read_concern_get_level (
-                     mongoc_collection_get_read_concern (gridfs->files)),
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (mongoc_collection_get_read_concern (gridfs->files)),
                   MONGOC_READ_CONCERN_LEVEL_AVAILABLE);
-   ASSERT_CMPINT (mongoc_write_concern_get_w (
-                     mongoc_collection_get_write_concern (gridfs->chunks)),
+   ASSERT_CMPINT (mongoc_write_concern_get_w (mongoc_collection_get_write_concern (gridfs->chunks)),
                   ==,
                   MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
-   ASSERT_CMPINT (mongoc_write_concern_get_w (
-                     mongoc_collection_get_write_concern (gridfs->files)),
+   ASSERT_CMPINT (mongoc_write_concern_get_w (mongoc_collection_get_write_concern (gridfs->files)),
                   ==,
                   MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    mongoc_read_concern_destroy (rc);
@@ -1137,10 +1032,7 @@ test_gridfs_bucket_opts (void)
    memset (bucket_name, 'a', 128 - strlen ("chunks"));
    opts = BCON_NEW ("bucketName", bucket_name);
    gridfs = mongoc_gridfs_bucket_new (db, opts, NULL, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "must have fewer");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "must have fewer");
    bson_destroy (opts);
    mongoc_gridfs_bucket_destroy (gridfs);
 
@@ -1162,14 +1054,8 @@ test_gridfs_bucket_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
    TestSuite_AddLive (suite, "/gridfs/create_bucket", test_create_bucket);
-   TestSuite_AddLive (
-      suite, "/gridfs/upload_and_download", test_upload_and_download);
-   TestSuite_AddFull (suite,
-                      "/gridfs/upload_error",
-                      test_upload_error,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_auth);
+   TestSuite_AddLive (suite, "/gridfs/upload_and_download", test_upload_and_download);
+   TestSuite_AddFull (suite, "/gridfs/upload_error", test_upload_error, NULL, NULL, test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/gridfs/find_w_session",
                       test_find_w_session,

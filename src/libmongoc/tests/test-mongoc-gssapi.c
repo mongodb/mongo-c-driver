@@ -70,18 +70,15 @@ static BSON_THREAD_FUN (gssapi_kerberos_worker, data)
       bson_t *cmd = BCON_NEW ("ping", BCON_INT32 (1));
 
       client = mongoc_client_pool_pop (pool);
-      if (!mongoc_client_command_with_opts (
-             client, "test", cmd, NULL, NULL, NULL, &error)) {
+      if (!mongoc_client_command_with_opts (client, "test", cmd, NULL, NULL, NULL, &error)) {
          fprintf (stderr, "ping command failed: %s\n", error.message);
          abort ();
       }
       bson_destroy (cmd);
       collection = mongoc_client_get_collection (client, "kerberos", "test");
-      cursor = mongoc_collection_find (
-         collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
 
-      if (!mongoc_cursor_next (cursor, &doc) &&
-          mongoc_cursor_error (cursor, &error)) {
+      if (!mongoc_cursor_next (cursor, &doc) && mongoc_cursor_error (cursor, &error)) {
          fprintf (stderr, "Cursor Failure: %s\n", error.message);
          abort ();
       }
@@ -116,26 +113,19 @@ main (void)
    mongoc_init ();
 
    if (!host || !user) {
-      fprintf (stderr,
-               "%s and %s must be defined in environment\n",
-               GSSAPI_HOST,
-               GSSAPI_USER);
+      fprintf (stderr, "%s and %s must be defined in environment\n", GSSAPI_HOST, GSSAPI_USER);
       return 1;
    }
 
    bson_mutex_init (&closure.mutex);
 
-   uri_str = bson_strdup_printf (
-      "mongodb://%s@%s/?authMechanism=GSSAPI&connectTimeoutMS=30000",
-      user,
-      host);
+   uri_str = bson_strdup_printf ("mongodb://%s@%s/?authMechanism=GSSAPI&connectTimeoutMS=30000", user, host);
 
    uri = mongoc_uri_new (uri_str);
    closure.pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < NTHREADS; i++) {
-      r = mcommon_thread_create (
-         &threads[i], gssapi_kerberos_worker, (void *) &closure);
+      r = mcommon_thread_create (&threads[i], gssapi_kerberos_worker, (void *) &closure);
       BSON_ASSERT (r == 0);
    }
 

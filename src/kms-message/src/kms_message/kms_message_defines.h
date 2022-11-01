@@ -22,9 +22,9 @@
 #ifdef KMS_MSG_STATIC
 #define KMS_MSG_API
 #elif defined(KMS_MSG_COMPILATION)
-#define KMS_MSG_API __declspec(dllexport)
+#define KMS_MSG_API __declspec (dllexport)
 #else
-#define KMS_MSG_API __declspec(dllimport)
+#define KMS_MSG_API __declspec (dllimport)
 #endif
 #define KMS_MSG_CALL __cdecl
 #elif defined(__GNUC__)

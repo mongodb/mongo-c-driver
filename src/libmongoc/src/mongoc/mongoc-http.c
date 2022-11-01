@@ -75,8 +75,7 @@ _mongoc_http_render_request_head (const mongoc_http_request_t *req)
    bson_string_append_printf (string, "Connection: close\r\n");
    /* Add Content-Length if body is included. */
    if (req->body_len) {
-      bson_string_append_printf (
-         string, "Content-Length: %d\r\n", req->body_len);
+      bson_string_append_printf (string, "Content-Length: %d\r\n", req->body_len);
    }
    // Add any extra headers
    if (req->extra_headers) {
@@ -108,14 +107,12 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    char *ptr;
    const char *header_delimiter = "\r\n\r\n";
 
-   const mcd_timer timer =
-      mcd_timer_expire_after (mcd_milliseconds (timeout_ms));
+   const mcd_timer timer = mcd_timer_expire_after (mcd_milliseconds (timeout_ms));
 
    memset (res, 0, sizeof (*res));
    _mongoc_buffer_init (&http_response_buf, NULL, 0, NULL, NULL);
 
-   if (!_mongoc_host_list_from_hostport_with_err (
-          &host_list, req->host, (uint16_t) req->port, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (&host_list, req->host, (uint16_t) req->port, error)) {
       goto fail;
    }
 
@@ -125,22 +122,17 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       &host_list,
       error);
    if (!stream) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to connect to: %s",
-                      req->host);
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to connect to: %s", req->host);
       goto fail;
    }
 
 #ifndef MONGOC_ENABLE_SSL
    if (use_tls) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_STREAM,
-         MONGOC_ERROR_STREAM_SOCKET,
-         "Failed to connect to %s: libmongoc not built with TLS support",
-         req->host);
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failed to connect to %s: libmongoc not built with TLS support",
+                      req->host);
       goto fail;
    }
 #else
@@ -148,23 +140,16 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       mongoc_stream_t *tls_stream;
 
       BSON_ASSERT (ssl_opts);
-      tls_stream = mongoc_stream_tls_new_with_hostname (
-         stream, req->host, ssl_opts, true);
+      tls_stream = mongoc_stream_tls_new_with_hostname (stream, req->host, ssl_opts, true);
       if (!tls_stream) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "Failed create TLS stream to: %s",
-                         req->host);
+         bson_set_error (
+            error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed create TLS stream to: %s", req->host);
          goto fail;
       }
 
       stream = tls_stream;
       if (!mongoc_stream_tls_handshake_block (
-             stream,
-             req->host,
-             mcd_get_milliseconds (mcd_timer_remaining (timer)),
-             error)) {
+             stream, req->host, mcd_get_milliseconds (mcd_timer_remaining (timer)), error)) {
          goto fail;
       }
    }
@@ -182,24 +167,14 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    iovec.iov_base = http_request->str;
    iovec.iov_len = http_request->len;
 
-   if (!_mongoc_stream_writev_full (
-          stream,
-          &iovec,
-          1,
-          mcd_get_milliseconds (mcd_timer_remaining (timer)),
-          error)) {
+   if (!_mongoc_stream_writev_full (stream, &iovec, 1, mcd_get_milliseconds (mcd_timer_remaining (timer)), error)) {
       goto fail;
    }
 
    if (req->body && req->body_len) {
       iovec.iov_base = (void *) req->body;
       iovec.iov_len = req->body_len;
-      if (!_mongoc_stream_writev_full (
-             stream,
-             &iovec,
-             1,
-             mcd_get_milliseconds (mcd_timer_remaining (timer)),
-             error)) {
+      if (!_mongoc_stream_writev_full (stream, &iovec, 1, mcd_get_milliseconds (mcd_timer_remaining (timer)), error)) {
          goto fail;
       }
    }
@@ -207,10 +182,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    /* Read until connection close. */
    while (1) {
       bytes_read = _mongoc_buffer_try_append_from_stream (
-         &http_response_buf,
-         stream,
-         1024 * 32,
-         mcd_get_milliseconds (mcd_timer_remaining (timer)));
+         &http_response_buf, stream, 1024 * 32, mcd_get_milliseconds (mcd_timer_remaining (timer)));
       if (mongoc_stream_should_retry (stream)) {
          continue;
       }
@@ -218,33 +190,23 @@ _mongoc_http_send (const mongoc_http_request_t *req,
          break;
       }
       if (http_response_buf.datalen > 1024 * 1024 * 8) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "HTTP response message is too large");
+         bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "HTTP response message is too large");
          goto fail;
       }
    }
 
    if (mongoc_stream_timed_out (stream)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Timeout reading from stream");
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Timeout reading from stream");
       goto fail;
    }
 
    if (http_response_buf.len == 0) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "No response received");
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "No response received");
       goto fail;
    }
 
    http_response_str = (char *) http_response_buf.data;
-   const char *const resp_end_ptr =
-      http_response_str + http_response_buf.datalen;
+   const char *const resp_end_ptr = http_response_str + http_response_buf.datalen;
 
 
    const char *proto_leader_10 = "HTTP/1.0 ";
@@ -255,13 +217,12 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    }
 
    if (!ptr) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_STREAM,
-         MONGOC_ERROR_STREAM_SOCKET,
-         "No HTTP version leader in HTTP response. Expected '%s' or '%s'",
-         proto_leader_10,
-         proto_leader_11);
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "No HTTP version leader in HTTP response. Expected '%s' or '%s'",
+                      proto_leader_10,
+                      proto_leader_11);
       goto fail;
    }
 
@@ -269,10 +230,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    ptr += strlen (proto_leader_10);
    ssize_t remain = resp_end_ptr - ptr;
    if (remain < 4) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Short read in HTTP response");
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Short read in HTTP response");
       goto fail;
    }
 
@@ -293,18 +251,16 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    /* Find the end of the headers. */
    ptr = strstr (http_response_str, header_delimiter);
    if (NULL == ptr) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_STREAM,
-         MONGOC_ERROR_STREAM_SOCKET,
-         "Error occurred reading response: end of headers not found");
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Error occurred reading response: end of headers not found");
       goto fail;
    }
 
    res->headers_len = ptr - http_response_str;
    res->headers = bson_strndup (http_response_str, res->headers_len);
-   res->body_len =
-      http_response_buf.len - res->headers_len - strlen (header_delimiter);
+   res->body_len = http_response_buf.len - res->headers_len - strlen (header_delimiter);
    /* Add a NULL character in case caller assumes NULL terminated. */
    res->body = bson_malloc0 (res->body_len + 1);
    memcpy (res->body, ptr + strlen (header_delimiter), res->body_len);

@@ -143,9 +143,8 @@ request_matches_flags (const request_t *request, mongoc_query_flags_t flags)
    rpc = &request->request_rpc;
 
    if (rpc->query.flags != flags) {
-      test_error ("request's query flags are %s, expected %s",
-                  query_flags_str (rpc->query.flags),
-                  query_flags_str (flags));
+      test_error (
+         "request's query flags are %s, expected %s", query_flags_str (rpc->query.flags), query_flags_str (flags));
       return false;
    }
 
@@ -183,8 +182,7 @@ request_matches_query (const request_t *request,
       doc_as_json = NULL;
    }
 
-   if (!match_json (
-          doc, is_command, __FILE__, __LINE__, BSON_FUNC, query_json)) {
+   if (!match_json (doc, is_command, __FILE__, __LINE__, BSON_FUNC, query_json)) {
       /* match_json has logged the err */
       goto done;
    }
@@ -216,10 +214,8 @@ request_matches_query (const request_t *request,
    }
 
    if (0 != strcmp (rpc->query.collection, ns)) {
-      test_error ("request's namespace is '%s', expected '%s': %s",
-                  request->request_rpc.query.collection,
-                  ns,
-                  doc_as_json);
+      test_error (
+         "request's namespace is '%s', expected '%s': %s", request->request_rpc.query.collection, ns, doc_as_json);
       goto done;
    }
 
@@ -229,10 +225,7 @@ request_matches_query (const request_t *request,
    }
 
    if (rpc->query.skip != skip) {
-      test_error ("requests's skip = %d, expected %d: %s",
-                  rpc->query.skip,
-                  skip,
-                  doc_as_json);
+      test_error ("requests's skip = %d, expected %d: %s", rpc->query.skip, skip, doc_as_json);
       goto done;
    }
 
@@ -246,10 +239,7 @@ request_matches_query (const request_t *request,
    }
 
    if (!n_return_equal) {
-      test_error ("requests's n_return = %d, expected %d: %s",
-                  rpc->query.n_return,
-                  n_return,
-                  doc_as_json);
+      test_error ("requests's n_return = %d, expected %d: %s", rpc->query.n_return, n_return, doc_as_json);
       goto done;
    }
 
@@ -263,10 +253,7 @@ done:
 
 /* TODO: take file, line, function params from caller, wrap in macro */
 bool
-request_matches_insert (const request_t *request,
-                        const char *ns,
-                        mongoc_insert_flags_t flags,
-                        const char *doc_json)
+request_matches_insert (const request_t *request, const char *ns, mongoc_insert_flags_t flags, const char *doc_json)
 {
    const mongoc_rpc_t *rpc;
    const bson_t *doc;
@@ -275,22 +262,18 @@ request_matches_insert (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
-      test_error ("request's opcode does not match INSERT, got: %d",
-                  request->opcode);
+      test_error ("request's opcode does not match INSERT, got: %d", request->opcode);
       return false;
    }
 
    if (strcmp (rpc->insert.collection, ns)) {
-      test_error ("insert's namespace is '%s', expected '%s'",
-                  request->request_rpc.get_more.collection,
-                  ns);
+      test_error ("insert's namespace is '%s', expected '%s'", request->request_rpc.get_more.collection, ns);
       return false;
    }
 
    if (rpc->insert.flags != flags) {
-      test_error ("request's insert flags are %s, expected %s",
-                  insert_flags_str (rpc->insert.flags),
-                  insert_flags_str (flags));
+      test_error (
+         "request's insert flags are %s, expected %s", insert_flags_str (rpc->insert.flags), insert_flags_str (flags));
       return false;
    }
 
@@ -306,10 +289,7 @@ request_matches_insert (const request_t *request,
 
 /* TODO: take file, line, function params from caller, wrap in macro */
 bool
-request_matches_bulk_insert (const request_t *request,
-                             const char *ns,
-                             mongoc_insert_flags_t flags,
-                             int n)
+request_matches_bulk_insert (const request_t *request, const char *ns, mongoc_insert_flags_t flags, int n)
 {
    const mongoc_rpc_t *rpc;
 
@@ -317,28 +297,23 @@ request_matches_bulk_insert (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
-      test_error ("request's opcode does not match INSERT, got: %d",
-                  request->opcode);
+      test_error ("request's opcode does not match INSERT, got: %d", request->opcode);
       return false;
    }
 
    if (strcmp (rpc->insert.collection, ns)) {
-      test_error ("insert's namespace is '%s', expected '%s'",
-                  request->request_rpc.get_more.collection,
-                  ns);
+      test_error ("insert's namespace is '%s', expected '%s'", request->request_rpc.get_more.collection, ns);
       return false;
    }
 
    if (rpc->insert.flags != flags) {
-      test_error ("request's insert flags are %s, expected %s",
-                  insert_flags_str (rpc->insert.flags),
-                  insert_flags_str (flags));
+      test_error (
+         "request's insert flags are %s, expected %s", insert_flags_str (rpc->insert.flags), insert_flags_str (flags));
       return false;
    }
 
    if ((int) request->docs.len != n) {
-      test_error (
-         "expected %d docs inserted, got %d", n, (int) request->docs.len);
+      test_error ("expected %d docs inserted, got %d", n, (int) request->docs.len);
       return false;
    }
 
@@ -361,22 +336,18 @@ request_matches_update (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_UPDATE) {
-      test_error ("request's opcode does not match UPDATE, got: %d",
-                  request->opcode);
+      test_error ("request's opcode does not match UPDATE, got: %d", request->opcode);
       return false;
    }
 
    if (strcmp (rpc->update.collection, ns)) {
-      test_error ("update's namespace is '%s', expected '%s'",
-                  request->request_rpc.update.collection,
-                  ns);
+      test_error ("update's namespace is '%s', expected '%s'", request->request_rpc.update.collection, ns);
       return false;
    }
 
    if (rpc->update.flags != flags) {
-      test_error ("request's update flags are %s, expected %s",
-                  update_flags_str (rpc->update.flags),
-                  update_flags_str (flags));
+      test_error (
+         "request's update flags are %s, expected %s", update_flags_str (rpc->update.flags), update_flags_str (flags));
       return false;
    }
 
@@ -409,22 +380,18 @@ request_matches_delete (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_DELETE) {
-      test_error ("request's opcode does not match DELETE, got: %d",
-                  request->opcode);
+      test_error ("request's opcode does not match DELETE, got: %d", request->opcode);
       return false;
    }
 
    if (strcmp (rpc->delete_.collection, ns)) {
-      test_error ("delete's namespace is '%s', expected '%s'",
-                  request->request_rpc.delete_.collection,
-                  ns);
+      test_error ("delete's namespace is '%s', expected '%s'", request->request_rpc.delete_.collection, ns);
       return false;
    }
 
    if (rpc->delete_.flags != flags) {
-      test_error ("request's delete flags are %s, expected %s",
-                  delete_flags_str (rpc->delete_.flags),
-                  delete_flags_str (flags));
+      test_error (
+         "request's delete flags are %s, expected %s", delete_flags_str (rpc->delete_.flags), delete_flags_str (flags));
       return false;
    }
 
@@ -440,10 +407,7 @@ request_matches_delete (const request_t *request,
 
 /* TODO: take file, line, function params from caller, wrap in macro */
 bool
-request_matches_getmore (const request_t *request,
-                         const char *ns,
-                         int32_t n_return,
-                         int64_t cursor_id)
+request_matches_getmore (const request_t *request, const char *ns, int32_t n_return, int64_t cursor_id)
 {
    const mongoc_rpc_t *rpc;
 
@@ -451,29 +415,22 @@ request_matches_getmore (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_GET_MORE) {
-      test_error ("request's opcode does not match GET_MORE, got: %d",
-                  request->opcode);
+      test_error ("request's opcode does not match GET_MORE, got: %d", request->opcode);
       return false;
    }
 
    if (strcmp (rpc->get_more.collection, ns)) {
-      test_error ("request's namespace is '%s', expected '%s'",
-                  request->request_rpc.get_more.collection,
-                  ns);
+      test_error ("request's namespace is '%s', expected '%s'", request->request_rpc.get_more.collection, ns);
       return false;
    }
 
    if (rpc->get_more.n_return != n_return) {
-      test_error ("requests's n_return = %d, expected %d",
-                  rpc->get_more.n_return,
-                  n_return);
+      test_error ("requests's n_return = %d, expected %d", rpc->get_more.n_return, n_return);
       return false;
    }
 
    if (rpc->get_more.cursor_id != cursor_id) {
-      test_error ("requests's cursor_id = %" PRId64 ", expected %" PRId64,
-                  rpc->get_more.cursor_id,
-                  cursor_id);
+      test_error ("requests's cursor_id = %" PRId64 ", expected %" PRId64, rpc->get_more.cursor_id, cursor_id);
       return false;
    }
 
@@ -491,21 +448,17 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_KILL_CURSORS) {
-      test_error ("request's opcode does not match KILL_CURSORS, got: %d",
-                  request->opcode);
+      test_error ("request's opcode does not match KILL_CURSORS, got: %d", request->opcode);
       return false;
    }
 
    if (rpc->kill_cursors.n_cursors != 1) {
-      test_error ("request's n_cursors is %d, expected 1",
-                  rpc->kill_cursors.n_cursors);
+      test_error ("request's n_cursors is %d, expected 1", rpc->kill_cursors.n_cursors);
       return false;
    }
 
    if (rpc->kill_cursors.cursors[0] != cursor_id) {
-      test_error ("request's cursor_id %" PRId64 ", expected %" PRId64,
-                  rpc->kill_cursors.cursors[0],
-                  cursor_id);
+      test_error ("request's cursor_id %" PRId64 ", expected %" PRId64, rpc->kill_cursors.cursors[0], cursor_id);
       return false;
    }
 
@@ -533,10 +486,7 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
  */
 
 bool
-request_matches_msg (const request_t *request,
-                     uint32_t flags,
-                     const bson_t **docs,
-                     size_t n_docs)
+request_matches_msg (const request_t *request, uint32_t flags, const bson_t **docs, size_t n_docs)
 {
    const bson_t *doc;
    const bson_t *pattern;
@@ -556,23 +506,16 @@ request_matches_msg (const request_t *request,
 
       /* make sure the pattern is reasonable, e.g. that we didn't pass a string
        * instead of a bson_t* by mistake */
-      ASSERT_WITH_MSG (bson_validate_with_error (pattern,
-                                                 BSON_VALIDATE_EMPTY_KEYS |
-                                                    BSON_VALIDATE_UTF8,
-                                                 &bson_error),
+      ASSERT_WITH_MSG (bson_validate_with_error (pattern, BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_UTF8, &bson_error),
                        "invalid argument at position %d (note: must be "
-                       "bson_t*, not char*):\ndomain: %" PRIu32
-                       ", code: %" PRIu32 ", message: %s\n",
+                       "bson_t*, not char*):\ndomain: %" PRIu32 ", code: %" PRIu32 ", message: %s\n",
                        i,
                        bson_error.domain,
                        bson_error.code,
                        bson_error.message);
 
       if (i > request->docs.len) {
-         fprintf (stderr,
-                  "Expected at least %d documents in request, got %d\n",
-                  i,
-                  (int) request->docs.len);
+         fprintf (stderr, "Expected at least %d documents in request, got %d\n", i, (int) request->docs.len);
          return false;
       }
 
@@ -583,19 +526,13 @@ request_matches_msg (const request_t *request,
    }
 
    if (n_docs < request->docs.len) {
-      fprintf (stderr,
-               "Expected %d documents in request, got %d\n",
-               (int) n_docs,
-               (int) request->docs.len);
+      fprintf (stderr, "Expected %d documents in request, got %d\n", (int) n_docs, (int) request->docs.len);
       return false;
    }
 
 
    if (flags != request->request_rpc.msg.flags) {
-      fprintf (stderr,
-               "Expected OP_MSG flags %u, got %u\n",
-               flags,
-               request->request_rpc.msg.flags);
+      fprintf (stderr, "Expected OP_MSG flags %u, got %u\n", flags, request->request_rpc.msg.flags);
       return false;
    }
 
@@ -811,9 +748,7 @@ request_from_query (request_t *request, const mongoc_rpc_t *rpc)
       if (bson_iter_init (&iter, query) && bson_iter_next (&iter)) {
          request->command_name = bson_strdup (bson_iter_key (&iter));
       } else {
-         fprintf (stderr,
-                  "WARNING: no command name for %s\n",
-                  request->request_rpc.query.collection);
+         fprintf (stderr, "WARNING: no command name for %s\n", request->request_rpc.query.collection);
       }
    }
 
@@ -841,13 +776,11 @@ request_from_query (request_t *request, const mongoc_rpc_t *rpc)
    bson_free (str);
 
    if (rpc->query.skip) {
-      bson_string_append_printf (
-         query_as_str, " skip=%d", (int) rpc->query.skip);
+      bson_string_append_printf (query_as_str, " skip=%d", (int) rpc->query.skip);
    }
 
    if (rpc->query.n_return) {
-      bson_string_append_printf (
-         query_as_str, " n_return=%d", (int) rpc->query.n_return);
+      bson_string_append_printf (query_as_str, " n_return=%d", (int) rpc->query.n_return);
    }
 
    request->as_str = bson_string_free (query_as_str, false);
@@ -1043,27 +976,22 @@ request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc)
 {
    /* protocol allows multiple cursor ids but we only implement one */
    BSON_ASSERT (rpc->kill_cursors.n_cursors == 1);
-   request->as_str = bson_strdup_printf ("OP_KILLCURSORS %" PRId64,
-                                         rpc->kill_cursors.cursors[0]);
+   request->as_str = bson_strdup_printf ("OP_KILLCURSORS %" PRId64, rpc->kill_cursors.cursors[0]);
 }
 
 
 static void
 request_from_getmore (request_t *request, const mongoc_rpc_t *rpc)
 {
-   request->as_str =
-      bson_strdup_printf ("OP_GETMORE %s %" PRId64 " n_return=%d",
-                          rpc->get_more.collection,
-                          rpc->get_more.cursor_id,
-                          rpc->get_more.n_return);
+   request->as_str = bson_strdup_printf ("OP_GETMORE %s %" PRId64 " n_return=%d",
+                                         rpc->get_more.collection,
+                                         rpc->get_more.cursor_id,
+                                         rpc->get_more.n_return);
 }
 
 
 static void
-parse_op_msg_doc (request_t *request,
-                  const uint8_t *data,
-                  int32_t len,
-                  bson_string_t *msg_as_str)
+parse_op_msg_doc (request_t *request, const uint8_t *data, int32_t len, bson_string_t *msg_as_str)
 {
    int32_t data_len;
    int32_t doc_len;
@@ -1115,8 +1043,7 @@ request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc)
       switch (section->payload_type) {
       case 0:
          /* a single BSON document */
-         parse_op_msg_doc (
-            request, section->payload.bson_document, -1, msg_as_str);
+         parse_op_msg_doc (request, section->payload.bson_document, -1, msg_as_str);
          break;
       case 1:
          /* a sequence of BSON documents */
@@ -1133,8 +1060,7 @@ request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc)
          bson_string_append (msg_as_str, "]");
          break;
       default:
-         fprintf (
-            stderr, "Unimplemented payload type %d\n", section->payload_type);
+         fprintf (stderr, "Unimplemented payload type %d\n", section->payload_type);
          abort ();
       }
    }

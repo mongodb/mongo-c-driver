@@ -42,9 +42,7 @@ static BSON_ONCE_FUN (_init_mtx)
 }
 
 void
-mongoc_shared_ptr_reset (mongoc_shared_ptr *const ptr,
-                         void *const pointee,
-                         void (*const deleter) (void *))
+mongoc_shared_ptr_reset (mongoc_shared_ptr *const ptr, void *const pointee, void (*const deleter) (void *))
 {
    BSON_ASSERT_PARAM (ptr);
    if (!mongoc_shared_ptr_is_null (*ptr)) {
@@ -65,8 +63,7 @@ mongoc_shared_ptr_reset (mongoc_shared_ptr *const ptr,
 }
 
 void
-mongoc_shared_ptr_assign (mongoc_shared_ptr *const out,
-                          mongoc_shared_ptr const from)
+mongoc_shared_ptr_assign (mongoc_shared_ptr *const out, mongoc_shared_ptr const from)
 {
    /* Copy from 'from' *first*, since this might be a self-assignment. */
    mongoc_shared_ptr copied = mongoc_shared_ptr_copy (from);
@@ -84,8 +81,7 @@ mongoc_shared_ptr_create (void *pointee, void (*deleter) (void *))
 }
 
 void
-mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *const out,
-                                mongoc_shared_ptr const from)
+mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *const out, mongoc_shared_ptr const from)
 {
    mongoc_shared_ptr prev = MONGOC_SHARED_PTR_NULL;
    BSON_ASSERT_PARAM (out);
@@ -119,8 +115,7 @@ mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
-      bson_atomic_int_fetch_add (
-         &ret._aux->refcount, 1, bson_memory_order_acquire);
+      bson_atomic_int_fetch_add (&ret._aux->refcount, 1, bson_memory_order_acquire);
    }
    return ret;
 }
@@ -135,8 +130,7 @@ mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
       return;
    }
    /* Decrement the reference count by one */
-   prevcount = bson_atomic_int_fetch_sub (
-      &ptr->_aux->refcount, 1, bson_memory_order_acq_rel);
+   prevcount = bson_atomic_int_fetch_sub (&ptr->_aux->refcount, 1, bson_memory_order_acq_rel);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
        * Release the managed data. */
@@ -149,9 +143,6 @@ mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
 int
 mongoc_shared_ptr_use_count (mongoc_shared_ptr const ptr)
 {
-   BSON_ASSERT (
-      !mongoc_shared_ptr_is_null (ptr) &&
-      "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_use_count");
-   return bson_atomic_int_fetch (&ptr._aux->refcount,
-                                 bson_memory_order_relaxed);
+   BSON_ASSERT (!mongoc_shared_ptr_is_null (ptr) && "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_use_count");
+   return bson_atomic_int_fetch (&ptr._aux->refcount, bson_memory_order_relaxed);
 }

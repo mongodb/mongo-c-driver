@@ -67,19 +67,14 @@ _mongoc_sspi_auth_sspi_client_init (WCHAR *service,
                                     ULONG plen,
                                     mongoc_sspi_client_state_t *state);
 int
-_mongoc_sspi_auth_sspi_client_step (mongoc_sspi_client_state_t *state,
-                                    SEC_CHAR *challenge);
+_mongoc_sspi_auth_sspi_client_step (mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
 
 int
-_mongoc_sspi_auth_sspi_client_unwrap (mongoc_sspi_client_state_t *state,
-                                      SEC_CHAR *challenge);
+_mongoc_sspi_auth_sspi_client_unwrap (mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
 
 int
-_mongoc_sspi_auth_sspi_client_wrap (mongoc_sspi_client_state_t *state,
-                                    SEC_CHAR *data,
-                                    SEC_CHAR *user,
-                                    ULONG ulen,
-                                    INT protect);
+_mongoc_sspi_auth_sspi_client_wrap (
+   mongoc_sspi_client_state_t *state, SEC_CHAR *data, SEC_CHAR *user, ULONG ulen, INT protect);
 
 
 BSON_END_DECLS

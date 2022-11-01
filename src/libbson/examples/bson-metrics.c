@@ -48,63 +48,51 @@ typedef struct {
    bson_type_metrics_t bson_type_metrics[256];
 } bson_metrics_state_t;
 
-static bson_metrics_state_t initial_state = {
-   0L,
-   0L,
-   0L,
-   0L,
-   0L,
-   0L,
-   {{/* BSON_TYPE_EOD        = 0x00 */ 0L, "End of document"},
-    {/* BSON_TYPE_DOUBLE     = 0x01 */ 0L, "Floating point"},
-    {/* BSON_TYPE_UTF8       = 0x02 */ 0L, "UTF-8 string"},
-    {/* BSON_TYPE_DOCUMENT   = 0x03 */ 0L, "Embedded document"},
-    {/* BSON_TYPE_ARRAY      = 0x04 */ 0L, "Array"},
-    {/* BSON_TYPE_BINARY     = 0x05 */ 0L, "Binary data"},
-    {/* BSON_TYPE_UNDEFINED  = 0x06 */ 0L, "Undefined - Deprecated"},
-    {/* BSON_TYPE_OID        = 0x07 */ 0L, "ObjectId"},
-    {/* BSON_TYPE_BOOL       = 0x08 */ 0L, "Boolean"},
-    {/* BSON_TYPE_DATE_TIME  = 0x09 */ 0L, "UTC datetime"},
-    {/* BSON_TYPE_NULL       = 0x0A */ 0L, "Null value"},
-    {/* BSON_TYPE_REGEX      = 0x0B */ 0L, "Regular expression"},
-    {/* BSON_TYPE_DBPOINTER  = 0x0C */ 0L, "DBPointer - Deprecated"},
-    {/* BSON_TYPE_CODE       = 0x0D */ 0L, "JavaScript code"},
-    {/* BSON_TYPE_SYMBOL     = 0x0E */ 0L, "Symbol - Deprecated"},
-    {/* BSON_TYPE_CODEWSCOPE = 0x0F */ 0L, "JavaScript code w/ scope"},
-    {/* BSON_TYPE_INT32      = 0x10 */ 0L, "32-bit Integer"},
-    {/* BSON_TYPE_TIMESTAMP  = 0x11 */ 0L, "Timestamp"},
-    {/* BSON_TYPE_INT64      = 0x12 */ 0L, "64-bit Integer"},
-    {0L, NULL}}};
+static bson_metrics_state_t initial_state = {0L,
+                                             0L,
+                                             0L,
+                                             0L,
+                                             0L,
+                                             0L,
+                                             {{/* BSON_TYPE_EOD        = 0x00 */ 0L, "End of document"},
+                                              {/* BSON_TYPE_DOUBLE     = 0x01 */ 0L, "Floating point"},
+                                              {/* BSON_TYPE_UTF8       = 0x02 */ 0L, "UTF-8 string"},
+                                              {/* BSON_TYPE_DOCUMENT   = 0x03 */ 0L, "Embedded document"},
+                                              {/* BSON_TYPE_ARRAY      = 0x04 */ 0L, "Array"},
+                                              {/* BSON_TYPE_BINARY     = 0x05 */ 0L, "Binary data"},
+                                              {/* BSON_TYPE_UNDEFINED  = 0x06 */ 0L, "Undefined - Deprecated"},
+                                              {/* BSON_TYPE_OID        = 0x07 */ 0L, "ObjectId"},
+                                              {/* BSON_TYPE_BOOL       = 0x08 */ 0L, "Boolean"},
+                                              {/* BSON_TYPE_DATE_TIME  = 0x09 */ 0L, "UTC datetime"},
+                                              {/* BSON_TYPE_NULL       = 0x0A */ 0L, "Null value"},
+                                              {/* BSON_TYPE_REGEX      = 0x0B */ 0L, "Regular expression"},
+                                              {/* BSON_TYPE_DBPOINTER  = 0x0C */ 0L, "DBPointer - Deprecated"},
+                                              {/* BSON_TYPE_CODE       = 0x0D */ 0L, "JavaScript code"},
+                                              {/* BSON_TYPE_SYMBOL     = 0x0E */ 0L, "Symbol - Deprecated"},
+                                              {/* BSON_TYPE_CODEWSCOPE = 0x0F */ 0L, "JavaScript code w/ scope"},
+                                              {/* BSON_TYPE_INT32      = 0x10 */ 0L, "32-bit Integer"},
+                                              {/* BSON_TYPE_TIMESTAMP  = 0x11 */ 0L, "Timestamp"},
+                                              {/* BSON_TYPE_INT64      = 0x12 */ 0L, "64-bit Integer"},
+                                              {0L, NULL}}};
 
 static bson_metrics_state_t state;
 
 static int
 compar_bson_type_metrics (const void *a, const void *b)
 {
-   return (((bson_type_metrics_t *) b)->count -
-           ((bson_type_metrics_t *) a)->count);
+   return (((bson_type_metrics_t *) b)->count - ((bson_type_metrics_t *) a)->count);
 }
 
 /*
  * Forward declarations.
  */
 static bool
-bson_metrics_visit_array (const bson_iter_t *iter,
-                          const char *key,
-                          const bson_t *v_array,
-                          void *data);
+bson_metrics_visit_array (const bson_iter_t *iter, const char *key, const bson_t *v_array, void *data);
 static bool
-bson_metrics_visit_document (const bson_iter_t *iter,
-                             const char *key,
-                             const bson_t *v_document,
-                             void *data);
+bson_metrics_visit_document (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data);
 
 static bool
-bson_metrics_visit_utf8 (const bson_iter_t *iter,
-                         const char *key,
-                         size_t v_utf8_len,
-                         const char *v_utf8,
-                         void *data)
+bson_metrics_visit_utf8 (const bson_iter_t *iter, const char *key, size_t v_utf8_len, const char *v_utf8, void *data)
 {
    bson_metrics_state_t *s = data;
 
@@ -157,10 +145,7 @@ static const bson_visitor_t bson_metrics_visitors = {
 };
 
 static bool
-bson_metrics_visit_document (const bson_iter_t *iter,
-                             const char *key,
-                             const bson_t *v_document,
-                             void *data)
+bson_metrics_visit_document (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data)
 {
    bson_metrics_state_t *s = data;
    bson_iter_t child;
@@ -183,10 +168,7 @@ bson_metrics_visit_document (const bson_iter_t *iter,
 }
 
 static bool
-bson_metrics_visit_array (const bson_iter_t *iter,
-                          const char *key,
-                          const bson_t *v_array,
-                          void *data)
+bson_metrics_visit_array (const bson_iter_t *iter, const char *key, const bson_t *v_array, void *data)
 {
    bson_metrics_state_t *s = data;
    bson_iter_t child;
@@ -256,8 +238,7 @@ main (int argc, char *argv[])
        * Initialize a new reader for this file descriptor.
        */
       if (!(reader = bson_reader_new_from_file (filename, &error))) {
-         fprintf (
-            stderr, "Failed to open \"%s\": %s\n", filename, error.message);
+         fprintf (stderr, "Failed to open \"%s\": %s\n", filename, error.message);
          continue;
       }
 
@@ -274,50 +255,39 @@ main (int argc, char *argv[])
       dtime_delta = BSON_MAX (dtime_after - dtime_before, 0.000001);
       state.bson_type_metrics[BSON_TYPE_MAXKEY].description = "Max key";
       state.bson_type_metrics[BSON_TYPE_MINKEY].description = "Min key";
-      aggregate_count = state.bson_type_metrics[BSON_TYPE_DOCUMENT].count +
-                        state.bson_type_metrics[BSON_TYPE_ARRAY].count;
-      qsort (state.bson_type_metrics,
-             256,
-             sizeof (bson_type_metrics_t),
-             compar_bson_type_metrics);
+      aggregate_count =
+         state.bson_type_metrics[BSON_TYPE_DOCUMENT].count + state.bson_type_metrics[BSON_TYPE_ARRAY].count;
+      qsort (state.bson_type_metrics, 256, sizeof (bson_type_metrics_t), compar_bson_type_metrics);
 
       printf ("\n  {\n");
       printf ("    \"file\": \"%s\",\n", filename);
       printf ("    \"secs\": %.2f,\n", dtime_delta);
-      printf ("    \"docs_per_sec\": %" PRIu64 ",\n",
-              (uint64_t) floor (state.doc_count / dtime_delta));
+      printf ("    \"docs_per_sec\": %" PRIu64 ",\n", (uint64_t) floor (state.doc_count / dtime_delta));
       printf ("    \"docs\": %" PRIu64 ",\n", state.doc_count);
       printf ("    \"elements\": %" PRIu64 ",\n", state.element_count);
       printf ("    \"elements_per_doc\": %" PRIu64 ",\n",
-              (uint64_t) floor ((double) state.element_count /
-                                (double) BSON_MAX (state.doc_count, 1)));
+              (uint64_t) floor ((double) state.element_count / (double) BSON_MAX (state.doc_count, 1)));
       printf ("    \"aggregates\": %" PRIu64 ",\n", aggregate_count);
       printf ("    \"aggregates_per_doc\": %" PRIu64 ",\n",
-              (uint64_t) floor ((double) aggregate_count /
-                                (double) BSON_MAX (state.doc_count, 1)));
-      printf ("    \"degree\": %" PRIu64 ",\n",
-              (uint64_t) floor (
-                 (double) state.element_count /
-                 ((double) BSON_MAX (state.doc_count + aggregate_count, 1))));
+              (uint64_t) floor ((double) aggregate_count / (double) BSON_MAX (state.doc_count, 1)));
+      printf (
+         "    \"degree\": %" PRIu64 ",\n",
+         (uint64_t) floor ((double) state.element_count / ((double) BSON_MAX (state.doc_count + aggregate_count, 1))));
       printf ("    \"doc_size_max\": %" PRIu64 ",\n", state.doc_size_max);
       printf ("    \"doc_size_average\": %" PRIu64 ",\n",
-              (uint64_t) floor ((double) bson_reader_tell (reader) /
-                                (double) BSON_MAX (state.doc_count, 1)));
+              (uint64_t) floor ((double) bson_reader_tell (reader) / (double) BSON_MAX (state.doc_count, 1)));
       printf ("    \"key_size_average\": %" PRIu64 ",\n",
-              (uint64_t) floor ((double) state.key_size_tally /
-                                (double) BSON_MAX (state.element_count, 1)));
+              (uint64_t) floor ((double) state.key_size_tally / (double) BSON_MAX (state.element_count, 1)));
       printf ("    \"string_size_average\": %" PRIu64 ",\n",
-              (uint64_t) floor (
-                 (double) state.utf8_size_tally /
-                 (double) BSON_MAX (
-                    state.bson_type_metrics[BSON_TYPE_UTF8].count, 1)));
+              (uint64_t) floor ((double) state.utf8_size_tally /
+                                (double) BSON_MAX (state.bson_type_metrics[BSON_TYPE_UTF8].count, 1)));
       printf ("    \"percent_by_type\": {\n");
       for (j = 0; state.bson_type_metrics[j].count > 0; j++) {
          bson_type_metrics_t bson_type_metrics = state.bson_type_metrics[j];
-         printf ("      \"%s\": %" PRIu64 ",\n",
-                 bson_type_metrics.description,
-                 (uint64_t) floor ((double) bson_type_metrics.count * 100.0 /
-                                   (double) BSON_MAX (state.element_count, 1)));
+         printf (
+            "      \"%s\": %" PRIu64 ",\n",
+            bson_type_metrics.description,
+            (uint64_t) floor ((double) bson_type_metrics.count * 100.0 / (double) BSON_MAX (state.element_count, 1)));
       }
       printf ("    }\n");
       printf ("  }");

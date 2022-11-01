@@ -44,8 +44,7 @@
 #endif
 
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
-#pragma message( \
-   "Configure the driver with ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF.\
+#pragma message("Configure the driver with ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF.\
  Automatic cleanup is deprecated and will be removed in version 2.0.")
 #endif
 
@@ -106,10 +105,8 @@ static BSON_ONCE_FUN (_mongoc_do_init)
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    /* The following functions should not use tracing, as they may be invoked
     * before mongoc_log_set_handler() can complete. */
-   sasl_set_mutex (mongoc_cyrus_mutex_alloc,
-                   mongoc_cyrus_mutex_lock,
-                   mongoc_cyrus_mutex_unlock,
-                   mongoc_cyrus_mutex_free);
+   sasl_set_mutex (
+      mongoc_cyrus_mutex_alloc, mongoc_cyrus_mutex_lock, mongoc_cyrus_mutex_unlock, mongoc_cyrus_mutex_free);
 
    status = sasl_client_init (NULL);
    BSON_ASSERT (status == SASL_OK);
@@ -144,7 +141,7 @@ static BSON_ONCE_FUN (_mongoc_do_init)
 #endif
 
 #if defined(MONGOC_ENABLE_OCSP_OPENSSL)
-  _mongoc_ocsp_cache_init ();
+   _mongoc_ocsp_cache_init ();
 #endif
 
    BSON_ONCE_RETURN;

@@ -298,12 +298,8 @@ _get_os_version (void)
    osvi.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
 
    if (GetVersionEx (&osvi)) {
-      bson_snprintf (ret,
-                     HANDSHAKE_OS_VERSION_MAX,
-                     "%lu.%lu (%lu)",
-                     osvi.dwMajorVersion,
-                     osvi.dwMinorVersion,
-                     osvi.dwBuildNumber);
+      bson_snprintf (
+         ret, HANDSHAKE_OS_VERSION_MAX, "%lu.%lu (%lu)", osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
       found = true;
    } else {
       MONGOC_WARNING ("Error with GetVersionEx(): %lu", GetLastError ());
@@ -336,8 +332,7 @@ _get_system_info (mongoc_handshake_t *handshake)
    handshake->os_type = _get_os_type ();
 
 #ifdef MONGOC_OS_IS_LINUX
-   _mongoc_linux_distro_scanner_get_distro (&handshake->os_name,
-                                            &handshake->os_version);
+   _mongoc_linux_distro_scanner_get_distro (&handshake->os_name, &handshake->os_version);
 #else
    handshake->os_name = _get_os_name ();
    handshake->os_version = _get_os_version ();
@@ -359,8 +354,7 @@ static void
 _get_driver_info (mongoc_handshake_t *handshake)
 {
    handshake->driver_name = bson_strndup ("mongoc", HANDSHAKE_DRIVER_NAME_MAX);
-   handshake->driver_version =
-      bson_strndup (MONGOC_VERSION_S, HANDSHAKE_DRIVER_VERSION_MAX);
+   handshake->driver_version = bson_strndup (MONGOC_VERSION_S, HANDSHAKE_DRIVER_VERSION_MAX);
 }
 
 static void
@@ -416,13 +410,11 @@ _set_flags (mongoc_handshake_t *handshake)
    str = bson_string_new ("");
 
    if (strlen (MONGOC_EVALUATE_STR (MONGOC_USER_SET_CFLAGS)) > 0) {
-      bson_string_append_printf (
-         str, " CFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_CFLAGS));
+      bson_string_append_printf (str, " CFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_CFLAGS));
    }
 
    if (strlen (MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS)) > 0) {
-      bson_string_append_printf (
-         str, " LDFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS));
+      bson_string_append_printf (str, " LDFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS));
    }
 
    handshake->flags = bson_string_free (str, false);
@@ -469,16 +461,15 @@ _append_platform_field (bson_t *doc, const char *platform)
    bson_string_t *combined_platform = bson_string_new (platform);
 
    /* Compute space left for platform field */
-   max_platform_str_size =
-      HANDSHAKE_MAX_SIZE - ((int) doc->len +
-                            /* 1 byte for utf8 tag */
-                            1 +
+   max_platform_str_size = HANDSHAKE_MAX_SIZE - ((int) doc->len +
+                                                 /* 1 byte for utf8 tag */
+                                                 1 +
 
-                            /* key size */
-                            (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
+                                                 /* key size */
+                                                 (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
 
-                            /* 4 bytes for length of string */
-                            4);
+                                                 /* 4 bytes for length of string */
+                                                 4);
 
    if (max_platform_str_size <= 0) {
       bson_string_free (combined_platform, true);
@@ -489,8 +480,7 @@ _append_platform_field (bson_t *doc, const char *platform)
     * platform information is truncated
     * Try to drop flags first, and if there is still not enough space also drop
     * compiler info */
-   if (max_platform_str_size >
-       combined_platform->len + strlen (compiler_info) + 1) {
+   if (max_platform_str_size > combined_platform->len + strlen (compiler_info) + 1) {
       bson_string_append (combined_platform, compiler_info);
    }
    if (max_platform_str_size > combined_platform->len + strlen (flags) + 1) {
@@ -499,12 +489,11 @@ _append_platform_field (bson_t *doc, const char *platform)
 
    /* We use the flags_index field to check if the CLAGS/LDFLAGS need to be
     * truncated, and if so we drop them altogether */
-   bson_append_utf8 (
-      doc,
-      HANDSHAKE_PLATFORM_FIELD,
-      -1,
-      combined_platform->str,
-      BSON_MIN (max_platform_str_size - 1, combined_platform->len));
+   bson_append_utf8 (doc,
+                     HANDSHAKE_PLATFORM_FIELD,
+                     -1,
+                     combined_platform->str,
+                     BSON_MIN (max_platform_str_size - 1, combined_platform->len));
 
    bson_string_free (combined_platform, true);
    BSON_ASSERT (doc->len <= HANDSHAKE_MAX_SIZE);
@@ -520,20 +509,14 @@ _mongoc_handshake_build_doc_with_application (bson_t *doc, const char *appname)
 {
    const mongoc_handshake_t *md = _mongoc_handshake_get ();
 
-   bsonBuildAppend (
-      *doc,
-      if (appname,
-          then (kv ("application", doc (kv ("name", cstr (appname)))))),
-      kv ("driver",
-          doc (kv ("name", cstr (md->driver_name)),
-               kv ("version", cstr (md->driver_version)))),
-      kv (
-         "os",
-         doc (kv ("type", cstr (md->os_type)),
-              if (md->os_name, then (kv ("name", cstr (md->os_name)))),
-              if (md->os_version, then (kv ("version", cstr (md->os_version)))),
-              if (md->os_architecture,
-                  then (kv ("architecture", cstr (md->os_architecture)))))));
+   bsonBuildAppend (*doc,
+                    if (appname, then (kv ("application", doc (kv ("name", cstr (appname)))))),
+                    kv ("driver", doc (kv ("name", cstr (md->driver_name)), kv ("version", cstr (md->driver_version)))),
+                    kv ("os",
+                        doc (kv ("type", cstr (md->os_type)),
+                             if (md->os_name, then (kv ("name", cstr (md->os_name)))),
+                             if (md->os_version, then (kv ("version", cstr (md->os_version)))),
+                             if (md->os_architecture, then (kv ("architecture", cstr (md->os_architecture)))))));
 
    if (doc->len > HANDSHAKE_MAX_SIZE) {
       /* We've done all we can possibly do to ensure the current
@@ -596,9 +579,7 @@ _append_and_truncate (char **s, const char *suffix, int max_len)
  * All arguments are optional.
  */
 bool
-mongoc_handshake_data_append (const char *driver_name,
-                              const char *driver_version,
-                              const char *platform)
+mongoc_handshake_data_append (const char *driver_name, const char *driver_version, const char *platform)
 {
    int platform_space;
 
@@ -613,32 +594,25 @@ mongoc_handshake_data_append (const char *driver_name,
 
    /* allow practically any size for "platform", we'll trim it down in
     * _mongoc_handshake_build_doc_with_application */
-   platform_space =
-      HANDSHAKE_MAX_SIZE - (int) strlen (_mongoc_handshake_get ()->platform);
+   platform_space = HANDSHAKE_MAX_SIZE - (int) strlen (_mongoc_handshake_get ()->platform);
 
    if (platform) {
       /* we check for an empty string as a special case to avoid an unnecessary
        * delimiter being added in front of the string by _append_and_truncate */
       if (_mongoc_handshake_get ()->platform[0] == '\0') {
          bson_free (_mongoc_handshake_get ()->platform);
-         _mongoc_handshake_get ()->platform =
-            bson_strdup_printf ("%.*s", platform_space, platform);
+         _mongoc_handshake_get ()->platform = bson_strdup_printf ("%.*s", platform_space, platform);
       } else {
-         _append_and_truncate (
-            &_mongoc_handshake_get ()->platform, platform, HANDSHAKE_MAX_SIZE);
+         _append_and_truncate (&_mongoc_handshake_get ()->platform, platform, HANDSHAKE_MAX_SIZE);
       }
    }
 
    if (driver_name) {
-      _append_and_truncate (&_mongoc_handshake_get ()->driver_name,
-                            driver_name,
-                            HANDSHAKE_DRIVER_NAME_MAX);
+      _append_and_truncate (&_mongoc_handshake_get ()->driver_name, driver_name, HANDSHAKE_DRIVER_NAME_MAX);
    }
 
    if (driver_version) {
-      _append_and_truncate (&_mongoc_handshake_get ()->driver_version,
-                            driver_version,
-                            HANDSHAKE_DRIVER_VERSION_MAX);
+      _append_and_truncate (&_mongoc_handshake_get ()->driver_version, driver_version, HANDSHAKE_DRIVER_VERSION_MAX);
    }
 
    _mongoc_handshake_freeze ();
@@ -660,29 +634,23 @@ _mongoc_handshake_appname_is_valid (const char *appname)
 }
 
 void
-_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri,
-                                               bson_t *cmd)
+_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri, bson_t *cmd)
 {
    const char *username;
    char *db_user;
    username = mongoc_uri_get_username (uri);
-   db_user =
-      bson_strdup_printf ("%s.%s", mongoc_uri_get_auth_source (uri), username);
+   db_user = bson_strdup_printf ("%s.%s", mongoc_uri_get_auth_source (uri), username);
    bson_append_utf8 (cmd, "saslSupportedMechs", 18, db_user, -1);
    bson_free (db_user);
 }
 
 void
-_mongoc_handshake_parse_sasl_supported_mechs (
-   const bson_t *hello,
-   mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs)
+_mongoc_handshake_parse_sasl_supported_mechs (const bson_t *hello,
+                                              mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs)
 {
    memset (sasl_supported_mechs, 0, sizeof (*sasl_supported_mechs));
    bsonParse (*hello,
               find (keyWithType ("saslSupportedMechs", array),
-                    visitEach (case (
-                       when (strEqual ("SCRAM-SHA-256"),
-                             do(sasl_supported_mechs->scram_sha_256 = true)),
-                       when (strEqual ("SCRAM-SHA-1"),
-                             do(sasl_supported_mechs->scram_sha_1 = true))))));
+                    visitEach (case (when (strEqual ("SCRAM-SHA-256"), do (sasl_supported_mechs->scram_sha_256 = true)),
+                                     when (strEqual ("SCRAM-SHA-1"), do (sasl_supported_mechs->scram_sha_1 = true))))));
 }

@@ -50,8 +50,7 @@ test_mongoc_client_pool_pop_timeout (void)
    int64_t start;
    int64_t duration_usec;
 
-   uri = mongoc_uri_new (
-      "mongodb://127.0.0.1/?maxpoolsize=1&waitqueuetimeoutms=2000");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&waitqueuetimeoutms=2000");
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
    client = mongoc_client_pool_pop (pool);
    BSON_ASSERT (client);
@@ -212,8 +211,7 @@ test_mongoc_client_pool_set_min_size (void)
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10&minpoolsize=3");
    capture_logs (true);
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
-   ASSERT_CAPTURED_LOG (
-      "minpoolsize URI option", MONGOC_LOG_LEVEL_WARNING, "is deprecated");
+   ASSERT_CAPTURED_LOG ("minpoolsize URI option", MONGOC_LOG_LEVEL_WARNING, "is deprecated");
 
    for (i = 0; i < 10; i++) {
       client = mongoc_client_pool_pop (pool);
@@ -226,9 +224,8 @@ test_mongoc_client_pool_set_min_size (void)
    BEGIN_IGNORE_DEPRECATIONS
    mongoc_client_pool_min_size (pool, 7);
    END_IGNORE_DEPRECATIONS
-   ASSERT_CAPTURED_LOG ("mongoc_client_pool_min_size",
-                        MONGOC_LOG_LEVEL_WARNING,
-                        "mongoc_client_pool_min_size is deprecated");
+   ASSERT_CAPTURED_LOG (
+      "mongoc_client_pool_min_size", MONGOC_LOG_LEVEL_WARNING, "mongoc_client_pool_min_size is deprecated");
 
    for (i = 0; i < 10; i++) {
       client = _mongoc_array_index (&conns, mongoc_client_t *, i);
@@ -253,9 +250,7 @@ test_mongoc_client_pool_ssl_disabled (void)
    ASSERT (uri);
    capture_logs (true);
    ASSERT (NULL == test_framework_client_pool_new_from_uri (uri, NULL));
-   ASSERT_CAPTURED_LOG ("mongoc_client_pool_new",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "SSL not enabled in this build.");
+   ASSERT_CAPTURED_LOG ("mongoc_client_pool_new", MONGOC_LOG_LEVEL_ERROR, "SSL not enabled in this build.");
 
    mongoc_uri_destroy (uri);
 }
@@ -276,9 +271,8 @@ test_mongoc_client_pool_handshake (void)
    /* Be sure we can't set it twice */
    capture_logs (true);
    ASSERT (!mongoc_client_pool_set_appname (pool, "a"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set appname more than once");
+   ASSERT_CAPTURED_LOG (
+      "_mongoc_topology_scanner_set_appname", MONGOC_LOG_LEVEL_ERROR, "Cannot set appname more than once");
    capture_logs (false);
 
    mongoc_client_pool_destroy (pool);
@@ -302,9 +296,8 @@ test_mongoc_client_pool_handshake (void)
     * the handshake */
    capture_logs (true);
    ASSERT (!mongoc_client_pool_set_appname (pool, "a"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set appname after handshake initiated");
+   ASSERT_CAPTURED_LOG (
+      "_mongoc_topology_scanner_set_appname", MONGOC_LOG_LEVEL_ERROR, "Cannot set appname after handshake initiated");
    capture_logs (false);
 
    mongoc_uri_destroy (uri);
@@ -331,21 +324,14 @@ test_client_pool_destroy_without_pushing (void)
    /* Push a client back onto the pool so endSessions succeeds to avoid a
     * warning. */
    client_in_pool = mongoc_client_pool_pop (pool);
-   ret = mongoc_client_command_simple (client_in_pool,
-                                       "admin",
-                                       cmd,
-                                       NULL /* read prefs */,
-                                       NULL /* reply */,
-                                       &error);
+   ret = mongoc_client_command_simple (client_in_pool, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
    mongoc_client_pool_push (pool, client_in_pool);
 
 
-   ret = mongoc_client_command_simple (
-      client1, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+   ret = mongoc_client_command_simple (client1, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
-   ret = mongoc_client_command_simple (
-      client2, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+   ret = mongoc_client_command_simple (client2, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
    /* Since clients are checked out of pool, it is technically ok to
@@ -353,8 +339,7 @@ test_client_pool_destroy_without_pushing (void)
    mongoc_client_destroy (client1);
 
    /* An operation on client2 should still be ok. */
-   ret = mongoc_client_command_simple (
-      client2, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+   ret = mongoc_client_command_simple (client2, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
    mongoc_client_destroy (client2);
 
@@ -369,8 +354,7 @@ command_started_cb (const mongoc_apm_command_started_t *event)
 {
    int *count;
 
-   if (strcmp (mongoc_apm_command_started_get_command_name (event),
-               "endSessions") != 0) {
+   if (strcmp (mongoc_apm_command_started_get_command_name (event), "endSessions") != 0) {
       return;
    }
 
@@ -476,23 +460,14 @@ void
 test_client_pool_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
-   TestSuite_Add (
-      suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
-   TestSuite_Add (
-      suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
-   TestSuite_Add (suite,
-                  "/ClientPool/min_size_zero",
-                  test_mongoc_client_pool_min_size_zero);
-   TestSuite_Add (suite,
-                  "/ClientPool/min_size_dispose",
-                  test_mongoc_client_pool_min_size_dispose);
-   TestSuite_Add (
-      suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
-   TestSuite_Add (
-      suite, "/ClientPool/set_min_size", test_mongoc_client_pool_set_min_size);
+   TestSuite_Add (suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
+   TestSuite_Add (suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
+   TestSuite_Add (suite, "/ClientPool/min_size_zero", test_mongoc_client_pool_min_size_zero);
+   TestSuite_Add (suite, "/ClientPool/min_size_dispose", test_mongoc_client_pool_min_size_dispose);
+   TestSuite_Add (suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
+   TestSuite_Add (suite, "/ClientPool/set_min_size", test_mongoc_client_pool_set_min_size);
 
-   TestSuite_Add (
-      suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
+   TestSuite_Add (suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
 
    TestSuite_AddFull (suite,
                       "/ClientPool/create_client_pool_unused_session",
@@ -501,13 +476,8 @@ test_client_pool_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_sessions);
 #ifndef MONGOC_ENABLE_SSL
-   TestSuite_Add (
-      suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
+   TestSuite_Add (suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
 #endif
-   TestSuite_AddLive (suite,
-                      "/ClientPool/destroy_without_push",
-                      test_client_pool_destroy_without_pushing);
-   TestSuite_AddLive (suite,
-                      "/ClientPool/max_pool_size_exceeded",
-                      test_client_pool_max_pool_size_exceeded);
+   TestSuite_AddLive (suite, "/ClientPool/destroy_without_push", test_client_pool_destroy_without_pushing);
+   TestSuite_AddLive (suite, "/ClientPool/max_pool_size_exceeded", test_client_pool_max_pool_size_exceeded);
 }

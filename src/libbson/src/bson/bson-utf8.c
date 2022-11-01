@@ -210,15 +210,13 @@ bson_utf8_validate (const char *utf8, /* IN */
          return false;
 
       case 3:
-         if (((c >= 0x0800) && (c <= 0x0FFF)) ||
-             ((c >= 0x1000) && (c <= 0xFFFF))) {
+         if (((c >= 0x0800) && (c <= 0x0FFF)) || ((c >= 0x1000) && (c <= 0xFFFF))) {
             continue;
          }
          return false;
 
       case 4:
-         if (((c >= 0x10000) && (c <= 0x3FFFF)) ||
-             ((c >= 0x40000) && (c <= 0xFFFFF)) ||
+         if (((c >= 0x10000) && (c <= 0x3FFFF)) || ((c >= 0x40000) && (c <= 0xFFFFF)) ||
              ((c >= 0x100000) && (c <= 0x10FFFF))) {
             continue;
          }

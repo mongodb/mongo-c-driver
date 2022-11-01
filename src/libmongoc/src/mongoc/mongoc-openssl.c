@@ -91,8 +91,7 @@ _mongoc_openssl_init (void)
    tlsfeature_nid = NID_tlsfeature;
 #else
    /* TLS versions before 1.1.0 did not define the TLS Feature extension. */
-   tlsfeature_nid =
-      OBJ_create ("1.3.6.1.5.5.7.1.24", "tlsfeature", "TLS Feature");
+   tlsfeature_nid = OBJ_create ("1.3.6.1.5.5.7.1.24", "tlsfeature", "TLS Feature");
 #endif
 
    SSL_CTX_free (ctx);
@@ -124,25 +123,20 @@ _mongoc_openssl_password_cb (char *buf, int num, int rwflag, void *user_data)
 
 #ifdef _WIN32
 bool
-_mongoc_openssl_import_cert_store (LPWSTR store_name,
-                                   DWORD dwFlags,
-                                   X509_STORE *openssl_store)
+_mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE *openssl_store)
 {
    PCCERT_CONTEXT cert = NULL;
    HCERTSTORE cert_store;
 
-   cert_store = CertOpenStore (
-      CERT_STORE_PROV_SYSTEM,                  /* provider */
-      X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* certificate encoding */
-      0,                                       /* unused */
-      dwFlags,                                 /* dwFlags */
-      store_name); /* system store name. "My" or "Root" */
+   cert_store = CertOpenStore (CERT_STORE_PROV_SYSTEM,                  /* provider */
+                               X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* certificate encoding */
+                               0,                                       /* unused */
+                               dwFlags,                                 /* dwFlags */
+                               store_name);                             /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
       LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                        FORMAT_MESSAGE_FROM_SYSTEM |
-                        FORMAT_MESSAGE_ARGUMENT_ARRAY,
+      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
                      NULL,
                      GetLastError (),
                      LANG_NEUTRAL,
@@ -155,13 +149,10 @@ _mongoc_openssl_import_cert_store (LPWSTR store_name,
    }
 
    while ((cert = CertEnumCertificatesInStore (cert_store, cert)) != NULL) {
-      X509 *x509Obj = d2i_X509 (NULL,
-                                (const unsigned char **) &cert->pbCertEncoded,
-                                cert->cbCertEncoded);
+      X509 *x509Obj = d2i_X509 (NULL, (const unsigned char **) &cert->pbCertEncoded, cert->cbCertEncoded);
 
       if (x509Obj == NULL) {
-         MONGOC_WARNING (
-            "Error parsing X509 object from Windows certificate store");
+         MONGOC_WARNING ("Error parsing X509 object from Windows certificate store");
          continue;
       }
 
@@ -185,12 +176,10 @@ _mongoc_openssl_import_cert_stores (SSL_CTX *context)
       return false;
    }
 
-   retval = _mongoc_openssl_import_cert_store (L"root",
-                                               CERT_SYSTEM_STORE_CURRENT_USER |
-                                                  CERT_STORE_READONLY_FLAG,
-                                               store);
-   retval &= _mongoc_openssl_import_cert_store (
-      L"CA", CERT_SYSTEM_STORE_CURRENT_USER | CERT_STORE_READONLY_FLAG, store);
+   retval =
+      _mongoc_openssl_import_cert_store (L"root", CERT_SYSTEM_STORE_CURRENT_USER | CERT_STORE_READONLY_FLAG, store);
+   retval &=
+      _mongoc_openssl_import_cert_store (L"CA", CERT_SYSTEM_STORE_CURRENT_USER | CERT_STORE_READONLY_FLAG, store);
 
    return retval;
 }
@@ -198,9 +187,7 @@ _mongoc_openssl_import_cert_stores (SSL_CTX *context)
 
 #if OPENSSL_VERSION_NUMBER > 0x10002000L
 bool
-_mongoc_openssl_check_peer_hostname (SSL *ssl,
-                                     const char *host,
-                                     bool allow_invalid_hostname)
+_mongoc_openssl_check_peer_hostname (SSL *ssl, const char *host, bool allow_invalid_hostname)
 {
    X509 *peer = NULL;
 
@@ -209,8 +196,7 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl,
    }
 
    peer = SSL_get_peer_certificate (ssl);
-   if (peer && (X509_check_host (peer, host, 0, 0, NULL) == 1 ||
-                X509_check_ip_asc (peer, host, 0) == 1)) {
+   if (peer && (X509_check_host (peer, host, 0, 0, NULL) == 1 || X509_check_ip_asc (peer, host, 0) == 1)) {
       X509_free (peer);
       return true;
    }
@@ -253,18 +239,15 @@ _mongoc_openssl_hostcheck (const char *pattern, const char *hostname)
     * o the wildcard isn't in the left most group (separated by dots)
     * o the pattern is embedded in an A-label or U-label
     */
-   if (pattern_label_end == NULL ||
-       strchr (pattern_label_end + 1, '.') == NULL ||
-       pattern_wildcard > pattern_label_end ||
-       strncasecmp (pattern, "xn--", 4) == 0) {
+   if (pattern_label_end == NULL || strchr (pattern_label_end + 1, '.') == NULL ||
+       pattern_wildcard > pattern_label_end || strncasecmp (pattern, "xn--", 4) == 0) {
       return strcasecmp (pattern, hostname) == 0;
    }
 
    hostname_label_end = strchr (hostname, '.');
 
    /* we know we have a dot in the pattern, we need one in the hostname */
-   if (hostname_label_end == NULL ||
-       strcasecmp (pattern_label_end, hostname_label_end)) {
+   if (hostname_label_end == NULL || strcasecmp (pattern_label_end, hostname_label_end)) {
       return 0;
    }
 
@@ -279,18 +262,14 @@ _mongoc_openssl_hostcheck (const char *pattern, const char *hostname)
    prefixlen = pattern_wildcard - pattern;
    suffixlen = pattern_label_end - (pattern_wildcard + 1);
    return strncasecmp (pattern, hostname, prefixlen) == 0 &&
-          strncasecmp (pattern_wildcard + 1,
-                       hostname_label_end - suffixlen,
-                       suffixlen) == 0;
+          strncasecmp (pattern_wildcard + 1, hostname_label_end - suffixlen, suffixlen) == 0;
 }
 
 
 /** check if a provided cert matches a passed hostname
  */
 bool
-_mongoc_openssl_check_peer_hostname (SSL *ssl,
-                                     const char *host,
-                                     bool allow_invalid_hostname)
+_mongoc_openssl_check_peer_hostname (SSL *ssl, const char *host, bool allow_invalid_hostname)
 {
    X509 *peer;
    X509_NAME *subject_name;
@@ -331,8 +310,7 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl,
    peer = SSL_get_peer_certificate (ssl);
 
    if (!peer) {
-      MONGOC_WARNING ("SSL Certification verification failed: %s",
-                      ERR_error_string (ERR_get_error (), NULL));
+      MONGOC_WARNING ("SSL Certification verification failed: %s", ERR_error_string (ERR_get_error (), NULL));
       RETURN (false);
    }
 
@@ -340,8 +318,7 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl,
 
    if (verify_status == X509_V_OK) {
       /* gets a stack of alt names that we can iterate through */
-      sans = (STACK_OF (GENERAL_NAME) *) X509_get_ext_d2i (
-         (X509 *) peer, NID_subject_alt_name, NULL, NULL);
+      sans = (STACK_OF (GENERAL_NAME) *) X509_get_ext_d2i ((X509 *) peer, NID_subject_alt_name, NULL, NULL);
 
       if (sans) {
          n_sans = sk_GENERAL_NAME_num (sans);
@@ -362,19 +339,16 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl,
                case GEN_DNS:
 
                   /* check that we don't have an embedded null byte */
-                  if ((length == bson_strnlen (check, length)) &&
-                      _mongoc_openssl_hostcheck (check, host)) {
+                  if ((length == bson_strnlen (check, length)) && _mongoc_openssl_hostcheck (check, host)) {
                      r = 1;
                   }
 
                   break;
                case GEN_IPADD:
                   if (length == addrlen) {
-                     if (length == sizeof addr6 &&
-                         !memcmp (check, &addr6, length)) {
+                     if (length == sizeof addr6 && !memcmp (check, &addr6, length)) {
                         r = 1;
-                     } else if (length == sizeof addr4 &&
-                                !memcmp (check, &addr4, length)) {
+                     } else if (length == sizeof addr4 && !memcmp (check, &addr4, length)) {
                         r = 1;
                      }
                   }
@@ -394,8 +368,7 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl,
             i = -1;
 
             /* skip to the last common name */
-            while ((idx = X509_NAME_get_index_by_NID (
-                       subject_name, NID_commonName, i)) >= 0) {
+            while ((idx = X509_NAME_get_index_by_NID (subject_name, NID_commonName, i)) >= 0) {
                i = idx;
             }
 
@@ -409,13 +382,11 @@ _mongoc_openssl_check_peer_hostname (SSL *ssl,
                   /* TODO: I've heard tell that old versions of SSL crap out
                    * when calling ASN1_STRING_to_UTF8 on already utf8 data.
                    * Check up on that */
-                  length = ASN1_STRING_to_UTF8 ((unsigned char **) &check,
-                                                entry_data);
+                  length = ASN1_STRING_to_UTF8 ((unsigned char **) &check, entry_data);
 
                   if (length >= 0) {
                      /* check for embedded nulls */
-                     if ((length == bson_strnlen (check, length)) &&
-                         _mongoc_openssl_hostcheck (check, host)) {
+                     if ((length == bson_strnlen (check, length)) && _mongoc_openssl_hostcheck (check, host)) {
                         r = 1;
                      }
 
@@ -440,9 +411,7 @@ _mongoc_openssl_setup_ca (SSL_CTX *ctx, const char *cert, const char *cert_dir)
    BSON_ASSERT (cert || cert_dir);
 
    if (!SSL_CTX_load_verify_locations (ctx, cert, cert_dir)) {
-      MONGOC_ERROR ("Cannot load Certificate Authorities from '%s' and '%s'",
-                    cert,
-                    cert_dir);
+      MONGOC_ERROR ("Cannot load Certificate Authorities from '%s' and '%s'", cert, cert_dir);
       return 0;
    }
 
@@ -469,9 +438,7 @@ _mongoc_openssl_setup_crl (SSL_CTX *ctx, const char *crlfile)
 
 
 static bool
-_mongoc_openssl_setup_pem_file (SSL_CTX *ctx,
-                                const char *pem_file,
-                                const char *password)
+_mongoc_openssl_setup_pem_file (SSL_CTX *ctx, const char *pem_file, const char *password)
 {
    if (!SSL_CTX_use_certificate_chain_file (ctx, pem_file)) {
       MONGOC_ERROR ("Cannot find certificate in '%s'", pem_file);
@@ -653,18 +620,14 @@ _get_must_staple (X509 *cert)
    ext_data = X509_EXTENSION_get_data (ext);
 
    /* Data is a DER encoded sequence of integers. */
-   return _mongoc_tlsfeature_has_status_request (
-      ASN1_STRING_get0_data (ext_data), ASN1_STRING_length (ext_data));
+   return _mongoc_tlsfeature_has_status_request (ASN1_STRING_get0_data (ext_data), ASN1_STRING_length (ext_data));
 }
 
 #define ERR_STR (ERR_error_string (ERR_get_error (), NULL))
 #define MONGOC_OCSP_REQUEST_TIMEOUT_MS 5000
 
 static OCSP_RESPONSE *
-_contact_ocsp_responder (OCSP_CERTID *id,
-                         X509 *peer,
-                         mongoc_ssl_opt_t *ssl_opts,
-                         int *ocsp_uri_count)
+_contact_ocsp_responder (OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts, int *ocsp_uri_count)
 {
    STACK_OF (OPENSSL_STRING) *url_stack = NULL;
    OPENSSL_STRING url = NULL, host = NULL, path = NULL, port = NULL;
@@ -723,20 +686,14 @@ _contact_ocsp_responder (OCSP_CERTID *id,
       http_req.port = (int) bson_ascii_strtoll (port, NULL, 10);
       http_req.body = (const char *) request_der;
       http_req.body_len = request_der_len;
-      if (!_mongoc_http_send (&http_req,
-                              MONGOC_OCSP_REQUEST_TIMEOUT_MS,
-                              ssl != 0,
-                              ssl_opts,
-                              &http_res,
-                              &error)) {
+      if (!_mongoc_http_send (&http_req, MONGOC_OCSP_REQUEST_TIMEOUT_MS, ssl != 0, ssl_opts, &http_res, &error)) {
          MONGOC_DEBUG ("Could not send HTTP request: %s", error.message);
          GOTO (retry);
       }
 
       resp_data = (const unsigned char *) http_res.body;
 
-      if (http_res.body_len == 0 ||
-          !d2i_OCSP_RESPONSE (&resp, &resp_data, http_res.body_len)) {
+      if (http_res.body_len == 0 || !d2i_OCSP_RESPONSE (&resp, &resp_data, http_res.body_len)) {
          MONGOC_DEBUG ("Could not parse OCSP response from HTTP response");
          MONGOC_DEBUG ("Response headers: %s", http_res.headers);
          GOTO (retry);
@@ -761,9 +718,7 @@ _contact_ocsp_responder (OCSP_CERTID *id,
    RETURN (resp);
 }
 
-#define SOFT_FAIL(...)                              \
-   ((stapled_response) ? MONGOC_ERROR (__VA_ARGS__) \
-                       : MONGOC_DEBUG (__VA_ARGS__))
+#define SOFT_FAIL(...) ((stapled_response) ? MONGOC_ERROR (__VA_ARGS__) : MONGOC_DEBUG (__VA_ARGS__))
 
 #define X509_CHECK_SUCCESS 1
 #define OCSP_VERIFY_SUCCESS 1
@@ -783,8 +738,7 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
    unsigned char *mutable_resp_data = NULL;
    int cert_status, reason, len, status;
    OCSP_CERTID *id = NULL;
-   ASN1_GENERALIZEDTIME *produced_at = NULL, *this_update = NULL,
-                        *next_update = NULL;
+   ASN1_GENERALIZEDTIME *produced_at = NULL, *this_update = NULL, *next_update = NULL;
    int ocsp_uri_count = 0;
 
    if (opts->weak_cert_validation) {
@@ -817,8 +771,7 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
       GOTO (done);
    }
 
-   if (_mongoc_ocsp_cache_get_status (
-          id, &cert_status, &reason, &this_update, &next_update)) {
+   if (_mongoc_ocsp_cache_get_status (id, &cert_status, &reason, &this_update, &next_update)) {
       GOTO (validate);
    }
 
@@ -843,8 +796,7 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
       }
 
       if (opts->disable_endpoint_check ||
-          !(resp = _contact_ocsp_responder (
-               id, peer, &opts->ssl_opts, &ocsp_uri_count))) {
+          !(resp = _contact_ocsp_responder (id, peer, &opts->ssl_opts, &ocsp_uri_count))) {
          if (ocsp_uri_count > 0) {
             /* Only log a soft failure if there were OCSP responders listed in
              * the certificate. */
@@ -859,9 +811,7 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
    /* Validate the OCSP response status of the OCSP_RESPONSE object */
    status = OCSP_response_status (resp);
    if (status != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
-      SOFT_FAIL ("OCSP response error %d %s",
-                 status,
-                 OCSP_response_status_str (status));
+      SOFT_FAIL ("OCSP response error %d %s", status, OCSP_response_status_str (status));
       ret = OCSP_CB_ERROR;
       GOTO (done);
    }
@@ -891,21 +841,14 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
     * cert_chain has already been verified. Use OCSP_TRUSTOTHER so the signer
     * certificate can be considered verified if it is in cert_chain.
     */
-   if (OCSP_basic_verify (basic, cert_chain, store, OCSP_TRUSTOTHER) !=
-       OCSP_VERIFY_SUCCESS) {
+   if (OCSP_basic_verify (basic, cert_chain, store, OCSP_TRUSTOTHER) != OCSP_VERIFY_SUCCESS) {
       SOFT_FAIL ("OCSP response failed verification: %s", ERR_STR);
       ret = OCSP_CB_ERROR;
       GOTO (done);
    }
 
    /* searches the basic response for an OCSP response for the given cert ID */
-   if (!OCSP_resp_find_status (basic,
-                               id,
-                               &cert_status,
-                               &reason,
-                               &produced_at,
-                               &this_update,
-                               &next_update)) {
+   if (!OCSP_resp_find_status (basic, id, &cert_status, &reason, &produced_at, &this_update, &next_update)) {
       SOFT_FAIL ("No OCSP response found for the peer certificate");
       ret = OCSP_CB_ERROR;
       GOTO (done);
@@ -922,16 +865,13 @@ validate:
    switch (cert_status) {
    case V_OCSP_CERTSTATUS_GOOD:
       TRACE ("%s", "OCSP Certificate Status: Good");
-      _mongoc_ocsp_cache_set_resp (
-         id, cert_status, reason, this_update, next_update);
+      _mongoc_ocsp_cache_set_resp (id, cert_status, reason, this_update, next_update);
       break;
 
    case V_OCSP_CERTSTATUS_REVOKED:
-      MONGOC_ERROR ("OCSP Certificate Status: Revoked. Reason: %s",
-                    OCSP_crl_reason_str (reason));
+      MONGOC_ERROR ("OCSP Certificate Status: Revoked. Reason: %s", OCSP_crl_reason_str (reason));
       ret = OCSP_CB_REVOKED;
-      _mongoc_ocsp_cache_set_resp (
-         id, cert_status, reason, this_update, next_update);
+      _mongoc_ocsp_cache_set_resp (id, cert_status, reason, this_update, next_update);
       GOTO (done);
 
    default:
@@ -940,8 +880,7 @@ validate:
    }
 
    /* Validate hostname matches cert */
-   if (!_mongoc_openssl_check_peer_hostname (
-          ssl, opts->host, opts->allow_invalid_hostname)) {
+   if (!_mongoc_openssl_check_peer_hostname (ssl, opts->host, opts->allow_invalid_hostname)) {
       ret = OCSP_CB_REVOKED;
       GOTO (done);
    }
@@ -1032,8 +971,7 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
    SSL_CTX_set_mode (ctx, SSL_MODE_AUTO_RETRY);
 
    /* Load my private keys to present to the server */
-   if (opt->pem_file &&
-       !_mongoc_openssl_setup_pem_file (ctx, opt->pem_file, opt->pem_pwd)) {
+   if (opt->pem_file && !_mongoc_openssl_setup_pem_file (ctx, opt->pem_file, opt->pem_pwd)) {
       SSL_CTX_free (ctx);
       return NULL;
    }
@@ -1088,8 +1026,7 @@ _mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
    BSON_ASSERT (strbio);
 
 
-   if (BIO_read_filename (certbio, filename) &&
-       (cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
+   if (BIO_read_filename (certbio, filename) && (cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
       if ((subject = X509_get_subject_name (cert))) {
          ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
 
@@ -1142,10 +1079,7 @@ _mongoc_openssl_thread_id_callback (void)
 #endif
 
 static void
-_mongoc_openssl_thread_locking_callback (int mode,
-                                         int type,
-                                         const char *file,
-                                         int line)
+_mongoc_openssl_thread_locking_callback (int mode, int type, const char *file, int line)
 {
    if (mode & CRYPTO_LOCK) {
       bson_mutex_lock (&gMongocOpenSslThreadLocks[type]);
@@ -1159,8 +1093,7 @@ _mongoc_openssl_thread_startup (void)
 {
    int i;
 
-   gMongocOpenSslThreadLocks = (bson_mutex_t *) OPENSSL_malloc (
-      CRYPTO_num_locks () * sizeof (bson_mutex_t));
+   gMongocOpenSslThreadLocks = (bson_mutex_t *) OPENSSL_malloc (CRYPTO_num_locks () * sizeof (bson_mutex_t));
 
    for (i = 0; i < CRYPTO_num_locks (); i++) {
       bson_mutex_init (&gMongocOpenSslThreadLocks[i]);
@@ -1177,8 +1110,7 @@ _mongoc_openssl_thread_cleanup (void)
 {
    int i;
 
-   if (CRYPTO_get_locking_callback () ==
-       _mongoc_openssl_thread_locking_callback) {
+   if (CRYPTO_get_locking_callback () == _mongoc_openssl_thread_locking_callback) {
       CRYPTO_set_locking_callback (NULL);
    }
 

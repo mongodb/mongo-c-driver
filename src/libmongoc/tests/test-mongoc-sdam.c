@@ -15,9 +15,7 @@
 
 
 static void
-_topology_has_description (const mongoc_topology_description_t *topology,
-                           bson_t *server,
-                           const char *address)
+_topology_has_description (const mongoc_topology_description_t *topology, bson_t *server, const char *address)
 {
    mongoc_server_description_t const *sd;
    bson_iter_t server_iter;
@@ -47,10 +45,7 @@ _topology_has_description (const mongoc_topology_description_t *topology,
       } else if (strcmp ("type", bson_iter_key (&server_iter)) == 0) {
          server_type = bson_iter_utf8 (&server_iter, NULL);
          if (sd->type != server_type_from_test (server_type)) {
-            fprintf (stderr,
-                     "expected server type %s not %s\n",
-                     server_type,
-                     mongoc_server_description_type (sd));
+            fprintf (stderr, "expected server type %s not %s\n", server_type, mongoc_server_description_type (sd));
             abort ();
          }
       } else if (strcmp ("setVersion", bson_iter_key (&server_iter)) == 0) {
@@ -64,42 +59,34 @@ _topology_has_description (const mongoc_topology_description_t *topology,
       } else if (strcmp ("electionId", bson_iter_key (&server_iter)) == 0) {
          bson_oid_t expected_oid;
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
-            bson_oid_init_from_string (&expected_oid,
-                                       "000000000000000000000000");
+            bson_oid_init_from_string (&expected_oid, "000000000000000000000000");
          } else {
             ASSERT (BSON_ITER_HOLDS_OID (&server_iter));
             bson_oid_copy (bson_iter_oid (&server_iter), &expected_oid);
          }
 
          ASSERT_CMPOID (&sd->election_id, &expected_oid);
-      } else if (strcmp ("topologyVersion", bson_iter_key (&server_iter)) ==
-                 0) {
+      } else if (strcmp ("topologyVersion", bson_iter_key (&server_iter)) == 0) {
          bson_t expected_topology_version;
 
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
             bson_init (&expected_topology_version);
          } else {
             ASSERT (BSON_ITER_HOLDS_DOCUMENT (&server_iter));
-            bson_lookup_doc (
-               server, "topologyVersion", &expected_topology_version);
+            bson_lookup_doc (server, "topologyVersion", &expected_topology_version);
          }
 
-         assert_match_bson (
-            &sd->topology_version, &expected_topology_version, false);
+         assert_match_bson (&sd->topology_version, &expected_topology_version, false);
          bson_destroy (&expected_topology_version);
       } else if (strcmp ("pool", bson_iter_key (&server_iter)) == 0) {
          bson_iter_t iter;
          uint32_t expected_generation;
 
          BSON_ASSERT (bson_iter_recurse (&server_iter, &iter));
-         BSON_ASSERT (bson_iter_find (&iter, "generation") &&
-                      BSON_ITER_HOLDS_INT32 (&iter));
+         BSON_ASSERT (bson_iter_find (&iter, "generation") && BSON_ITER_HOLDS_INT32 (&iter));
          expected_generation = bson_iter_int32 (&iter);
-         ASSERT_CMPINT32 (expected_generation,
-                          ==,
-                          mc_tpl_sd_get_generation (sd, &kZeroServiceId));
-      } else if (strcmp ("logicalSessionTimeoutMinutes",
-                         bson_iter_key (&server_iter)) == 0) {
+         ASSERT_CMPINT32 (expected_generation, ==, mc_tpl_sd_get_generation (sd, &kZeroServiceId));
+      } else if (strcmp ("logicalSessionTimeoutMinutes", bson_iter_key (&server_iter)) == 0) {
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
             if (sd->session_timeout_minutes != MONGOC_NO_SESSIONS) {
                test_error ("ERROR: expected unset value for "
@@ -107,9 +94,7 @@ _topology_has_description (const mongoc_topology_description_t *topology,
                            sd->session_timeout_minutes);
             }
          } else {
-            ASSERT_CMPINT64 (bson_iter_as_int64 (&server_iter),
-                             ==,
-                             sd->session_timeout_minutes);
+            ASSERT_CMPINT64 (bson_iter_as_int64 (&server_iter), ==, sd->session_timeout_minutes);
          }
       } else if (strcmp ("minWireVersion", bson_iter_key (&server_iter)) == 0) {
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
@@ -119,8 +104,7 @@ _topology_has_description (const mongoc_topology_description_t *topology,
                            sd->min_wire_version);
             }
          } else {
-            ASSERT_CMPINT32 (
-               bson_iter_int32 (&server_iter), ==, sd->min_wire_version);
+            ASSERT_CMPINT32 (bson_iter_int32 (&server_iter), ==, sd->min_wire_version);
          }
       } else if (strcmp ("maxWireVersion", bson_iter_key (&server_iter)) == 0) {
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
@@ -130,12 +114,10 @@ _topology_has_description (const mongoc_topology_description_t *topology,
                            sd->max_wire_version);
             }
          } else {
-            ASSERT_CMPINT32 (
-               bson_iter_int32 (&server_iter), ==, sd->max_wire_version);
+            ASSERT_CMPINT32 (bson_iter_int32 (&server_iter), ==, sd->max_wire_version);
          }
       } else {
-         fprintf (
-            stderr, "ERROR: unparsed field %s\n", bson_iter_key (&server_iter));
+         fprintf (stderr, "ERROR: unparsed field %s\n", bson_iter_key (&server_iter));
          BSON_ASSERT (0);
       }
    }
@@ -197,9 +179,7 @@ test_sdam_cb (bson_t *test)
          mc_tpld_renew_ref (&td, client->topology);
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &servers);
-            ASSERT_CMPINT (bson_count_keys (&servers),
-                           ==,
-                           mc_tpld_servers_const (td.ptr)->items_len);
+            ASSERT_CMPINT (bson_count_keys (&servers), ==, mc_tpld_servers_const (td.ptr)->items_len);
 
             bson_iter_init (&servers_iter, &servers);
 
@@ -217,36 +197,25 @@ test_sdam_cb (bson_t *test)
                ASSERT_CMPSTR (td.ptr->set_name, set_name);
             } else {
                if (td.ptr->set_name) {
-                  test_error ("expected NULL setName, got: %s",
-                              td.ptr->set_name);
+                  test_error ("expected NULL setName, got: %s", td.ptr->set_name);
                }
             }
-         } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) ==
-                    0) {
-            ASSERT_CMPSTR (mongoc_topology_description_type (td.ptr),
-                           bson_iter_utf8 (&outcome_iter, NULL));
-         } else if (strcmp ("logicalSessionTimeoutMinutes",
-                            bson_iter_key (&outcome_iter)) == 0) {
+         } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) == 0) {
+            ASSERT_CMPSTR (mongoc_topology_description_type (td.ptr), bson_iter_utf8 (&outcome_iter, NULL));
+         } else if (strcmp ("logicalSessionTimeoutMinutes", bson_iter_key (&outcome_iter)) == 0) {
             if (BSON_ITER_HOLDS_NULL (&outcome_iter)) {
-               ASSERT_CMPINT64 (td.ptr->session_timeout_minutes,
-                                ==,
-                                (int64_t) MONGOC_NO_SESSIONS);
+               ASSERT_CMPINT64 (td.ptr->session_timeout_minutes, ==, (int64_t) MONGOC_NO_SESSIONS);
             } else {
-               ASSERT_CMPINT64 (td.ptr->session_timeout_minutes,
-                                ==,
-                                bson_iter_as_int64 (&outcome_iter));
+               ASSERT_CMPINT64 (td.ptr->session_timeout_minutes, ==, bson_iter_as_int64 (&outcome_iter));
             }
          } else if (strcmp ("compatible", bson_iter_key (&outcome_iter)) == 0) {
             if (bson_iter_as_bool (&outcome_iter)) {
                ASSERT_CMPINT (0, ==, td.ptr->compatibility_error.domain);
             } else {
-               ASSERT_ERROR_CONTAINS (td.ptr->compatibility_error,
-                                      MONGOC_ERROR_PROTOCOL,
-                                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                                      "");
+               ASSERT_ERROR_CONTAINS (
+                  td.ptr->compatibility_error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "");
             }
-         } else if (strcmp ("maxSetVersion", bson_iter_key (&outcome_iter)) ==
-                    0) {
+         } else if (strcmp ("maxSetVersion", bson_iter_key (&outcome_iter)) == 0) {
             if (BSON_ITER_HOLDS_NULL (&outcome_iter)) {
                if (td.ptr->max_set_version != MONGOC_NO_SET_VERSION) {
                   test_error ("ERROR: expected unset value for maxSetVersion "
@@ -254,12 +223,9 @@ test_sdam_cb (bson_t *test)
                               td.ptr->max_set_version);
                }
             } else {
-               ASSERT_CMPINT64 (bson_iter_as_int64 (&outcome_iter),
-                                ==,
-                                td.ptr->max_set_version);
+               ASSERT_CMPINT64 (bson_iter_as_int64 (&outcome_iter), ==, td.ptr->max_set_version);
             }
-         } else if (strcmp ("maxElectionId", bson_iter_key (&outcome_iter)) ==
-                    0) {
+         } else if (strcmp ("maxElectionId", bson_iter_key (&outcome_iter)) == 0) {
             const bson_oid_t *expected_oid;
             bson_oid_t zeroed = {0};
 
@@ -280,8 +246,7 @@ test_sdam_cb (bson_t *test)
                            expected_oid_str,
                            actual_oid_str);
             }
-         } else if (strcmp ("logicalSessionTimeoutMinutes",
-                            bson_iter_key (&outcome_iter)) == 0) {
+         } else if (strcmp ("logicalSessionTimeoutMinutes", bson_iter_key (&outcome_iter)) == 0) {
             if (BSON_ITER_HOLDS_NULL (&outcome_iter)) {
                if (td.ptr->session_timeout_minutes != MONGOC_NO_SESSIONS) {
                   test_error ("ERROR: expected unset value for "
@@ -289,14 +254,10 @@ test_sdam_cb (bson_t *test)
                               td.ptr->session_timeout_minutes);
                }
             } else {
-               ASSERT_CMPINT64 (bson_iter_as_int64 (&outcome_iter),
-                                ==,
-                                td.ptr->session_timeout_minutes);
+               ASSERT_CMPINT64 (bson_iter_as_int64 (&outcome_iter), ==, td.ptr->session_timeout_minutes);
             }
          } else {
-            fprintf (stderr,
-                     "ERROR: unparsed test field %s\n",
-                     bson_iter_key (&outcome_iter));
+            fprintf (stderr, "ERROR: unparsed test field %s\n", bson_iter_key (&outcome_iter));
             BSON_ASSERT (false);
          }
       }
@@ -311,9 +272,7 @@ test_sdam_cb (bson_t *test)
  * check for sessions support. That interferes with failpoints set on hello.
  */
 static void
-sdam_json_test_ctx_init (json_test_ctx_t *ctx,
-                         const json_test_config_t *config,
-                         mongoc_client_pool_t *pool)
+sdam_json_test_ctx_init (json_test_ctx_t *ctx, const json_test_config_t *config, mongoc_client_pool_t *pool)
 {
    const char *db_name;
    const char *coll_name;
@@ -351,15 +310,12 @@ sdam_json_test_ctx_cleanup (json_test_ctx_t *ctx)
 }
 
 static bool
-sdam_integration_operation_cb (json_test_ctx_t *ctx,
-                               const bson_t *test,
-                               const bson_t *operation)
+sdam_integration_operation_cb (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
 {
    bson_t reply;
    bool res;
 
-   res =
-      json_test_operation (ctx, test, operation, ctx->collection, NULL, &reply);
+   res = json_test_operation (ctx, test, operation, ctx->collection, NULL, &reply);
 
    bson_destroy (&reply);
 
@@ -388,13 +344,8 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
       bool ret;
 
       server_id = servers->items[i].id;
-      ret = mongoc_client_command_simple_with_server_id (client,
-                                                         "admin",
-                                                         &cmd,
-                                                         NULL /* read prefs */,
-                                                         server_id,
-                                                         NULL /* reply */,
-                                                         &error);
+      ret = mongoc_client_command_simple_with_server_id (
+         client, "admin", &cmd, NULL /* read prefs */, server_id, NULL /* reply */, &error);
       if (!ret) {
          MONGOC_DEBUG ("error disabling failpoint: %s", error.message);
       }
@@ -439,12 +390,7 @@ run_one_integration_test (json_test_config_t *config, bson_t *test)
    setup_client = test_framework_new_default_client ();
    /* Disable failpoints that may have been enabled in a previous test run. */
    deactivate_failpoints_on_all_servers (setup_client);
-   mongoc_client_command_simple (setup_client,
-                                 "admin",
-                                 tmp_bson ("{'killAllSessions': []}"),
-                                 NULL,
-                                 NULL,
-                                 &error);
+   mongoc_client_command_simple (setup_client, "admin", tmp_bson ("{'killAllSessions': []}"), NULL, NULL, &error);
 
    insert_data (db_name, coll_name, config->scenario);
 
@@ -479,9 +425,7 @@ run_one_integration_test (json_test_config_t *config, bson_t *test)
    if (bson_has_field (test, "outcome.collection")) {
       mongoc_collection_t *outcome_coll;
       outcome_coll = mongoc_client_get_collection (
-         setup_client,
-         mongoc_database_get_name (ctx.db),
-         mongoc_collection_get_name (ctx.collection));
+         setup_client, mongoc_database_get_name (ctx.db), mongoc_collection_get_name (ctx.collection));
       check_outcome_collection (outcome_coll, test);
       mongoc_collection_destroy (outcome_coll);
    }
@@ -542,44 +486,31 @@ static void
 test_all_spec_tests (TestSuite *suite)
 {
    /* Single */
-   install_json_test_suite (
-      suite, JSON_DIR, "server_discovery_and_monitoring/single", &test_sdam_cb);
+   install_json_test_suite (suite, JSON_DIR, "server_discovery_and_monitoring/single", &test_sdam_cb);
 
    /* Replica set */
-   install_json_test_suite (
-      suite, JSON_DIR, "server_discovery_and_monitoring/rs", &test_sdam_cb);
+   install_json_test_suite (suite, JSON_DIR, "server_discovery_and_monitoring/rs", &test_sdam_cb);
 
    /* Sharded */
-   install_json_test_suite (suite,
-                            JSON_DIR,
-                            "server_discovery_and_monitoring/sharded",
-                            &test_sdam_cb);
+   install_json_test_suite (suite, JSON_DIR, "server_discovery_and_monitoring/sharded", &test_sdam_cb);
 
-   install_json_test_suite (
-      suite, JSON_DIR, "server_discovery_and_monitoring/errors", &test_sdam_cb);
+   install_json_test_suite (suite, JSON_DIR, "server_discovery_and_monitoring/errors", &test_sdam_cb);
 
    /* Tests not in official Server Discovery And Monitoring Spec */
-   install_json_test_suite (suite,
-                            JSON_DIR,
-                            "server_discovery_and_monitoring/supplemental",
-                            &test_sdam_cb);
+   install_json_test_suite (suite, JSON_DIR, "server_discovery_and_monitoring/supplemental", &test_sdam_cb);
 
    /* Integration tests. */
    /* The integration tests configure retryable writes, which requires crypto.
     */
-   install_json_test_suite_with_check (
-      suite,
-      JSON_DIR,
-      "server_discovery_and_monitoring/integration",
-      &test_sdam_integration_cb,
-      TestSuite_CheckLive,
-      test_framework_skip_if_no_crypto,
-      test_framework_skip_if_slow);
+   install_json_test_suite_with_check (suite,
+                                       JSON_DIR,
+                                       "server_discovery_and_monitoring/integration",
+                                       &test_sdam_integration_cb,
+                                       TestSuite_CheckLive,
+                                       test_framework_skip_if_no_crypto,
+                                       test_framework_skip_if_slow);
 
-   install_json_test_suite (suite,
-                            JSON_DIR,
-                            "server_discovery_and_monitoring/load-balanced",
-                            &test_sdam_cb);
+   install_json_test_suite (suite, JSON_DIR, "server_discovery_and_monitoring/load-balanced", &test_sdam_cb);
 }
 
 static void
@@ -622,8 +553,7 @@ test_topology_discovery (void *ctx)
     *
     * Outcome: Verify that the write succeeded. */
    bson_free (uri_str);
-   uri_str = bson_strdup_printf ("mongodb://%s/?directConnection=false",
-                                 hl_secondary->host_and_port);
+   uri_str = bson_strdup_printf ("mongodb://%s/?directConnection=false", hl_secondary->host_and_port);
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
 
    mongoc_client_destroy (client);
@@ -688,8 +618,7 @@ test_direct_connection (void *ctx)
     *
     * Outcome: Verify that the write failed with a NotPrimary error. */
    bson_free (uri_str);
-   uri_str = bson_strdup_printf ("mongodb://%s/?directConnection=true",
-                                 hl_secondary->host_and_port);
+   uri_str = bson_strdup_printf ("mongodb://%s/?directConnection=true", hl_secondary->host_and_port);
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
 
    mongoc_client_destroy (client);
@@ -699,8 +628,7 @@ test_direct_connection (void *ctx)
    BSON_APPEND_UTF8 (&doc, "hello", "world");
    r = mongoc_collection_insert_one (collection, &doc, NULL, &reply, &error);
    ASSERT_OR_PRINT (!r, error);
-   ASSERT (strstr (error.message, "not master") ||
-           strstr (error.message, "not primary"));
+   ASSERT (strstr (error.message, "not master") || strstr (error.message, "not primary"));
 
    bson_destroy (&reply);
    bson_destroy (&doc);
@@ -766,8 +694,7 @@ test_existing_behavior (void *ctx)
    BSON_APPEND_UTF8 (&doc, "hello", "world");
    r = mongoc_collection_insert_one (collection, &doc, NULL, &reply, &error);
    ASSERT_OR_PRINT (!r, error);
-   ASSERT (strstr (error.message, "not master") ||
-           strstr (error.message, "not primary"));
+   ASSERT (strstr (error.message, "not master") || strstr (error.message, "not primary"));
 
    bson_destroy (&reply);
    bson_destroy (&doc);
@@ -790,9 +717,7 @@ heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    prose_test_ctx_t *ctx;
 
-   ctx =
-      (prose_test_ctx_t *) mongoc_apm_server_heartbeat_succeeded_get_context (
-         event);
+   ctx = (prose_test_ctx_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
    ctx->n_heartbeat_succeeded++;
 /* The reported duration may be 0 on Windows due to poor clock resolution.
  * bson_get_monotonic_time () uses GetTickCount64. MS docs say:
@@ -835,8 +760,7 @@ test_prose_rtt (void *unused)
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
 
    callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks,
-                                                 heartbeat_succeeded);
+   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks, heartbeat_succeeded);
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
    test_framework_set_pool_ssl_opts (pool);
    memset (&ctx, 0, sizeof (prose_test_ctx_t));
@@ -845,8 +769,7 @@ test_prose_rtt (void *unused)
 
    /* Run a find command for the server to be discovered. */
    coll = get_test_collection (client, "streamingRttTest");
-   cursor = mongoc_collection_find_with_opts (
-      coll, tmp_bson ("{}"), NULL /* opts */, NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL /* opts */, NULL /* read prefs */);
    mongoc_cursor_next (cursor, &doc);
 
    /* Sleep for RTT_TEST_INITIAL_SLEEP_SEC seconds to allow multiple heartbeats
@@ -872,20 +795,17 @@ test_prose_rtt (void *unused)
                 "appName",
                 "streamingRttTest",
                 "}");
-   ret = mongoc_client_command_simple (
-      client, "admin", &cmd, NULL /* read prefs. */, NULL /* reply */, &error);
+   ret = mongoc_client_command_simple (client, "admin", &cmd, NULL /* read prefs. */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
    /* Wait for the server's RTT to exceed 250ms. If this does not happen for
     * RTT_TEST_TIMEOUT_SEC seconds, consider it a failure. */
    satisfied = false;
    start_us = bson_get_monotonic_time ();
-   while (!satisfied && bson_get_monotonic_time () <
-                           start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
+   while (!satisfied && bson_get_monotonic_time () < start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
       mongoc_server_description_t *sd;
 
-      sd = mongoc_client_select_server (
-         client, true, NULL /* read prefs */, &error);
+      sd = mongoc_client_select_server (client, true, NULL /* read prefs */, &error);
       ASSERT_OR_PRINT (sd, error);
       rtt = mongoc_server_description_round_trip_time (sd);
       if (rtt > 250) {
@@ -896,17 +816,14 @@ test_prose_rtt (void *unused)
    }
 
    if (!satisfied) {
-      test_error ("After %d seconds, the latest observed RTT was only %" PRId64,
-                  RTT_TEST_TIMEOUT_SEC,
-                  rtt);
+      test_error ("After %d seconds, the latest observed RTT was only %" PRId64, RTT_TEST_TIMEOUT_SEC, rtt);
    }
 
    /* Disable the failpoint. */
    bson_reinit (&cmd);
    BCON_APPEND (&cmd, "configureFailPoint", "failCommand");
    BCON_APPEND (&cmd, "mode", "off");
-   ret = mongoc_client_command_simple (
-      client, "admin", &cmd, NULL /* read prefs. */, NULL /* reply */, &error);
+   ret = mongoc_client_command_simple (client, "admin", &cmd, NULL /* read prefs. */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
    bson_destroy (&cmd);

@@ -108,8 +108,7 @@ void
 _mongoc_handshake_cleanup (void);
 
 bool
-_mongoc_handshake_build_doc_with_application (bson_t *doc,
-                                              const char *application);
+_mongoc_handshake_build_doc_with_application (bson_t *doc, const char *application);
 
 void
 _mongoc_handshake_freeze (void);
@@ -126,13 +125,11 @@ typedef struct {
 } mongoc_handshake_sasl_supported_mechs_t;
 
 void
-_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri,
-                                               bson_t *hello);
+_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri, bson_t *hello);
 
 void
-_mongoc_handshake_parse_sasl_supported_mechs (
-   const bson_t *hello,
-   mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
+_mongoc_handshake_parse_sasl_supported_mechs (const bson_t *hello,
+                                              mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
 
 BSON_END_DECLS
 

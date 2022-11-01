@@ -39,8 +39,7 @@ tables_init (void)
    }
 
    for (i = 0; i < 256; ++i) {
-      rfc_3986_tab[i] =
-         isalnum (i) || i == '~' || i == '-' || i == '.' || i == '_';
+      rfc_3986_tab[i] = isalnum (i) || i == '~' || i == '-' || i == '.' || i == '_';
    }
 
    kms_initialized = true;
@@ -168,9 +167,7 @@ kms_request_str_dup (kms_request_str_t *str)
 }
 
 void
-kms_request_str_set_chars (kms_request_str_t *str,
-                           const char *chars,
-                           ssize_t len)
+kms_request_str_set_chars (kms_request_str_t *str, const char *chars, ssize_t len)
 {
    size_t actual_len = len < 0 ? strlen (chars) : (size_t) len;
    kms_request_str_reserve (str, actual_len); /* adds 1 for nil */
@@ -181,9 +178,7 @@ kms_request_str_set_chars (kms_request_str_t *str,
 bool
 kms_request_str_ends_with (kms_request_str_t *str, kms_request_str_t *suffix)
 {
-   if (str->len >= suffix->len &&
-       0 == strncmp (
-               &str->str[str->len - suffix->len], suffix->str, suffix->len)) {
+   if (str->len >= suffix->len && 0 == strncmp (&str->str[str->len - suffix->len], suffix->str, suffix->len)) {
       return true;
    }
 
@@ -212,9 +207,7 @@ kms_request_str_append_char (kms_request_str_t *str, char c)
 
 
 void
-kms_request_str_append_chars (kms_request_str_t *str,
-                              const char *appended,
-                              ssize_t len)
+kms_request_str_append_chars (kms_request_str_t *str, const char *appended, ssize_t len)
 {
    if (len < 0) {
       len = strlen (appended);
@@ -232,8 +225,7 @@ kms_request_str_append_newline (kms_request_str_t *str)
 }
 
 void
-kms_request_str_append_lowercase (kms_request_str_t *str,
-                                  kms_request_str_t *appended)
+kms_request_str_append_lowercase (kms_request_str_t *str, kms_request_str_t *appended)
 {
    size_t i;
    char *p;
@@ -283,9 +275,7 @@ kms_request_str_appendf (kms_request_str_t *str, const char *format, ...)
 }
 
 void
-kms_request_str_append_escaped (kms_request_str_t *str,
-                                kms_request_str_t *appended,
-                                bool escape_slash)
+kms_request_str_append_escaped (kms_request_str_t *str, kms_request_str_t *appended, bool escape_slash)
 {
    uint8_t *in;
    uint8_t *out;
@@ -314,8 +304,7 @@ kms_request_str_append_escaped (kms_request_str_t *str,
 }
 
 void
-kms_request_str_append_stripped (kms_request_str_t *str,
-                                 kms_request_str_t *appended)
+kms_request_str_append_stripped (kms_request_str_t *str, kms_request_str_t *appended)
 {
    const char *src = appended->str;
    const char *end = appended->str + appended->len;
@@ -358,9 +347,7 @@ kms_request_str_append_stripped (kms_request_str_t *str,
 }
 
 bool
-kms_request_str_append_hashed (_kms_crypto_t *crypto,
-                               kms_request_str_t *str,
-                               kms_request_str_t *appended)
+kms_request_str_append_hashed (_kms_crypto_t *crypto, kms_request_str_t *str, kms_request_str_t *appended)
 {
    uint8_t hash[32];
    char *hex_chars;
@@ -377,9 +364,7 @@ kms_request_str_append_hashed (_kms_crypto_t *crypto,
 }
 
 bool
-kms_request_str_append_hex (kms_request_str_t *str,
-                            unsigned char *data,
-                            size_t len)
+kms_request_str_append_hex (kms_request_str_t *str, unsigned char *data, size_t len)
 {
    char *hex_chars;
 

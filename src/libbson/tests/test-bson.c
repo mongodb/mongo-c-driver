@@ -39,8 +39,7 @@ get_bson (const char *filename)
    char real_filename[256];
    int fd;
 
-   bson_snprintf (
-      real_filename, sizeof real_filename, BSON_BINARY_DIR "/%s", filename);
+   bson_snprintf (real_filename, sizeof real_filename, BSON_BINARY_DIR "/%s", filename);
 
    real_filename[sizeof real_filename - 1] = '\0';
 
@@ -135,13 +134,7 @@ BSON_ASSERT_BSON_EQUAL (const bson_t *a, const bson_t *b)
             abort ();
          }
          if (data1[i] != data2[i]) {
-            printf ("a[%u](0x%02x,%u) != b[%u](0x%02x,%u)\n",
-                    i,
-                    data1[i],
-                    data1[i],
-                    i,
-                    data2[i],
-                    data2[i]);
+            printf ("a[%u](0x%02x,%u) != b[%u](0x%02x,%u)\n", i, data1[i], data1[i], i, data2[i], data2[i]);
             abort ();
          }
       }
@@ -295,8 +288,7 @@ test_bson_append_binary (void)
    bson_t *b2;
 
    b = bson_new ();
-   BSON_ASSERT (
-      bson_append_binary (b, "binary", -1, BSON_SUBTYPE_USER, binary, 4));
+   BSON_ASSERT (bson_append_binary (b, "binary", -1, BSON_SUBTYPE_USER, binary, 4));
    b2 = get_bson ("test24.bson");
    BSON_ASSERT_BSON_EQUAL (b, b2);
    bson_destroy (b);
@@ -312,8 +304,7 @@ test_bson_append_binary_deprecated (void)
    bson_t *b2;
 
    b = bson_new ();
-   BSON_ASSERT (bson_append_binary (
-      b, "binary", -1, BSON_SUBTYPE_BINARY_DEPRECATED, binary, 4));
+   BSON_ASSERT (bson_append_binary (b, "binary", -1, BSON_SUBTYPE_BINARY_DEPRECATED, binary, 4));
    b2 = get_bson ("binary_deprecated.bson");
    BSON_ASSERT_BSON_EQUAL (b, b2);
    bson_destroy (b);
@@ -409,8 +400,7 @@ test_bson_append_regex_w_len (void)
    bson_destroy (b2);
 
    b = bson_new ();
-   BSON_ASSERT (
-      bson_append_regex_w_len (b, "regex", -1, "^abcd    ", 5, "ilx"));
+   BSON_ASSERT (bson_append_regex_w_len (b, "regex", -1, "^abcd    ", 5, "ilx"));
    b2 = get_bson ("test27.bson");
    BSON_ASSERT_BSON_EQUAL (b, b2);
    bson_destroy (b);
@@ -478,8 +468,7 @@ test_bson_append_code_with_scope (void)
 
    /* Test with NULL bson, which converts to just CODE type. */
    b = bson_new ();
-   BSON_ASSERT (
-      bson_append_code_with_scope (b, "code", -1, "var a = {};", NULL));
+   BSON_ASSERT (bson_append_code_with_scope (b, "code", -1, "var a = {};", NULL));
    b2 = get_bson ("test30.bson");
    BSON_ASSERT_BSON_EQUAL (b, b2);
    r = bson_iter_init_find (&iter, b, "code");
@@ -491,8 +480,7 @@ test_bson_append_code_with_scope (void)
    /* Empty scope is still CODEWSCOPE. */
    b = bson_new ();
    scope = bson_new ();
-   BSON_ASSERT (
-      bson_append_code_with_scope (b, "code", -1, "var a = {};", scope));
+   BSON_ASSERT (bson_append_code_with_scope (b, "code", -1, "var a = {};", scope));
    b2 = get_bson ("code_w_empty_scope.bson");
    BSON_ASSERT_BSON_EQUAL (b, b2);
    r = bson_iter_init_find (&iter, b, "code");
@@ -506,8 +494,7 @@ test_bson_append_code_with_scope (void)
    b = bson_new ();
    scope = bson_new ();
    BSON_ASSERT (bson_append_utf8 (scope, "foo", -1, "bar", -1));
-   BSON_ASSERT (
-      bson_append_code_with_scope (b, "code", -1, "var a = {};", scope));
+   BSON_ASSERT (bson_append_code_with_scope (b, "code", -1, "var a = {};", scope));
    b2 = get_bson ("test31.bson");
    BSON_ASSERT_BSON_EQUAL (b, b2);
    r = bson_iter_init_find (&iter, b, "code");
@@ -530,8 +517,7 @@ test_bson_append_code_with_scope (void)
    bson_destroy (b);
 
    /* CDRIVER-2269 Test with malformed BSON from ticket */
-   reader =
-      bson_reader_new_from_file (BSON_BINARY_DIR "/cdriver2269.bson", &err);
+   reader = bson_reader_new_from_file (BSON_BINARY_DIR "/cdriver2269.bson", &err);
 
    BSON_ASSERT (reader);
    ticket_bson = bson_reader_read (reader, &eof);
@@ -1154,11 +1140,8 @@ test_bson_validate (void)
    bson_destroy (b);
 
    b = get_bson ("empty_key.bson");
-   BSON_ASSERT (bson_validate (b,
-                               BSON_VALIDATE_NONE | BSON_VALIDATE_UTF8 |
-                                  BSON_VALIDATE_DOLLAR_KEYS |
-                                  BSON_VALIDATE_DOT_KEYS,
-                               &offset));
+   BSON_ASSERT (bson_validate (
+      b, BSON_VALIDATE_NONE | BSON_VALIDATE_UTF8 | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS, &offset));
    bson_destroy (b);
 
 #define VALIDATE_TEST(_filename, _flags, _offset, _flag, _msg)     \
@@ -1169,16 +1152,8 @@ test_bson_validate (void)
    ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, _flag, _msg); \
    bson_destroy (b)
 
-   VALIDATE_TEST ("overflow2.bson",
-                  BSON_VALIDATE_NONE,
-                  9,
-                  BSON_VALIDATE_NONE,
-                  "corrupt BSON");
-   VALIDATE_TEST ("trailingnull.bson",
-                  BSON_VALIDATE_NONE,
-                  14,
-                  BSON_VALIDATE_NONE,
-                  "corrupt BSON");
+   VALIDATE_TEST ("overflow2.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("trailingnull.bson", BSON_VALIDATE_NONE, 14, BSON_VALIDATE_NONE, "corrupt BSON");
    VALIDATE_TEST ("dollarquery.bson",
                   BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS,
                   4,
@@ -1189,127 +1164,57 @@ test_bson_validate (void)
                   4,
                   BSON_VALIDATE_DOT_KEYS,
                   "keys cannot contain \".\": \"abc.def\"");
-   VALIDATE_TEST ("overflow3.bson",
-                  BSON_VALIDATE_NONE,
-                  9,
-                  BSON_VALIDATE_NONE,
-                  "corrupt BSON");
+   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
    /* same outcome as above, despite different flags */
-   VALIDATE_TEST ("overflow3.bson",
-                  BSON_VALIDATE_UTF8,
-                  9,
-                  BSON_VALIDATE_NONE,
-                  "corrupt BSON");
-   VALIDATE_TEST ("overflow4.bson",
-                  BSON_VALIDATE_NONE,
-                  9,
-                  BSON_VALIDATE_NONE,
-                  "corrupt BSON");
-   VALIDATE_TEST ("empty_key.bson",
-                  BSON_VALIDATE_EMPTY_KEYS,
-                  4,
-                  BSON_VALIDATE_EMPTY_KEYS,
-                  "empty key");
-   VALIDATE_TEST (
-      "test40.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test41.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test42.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test43.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test44.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test45.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test46.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test47.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test48.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test49.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test50.bson",
-                  BSON_VALIDATE_NONE,
-                  10,
-                  BSON_VALIDATE_NONE,
-                  "corrupt code-with-scope");
-   VALIDATE_TEST ("test51.bson",
-                  BSON_VALIDATE_NONE,
-                  10,
-                  BSON_VALIDATE_NONE,
-                  "corrupt code-with-scope");
-   VALIDATE_TEST (
-      "test52.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST (
-      "test53.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test54.bson",
-                  BSON_VALIDATE_NONE,
-                  12,
-                  BSON_VALIDATE_NONE,
-                  "corrupt BSON");
-   VALIDATE_TEST (
-      "test59.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_UTF8, 9, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("overflow4.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("empty_key.bson", BSON_VALIDATE_EMPTY_KEYS, 4, BSON_VALIDATE_EMPTY_KEYS, "empty key");
+   VALIDATE_TEST ("test40.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test41.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test42.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test43.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test44.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test45.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test46.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test47.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test48.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test49.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test50.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_NONE, "corrupt code-with-scope");
+   VALIDATE_TEST ("test51.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_NONE, "corrupt code-with-scope");
+   VALIDATE_TEST ("test52.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test53.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test54.bson", BSON_VALIDATE_NONE, 12, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test59.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
 
    /* DBRef validation */
-   b = BCON_NEW ("my_dbref",
-                 "{",
-                 "$ref",
-                 BCON_UTF8 ("collection"),
-                 "$id",
-                 BCON_INT32 (1),
-                 "}");
+   b = BCON_NEW ("my_dbref", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_INT32 (1), "}");
    BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
-   BSON_ASSERT (
-      bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
+   BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
    bson_destroy (b);
 
    /* needs "$ref" before "$id" */
    b = BCON_NEW ("my_dbref", "{", "$id", BCON_INT32 (1), "}");
    BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
-   BSON_ASSERT (
-      !bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_INVALID,
-                          BSON_VALIDATE_DOLLAR_KEYS,
-                          "keys cannot begin with \"$\": \"$id\"");
+   BSON_ASSERT (!bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "keys cannot begin with \"$\": \"$id\"");
    bson_destroy (b);
 
    /* two $refs */
-   b = BCON_NEW ("my_dbref",
-                 "{",
-                 "$ref",
-                 BCON_UTF8 ("collection"),
-                 "$ref",
-                 BCON_UTF8 ("collection"),
-                 "}");
+   b = BCON_NEW ("my_dbref", "{", "$ref", BCON_UTF8 ("collection"), "$ref", BCON_UTF8 ("collection"), "}");
    BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
-   BSON_ASSERT (
-      !bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_INVALID,
-                          BSON_VALIDATE_DOLLAR_KEYS,
-                          "keys cannot begin with \"$\": \"$ref\"");
+   BSON_ASSERT (!bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "keys cannot begin with \"$\": \"$ref\"");
    bson_destroy (b);
 
    /* must not contain invalid key like "extra" */
-   b = BCON_NEW ("my_dbref",
-                 "{",
-                 "$ref",
-                 BCON_UTF8 ("collection"),
-                 "extra",
-                 BCON_INT32 (2),
-                 "$id",
-                 BCON_INT32 (1),
-                 "}");
+   b =
+      BCON_NEW ("my_dbref", "{", "$ref", BCON_UTF8 ("collection"), "extra", BCON_INT32 (2), "$id", BCON_INT32 (1), "}");
    BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
-   BSON_ASSERT (
-      !bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_INVALID,
-                          BSON_VALIDATE_DOLLAR_KEYS,
-                          "invalid key within DBRef subdocument: \"extra\"");
+   BSON_ASSERT (!bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
+   ASSERT_ERROR_CONTAINS (
+      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "invalid key within DBRef subdocument: \"extra\"");
    bson_destroy (b);
 
 #undef VALIDATE_TEST
@@ -2149,10 +2054,7 @@ typedef struct {
 
 
 void
-visit_unsupported_type (const bson_iter_t *iter,
-                        const char *key,
-                        uint32_t type_code,
-                        void *data)
+visit_unsupported_type (const bson_iter_t *iter, const char *key, uint32_t type_code, void *data)
 {
    unsupported_type_test_data_t *context;
 
@@ -2255,16 +2157,13 @@ test_bson_subtype_2 (void)
    BSON_ASSERT (bson_validate (&b, BSON_VALIDATE_NONE, 0));
    BSON_ASSERT (0 == bson_compare (&b, bson_ok));
 
-   BSON_ASSERT (bson_init_static (
-      &b, (uint8_t *) len_too_long, sizeof (len_too_long) - 1));
+   BSON_ASSERT (bson_init_static (&b, (uint8_t *) len_too_long, sizeof (len_too_long) - 1));
    BSON_ASSERT (!bson_validate (&b, BSON_VALIDATE_NONE, 0));
 
-   BSON_ASSERT (bson_init_static (
-      &b, (uint8_t *) len_too_short, sizeof (len_too_short) - 1));
+   BSON_ASSERT (bson_init_static (&b, (uint8_t *) len_too_short, sizeof (len_too_short) - 1));
    BSON_ASSERT (!bson_validate (&b, BSON_VALIDATE_NONE, 0));
 
-   BSON_ASSERT (bson_init_static (
-      &b, (uint8_t *) len_negative, sizeof (len_negative) - 1));
+   BSON_ASSERT (bson_init_static (&b, (uint8_t *) len_negative, sizeof (len_negative) - 1));
    BSON_ASSERT (!bson_validate (&b, BSON_VALIDATE_NONE, 0));
 
    bson_destroy (bson_ok);
@@ -2280,11 +2179,8 @@ test_bson_regex_lengths (void)
    bson_oid_init_from_string (&oid, "1234567890abcdef12345678");
    bson_append_oid (&new, "0123456", -1, &oid);
 
-   bson_append_regex (&new,
-                      "0_________1_________2_________3___4",
-                      -1,
-                      "0_________1_________2_________3_________4_________5___4",
-                      "i");
+   bson_append_regex (
+      &new, "0_________1_________2_________3___4", -1, "0_________1_________2_________3_________4_________5___4", "i");
 
    ASSERT (new.len == 121);
    ASSERT (new.flags &BSON_FLAG_STATIC);
@@ -2321,8 +2217,7 @@ test_bson_iter_key_len (void)
 
    BSON_ASSERT (bson_iter_init (&iter, bson));
    while (bson_iter_next (&iter)) {
-      ASSERT_WITH_MSG (strlen (bson_iter_key (&iter)) ==
-                          bson_iter_key_len (&iter),
+      ASSERT_WITH_MSG (strlen (bson_iter_key (&iter)) == bson_iter_key_len (&iter),
                        "iter_key_len differs from real key length. got %d but "
                        "expected %d for key %s\n",
                        bson_iter_key_len (&iter),
@@ -2347,14 +2242,11 @@ test_bson_iter_init_from_data_at_offset (void)
       uint32_t offset = bson_iter_offset (&iter);
       bson_iter_t recreated = {0};
 
-      BSON_ASSERT (bson_iter_init_from_data_at_offset (
-         &recreated, data, bson->len, offset, keylen));
-      if (memcmp ((void *) &iter, (void *) &recreated, sizeof (bson_iter_t)) !=
-          0) {
+      BSON_ASSERT (bson_iter_init_from_data_at_offset (&recreated, data, bson->len, offset, keylen));
+      if (memcmp ((void *) &iter, (void *) &recreated, sizeof (bson_iter_t)) != 0) {
          int i;
          bson_iter_t *iters[] = {&iter, &recreated};
-         fprintf (stderr,
-                  "recreated iterator does not match initial iterator:\n");
+         fprintf (stderr, "recreated iterator does not match initial iterator:\n");
          for (i = 0; i < 2; i++) {
             fprintf (stderr, "iter %d: ", i);
             fprintf (stderr,
@@ -2436,11 +2328,10 @@ _binary_null_handling (bool is_legacy)
    _check_null_binary (bson, is_legacy);
    bson_destroy (bson);
 
-   bson = bson_new_from_json (
-      (uint8_t *) "{\"binary\": { \"$binary\": { \"subType\": \"00\", "
-                  "\"base64\": \"\" } } }",
-      -1,
-      &error);
+   bson = bson_new_from_json ((uint8_t *) "{\"binary\": { \"$binary\": { \"subType\": \"00\", "
+                                          "\"base64\": \"\" } } }",
+                              -1,
+                              &error);
    ASSERT_OR_PRINT (bson, error);
    _check_null_binary (bson, is_legacy);
    bson_destroy (bson);
@@ -2476,34 +2367,30 @@ test_bson_as_json_string (void)
    bson_t *all_types;
    int i;
    char *actual;
-   const char *expected =
-      "{ \"double\" : { \"$numberDouble\" : \"1.0\" }, \"string\" : "
-      "\"string_example\", \"document\" : { \"x\" : \"y\" }, \"document\" : [ "
-      "\"x\" ], \"binary\" : { \"$binary\" : { \"base64\" : \"ZGF0YQ==\", "
-      "\"subType\" : \"00\" } }, \"undefined\" : { \"$undefined\" : true }, "
-      "\"oid\" : { \"$oid\" : \"000000000000000000000000\" }, \"bool\" : true, "
-      "\"datetime\" : { \"$date\" : { \"$numberLong\" : \"123\" } }, \"null\" "
-      ": null, \"regex\" : { \"$regularExpression\" : { \"pattern\" : \"a+\", "
-      "\"options\" : \"\" } }, \"dbpointer\" : { \"$dbPointer\" : { \"$ref\" : "
-      "\"collection\", \"$id\" : { \"$oid\" : \"000000000000000000000000\" } } "
-      "}, \"code\" : { \"$code\" : \"var x = 1;\" }, \"symbol\" : { "
-      "\"$symbol\" : \"symbol_example\" }, \"code\" : { \"$code\" : \"var x = "
-      "1;\" }, \"code_w_scope\" : { \"$code\" : \"var x = 1;\", \"$scope\" : { "
-      "} }, \"int32\" : { \"$numberInt\" : \"1\" }, \"timestamp\" : { "
-      "\"$timestamp\" : { \"t\" : 2, \"i\" : 3 } }, \"int64\" : { "
-      "\"$numberLong\" : \"4\" }, \"decimal128\" : { \"$numberDecimal\" : "
-      "\"1.23456789\" }, \"minkey\" : { \"$minKey\" : 1 }, \"maxkey\" : { "
-      "\"$maxKey\" : 1 }, \"\" : { \"$numberInt\" : \"-1\" } }";
+   const char *expected = "{ \"double\" : { \"$numberDouble\" : \"1.0\" }, \"string\" : "
+                          "\"string_example\", \"document\" : { \"x\" : \"y\" }, \"document\" : [ "
+                          "\"x\" ], \"binary\" : { \"$binary\" : { \"base64\" : \"ZGF0YQ==\", "
+                          "\"subType\" : \"00\" } }, \"undefined\" : { \"$undefined\" : true }, "
+                          "\"oid\" : { \"$oid\" : \"000000000000000000000000\" }, \"bool\" : true, "
+                          "\"datetime\" : { \"$date\" : { \"$numberLong\" : \"123\" } }, \"null\" "
+                          ": null, \"regex\" : { \"$regularExpression\" : { \"pattern\" : \"a+\", "
+                          "\"options\" : \"\" } }, \"dbpointer\" : { \"$dbPointer\" : { \"$ref\" : "
+                          "\"collection\", \"$id\" : { \"$oid\" : \"000000000000000000000000\" } } "
+                          "}, \"code\" : { \"$code\" : \"var x = 1;\" }, \"symbol\" : { "
+                          "\"$symbol\" : \"symbol_example\" }, \"code\" : { \"$code\" : \"var x = "
+                          "1;\" }, \"code_w_scope\" : { \"$code\" : \"var x = 1;\", \"$scope\" : { "
+                          "} }, \"int32\" : { \"$numberInt\" : \"1\" }, \"timestamp\" : { "
+                          "\"$timestamp\" : { \"t\" : 2, \"i\" : 3 } }, \"int64\" : { "
+                          "\"$numberLong\" : \"4\" }, \"decimal128\" : { \"$numberDecimal\" : "
+                          "\"1.23456789\" }, \"minkey\" : { \"$minKey\" : 1 }, \"maxkey\" : { "
+                          "\"$maxKey\" : 1 }, \"\" : { \"$numberInt\" : \"-1\" } }";
 
    all_types = bson_with_all_types ();
    actual = bson_as_canonical_extended_json (all_types, NULL);
 
    for (i = 0; i < strlen (expected); i++) {
       if (expected[i] != actual[i]) {
-         test_error ("character mismatch at %d. Expected: %s, got %s",
-                     i,
-                     expected,
-                     actual);
+         test_error ("character mismatch at %d. Expected: %s, got %s", i, expected, actual);
       }
    }
 
@@ -2520,7 +2407,7 @@ static void
 test_bson_dsl_parse (void)
 {
    // Do nothing:
-   bsonParse (*TMP_BSON_FROM_JSON ({}), do());
+   bsonParse (*TMP_BSON_FROM_JSON ({}), do ());
    BSON_ASSERT (!bsonParseError);
 
    // Generate an error
@@ -2528,13 +2415,13 @@ test_bson_dsl_parse (void)
    ASSERT_CMPSTR (bsonParseError, "failed 1");
 
    // Error is reset on each entry
-   bsonParse (*TMP_BSON_FROM_JSON ({}), do());
+   bsonParse (*TMP_BSON_FROM_JSON ({}), do ());
    BSON_ASSERT (!bsonParseError);
 
    // Find an element
    bson_t *simple_foo_bar = TMP_BSON_FROM_JSON ({"foo" : "bar"});
    bool found = false;
-   bsonParse (*simple_foo_bar, find (key ("foo"), do(found = true)));
+   bsonParse (*simple_foo_bar, find (key ("foo"), do (found = true)));
    BSON_ASSERT (found);
 
    // Store a reference to the string
@@ -2545,25 +2432,22 @@ test_bson_dsl_parse (void)
    // We can fail to find too
    found = false;
    bool not_found = false;
-   bsonParse (*simple_foo_bar,
-              find (key ("bad"), do(found = true)),
-              else(do(not_found = true)));
+   bsonParse (*simple_foo_bar, find (key ("bad"), do (found = true)), else (do (not_found = true)));
    BSON_ASSERT (!found);
    BSON_ASSERT (not_found);
 
    // We can find two items
    int32_t a = 0, b = 0;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : 1729, "bar" : 42}),
-              find (key ("foo"), do(a = bsonAs (int32))),
-              find (key ("bar"), do(b = bsonAs (int32))));
+              find (key ("foo"), do (a = bsonAs (int32))),
+              find (key ("bar"), do (b = bsonAs (int32))));
    ASSERT_CMPINT (a, ==, 1729);
    ASSERT_CMPINT (b, ==, 42);
 
    // Wrong types are zeroed
    a = 91;
    found = false;
-   bsonParse (*TMP_BSON_FROM_JSON ({"foo" : "string"}),
-              find (key ("foo"), do(found = true; a = bsonAs (int32))));
+   bsonParse (*TMP_BSON_FROM_JSON ({"foo" : "string"}), find (key ("foo"), do (found = true; a = bsonAs (int32))));
    BSON_ASSERT (found);
    ASSERT_CMPINT (a, ==, 0);
 
@@ -2571,7 +2455,7 @@ test_bson_dsl_parse (void)
    found = false;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : null, "bar" : null}),
               find (key ("foo"), error ("got foo")),
-              find (key ("bar"), do(found = true)));
+              find (key ("bar"), do (found = true)));
    ASSERT_CMPSTR (bsonParseError, "got foo");
    BSON_ASSERT (!found);
 
@@ -2579,7 +2463,7 @@ test_bson_dsl_parse (void)
    found = false;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : null, "bar" : null}),
               find (key ("foo"), halt),
-              find (key ("bar"), do(found = true)));
+              find (key ("bar"), do (found = true)));
    BSON_ASSERT (!bsonParseError);
    BSON_ASSERT (!found);
 
@@ -2588,14 +2472,14 @@ test_bson_dsl_parse (void)
    b = 0;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 2}),
               if (a == 812,
-                  then (find (key ("foo"), do(b = bsonAs (int32)))),
-                  else(find (key ("bar"), do(b = bsonAs (int32))))));
+                  then (find (key ("foo"), do (b = bsonAs (int32)))),
+                  else (find (key ("bar"), do (b = bsonAs (int32))))));
    ASSERT_CMPINT (b, ==, 1);
    a = 4;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 2}),
               if (a == 812,
-                  then (find (key ("foo"), do(b = bsonAs (int32)))),
-                  else(find (key ("bar"), do(b = bsonAs (int32))))));
+                  then (find (key ("foo"), do (b = bsonAs (int32)))),
+                  else (find (key ("bar"), do (b = bsonAs (int32))))));
    ASSERT_CMPINT (b, ==, 2);
 
    bson_t tmp = BSON_INITIALIZER;
@@ -2604,7 +2488,7 @@ test_bson_dsl_parse (void)
    }
    BSON_APPEND_BOOL (&tmp, "final", true);
    int unvisited = 0;
-   bsonParse (tmp, find (key ("final"), nop), visitOthers (do(++unvisited)));
+   bsonParse (tmp, find (key ("final"), nop), visitOthers (do (++unvisited)));
    ASSERT_CMPINT (unvisited, ==, 1024);
    bson_destroy (&tmp);
 }
@@ -2614,32 +2498,30 @@ test_bson_dsl_visit (void)
 {
    // Count elements
    int count = 0;
-   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 1}), do(++count));
+   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 1}), do (++count));
    ASSERT_CMPINT (count, ==, 2);
 
    // Branch on keys
    int foo_val = 0;
    int bar_val = 0;
    bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : 61, "bar" : 951}),
-                  if (key ("foo"), then (do(foo_val = bsonAs (int32)))),
-                  if (key ("bar"), then (do(bar_val = bsonAs (int32)))));
+                  if (key ("foo"), then (do (foo_val = bsonAs (int32)))),
+                  if (key ("bar"), then (do (bar_val = bsonAs (int32)))));
    ASSERT_CMPINT (foo_val, ==, 61);
    ASSERT_CMPINT (bar_val, ==, 951);
 
    // Store reference to subdocs
    bson_t subdoc;
-   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : {"bar" : 42}}),
-                  storeDocRef (subdoc));
+   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : {"bar" : 42}}), storeDocRef (subdoc));
    bar_val = 0;
-   bsonVisitEach (subdoc, do(bar_val = bsonAs (int32)));
+   bsonVisitEach (subdoc, do (bar_val = bsonAs (int32)));
    ASSERT_CMPINT (bar_val, ==, 42);
 
    // Visit subdocs directly
    const char *baz_str = NULL;
    char *path = NULL;
-   bsonVisitEach (
-      *TMP_BSON_FROM_JSON ({"foo" : {"bar" : {"baz" : "baz_string"}}}),
-      visitEach (visitEach (storeStrRef (baz_str), dupPath (path))));
+   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : {"bar" : {"baz" : "baz_string"}}}),
+                  visitEach (visitEach (storeStrRef (baz_str), dupPath (path))));
    ASSERT_CMPSTR (baz_str, "baz_string");
    ASSERT_CMPSTR (path, "$.foo.bar.baz");
    bson_free (path);
@@ -2688,34 +2570,27 @@ test_bson_dsl_predicate (void)
       require (key ("empty_string"), require (type (utf8))),
       require (key ("empty_array"), require (type (array)), require (empty)),
       require (key ("empty_doc"), require (type (doc)), require (empty)),
-      require (
-         key ("with_last"),
-         require (type (doc)),
-         visitEach (if (lastElement,
-                        then (require (key ("b")), require (type (utf8))),
-                        else(require (key ("a")), require (type (null)))))),
-      require (
-         key ("with_last"),
-         visitEach (case (when (key ("a"), require (type (null))),
-                          when (key ("b"), require (strEqual ("lastElement"))),
-                          else(do(abort ()))))),
+      require (key ("with_last"),
+               require (type (doc)),
+               visitEach (if (lastElement,
+                              then (require (key ("b")), require (type (utf8))),
+                              else (require (key ("a")), require (type (null)))))),
+      require (key ("with_last"),
+               visitEach (case (when (key ("a"), require (type (null))),
+                                when (key ("b"), require (strEqual ("lastElement"))),
+                                else (do (abort ()))))),
       require (key ("string"),
-               case (when (strEqual ("goodbye"), do(abort ())),
+               case (when (strEqual ("goodbye"), do (abort ())),
                      when (strEqual ("hello"), nop),
                      // Not eached since the prior case matched:
-                     when (strEqual ("hello"), do(abort ())),
-                     else(do(abort ())))),
-      visitOthers (if (key ("unhandled"),
-                       then (do(saw_other = true)),
-                       else(do(abort ())))));
+                     when (strEqual ("hello"), do (abort ())),
+                     else (do (abort ())))),
+      visitOthers (if (key ("unhandled"), then (do (saw_other = true)), else (do (abort ())))));
    BSON_ASSERT (saw_other);
 }
 
 static void
-do_assert_bson_equal (const bson_t *actual,
-                      const bson_t *expected,
-                      const char *file,
-                      int line)
+do_assert_bson_equal (const bson_t *actual, const bson_t *expected, const char *file, int line)
 {
    char *actual_str = bson_as_canonical_extended_json (actual, NULL);
    char *expected_str = bson_as_canonical_extended_json (expected, NULL);
@@ -2732,14 +2607,13 @@ do_assert_bson_equal (const bson_t *actual,
 }
 
 #define ASSERT_BSON_EQUAL(Actual, ...) \
-   do_assert_bson_equal (              \
-      &(Actual), TMP_BSON_FROM_JSON (__VA_ARGS__), __FILE__, __LINE__)
+   do_assert_bson_equal (&(Actual), TMP_BSON_FROM_JSON (__VA_ARGS__), __FILE__, __LINE__)
 
 static void
 test_bson_dsl_build (void)
 {
    // Create a very simple empty document
-   bsonBuildDecl (doc, do());
+   bsonBuildDecl (doc, do ());
    BSON_ASSERT (!bsonBuildError);
    ASSERT_BSON_EQUAL (doc, {});
    bson_destroy (&doc);
@@ -2757,18 +2631,15 @@ test_bson_dsl_build (void)
    bson_destroy (&doc);
 
    // Conditional insert
-   bsonBuild (doc,
-              if (0, then (kv ("never", null)), else(kv ("truth", int32 (1)))));
+   bsonBuild (doc, if (0, then (kv ("never", null)), else (kv ("truth", int32 (1)))));
    ASSERT_BSON_EQUAL (doc, {"truth" : 1});
    bson_destroy (&doc);
 
    // Insert a subdoc
-   bson_t *subdoc =
-      TMP_BSON_FROM_JSON ({"child" : [ 1, 2, 3 ], "other" : null});
+   bson_t *subdoc = TMP_BSON_FROM_JSON ({"child" : [ 1, 2, 3 ], "other" : null});
 
    bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, true))));
-   ASSERT_BSON_EQUAL (doc,
-                      {"subdoc" : {"child" : [ 1, 2, 3 ], "other" : null}});
+   ASSERT_BSON_EQUAL (doc, {"subdoc" : {"child" : [ 1, 2, 3 ], "other" : null}});
    bson_destroy (&doc);
 
    // Conditional insert
@@ -2822,28 +2693,23 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/append_overflow", test_bson_append_overflow);
    TestSuite_Add (suite, "/bson/append_array", test_bson_append_array);
    TestSuite_Add (suite, "/bson/append_binary", test_bson_append_binary);
-   TestSuite_Add (suite,
-                  "/bson/append_binary_deprecated",
-                  test_bson_append_binary_deprecated);
+   TestSuite_Add (suite, "/bson/append_binary_deprecated", test_bson_append_binary_deprecated);
    TestSuite_Add (suite, "/bson/append_bool", test_bson_append_bool);
    TestSuite_Add (suite, "/bson/append_code", test_bson_append_code);
-   TestSuite_Add (
-      suite, "/bson/append_code_with_scope", test_bson_append_code_with_scope);
+   TestSuite_Add (suite, "/bson/append_code_with_scope", test_bson_append_code_with_scope);
    TestSuite_Add (suite, "/bson/append_dbpointer", test_bson_append_dbpointer);
    TestSuite_Add (suite, "/bson/append_document", test_bson_append_document);
    TestSuite_Add (suite, "/bson/append_double", test_bson_append_double);
    TestSuite_Add (suite, "/bson/append_int32", test_bson_append_int32);
    TestSuite_Add (suite, "/bson/append_int64", test_bson_append_int64);
-   TestSuite_Add (
-      suite, "/bson/append_decimal128", test_bson_append_decimal128);
+   TestSuite_Add (suite, "/bson/append_decimal128", test_bson_append_decimal128);
    TestSuite_Add (suite, "/bson/append_iter", test_bson_append_iter);
    TestSuite_Add (suite, "/bson/append_maxkey", test_bson_append_maxkey);
    TestSuite_Add (suite, "/bson/append_minkey", test_bson_append_minkey);
    TestSuite_Add (suite, "/bson/append_null", test_bson_append_null);
    TestSuite_Add (suite, "/bson/append_oid", test_bson_append_oid);
    TestSuite_Add (suite, "/bson/append_regex", test_bson_append_regex);
-   TestSuite_Add (
-      suite, "/bson/append_regex_w_len", test_bson_append_regex_w_len);
+   TestSuite_Add (suite, "/bson/append_regex_w_len", test_bson_append_regex_w_len);
    TestSuite_Add (suite, "/bson/append_utf8", test_bson_append_utf8);
    TestSuite_Add (suite, "/bson/append_symbol", test_bson_append_symbol);
    TestSuite_Add (suite, "/bson/append_time_t", test_bson_append_time_t);
@@ -2856,23 +2722,17 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/validate", test_bson_validate);
    TestSuite_Add (suite, "/bson/validate/dbref", test_bson_validate_dbref);
    TestSuite_Add (suite, "/bson/validate/bool", test_bson_validate_bool);
-   TestSuite_Add (
-      suite, "/bson/validate/dbpointer", test_bson_validate_dbpointer);
+   TestSuite_Add (suite, "/bson/validate/dbpointer", test_bson_validate_dbpointer);
    TestSuite_Add (suite, "/bson/new_1mm", test_bson_new_1mm);
    TestSuite_Add (suite, "/bson/init_1mm", test_bson_init_1mm);
    TestSuite_Add (suite, "/bson/build_child", test_bson_build_child);
    TestSuite_Add (suite, "/bson/build_child_deep", test_bson_build_child_deep);
-   TestSuite_Add (suite,
-                  "/bson/build_child_deep_no_begin_end",
-                  test_bson_build_child_deep_no_begin_end);
-   TestSuite_Add (
-      suite, "/bson/build_child_array", test_bson_build_child_array);
+   TestSuite_Add (suite, "/bson/build_child_deep_no_begin_end", test_bson_build_child_deep_no_begin_end);
+   TestSuite_Add (suite, "/bson/build_child_array", test_bson_build_child_array);
    TestSuite_Add (suite, "/bson/count", test_bson_count_keys);
    TestSuite_Add (suite, "/bson/copy", test_bson_copy);
    TestSuite_Add (suite, "/bson/copy_to", test_bson_copy_to);
-   TestSuite_Add (suite,
-                  "/bson/copy_to_excluding_noinit",
-                  test_bson_copy_to_excluding_noinit);
+   TestSuite_Add (suite, "/bson/copy_to_excluding_noinit", test_bson_copy_to_excluding_noinit);
    TestSuite_Add (suite, "/bson/initializer", test_bson_initializer);
    TestSuite_Add (suite, "/bson/concat", test_bson_concat);
    TestSuite_Add (suite, "/bson/reinit", test_bson_reinit);
@@ -2880,34 +2740,21 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/clear", test_bson_clear);
    TestSuite_Add (suite, "/bson/steal", test_bson_steal);
    TestSuite_Add (suite, "/bson/reserve_buffer", test_bson_reserve_buffer);
-   TestSuite_Add (
-      suite, "/bson/reserve_buffer/errors", test_bson_reserve_buffer_errors);
-   TestSuite_Add (
-      suite, "/bson/destroy_with_steal", test_bson_destroy_with_steal);
+   TestSuite_Add (suite, "/bson/reserve_buffer/errors", test_bson_reserve_buffer_errors);
+   TestSuite_Add (suite, "/bson/destroy_with_steal", test_bson_destroy_with_steal);
    TestSuite_Add (suite, "/bson/has_field", test_bson_has_field);
-   TestSuite_Add (
-      suite, "/bson/visit_invalid_field", test_bson_visit_invalid_field);
-   TestSuite_Add (
-      suite, "/bson/unsupported_type", test_bson_visit_unsupported_type);
-   TestSuite_Add (suite,
-                  "/bson/unsupported_type/bad_key",
-                  test_bson_visit_unsupported_type_bad_key);
-   TestSuite_Add (suite,
-                  "/bson/unsupported_type/empty_key",
-                  test_bson_visit_unsupported_type_empty_key);
+   TestSuite_Add (suite, "/bson/visit_invalid_field", test_bson_visit_invalid_field);
+   TestSuite_Add (suite, "/bson/unsupported_type", test_bson_visit_unsupported_type);
+   TestSuite_Add (suite, "/bson/unsupported_type/bad_key", test_bson_visit_unsupported_type_bad_key);
+   TestSuite_Add (suite, "/bson/unsupported_type/empty_key", test_bson_visit_unsupported_type_empty_key);
    TestSuite_Add (suite, "/bson/binary_subtype_2", test_bson_subtype_2);
    TestSuite_Add (suite, "/bson/regex_length", test_bson_regex_lengths);
    TestSuite_Add (suite, "/util/next_power_of_two", test_next_power_of_two);
    TestSuite_Add (suite, "/bson/empty_binary", test_bson_empty_binary);
    TestSuite_Add (suite, "/bson/iter/key_len", test_bson_iter_key_len);
-   TestSuite_Add (suite,
-                  "/bson/iter/init_from_data_at_offset",
-                  test_bson_iter_init_from_data_at_offset);
-   TestSuite_Add (
-      suite, "/bson/value/null_handling", test_bson_binary_null_handling);
-   TestSuite_Add (suite,
-                  "/bson/append_null_from_utf8_or_symbol",
-                  test_bson_append_null_from_utf8_or_symbol);
+   TestSuite_Add (suite, "/bson/iter/init_from_data_at_offset", test_bson_iter_init_from_data_at_offset);
+   TestSuite_Add (suite, "/bson/value/null_handling", test_bson_binary_null_handling);
+   TestSuite_Add (suite, "/bson/append_null_from_utf8_or_symbol", test_bson_append_null_from_utf8_or_symbol);
    TestSuite_Add (suite, "/bson/as_json_string", test_bson_as_json_string);
 
    TestSuite_Add (suite, "/bson/dsl/predicate", test_bson_dsl_predicate);

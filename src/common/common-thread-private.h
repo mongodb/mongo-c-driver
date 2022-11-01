@@ -41,8 +41,7 @@ BSON_BEGIN_DECLS
 #define bson_once pthread_once
 #define bson_once_t pthread_once_t
 #define bson_thread_t pthread_t
-#define BSON_THREAD_FUN(_function_name, _arg_name) \
-   void *(_function_name) (void *(_arg_name))
+#define BSON_THREAD_FUN(_function_name, _arg_name) void *(_function_name) (void *(_arg_name))
 #define BSON_THREAD_FUN_TYPE(_function_name) void *(*(_function_name)) (void *)
 #define BSON_THREAD_RETURN return NULL
 
@@ -95,8 +94,7 @@ typedef struct {
 
 #else
 #include <process.h>
-#define BSON_ONCE_FUN(n) \
-   BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c)
+#define BSON_ONCE_FUN(n) BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c)
 #define BSON_ONCE_INIT INIT_ONCE_STATIC_INIT
 #define BSON_ONCE_RETURN return true
 #define bson_mutex_destroy DeleteCriticalSection
@@ -107,10 +105,8 @@ typedef struct {
 #define bson_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
 #define bson_once_t INIT_ONCE
 #define bson_thread_t HANDLE
-#define BSON_THREAD_FUN(_function_name, _arg_name) \
-   unsigned (__stdcall _function_name) (void *(_arg_name))
-#define BSON_THREAD_FUN_TYPE(_function_name) \
-   unsigned (__stdcall * _function_name) (void *)
+#define BSON_THREAD_FUN(_function_name, _arg_name) unsigned (__stdcall _function_name) (void *(_arg_name))
+#define BSON_THREAD_FUN_TYPE(_function_name) unsigned (__stdcall * _function_name) (void *)
 #define BSON_THREAD_RETURN return 0
 #endif
 
@@ -120,9 +116,7 @@ typedef struct {
 int
 mcommon_thread_join (bson_thread_t thread);
 int
-mcommon_thread_create (bson_thread_t *thread,
-                       BSON_THREAD_FUN_TYPE (func),
-                       void *arg);
+mcommon_thread_create (bson_thread_t *thread, BSON_THREAD_FUN_TYPE (func), void *arg);
 
 #if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
 #define mcommon_mutex_is_locked COMMON_NAME (mutex_is_locked)

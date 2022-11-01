@@ -76,20 +76,16 @@ test_wire_server_versions (void)
 
    /* Bumping WIRE_VERSION_MAX must be accompanied by an update to
     * `_mongoc_wire_version_to_server_version`. */
-   ASSERT_WITH_MSG (
-      strcmp (_mongoc_wire_version_to_server_version (WIRE_VERSION_MAX),
-              "Unknown"),
-      "WIRE_VERSION_MAX must have a corresponding server version defined in "
-      "_mongoc_wire_version_to_server_version");
+   ASSERT_WITH_MSG (strcmp (_mongoc_wire_version_to_server_version (WIRE_VERSION_MAX), "Unknown"),
+                    "WIRE_VERSION_MAX must have a corresponding server version defined in "
+                    "_mongoc_wire_version_to_server_version");
 
    /* Unlikely given the minimum version should always be a value older than the
     * maximum version, but nevertheless important to assert so warning/error
     * messages remain valid. */
-   ASSERT_WITH_MSG (
-      strcmp (_mongoc_wire_version_to_server_version (WIRE_VERSION_MIN),
-              "Unknown"),
-      "WIRE_VERSION_MIN must have a corresponding server version defined in "
-      "_mongoc_wire_version_to_server_version");
+   ASSERT_WITH_MSG (strcmp (_mongoc_wire_version_to_server_version (WIRE_VERSION_MIN), "Unknown"),
+                    "WIRE_VERSION_MIN must have a corresponding server version defined in "
+                    "_mongoc_wire_version_to_server_version");
 }
 
 
@@ -99,6 +95,5 @@ test_util_install (TestSuite *suite)
    TestSuite_Add (suite, "/Util/command_name", test_command_name);
    TestSuite_Add (suite, "/Util/rand_simple", test_rand_simple);
    TestSuite_Add (suite, "/Util/lowercase_utf8", test_lowercase_utf8);
-   TestSuite_Add (
-      suite, "/Util/wire_server_versions", test_wire_server_versions);
+   TestSuite_Add (suite, "/Util/wire_server_versions", test_wire_server_versions);
 }

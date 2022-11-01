@@ -37,7 +37,7 @@ _mongoc_rand_bytes (uint8_t *buf, int num)
    struct timeval tv;
 
    bson_gettimeofday (&tv);
-   RAND_add (&tv, sizeof(tv), 0.0);
+   RAND_add (&tv, sizeof (tv), 0.0);
 #endif
 
    return RAND_bytes (buf, num);

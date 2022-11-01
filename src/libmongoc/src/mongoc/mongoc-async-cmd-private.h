@@ -97,11 +97,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd);
 
 #ifdef MONGOC_ENABLE_SSL
 int
-mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
-                            int *events,
-                            void *ctx,
-                            int32_t timeout_msec,
-                            bson_error_t *error);
+mongoc_async_cmd_tls_setup (mongoc_stream_t *stream, int *events, void *ctx, int32_t timeout_msec, bson_error_t *error);
 #endif
 
 BSON_END_DECLS

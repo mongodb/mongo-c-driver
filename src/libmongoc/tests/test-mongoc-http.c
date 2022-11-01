@@ -60,10 +60,6 @@ test_mongoc_http (void *unused)
 void
 test_http_install (TestSuite *suite)
 {
-   TestSuite_AddFull (suite,
-                      "/http",
-                      test_mongoc_http,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_offline);
+   TestSuite_AddFull (
+      suite, "/http", test_mongoc_http, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_offline);
 }

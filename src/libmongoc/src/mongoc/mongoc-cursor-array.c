@@ -35,10 +35,8 @@ _prime (mongoc_cursor_t *cursor)
    bson_destroy (&data->array);
    /* this cursor is only used with the listDatabases command. it iterates
     * over the array in the response's "databases" field. */
-   if (_mongoc_cursor_run_command (
-          cursor, &data->cmd, &cursor->opts, &data->array, false) &&
-       bson_iter_init_find (&iter, &data->array, data->field_name) &&
-       BSON_ITER_HOLDS_ARRAY (&iter) &&
+   if (_mongoc_cursor_run_command (cursor, &data->cmd, &cursor->opts, &data->array, false) &&
+       bson_iter_init_find (&iter, &data->array, data->field_name) && BSON_ITER_HOLDS_ARRAY (&iter) &&
        bson_iter_recurse (&iter, &data->iter)) {
       return IN_BATCH;
    }
@@ -86,14 +84,10 @@ _destroy (mongoc_cursor_impl_t *impl)
 
 
 mongoc_cursor_t *
-_mongoc_cursor_array_new (mongoc_client_t *client,
-                          const char *db_and_coll,
-                          const bson_t *cmd,
-                          const bson_t *opts,
-                          const char *field_name)
+_mongoc_cursor_array_new (
+   mongoc_client_t *client, const char *db_and_coll, const bson_t *cmd, const bson_t *opts, const char *field_name)
 {
-   mongoc_cursor_t *cursor = _mongoc_cursor_new_with_opts (
-      client, db_and_coll, opts, NULL, NULL, NULL);
+   mongoc_cursor_t *cursor = _mongoc_cursor_new_with_opts (client, db_and_coll, opts, NULL, NULL, NULL);
    data_array_t *data = BSON_ALIGNED_ALLOC0 (data_array_t);
    bson_copy_to (cmd, &data->cmd);
    bson_init (&data->array);

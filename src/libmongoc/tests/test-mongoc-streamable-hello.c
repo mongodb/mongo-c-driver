@@ -14,10 +14,8 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "streamable-hello"
 
-#define TV1 \
-   "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
-#define TV2 \
-   "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }"
+#define TV1 "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
+#define TV2 "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }"
 
 static mongoc_server_description_t *
 _force_scan (mongoc_client_t *client, mock_server_t *server, const char *hello)
@@ -29,8 +27,7 @@ _force_scan (mongoc_client_t *client, mock_server_t *server, const char *hello)
 
    /* Mark the topology as "stale" to trigger a scan. */
    client->topology->stale = true;
-   future =
-      future_client_select_server (client, true /* for writes */, NULL, &error);
+   future = future_client_select_server (client, true /* for writes */, NULL, &error);
    request = mock_server_receives_any_hello (server);
    mock_server_replies_simple (request, hello);
    sd = future_get_mongoc_server_description_ptr (future);
@@ -51,8 +48,7 @@ test_topology_version_update (void)
    server = mock_server_new ();
    mock_server_run (server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    /* Override minHeartbeatFrequencyMS so test does not wait for 500ms when a
     * scan is needed. */
    client->topology->min_heartbeat_frequency_msec = 1;
@@ -124,9 +120,7 @@ _single_to_double (const char *in)
 }
 
 static void
-_assert_topology_version_compare (const char *tv1,
-                                  const char *tv2,
-                                  int expected)
+_assert_topology_version_compare (const char *tv1, const char *tv2, int expected)
 {
    int actual;
    bson_t *tv1_bson;
@@ -135,12 +129,10 @@ _assert_topology_version_compare (const char *tv1,
    char *tv1_quoted = _single_to_double (tv1);
    char *tv2_quoted = _single_to_double (tv2);
 
-   tv1_bson = bson_new_from_json (
-      (const uint8_t *) tv1_quoted, strlen (tv1_quoted), &error);
+   tv1_bson = bson_new_from_json ((const uint8_t *) tv1_quoted, strlen (tv1_quoted), &error);
    ASSERT_OR_PRINT (tv1_bson, error);
 
-   tv2_bson = bson_new_from_json (
-      (const uint8_t *) tv2_quoted, strlen (tv2_quoted), &error);
+   tv2_bson = bson_new_from_json ((const uint8_t *) tv2_quoted, strlen (tv2_quoted), &error);
    ASSERT_OR_PRINT (tv2_bson, error);
 
    actual = mongoc_server_description_topology_version_cmp (tv1_bson, tv2_bson);
@@ -155,45 +147,31 @@ _assert_topology_version_compare (const char *tv1,
 static void
 test_topology_version_compare (void)
 {
-   _assert_topology_version_compare (
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }",
-      -1);
-   _assert_topology_version_compare (
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
-      0);
-   _assert_topology_version_compare (
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }",
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
-      1);
+   _assert_topology_version_compare ("{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
+                                     "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }",
+                                     -1);
+   _assert_topology_version_compare ("{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
+                                     "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
+                                     0);
+   _assert_topology_version_compare ("{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }",
+                                     "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
+                                     1);
    /* Different process IDs always compare less. */
-   _assert_topology_version_compare (
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
-      "{ 'processId': { '$oid': 'CCCCCCCCCCCCCCCCCCCCCCCC' }, 'counter': 1 }",
-      -1);
+   _assert_topology_version_compare ("{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
+                                     "{ 'processId': { '$oid': 'CCCCCCCCCCCCCCCCCCCCCCCC' }, 'counter': 1 }",
+                                     -1);
    /* Missing fields or malformed always compare less. */
    _assert_topology_version_compare (
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
-      "{ }",
-      -1);
+      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }", "{ }", -1);
    _assert_topology_version_compare (
-      "{ }",
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
-      -1);
+      "{ }", "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }", -1);
    _assert_topology_version_compare (
-      "{ 'counter': 2 }",
-      "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }",
-      -1);
+      "{ 'counter': 2 }", "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }", -1);
 }
 
 void
 test_streamable_hello_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (suite,
-                                "/streamable/topology_version/update",
-                                test_topology_version_update);
-   TestSuite_Add (suite,
-                  "/streamable/topology_version/compare",
-                  test_topology_version_compare);
+   TestSuite_AddMockServerTest (suite, "/streamable/topology_version/update", test_topology_version_update);
+   TestSuite_Add (suite, "/streamable/topology_version/compare", test_topology_version_compare);
 }

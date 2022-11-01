@@ -43,8 +43,7 @@ static void
 _mongoc_stream_tls_libressl_destroy (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (libressl);
@@ -76,8 +75,7 @@ _mongoc_stream_tls_libressl_close (mongoc_stream_t *stream)
 {
    int ret = 0;
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (libressl);
@@ -90,8 +88,7 @@ static int
 _mongoc_stream_tls_libressl_flush (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (libressl);
@@ -99,13 +96,10 @@ _mongoc_stream_tls_libressl_flush (mongoc_stream_t *stream)
 }
 
 static ssize_t
-_mongoc_stream_tls_libressl_write (mongoc_stream_t *stream,
-                                   char *buf,
-                                   size_t buf_len)
+_mongoc_stream_tls_libressl_write (mongoc_stream_t *stream, char *buf, size_t buf_len)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
    mongoc_stream_poll_t poller;
    ssize_t total_write = 0;
    ssize_t ret;
@@ -161,14 +155,10 @@ _mongoc_stream_tls_libressl_write (mongoc_stream_t *stream,
 /* This is copypasta from _mongoc_stream_tls_openssl_writev */
 #define MONGOC_STREAM_TLS_BUFFER_SIZE 4096
 static ssize_t
-_mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream,
-                                    mongoc_iovec_t *iov,
-                                    size_t iovcnt,
-                                    int32_t timeout_msec)
+_mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
    char buf[MONGOC_STREAM_TLS_BUFFER_SIZE];
    ssize_t ret = 0;
    ssize_t child_ret;
@@ -204,9 +194,7 @@ _mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream,
       iov_pos = 0;
 
       while (iov_pos < iov[i].iov_len) {
-         if (buf_head != buf_tail ||
-             ((i + 1 < iovcnt) &&
-              ((buf_end - buf_tail) > (iov[i].iov_len - iov_pos)))) {
+         if (buf_head != buf_tail || ((i + 1 < iovcnt) && ((buf_end - buf_tail) > (iov[i].iov_len - iov_pos)))) {
             /* If we have either of:
              *   - buffered bytes already
              *   - another iovec to send after this one and we don't have more
@@ -241,8 +229,7 @@ _mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream,
             /* We get here if we buffered some bytes and filled the buffer, or
              * if we didn't buffer and have to send out of the iovec */
 
-            child_ret = _mongoc_stream_tls_libressl_write (
-               stream, to_write, to_write_len);
+            child_ret = _mongoc_stream_tls_libressl_write (stream, to_write, to_write_len);
 
             if (child_ret < 0) {
                RETURN (ret);
@@ -264,8 +251,7 @@ _mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream,
    if (buf_head != buf_tail) {
       /* If we have any bytes buffered, send */
 
-      child_ret = _mongoc_stream_tls_libressl_write (
-         stream, buf_head, buf_tail - buf_head);
+      child_ret = _mongoc_stream_tls_libressl_write (stream, buf_head, buf_tail - buf_head);
 
       if (child_ret < 0) {
          RETURN (child_ret);
@@ -284,15 +270,11 @@ _mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream,
 
 /* This function is copypasta of _mongoc_stream_tls_openssl_readv */
 static ssize_t
-_mongoc_stream_tls_libressl_readv (mongoc_stream_t *stream,
-                                   mongoc_iovec_t *iov,
-                                   size_t iovcnt,
-                                   size_t min_bytes,
-                                   int32_t timeout_msec)
+_mongoc_stream_tls_libressl_readv (
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
    ssize_t ret = 0;
    ssize_t read_ret;
    size_t i;
@@ -319,9 +301,7 @@ _mongoc_stream_tls_libressl_readv (mongoc_stream_t *stream,
          poller.stream = stream;
          poller.revents = 0;
          poller.events = POLLIN;
-         read_ret = tls_read (libressl->ctx,
-                              (char *) iov[i].iov_base + iov_pos,
-                              (int) (iov[i].iov_len - iov_pos));
+         read_ret = tls_read (libressl->ctx, (char *) iov[i].iov_base + iov_pos, (int) (iov[i].iov_len - iov_pos));
 
          if (read_ret == TLS_WANT_POLLIN) {
             poller.events = POLLIN;
@@ -367,28 +347,22 @@ _mongoc_stream_tls_libressl_readv (mongoc_stream_t *stream,
 }
 
 static int
-_mongoc_stream_tls_libressl_setsockopt (mongoc_stream_t *stream,
-                                        int level,
-                                        int optname,
-                                        void *optval,
-                                        mongoc_socklen_t optlen)
+_mongoc_stream_tls_libressl_setsockopt (
+   mongoc_stream_t *stream, int level, int optname, void *optval, mongoc_socklen_t optlen)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (libressl);
-   RETURN (mongoc_stream_setsockopt (
-      tls->base_stream, level, optname, optval, optlen));
+   RETURN (mongoc_stream_setsockopt (tls->base_stream, level, optname, optval, optlen));
 }
 
 static mongoc_stream_t *
 _mongoc_stream_tls_libressl_get_base_stream (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (libressl);
@@ -400,8 +374,7 @@ static bool
 _mongoc_stream_tls_libressl_check_closed (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (libressl);
@@ -409,14 +382,10 @@ _mongoc_stream_tls_libressl_check_closed (mongoc_stream_t *stream)
 }
 
 bool
-mongoc_stream_tls_libressl_handshake (mongoc_stream_t *stream,
-                                      const char *host,
-                                      int *events,
-                                      bson_error_t *error)
+mongoc_stream_tls_libressl_handshake (mongoc_stream_t *stream, const char *host, int *events, bson_error_t *error)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_libressl_t *libressl =
-      (mongoc_stream_tls_libressl_t *) tls->ctx;
+   mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;
    int ret;
 
    ENTRY;
@@ -430,11 +399,8 @@ mongoc_stream_tls_libressl_handshake (mongoc_stream_t *stream,
       *events = POLLOUT;
    } else if (ret < 0) {
       *events = 0;
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "TLS handshake failed: %s",
-                      tls_error (libressl->ctx));
+      bson_set_error (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed: %s", tls_error (libressl->ctx));
       RETURN (false);
    } else {
       RETURN (true);
@@ -463,10 +429,7 @@ _mongoc_stream_tls_libressl_should_retry (mongoc_stream_t *stream)
 }
 
 mongoc_stream_t *
-mongoc_stream_tls_libressl_new (mongoc_stream_t *base_stream,
-                                const char *host,
-                                mongoc_ssl_opt_t *opt,
-                                int client)
+mongoc_stream_tls_libressl_new (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
 {
    mongoc_stream_tls_t *tls;
    mongoc_stream_tls_libressl_t *libressl;
@@ -477,9 +440,8 @@ mongoc_stream_tls_libressl_new (mongoc_stream_t *base_stream,
 
 
    if (opt->crl_file) {
-      MONGOC_ERROR (
-         "Setting mongoc_ssl_opt_t.crl_file has no effect when built "
-         "against libtls");
+      MONGOC_ERROR ("Setting mongoc_ssl_opt_t.crl_file has no effect when built "
+                    "against libtls");
       RETURN (false);
    }
    libressl = (mongoc_stream_tls_libressl_t *) bson_malloc0 (sizeof *libressl);
@@ -522,9 +484,7 @@ mongoc_stream_tls_libressl_new (mongoc_stream_t *base_stream,
 
       do {
          if (stream->type == MONGOC_STREAM_SOCKET) {
-            int socket = mongoc_stream_socket_get_socket (
-                            (mongoc_stream_socket_t *) stream)
-                            ->sd;
+            int socket = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *) stream)->sd;
             if (tls_configure (libressl->ctx, libressl->config) == -1) {
                MONGOC_ERROR ("%s", tls_config_error (libressl->config));
                RETURN (false);

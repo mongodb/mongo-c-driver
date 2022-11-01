@@ -109,8 +109,7 @@ static BSON_THREAD_FUN (json_test_worker_thread_run, wt_void)
       op = (bson_t *) q_get_nowait (wt->queue);
       shutdown = wt->shutdown_requested;
       while (!op && !shutdown) {
-         mongoc_cond_timedwait (
-            &wt->cond, &wt->mutex, WORKER_THREAD_WAIT_TIMEOUT_MS);
+         mongoc_cond_timedwait (&wt->cond, &wt->mutex, WORKER_THREAD_WAIT_TIMEOUT_MS);
          shutdown = wt->shutdown_requested;
          op = q_get_nowait (wt->queue);
       }
@@ -119,12 +118,7 @@ static BSON_THREAD_FUN (json_test_worker_thread_run, wt_void)
       if (op) {
          bson_t reply;
 
-         json_test_operation (wt->ctx,
-                              wt->ctx->config->scenario,
-                              op,
-                              wt->ctx->collection,
-                              NULL /* session */,
-                              &reply);
+         json_test_operation (wt->ctx, wt->ctx->config->scenario, op, wt->ctx->collection, NULL /* session */, &reply);
          bson_destroy (op);
          op = NULL;
          bson_destroy (&reply);
@@ -193,8 +187,7 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    bson_init (&ctx->lsids[1]);
    ctx->sessions[0] = NULL;
    ctx->sessions[1] = NULL;
-   ctx->has_sessions = test_framework_session_timeout_minutes () > -1 &&
-                       test_framework_skip_if_no_crypto ();
+   ctx->has_sessions = test_framework_session_timeout_minutes () > -1 && test_framework_skip_if_no_crypto ();
 
    /* transactions tests require two sessions named session0 and session1,
     * retryable writes use one explicit session or none */
@@ -203,16 +196,13 @@ json_test_ctx_init (json_test_ctx_t *ctx,
          session_name = bson_strdup_printf ("session%d", i);
          session_opts_path = bson_strdup_printf ("sessionOptions.session%d", i);
          if (bson_has_field (test, session_opts_path)) {
-            ctx->sessions[i] =
-               bson_lookup_session (test, session_opts_path, client);
+            ctx->sessions[i] = bson_lookup_session (test, session_opts_path, client);
          } else {
-            ctx->sessions[i] =
-               mongoc_client_start_session (client, NULL, &error);
+            ctx->sessions[i] = mongoc_client_start_session (client, NULL, &error);
          }
 
          ASSERT_OR_PRINT (ctx->sessions[i], error);
-         bson_concat (&ctx->lsids[i],
-                      mongoc_client_session_get_lsid (ctx->sessions[i]));
+         bson_concat (&ctx->lsids[i], mongoc_client_session_get_lsid (ctx->sessions[i]));
 
          bson_free (session_name);
          bson_free (session_opts_path);
@@ -270,8 +260,7 @@ value_to_str (const bson_value_t *value)
 {
    bson_t doc;
 
-   if (value->value_type == BSON_TYPE_DOCUMENT ||
-       value->value_type == BSON_TYPE_ARRAY) {
+   if (value->value_type == BSON_TYPE_DOCUMENT || value->value_type == BSON_TYPE_ARRAY) {
       bson_init_from_value (&doc, value);
       return bson_as_json (&doc, NULL);
    } else {
@@ -346,16 +335,13 @@ convert_bulk_write_result (const bson_t *doc, bson_t *r)
 
 /* convert from spec result in JSON test to a libmongoc result */
 static void
-convert_spec_result (const char *op_name,
-                     const bson_value_t *spec_result,
-                     bson_value_t *converted)
+convert_spec_result (const char *op_name, const bson_value_t *spec_result, bson_value_t *converted)
 {
    bson_t doc;
    bson_t r;
    bson_iter_t iter;
 
-   if (spec_result->value_type != BSON_TYPE_DOCUMENT &&
-       spec_result->value_type != BSON_TYPE_ARRAY) {
+   if (spec_result->value_type != BSON_TYPE_DOCUMENT && spec_result->value_type != BSON_TYPE_ARRAY) {
       bson_value_copy (spec_result, converted);
       return;
    }
@@ -373,13 +359,10 @@ convert_spec_result (const char *op_name,
       while (bson_iter_next (&iter)) {
          if (BSON_ITER_IS_KEY (&iter, "upsertedCount")) {
             if (bson_iter_as_int64 (&iter) != 0) {
-               BSON_APPEND_INT64 (
-                  &r, "upsertedCount", bson_iter_as_int64 (&iter));
+               BSON_APPEND_INT64 (&r, "upsertedCount", bson_iter_as_int64 (&iter));
             }
-         } else if (!BSON_ITER_IS_KEY (&iter, "insertedId") &&
-                    !BSON_ITER_IS_KEY (&iter, "insertedIds")) {
-            BSON_APPEND_VALUE (
-               &r, bson_iter_key (&iter), bson_iter_value (&iter));
+         } else if (!BSON_ITER_IS_KEY (&iter, "insertedId") && !BSON_ITER_IS_KEY (&iter, "insertedIds")) {
+            BSON_APPEND_VALUE (&r, bson_iter_key (&iter), bson_iter_value (&iter));
          }
       }
    }
@@ -435,16 +418,12 @@ get_result (const bson_t *test, const bson_t *operation, bson_value_t *value)
 
 
 static void
-check_success_expected (const bson_t *operation,
-                        bool succeeded,
-                        bool expected,
-                        const bson_error_t *error)
+check_success_expected (const bson_t *operation, bool succeeded, bool expected, const bson_error_t *error)
 {
    char *json = bson_as_json (operation, NULL);
 
    if (!succeeded && expected) {
-      test_error (
-         "Expected success, got error \"%s\":\n%s", error->message, json);
+      test_error ("Expected success, got error \"%s\":\n%s", error->message, json);
    }
    if (succeeded && !expected) {
       test_error ("Expected error, got success:\n%s", json);
@@ -497,10 +476,7 @@ check_error_code_name (const bson_t *operation, const bson_error_t *error)
    code_name = bson_lookup_utf8 (operation, "errorCodeName");
    expected_error_code = error_code_from_name (code_name);
    if (error->code != expected_error_code) {
-      test_error ("Expected error code %d : %s but got error code %d\n",
-                  expected_error_code,
-                  code_name,
-                  error->code);
+      test_error ("Expected error code %d : %s but got error code %d\n", expected_error_code, code_name, error->code);
    }
 }
 
@@ -536,8 +512,7 @@ check_error_labels_contain (const bson_t *operation, const bson_value_t *result)
    BSON_ASSERT (result);
 
    BSON_ASSERT (bson_iter_init (&operation_iter, operation));
-   BSON_ASSERT (bson_iter_find_descendant (
-      &operation_iter, "errorLabelsContain", &expected_labels));
+   BSON_ASSERT (bson_iter_find_descendant (&operation_iter, "errorLabelsContain", &expected_labels));
    BSON_ASSERT (bson_iter_recurse (&expected_labels, &expected_label));
 
    /* if the test has "errorLabelsContain" then result must be an error reply */
@@ -547,9 +522,7 @@ check_error_labels_contain (const bson_t *operation, const bson_value_t *result)
    while (bson_iter_next (&expected_label)) {
       expected_label_str = bson_iter_utf8 (&expected_label, NULL);
       if (!mongoc_error_has_label (&reply, expected_label_str)) {
-         test_error ("Expected label \"%s\" not found in %s",
-                     expected_label_str,
-                     bson_as_json (&reply, NULL));
+         test_error ("Expected label \"%s\" not found in %s", expected_label_str, bson_as_json (&reply, NULL));
       }
    }
 }
@@ -581,11 +554,9 @@ check_error_labels_omit (const bson_t *operation, const bson_value_t *result)
    bson_lookup_doc (operation, "errorLabelsOmit", &omitted_labels);
    BSON_ASSERT (bson_iter_init (&omitted_label, &omitted_labels));
    while (bson_iter_next (&omitted_label)) {
-      if (mongoc_error_has_label (&reply,
-                                  bson_iter_utf8 (&omitted_label, NULL))) {
-         test_error ("Label \"%s\" should have been omitted %s",
-                     bson_iter_utf8 (&omitted_label, NULL),
-                     value_to_str (result));
+      if (mongoc_error_has_label (&reply, bson_iter_utf8 (&omitted_label, NULL))) {
+         test_error (
+            "Label \"%s\" should have been omitted %s", bson_iter_utf8 (&omitted_label, NULL), value_to_str (result));
       }
    }
 }
@@ -621,11 +592,8 @@ check_error_labels_omit (const bson_t *operation, const bson_value_t *result)
  */
 
 void
-check_result (const bson_t *test,
-              const bson_t *operation,
-              bool succeeded,
-              const bson_value_t *result,
-              const bson_error_t *error)
+check_result (
+   const bson_t *test, const bson_t *operation, bool succeeded, const bson_value_t *result, const bson_error_t *error)
 {
    bson_t expected_doc;
    bson_value_t expected_value;
@@ -639,10 +607,8 @@ check_result (const bson_t *test,
 
    if (expected_value.value_type == BSON_TYPE_DOCUMENT) {
       bson_init_from_value (&expected_doc, &expected_value);
-      if (bson_has_field (&expected_doc, "errorCodeName") ||
-          bson_has_field (&expected_doc, "errorContains") ||
-          bson_has_field (&expected_doc, "errorLabelsContain") ||
-          bson_has_field (&expected_doc, "errorLabelsOmit")) {
+      if (bson_has_field (&expected_doc, "errorCodeName") || bson_has_field (&expected_doc, "errorContains") ||
+          bson_has_field (&expected_doc, "errorLabelsContain") || bson_has_field (&expected_doc, "errorLabelsOmit")) {
          /* Expect the operation has failed. Transactions tests specify errors
           * per-operation, with one or more details:
           *    operations:
@@ -672,10 +638,7 @@ check_result (const bson_t *test,
     *     error: true
     */
 
-   check_success_expected (operation,
-                           succeeded,
-                           !_mongoc_lookup_bool (test, "outcome.error", false),
-                           error);
+   check_success_expected (operation, succeeded, !_mongoc_lookup_bool (test, "outcome.error", false), error);
 
    BSON_ASSERT (result);
 
@@ -697,9 +660,7 @@ check_result (const bson_t *test,
 
 
 static bool
-add_request_to_bulk (mongoc_bulk_operation_t *bulk,
-                     const bson_t *request,
-                     bson_error_t *error)
+add_request_to_bulk (mongoc_bulk_operation_t *bulk, const bson_t *request, bson_error_t *error)
 {
    const char *name;
    bson_t args;
@@ -734,22 +695,19 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk,
 
       bson_lookup_doc (&args, "filter", &filter);
 
-      r = mongoc_bulk_operation_remove_many_with_opts (
-         bulk, &filter, &opts, error);
+      r = mongoc_bulk_operation_remove_many_with_opts (bulk, &filter, &opts, error);
    } else if (!strcmp (name, "deleteOne")) {
       bson_t filter;
 
       bson_lookup_doc (&args, "filter", &filter);
 
-      r = mongoc_bulk_operation_remove_one_with_opts (
-         bulk, &filter, &opts, error);
+      r = mongoc_bulk_operation_remove_one_with_opts (bulk, &filter, &opts, error);
    } else if (!strcmp (name, "insertOne")) {
       bson_t document;
 
       bson_lookup_doc (&args, "document", &document);
 
-      r =
-         mongoc_bulk_operation_insert_with_opts (bulk, &document, &opts, error);
+      r = mongoc_bulk_operation_insert_with_opts (bulk, &document, &opts, error);
    } else if (!strcmp (name, "replaceOne")) {
       bson_t filter;
       bson_t replacement;
@@ -758,12 +716,10 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk,
       bson_lookup_doc (&args, "replacement", &replacement);
 
       if (bson_has_field (&args, "upsert")) {
-         BSON_APPEND_BOOL (
-            &opts, "upsert", _mongoc_lookup_bool (&args, "upsert", false));
+         BSON_APPEND_BOOL (&opts, "upsert", _mongoc_lookup_bool (&args, "upsert", false));
       }
 
-      r = mongoc_bulk_operation_replace_one_with_opts (
-         bulk, &filter, &replacement, &opts, error);
+      r = mongoc_bulk_operation_replace_one_with_opts (bulk, &filter, &replacement, &opts, error);
    } else if (!strcmp (name, "updateMany")) {
       bson_t filter;
       bson_t update;
@@ -772,12 +728,10 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk,
       bson_lookup_doc (&args, "update", &update);
 
       if (bson_has_field (&args, "upsert")) {
-         BSON_APPEND_BOOL (
-            &opts, "upsert", _mongoc_lookup_bool (&args, "upsert", false));
+         BSON_APPEND_BOOL (&opts, "upsert", _mongoc_lookup_bool (&args, "upsert", false));
       }
 
-      r = mongoc_bulk_operation_update_many_with_opts (
-         bulk, &filter, &update, &opts, error);
+      r = mongoc_bulk_operation_update_many_with_opts (bulk, &filter, &update, &opts, error);
    } else if (!strcmp (name, "updateOne")) {
       bson_t filter;
       bson_t update;
@@ -786,12 +740,10 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk,
       bson_lookup_doc (&args, "update", &update);
 
       if (bson_has_field (&args, "upsert")) {
-         BSON_APPEND_BOOL (
-            &opts, "upsert", _mongoc_lookup_bool (&args, "upsert", false));
+         BSON_APPEND_BOOL (&opts, "upsert", _mongoc_lookup_bool (&args, "upsert", false));
       }
 
-      r = mongoc_bulk_operation_update_one_with_opts (
-         bulk, &filter, &update, &opts, error);
+      r = mongoc_bulk_operation_update_one_with_opts (bulk, &filter, &update, &opts, error);
    } else {
       test_error ("unrecognized request name %s", name);
       abort ();
@@ -804,10 +756,7 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk,
 
 
 static void
-execute_bulk_operation (mongoc_bulk_operation_t *bulk,
-                        const bson_t *test,
-                        const bson_t *operation,
-                        bson_t *reply)
+execute_bulk_operation (mongoc_bulk_operation_t *bulk, const bson_t *test, const bson_t *operation, bson_t *reply)
 {
    uint32_t server_id;
    bson_error_t error;
@@ -821,9 +770,7 @@ execute_bulk_operation (mongoc_bulk_operation_t *bulk,
 
 
 static bson_t *
-create_bulk_write_opts (const bson_t *operation,
-                        mongoc_client_session_t *session,
-                        mongoc_write_concern_t *wc)
+create_bulk_write_opts (const bson_t *operation, mongoc_client_session_t *session, mongoc_write_concern_t *wc)
 {
    bson_t *opts;
    bson_t tmp;
@@ -887,9 +834,7 @@ bulk_write (mongoc_collection_t *collection,
 }
 
 
-#define COPY_EXCEPT(...)           \
-   bson_copy_to_excluding_noinit ( \
-      &args, &opts, "session", "readPreference", __VA_ARGS__, NULL);
+#define COPY_EXCEPT(...) bson_copy_to_excluding_noinit (&args, &opts, "session", "readPreference", __VA_ARGS__, NULL);
 
 
 static bool
@@ -917,44 +862,38 @@ single_write (mongoc_collection_t *collection,
       bson_t filter;
       bson_lookup_doc (&args, "filter", &filter);
       COPY_EXCEPT ("filter");
-      r = mongoc_collection_delete_many (
-         collection, &filter, &opts, reply, &error);
+      r = mongoc_collection_delete_many (collection, &filter, &opts, reply, &error);
    } else if (!strcmp (name, "deleteOne")) {
       bson_t filter;
       bson_lookup_doc (&args, "filter", &filter);
       COPY_EXCEPT ("filter");
-      r = mongoc_collection_delete_one (
-         collection, &filter, &opts, reply, &error);
+      r = mongoc_collection_delete_one (collection, &filter, &opts, reply, &error);
    } else if (!strcmp (name, "insertOne")) {
       bson_t document;
       bson_lookup_doc (&args, "document", &document);
       COPY_EXCEPT ("document");
-      r = mongoc_collection_insert_one (
-         collection, &document, &opts, reply, &error);
+      r = mongoc_collection_insert_one (collection, &document, &opts, reply, &error);
    } else if (!strcmp (name, "replaceOne")) {
       bson_t filter;
       bson_t replacement;
       bson_lookup_doc (&args, "filter", &filter);
       bson_lookup_doc (&args, "replacement", &replacement);
       COPY_EXCEPT ("filter", "replacement");
-      r = mongoc_collection_replace_one (
-         collection, &filter, &replacement, &opts, reply, &error);
+      r = mongoc_collection_replace_one (collection, &filter, &replacement, &opts, reply, &error);
    } else if (!strcmp (name, "updateMany")) {
       bson_t filter;
       bson_t update;
       bson_lookup_doc (&args, "filter", &filter);
       bson_lookup_doc (&args, "update", &update);
       COPY_EXCEPT ("filter", "update");
-      r = mongoc_collection_update_many (
-         collection, &filter, &update, &opts, reply, &error);
+      r = mongoc_collection_update_many (collection, &filter, &update, &opts, reply, &error);
    } else if (!strcmp (name, "updateOne")) {
       bson_t filter;
       bson_t update;
       bson_lookup_doc (&args, "filter", &filter);
       bson_lookup_doc (&args, "update", &update);
       COPY_EXCEPT ("filter", "update");
-      r = mongoc_collection_update_one (
-         collection, &filter, &update, &opts, reply, &error);
+      r = mongoc_collection_update_one (collection, &filter, &update, &opts, reply, &error);
    } else {
       test_error ("unrecognized request name %s", name);
       abort ();
@@ -1028,8 +967,7 @@ create_find_and_modify_opts (const char *name,
       bson_value_destroy (&temp);
    }
 
-   if (bson_has_field (args, "returnDocument") &&
-       !strcmp ("After", bson_lookup_utf8 (args, "returnDocument"))) {
+   if (bson_has_field (args, "returnDocument") && !strcmp ("After", bson_lookup_utf8 (args, "returnDocument"))) {
       flags |= MONGOC_FIND_AND_MODIFY_RETURN_NEW;
    }
 
@@ -1073,8 +1011,7 @@ find_and_modify (mongoc_collection_t *collection,
 
    opts = create_find_and_modify_opts (name, &args, session, wc);
 
-   r = mongoc_collection_find_and_modify_with_opts (
-      collection, &filter, opts, reply, &error);
+   r = mongoc_collection_find_and_modify_with_opts (collection, &filter, opts, reply, &error);
 
 
    /* Transactions Tests have findAndModify results like:
@@ -1151,15 +1088,11 @@ insert_many (mongoc_collection_t *collection,
     *         - { _id: 2, x: 22 }
     *       options: { ordered: false }
     */
-   BSON_APPEND_BOOL (
-      &opts,
-      "ordered",
-      _mongoc_lookup_bool (&args, "options.ordered", true /* default */));
+   BSON_APPEND_BOOL (&opts, "ordered", _mongoc_lookup_bool (&args, "options.ordered", true /* default */));
 
    COPY_EXCEPT ("documents", "options");
 
-   r = mongoc_collection_insert_many (
-      collection, (const bson_t **) doc_ptrs, n, &opts, reply, &error);
+   r = mongoc_collection_insert_many (collection, (const bson_t **) doc_ptrs, n, &opts, reply, &error);
 
    /* CRUD tests may specify a write result even if an error is expected.
     * From the CRUD spec test readme:
@@ -1275,12 +1208,10 @@ count (mongoc_collection_t *collection,
       bson_lookup_doc (operation, "arguments.filter", &filter);
    }
    if (bson_has_field (operation, "arguments.skip")) {
-      BSON_APPEND_INT64 (
-         &opts, "skip", bson_lookup_int32 (operation, "arguments.skip"));
+      BSON_APPEND_INT64 (&opts, "skip", bson_lookup_int32 (operation, "arguments.skip"));
    }
    if (bson_has_field (operation, "arguments.limit")) {
-      BSON_APPEND_INT64 (
-         &opts, "limit", bson_lookup_int32 (operation, "arguments.limit"));
+      BSON_APPEND_INT64 (&opts, "limit", bson_lookup_int32 (operation, "arguments.limit"));
    }
    if (bson_has_field (operation, "arguments.collation")) {
       bson_t collation;
@@ -1291,21 +1222,12 @@ count (mongoc_collection_t *collection,
 
    name = bson_lookup_utf8 (operation, "name");
    if (!strcmp (name, "countDocuments")) {
-      r = mongoc_collection_count_documents (
-         collection, &filter, &opts, read_prefs, reply, &error);
+      r = mongoc_collection_count_documents (collection, &filter, &opts, read_prefs, reply, &error);
    } else if (!strcmp (name, "estimatedDocumentCount")) {
-      r = mongoc_collection_estimated_document_count (
-         collection, &opts, read_prefs, reply, &error);
+      r = mongoc_collection_estimated_document_count (collection, &opts, read_prefs, reply, &error);
    } else if (!strcmp (name, "count")) {
       /* deprecated old count function */
-      r = mongoc_collection_count_with_opts (collection,
-                                             MONGOC_QUERY_NONE,
-                                             &filter,
-                                             0,
-                                             0,
-                                             &opts,
-                                             read_prefs,
-                                             &error);
+      r = mongoc_collection_count_with_opts (collection, MONGOC_QUERY_NONE, &filter, 0, 0, &opts, read_prefs, &error);
       /* fake a reply for the test framework's sake */
       bson_init (reply);
    } else {
@@ -1355,8 +1277,7 @@ distinct (mongoc_collection_t *collection,
 
    r = mongoc_collection_read_command_with_opts (
       collection,
-      tmp_bson (
-         "{'distinct': '%s', 'key': '%s'}", collection->collection, field_name),
+      tmp_bson ("{'distinct': '%s', 'key': '%s'}", collection->collection, field_name),
       read_prefs,
       &opts,
       reply,
@@ -1383,9 +1304,7 @@ distinct (mongoc_collection_t *collection,
 
 
 static void
-check_cursor (mongoc_cursor_t *cursor,
-              const bson_t *test,
-              const bson_t *operation)
+check_cursor (mongoc_cursor_t *cursor, const bson_t *test, const bson_t *operation)
 {
    const bson_t *doc;
    bson_error_t error;
@@ -1460,8 +1379,7 @@ find (mongoc_collection_t *collection,
 
       bson_lookup_doc (&args, "modifiers", &modifiers);
       bson_concat (query, &modifiers);
-      r = _mongoc_cursor_translate_dollar_query_opts (
-         query, &opts, &unwrapped, &error);
+      r = _mongoc_cursor_translate_dollar_query_opts (query, &opts, &unwrapped, &error);
       ASSERT_OR_PRINT (r, error);
       bson_destroy (&unwrapped);
    }
@@ -1469,8 +1387,7 @@ find (mongoc_collection_t *collection,
    COPY_EXCEPT ("filter", "modifiers");
    append_session (session, &opts);
 
-   cursor =
-      mongoc_collection_find_with_opts (collection, &filter, &opts, read_prefs);
+   cursor = mongoc_collection_find_with_opts (collection, &filter, &opts, read_prefs);
 
    check_cursor (cursor, test, operation);
    mongoc_cursor_destroy (cursor);
@@ -1500,8 +1417,7 @@ find_one (mongoc_collection_t *collection,
 
    bson_lookup_doc (operation, "arguments.filter", &filter);
 
-   cursor =
-      mongoc_collection_find_with_opts (collection, &filter, &opts, read_prefs);
+   cursor = mongoc_collection_find_with_opts (collection, &filter, &opts, read_prefs);
 
    if (mongoc_cursor_next (cursor, &doc)) {
       value_init_from_doc (&value, doc);
@@ -1529,8 +1445,7 @@ _is_aggregate_out (const bson_t *pipeline)
 
    ASSERT (bson_iter_init (&iter, pipeline));
    while (bson_iter_next (&iter)) {
-      if (BSON_ITER_HOLDS_DOCUMENT (&iter) &&
-          bson_iter_recurse (&iter, &stage)) {
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter) && bson_iter_recurse (&iter, &stage)) {
          if (bson_iter_find (&stage, "$out")) {
             return true;
          }
@@ -1562,8 +1477,7 @@ aggregate (mongoc_collection_t *collection,
    append_session (session, &opts);
    COPY_EXCEPT ("pipeline");
 
-   cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, &pipeline, &opts, read_prefs);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, &pipeline, &opts, read_prefs);
 
    /* Driver CRUD API Spec: "$out is a special pipeline stage that causes no
     * results to be returned from the server. As such, the iterable here would
@@ -1677,8 +1591,7 @@ command (mongoc_database_t *db,
    COPY_EXCEPT ("command");
    append_session (session, &opts);
 
-   r = mongoc_database_command_with_opts (
-      db, &cmd, read_prefs, &opts, reply, &error);
+   r = mongoc_database_command_with_opts (db, &cmd, read_prefs, &opts, reply, &error);
 
    value_init_from_doc (&value, reply);
    check_result (test, operation, r, &value, &error);
@@ -1691,10 +1604,7 @@ command (mongoc_database_t *db,
 
 
 static bool
-start_transaction (mongoc_client_session_t *session,
-                   const bson_t *test,
-                   const bson_t *operation,
-                   bson_t *reply)
+start_transaction (mongoc_client_session_t *session, const bson_t *test, const bson_t *operation, bson_t *reply)
 {
    mongoc_transaction_opt_t *opts = NULL;
    bson_error_t error;
@@ -1719,10 +1629,7 @@ start_transaction (mongoc_client_session_t *session,
 
 
 static bool
-commit_transaction (mongoc_client_session_t *session,
-                    const bson_t *test,
-                    const bson_t *operation,
-                    bson_t *reply)
+commit_transaction (mongoc_client_session_t *session, const bson_t *test, const bson_t *operation, bson_t *reply)
 {
    bson_value_t value;
    bson_error_t error;
@@ -1738,10 +1645,7 @@ commit_transaction (mongoc_client_session_t *session,
 
 
 static bool
-abort_transaction (mongoc_client_session_t *session,
-                   const bson_t *test,
-                   const bson_t *operation,
-                   bson_t *reply)
+abort_transaction (mongoc_client_session_t *session, const bson_t *test, const bson_t *operation, bson_t *reply)
 {
    bson_value_t value;
    bson_error_t error;
@@ -1797,12 +1701,10 @@ list_database_names (mongoc_client_t *client,
    bson_init (&opts);
    append_session (session, &opts);
 
-   database_names =
-      mongoc_client_get_database_names_with_opts (client, &opts, &error);
+   database_names = mongoc_client_get_database_names_with_opts (client, &opts, &error);
    bson_destroy (&opts);
 
-   check_result (
-      test, operation, database_names != NULL, NULL /* result */, &error);
+   check_result (test, operation, database_names != NULL, NULL /* result */, &error);
    bson_init (reply);
    bson_strfreev (database_names);
    return true;
@@ -1834,11 +1736,8 @@ list_indexes (mongoc_collection_t *collection,
 
 
 static bool
-list_collections (mongoc_database_t *db,
-                  const bson_t *test,
-                  const bson_t *operation,
-                  mongoc_client_session_t *session,
-                  bson_t *reply)
+list_collections (
+   mongoc_database_t *db, const bson_t *test, const bson_t *operation, mongoc_client_session_t *session, bson_t *reply)
 {
    mongoc_cursor_t *cursor;
    bson_t opts;
@@ -1858,11 +1757,8 @@ list_collections (mongoc_database_t *db,
 }
 
 static bool
-list_collection_names (mongoc_database_t *db,
-                       const bson_t *test,
-                       const bson_t *operation,
-                       mongoc_client_session_t *session,
-                       bson_t *reply)
+list_collection_names (
+   mongoc_database_t *db, const bson_t *test, const bson_t *operation, mongoc_client_session_t *session, bson_t *reply)
 {
    char **collection_names;
    bson_t opts;
@@ -1871,13 +1767,11 @@ list_collection_names (mongoc_database_t *db,
    bson_init (&opts);
    append_session (session, &opts);
 
-   collection_names =
-      mongoc_database_get_collection_names_with_opts (db, &opts, &error);
+   collection_names = mongoc_database_get_collection_names_with_opts (db, &opts, &error);
 
    bson_destroy (&opts);
 
-   check_result (
-      test, operation, collection_names != NULL, NULL /* result */, &error);
+   check_result (test, operation, collection_names != NULL, NULL /* result */, &error);
    bson_init (reply);
    bson_strfreev (collection_names);
 
@@ -1920,11 +1814,8 @@ gridfs_download (mongoc_database_t *db,
 
 
 static bool
-create_collection (mongoc_database_t *db,
-                   const bson_t *test,
-                   const bson_t *operation,
-                   mongoc_client_session_t *session,
-                   bson_t *reply)
+create_collection (
+   mongoc_database_t *db, const bson_t *test, const bson_t *operation, mongoc_client_session_t *session, bson_t *reply)
 {
    bson_t args;
    bson_t opts = BSON_INITIALIZER;
@@ -1943,8 +1834,7 @@ create_collection (mongoc_database_t *db,
    collection_name = bson_lookup_utf8 (&args, "collection");
    COPY_EXCEPT ("collection");
 
-   collection =
-      mongoc_database_create_collection (db, collection_name, &opts, &error);
+   collection = mongoc_database_create_collection (db, collection_name, &opts, &error);
 
    bson_destroy (&opts);
 
@@ -1959,11 +1849,8 @@ create_collection (mongoc_database_t *db,
 
 
 static bool
-drop_collection (mongoc_database_t *db,
-                 const bson_t *test,
-                 const bson_t *operation,
-                 mongoc_client_session_t *session,
-                 bson_t *reply)
+drop_collection (
+   mongoc_database_t *db, const bson_t *test, const bson_t *operation, mongoc_client_session_t *session, bson_t *reply)
 {
    bson_t args;
    bson_t opts = BSON_INITIALIZER;
@@ -2036,8 +1923,7 @@ create_index (mongoc_database_t *db,
                               "}",
                               "]");
 
-   r = mongoc_database_write_command_with_opts (
-      db, create_indexes, &opts, NULL, &error);
+   r = mongoc_database_write_command_with_opts (db, create_indexes, &opts, NULL, &error);
 
    bson_destroy (&opts);
    bson_destroy (create_indexes);
@@ -2068,9 +1954,7 @@ collection_exists (mongoc_client_t *client, const bson_t *operation)
 
    names = mongoc_database_get_collection_names_with_opts (db, NULL, &error);
    if (!names) {
-      test_error ("expected error checking if collection '%s' exists: %s",
-                  collection_name,
-                  error.message);
+      test_error ("expected error checking if collection '%s' exists: %s", collection_name, error.message);
    }
 
    for (i = 0; names && names[i] != NULL; i++) {
@@ -2104,14 +1988,12 @@ index_exists (mongoc_client_t *client, const bson_t *operation)
    collection_name = bson_lookup_utf8 (&args, "collection");
    index_name = bson_lookup_utf8 (&args, "index");
 
-   collection =
-      mongoc_client_get_collection (client, database_name, collection_name);
+   collection = mongoc_client_get_collection (client, database_name, collection_name);
 
    indexes = mongoc_collection_find_indexes_with_opts (collection, NULL);
 
    while (mongoc_cursor_next (indexes, &doc)) {
-      if (bson_iter_init (&index, doc) && bson_iter_find (&index, "name") &&
-          BSON_ITER_HOLDS_UTF8 (&index) &&
+      if (bson_iter_init (&index, doc) && bson_iter_find (&index, "name") && BSON_ITER_HOLDS_UTF8 (&index) &&
           !strcmp (bson_iter_utf8 (&index, NULL), index_name)) {
          found = true;
       }
@@ -2232,12 +2114,11 @@ wait_for_primary_change (json_test_ctx_t *ctx, const bson_t *operation)
       }
    }
    if (!satisfied) {
-      test_error (
-         "did not see any primary change events after %dms. %d total occurred. "
-         "%d accounted for.",
-         timeout_ms,
-         (int) total,
-         (int) measured);
+      test_error ("did not see any primary change events after %dms. %d total occurred. "
+                  "%d accounted for.",
+                  timeout_ms,
+                  (int) total,
+                  (int) measured);
    }
 }
 
@@ -2259,10 +2140,7 @@ assert_event_count (json_test_ctx_t *ctx, const bson_t *operation)
       test_error ("Unknown event: %s", event_name);
    }
    if (count != total) {
-      test_error ("event count %s mismatched. Expected %d, but have %d",
-                  event_name,
-                  count,
-                  total);
+      test_error ("event count %s mismatched. Expected %d, but have %d", event_name, count, total);
    }
 }
 
@@ -2272,52 +2150,41 @@ assert_session_transaction_state (json_test_ctx_t *ctx, const bson_t *operation)
    const char *expected_state;
    const mongoc_client_session_t *session;
    mongoc_transaction_state_t state;
-   char *state_strings[] = {
-      "none", "starting", "in progress", "committed", "aborted"};
+   char *state_strings[] = {"none", "starting", "in progress", "committed", "aborted"};
 
    expected_state = bson_lookup_utf8 (operation, "arguments.state");
-   session = session_from_name (
-      ctx, bson_lookup_utf8 (operation, "arguments.session"));
+   session = session_from_name (ctx, bson_lookup_utf8 (operation, "arguments.session"));
    state = mongoc_client_session_get_transaction_state (session);
 
    if (!strcmp (expected_state, "none")) {
       if (state != MONGOC_TRANSACTION_NONE) {
-         test_error ("expected session transaction state none, but have %s",
-                     state_strings[state]);
+         test_error ("expected session transaction state none, but have %s", state_strings[state]);
       }
    } else if (!strcmp (expected_state, "starting")) {
       if (state != MONGOC_TRANSACTION_STARTING) {
-         test_error ("expected session transaction state starting, but have %s",
-                     state_strings[state]);
+         test_error ("expected session transaction state starting, but have %s", state_strings[state]);
       }
    } else if (!strcmp (expected_state, "in_progress")) {
       if (state != MONGOC_TRANSACTION_IN_PROGRESS) {
-         test_error (
-            "expected session transaction state in progress, but have %s",
-            state_strings[state]);
+         test_error ("expected session transaction state in progress, but have %s", state_strings[state]);
       }
    } else if (!strcmp (expected_state, "committed")) {
       if (state != MONGOC_TRANSACTION_COMMITTED) {
-         test_error (
-            "expected session transaction state committed, but have %s",
-            state_strings[state]);
+         test_error ("expected session transaction state committed, but have %s", state_strings[state]);
       }
    } else if (!strcmp (expected_state, "aborted")) {
       if (state != MONGOC_TRANSACTION_ABORTED) {
-         test_error ("expected session transaction state aborted, but have %s",
-                     state_strings[state]);
+         test_error ("expected session transaction state aborted, but have %s", state_strings[state]);
       }
    } else {
-      test_error ("unrecognized state %s for assertSessionTransactionState",
-                  expected_state);
+      test_error ("unrecognized state %s for assertSessionTransactionState", expected_state);
    }
 }
 
 static bool
 op_error (const bson_t *operation)
 {
-   return bson_has_field (operation, "error") &&
-          bson_lookup_bool (operation, "error");
+   return bson_has_field (operation, "error") && bson_lookup_bool (operation, "error");
 }
 
 bool
@@ -2355,8 +2222,7 @@ json_test_operation (json_test_ctx_t *ctx,
       read_prefs = bson_lookup_read_prefs (operation, "read_preference");
    } else if (bson_has_field (operation, "arguments.readPreference")) {
       /* transactions tests */
-      read_prefs =
-         bson_lookup_read_prefs (operation, "arguments.readPreference");
+      read_prefs = bson_lookup_read_prefs (operation, "arguments.readPreference");
    }
 
    if (bson_has_field (operation, "arguments.writeConcern")) {
@@ -2368,15 +2234,10 @@ json_test_operation (json_test_ctx_t *ctx,
    if (!strcmp (obj_name, "collection")) {
       if (!strcmp (op_name, "bulkWrite")) {
          res = bulk_write (c, test, operation, session, wc, reply);
-      } else if (!strcmp (op_name, "deleteOne") ||
-                 !strcmp (op_name, "deleteMany") ||
-                 !strcmp (op_name, "insertOne") ||
-                 !strcmp (op_name, "replaceOne") ||
-                 !strcmp (op_name, "updateOne") ||
-                 !strcmp (op_name, "updateMany")) {
+      } else if (!strcmp (op_name, "deleteOne") || !strcmp (op_name, "deleteMany") || !strcmp (op_name, "insertOne") ||
+                 !strcmp (op_name, "replaceOne") || !strcmp (op_name, "updateOne") || !strcmp (op_name, "updateMany")) {
          res = single_write (c, test, operation, session, wc, reply);
-      } else if (!strcmp (op_name, "findOneAndDelete") ||
-                 !strcmp (op_name, "findOneAndReplace") ||
+      } else if (!strcmp (op_name, "findOneAndDelete") || !strcmp (op_name, "findOneAndReplace") ||
                  !strcmp (op_name, "findOneAndUpdate")) {
          res = find_and_modify (c, test, operation, session, wc, reply);
       } else if (!strcmp (op_name, "insertMany")) {
@@ -2399,8 +2260,7 @@ json_test_operation (json_test_ctx_t *ctx,
          res = find_one (c, test, operation, session, read_prefs, reply);
       } else if (!strcmp (op_name, "aggregate")) {
          res = aggregate (c, test, operation, session, read_prefs, reply);
-      } else if (!strcmp (op_name, "listIndexes") ||
-                 !strcmp (op_name, "listIndexNames")) {
+      } else if (!strcmp (op_name, "listIndexes") || !strcmp (op_name, "listIndexNames")) {
          res = list_indexes (c, test, operation, session, reply);
       } else if (!strcmp (op_name, "watch")) {
          bson_t pipeline = BSON_INITIALIZER;
@@ -2454,8 +2314,7 @@ json_test_operation (json_test_ctx_t *ctx,
          test_error ("unrecognized database operation name %s", op_name);
       }
    } else if (!strncmp (obj_name, "session", 7)) {
-      mongoc_client_session_t *named_session =
-         session_from_name (ctx, obj_name);
+      mongoc_client_session_t *named_session = session_from_name (ctx, obj_name);
 
       if (!strcmp (op_name, "startTransaction")) {
          res = start_transaction (named_session, test, operation, reply);
@@ -2489,8 +2348,7 @@ json_test_operation (json_test_ctx_t *ctx,
 
          client = test_framework_client_new_from_uri (ctx->client->uri, NULL);
          test_framework_set_ssl_opts (client);
-         activate_fail_point (
-            client, session->server_id, operation, "arguments.failPoint");
+         activate_fail_point (client, session->server_id, operation, "arguments.failPoint");
 
          mongoc_client_destroy (client);
       } else if (!strcmp (op_name, "assertSessionNotDirty")) {
@@ -2558,8 +2416,7 @@ json_test_operation (json_test_ctx_t *ctx,
 
          client = test_framework_client_new_from_uri (ctx->client->uri, NULL);
          test_framework_set_ssl_opts (client);
-         activate_fail_point (
-            client, 0 /* primary */, operation, "arguments.failPoint");
+         activate_fail_point (client, 0 /* primary */, operation, "arguments.failPoint");
 
          mongoc_client_destroy (client);
       } else if (!strcmp (op_name, "wait")) {
@@ -2590,22 +2447,19 @@ json_test_operation (json_test_ctx_t *ctx,
       } else if (!strcmp (op_name, "startThread")) {
          json_test_worker_thread_t *wt;
 
-         wt = thread_from_name (ctx,
-                                bson_lookup_utf8 (operation, "arguments.name"));
+         wt = thread_from_name (ctx, bson_lookup_utf8 (operation, "arguments.name"));
          start_thread (wt);
       } else if (!strcmp (op_name, "waitForThread")) {
          json_test_worker_thread_t *wt;
 
-         wt = thread_from_name (ctx,
-                                bson_lookup_utf8 (operation, "arguments.name"));
+         wt = thread_from_name (ctx, bson_lookup_utf8 (operation, "arguments.name"));
          wait_for_thread (wt);
       } else if (!strcmp (op_name, "runOnThread")) {
          json_test_worker_thread_t *wt;
          bson_t op;
 
          bson_lookup_doc (operation, "arguments.operation", &op);
-         wt = thread_from_name (ctx,
-                                bson_lookup_utf8 (operation, "arguments.name"));
+         wt = thread_from_name (ctx, bson_lookup_utf8 (operation, "arguments.name"));
          run_on_thread (wt, &op);
       } else if (!strcmp (op_name, "assertSessionTransactionState")) {
          assert_session_transaction_state (ctx, operation);
@@ -2637,8 +2491,7 @@ json_test_operation (json_test_ctx_t *ctx,
       }
    } else if (!strcmp (obj_name, "gridfsbucket")) {
       if (!strcmp (op_name, "download")) {
-         res =
-            gridfs_download (db, test, operation, session, read_prefs, reply);
+         res = gridfs_download (db, test, operation, session, read_prefs, reply);
       } else if (!strcmp (op_name, "download_by_name")) {
          test_error ("download_by_name is part of the optional advanced API "
                      "and not implemented in libmongoc");
@@ -2659,9 +2512,7 @@ json_test_operation (json_test_ctx_t *ctx,
 
 
 static void
-one_operation (json_test_ctx_t *ctx,
-               const bson_t *test,
-               const bson_t *operation)
+one_operation (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
 {
    const char *op_name;
    mongoc_write_concern_t *wc = NULL;
@@ -2678,8 +2529,7 @@ one_operation (json_test_ctx_t *ctx,
    if (bson_has_field (operation, "arguments.writeConcern")) {
       wc = bson_lookup_write_concern (operation, "arguments.writeConcern");
    } else if (bson_has_field (operation, "collectionOptions.writeConcern")) {
-      wc = bson_lookup_write_concern (operation,
-                                      "collectionOptions.writeConcern");
+      wc = bson_lookup_write_concern (operation, "collectionOptions.writeConcern");
    }
 
    if (wc) {

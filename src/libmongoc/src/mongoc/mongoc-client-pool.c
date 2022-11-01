@@ -57,31 +57,26 @@ struct _mongoc_client_pool_t {
 
 #ifdef MONGOC_ENABLE_SSL
 void
-mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool,
-                                 const mongoc_ssl_opt_t *opts)
+mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool, const mongoc_ssl_opt_t *opts)
 {
    bson_mutex_lock (&pool->mutex);
 
-   _mongoc_ssl_opts_cleanup (&pool->ssl_opts,
-                             false /* don't free internal opts. */);
+   _mongoc_ssl_opts_cleanup (&pool->ssl_opts, false /* don't free internal opts. */);
 
    pool->ssl_opts_set = false;
 
    if (opts) {
-      _mongoc_ssl_opts_copy_to (
-         opts, &pool->ssl_opts, false /* don't overwrite internal opts. */);
+      _mongoc_ssl_opts_copy_to (opts, &pool->ssl_opts, false /* don't overwrite internal opts. */);
       pool->ssl_opts_set = true;
    }
 
-   mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner,
-                                         &pool->ssl_opts);
+   mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner, &pool->ssl_opts);
 
    bson_mutex_unlock (&pool->mutex);
 }
 
 void
-_mongoc_client_pool_set_internal_tls_opts (
-   mongoc_client_pool_t *pool, _mongoc_internal_tls_opts_t *internal)
+_mongoc_client_pool_set_internal_tls_opts (mongoc_client_pool_t *pool, _mongoc_internal_tls_opts_t *internal)
 {
    bson_mutex_lock (&pool->mutex);
    if (!pool->ssl_opts_set) {
@@ -89,8 +84,7 @@ _mongoc_client_pool_set_internal_tls_opts (
       return;
    }
    pool->ssl_opts.internal = bson_malloc (sizeof (_mongoc_internal_tls_opts_t));
-   memcpy (
-      pool->ssl_opts.internal, internal, sizeof (_mongoc_internal_tls_opts_t));
+   memcpy (pool->ssl_opts.internal, internal, sizeof (_mongoc_internal_tls_opts_t));
    bson_mutex_unlock (&pool->mutex);
 }
 #endif
@@ -161,10 +155,8 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
    b = mongoc_uri_get_options (pool->uri);
 
    if (bson_iter_init_find_case (&iter, b, MONGOC_URI_MINPOOLSIZE)) {
-      MONGOC_WARNING (
-         MONGOC_URI_MINPOOLSIZE
-         " is deprecated; its behavior does not match its name, and its actual"
-         " behavior will likely hurt performance.");
+      MONGOC_WARNING (MONGOC_URI_MINPOOLSIZE " is deprecated; its behavior does not match its name, and its actual"
+                                             " behavior will likely hurt performance.");
 
       if (BSON_ITER_HOLDS_INT32 (&iter)) {
          pool->min_pool_size = BSON_MAX (0, bson_iter_int32 (&iter));
@@ -177,8 +169,7 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
       }
    }
 
-   appname =
-      mongoc_uri_get_option_as_utf8 (pool->uri, MONGOC_URI_APPNAME, NULL);
+   appname = mongoc_uri_get_option_as_utf8 (pool->uri, MONGOC_URI_APPNAME, NULL);
    if (appname) {
       /* the appname should have already been validated */
       BSON_ASSERT (mongoc_client_pool_set_appname (pool, appname));
@@ -218,8 +209,7 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
       mongoc_client_pool_push (pool, client);
    }
 
-   while (
-      (client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
+   while ((client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       mongoc_client_destroy (client);
    }
 
@@ -262,15 +252,12 @@ _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
 {
    /* for tests */
    mongoc_client_set_stream_initiator (
-      client,
-      pool->topology->scanner->initiator,
-      pool->topology->scanner->initiator_context);
+      client, pool->topology->scanner->initiator, pool->topology->scanner->initiator_context);
 
    pool->client_initialized = true;
    client->is_pooled = true;
    client->error_api_version = pool->error_api_version;
-   _mongoc_client_set_apm_callbacks_private (
-      client, &pool->apm_callbacks, pool->apm_context);
+   _mongoc_client_set_apm_callbacks_private (client, &pool->apm_callbacks, pool->apm_context);
 
    client->api = mongoc_server_api_copy (pool->api);
 
@@ -294,11 +281,9 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 
    BSON_ASSERT (pool);
 
-   wait_queue_timeout_ms = mongoc_uri_get_option_as_int32 (
-      pool->uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1);
+   wait_queue_timeout_ms = mongoc_uri_get_option_as_int32 (pool->uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1);
    if (wait_queue_timeout_ms > 0) {
-      expire_at_ms =
-         (bson_get_monotonic_time () / 1000) + wait_queue_timeout_ms;
+      expire_at_ms = (bson_get_monotonic_time () / 1000) + wait_queue_timeout_ms;
    }
    bson_mutex_lock (&pool->mutex);
 
@@ -313,8 +298,7 @@ again:
          if (wait_queue_timeout_ms > 0) {
             now_ms = bson_get_monotonic_time () / 1000;
             if (now_ms < expire_at_ms) {
-               r = mongoc_cond_timedwait (
-                  &pool->cond, &pool->mutex, expire_at_ms - now_ms);
+               r = mongoc_cond_timedwait (&pool->cond, &pool->mutex, expire_at_ms - now_ms);
                if (mongo_cond_ret_is_timedout (r)) {
                   GOTO (done);
                }
@@ -376,8 +360,7 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)
    bson_mutex_lock (&pool->mutex);
    _mongoc_queue_push_head (&pool->queue, client);
 
-   if (pool->min_pool_size &&
-       _mongoc_queue_get_length (&pool->queue) > pool->min_pool_size) {
+   if (pool->min_pool_size && _mongoc_queue_get_length (&pool->queue) > pool->min_pool_size) {
       mongoc_client_t *old_client;
       old_client = (mongoc_client_t *) _mongoc_queue_pop_tail (&pool->queue);
       if (old_client) {
@@ -394,12 +377,9 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)
 
 /* for tests */
 void
-_mongoc_client_pool_set_stream_initiator (mongoc_client_pool_t *pool,
-                                          mongoc_stream_initiator_t si,
-                                          void *context)
+_mongoc_client_pool_set_stream_initiator (mongoc_client_pool_t *pool, mongoc_stream_initiator_t si, void *context)
 {
-   mongoc_topology_scanner_set_stream_initiator (
-      pool->topology->scanner, si, context);
+   mongoc_topology_scanner_set_stream_initiator (pool->topology->scanner, si, context);
 }
 
 /* for tests */
@@ -457,9 +437,8 @@ mongoc_client_pool_min_size (mongoc_client_pool_t *pool, uint32_t min_pool_size)
 {
    ENTRY;
 
-   MONGOC_WARNING (
-      "mongoc_client_pool_min_size is deprecated; its behavior does not match"
-      " its name, and its actual behavior will likely hurt performance.");
+   MONGOC_WARNING ("mongoc_client_pool_min_size is deprecated; its behavior does not match"
+                   " its name, and its actual behavior will likely hurt performance.");
 
    bson_mutex_lock (&pool->mutex);
    pool->min_pool_size = min_pool_size;
@@ -469,9 +448,7 @@ mongoc_client_pool_min_size (mongoc_client_pool_t *pool, uint32_t min_pool_size)
 }
 
 bool
-mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
-                                      mongoc_apm_callbacks_t *callbacks,
-                                      void *context)
+mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool, mongoc_apm_callbacks_t *callbacks, void *context)
 {
    mongoc_topology_t *const topology = BSON_ASSERT_PTR_INLINE (pool)->topology;
    mc_tpld_modification tdmod;
@@ -484,14 +461,11 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
    tdmod = mc_tpld_modify_begin (topology);
 
    if (callbacks) {
-      memcpy (&tdmod.new_td->apm_callbacks,
-              callbacks,
-              sizeof (mongoc_apm_callbacks_t));
+      memcpy (&tdmod.new_td->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
       memcpy (&pool->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
    }
 
-   mongoc_topology_set_apm_callbacks (
-      topology, tdmod.new_td, callbacks, context);
+   mongoc_topology_set_apm_callbacks (topology, tdmod.new_td, callbacks, context);
    tdmod.new_td->apm_context = context;
    pool->apm_context = context;
    pool->apm_callbacks_set = true;
@@ -504,8 +478,7 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
 bool
 mongoc_client_pool_set_error_api (mongoc_client_pool_t *pool, int32_t version)
 {
-   if (version != MONGOC_ERROR_API_VERSION_LEGACY &&
-       version != MONGOC_ERROR_API_VERSION_2) {
+   if (version != MONGOC_ERROR_API_VERSION_LEGACY && version != MONGOC_ERROR_API_VERSION_2) {
       MONGOC_ERROR ("Unsupported Error API Version: %" PRId32, version);
       return false;
    }
@@ -538,23 +511,18 @@ mongoc_client_pool_enable_auto_encryption (mongoc_client_pool_t *pool,
                                            mongoc_auto_encryption_opts_t *opts,
                                            bson_error_t *error)
 {
-   return _mongoc_cse_client_pool_enable_auto_encryption (
-      pool->topology, opts, error);
+   return _mongoc_cse_client_pool_enable_auto_encryption (pool->topology, opts, error);
 }
 
 bool
-mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool,
-                                   const mongoc_server_api_t *api,
-                                   bson_error_t *error)
+mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool, const mongoc_server_api_t *api, bson_error_t *error)
 {
    BSON_ASSERT_PARAM (pool);
    BSON_ASSERT_PARAM (api);
 
    if (pool->api) {
-      bson_set_error (error,
-                      MONGOC_ERROR_POOL,
-                      MONGOC_ERROR_POOL_API_ALREADY_SET,
-                      "Cannot set server api more than once per pool");
+      bson_set_error (
+         error, MONGOC_ERROR_POOL, MONGOC_ERROR_POOL_API_ALREADY_SET, "Cannot set server api more than once per pool");
       return false;
    }
 

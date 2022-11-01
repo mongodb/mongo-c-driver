@@ -67,8 +67,7 @@ main (int argc, char *argv[])
       goto done;
    }
 
-   r = mongoc_collection_update_one (
-      collection, selector, update, update_opts, NULL /* reply */, &error);
+   r = mongoc_collection_update_one (collection, selector, update, update_opts, NULL /* reply */, &error);
 
    if (!r) {
       fprintf (stderr, "Update failed: %s\n", error.message);
@@ -90,8 +89,7 @@ main (int argc, char *argv[])
     * blocks waiting for the secondary to catch up, if necessary, or times out
     * and fails after 2000 ms.
     */
-   cursor = mongoc_collection_find_with_opts (
-      collection, selector, find_opts, secondary);
+   cursor = mongoc_collection_find_with_opts (collection, selector, find_opts, secondary);
 
    while (mongoc_cursor_next (cursor, &doc)) {
       str = bson_as_json (doc, NULL);

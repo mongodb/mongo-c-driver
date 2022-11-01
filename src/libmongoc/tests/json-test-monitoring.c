@@ -72,10 +72,7 @@ assert_host_in_uri (const mongoc_host_list_t *host, const mongoc_uri_t *uri)
       hosts = hosts->next;
    }
 
-   fprintf (stderr,
-            "Host \"%s\" not in \"%s\"",
-            host->host_and_port,
-            mongoc_uri_get_string (uri));
+   fprintf (stderr, "Host \"%s\" not in \"%s\"", host->host_and_port, mongoc_uri_get_string (uri));
    fflush (stderr);
    abort ();
 }
@@ -84,8 +81,7 @@ assert_host_in_uri (const mongoc_host_list_t *host, const mongoc_uri_t *uri)
 static void
 started_cb (const mongoc_apm_command_started_t *event)
 {
-   json_test_ctx_t *ctx =
-      (json_test_ctx_t *) mongoc_apm_command_started_get_context (event);
+   json_test_ctx_t *ctx = (json_test_ctx_t *) mongoc_apm_command_started_get_context (event);
    bson_t *events = &ctx->events;
    char str[16];
    const char *key;
@@ -143,8 +139,7 @@ started_cb (const mongoc_apm_command_started_t *event)
 static void
 succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 {
-   json_test_ctx_t *ctx =
-      (json_test_ctx_t *) mongoc_apm_command_succeeded_get_context (event);
+   json_test_ctx_t *ctx = (json_test_ctx_t *) mongoc_apm_command_succeeded_get_context (event);
    char str[16];
    const char *key;
    bson_t *new_event;
@@ -188,8 +183,7 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 static void
 failed_cb (const mongoc_apm_command_failed_t *event)
 {
-   json_test_ctx_t *ctx =
-      (json_test_ctx_t *) mongoc_apm_command_failed_get_context (event);
+   json_test_ctx_t *ctx = (json_test_ctx_t *) mongoc_apm_command_failed_get_context (event);
    char str[16];
    const char *key;
    bson_t *new_event;
@@ -198,10 +192,7 @@ failed_cb (const mongoc_apm_command_failed_t *event)
       char *reply_json;
 
       reply_json = bson_as_canonical_extended_json (event->reply, NULL);
-      MONGOC_DEBUG ("<-- %s COMMAND FAILED: %s\nREPLY: %s\n",
-                    event->command_name,
-                    event->error->message,
-                    reply_json);
+      MONGOC_DEBUG ("<-- %s COMMAND FAILED: %s\nREPLY: %s\n", event->command_name, event->error->message, reply_json);
       bson_free (reply_json);
    }
 
@@ -252,8 +243,7 @@ server_changed_cb (const mongoc_apm_server_changed_t *event)
    if (sd->type == MONGOC_SERVER_UNKNOWN) {
       ctx->total_ServerMarkedUnknownEvent++;
    }
-   if (sd->type == MONGOC_SERVER_RS_PRIMARY &&
-       !_mongoc_host_list_compare_one (&sd->host, &ctx->primary_host)) {
+   if (sd->type == MONGOC_SERVER_RS_PRIMARY && !_mongoc_host_list_compare_one (&sd->host, &ctx->primary_host)) {
       ctx->total_PrimaryChangedEvent++;
       memcpy (&ctx->primary_host, &sd->host, sizeof (mongoc_host_list_t));
    }
@@ -317,13 +307,10 @@ apm_match_visitor_ctx_reset (apm_match_visitor_ctx_t *ctx)
 
 
 static match_action_t
-apm_match_visitor (match_ctx_t *ctx,
-                   bson_iter_t *pattern_iter,
-                   bson_iter_t *doc_iter)
+apm_match_visitor (match_ctx_t *ctx, bson_iter_t *pattern_iter, bson_iter_t *doc_iter)
 {
    const char *key = bson_iter_key (pattern_iter);
-   apm_match_visitor_ctx_t *visitor_ctx =
-      (apm_match_visitor_ctx_t *) ctx->visitor_ctx;
+   apm_match_visitor_ctx_t *visitor_ctx = (apm_match_visitor_ctx_t *) ctx->visitor_ctx;
 
 #define SHOULD_EXIST                          \
    do {                                       \
@@ -334,8 +321,7 @@ apm_match_visitor (match_ctx_t *ctx,
    } while (0)
 #define IS_COMMAND(cmd) (ends_with (ctx->path, "command") && !strcmp (key, cmd))
 
-   if (ends_with (ctx->path, "command") && !visitor_ctx->command_name &&
-       doc_iter) {
+   if (ends_with (ctx->path, "command") && !visitor_ctx->command_name && doc_iter) {
       visitor_ctx->command_name = bson_strdup (bson_iter_key (doc_iter));
    }
 
@@ -369,8 +355,7 @@ apm_match_visitor (match_ctx_t *ctx,
          visitor_ctx->cursor_id = bson_iter_as_int64 (doc_iter);
       } else if (visitor_ctx->cursor_id != bson_iter_as_int64 (doc_iter)) {
          match_err (ctx,
-                    "cursor requested in getMore (%" PRId64
-                    ") does not match previously seen (%" PRId64 ")",
+                    "cursor requested in getMore (%" PRId64 ") does not match previously seen (%" PRId64 ")",
                     bson_iter_as_int64 (doc_iter),
                     visitor_ctx->cursor_id);
          return MATCH_ACTION_ABORT;
@@ -387,20 +372,17 @@ apm_match_visitor (match_ctx_t *ctx,
        * includes an lsid with the value "session0" or "session1". Tests MUST
        * assert that the command's actual lsid matches the id of the correct
        * ClientSession named session0 or session1." */
-      if (!strcmp (session_name, "session0") &&
-          !lsids_match (&visitor_ctx->lsids[0], &lsid)) {
+      if (!strcmp (session_name, "session0") && !lsids_match (&visitor_ctx->lsids[0], &lsid)) {
          fail = true;
       }
 
-      if (!strcmp (session_name, "session1") &&
-          !lsids_match (&visitor_ctx->lsids[1], &lsid)) {
+      if (!strcmp (session_name, "session1") && !lsids_match (&visitor_ctx->lsids[1], &lsid)) {
          fail = true;
       }
 
       if (fail) {
          char *str = bson_as_json (&lsid, NULL);
-         match_err (
-            ctx, "expected %s, but used session: %s", session_name, str);
+         match_err (ctx, "expected %s, but used session: %s", session_name, str);
          bson_free (str);
          return MATCH_ACTION_ABORT;
       } else {
@@ -417,8 +399,7 @@ apm_match_visitor (match_ctx_t *ctx,
       if (!strcmp (key, "upsert") && !bson_iter_bool (pattern_iter)) {
          return MATCH_ACTION_SKIP;
       }
-   } else if (visitor_ctx->command_name &&
-              !strcmp (visitor_ctx->command_name, "findAndModify") &&
+   } else if (visitor_ctx->command_name && !strcmp (visitor_ctx->command_name, "findAndModify") &&
               !strcmp (key, "new")) {
       /* transaction tests expect "new: false" explicitly; we don't send it */
       return MATCH_ACTION_SKIP;
@@ -614,8 +595,7 @@ test_apm_matching (void)
    match_ctx.visitor_ctx = (void *) &match_visitor_ctx;
 
    BSON_ASSERT (match_bson_with_ctx (tmp_bson (e1), tmp_bson (e1), &match_ctx));
-   BSON_ASSERT (
-      !match_bson_with_ctx (tmp_bson (e2), tmp_bson (e2), &match_ctx));
+   BSON_ASSERT (!match_bson_with_ctx (tmp_bson (e2), tmp_bson (e2), &match_ctx));
    ASSERT_CONTAINS (match_ctx.errmsg, "cursor requested in getMore");
    apm_match_visitor_ctx_reset (&match_visitor_ctx);
 }

@@ -53,14 +53,10 @@
  * Performs TLS handshake dance
  */
 bool
-mongoc_stream_tls_handshake (mongoc_stream_t *stream,
-                             const char *host,
-                             int32_t timeout_msec,
-                             int *events,
-                             bson_error_t *error)
+mongoc_stream_tls_handshake (
+   mongoc_stream_t *stream, const char *host, int32_t timeout_msec, int *events, bson_error_t *error)
 {
-   mongoc_stream_tls_t *stream_tls =
-      (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
+   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
 
    BSON_ASSERT (stream_tls);
    BSON_ASSERT (stream_tls->handshake);
@@ -71,10 +67,7 @@ mongoc_stream_tls_handshake (mongoc_stream_t *stream,
 }
 
 bool
-mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
-                                   const char *host,
-                                   int32_t timeout_msec,
-                                   bson_error_t *error)
+mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, int32_t timeout_msec, bson_error_t *error)
 {
    int events;
    ssize_t ret = 0;
@@ -99,8 +92,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
    do {
       events = 0;
 
-      if (mongoc_stream_tls_handshake (
-             stream, host, timeout_msec, &events, error)) {
+      if (mongoc_stream_tls_handshake (stream, host, timeout_msec, &events, error)) {
          return true;
       }
 
@@ -112,10 +104,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
          if (expire) {
             now = bson_get_monotonic_time ();
             if ((expire - now) < 0) {
-               bson_set_error (error,
-                               MONGOC_ERROR_STREAM,
-                               MONGOC_ERROR_STREAM_SOCKET,
-                               "TLS handshake timed out.");
+               bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake timed out.");
                return false;
             } else {
                timeout_msec = (expire - now) / 1000L;
@@ -126,10 +115,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
    } while (events && ret > 0);
 
    if (error && !error->code) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "TLS handshake failed.");
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed.");
    }
    return false;
 }
@@ -140,8 +126,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
 bool
 mongoc_stream_tls_do_handshake (mongoc_stream_t *stream, int32_t timeout_msec)
 {
-   mongoc_stream_tls_t *stream_tls =
-      (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
+   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
 
    BSON_UNUSED (timeout_msec);
 
@@ -160,8 +145,7 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream, int32_t timeout_msec)
 bool
 mongoc_stream_tls_check_cert (mongoc_stream_t *stream, const char *host)
 {
-   mongoc_stream_tls_t *stream_tls =
-      (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
+   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
 
    BSON_UNUSED (host);
 
@@ -200,10 +184,7 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream, const char *host)
  */
 
 mongoc_stream_t *
-mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream,
-                                     const char *host,
-                                     mongoc_ssl_opt_t *opt,
-                                     int client)
+mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
 {
    BSON_ASSERT (base_stream);
 
@@ -225,8 +206,7 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream,
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
    return mongoc_stream_tls_libressl_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-   return mongoc_stream_tls_secure_transport_new (
-      base_stream, host, opt, client);
+   return mongoc_stream_tls_secure_transport_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    return mongoc_stream_tls_secure_channel_new (base_stream, host, opt, client);
 #else
@@ -235,9 +215,7 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream,
 }
 
 mongoc_stream_t *
-mongoc_stream_tls_new (mongoc_stream_t *base_stream,
-                       mongoc_ssl_opt_t *opt,
-                       int client)
+mongoc_stream_tls_new (mongoc_stream_t *base_stream, mongoc_ssl_opt_t *opt, int client)
 {
    return mongoc_stream_tls_new_with_hostname (base_stream, NULL, opt, client);
 }

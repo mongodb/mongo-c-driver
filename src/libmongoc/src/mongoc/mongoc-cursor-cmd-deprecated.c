@@ -31,8 +31,7 @@ _prime (mongoc_cursor_t *cursor)
 {
    data_cmd_deprecated_t *data = (data_cmd_deprecated_t *) cursor->impl.data;
    bson_destroy (&data->reply);
-   if (_mongoc_cursor_run_command (
-          cursor, &data->cmd, &cursor->opts, &data->reply, true)) {
+   if (_mongoc_cursor_run_command (cursor, &data->cmd, &cursor->opts, &data->reply, true)) {
       return IN_BATCH;
    } else {
       return DONE;
@@ -63,8 +62,7 @@ static void
 _clone (mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
 {
    data_cmd_deprecated_t *data_src = (data_cmd_deprecated_t *) src->data;
-   data_cmd_deprecated_t *data_dst =
-      BSON_ALIGNED_ALLOC0 (data_cmd_deprecated_t);
+   data_cmd_deprecated_t *data_dst = BSON_ALIGNED_ALLOC0 (data_cmd_deprecated_t);
    bson_init (&data_dst->reply);
    bson_copy_to (&data_src->cmd, &data_dst->cmd);
    dst->data = data_dst;
@@ -87,13 +85,8 @@ _mongoc_cursor_cmd_deprecated_new (mongoc_client_t *client,
                                    const bson_t *cmd,
                                    const mongoc_read_prefs_t *read_prefs)
 {
-   mongoc_cursor_t *cursor =
-      _mongoc_cursor_new_with_opts (client,
-                                    db_and_coll,
-                                    NULL,
-                                    read_prefs /* user prefs */,
-                                    NULL /* default prefs */,
-                                    NULL);
+   mongoc_cursor_t *cursor = _mongoc_cursor_new_with_opts (
+      client, db_and_coll, NULL, read_prefs /* user prefs */, NULL /* default prefs */, NULL);
    data_cmd_deprecated_t *data = BSON_ALIGNED_ALLOC0 (data_cmd_deprecated_t);
    _mongoc_cursor_check_and_copy_to (cursor, "command", cmd, &data->cmd);
    bson_init (&data->reply);

@@ -11,8 +11,7 @@ int
 main (int argc, char *argv[])
 {
    mongoc_client_t *client;
-   const char *uri_string =
-      "mongodb://127.0.0.1/?appname=create-indexes-example";
+   const char *uri_string = "mongodb://127.0.0.1/?appname=create-indexes-example";
    mongoc_uri_t *uri;
    mongoc_database_t *db;
    const char *collection_name = "test";
@@ -68,8 +67,7 @@ main (int argc, char *argv[])
                               "}",
                               "]");
 
-   r = mongoc_database_write_command_with_opts (
-      db, create_indexes, NULL /* opts */, &reply, &error);
+   r = mongoc_database_write_command_with_opts (db, create_indexes, NULL /* opts */, &reply, &error);
 
    reply_str = bson_as_json (&reply, NULL);
    printf ("%s\n", reply_str);

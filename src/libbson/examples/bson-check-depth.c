@@ -29,10 +29,7 @@ typedef struct {
 } check_depth_t;
 
 bool
-_check_depth_document (const bson_iter_t *iter,
-                       const char *key,
-                       const bson_t *v_document,
-                       void *data);
+_check_depth_document (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data);
 
 static const bson_visitor_t check_depth_funcs = {
    NULL,
@@ -46,10 +43,7 @@ static const bson_visitor_t check_depth_funcs = {
 };
 
 bool
-_check_depth_document (const bson_iter_t *iter,
-                       const char *key,
-                       const bson_t *v_document,
-                       void *data)
+_check_depth_document (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data)
 {
    check_depth_t *state = (check_depth_t *) data;
    bson_iter_t child;

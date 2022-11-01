@@ -34,63 +34,47 @@ test_mongoc_client_max_staleness (void)
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
-   client = test_framework_client_new (
-      "mongodb://a/?" MONGOC_URI_READPREFERENCE "=secondary", NULL);
+   client = test_framework_client_new ("mongodb://a/?" MONGOC_URI_READPREFERENCE "=secondary", NULL);
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
    /* -1 is the default, means "no max staleness" */
-   client = test_framework_client_new (
-      "mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS "=-1", NULL);
+   client = test_framework_client_new ("mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS "=-1", NULL);
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
    client = test_framework_client_new (
-      "mongodb://a/?" MONGOC_URI_READPREFERENCE
-      "=primary&" MONGOC_URI_MAXSTALENESSSECONDS "=-1",
-      NULL);
+      "mongodb://a/?" MONGOC_URI_READPREFERENCE "=primary&" MONGOC_URI_MAXSTALENESSSECONDS "=-1", NULL);
 
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
    /* no " MONGOC_URI_MAXSTALENESSSECONDS " with primary mode */
    capture_logs (true);
-   ASSERT (!test_framework_client_new (
-      "mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS "=120", NULL));
-   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=120",
-                        MONGOC_LOG_LEVEL_WARNING,
-                        "Invalid readPreferences");
+   ASSERT (!test_framework_client_new ("mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS "=120", NULL));
+   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=120", MONGOC_LOG_LEVEL_WARNING, "Invalid readPreferences");
 
    capture_logs (true);
    ASSERT (!test_framework_client_new (
-      "mongodb://a/?" MONGOC_URI_READPREFERENCE
-      "=primary&" MONGOC_URI_MAXSTALENESSSECONDS "=120",
-      NULL));
-   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=120",
-                        MONGOC_LOG_LEVEL_WARNING,
-                        "Invalid readPreferences");
+      "mongodb://a/?" MONGOC_URI_READPREFERENCE "=primary&" MONGOC_URI_MAXSTALENESSSECONDS "=120", NULL));
+   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=120", MONGOC_LOG_LEVEL_WARNING, "Invalid readPreferences");
    capture_logs (false);
 
    /* zero is prohibited */
    capture_logs (true);
    client = test_framework_client_new (
-      "mongodb://a/?" MONGOC_URI_READPREFERENCE
-      "=nearest&" MONGOC_URI_MAXSTALENESSSECONDS "=0",
-      NULL);
+      "mongodb://a/?" MONGOC_URI_READPREFERENCE "=nearest&" MONGOC_URI_MAXSTALENESSSECONDS "=0", NULL);
 
-   ASSERT_CAPTURED_LOG (
-      MONGOC_URI_MAXSTALENESSSECONDS "=0",
-      MONGOC_LOG_LEVEL_WARNING,
-      "Unsupported value for \"" MONGOC_URI_MAXSTALENESSSECONDS "\": \"0\"");
+   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=0",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported value for \"" MONGOC_URI_MAXSTALENESSSECONDS "\": \"0\"");
    capture_logs (false);
 
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
-   client =
-      test_framework_client_new ("mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS
-                                 "=120&" MONGOC_URI_READPREFERENCE "=secondary",
-                                 NULL);
+   client = test_framework_client_new (
+      "mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS "=120&" MONGOC_URI_READPREFERENCE "=secondary", NULL);
 
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) 120);
    mongoc_client_destroy (client);
@@ -98,20 +82,15 @@ test_mongoc_client_max_staleness (void)
    /* float is ignored */
    capture_logs (true);
    ASSERT (!test_framework_client_new (
-      "mongodb://a/?" MONGOC_URI_READPREFERENCE
-      "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=10.5",
-      NULL));
+      "mongodb://a/?" MONGOC_URI_READPREFERENCE "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=10.5", NULL));
 
-   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=10.5",
-                        MONGOC_LOG_LEVEL_WARNING,
-                        "Invalid " MONGOC_URI_MAXSTALENESSSECONDS);
+   ASSERT_CAPTURED_LOG (
+      MONGOC_URI_MAXSTALENESSSECONDS "=10.5", MONGOC_LOG_LEVEL_WARNING, "Invalid " MONGOC_URI_MAXSTALENESSSECONDS);
    capture_logs (false);
 
    /* 1 is allowed, it'll be rejected once we begin server selection */
    client = test_framework_client_new (
-      "mongodb://a/?" MONGOC_URI_READPREFERENCE
-      "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=1",
-      NULL);
+      "mongodb://a/?" MONGOC_URI_READPREFERENCE "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=1", NULL);
 
    ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 1);
    mongoc_client_destroy (client);
@@ -132,22 +111,19 @@ test_mongos_max_staleness_read_pref (void)
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    mock_server_auto_endsessions (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    /* count command with mode "secondary", no MONGOC_URI_MAXSTALENESSSECONDS. */
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_collection_set_read_prefs (collection, prefs);
-   future = future_collection_count (
-      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db',"
-                " '$readPreference': {"
-                "   'mode': 'secondary',"
-                "   'maxStalenessSeconds': {'$exists': false}}}"));
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " '$readPreference': {"
+                                                 "   'mode': 'secondary',"
+                                                 "   'maxStalenessSeconds': {'$exists': false}}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -161,15 +137,13 @@ test_mongos_max_staleness_read_pref (void)
    mongoc_collection_set_read_prefs (collection, prefs);
 
    mongoc_collection_set_read_prefs (collection, prefs);
-   future = future_collection_count (
-      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db',"
-                " '$readPreference': {"
-                "   'mode': 'secondary',"
-                "   'maxStalenessSeconds': {'$numberLong': '1'}}}"));
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " '$readPreference': {"
+                                                 "   'mode': 'secondary',"
+                                                 "   'maxStalenessSeconds': {'$numberLong': '1'}}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -183,13 +157,9 @@ test_mongos_max_staleness_read_pref (void)
    mongoc_read_prefs_set_max_staleness_seconds (prefs, MONGOC_NO_MAX_STALENESS);
    mongoc_collection_set_read_prefs (collection, prefs);
 
-   future = future_collection_count (
-      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
    request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson (
-         "{'$db': 'db', '$readPreference': {'mode': 'secondaryPreferred'}}"));
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', '$readPreference': {'mode': 'secondaryPreferred'}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -202,15 +172,13 @@ test_mongos_max_staleness_read_pref (void)
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 1);
    mongoc_collection_set_read_prefs (collection, prefs);
 
-   future = future_collection_count (
-      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
-   request = mock_server_receives_msg (
-      server,
-      MONGOC_MSG_NONE,
-      tmp_bson ("{'$db': 'db',"
-                " '$readPreference': {"
-                "   'mode': 'secondaryPreferred',"
-                "   'maxStalenessSeconds': {'$numberLong': '1'}}}"));
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_msg (server,
+                                       MONGOC_MSG_NONE,
+                                       tmp_bson ("{'$db': 'db',"
+                                                 " '$readPreference': {"
+                                                 "   'mode': 'secondaryPreferred',"
+                                                 "   'maxStalenessSeconds': {'$numberLong': '1'}}}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -251,23 +219,19 @@ _test_last_write_date (bool pooled)
    mongoc_uri_destroy (uri);
 
    collection = get_test_collection (client, "test_last_write_date");
-   r = mongoc_collection_insert_one (
-      collection, tmp_bson ("{}"), NULL, NULL, &error);
+   r = mongoc_collection_insert_one (collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    _mongoc_usleep (1000 * 1000);
-   s0 = mongoc_topology_select (
-      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   s0 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (s0, error);
 
    _mongoc_usleep (1000 * 1000);
-   r = mongoc_collection_insert_one (
-      collection, tmp_bson ("{}"), NULL, NULL, &error);
+   r = mongoc_collection_insert_one (collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    _mongoc_usleep (1000 * 1000);
-   s1 = mongoc_topology_select (
-      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   s1 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (s1, error);
    ASSERT_CMPINT64 (s1->last_write_date_ms, !=, (int64_t) -1);
 
@@ -324,8 +288,7 @@ _test_last_write_date_absent (bool pooled)
       client = test_framework_new_default_client ();
    }
 
-   sd = mongoc_topology_select (
-      client->topology, MONGOC_SS_READ, NULL, NULL, &error);
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, NULL, &error);
    ASSERT_OR_PRINT (sd, error);
 
    /* lastWriteDate absent */
@@ -363,19 +326,15 @@ test_last_write_date_absent_pooled (void *ctx)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   install_json_test_suite (
-      suite, JSON_DIR, "max_staleness", &test_server_selection_logic_cb);
+   install_json_test_suite (suite, JSON_DIR, "max_staleness", &test_server_selection_logic_cb);
 }
 
 void
 test_client_max_staleness_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_Add (
-      suite, "/Client/max_staleness", test_mongoc_client_max_staleness);
-   TestSuite_AddMockServerTest (suite,
-                                "/Client/max_staleness/mongos",
-                                test_mongos_max_staleness_read_pref);
+   TestSuite_Add (suite, "/Client/max_staleness", test_mongoc_client_max_staleness);
+   TestSuite_AddMockServerTest (suite, "/Client/max_staleness/mongos", test_mongos_max_staleness_read_pref);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date",
                       test_last_write_date,
@@ -390,12 +349,8 @@ test_client_max_staleness_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_not_replset,
                       test_framework_skip_if_slow);
-   TestSuite_AddFull (suite,
-                      "/Client/last_write_date_absent",
-                      test_last_write_date_absent,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_replset);
+   TestSuite_AddFull (
+      suite, "/Client/last_write_date_absent", test_last_write_date_absent, NULL, NULL, test_framework_skip_if_replset);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date_absent/pooled",
                       test_last_write_date_absent_pooled,

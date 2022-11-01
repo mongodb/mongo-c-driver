@@ -28,8 +28,7 @@ map_reduce_basic (mongoc_database_t *database)
                        BCON_CODE (REDUCER),
                        "out",
                        BCON_UTF8 (out_collection_name));
-   res =
-      mongoc_database_command_simple (database, command, NULL, &reply, &error);
+   res = mongoc_database_command_simple (database, command, NULL, &reply, &error);
 
    if (!res) {
       fprintf (stderr, "MapReduce failed: %s\n", error.message);
@@ -40,10 +39,8 @@ map_reduce_basic (mongoc_database_t *database)
    print_res (&reply);
 
    /* Now we'll query outCollection to see what the results are */
-   out_collection =
-      mongoc_database_get_collection (database, out_collection_name);
-   cursor = mongoc_collection_find_with_opts (
-      out_collection, &find_query, NULL, NULL);
+   out_collection = mongoc_database_get_collection (database, out_collection_name);
+   cursor = mongoc_collection_find_with_opts (out_collection, &find_query, NULL, NULL);
    query_done = true;
 
    /* Do something with the results */

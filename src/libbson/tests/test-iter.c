@@ -395,8 +395,7 @@ static void
 test_bson_iter_empty_key (void)
 {
    /* create a bson document empty keys. */
-   bson_t *bson = BCON_NEW (
-      "", "{", "x", BCON_INT32 (1), "", "{", "y", BCON_INT32 (2), "}", "}");
+   bson_t *bson = BCON_NEW ("", "{", "x", BCON_INT32 (1), "", "{", "y", BCON_INT32 (2), "}", "}");
    bson_iter_t iter;
    bson_iter_t descendant;
 
@@ -657,8 +656,7 @@ test_bson_iter_find_descendant (void)
    BSON_ASSERT (bson_iter_int32 (&desc) == 1);
    bson_destroy (b);
 
-   b = BCON_NEW (
-      "foo", "{", "bar", "[", "{", "baz", BCON_INT32 (1), "}", "]", "}");
+   b = BCON_NEW ("foo", "{", "bar", "[", "{", "baz", BCON_INT32 (1), "}", "]", "}");
    BSON_ASSERT (bson_iter_init (&iter, b));
    BSON_ASSERT (bson_iter_find_descendant (&iter, "foo.bar.0.baz", &desc));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&desc));
@@ -730,48 +728,27 @@ test_iter_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/iter/test_mixed", test_bson_iter_mixed);
    TestSuite_Add (suite, "/bson/iter/test_overflow", test_bson_iter_overflow);
    TestSuite_Add (suite, "/bson/iter/test_timeval", test_bson_iter_timeval);
-   TestSuite_Add (
-      suite, "/bson/iter/test_trailing_null", test_bson_iter_trailing_null);
+   TestSuite_Add (suite, "/bson/iter/test_trailing_null", test_bson_iter_trailing_null);
    TestSuite_Add (suite, "/bson/iter/test_fuzz", test_bson_iter_fuzz);
    TestSuite_Add (suite, "/bson/iter/test_regex", test_bson_iter_regex);
-   TestSuite_Add (suite,
-                  "/bson/iter/test_next_after_finish",
-                  test_bson_iter_next_after_finish);
+   TestSuite_Add (suite, "/bson/iter/test_next_after_finish", test_bson_iter_next_after_finish);
    TestSuite_Add (suite, "/bson/iter/test_find_case", test_bson_iter_find_case);
-   TestSuite_Add (
-      suite, "/bson/iter/test_find_w_len", test_bson_iter_find_w_len);
-   TestSuite_Add (
-      suite, "/bson/iter/test_init_find_w_len", test_bson_iter_init_find_w_len);
-   TestSuite_Add (
-      suite, "/bson/iter/test_bson_iter_as_double", test_bson_iter_as_double);
-   TestSuite_Add (
-      suite, "/bson/iter/test_overwrite_int32", test_bson_iter_overwrite_int32);
-   TestSuite_Add (
-      suite, "/bson/iter/test_overwrite_int64", test_bson_iter_overwrite_int64);
-   TestSuite_Add (suite,
-                  "/bson/iter/test_overwrite_double",
-                  test_bson_iter_overwrite_double);
-   TestSuite_Add (
-      suite, "/bson/iter/test_overwrite_bool", test_bson_iter_overwrite_bool);
-   TestSuite_Add (
-      suite, "/bson/iter/test_overwrite_oid", test_bson_iter_overwrite_oid);
-   TestSuite_Add (suite,
-                  "/bson/iter/test_overwrite_timestamp",
-                  test_bson_iter_overwrite_timestamp);
-   TestSuite_Add (suite,
-                  "/bson/iter/test_overwrite_date_time",
-                  test_bson_iter_overwrite_date_time);
-   TestSuite_Add (suite,
-                  "/bson/iter/test_bson_iter_overwrite_decimal128",
-                  test_bson_iter_overwrite_decimal128);
+   TestSuite_Add (suite, "/bson/iter/test_find_w_len", test_bson_iter_find_w_len);
+   TestSuite_Add (suite, "/bson/iter/test_init_find_w_len", test_bson_iter_init_find_w_len);
+   TestSuite_Add (suite, "/bson/iter/test_bson_iter_as_double", test_bson_iter_as_double);
+   TestSuite_Add (suite, "/bson/iter/test_overwrite_int32", test_bson_iter_overwrite_int32);
+   TestSuite_Add (suite, "/bson/iter/test_overwrite_int64", test_bson_iter_overwrite_int64);
+   TestSuite_Add (suite, "/bson/iter/test_overwrite_double", test_bson_iter_overwrite_double);
+   TestSuite_Add (suite, "/bson/iter/test_overwrite_bool", test_bson_iter_overwrite_bool);
+   TestSuite_Add (suite, "/bson/iter/test_overwrite_oid", test_bson_iter_overwrite_oid);
+   TestSuite_Add (suite, "/bson/iter/test_overwrite_timestamp", test_bson_iter_overwrite_timestamp);
+   TestSuite_Add (suite, "/bson/iter/test_overwrite_date_time", test_bson_iter_overwrite_date_time);
+   TestSuite_Add (suite, "/bson/iter/test_bson_iter_overwrite_decimal128", test_bson_iter_overwrite_decimal128);
    TestSuite_Add (suite, "/bson/iter/recurse", test_bson_iter_recurse);
-   TestSuite_Add (
-      suite, "/bson/iter/init_find_case", test_bson_iter_init_find_case);
-   TestSuite_Add (
-      suite, "/bson/iter/find_descendant", test_bson_iter_find_descendant);
+   TestSuite_Add (suite, "/bson/iter/init_find_case", test_bson_iter_init_find_case);
+   TestSuite_Add (suite, "/bson/iter/find_descendant", test_bson_iter_find_descendant);
    TestSuite_Add (suite, "/bson/iter/as_bool", test_bson_iter_as_bool);
-   TestSuite_Add (
-      suite, "/bson/iter/binary_deprecated", test_bson_iter_binary_deprecated);
+   TestSuite_Add (suite, "/bson/iter/binary_deprecated", test_bson_iter_binary_deprecated);
    TestSuite_Add (suite, "/bson/iter/from_data", test_bson_iter_from_data);
    TestSuite_Add (suite, "/bson/iter/empty_key", test_bson_iter_empty_key);
 }

@@ -52,8 +52,7 @@ kms_response_parser_wants_bytes (kms_response_parser_t *parser, int32_t max)
       return max;
    case PARSING_BODY:
       KMS_ASSERT (parser->content_length != -1);
-      return parser->content_length -
-             ((int) parser->raw_response->len - parser->start);
+      return parser->content_length - ((int) parser->raw_response->len - parser->start);
    }
    return -1;
 }
@@ -192,8 +191,7 @@ _parse_line (kms_response_parser_t *parser, int end)
       kms_kv_list_add (response->headers, key, val);
 
       /* if we have *not* read the Content-Length yet, check. */
-      if (parser->content_length == -1 &&
-          strcmp (key->str, "Content-Length") == 0) {
+      if (parser->content_length == -1 && strcmp (key->str, "Content-Length") == 0) {
          if (!_parse_int (val->str, &parser->content_length)) {
             KMS_ERROR (parser, "Could not parse Content-Length header.");
             kms_request_str_destroy (key);
@@ -209,9 +207,7 @@ _parse_line (kms_response_parser_t *parser, int end)
 }
 
 bool
-kms_response_parser_feed (kms_response_parser_t *parser,
-                          uint8_t *buf,
-                          uint32_t len)
+kms_response_parser_feed (kms_response_parser_t *parser, uint8_t *buf, uint32_t len)
 {
    kms_request_str_t *raw = parser->raw_response;
    int curr, body_read;
@@ -239,16 +235,14 @@ kms_response_parser_feed (kms_response_parser_t *parser,
       case PARSING_BODY:
          body_read = (int) raw->len - parser->start;
 
-         if (parser->content_length == -1 ||
-             body_read > parser->content_length) {
+         if (parser->content_length == -1 || body_read > parser->content_length) {
             KMS_ERROR (parser, "Unexpected: exceeded content length");
             return false;
          }
 
          /* check if we have the entire body. */
          if (body_read == parser->content_length) {
-            parser->response->body = kms_request_str_new_from_chars (
-               raw->str + parser->start, parser->content_length);
+            parser->response->body = kms_request_str_new_from_chars (raw->str + parser->start, parser->content_length);
             parser->state = PARSING_DONE;
          }
 

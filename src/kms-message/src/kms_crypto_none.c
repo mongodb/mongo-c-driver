@@ -30,22 +30,15 @@ kms_crypto_cleanup ()
 }
 
 bool
-kms_sha256 (void *unused_ctx,
-            const char *input,
-            size_t len,
-            unsigned char *hash_out)
+kms_sha256 (void *unused_ctx, const char *input, size_t len, unsigned char *hash_out)
 {
    /* only gets called if hooks were mistakenly not set */
    return false;
 }
 
 bool
-kms_sha256_hmac (void *unused_ctx,
-                 const char *key_input,
-                 size_t key_len,
-                 const char *input,
-                 size_t len,
-                 unsigned char *hash_out)
+kms_sha256_hmac (
+   void *unused_ctx, const char *key_input, size_t key_len, const char *input, size_t len, unsigned char *hash_out)
 {
    /* only gets called if hooks were mistakenly not set */
    return false;

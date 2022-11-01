@@ -32,14 +32,12 @@ kms_caller_identity_request_new (const kms_request_opt_t *opt)
       goto done;
    }
 
-   if (!(kms_request_add_header_field (
-          request, "Content-Type", "application/x-www-form-urlencoded"))) {
+   if (!(kms_request_add_header_field (request, "Content-Type", "application/x-www-form-urlencoded"))) {
       goto done;
    }
 
    payload = kms_request_str_new ();
-   kms_request_str_appendf (payload,
-                            "Action=GetCallerIdentity&Version=2011-06-15");
+   kms_request_str_appendf (payload, "Action=GetCallerIdentity&Version=2011-06-15");
    kms_request_append_payload (request, payload->str, payload->len);
 
 done:

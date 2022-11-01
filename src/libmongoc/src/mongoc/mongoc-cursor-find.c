@@ -50,12 +50,10 @@ _prime (mongoc_cursor_t *cursor)
       wire_version > WIRE_VERSION_5_0 ||
       /* Fallback to legacy OP_QUERY wire protocol messages if exhaust cursor
          requested with server version 3.6 or newer. */
-      (wire_version >= WIRE_VERSION_FIND_CMD &&
-       !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST))) {
+      (wire_version >= WIRE_VERSION_FIND_CMD && !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST))) {
       _mongoc_cursor_impl_find_cmd_init (cursor, &data->filter /* stolen */);
    } else {
-      _mongoc_cursor_impl_find_opquery_init (cursor,
-                                             &data->filter /* stolen */);
+      _mongoc_cursor_impl_find_opquery_init (cursor, &data->filter /* stolen */);
    }
    /* destroy this impl data since impl functions have been replaced. */
    bson_free (data);
@@ -94,8 +92,7 @@ _mongoc_cursor_find_new (mongoc_client_t *client,
 {
    mongoc_cursor_t *cursor;
    data_find_t *data = BSON_ALIGNED_ALLOC0 (data_find_t);
-   cursor = _mongoc_cursor_new_with_opts (
-      client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
+   cursor = _mongoc_cursor_new_with_opts (client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
    _mongoc_cursor_check_and_copy_to (cursor, "filter", filter, &data->filter);
    cursor->impl.prime = _prime;
    cursor->impl.clone = _clone;

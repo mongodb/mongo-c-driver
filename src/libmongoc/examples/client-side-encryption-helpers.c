@@ -37,8 +37,7 @@ print_one_document (mongoc_collection_t *coll, bson_error_t *error)
    char *as_string = NULL;
 
    filter = bson_new ();
-   cursor = mongoc_collection_find_with_opts (
-      coll, filter, NULL /* opts  */, NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (coll, filter, NULL /* opts  */, NULL /* read prefs */);
    if (!mongoc_cursor_next (cursor, &found)) {
       fprintf (stderr, "error: did not find inserted document\n");
       goto fail;

@@ -42,10 +42,8 @@ _assert_options_match (const bson_t *test, mongoc_uri_t *uri)
    while (bson_iter_next (&test_opts_iter)) {
       opt_name = bson_iter_key (&test_opts_iter);
       opt_name_canon = mongoc_uri_canonicalize_option (opt_name);
-      opts_or_creds = !bson_strcasecmp (opt_name, "authSource") ? creds_from_uri
-                                                                : opts_from_uri;
-      if (!bson_iter_init_find_case (
-             &uri_opts_iter, opts_or_creds, opt_name_canon)) {
+      opts_or_creds = !bson_strcasecmp (opt_name, "authSource") ? creds_from_uri : opts_from_uri;
+      if (!bson_iter_init_find_case (&uri_opts_iter, opts_or_creds, opt_name_canon)) {
          fprintf (stderr,
                   "URI options incorrectly set from TXT record: "
                   "no option named \"%s\"\n"
@@ -98,8 +96,7 @@ topology_changed (const mongoc_apm_topology_changed_t *event)
    _mongoc_host_list_destroy_all (ctx->hosts);
    ctx->hosts = NULL;
    for (i = 0; i < n; i++) {
-      ctx->hosts = _mongoc_host_list_push (
-         sds[i]->host.host, sds[i]->host.port, AF_UNSPEC, ctx->hosts);
+      ctx->hosts = _mongoc_host_list_push (sds[i]->host.host, sds[i]->host.port, AF_UNSPEC, ctx->hosts);
    }
    bson_mutex_unlock (&ctx->mutex);
 
@@ -191,10 +188,9 @@ typedef struct {
    const char *reason;
 } skipped_dns_test_t;
 
-skipped_dns_test_t SKIPPED_DNS_TESTS[] = {
-   {"mongodb+srv://test5.test.build.10gen.cc/?authSource=otherDB",
-    "C driver requires username present if any auth fields are present"},
-   {0}};
+skipped_dns_test_t SKIPPED_DNS_TESTS[] = {{"mongodb+srv://test5.test.build.10gen.cc/?authSource=otherDB",
+                                           "C driver requires username present if any auth fields are present"},
+                                          {0}};
 
 static bool
 is_test_skipped (const char *uri_str)
@@ -203,8 +199,7 @@ is_test_skipped (const char *uri_str)
 
    for (skip = SKIPPED_DNS_TESTS; skip->uri_str != NULL; skip++) {
       if (!strcmp (skip->uri_str, uri_str)) {
-         MONGOC_DEBUG (
-            "Skipping test of URI: %s Reason: %s", skip->uri_str, skip->reason);
+         MONGOC_DEBUG ("Skipping test of URI: %s Reason: %s", skip->uri_str, skip->reason);
          return true;
       }
    }
@@ -283,9 +278,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       /* before we set SSL on so that we can connect to the test replica set,
        * assert that the URI has SSL on by default, and SSL off if "ssl=false"
        * is in the URI string */
-      BSON_ASSERT (
-         mongoc_uri_get_tls (_mongoc_client_pool_get_topology (pool)->uri) ==
-         expect_ssl);
+      BSON_ASSERT (mongoc_uri_get_tls (_mongoc_client_pool_get_topology (pool)->uri) == expect_ssl);
 #ifdef MONGOC_ENABLE_SSL
       mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
 #else
@@ -324,13 +317,9 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       if (n_hosts && !expect_error) {
          WAIT_UNTIL (_host_list_matches (test, &ctx));
       } else {
-         r = mongoc_client_command_simple (
-            client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
          BSON_ASSERT (!r);
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_SERVER_SELECTION,
-                                MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                                "");
+         ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "");
       }
    } else if (NULL == mongoc_uri_get_username (uri)) {
       /* Skip single-threaded tests containing auth credentials. Monitoring
@@ -338,18 +327,13 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
        * not correspond to the test users. TODO (CDRIVER-4046): unskip these
        * tests. */
       if (n_hosts && !expect_error) {
-         r = mongoc_client_command_simple (
-            client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
          ASSERT_OR_PRINT (r, error);
          WAIT_UNTIL (_host_list_matches (test, &ctx));
       } else {
-         r = mongoc_client_command_simple (
-            client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
          BSON_ASSERT (!r);
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_SERVER_SELECTION,
-                                MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                                "");
+         ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "");
       }
    }
 
@@ -360,16 +344,12 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    _assert_options_match (test, client->topology->uri);
 
    /* the client has a copy of the topology's URI, assert they're the same */
-   ASSERT (bson_equal (mongoc_uri_get_options (client->uri),
-                       mongoc_uri_get_options (client->topology->uri)));
-   ASSERT (bson_equal (mongoc_uri_get_credentials (client->uri),
-                       mongoc_uri_get_credentials (client->topology->uri)));
+   ASSERT (bson_equal (mongoc_uri_get_options (client->uri), mongoc_uri_get_options (client->topology->uri)));
+   ASSERT (bson_equal (mongoc_uri_get_credentials (client->uri), mongoc_uri_get_credentials (client->topology->uri)));
    if (!mongoc_uri_get_hosts (client->uri)) {
       ASSERT (!mongoc_uri_get_hosts (client->topology->uri));
    } else {
-      _mongoc_host_list_compare_one (
-         mongoc_uri_get_hosts (client->uri),
-         mongoc_uri_get_hosts (client->topology->uri));
+      _mongoc_host_list_compare_one (mongoc_uri_get_hosts (client->uri), mongoc_uri_get_hosts (client->topology->uri));
    }
 
    if (pooled) {
@@ -422,31 +402,28 @@ test_dns_check_srv_polling (void)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   install_json_test_suite_with_check (
-      suite,
-      JSON_DIR,
-      "initial_dns_seedlist_discovery/replica-set",
-      test_dns,
-      test_dns_check_replset,
-      test_framework_skip_if_no_crypto);
+   install_json_test_suite_with_check (suite,
+                                       JSON_DIR,
+                                       "initial_dns_seedlist_discovery/replica-set",
+                                       test_dns,
+                                       test_dns_check_replset,
+                                       test_framework_skip_if_no_crypto);
 
-   install_json_test_suite_with_check (
-      suite,
-      JSON_DIR,
-      "initial_dns_seedlist_discovery/load-balanced",
-      test_dns,
-      test_dns_check_loadbalanced,
-      test_framework_skip_if_no_crypto);
+   install_json_test_suite_with_check (suite,
+                                       JSON_DIR,
+                                       "initial_dns_seedlist_discovery/load-balanced",
+                                       test_dns,
+                                       test_dns_check_loadbalanced,
+                                       test_framework_skip_if_no_crypto);
 
-   install_json_test_suite_with_check (
-      suite,
-      JSON_DIR,
-      "initial_dns_seedlist_discovery/sharded",
-      test_dns,
-      /* Topology of load-balancer tests satisfy topology requirements of
-       * sharded tests, even though a load balancer is not required. */
-      test_dns_check_loadbalanced,
-      test_framework_skip_if_no_crypto);
+   install_json_test_suite_with_check (suite,
+                                       JSON_DIR,
+                                       "initial_dns_seedlist_discovery/sharded",
+                                       test_dns,
+                                       /* Topology of load-balancer tests satisfy topology requirements of
+                                        * sharded tests, even though a load balancer is not required. */
+                                       test_dns_check_loadbalanced,
+                                       test_framework_skip_if_no_crypto);
 }
 
 extern bool
@@ -505,8 +482,7 @@ dump_topology_description (const mongoc_topology_description_t *td)
 }
 
 static void
-check_topology_description (mongoc_topology_description_t *td,
-                            mongoc_host_list_t *hosts)
+check_topology_description (mongoc_topology_description_t *td, mongoc_host_list_t *hosts)
 {
    int nhosts = 0;
    mongoc_host_list_t *host;
@@ -519,13 +495,11 @@ check_topology_description (mongoc_topology_description_t *td,
       /* Check that "host" is already in the topology description by upserting
        * it, and ensuring that the number of servers remains constant. */
       server_count = servers->items_len;
-      BSON_ASSERT (mongoc_topology_description_add_server (
-         td, host->host_and_port, NULL));
+      BSON_ASSERT (mongoc_topology_description_add_server (td, host->host_and_port, NULL));
       if (server_count != servers->items_len) {
          dump_topology_description (td);
          dump_hosts (hosts);
-         test_error ("topology description did not have host: %s",
-                     host->host_and_port);
+         test_error ("topology description did not have host: %s", host->host_and_port);
       }
    }
 
@@ -563,8 +537,7 @@ test_srv_polling_mocked (void *unused)
 
    /* Add an extra host. */
    hosts = MAKE_HOSTS ("x.test.com", "a.test.com", "y.test.com", "b.test.com");
-   expected =
-      MAKE_HOSTS ("x.test.com", "a.test.com", "y.test.com", "b.test.com");
+   expected = MAKE_HOSTS ("x.test.com", "a.test.com", "y.test.com", "b.test.com");
    ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, hosts, &error);
    ASSERT_OR_PRINT (ret, error);
    check_topology_description (&td, expected);
@@ -598,10 +571,8 @@ test_srv_polling_mocked (void *unused)
    expected = MAKE_HOSTS ("x.test.com", "y.test.com");
    ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, NULL, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                          "SRV response did not contain any valid hosts");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "SRV response did not contain any valid hosts");
    check_topology_description (&td, expected);
    _mongoc_host_list_destroy_all (expected);
    ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_ERROR, "Invalid host");
@@ -612,10 +583,8 @@ test_srv_polling_mocked (void *unused)
    expected = MAKE_HOSTS ("x.test.com", "y.test.com");
    ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, NULL, &error);
    BSON_ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                          "SRV response did not contain any valid hosts");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "SRV response did not contain any valid hosts");
    check_topology_description (&td, expected);
    _mongoc_host_list_destroy_all (expected);
    _mongoc_host_list_destroy_all (hosts);
@@ -640,11 +609,7 @@ test_small_initial_buffer (void *unused)
 
    memset (&rr_data, 0, sizeof (rr_data));
    ASSERT_OR_PRINT (
-      _mongoc_client_get_rr ("_mongodb._tcp.test1.test.build.10gen.cc",
-                             rr_type,
-                             &rr_data,
-                             small_buffer_size,
-                             &error),
+      _mongoc_client_get_rr ("_mongodb._tcp.test1.test.build.10gen.cc", rr_type, &rr_data, small_buffer_size, &error),
       error);
    ASSERT_CMPINT (rr_data.count, ==, 2);
    bson_free (rr_data.txt_record_opts);
@@ -674,8 +639,7 @@ _prose_test_ping (mongoc_client_t *client)
    bson_error_t error;
    bson_t *cmd = BCON_NEW ("ping", BCON_INT32 (1));
 
-   if (!mongoc_client_command_simple (
-          client, "admin", cmd, NULL, NULL, &error)) {
+   if (!mongoc_client_command_simple (client, "admin", cmd, NULL, NULL, &error)) {
       test_error ("ping failed: %s", error.message);
    }
 
@@ -686,8 +650,7 @@ _prose_test_ping (mongoc_client_t *client)
 #define RESCAN_INTERVAL_MS 500
 
 static void *
-_prose_test_init_resource_single (const mongoc_uri_t *uri,
-                                  _mongoc_rr_resolver_fn fn)
+_prose_test_init_resource_single (const mongoc_uri_t *uri, _mongoc_rr_resolver_fn fn)
 {
    mongoc_client_t *client;
    mongoc_topology_t *topology;
@@ -699,8 +662,7 @@ _prose_test_init_resource_single (const mongoc_uri_t *uri,
    topology = client->topology;
 
    _mongoc_topology_set_rr_resolver (topology, fn);
-   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
-                                                        RESCAN_INTERVAL_MS);
+   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, RESCAN_INTERVAL_MS);
 
 #if defined(MONGOC_ENABLE_SSL)
    {
@@ -714,8 +676,7 @@ _prose_test_init_resource_single (const mongoc_uri_t *uri,
 }
 
 static void *
-_prose_test_init_resource_pooled (const mongoc_uri_t *uri,
-                                  _mongoc_rr_resolver_fn fn)
+_prose_test_init_resource_pooled (const mongoc_uri_t *uri, _mongoc_rr_resolver_fn fn)
 {
    mongoc_client_pool_t *pool;
    mongoc_topology_t *topology;
@@ -727,8 +688,7 @@ _prose_test_init_resource_pooled (const mongoc_uri_t *uri,
    topology = _mongoc_client_pool_get_topology (pool);
 
    _mongoc_topology_set_rr_resolver (topology, fn);
-   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
-                                                        RESCAN_INTERVAL_MS);
+   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology, RESCAN_INTERVAL_MS);
 
 #if defined(MONGOC_ENABLE_SSL)
    {
@@ -795,8 +755,7 @@ _prose_test_update_srv_single (void *resource)
    _mongoc_usleep (2000 * RESCAN_INTERVAL_MS);
 
    /* Avoid ping given `loadBalanced=true`; see prose test 9. */
-   if (!mongoc_uri_get_option_as_bool (
-          client->uri, MONGOC_URI_LOADBALANCED, false)) {
+   if (!mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_LOADBALANCED, false)) {
       _prose_test_ping (client);
    }
 }
@@ -817,19 +776,17 @@ typedef struct {
    void (*update_srv) (void *);
 } _prose_test_fns_t;
 
-static const _prose_test_fns_t _prose_test_single_fns = {
-   _prose_test_init_resource_single,
-   _prose_test_free_resource_single,
-   _prose_test_get_client_single,
-   _prose_test_release_client_single,
-   _prose_test_update_srv_single};
+static const _prose_test_fns_t _prose_test_single_fns = {_prose_test_init_resource_single,
+                                                         _prose_test_free_resource_single,
+                                                         _prose_test_get_client_single,
+                                                         _prose_test_release_client_single,
+                                                         _prose_test_update_srv_single};
 
-static const _prose_test_fns_t _prose_test_pooled_fns = {
-   _prose_test_init_resource_pooled,
-   _prose_test_free_resource_pooled,
-   _prose_test_get_client_pooled,
-   _prose_test_release_client_pooled,
-   _prose_test_update_srv_pooled};
+static const _prose_test_fns_t _prose_test_pooled_fns = {_prose_test_init_resource_pooled,
+                                                         _prose_test_free_resource_pooled,
+                                                         _prose_test_get_client_pooled,
+                                                         _prose_test_release_client_pooled,
+                                                         _prose_test_update_srv_pooled};
 
 static void
 _prose_test_9 (const _prose_test_fns_t *fns)
@@ -839,12 +796,10 @@ _prose_test_9 (const _prose_test_fns_t *fns)
    BSON_ASSERT_PARAM (fns);
 
    {
-      mongoc_uri_t *const uri =
-         mongoc_uri_new ("mongodb+srv://test3.test.build.10gen.cc");
+      mongoc_uri_t *const uri = mongoc_uri_new ("mongodb+srv://test3.test.build.10gen.cc");
 
       mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
-      mongoc_uri_set_option_as_int32 (
-         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
 
       resource = fns->init_resource (uri, _mock_rr_resolver_prose_test_9);
 
@@ -852,8 +807,7 @@ _prose_test_9 (const _prose_test_fns_t *fns)
    }
 
    {
-      mongoc_host_list_t *const expected =
-         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
+      mongoc_host_list_t *const expected = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
       mongoc_client_t *const client = fns->get_client (resource);
 
       {
@@ -869,8 +823,7 @@ _prose_test_9 (const _prose_test_fns_t *fns)
    fns->update_srv (resource);
 
    {
-      mongoc_host_list_t *const expected =
-         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
+      mongoc_host_list_t *const expected = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
       mongoc_client_t *const client = fns->get_client (resource);
 
       {
@@ -937,12 +890,10 @@ _prose_test_10 (const _prose_test_fns_t *fns)
    BSON_ASSERT_PARAM (fns);
 
    {
-      mongoc_uri_t *const uri =
-         mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+      mongoc_uri_t *const uri = mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
 
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0);
-      mongoc_uri_set_option_as_int32 (
-         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
 
       resource = fns->init_resource (uri, _mock_rr_resolver_prose_test_10);
 
@@ -951,8 +902,7 @@ _prose_test_10 (const _prose_test_fns_t *fns)
 
    {
       mongoc_host_list_t *const expected =
-         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
-                     "localhost.test.build.10gen.cc:27018");
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017", "localhost.test.build.10gen.cc:27018");
       mongoc_client_t *const client = fns->get_client (resource);
 
       {
@@ -968,10 +918,9 @@ _prose_test_10 (const _prose_test_fns_t *fns)
    fns->update_srv (resource);
 
    {
-      mongoc_host_list_t *const expected =
-         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
-                     "localhost.test.build.10gen.cc:27019",
-                     "localhost.test.build.10gen.cc:27020");
+      mongoc_host_list_t *const expected = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                                                       "localhost.test.build.10gen.cc:27019",
+                                                       "localhost.test.build.10gen.cc:27020");
       mongoc_client_t *const client = fns->get_client (resource);
 
       {
@@ -1017,8 +966,7 @@ _mock_rr_resolver_prose_test_11 (const char *service,
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
-      rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
-                                   "localhost.test.build.10gen.cc:27020");
+      rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019", "localhost.test.build.10gen.cc:27020");
       rr_data->count = _mongoc_host_list_length (rr_data->hosts);
       rr_data->min_ttl = 0u;
       rr_data->txt_record_opts = NULL;
@@ -1037,12 +985,10 @@ _prose_test_11 (const _prose_test_fns_t *fns)
    BSON_ASSERT_PARAM (fns);
 
    {
-      mongoc_uri_t *const uri =
-         mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+      mongoc_uri_t *const uri = mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
 
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 2);
-      mongoc_uri_set_option_as_int32 (
-         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
 
       resource = fns->init_resource (uri, _mock_rr_resolver_prose_test_11);
 
@@ -1051,8 +997,7 @@ _prose_test_11 (const _prose_test_fns_t *fns)
 
    {
       mongoc_host_list_t *const expected =
-         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
-                     "localhost.test.build.10gen.cc:27018");
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017", "localhost.test.build.10gen.cc:27018");
       mongoc_client_t *const client = fns->get_client (resource);
 
       {
@@ -1069,8 +1014,7 @@ _prose_test_11 (const _prose_test_fns_t *fns)
 
    {
       mongoc_host_list_t *const expected =
-         MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
-                     "localhost.test.build.10gen.cc:27020");
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27019", "localhost.test.build.10gen.cc:27020");
       mongoc_client_t *const client = fns->get_client (resource);
 
       {
@@ -1170,12 +1114,10 @@ _prose_test_12 (const _prose_test_fns_t *fns)
    BSON_ASSERT_PARAM (fns);
 
    {
-      mongoc_uri_t *const uri =
-         mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+      mongoc_uri_t *const uri = mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
 
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 2);
-      mongoc_uri_set_option_as_int32 (
-         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
 
       resource = fns->init_resource (uri, _mock_rr_resolver_prose_test_12);
 
@@ -1184,8 +1126,7 @@ _prose_test_12 (const _prose_test_fns_t *fns)
 
    {
       mongoc_host_list_t *const expected =
-         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
-                     "localhost.test.build.10gen.cc:27018");
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017", "localhost.test.build.10gen.cc:27018");
       mongoc_client_t *const client = fns->get_client (resource);
 
       {
@@ -1214,15 +1155,11 @@ _prose_test_12 (const _prose_test_fns_t *fns)
          mc_tpld_modify_drop (tdmod);
       }
 
+      ASSERT_WITH_MSG (ctx.num_existing > 0u, "hosts that have not changed must be left alone and unchanged");
       ASSERT_WITH_MSG (
-         ctx.num_existing > 0u,
-         "hosts that have not changed must be left alone and unchanged");
-      ASSERT_WITH_MSG (ctx.num_existing == 1u,
-                       "only a single host should have remained, but found %zu",
-                       ctx.num_existing);
+         ctx.num_existing == 1u, "only a single host should have remained, but found %zu", ctx.num_existing);
 
-      ASSERT_WITH_MSG (ctx.num_new_valid == 1u,
-                       "exactly one valid new hosts should have been added");
+      ASSERT_WITH_MSG (ctx.num_new_valid == 1u, "exactly one valid new hosts should have been added");
 
       fns->release_client (resource, client);
    }
@@ -1250,12 +1187,8 @@ void
 test_dns_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_AddFull (suite,
-                      "/initial_dns_seedlist_discovery/srv_polling/mocked",
-                      test_srv_polling_mocked,
-                      NULL,
-                      NULL,
-                      NULL);
+   TestSuite_AddFull (
+      suite, "/initial_dns_seedlist_discovery/srv_polling/mocked", test_srv_polling_mocked, NULL, NULL, NULL);
    TestSuite_AddFull (suite,
                       "/initial_dns_seedlist_discovery/small_initial_buffer",
                       test_small_initial_buffer,
@@ -1267,67 +1200,59 @@ test_dns_install (TestSuite *suite)
     * of the SRV polling tests, since they are defined in the "Polling SRV
     * Records for mongos Discovery" spec, not the "Initial DNS Seedlist
     * Discovery" spec. */
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/single",
-      prose_test_9_single,
-      NULL,
-      NULL,
-      test_dns_check_srv_polling);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/single",
+                      prose_test_9_single,
+                      NULL,
+                      NULL,
+                      test_dns_check_srv_polling);
 
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/pooled",
-      prose_test_9_pooled,
-      NULL,
-      NULL,
-      test_dns_check_srv_polling);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/pooled",
+                      prose_test_9_pooled,
+                      NULL,
+                      NULL,
+                      test_dns_check_srv_polling);
 
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/single",
-      prose_test_10_single,
-      NULL,
-      NULL,
-      test_dns_check_srv_polling);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/single",
+                      prose_test_10_single,
+                      NULL,
+                      NULL,
+                      test_dns_check_srv_polling);
 
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/pooled",
-      prose_test_10_pooled,
-      NULL,
-      NULL,
-      test_dns_check_srv_polling);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/pooled",
+                      prose_test_10_pooled,
+                      NULL,
+                      NULL,
+                      test_dns_check_srv_polling);
 
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/single",
-      prose_test_11_single,
-      NULL,
-      NULL,
-      test_dns_check_srv_polling);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/single",
+                      prose_test_11_single,
+                      NULL,
+                      NULL,
+                      test_dns_check_srv_polling);
 
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/pooled",
-      prose_test_11_pooled,
-      NULL,
-      NULL,
-      test_dns_check_srv_polling);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/pooled",
+                      prose_test_11_pooled,
+                      NULL,
+                      NULL,
+                      test_dns_check_srv_polling);
 
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/single",
-      prose_test_12_single,
-      NULL,
-      NULL,
-      test_dns_check_srv_polling);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/single",
+                      prose_test_12_single,
+                      NULL,
+                      NULL,
+                      test_dns_check_srv_polling);
 
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/pooled",
-      prose_test_12_pooled,
-      NULL,
-      NULL,
-      test_dns_check_srv_polling);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/pooled",
+                      prose_test_12_pooled,
+                      NULL,
+                      NULL,
+                      test_dns_check_srv_polling);
 }

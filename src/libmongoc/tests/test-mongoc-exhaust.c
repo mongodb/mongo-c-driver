@@ -39,8 +39,7 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
 
    server_id = mongoc_cursor_get_hint (cursor);
 
-   sd = mongoc_topology_description_server_by_id_const (
-      td.ptr, server_id, &error);
+   sd = mongoc_topology_description_server_by_id_const (td.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
    generation = mc_tpl_sd_get_generation (sd, &kZeroServiceId);
    mc_tpld_drop_ref (&td);
@@ -58,8 +57,7 @@ get_connection_count (mongoc_client_t *client)
    int conns;
 
    BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
-   res = mongoc_client_command_simple (
-      client, "admin", &cmd, NULL, &reply, &error);
+   res = mongoc_client_command_simple (client, "admin", &cmd, NULL, &reply, &error);
    ASSERT_OR_PRINT (res, error);
 
    conns = bson_lookup_int32 (&reply, "connections.totalCreated");
@@ -124,23 +122,16 @@ test_exhaust_cursor (bool pooled)
       }
 
       BEGIN_IGNORE_DEPRECATIONS;
-      ASSERT_OR_PRINT (mongoc_collection_insert_bulk (collection,
-                                                      MONGOC_INSERT_NONE,
-                                                      (const bson_t **) bptr,
-                                                      10,
-                                                      wr,
-                                                      &error),
-                       error);
+      ASSERT_OR_PRINT (
+         mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, wr, &error), error);
       END_IGNORE_DEPRECATIONS;
    }
 
    /* create a couple of cursors */
    {
-      cursor = mongoc_collection_find (
-         collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q, NULL, NULL);
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q, NULL, NULL);
 
-      cursor2 = mongoc_collection_find (
-         collection, MONGOC_QUERY_NONE, 0, 0, 0, &q, NULL, NULL);
+      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q, NULL, NULL);
    }
 
    /* Read from the exhaust cursor, ensure that we're in exhaust where we
@@ -169,8 +160,7 @@ test_exhaust_cursor (bool pooled)
     * (putting the client into exhaust), breaks a mid-stream read from a
     * regular cursor */
    {
-      cursor = mongoc_collection_find (
-         collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q, NULL, NULL);
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q, NULL, NULL);
 
       r = mongoc_cursor_next (cursor2, &doc);
       if (!r) {
@@ -182,8 +172,7 @@ test_exhaust_cursor (bool pooled)
       /* The pool was not cleared. */
       ASSERT_CMPINT64 (generation1, ==, get_generation (client, cursor2));
       /* But a new connection was made. */
-      ASSERT_CMPINT32 (
-         connection_count1 + 1, ==, get_connection_count (audit_client));
+      ASSERT_CMPINT32 (connection_count1 + 1, ==, get_connection_count (audit_client));
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);
@@ -214,12 +203,7 @@ test_exhaust_cursor (bool pooled)
    /* make sure writes fail as well */
    {
       BEGIN_IGNORE_DEPRECATIONS;
-      r = mongoc_collection_insert_bulk (collection,
-                                         MONGOC_INSERT_NONE,
-                                         (const bson_t **) bptr,
-                                         10,
-                                         wr,
-                                         &error);
+      r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, wr, &error);
       END_IGNORE_DEPRECATIONS;
 
       BSON_ASSERT (!r);
@@ -235,12 +219,10 @@ test_exhaust_cursor (bool pooled)
     * 4. make sure we can read the cursor we made during the exhaust
     */
    {
-      cursor2 = mongoc_collection_find (
-         collection, MONGOC_QUERY_NONE, 0, 0, 0, &q, NULL, NULL);
+      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q, NULL, NULL);
 
       server_id = cursor->server_id;
-      stream =
-         (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes, server_id);
+      stream = (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes, server_id);
 
       for (i = 1; i < 10; i++) {
          r = mongoc_cursor_next (cursor, &doc);
@@ -254,8 +236,7 @@ test_exhaust_cursor (bool pooled)
 
       mongoc_cursor_destroy (cursor);
 
-      BSON_ASSERT (stream == (mongoc_stream_t *) mongoc_set_get (
-                                client->cluster.nodes, server_id));
+      BSON_ASSERT (stream == (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes, server_id));
 
       r = mongoc_cursor_next (cursor2, &doc);
       BSON_ASSERT (r);
@@ -316,13 +297,10 @@ test_exhaust_cursor_fallback (void *unused)
    ASSERT (collection);
 
    (void) mongoc_collection_drop (collection, &error);
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (
-                       collection, tmp_bson ("{'a': 1}"), NULL, NULL, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (collection, tmp_bson ("{'a': 1}"), NULL, NULL, &error), error);
 
 
-   cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{}"), tmp_bson ("{'exhaust': true}"), NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'exhaust': true}"), NULL);
    ASSERT (cursor);
 
    /* Cursor should be a normal cursor despite exhaust option. */
@@ -333,12 +311,9 @@ test_exhaust_cursor_fallback (void *unused)
     * server wire version is discovered, not on call to
     * mongoc_collection_find_with_opts(). */
    capture_logs (true);
-   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc),
-                    (mongoc_cursor_error (cursor, &error), error));
+   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), (mongoc_cursor_error (cursor, &error), error));
    ASSERT_CAPTURED_LOG (
-      "cursor",
-      MONGOC_LOG_LEVEL_WARNING,
-      "exhaust cursors not supported with OP_MSG, using normal cursor instead");
+      "cursor", MONGOC_LOG_LEVEL_WARNING, "exhaust cursors not supported with OP_MSG, using normal cursor instead");
    capture_logs (false);
 
    ASSERT_MATCH (doc, "{'a': 1}");
@@ -380,8 +355,7 @@ test_exhaust_cursor_multi_batch (void *context)
    server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
 
    i = 0;
    while (mongoc_cursor_next (cursor, &cursor_doc)) {
@@ -409,18 +383,10 @@ test_cursor_set_max_await_time_ms (void)
    const bson_t *bson;
 
    client = test_framework_new_default_client ();
-   collection =
-      get_test_collection (client, "test_cursor_set_max_await_time_ms");
+   collection = get_test_collection (client, "test_cursor_set_max_await_time_ms");
 
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_TAILABLE_CURSOR |
-                                       MONGOC_QUERY_AWAIT_DATA,
-                                    0,
-                                    0,
-                                    0,
-                                    tmp_bson ("{}"),
-                                    NULL,
-                                    NULL);
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
 
    ASSERT_CMPINT (0, ==, mongoc_cursor_get_max_await_time_ms (cursor));
    mongoc_cursor_set_max_await_time_ms (cursor, 123);
@@ -452,19 +418,12 @@ _request_error (request_t *request, exhaust_error_type_t error_type)
    if (error_type == NETWORK_ERROR) {
       mock_server_resets (request);
    } else {
-      mock_server_replies (request,
-                           MONGOC_REPLY_QUERY_FAILURE,
-                           123,
-                           0,
-                           0,
-                           "{'$err': 'uh oh', 'code': 4321}");
+      mock_server_replies (request, MONGOC_REPLY_QUERY_FAILURE, 123, 0, 0, "{'$err': 'uh oh', 'code': 4321}");
    }
 }
 
 static void
-_check_error (mongoc_client_t *client,
-              mongoc_cursor_t *cursor,
-              exhaust_error_type_t error_type)
+_check_error (mongoc_client_t *client, mongoc_cursor_t *cursor, exhaust_error_type_t error_type)
 {
    uint32_t server_id;
    bson_error_t error;
@@ -474,36 +433,22 @@ _check_error (mongoc_client_t *client,
    ASSERT (mongoc_cursor_error (cursor, &error));
 
    if (error_type == NETWORK_ERROR) {
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_SOCKET,
-                             "socket error or timeout");
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error or timeout");
 
       /* socket was discarded */
-      ASSERT (!mongoc_cluster_stream_for_server (&client->cluster,
-                                                 server_id,
-                                                 false /* don't reconnect */,
-                                                 NULL,
-                                                 NULL,
-                                                 &error));
+      ASSERT (!mongoc_cluster_stream_for_server (
+         &client->cluster, server_id, false /* don't reconnect */, NULL, NULL, &error));
 
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_SOCKET,
-                             "socket error or timeout");
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error or timeout");
    } else {
       /* query failure */
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_QUERY,
-                             4321 /* error from mock server */,
-                             "uh oh" /* message from mock server */);
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_QUERY, 4321 /* error from mock server */, "uh oh" /* message from mock server */);
    }
 }
 
 static void
-_mock_test_exhaust (bool pooled,
-                    exhaust_error_when_t error_when,
-                    exhaust_error_type_t error_type)
+_mock_test_exhaust (bool pooled, exhaust_error_when_t error_when, exhaust_error_type_t error_type)
 {
    mock_server_t *server;
    mongoc_client_pool_t *pool = NULL;
@@ -520,27 +465,18 @@ _mock_test_exhaust (bool pooled,
    mock_server_run (server);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (
-         mock_server_get_uri (server), NULL);
+      pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (server), NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new_from_uri (mock_server_get_uri (server),
-                                                   NULL);
+      client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    }
 
    collection = mongoc_client_get_collection (client, "db", "test");
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "db.test",
-                                         MONGOC_QUERY_SECONDARY_OK |
-                                            MONGOC_QUERY_EXHAUST,
-                                         0,
-                                         0,
-                                         "{}",
-                                         NULL);
+   request = mock_server_receives_query (
+      server, "db.test", MONGOC_QUERY_SECONDARY_OK | MONGOC_QUERY_EXHAUST, 0, 0, "{}", NULL);
 
    if (error_when == SECOND_BATCH) {
       /* initial query succeeds, gets a doc and cursor id of 123 */
@@ -650,8 +586,7 @@ test_exhaust_in_child (void)
    to_insert = BCON_NEW ("x", BCON_INT32 (1));
    bulk = mongoc_collection_create_bulk_operation (coll, false, NULL /* wc */);
    for (i = 0; i < 1001; i++) {
-      ret = mongoc_bulk_operation_insert_with_opts (
-         bulk, to_insert, NULL /* opts */, &error);
+      ret = mongoc_bulk_operation_insert_with_opts (bulk, to_insert, NULL /* opts */, &error);
       ASSERT_OR_PRINT (ret, error);
    }
    ret = mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
@@ -659,10 +594,8 @@ test_exhaust_in_child (void)
    mongoc_bulk_operation_destroy (bulk);
 
    /* create an exhaust cursor. */
-   cursor = mongoc_collection_find_with_opts (coll,
-                                              tmp_bson ("{}"),
-                                              tmp_bson ("{'exhaust': true }"),
-                                              NULL /* read prefs */);
+   cursor =
+      mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), tmp_bson ("{'exhaust': true }"), NULL /* read prefs */);
    BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
    BSON_ASSERT (client->in_exhaust);
    server_id = mongoc_cursor_get_hint (cursor);
@@ -679,13 +612,8 @@ test_exhaust_in_child (void)
       /* A command directly on that server should still work (it should open a
        * new socket). */
       ping = BCON_NEW ("ping", BCON_INT32 (1));
-      ret = mongoc_client_command_simple_with_server_id (client,
-                                                         "admin",
-                                                         ping,
-                                                         NULL /* read prefs */,
-                                                         server_id,
-                                                         NULL /* reply */,
-                                                         &error);
+      ret = mongoc_client_command_simple_with_server_id (
+         client, "admin", ping, NULL /* read prefs */, server_id, NULL /* reply */, &error);
       ASSERT_OR_PRINT (ret, error);
       mongoc_collection_destroy (coll);
       mongoc_client_destroy (client);
@@ -740,47 +668,28 @@ test_exhaust_install (TestSuite *suite)
                       NULL,
                       skip_if_mongos,
                       test_framework_skip_if_max_wire_version_less_than_14);
-   TestSuite_AddLive (suite,
-                      "/Client/set_max_await_time_ms",
-                      test_cursor_set_max_await_time_ms);
+   TestSuite_AddLive (suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
    TestSuite_AddMockServerTest (
-      suite,
-      "/Client/exhaust_cursor/err/network/1st_batch/single",
-      test_exhaust_network_err_1st_batch_single);
+      suite, "/Client/exhaust_cursor/err/network/1st_batch/single", test_exhaust_network_err_1st_batch_single);
    TestSuite_AddMockServerTest (
-      suite,
-      "/Client/exhaust_cursor/err/network/1st_batch/pooled",
-      test_exhaust_network_err_1st_batch_pooled);
+      suite, "/Client/exhaust_cursor/err/network/1st_batch/pooled", test_exhaust_network_err_1st_batch_pooled);
    TestSuite_AddMockServerTest (
-      suite,
-      "/Client/exhaust_cursor/err/server/1st_batch/single",
-      test_exhaust_server_err_1st_batch_single);
+      suite, "/Client/exhaust_cursor/err/server/1st_batch/single", test_exhaust_server_err_1st_batch_single);
    TestSuite_AddMockServerTest (
-      suite,
-      "/Client/exhaust_cursor/err/server/1st_batch/pooled",
-      test_exhaust_server_err_1st_batch_pooled);
+      suite, "/Client/exhaust_cursor/err/server/1st_batch/pooled", test_exhaust_server_err_1st_batch_pooled);
    TestSuite_AddMockServerTest (
-      suite,
-      "/Client/exhaust_cursor/err/network/2nd_batch/single",
-      test_exhaust_network_err_2nd_batch_single);
+      suite, "/Client/exhaust_cursor/err/network/2nd_batch/single", test_exhaust_network_err_2nd_batch_single);
    TestSuite_AddMockServerTest (
-      suite,
-      "/Client/exhaust_cursor/err/network/2nd_batch/pooled",
-      test_exhaust_network_err_2nd_batch_pooled);
+      suite, "/Client/exhaust_cursor/err/network/2nd_batch/pooled", test_exhaust_network_err_2nd_batch_pooled);
    TestSuite_AddMockServerTest (
-      suite,
-      "/Client/exhaust_cursor/err/server/2nd_batch/single",
-      test_exhaust_server_err_2nd_batch_single);
+      suite, "/Client/exhaust_cursor/err/server/2nd_batch/single", test_exhaust_server_err_2nd_batch_single);
    TestSuite_AddMockServerTest (
-      suite,
-      "/Client/exhaust_cursor/err/server/2nd_batch/pooled",
-      test_exhaust_server_err_2nd_batch_pooled);
+      suite, "/Client/exhaust_cursor/err/server/2nd_batch/pooled", test_exhaust_server_err_2nd_batch_pooled);
 #ifndef _WIN32
    /* Skip on Windows, since "fork" is not available and this test is not
     * particularly platform dependent. */
    if (!TestSuite_NoFork (suite)) {
-      TestSuite_AddLive (
-         suite, "/Client/exhaust_cursor/after_reset", test_exhaust_in_child);
+      TestSuite_AddLive (suite, "/Client/exhaust_cursor/after_reset", test_exhaust_in_child);
    }
 #endif /* _WIN32 */
 }

@@ -35,14 +35,12 @@
 #endif
 
 #if BSON_GNUC_CHECK_VERSION(4, 6)
-#define BEGIN_IGNORE_DEPRECATIONS  \
-   _Pragma ("GCC diagnostic push") \
-      _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define BEGIN_IGNORE_DEPRECATIONS \
+   _Pragma ("GCC diagnostic push") _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 #define END_IGNORE_DEPRECATIONS _Pragma ("GCC diagnostic pop")
 #elif defined(__clang__)
-#define BEGIN_IGNORE_DEPRECATIONS    \
-   _Pragma ("clang diagnostic push") \
-      _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define BEGIN_IGNORE_DEPRECATIONS \
+   _Pragma ("clang diagnostic push") _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
 #define END_IGNORE_DEPRECATIONS _Pragma ("clang diagnostic pop")
 #else
 #define BEGIN_IGNORE_DEPRECATIONS
@@ -111,19 +109,13 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
                                  bson_error_t *error);
 
 bool
-_mongoc_validate_new_document (const bson_t *insert,
-                               bson_validate_flags_t vflags,
-                               bson_error_t *error);
+_mongoc_validate_new_document (const bson_t *insert, bson_validate_flags_t vflags, bson_error_t *error);
 
 bool
-_mongoc_validate_replace (const bson_t *insert,
-                          bson_validate_flags_t vflags,
-                          bson_error_t *error);
+_mongoc_validate_replace (const bson_t *insert, bson_validate_flags_t vflags, bson_error_t *error);
 
 bool
-_mongoc_validate_update (const bson_t *update,
-                         bson_validate_flags_t vflags,
-                         bson_error_t *error);
+_mongoc_validate_update (const bson_t *update, bson_validate_flags_t vflags, bson_error_t *error);
 
 void
 mongoc_lowercase (const char *src, char *buf /* OUT */);
@@ -138,8 +130,7 @@ void
 _mongoc_bson_array_copy_labels_to (const bson_t *reply, bson_t *dst);
 
 void
-_mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
-                                            bson_t *reply);
+_mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs, bson_t *reply);
 
 bool
 _mongoc_document_is_pipeline (const bson_t *document);
@@ -237,9 +228,7 @@ _mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void));
 /* _mongoc_iter_document_as_bson attempts to read the document from @iter into
  * @bson. */
 bool
-_mongoc_iter_document_as_bson (const bson_iter_t *iter,
-                               bson_t *bson,
-                               bson_error_t *error);
+_mongoc_iter_document_as_bson (const bson_iter_t *iter, bson_t *bson, bson_error_t *error);
 
 BSON_END_DECLS
 

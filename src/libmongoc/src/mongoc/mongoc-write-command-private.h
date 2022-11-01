@@ -107,9 +107,7 @@ _mongoc_command_type_to_name (int command_type);
 void
 _mongoc_write_command_destroy (mongoc_write_command_t *command);
 void
-_mongoc_write_command_init (bson_t *doc,
-                            mongoc_write_command_t *command,
-                            const char *collection);
+_mongoc_write_command_init (bson_t *doc, mongoc_write_command_t *command, const char *collection);
 void
 _mongoc_write_command_init_insert (mongoc_write_command_t *command,
                                    const bson_t *document,
@@ -150,8 +148,7 @@ _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
                                        const bson_t *opts,
                                        int64_t operation_id);
 void
-_mongoc_write_command_insert_append (mongoc_write_command_t *command,
-                                     const bson_t *document);
+_mongoc_write_command_insert_append (mongoc_write_command_t *command, const bson_t *document);
 void
 _mongoc_write_command_update_append (mongoc_write_command_t *command,
                                      const bson_t *selector,
@@ -159,15 +156,10 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
                                      const bson_t *opts);
 
 void
-_mongoc_write_command_delete_append (mongoc_write_command_t *command,
-                                     const bson_t *selector,
-                                     const bson_t *opts);
+_mongoc_write_command_delete_append (mongoc_write_command_t *command, const bson_t *selector, const bson_t *opts);
 
 void
-_mongoc_write_command_too_large_error (bson_error_t *error,
-                                       int32_t idx,
-                                       int32_t len,
-                                       int32_t max_bson_size);
+_mongoc_write_command_too_large_error (bson_error_t *error, int32_t idx, int32_t len, int32_t max_bson_size);
 void
 _mongoc_write_command_execute (mongoc_write_command_t *command,
                                mongoc_client_t *client,
@@ -190,21 +182,15 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
 void
 _mongoc_write_result_init (mongoc_write_result_t *result);
 void
-_mongoc_write_result_append_upsert (mongoc_write_result_t *result,
-                                    int32_t idx,
-                                    const bson_value_t *value);
+_mongoc_write_result_append_upsert (mongoc_write_result_t *result, int32_t idx, const bson_value_t *value);
 int32_t
-_mongoc_write_result_merge_arrays (uint32_t offset,
-                                   mongoc_write_result_t *result,
-                                   bson_t *dest,
-                                   bson_iter_t *iter);
+_mongoc_write_result_merge_arrays (uint32_t offset, mongoc_write_result_t *result, bson_t *dest, bson_iter_t *iter);
 void
 _mongoc_write_result_merge (mongoc_write_result_t *result,
                             mongoc_write_command_t *command,
                             const bson_t *reply,
                             uint32_t offset);
-#define MONGOC_WRITE_RESULT_COMPLETE(_result, ...) \
-   _mongoc_write_result_complete (_result, __VA_ARGS__, NULL)
+#define MONGOC_WRITE_RESULT_COMPLETE(_result, ...) _mongoc_write_result_complete (_result, __VA_ARGS__, NULL)
 bool
 _mongoc_write_result_complete (mongoc_write_result_t *result,
                                int32_t error_api_version,
@@ -223,9 +209,7 @@ mongoc_write_err_type_t
 _mongoc_write_error_get_type (bson_t *reply);
 
 bool
-_mongoc_write_error_update_if_unsupported_storage_engine (bool cmd_ret,
-                                                          bson_error_t *cmd_err,
-                                                          bson_t *reply);
+_mongoc_write_error_update_if_unsupported_storage_engine (bool cmd_ret, bson_error_t *cmd_err, bson_t *reply);
 
 BSON_END_DECLS
 

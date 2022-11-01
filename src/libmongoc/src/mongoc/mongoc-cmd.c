@@ -75,8 +75,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
  */
 
 void
-mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts,
-                              mongoc_client_session_t *cs)
+mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts, mongoc_client_session_t *cs)
 {
    BSON_ASSERT (parts);
    BSON_ASSERT (!parts->assembled.command);
@@ -106,10 +105,7 @@ mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts,
  */
 
 bool
-mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
-                              bson_iter_t *iter,
-                              int max_wire_version,
-                              bson_error_t *error)
+mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts, bson_iter_t *iter, int max_wire_version, bson_error_t *error)
 {
    mongoc_client_session_t *cs = NULL;
    mongoc_write_concern_t *wc;
@@ -139,8 +135,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
             RETURN (false);
          }
 
-         if (!mongoc_cmd_parts_set_write_concern (
-                parts, wc, max_wire_version, error)) {
+         if (!mongoc_cmd_parts_set_write_concern (parts, wc, max_wire_version, error)) {
             mongoc_write_concern_destroy (wc);
             RETURN (false);
          }
@@ -157,10 +152,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
          }
 
          if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "Invalid readConcern");
+            bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "Invalid readConcern");
             RETURN (false);
          }
 
@@ -173,15 +165,13 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
       } else if (BSON_ITER_IS_KEY (iter, "sessionId")) {
          BSON_ASSERT (!parts->assembled.session);
 
-         if (!_mongoc_client_session_from_iter (
-                parts->client, iter, &cs, error)) {
+         if (!_mongoc_client_session_from_iter (parts->client, iter, &cs, error)) {
             RETURN (false);
          }
 
          parts->assembled.session = cs;
          continue;
-      } else if (BSON_ITER_IS_KEY (iter, "serverId") ||
-                 BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS") ||
+      } else if (BSON_ITER_IS_KEY (iter, "serverId") || BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS") ||
                  BSON_ITER_IS_KEY (iter, "exhaust")) {
          continue;
       }
@@ -201,11 +191,10 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 }
 
 
-#define OPTS_ERR(_code, ...)                                              \
-   do {                                                                   \
-      bson_set_error (                                                    \
-         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_##_code, __VA_ARGS__); \
-      RETURN (false);                                                     \
+#define OPTS_ERR(_code, ...)                                                           \
+   do {                                                                                \
+      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_##_code, __VA_ARGS__); \
+      RETURN (false);                                                                  \
    } while (0)
 
 
@@ -251,8 +240,7 @@ mongoc_cmd_parts_set_read_concern (mongoc_cmd_parts_t *parts,
    }
 
    bson_destroy (&parts->read_concern_document);
-   bson_copy_to (_mongoc_read_concern_get_bson ((mongoc_read_concern_t *) rc),
-                 &parts->read_concern_document);
+   bson_copy_to (_mongoc_read_concern_get_bson ((mongoc_read_concern_t *) rc), &parts->read_concern_document);
 
    RETURN (true);
 }
@@ -284,18 +272,13 @@ mongoc_cmd_parts_set_write_concern (mongoc_cmd_parts_t *parts,
 
    is_fam = !strcasecmp (command_name, "findandmodify");
 
-   wc_allowed =
-      parts->is_write_command ||
-      (is_fam && max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
-      (!is_fam && max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN);
+   wc_allowed = parts->is_write_command || (is_fam && max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
+                (!is_fam && max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN);
 
    if (wc_allowed) {
-      parts->assembled.is_acknowledged =
-         mongoc_write_concern_is_acknowledged (wc);
+      parts->assembled.is_acknowledged = mongoc_write_concern_is_acknowledged (wc);
       bson_destroy (&parts->write_concern_document);
-      bson_copy_to (
-         _mongoc_write_concern_get_bson ((mongoc_write_concern_t *) wc),
-         &parts->write_concern_document);
+      bson_copy_to (_mongoc_write_concern_get_bson ((mongoc_write_concern_t *) wc), &parts->write_concern_document);
    }
 
    RETURN (true);
@@ -334,26 +317,22 @@ mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
 
    if (!bson_empty (&rw_opts->collation)) {
       if (max_wire_version < WIRE_VERSION_COLLATION) {
-         OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION,
-                   "The selected server does not support collation");
+         OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION, "The selected server does not support collation");
       }
 
-      if (!bson_append_document (
-             &parts->extra, "collation", 9, &rw_opts->collation)) {
+      if (!bson_append_document (&parts->extra, "collation", 9, &rw_opts->collation)) {
          OPTS_ERR (COMMAND_INVALID_ARG, "'opts' with 'collation' is too large");
       }
    }
 
-   if (!mongoc_cmd_parts_set_write_concern (
-          parts, rw_opts->writeConcern, max_wire_version, error)) {
+   if (!mongoc_cmd_parts_set_write_concern (parts, rw_opts->writeConcern, max_wire_version, error)) {
       RETURN (false);
    }
 
    /* process explicit read concern */
    if (!bson_empty (&rw_opts->readConcern)) {
       if (max_wire_version < WIRE_VERSION_READ_CONCERN) {
-         OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION,
-                   "The selected server does not support readConcern");
+         OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION, "The selected server does not support readConcern");
       }
 
       /* save readConcern for later, once we know about causal consistency */
@@ -391,18 +370,14 @@ _mongoc_cmd_parts_add_write_concern (mongoc_cmd_parts_t *parts)
 {
    if (!bson_empty (&parts->write_concern_document)) {
       _mongoc_cmd_parts_ensure_copied (parts);
-      bson_append_document (&parts->assembled_body,
-                            "writeConcern",
-                            12,
-                            &parts->write_concern_document);
+      bson_append_document (&parts->assembled_body, "writeConcern", 12, &parts->write_concern_document);
    }
 }
 
 
 /* The server type must be mongos, or message must be OP_MSG. */
 static void
-_mongoc_cmd_parts_add_read_prefs (bson_t *query,
-                                  const mongoc_read_prefs_t *prefs)
+_mongoc_cmd_parts_add_read_prefs (bson_t *query, const mongoc_read_prefs_t *prefs)
 {
    bson_t child;
    const char *mode_str;
@@ -449,8 +424,7 @@ _iter_concat (bson_t *dst, bson_iter_t *iter)
 /* Update result with the read prefs. Server must be mongos.
  */
 static void
-_mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
-                                   const mongoc_server_stream_t *server_stream)
+_mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts, const mongoc_server_stream_t *server_stream)
 {
    mongoc_read_mode_t mode;
    const bson_t *tags = NULL;
@@ -467,8 +441,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
 
    mode = mongoc_read_prefs_get_mode (parts->read_prefs);
    if (parts->read_prefs) {
-      max_staleness_seconds =
-         mongoc_read_prefs_get_max_staleness_seconds (parts->read_prefs);
+      max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (parts->read_prefs);
 
       tags = mongoc_read_prefs_get_tags (parts->read_prefs);
       hedge = mongoc_read_prefs_get_hedge (parts->read_prefs);
@@ -505,8 +478,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
    case MONGOC_READ_PRIMARY:
       break;
    case MONGOC_READ_SECONDARY_PREFERRED:
-      if (!bson_empty0 (tags) || max_staleness_seconds > 0 ||
-          !bson_empty0 (hedge)) {
+      if (!bson_empty0 (tags) || max_staleness_seconds > 0 || !bson_empty0 (hedge)) {
          add_read_prefs = true;
       }
       parts->assembled.query_flags |= MONGOC_QUERY_SECONDARY_OK;
@@ -520,8 +492,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
    }
 
    requires_read_concern =
-      !bson_empty (&parts->read_concern_document) &&
-      strcmp (parts->assembled.command_name, "getMore") != 0;
+      !bson_empty (&parts->read_concern_document) && strcmp (parts->assembled.command_name, "getMore") != 0;
 
    requires_write_concern = !bson_empty (&parts->write_concern_document);
 
@@ -539,23 +510,19 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
 
       bson_concat (&query, &parts->extra);
       if (requires_read_concern) {
-         bson_append_document (
-            &query, "readConcern", 11, &parts->read_concern_document);
+         bson_append_document (&query, "readConcern", 11, &parts->read_concern_document);
       }
 
       if (requires_write_concern) {
-         bson_append_document (
-            &query, "writeConcern", 12, &parts->write_concern_document);
+         bson_append_document (&query, "writeConcern", 12, &parts->write_concern_document);
       }
 
       bson_append_document_end (&parts->assembled_body, &query);
-      _mongoc_cmd_parts_add_read_prefs (&parts->assembled_body,
-                                        parts->read_prefs);
+      _mongoc_cmd_parts_add_read_prefs (&parts->assembled_body, parts->read_prefs);
 
       if (has_dollar_query) {
          /* copy anything that isn't in user's $query */
-         bson_copy_to_excluding_noinit (
-            parts->body, &parts->assembled_body, "$query", NULL);
+         bson_copy_to_excluding_noinit (parts->body, &parts->assembled_body, "$query", NULL);
       }
 
       parts->assembled.command = &parts->assembled_body;
@@ -565,28 +532,22 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       _iter_concat (&query, &dollar_query);
       bson_concat (&query, &parts->extra);
       if (requires_read_concern) {
-         bson_append_document (
-            &query, "readConcern", 11, &parts->read_concern_document);
+         bson_append_document (&query, "readConcern", 11, &parts->read_concern_document);
       }
 
       if (requires_write_concern) {
-         bson_append_document (
-            &query, "writeConcern", 12, &parts->write_concern_document);
+         bson_append_document (&query, "writeConcern", 12, &parts->write_concern_document);
       }
 
       bson_append_document_end (&parts->assembled_body, &query);
       /* copy anything that isn't in user's $query */
-      bson_copy_to_excluding_noinit (
-         parts->body, &parts->assembled_body, "$query", NULL);
+      bson_copy_to_excluding_noinit (parts->body, &parts->assembled_body, "$query", NULL);
 
       parts->assembled.command = &parts->assembled_body;
    } else {
       if (requires_read_concern) {
          _mongoc_cmd_parts_ensure_copied (parts);
-         bson_append_document (&parts->assembled_body,
-                               "readConcern",
-                               11,
-                               &parts->read_concern_document);
+         bson_append_document (&parts->assembled_body, "readConcern", 11, &parts->read_concern_document);
       }
 
       _mongoc_cmd_parts_add_write_concern (parts);
@@ -602,8 +563,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
 
 
 static void
-_mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
-                                   const mongoc_server_stream_t *server_stream)
+_mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts, const mongoc_server_stream_t *server_stream)
 {
    ENTRY;
 
@@ -626,8 +586,7 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
           * request. Clients MUST  NOT set the secondaryOk wire protocol flag if
           * the read preference mode is primary.
           */
-         if (parts->read_prefs &&
-             parts->read_prefs->mode != MONGOC_READ_PRIMARY) {
+         if (parts->read_prefs && parts->read_prefs->mode != MONGOC_READ_PRIMARY) {
             parts->assembled.query_flags |= MONGOC_QUERY_SECONDARY_OK;
          }
 
@@ -647,13 +606,9 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
       _mongoc_cmd_parts_ensure_copied (parts);
    }
 
-   if (!bson_empty (&parts->read_concern_document) &&
-       strcmp (parts->assembled.command_name, "getMore") != 0) {
+   if (!bson_empty (&parts->read_concern_document) && strcmp (parts->assembled.command_name, "getMore") != 0) {
       _mongoc_cmd_parts_ensure_copied (parts);
-      bson_append_document (&parts->assembled_body,
-                            "readConcern",
-                            11,
-                            &parts->read_concern_document);
+      bson_append_document (&parts->assembled_body, "readConcern", 11, &parts->read_concern_document);
    }
 
    _mongoc_cmd_parts_add_write_concern (parts);
@@ -696,12 +651,10 @@ _largest_cluster_time (const bson_t *a, const bson_t *b)
  * documentation already instructs users not to use that for basic writes.
  */
 static bool
-_allow_txn_number (const mongoc_cmd_parts_t *parts,
-                   const mongoc_server_stream_t *server_stream)
+_allow_txn_number (const mongoc_cmd_parts_t *parts, const mongoc_server_stream_t *server_stream)
 {
    /* There is no reason to call this function if allow_txn_number is set */
-   BSON_ASSERT (parts->allow_txn_number ==
-                MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN);
+   BSON_ASSERT (parts->allow_txn_number == MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN);
 
    if (!parts->is_write_command) {
       return false;
@@ -725,8 +678,7 @@ _allow_txn_number (const mongoc_cmd_parts_t *parts,
 
 /* Check if the write command should support retryable behavior. */
 static bool
-_is_retryable_write (const mongoc_cmd_parts_t *parts,
-                     const mongoc_server_stream_t *server_stream)
+_is_retryable_write (const mongoc_cmd_parts_t *parts, const mongoc_server_stream_t *server_stream)
 {
    if (!parts->assembled.session) {
       return false;
@@ -752,9 +704,7 @@ _is_retryable_write (const mongoc_cmd_parts_t *parts,
       return false;
    }
 
-   if (!mongoc_uri_get_option_as_bool (parts->client->uri,
-                                       MONGOC_URI_RETRYWRITES,
-                                       MONGOC_DEFAULT_RETRYWRITES)) {
+   if (!mongoc_uri_get_option_as_bool (parts->client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
       return false;
    }
 
@@ -764,8 +714,7 @@ _is_retryable_write (const mongoc_cmd_parts_t *parts,
 
 /* Check if the read command should support retryable behavior. */
 bool
-_is_retryable_read (const mongoc_cmd_parts_t *parts,
-                    const mongoc_server_stream_t *server_stream)
+_is_retryable_read (const mongoc_cmd_parts_t *parts, const mongoc_server_stream_t *server_stream)
 {
    if (!parts->is_read_command) {
       return false;
@@ -785,9 +734,7 @@ _is_retryable_read (const mongoc_cmd_parts_t *parts,
       return false;
    }
 
-   if (!mongoc_uri_get_option_as_bool (parts->client->uri,
-                                       MONGOC_URI_RETRYREADS,
-                                       MONGOC_DEFAULT_RETRYREADS)) {
+   if (!mongoc_uri_get_option_as_bool (parts->client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS)) {
       return false;
    }
 
@@ -816,9 +763,7 @@ _is_retryable_read (const mongoc_cmd_parts_t *parts,
  */
 
 bool
-mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
-                           mongoc_server_stream_t *server_stream,
-                           bson_error_t *error)
+mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts, mongoc_server_stream_t *server_stream, bson_error_t *error)
 {
    mongoc_server_description_type_t server_type;
    mongoc_client_session_t *cs;
@@ -861,26 +806,20 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    /* unused in OP_MSG: */
    parts->assembled.query_flags = parts->user_query_flags;
    parts->assembled.server_stream = server_stream;
-   cmd_name = parts->assembled.command_name =
-      _mongoc_get_command_name (parts->assembled.command);
+   cmd_name = parts->assembled.command_name = _mongoc_get_command_name (parts->assembled.command);
 
    if (!parts->assembled.command_name) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Empty command document");
+      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Empty command document");
       GOTO (done);
    }
 
    TRACE ("Preparing '%s'", cmd_name);
 
    is_get_more = !strcmp (cmd_name, "getMore");
-   parts->assembled.is_txn_finish = !strcmp (cmd_name, "commitTransaction") ||
-                                    !strcmp (cmd_name, "abortTransaction");
+   parts->assembled.is_txn_finish = !strcmp (cmd_name, "commitTransaction") || !strcmp (cmd_name, "abortTransaction");
 
    if (!parts->is_write_command && IS_PREF_PRIMARY (parts->read_prefs) &&
-       server_stream->topology_type == MONGOC_TOPOLOGY_SINGLE &&
-       server_type != MONGOC_SERVER_MONGOS) {
+       server_stream->topology_type == MONGOC_TOPOLOGY_SINGLE && server_type != MONGOC_SERVER_MONGOS) {
       prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
       prefs_ptr = prefs;
    } else {
@@ -895,23 +834,20 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       mode = MONGOC_READ_PRIMARY;
    }
 
-   if (mongoc_client_uses_server_api (parts->client) ||
-       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+   if (mongoc_client_uses_server_api (parts->client) || server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       if (!bson_has_field (parts->body, "$db")) {
          BSON_APPEND_UTF8 (&parts->extra, "$db", parts->assembled.db_name);
       }
 
       if (cs && _mongoc_client_session_in_txn (cs)) {
-         if (!IS_PREF_PRIMARY (cs->txn.opts.read_prefs) &&
-             !parts->is_write_command) {
+         if (!IS_PREF_PRIMARY (cs->txn.opts.read_prefs) && !parts->is_write_command) {
             bson_set_error (error,
                             MONGOC_ERROR_TRANSACTION,
                             MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                             "Read preference in a transaction must be primary");
             GOTO (done);
          }
-      } else if (mode != MONGOC_READ_PRIMARY &&
-                 server_type != MONGOC_SERVER_STANDALONE) {
+      } else if (mode != MONGOC_READ_PRIMARY && server_type != MONGOC_SERVER_STANDALONE) {
          /* "Type Standalone: clients MUST NOT send the read preference to the
           * server" */
          _mongoc_cmd_parts_add_read_prefs (&parts->extra, prefs_ptr);
@@ -941,32 +877,25 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
        */
       if (cs) {
          if (!parts->assembled.is_acknowledged) {
-            bson_set_error (
-               error,
-               MONGOC_ERROR_COMMAND,
-               MONGOC_ERROR_COMMAND_INVALID_ARG,
-               "Cannot use client session with unacknowledged command");
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot use client session with unacknowledged command");
             GOTO (done);
          }
 
          _mongoc_cmd_parts_ensure_copied (parts);
-         bson_append_document (&parts->assembled_body,
-                               "lsid",
-                               4,
-                               mongoc_client_session_get_lsid (cs));
+         bson_append_document (&parts->assembled_body, "lsid", 4, mongoc_client_session_get_lsid (cs));
 
          cs->server_session->last_used_usec = bson_get_monotonic_time ();
          cluster_time = mongoc_client_session_get_cluster_time (cs);
       }
 
       /* Ensure we know if the write command allows a transaction number */
-      if (!_mongoc_client_session_txn_in_progress (cs) &&
-          parts->is_write_command &&
-          parts->allow_txn_number ==
-             MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN) {
-         parts->allow_txn_number = _allow_txn_number (parts, server_stream)
-                                      ? MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES
-                                      : MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO;
+      if (!_mongoc_client_session_txn_in_progress (cs) && parts->is_write_command &&
+          parts->allow_txn_number == MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN) {
+         parts->allow_txn_number = _allow_txn_number (parts, server_stream) ? MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES
+                                                                            : MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO;
       }
 
       /* Determine if the command is retryable. If so, append txnNumber now
@@ -983,20 +912,17 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       }
 
       if (!bson_empty (&server_stream->cluster_time)) {
-         cluster_time =
-            _largest_cluster_time (&server_stream->cluster_time, cluster_time);
+         cluster_time = _largest_cluster_time (&server_stream->cluster_time, cluster_time);
       }
 
       if (cluster_time && server_type != MONGOC_SERVER_STANDALONE) {
          _mongoc_cmd_parts_ensure_copied (parts);
-         bson_append_document (
-            &parts->assembled_body, "$clusterTime", 12, cluster_time);
+         bson_append_document (&parts->assembled_body, "$clusterTime", 12, cluster_time);
       }
 
       /* Add versioned server api, if it is set. */
       if (mongoc_client_uses_server_api (parts->client)) {
-         _mongoc_cmd_append_server_api (&parts->assembled_body,
-                                        parts->client->api);
+         _mongoc_cmd_append_server_api (&parts->assembled_body, parts->client->api);
       }
 
       if (!is_get_more) {
@@ -1005,8 +931,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
              * Throw an error if snapshot is enabled and wire version is less
              * than 13 before potentially appending "snapshot" read concern. */
             if (mongoc_session_opts_get_snapshot (&cs->opts) &&
-                server_stream->sd->max_wire_version <
-                   WIRE_VERSION_SNAPSHOT_READS) {
+                server_stream->sd->max_wire_version < WIRE_VERSION_SNAPSHOT_READS) {
                bson_set_error (error,
                                MONGOC_ERROR_CLIENT,
                                MONGOC_ERROR_CLIENT_SESSION_FAILURE,
@@ -1016,34 +941,25 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
             _mongoc_cmd_parts_ensure_copied (parts);
             _mongoc_client_session_append_read_concern (
-               cs,
-               &parts->read_concern_document,
-               parts->is_read_command,
-               &parts->assembled_body);
+               cs, &parts->read_concern_document, parts->is_read_command, &parts->assembled_body);
          } else if (!bson_empty (&parts->read_concern_document)) {
             _mongoc_cmd_parts_ensure_copied (parts);
-            bson_append_document (&parts->assembled_body,
-                                  "readConcern",
-                                  11,
-                                  &parts->read_concern_document);
+            bson_append_document (&parts->assembled_body, "readConcern", 11, &parts->read_concern_document);
          }
       }
 
       /* if transaction is in progress do not inherit write concern */
-      if (parts->assembled.is_txn_finish ||
-          !_mongoc_client_session_in_txn (cs)) {
+      if (parts->assembled.is_txn_finish || !_mongoc_client_session_in_txn (cs)) {
          _mongoc_cmd_parts_add_write_concern (parts);
       }
 
       _mongoc_cmd_parts_ensure_copied (parts);
-      if (!_mongoc_client_session_append_txn (
-             cs, &parts->assembled_body, error)) {
+      if (!_mongoc_client_session_append_txn (cs, &parts->assembled_body, error)) {
          GOTO (done);
       }
 
       ret = true;
-   } else if (server_type == MONGOC_SERVER_MONGOS ||
-              server_stream->topology_type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+   } else if (server_type == MONGOC_SERVER_MONGOS || server_stream->topology_type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* TODO (CDRIVER-4117) remove the check of the topology description type.
        */
       _mongoc_cmd_parts_assemble_mongos (parts, server_stream);
@@ -1091,14 +1007,10 @@ mongoc_cmd_is_compressible (mongoc_cmd_t *cmd)
    BSON_ASSERT (cmd);
    BSON_ASSERT (cmd->command_name);
 
-   return !!strcasecmp (cmd->command_name, "hello") &&
-          !!strcasecmp (cmd->command_name, HANDSHAKE_CMD_LEGACY_HELLO) &&
-          !!strcasecmp (cmd->command_name, "authenticate") &&
-          !!strcasecmp (cmd->command_name, "getnonce") &&
-          !!strcasecmp (cmd->command_name, "saslstart") &&
-          !!strcasecmp (cmd->command_name, "saslcontinue") &&
-          !!strcasecmp (cmd->command_name, "createuser") &&
-          !!strcasecmp (cmd->command_name, "updateuser");
+   return !!strcasecmp (cmd->command_name, "hello") && !!strcasecmp (cmd->command_name, HANDSHAKE_CMD_LEGACY_HELLO) &&
+          !!strcasecmp (cmd->command_name, "authenticate") && !!strcasecmp (cmd->command_name, "getnonce") &&
+          !!strcasecmp (cmd->command_name, "saslstart") && !!strcasecmp (cmd->command_name, "saslcontinue") &&
+          !!strcasecmp (cmd->command_name, "createuser") && !!strcasecmp (cmd->command_name, "updateuser");
 }
 
 /*--------------------------------------------------------------------------
@@ -1174,8 +1086,7 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
  *--------------------------------------------------------------------------
  */
 void
-_mongoc_cmd_append_server_api (bson_t *command_body,
-                               const mongoc_server_api_t *api)
+_mongoc_cmd_append_server_api (bson_t *command_body, const mongoc_server_api_t *api)
 {
    const char *string_version;
 
@@ -1193,9 +1104,6 @@ _mongoc_cmd_append_server_api (bson_t *command_body,
    }
 
    if (api->deprecation_errors.is_set) {
-      bson_append_bool (command_body,
-                        "apiDeprecationErrors",
-                        -1,
-                        api->deprecation_errors.value);
+      bson_append_bool (command_body, "apiDeprecationErrors", -1, api->deprecation_errors.value);
    }
 }

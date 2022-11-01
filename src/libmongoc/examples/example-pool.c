@@ -27,8 +27,7 @@ worker (void *data)
        * probably only want to hold onto the client for the portion of the
        * request performing database queries.
        */
-      r = mongoc_client_command_simple (
-         client, "admin", &ping, NULL, NULL, &error);
+      r = mongoc_client_command_simple (client, "admin", &ping, NULL, NULL, &error);
 
       if (!r) {
          fprintf (stderr, "%s\n", error.message);

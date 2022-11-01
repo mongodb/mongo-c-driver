@@ -9,10 +9,7 @@
  * since it shares the same test runner with the transactions test runner. */
 
 static bool
-with_transaction_fail_transient_txn (mongoc_client_session_t *session,
-                                     void *ctx,
-                                     bson_t **reply,
-                                     bson_error_t *error)
+with_transaction_fail_transient_txn (mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error_t *error)
 {
    bson_t labels;
 
@@ -29,10 +26,7 @@ with_transaction_fail_transient_txn (mongoc_client_session_t *session,
 }
 
 static bool
-with_transaction_do_nothing (mongoc_client_session_t *session,
-                             void *ctx,
-                             bson_t **reply,
-                             bson_error_t *error)
+with_transaction_do_nothing (mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error_t *error)
 {
    BSON_UNUSED (session);
    BSON_UNUSED (ctx);
@@ -61,24 +55,22 @@ test_with_transaction_timeout (void *ctx)
    /* Test Case 1: Test that if the callback returns an
       error with the TransientTransactionError label and
       we have exceeded the timeout, withTransaction fails. */
-   res = mongoc_client_session_with_transaction (
-      session, with_transaction_fail_transient_txn, NULL, NULL, NULL, &error);
+   res =
+      mongoc_client_session_with_transaction (session, with_transaction_fail_transient_txn, NULL, NULL, NULL, &error);
    ASSERT (!res);
 
    /* Test Case 2: If committing returns an error with the
       UnknownTransactionCommitResult label and we have exceeded
       the timeout, withTransaction fails. */
    session->fail_commit_label = UNKNOWN_COMMIT_RESULT;
-   res = mongoc_client_session_with_transaction (
-      session, with_transaction_do_nothing, NULL, NULL, NULL, &error);
+   res = mongoc_client_session_with_transaction (session, with_transaction_do_nothing, NULL, NULL, NULL, &error);
    ASSERT (!res);
 
    /* Test Case 3: If committing returns an error with the
       TransientTransactionError label and we have exceeded the
       timeout, withTransaction fails. */
    session->fail_commit_label = TRANSIENT_TXN_ERR;
-   res = mongoc_client_session_with_transaction (
-      session, with_transaction_do_nothing, NULL, NULL, NULL, &error);
+   res = mongoc_client_session_with_transaction (session, with_transaction_do_nothing, NULL, NULL, NULL, &error);
    ASSERT (!res);
 
    mongoc_client_session_destroy (session);

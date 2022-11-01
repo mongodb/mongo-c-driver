@@ -18,8 +18,7 @@ get_test_file (const char *filename, size_t *length)
    char real_filename[256];
    int fd;
 
-   bson_snprintf (
-      real_filename, sizeof real_filename, BINARY_DIR "/%s", filename);
+   bson_snprintf (real_filename, sizeof real_filename, BINARY_DIR "/%s", filename);
 
 #ifdef _WIN32
    fd = _open (real_filename, O_RDONLY | _O_BINARY);
@@ -264,9 +263,7 @@ test_mongoc_rpc_insert_scatter (void)
    ASSERT_CMPINT (rpc.header.opcode, ==, MONGOC_OPCODE_INSERT);
    ASSERT_CMPINT (rpc.insert.flags, ==, MONGOC_INSERT_CONTINUE_ON_ERROR);
    ASSERT (!strcmp ("test.test", rpc.insert.collection));
-   reader =
-      bson_reader_new_from_data ((uint8_t *) rpc.insert.documents[0].iov_base,
-                                 rpc.insert.documents[0].iov_len);
+   reader = bson_reader_new_from_data ((uint8_t *) rpc.insert.documents[0].iov_base, rpc.insert.documents[0].iov_len);
    while ((b = bson_reader_read (reader, &eof))) {
       r = bson_equal (b, &empty);
       ASSERT (r);
@@ -458,8 +455,7 @@ test_mongoc_rpc_reply_scatter (void)
    ASSERT_CMPINT (rpc.reply.start_from, ==, 50);
    ASSERT_CMPINT (rpc.reply.n_returned, ==, 100);
    ASSERT_CMPINT (rpc.reply.documents_len, ==, 500);
-   reader =
-      bson_reader_new_from_data (rpc.reply.documents, rpc.reply.documents_len);
+   reader = bson_reader_new_from_data (rpc.reply.documents, rpc.reply.documents_len);
    while ((b = bson_reader_read (reader, &eof))) {
       r = bson_equal (b, &empty);
       ASSERT (r);
@@ -505,8 +501,7 @@ test_mongoc_rpc_reply_scatter2 (void)
    ASSERT (rpc.reply.start_from == 0);
    ASSERT (rpc.reply.n_returned == 100);
    ASSERT (rpc.reply.documents_len == 16200);
-   reader =
-      bson_reader_new_from_data (rpc.reply.documents, rpc.reply.documents_len);
+   reader = bson_reader_new_from_data (rpc.reply.documents, rpc.reply.documents_len);
    while (bson_reader_read (reader, &eof)) {
       count++;
    }
@@ -632,8 +627,7 @@ test_mongoc_rpc_buffer_iov (void)
 
    BSON_ASSERT (allocate > 0);
    full_opcode = bson_malloc0 (allocate + 16);
-   size = _mongoc_cluster_buffer_iovec (
-      (mongoc_iovec_t *) ar.data, ar.len, 0, full_opcode);
+   size = _mongoc_cluster_buffer_iovec ((mongoc_iovec_t *) ar.data, ar.len, 0, full_opcode);
    ASSERT_CMPINT (size, ==, 48);
 
    iov.iov_len = size;
@@ -664,16 +658,12 @@ test_rpc_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Rpc/delete/gather", test_mongoc_rpc_delete_gather);
    TestSuite_Add (suite, "/Rpc/delete/scatter", test_mongoc_rpc_delete_scatter);
-   TestSuite_Add (
-      suite, "/Rpc/get_more/gather", test_mongoc_rpc_get_more_gather);
-   TestSuite_Add (
-      suite, "/Rpc/get_more/scatter", test_mongoc_rpc_get_more_scatter);
+   TestSuite_Add (suite, "/Rpc/get_more/gather", test_mongoc_rpc_get_more_gather);
+   TestSuite_Add (suite, "/Rpc/get_more/scatter", test_mongoc_rpc_get_more_scatter);
    TestSuite_Add (suite, "/Rpc/insert/gather", test_mongoc_rpc_insert_gather);
    TestSuite_Add (suite, "/Rpc/insert/scatter", test_mongoc_rpc_insert_scatter);
-   TestSuite_Add (
-      suite, "/Rpc/kill_cursors/gather", test_mongoc_rpc_kill_cursors_gather);
-   TestSuite_Add (
-      suite, "/Rpc/kill_cursors/scatter", test_mongoc_rpc_kill_cursors_scatter);
+   TestSuite_Add (suite, "/Rpc/kill_cursors/gather", test_mongoc_rpc_kill_cursors_gather);
+   TestSuite_Add (suite, "/Rpc/kill_cursors/scatter", test_mongoc_rpc_kill_cursors_scatter);
    TestSuite_Add (suite, "/Rpc/query/gather", test_mongoc_rpc_query_gather);
    TestSuite_Add (suite, "/Rpc/query/scatter", test_mongoc_rpc_query_scatter);
    TestSuite_Add (suite, "/Rpc/reply/gather", test_mongoc_rpc_reply_gather);

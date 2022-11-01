@@ -115,12 +115,10 @@ _process_line (const char *name_key,
 
    /* If we find two copies of either key, the *name == NULL check will fail
     * so we will just keep the first value encountered. */
-   if (name_key_len == key_len && strncmp (line, name_key, key_len) == 0 &&
-       !(*name)) {
+   if (name_key_len == key_len && strncmp (line, name_key, key_len) == 0 && !(*name)) {
       *name = bson_strndup (value, value_len);
       TRACE ("Found name: %s", *name);
-   } else if (version_key_len == key_len &&
-              strncmp (line, version_key, key_len) == 0 && !(*version)) {
+   } else if (version_key_len == key_len && strncmp (line, version_key, key_len) == 0 && !(*version)) {
       *version = bson_strndup (value, value_len);
       TRACE ("Found version: %s", *version);
    }
@@ -184,14 +182,7 @@ _mongoc_linux_distro_scanner_read_key_value_file (const char *path,
          break;
       }
 
-      _process_line (name_key,
-                     name_key_len,
-                     name,
-                     version_key,
-                     version_key_len,
-                     version,
-                     buffer,
-                     buflen);
+      _process_line (name_key, name_key_len, name, version_key, version_key_len, version, buffer, buflen);
 
       if (*version && *name) {
          /* No point in reading any more */
@@ -243,10 +234,7 @@ _get_first_existing (const char **paths)
  * (even if the string is empty).
  */
 void
-_mongoc_linux_distro_scanner_split_line_by_release (const char *line,
-                                                    ssize_t line_len,
-                                                    char **name,
-                                                    char **version)
+_mongoc_linux_distro_scanner_split_line_by_release (const char *line, ssize_t line_len, char **name, char **version)
 {
    const char *needle_loc;
    const char *const needle = " release ";
@@ -286,9 +274,7 @@ _mongoc_linux_distro_scanner_split_line_by_release (const char *line,
  * Search for a *-release file, and read its contents.
  */
 void
-_mongoc_linux_distro_scanner_read_generic_release_file (const char **paths,
-                                                        char **name,
-                                                        char **version)
+_mongoc_linux_distro_scanner_read_generic_release_file (const char **paths, char **name, char **version)
 {
    const char *path;
    size_t buflen;
@@ -320,8 +306,7 @@ _mongoc_linux_distro_scanner_read_generic_release_file (const char **paths,
       TRACE ("Trying to split buffer with contents %s", buffer);
       /* Try splitting the string. If we can't it'll store everything in
        * *name. */
-      _mongoc_linux_distro_scanner_split_line_by_release (
-         buffer, buflen, name, version);
+      _mongoc_linux_distro_scanner_split_line_by_release (buffer, buflen, name, version);
    }
 
    fclose (f);
@@ -347,10 +332,7 @@ _get_kernel_version_from_uname (char **version)
  * should not be used after this call.
  */
 static bool
-_set_name_and_version_if_needed (char **name,
-                                 char **version,
-                                 char *new_name,
-                                 char *new_version)
+_set_name_and_version_if_needed (char **name, char **version, char *new_name, char *new_version)
 {
    if (new_name && !(*name)) {
       *name = new_name;
@@ -391,28 +373,21 @@ _mongoc_linux_distro_scanner_get_distro (char **name, char **version)
    *name = NULL;
    *version = NULL;
 
-   _mongoc_linux_distro_scanner_read_key_value_file (
-      "/etc/os-release", "NAME", -1, name, "VERSION_ID", -1, version);
+   _mongoc_linux_distro_scanner_read_key_value_file ("/etc/os-release", "NAME", -1, name, "VERSION_ID", -1, version);
 
    if (*name && *version) {
       RETURN (true);
    }
 
-   _mongoc_linux_distro_scanner_read_key_value_file ("/etc/lsb-release",
-                                                     "DISTRIB_ID",
-                                                     -1,
-                                                     &new_name,
-                                                     "DISTRIB_RELEASE",
-                                                     -1,
-                                                     &new_version);
+   _mongoc_linux_distro_scanner_read_key_value_file (
+      "/etc/lsb-release", "DISTRIB_ID", -1, &new_name, "DISTRIB_RELEASE", -1, &new_version);
 
    if (_set_name_and_version_if_needed (name, version, new_name, new_version)) {
       RETURN (true);
    }
 
    /* Try to read from a generic release file */
-   _mongoc_linux_distro_scanner_read_generic_release_file (
-      generic_release_paths, &new_name, &new_version);
+   _mongoc_linux_distro_scanner_read_generic_release_file (generic_release_paths, &new_name, &new_version);
 
    if (_set_name_and_version_if_needed (name, version, new_name, new_version)) {
       RETURN (true);

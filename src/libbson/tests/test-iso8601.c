@@ -17,10 +17,7 @@ test_date (const char *str, int64_t millis)
    }
 
    if (v != millis) {
-      fprintf (stderr,
-               "parsed value not correct: %" PRId64 " != %" PRId64 "\n",
-               millis,
-               v);
+      fprintf (stderr, "parsed value not correct: %" PRId64 " != %" PRId64 "\n", millis, v);
 
       fprintf (stderr, "parsing: [%s]\n", str);
       abort ();
@@ -73,10 +70,8 @@ test_bson_iso8601_utc (void)
     */
 
    test_date_rt ("1971-02-03T04:05:06.789Z", 34401906789ULL);
-   test_date_io (
-      "1971-02-03T04:05:06.78Z", "1971-02-03T04:05:06.780Z", 34401906780ULL);
-   test_date_io (
-      "1971-02-03T04:05:06.7Z", "1971-02-03T04:05:06.700Z", 34401906700ULL);
+   test_date_io ("1971-02-03T04:05:06.78Z", "1971-02-03T04:05:06.780Z", 34401906780ULL);
+   test_date_io ("1971-02-03T04:05:06.7Z", "1971-02-03T04:05:06.700Z", 34401906700ULL);
    test_date_rt ("1971-02-03T04:05:06Z", 34401906000ULL);
    test_date_io ("1971-02-03T04:05Z", "1971-02-03T04:05:00Z", 34401900000ULL);
    test_date_io ("1970-01-01T00:00:00.000Z", "1970-01-01T00:00:00Z", 0ULL);
@@ -107,40 +102,25 @@ test_bson_iso8601_local (void)
     * digits.
     */
 
-   test_date_io ("1971-02-03T09:16:06.789+0511",
-                 "1971-02-03T04:05:06.789Z",
-                 34401906789ULL);
-   test_date_io ("1971-02-03T09:16:06.78+0511",
-                 "1971-02-03T04:05:06.780Z",
-                 34401906780ULL);
-   test_date_io (
-      "1971-02-03T09:16:06.7+0511", "1971-02-03T04:05:06.700Z", 34401906700ULL);
-   test_date_io (
-      "1971-02-03T09:16:06+0511", "1971-02-03T04:05:06Z", 34401906000ULL);
-   test_date_io (
-      "1971-02-03T09:16+0511", "1971-02-03T04:05:00Z", 34401900000ULL);
+   test_date_io ("1971-02-03T09:16:06.789+0511", "1971-02-03T04:05:06.789Z", 34401906789ULL);
+   test_date_io ("1971-02-03T09:16:06.78+0511", "1971-02-03T04:05:06.780Z", 34401906780ULL);
+   test_date_io ("1971-02-03T09:16:06.7+0511", "1971-02-03T04:05:06.700Z", 34401906700ULL);
+   test_date_io ("1971-02-03T09:16:06+0511", "1971-02-03T04:05:06Z", 34401906000ULL);
+   test_date_io ("1971-02-03T09:16+0511", "1971-02-03T04:05:00Z", 34401900000ULL);
    test_date_io ("1970-01-01T00:00:00.000Z", "1970-01-01T00:00:00Z", 0ULL);
    test_date_rt ("1970-06-30T01:06:40.981Z", 15556000981ULL);
-   test_date_io ("1970-06-29T21:06:40.981-0400",
-                 "1970-06-30T01:06:40.981Z",
-                 15556000981ULL);
+   test_date_io ("1970-06-29T21:06:40.981-0400", "1970-06-30T01:06:40.981Z", 15556000981ULL);
    test_date_io ("1969-12-31T16:00:00.000-0800", "1970-01-01T00:00:00Z", 0ULL);
 
    if (!IS_TIME_T_SMALL) {
-      test_date_io ("2058-02-20T13:29:11.100-0500",
-                    "2058-02-20T18:29:11.100Z",
-                    2781455351100ULL);
+      test_date_io ("2058-02-20T13:29:11.100-0500", "2058-02-20T18:29:11.100Z", 2781455351100ULL);
       test_date_rt ("3000-12-31T23:59:59Z", 32535215999000ULL);
    } else {
       test_date_rt ("2038-01-19T03:14:07Z", 2147483647000ULL);
    }
 
-   test_date_io ("2013-02-20T13:29:11.100-0500",
-                 "2013-02-20T18:29:11.100Z",
-                 1361384951100ULL);
-   test_date_io ("2013-02-20T13:29:11.100-0501",
-                 "2013-02-20T18:30:11.100Z",
-                 1361385011100ULL);
+   test_date_io ("2013-02-20T13:29:11.100-0500", "2013-02-20T18:29:11.100Z", 1361384951100ULL);
+   test_date_io ("2013-02-20T13:29:11.100-0501", "2013-02-20T18:30:11.100Z", 1361385011100ULL);
    test_date ("0000-01-01T00:00:00.000Z", -62167219200000LL);
    test_date ("0000-01-01T00:00:00.000+2300", -62167302000000LL);
    test_date ("9999-01-01T00:00:00.000Z", 253370764800000ULL);
@@ -381,6 +361,5 @@ test_iso8601_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/iso8601/utc", test_bson_iso8601_utc);
    TestSuite_Add (suite, "/bson/iso8601/local", test_bson_iso8601_local);
    TestSuite_Add (suite, "/bson/iso8601/invalid", test_bson_iso8601_invalid);
-   TestSuite_Add (
-      suite, "/bson/iso8601/leap_year", test_bson_iso8601_leap_year);
+   TestSuite_Add (suite, "/bson/iso8601/leap_year", test_bson_iso8601_leap_year);
 }

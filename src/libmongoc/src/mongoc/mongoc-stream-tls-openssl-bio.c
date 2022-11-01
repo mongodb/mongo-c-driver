@@ -39,21 +39,19 @@
 #define MONGOC_LOG_DOMAIN "stream-tls-openssl-bio"
 
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
-   (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
 
 /* Magic vtable to make our BIO shim */
-static BIO_METHOD gMongocStreamTlsOpenSslRawMethods = {
-   BIO_TYPE_FILTER,
-   "mongoc-stream-tls-glue",
-   mongoc_stream_tls_openssl_bio_write,
-   mongoc_stream_tls_openssl_bio_read,
-   mongoc_stream_tls_openssl_bio_puts,
-   mongoc_stream_tls_openssl_bio_gets,
-   mongoc_stream_tls_openssl_bio_ctrl,
-   mongoc_stream_tls_openssl_bio_create,
-   mongoc_stream_tls_openssl_bio_destroy,
-   NULL};
+static BIO_METHOD gMongocStreamTlsOpenSslRawMethods = {BIO_TYPE_FILTER,
+                                                       "mongoc-stream-tls-glue",
+                                                       mongoc_stream_tls_openssl_bio_write,
+                                                       mongoc_stream_tls_openssl_bio_read,
+                                                       mongoc_stream_tls_openssl_bio_puts,
+                                                       mongoc_stream_tls_openssl_bio_gets,
+                                                       mongoc_stream_tls_openssl_bio_ctrl,
+                                                       mongoc_stream_tls_openssl_bio_create,
+                                                       mongoc_stream_tls_openssl_bio_destroy,
+                                                       NULL};
 
 static void
 BIO_set_data (BIO *b, void *ptr)
@@ -216,8 +214,7 @@ mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
    openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
 
    errno = 0;
-   ret = (int) mongoc_stream_read (
-      tls->base_stream, buf, len, 0, tls->timeout_msec);
+   ret = (int) mongoc_stream_read (tls->base_stream, buf, len, 0, tls->timeout_msec);
    BIO_clear_retry_flags (b);
 
    if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
@@ -273,8 +270,7 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
 
    errno = 0;
    TRACE ("mongoc_stream_writev is expected to write: %d", len);
-   ret =
-      (int) mongoc_stream_writev (tls->base_stream, &iov, 1, tls->timeout_msec);
+   ret = (int) mongoc_stream_writev (tls->base_stream, &iov, 1, tls->timeout_msec);
    BIO_clear_retry_flags (b);
 
    if (len > ret) {

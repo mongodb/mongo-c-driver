@@ -24,9 +24,7 @@ extern "C" {
 #endif
 
 KMS_MSG_EXPORT (kms_request_t *)
-kms_decrypt_request_new (const uint8_t *ciphertext_blob,
-                         size_t len,
-                         const kms_request_opt_t *opt);
+kms_decrypt_request_new (const uint8_t *ciphertext_blob, size_t len, const kms_request_opt_t *opt);
 
 #ifdef __cplusplus
 } /* extern "C" */

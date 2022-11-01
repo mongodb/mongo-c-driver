@@ -4,19 +4,15 @@
 #include "json-test-operations.h"
 #include "test-libmongoc.h"
 
-static const char *uri_str =
-   "mongodb://mhuser:pencil@localhost/?serverSelectionTryOnce=false";
+static const char *uri_str = "mongodb://mhuser:pencil@localhost/?serverSelectionTryOnce=false";
 
 static bool
-mongohouse_test_operation_cb (json_test_ctx_t *ctx,
-                              const bson_t *test,
-                              const bson_t *operation)
+mongohouse_test_operation_cb (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
 {
    bson_t reply;
    bool res;
 
-   res =
-      json_test_operation (ctx, test, operation, ctx->collection, NULL, &reply);
+   res = json_test_operation (ctx, test, operation, ctx->collection, NULL, &reply);
 
    bson_destroy (&reply);
 
@@ -82,8 +78,7 @@ cmd_started_cb (const mongoc_apm_command_started_t *event)
    const char *db;
    char *ns;
 
-   if (strcmp (mongoc_apm_command_started_get_command_name (event),
-               "killCursors") != 0) {
+   if (strcmp (mongoc_apm_command_started_get_command_name (event), "killCursors") != 0) {
       return;
    }
 
@@ -124,8 +119,7 @@ cmd_started_cb (const mongoc_apm_command_started_t *event)
 
    cursors_killed = bson_new_from_data (array_data, array_len);
 
-   test->parsed_cmd_started =
-      cursor_in_killed_array (cursors_killed, test->cursor_id);
+   test->parsed_cmd_started = cursor_in_killed_array (cursors_killed, test->cursor_id);
    bson_mutex_unlock (&test->mutex);
 
    bson_destroy (cursors_killed);
@@ -183,8 +177,7 @@ cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 
    cursors_killed = bson_new_from_data (array_data, array_len);
 
-   test->parsed_cmd_succeeded =
-      cursor_in_killed_array (cursors_killed, test->cursor_id);
+   test->parsed_cmd_succeeded = cursor_in_killed_array (cursors_killed, test->cursor_id);
    bson_mutex_unlock (&test->mutex);
 
    bson_destroy (cursors_killed);
@@ -225,12 +218,11 @@ test_mongohouse_kill_cursors (void *ctx_unused)
    coll = mongoc_client_get_collection (client, "test", "driverdata");
 
    /* Run a find on the server with a batchSize of 2 and a limit of 3. */
-   cursor = mongoc_collection_find_with_opts (
-      coll,
-      &query,
-      tmp_bson ("{ 'limit' : {'$numberLong' : '3'}, 'batchSize' : "
-                "{'$numberLong' : '2'}}"),
-      NULL);
+   cursor = mongoc_collection_find_with_opts (coll,
+                                              &query,
+                                              tmp_bson ("{ 'limit' : {'$numberLong' : '3'}, 'batchSize' : "
+                                                        "{'$numberLong' : '2'}}"),
+                                              NULL);
 
    /* Iterate the cursor to run the find on the server. */
    ASSERT_CURSOR_NEXT (cursor, &doc);
@@ -263,8 +255,7 @@ _run_ping_test (const char *connection_string)
    client = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client);
 
-   res = mongoc_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   res = mongoc_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
    mongoc_client_destroy (client);
@@ -279,12 +270,10 @@ test_mongohouse_auth (void *ctx_unused)
    BSON_UNUSED (ctx_unused);
 
    /* SCRAM-SHA-1 */
-   _run_ping_test (
-      "mongodb://mhuser:pencil@localhost/?authMechanism=SCRAM-SHA-1");
+   _run_ping_test ("mongodb://mhuser:pencil@localhost/?authMechanism=SCRAM-SHA-1");
 
    /* SCRAM-SHA-256 */
-   _run_ping_test (
-      "mongodb://mhuser:pencil@localhost/?authMechanism=SCRAM-SHA-256");
+   _run_ping_test ("mongodb://mhuser:pencil@localhost/?authMechanism=SCRAM-SHA-256");
 }
 
 /* Test that the driver can connect to ADL without authentication. */
@@ -300,11 +289,8 @@ test_mongohouse_no_auth (void *ctx_unused)
 void
 test_mongohouse_install (TestSuite *suite)
 {
-   install_json_test_suite_with_check (suite,
-                                       JSON_DIR,
-                                       "mongohouse",
-                                       &test_mongohouse_cb,
-                                       test_framework_skip_if_no_mongohouse);
+   install_json_test_suite_with_check (
+      suite, JSON_DIR, "mongohouse", &test_mongohouse_cb, test_framework_skip_if_no_mongohouse);
 
    TestSuite_AddFull (suite,
                       "/mongohouse/kill_cursors",
@@ -313,17 +299,9 @@ test_mongohouse_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_mongohouse);
 
-   TestSuite_AddFull (suite,
-                      "/mongohouse/no_auth",
-                      test_mongohouse_no_auth,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_mongohouse);
+   TestSuite_AddFull (
+      suite, "/mongohouse/no_auth", test_mongohouse_no_auth, NULL, NULL, test_framework_skip_if_no_mongohouse);
 
-   TestSuite_AddFull (suite,
-                      "/mongohouse/auth",
-                      test_mongohouse_auth,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_mongohouse);
+   TestSuite_AddFull (
+      suite, "/mongohouse/auth", test_mongohouse_auth, NULL, NULL, test_framework_skip_if_no_mongohouse);
 }

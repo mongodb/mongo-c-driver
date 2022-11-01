@@ -69,9 +69,7 @@ kms_kv_list_destroy (kms_kv_list_t *lst)
 }
 
 void
-kms_kv_list_add (kms_kv_list_t *lst,
-                 kms_request_str_t *key,
-                 kms_request_str_t *value)
+kms_kv_list_add (kms_kv_list_t *lst, kms_request_str_t *key, kms_request_str_t *value)
 {
    if (lst->len == lst->size) {
       lst->size *= 2;
@@ -105,9 +103,7 @@ kms_kv_list_del (kms_kv_list_t *lst, const char *key)
    for (i = 0; i < lst->len; i++) {
       if (0 == strcmp (lst->kvs[i].key->str, key)) {
          kv_cleanup (&lst->kvs[i]);
-         memmove (&lst->kvs[i],
-                  &lst->kvs[i + 1],
-                  sizeof (kms_kv_t) * (lst->len - i - 1));
+         memmove (&lst->kvs[i], &lst->kvs[i + 1], sizeof (kms_kv_t) * (lst->len - i - 1));
          lst->len--;
       }
    }
@@ -144,6 +140,5 @@ kms_kv_list_sort (kms_kv_list_t *lst, int (*cmp) (const void *, const void *))
 {
    /* A stable sort is required to sort headers when creating canonical
     * requests. qsort is not stable. */
-   insertionsort (
-      (unsigned char *) (lst->kvs), lst->len, sizeof (kms_kv_t), cmp);
+   insertionsort ((unsigned char *) (lst->kvs), lst->len, sizeof (kms_kv_t), cmp);
 }

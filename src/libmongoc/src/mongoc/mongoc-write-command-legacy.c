@@ -46,19 +46,18 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
 
    _append_array_from_command (command, &doc);
 
-   mongoc_apm_command_started_init (
-      &event,
-      &doc,
-      db,
-      _mongoc_command_type_to_name (command->type),
-      request_id,
-      command->operation_id,
-      &stream->sd->host,
-      stream->sd->id,
-      &stream->sd->service_id,
-      stream->sd->server_connection_id,
-      NULL,
-      client->apm_context);
+   mongoc_apm_command_started_init (&event,
+                                    &doc,
+                                    db,
+                                    _mongoc_command_type_to_name (command->type),
+                                    request_id,
+                                    command->operation_id,
+                                    &stream->sd->host,
+                                    stream->sd->id,
+                                    &stream->sd->service_id,
+                                    stream->sd->server_connection_id,
+                                    NULL,
+                                    client->apm_context);
 
    client->apm_callbacks.started (&event);
 
@@ -98,19 +97,18 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t *client,
    bson_append_int32 (&doc, "ok", 2, 1);
    bson_append_int32 (&doc, "n", 1, (int32_t) command->n_documents);
 
-   mongoc_apm_command_succeeded_init (
-      &event,
-      duration,
-      &doc,
-      _mongoc_command_type_to_name (command->type),
-      request_id,
-      command->operation_id,
-      &stream->sd->host,
-      stream->sd->id,
-      &stream->sd->service_id,
-      stream->sd->server_connection_id,
-      false,
-      client->apm_context);
+   mongoc_apm_command_succeeded_init (&event,
+                                      duration,
+                                      &doc,
+                                      _mongoc_command_type_to_name (command->type),
+                                      request_id,
+                                      command->operation_id,
+                                      &stream->sd->host,
+                                      stream->sd->id,
+                                      &stream->sd->service_id,
+                                      stream->sd->server_connection_id,
+                                      false,
+                                      client->apm_context);
 
    client->apm_callbacks.succeeded (&event);
 
@@ -160,30 +158,25 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
 
    if (!command->n_documents) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COLLECTION,
-                      MONGOC_ERROR_COLLECTION_DELETE_FAILED,
-                      "Cannot do an empty delete.");
+      bson_set_error (
+         error, MONGOC_ERROR_COLLECTION, MONGOC_ERROR_COLLECTION_DELETE_FAILED, "Cannot do an empty delete.");
       result->failed = true;
       EXIT;
    }
 
    ns = bson_strdup_printf ("%s.%s", database, collection);
 
-   reader =
-      bson_reader_new_from_data (command->payload.data, command->payload.len);
+   reader = bson_reader_new_from_data (command->payload.data, command->payload.len);
    while ((bson = bson_reader_read (reader, &eof))) {
       /* the document is like { "q": { <selector> }, limit: <0 or 1> } */
-      r = (bson_iter_init (&q_iter, bson) && bson_iter_find (&q_iter, "q") &&
-           BSON_ITER_HOLDS_DOCUMENT (&q_iter));
+      r = (bson_iter_init (&q_iter, bson) && bson_iter_find (&q_iter, "q") && BSON_ITER_HOLDS_DOCUMENT (&q_iter));
 
       BSON_ASSERT (r);
       bson_iter_document (&q_iter, &len, &data);
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
       if (len > max_bson_obj_size) {
-         _mongoc_write_command_too_large_error (
-            error, 0, len, max_bson_obj_size);
+         _mongoc_write_command_too_large_error (error, 0, len, max_bson_obj_size);
          result->failed = true;
          bson_reader_destroy (reader);
          bson_free (ns);
@@ -199,32 +192,24 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
       rpc.delete_.zero = 0;
       rpc.delete_.collection = ns;
 
-      if (bson_iter_find (&q_iter, "limit") &&
-          (BSON_ITER_HOLDS_INT (&q_iter))) {
+      if (bson_iter_find (&q_iter, "limit") && (BSON_ITER_HOLDS_INT (&q_iter))) {
          limit = bson_iter_as_int64 (&q_iter);
       }
 
-      rpc.delete_.flags =
-         limit ? MONGOC_DELETE_SINGLE_REMOVE : MONGOC_DELETE_NONE;
+      rpc.delete_.flags = limit ? MONGOC_DELETE_SINGLE_REMOVE : MONGOC_DELETE_NONE;
       rpc.delete_.selector = data;
 
-      _mongoc_monitor_legacy_write (
-         client, command, database, collection, server_stream, request_id);
+      _mongoc_monitor_legacy_write (client, command, database, collection, server_stream, request_id);
 
-      if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-             &client->cluster, &rpc, server_stream, error)) {
+      if (!mongoc_cluster_legacy_rpc_sendv_to_server (&client->cluster, &rpc, server_stream, error)) {
          result->failed = true;
          bson_free (ns);
          bson_reader_destroy (reader);
          EXIT;
       }
 
-      _mongoc_monitor_legacy_write_succeeded (client,
-                                              bson_get_monotonic_time () -
-                                                 started,
-                                              command,
-                                              server_stream,
-                                              request_id);
+      _mongoc_monitor_legacy_write_succeeded (
+         client, bson_get_monotonic_time () - started, command, server_stream, request_id);
 
       started = bson_get_monotonic_time ();
    }
@@ -278,10 +263,8 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
    max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
    if (!command->n_documents) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COLLECTION,
-                      MONGOC_ERROR_COLLECTION_INSERT_FAILED,
-                      "Cannot do an empty insert.");
+      bson_set_error (
+         error, MONGOC_ERROR_COLLECTION, MONGOC_ERROR_COLLECTION_INSERT_FAILED, "Cannot do an empty insert.");
       result->failed = true;
       EXIT;
    }
@@ -293,19 +276,16 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
 again:
    has_more = false;
    n_docs_in_batch = 0;
-   size = (uint32_t) (sizeof (mongoc_rpc_header_t) + 4 + strlen (database) + 1 +
-                      strlen (collection) + 1);
+   size = (uint32_t) (sizeof (mongoc_rpc_header_t) + 4 + strlen (database) + 1 + strlen (collection) + 1);
 
-   reader = bson_reader_new_from_data (command->payload.data + data_offset,
-                                       command->payload.len - data_offset);
+   reader = bson_reader_new_from_data (command->payload.data + data_offset, command->payload.len - data_offset);
    while ((bson = bson_reader_read (reader, &eof))) {
       BSON_ASSERT (n_docs_in_batch <= idx);
       BSON_ASSERT (idx <= command->n_documents);
 
       if (bson->len > max_bson_obj_size) {
          /* document is too large */
-         _mongoc_write_command_too_large_error (
-            error, idx, bson->len, max_bson_obj_size);
+         _mongoc_write_command_too_large_error (error, idx, bson->len, max_bson_obj_size);
 
          data_offset += bson->len;
 
@@ -337,28 +317,20 @@ again:
       rpc.header.request_id = request_id;
       rpc.header.response_to = 0;
       rpc.header.opcode = MONGOC_OPCODE_INSERT;
-      rpc.insert.flags =
-         ((command->flags.ordered) ? MONGOC_INSERT_NONE
-                                   : MONGOC_INSERT_CONTINUE_ON_ERROR);
+      rpc.insert.flags = ((command->flags.ordered) ? MONGOC_INSERT_NONE : MONGOC_INSERT_CONTINUE_ON_ERROR);
       rpc.insert.collection = ns;
       rpc.insert.documents = iov;
       rpc.insert.n_documents = n_docs_in_batch;
 
-      _mongoc_monitor_legacy_write (
-         client, command, database, collection, server_stream, request_id);
+      _mongoc_monitor_legacy_write (client, command, database, collection, server_stream, request_id);
 
-      if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-             &client->cluster, &rpc, server_stream, error)) {
+      if (!mongoc_cluster_legacy_rpc_sendv_to_server (&client->cluster, &rpc, server_stream, error)) {
          result->failed = true;
          GOTO (cleanup);
       }
 
-      _mongoc_monitor_legacy_write_succeeded (client,
-                                              bson_get_monotonic_time () -
-                                                 started,
-                                              command,
-                                              server_stream,
-                                              request_id);
+      _mongoc_monitor_legacy_write_succeeded (
+         client, bson_get_monotonic_time () - started, command, server_stream, request_id);
 
       started = bson_get_monotonic_time ();
    }
@@ -417,14 +389,11 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
 
    ns = bson_strdup_printf ("%s.%s", database, collection);
 
-   reader =
-      bson_reader_new_from_data (command->payload.data, command->payload.len);
+   reader = bson_reader_new_from_data (command->payload.data, command->payload.len);
    while ((bson = bson_reader_read (reader, &eof))) {
       /* ensure the document has "q" and "u" document fields in that order */
-      r = (bson_iter_init (&subiter, bson) && bson_iter_find (&subiter, "q") &&
-           BSON_ITER_HOLDS_DOCUMENT (&subiter) &&
-           bson_iter_find (&subiter, "u") &&
-           BSON_ITER_HOLDS_DOCUMENT (&subiter));
+      r = (bson_iter_init (&subiter, bson) && bson_iter_find (&subiter, "q") && BSON_ITER_HOLDS_DOCUMENT (&subiter) &&
+           bson_iter_find (&subiter, "u") && BSON_ITER_HOLDS_DOCUMENT (&subiter));
 
       BSON_ASSERT (r);
 
@@ -447,8 +416,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
             BSON_ASSERT (len >= 5);
 
             if (len > max_bson_obj_size) {
-               _mongoc_write_command_too_large_error (
-                  error, 0, len, max_bson_obj_size);
+               _mongoc_write_command_too_large_error (error, 0, len, max_bson_obj_size);
                result->failed = true;
                bson_reader_destroy (reader);
                bson_free (ns);
@@ -464,8 +432,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
             BSON_ASSERT (len >= 5);
 
             if (len > max_bson_obj_size) {
-               _mongoc_write_command_too_large_error (
-                  error, 0, len, max_bson_obj_size);
+               _mongoc_write_command_too_large_error (error, 0, len, max_bson_obj_size);
                result->failed = true;
                bson_reader_destroy (reader);
                bson_free (ns);
@@ -477,37 +444,27 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
          } else if (strcmp (bson_iter_key (&subiter), "multi") == 0) {
             val = bson_iter_bool (&subiter);
             if (val) {
-               rpc.update.flags =
-                  (mongoc_update_flags_t) (rpc.update.flags |
-                                           MONGOC_UPDATE_MULTI_UPDATE);
+               rpc.update.flags = (mongoc_update_flags_t) (rpc.update.flags | MONGOC_UPDATE_MULTI_UPDATE);
             }
          } else if (strcmp (bson_iter_key (&subiter), "upsert") == 0) {
             val = bson_iter_bool (&subiter);
             if (val) {
-               rpc.update.flags =
-                  (mongoc_update_flags_t) (rpc.update.flags |
-                                           MONGOC_UPDATE_UPSERT);
+               rpc.update.flags = (mongoc_update_flags_t) (rpc.update.flags | MONGOC_UPDATE_UPSERT);
             }
          }
       }
 
-      _mongoc_monitor_legacy_write (
-         client, command, database, collection, server_stream, request_id);
+      _mongoc_monitor_legacy_write (client, command, database, collection, server_stream, request_id);
 
-      if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-             &client->cluster, &rpc, server_stream, error)) {
+      if (!mongoc_cluster_legacy_rpc_sendv_to_server (&client->cluster, &rpc, server_stream, error)) {
          result->failed = true;
          bson_reader_destroy (reader);
          bson_free (ns);
          EXIT;
       }
 
-      _mongoc_monitor_legacy_write_succeeded (client,
-                                              bson_get_monotonic_time () -
-                                                 started,
-                                              command,
-                                              server_stream,
-                                              request_id);
+      _mongoc_monitor_legacy_write_succeeded (
+         client, bson_get_monotonic_time () - started, command, server_stream, request_id);
 
       started = bson_get_monotonic_time ();
    }

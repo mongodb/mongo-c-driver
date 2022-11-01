@@ -7,8 +7,7 @@ main (void)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
-   const char *uri_string =
-      "mongodb://127.0.0.1:27017/?appname=find-and-modify-example";
+   const char *uri_string = "mongodb://127.0.0.1:27017/?appname=find-and-modify-example";
    mongoc_uri_t *uri;
    bson_error_t error;
    bson_t *query;
@@ -49,16 +48,7 @@ main (void)
    /*
     * Submit the findAndModify.
     */
-   if (!mongoc_collection_find_and_modify (collection,
-                                           query,
-                                           NULL,
-                                           update,
-                                           NULL,
-                                           false,
-                                           false,
-                                           true,
-                                           &reply,
-                                           &error)) {
+   if (!mongoc_collection_find_and_modify (collection, query, NULL, update, NULL, false, false, true, &reply, &error)) {
       fprintf (stderr, "find_and_modify() failure: %s\n", error.message);
       return EXIT_FAILURE;
    }

@@ -110,9 +110,7 @@ make_uri (mongoc_array_t *servers)
 
 
 static char *
-hello_json (mock_rs_t *rs,
-            mongoc_server_description_type_t type,
-            const bson_t *tags)
+hello_json (mock_rs_t *rs, mongoc_server_description_type_t type, const bson_t *tags)
 {
    char *server_type;
    char *tags_json;
@@ -136,28 +134,27 @@ hello_json (mock_rs_t *rs,
 
    hosts_str = hosts (&rs->servers);
 
-   json = bson_strdup_printf (
-      "{'ok': 1,"
-      " %s"
-      " '$clusterTime': {"
-      "   'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
-      "   'signature': {"
-      "     'hash': {'$binary': {'subType': '0', 'base64': ''}},"
-      "     'keyId': {'$numberLong': '6446735049323708417'}"
-      "   },"
-      "   'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
-      " },"
-      "'logicalSessionTimeoutMinutes': 30,"
-      " 'tags': %s,"
-      " 'minWireVersion': %d,"
-      " 'maxWireVersion': %d,"
-      " 'setName': 'rs',"
-      " 'hosts': [%s]}",
-      server_type,
-      tags_json,
-      WIRE_VERSION_MIN,
-      rs->max_wire_version,
-      hosts_str);
+   json = bson_strdup_printf ("{'ok': 1,"
+                              " %s"
+                              " '$clusterTime': {"
+                              "   'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
+                              "   'signature': {"
+                              "     'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+                              "     'keyId': {'$numberLong': '6446735049323708417'}"
+                              "   },"
+                              "   'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
+                              " },"
+                              "'logicalSessionTimeoutMinutes': 30,"
+                              " 'tags': %s,"
+                              " 'minWireVersion': %d,"
+                              " 'maxWireVersion': %d,"
+                              " 'setName': 'rs',"
+                              " 'hosts': [%s]}",
+                              server_type,
+                              tags_json,
+                              WIRE_VERSION_MIN,
+                              rs->max_wire_version,
+                              hosts_str);
 
    bson_free (tags_json);
    bson_free (hosts_str);
@@ -176,8 +173,7 @@ primary_json (mock_rs_t *rs)
 static char *
 secondary_json (mock_rs_t *rs, int server_number)
 {
-   return hello_json (
-      rs, MONGOC_SERVER_RS_SECONDARY, rs->secondary_tags[server_number]);
+   return hello_json (rs, MONGOC_SERVER_RS_SECONDARY, rs->secondary_tags[server_number]);
 }
 
 
@@ -205,17 +201,13 @@ arbiter_json (mock_rs_t *rs)
  */
 
 mock_rs_t *
-mock_rs_with_auto_hello (int32_t max_wire_version,
-                         bool has_primary,
-                         int n_secondaries,
-                         int n_arbiters)
+mock_rs_with_auto_hello (int32_t max_wire_version, bool has_primary, int n_secondaries, int n_arbiters)
 {
    int i;
    mock_rs_t *rs = BSON_ALIGNED_ALLOC0 (mock_rs_t);
 
    ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
-                    "max_wire_version %" PRId32
-                    " must be greater than or equal to minimum wire version %d",
+                    "max_wire_version %" PRId32 " must be greater than or equal to minimum wire version %d",
                     max_wire_version,
                     WIRE_VERSION_MIN);
 
@@ -368,8 +360,7 @@ mock_rs_run (mock_rs_t *rs)
     * runs last, after auto_hello.
     */
    for (i = 0; i < rs->servers.len; i++) {
-      mock_server_autoresponds (
-         get_server (&rs->servers, i), rs_q_append, (void *) rs, NULL);
+      mock_server_autoresponds (get_server (&rs->servers, i), rs_q_append, (void *) rs, NULL);
    }
 
 
@@ -482,9 +473,7 @@ mock_rs_receives_query (mock_rs_t *rs,
 
    request = mock_rs_receives_request (rs);
 
-   if (request &&
-       !request_matches_query (
-          request, ns, flags, skip, n_return, query_json, fields_json, false)) {
+   if (request && !request_matches_query (request, ns, flags, skip, n_return, query_json, fields_json, false)) {
       request_destroy (request);
       return NULL;
    }
@@ -548,11 +537,8 @@ mock_rs_reply_to_find (mock_rs_t           *rs,
 
 MONGOC_PRINTF_FORMAT (4, 5)
 request_t *
-mock_rs_receives_command (mock_rs_t *rs,
-                          const char *database_name,
-                          mongoc_query_flags_t flags,
-                          const char *command_json,
-                          ...)
+mock_rs_receives_command (
+   mock_rs_t *rs, const char *database_name, mongoc_query_flags_t flags, const char *command_json, ...)
 {
    va_list args;
    char *formatted_command_json = NULL;
@@ -569,9 +555,7 @@ mock_rs_receives_command (mock_rs_t *rs,
 
    request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
 
-   if (request &&
-       !request_matches_query (
-          request, ns, flags, 0, 1, formatted_command_json, NULL, true)) {
+   if (request && !request_matches_query (request, ns, flags, 0, 1, formatted_command_json, NULL, true)) {
       bson_free (formatted_command_json);
       request_destroy (request);
       return NULL;
@@ -602,10 +586,7 @@ mock_rs_receives_command (mock_rs_t *rs,
  */
 
 request_t *
-mock_rs_receives_insert (mock_rs_t *rs,
-                         const char *ns,
-                         mongoc_insert_flags_t flags,
-                         const char *doc_json)
+mock_rs_receives_insert (mock_rs_t *rs, const char *ns, mongoc_insert_flags_t flags, const char *doc_json)
 {
    request_t *request;
 
@@ -639,10 +620,7 @@ mock_rs_receives_insert (mock_rs_t *rs,
  */
 
 request_t *
-mock_rs_receives_getmore (mock_rs_t *rs,
-                          const char *ns,
-                          int32_t n_return,
-                          int64_t cursor_id)
+mock_rs_receives_getmore (mock_rs_t *rs, const char *ns, int32_t n_return, int64_t cursor_id)
 {
    request_t *request;
 
@@ -780,8 +758,7 @@ mock_rs_replies (request_t *request,
                  int32_t number_returned,
                  const char *docs_json)
 {
-   mock_server_replies (
-      request, flags, cursor_id, starting_from, number_returned, docs_json);
+   mock_server_replies (request, flags, cursor_id, starting_from, number_returned, docs_json);
 }
 
 
@@ -858,8 +835,7 @@ mock_rs_replies_to_find (request_t *request,
                          const char *reply_json,
                          bool is_command)
 {
-   mock_server_replies_to_find (
-      request, flags, cursor_id, number_returned, ns, reply_json, is_command);
+   mock_server_replies_to_find (request, flags, cursor_id, number_returned, ns, reply_json, is_command);
 }
 
 
@@ -884,8 +860,7 @@ mock_rs_request_is_to_primary (mock_rs_t *rs, request_t *request)
 {
    BSON_ASSERT (request);
 
-   return MONGOC_SERVER_RS_PRIMARY ==
-          _mock_rs_server_type (rs, request_get_server_port (request));
+   return MONGOC_SERVER_RS_PRIMARY == _mock_rs_server_type (rs, request_get_server_port (request));
 }
 
 
@@ -910,8 +885,7 @@ mock_rs_request_is_to_secondary (mock_rs_t *rs, request_t *request)
 {
    BSON_ASSERT (request);
 
-   return MONGOC_SERVER_RS_SECONDARY ==
-          _mock_rs_server_type (rs, request_get_server_port (request));
+   return MONGOC_SERVER_RS_SECONDARY == _mock_rs_server_type (rs, request_get_server_port (request));
 }
 
 
@@ -931,8 +905,7 @@ mock_rs_stepdown (mock_rs_t *rs)
 
    BSON_ASSERT (rs->primary);
    rs->n_secondaries++;
-   rs->secondary_tags =
-      bson_realloc (rs->secondary_tags, rs->n_secondaries * sizeof (bson_t *));
+   rs->secondary_tags = bson_realloc (rs->secondary_tags, rs->n_secondaries * sizeof (bson_t *));
 
    rs->secondary_tags[rs->n_secondaries - 1] = bson_copy (&rs->primary_tags);
    bson_reinit (&rs->primary_tags);

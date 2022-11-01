@@ -261,18 +261,13 @@ test_loadbalanced_connect_single (void *unused)
 
    client = test_framework_new_default_client ();
    stats = set_client_callbacks (client);
-   ok = mongoc_client_command_simple (client,
-                                      "admin",
-                                      tmp_bson ("{'ping': 1}"),
-                                      NULL /* read prefs */,
-                                      NULL /* reply */,
-                                      &error);
+   ok = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ok, error);
 
    /* Ensure the server description is unchanged and remains as type
     * LoadBalancer. */
-   monitor_sd = mongoc_client_select_server (
-      client, true /* for writes */, NULL /* read prefs */, &error);
+   monitor_sd = mongoc_client_select_server (client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (monitor_sd, error);
    ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
 
@@ -297,18 +292,13 @@ test_loadbalanced_connect_pooled (void *unused)
    stats = set_client_pool_callbacks (pool);
    client = mongoc_client_pool_pop (pool);
 
-   ok = mongoc_client_command_simple (client,
-                                      "admin",
-                                      tmp_bson ("{'ping': 1}"),
-                                      NULL /* read prefs */,
-                                      NULL /* reply */,
-                                      &error);
+   ok = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ok, error);
 
    /* Ensure the server description is unchanged and remains as type
     * LoadBalancer. */
-   monitor_sd = mongoc_client_select_server (
-      client, true /* for writes */, NULL /* read prefs */, &error);
+   monitor_sd = mongoc_client_select_server (client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (monitor_sd, error);
    ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
 
@@ -333,15 +323,13 @@ test_loadbalanced_server_selection_establishes_connection_single (void *unused)
 
    client = test_framework_new_default_client ();
    stats = set_client_callbacks (client);
-   monitor_sd = mongoc_client_select_server (
-      client, true /* for writes */, NULL /* read prefs */, &error);
+   monitor_sd = mongoc_client_select_server (client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (monitor_sd, error);
    ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
 
    /* Ensure that a connection has been established by getting the handshake's
     * server description. */
-   handshake_sd = mongoc_client_get_handshake_description (
-      client, monitor_sd->id, NULL /* opts */, &error);
+   handshake_sd = mongoc_client_get_handshake_description (client, monitor_sd->id, NULL /* opts */, &error);
    ASSERT_OR_PRINT (handshake_sd, error);
    ASSERT_CMPSTR ("Mongos", mongoc_server_description_type (handshake_sd));
 
@@ -367,57 +355,40 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
    client = test_framework_new_default_client ();
    stats = set_client_callbacks (client);
 
-   ok = mongoc_client_command_simple (
-      client,
-      "admin",
-      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': { 'times': 2 }, "
-                "'data': {'closeConnection': true, 'failCommands': ['ping', "
-                "'isMaster']}}"),
-      NULL /* read prefs */,
-      NULL /* reply */,
-      &error);
-   ASSERT_OR_PRINT (ok, error);
-
    ok = mongoc_client_command_simple (client,
                                       "admin",
-                                      tmp_bson ("{'ping': 1}"),
+                                      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': { 'times': 2 }, "
+                                                "'data': {'closeConnection': true, 'failCommands': ['ping', "
+                                                "'isMaster']}}"),
                                       NULL /* read prefs */,
                                       NULL /* reply */,
                                       &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   ok = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    BSON_ASSERT (!ok);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
 
    /* The next attempted command should attempt to scan, and fail when
     * performing the handshake with the isMaster command. */
-   ok = mongoc_client_command_simple (client,
-                                      "admin",
-                                      tmp_bson ("{'ping': 1}"),
-                                      NULL /* read prefs */,
-                                      NULL /* reply */,
-                                      &error);
+   ok = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    BSON_ASSERT (!ok);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                          "Could not establish stream");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NOT_ESTABLISHED, "Could not establish stream");
 
    /* Failing to "scan" would normally cause the node to be in cooldown and fail
     * to reconnect (until the 5 second period has passed). But in load balancer
     * mode cooldown is bypassed, so the subsequent connect attempt should
     * succeed. */
-   ok = mongoc_client_command_simple (client,
-                                      "admin",
-                                      tmp_bson ("{'ping': 1}"),
-                                      NULL /* read prefs */,
-                                      NULL /* reply */,
-                                      &error);
+   ok = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ok, error);
 
    /* Ensure the server description is unchanged and remains as type
     * LoadBalancer. */
-   monitor_sd = mongoc_client_select_server (
-      client, true /* for writes */, NULL /* read prefs */, &error);
+   monitor_sd = mongoc_client_select_server (client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (monitor_sd, error);
    ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
 
@@ -459,14 +430,9 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
    client = test_framework_client_new_from_uri (uri, NULL);
 
-   future = future_client_command_simple (client,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
-   request = mock_server_receives_any_hello_with_match (
-      server, "{'loadBalanced': true}", "{'loadBalanced': true}");
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
+   request = mock_server_receives_any_hello_with_match (server, "{'loadBalanced': true}", "{'loadBalanced': true}");
    mock_server_replies_simple (request, LB_HELLO);
    request_destroy (request);
 
@@ -476,11 +442,9 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
-   monitor_sd = mongoc_client_select_server (
-      client, true /* for writes */, NULL /* read prefs */, &error);
+   monitor_sd = mongoc_client_select_server (client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (monitor_sd, error);
-   handshake_sd = mongoc_client_get_handshake_description (
-      client, 1, NULL /* opts */, &error);
+   handshake_sd = mongoc_client_get_handshake_description (client, 1, NULL /* opts */, &error);
    ASSERT_OR_PRINT (handshake_sd, error);
 
    bson_oid_init_from_string (&expected, "AAAAAAAAAAAAAAAAAAAAAAAA");
@@ -521,14 +485,9 @@ test_loadbalanced_handshake_rejects_non_loadbalanced (void)
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
    client = test_framework_client_new_from_uri (uri, NULL);
 
-   future = future_client_command_simple (client,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
-   request = mock_server_receives_any_hello_with_match (
-      server, "{'loadBalanced': true}", "{'loadBalanced': true}");
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
+   request = mock_server_receives_any_hello_with_match (server, "{'loadBalanced': true}", "{'loadBalanced': true}");
    mock_server_replies_simple (request, NON_LB_HELLO);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
@@ -569,15 +528,10 @@ test_pre_handshake_error_does_not_clear_pool (void)
    client_2 = mongoc_client_pool_pop (pool);
 
    /* client_1 opens a new connection to send "ping" */
-   future = future_client_command_simple (client_1,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client_1, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    /* A new connection is opened. */
-   request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   request = mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO);
    request_destroy (request);
@@ -590,31 +544,21 @@ test_pre_handshake_error_does_not_clear_pool (void)
 
    /* client_2 attempts to open a new connection, but receives an error on the
     * handshake. */
-   future = future_client_command_simple (client_2,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client_2, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    /* A new connection is opened. */
-   request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   request = mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
    BSON_ASSERT (request);
    capture_logs (true); /* hide Failed to buffer logs. */
    mock_server_hangs_up (request);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to send");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to send");
    future_destroy (future);
 
    /* client_1 sends another "ping". */
-   future = future_client_command_simple (client_1,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client_1, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
 
    /* The connection pool must not have been cleared. It can reuse the previous
     * connection. The next command is the "ping". */
@@ -677,15 +621,10 @@ test_post_handshake_error_clears_pool (void)
    client_3_serviceid_b = mongoc_client_pool_pop (pool);
 
    /* client_1_serviceid_a opens a new connection to send "ping" */
-   future = future_client_command_simple (client_1_serviceid_a,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client_1_serviceid_a, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    /* A new connection is opened. */
-   request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   request = mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_A);
    request_destroy (request);
@@ -698,15 +637,10 @@ test_post_handshake_error_clears_pool (void)
 
    /* client_2_serviceid_a also opens a new connection and receives the same
     * service ID. */
-   future = future_client_command_simple (client_2_serviceid_a,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client_2_serviceid_a, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    /* A new connection is opened. */
-   request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   request = mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_A);
    request_destroy (request);
@@ -719,15 +653,10 @@ test_post_handshake_error_clears_pool (void)
 
    /* client_3_serviceid_b also opens a new connection, but receives a different
     * service ID. */
-   future = future_client_command_simple (client_3_serviceid_b,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client_3_serviceid_b, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    /* A new connection is opened. */
-   request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   request = mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_B);
    request_destroy (request);
@@ -739,12 +668,8 @@ test_post_handshake_error_clears_pool (void)
    future_destroy (future);
 
    /* client_1_serviceid_a receives a network error. */
-   future = future_client_command_simple (client_1_serviceid_a,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client_1_serviceid_a, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
@@ -752,25 +677,18 @@ test_post_handshake_error_clears_pool (void)
    mock_server_hangs_up (request);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to send");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to send");
    future_destroy (future);
 
    /* Assert that the server is NOT marked Unknown. */
-   monitor_sd = mongoc_client_select_server (
-      client_1_serviceid_a, true, NULL /* read prefs */, &error);
+   monitor_sd = mongoc_client_select_server (client_1_serviceid_a, true, NULL /* read prefs */, &error);
    ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
 
    /* This should have invalidated the connection for client_2_serviceid_a. */
-   future = future_client_command_simple (client_2_serviceid_a,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client_2_serviceid_a, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    /* A new connection is opened. */
-   request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   request = mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_A);
    request_destroy (request);
@@ -782,12 +700,8 @@ test_post_handshake_error_clears_pool (void)
    future_destroy (future);
 
    /* But the connection for client_3_serviceid_b should still be OK. */
-   future = future_client_command_simple (client_3_serviceid_b,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client_3_serviceid_b, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
@@ -846,13 +760,12 @@ test_loadbalanced_install (TestSuite *suite)
                       NULL /* dtor */,
                       skip_if_not_loadbalanced);
 
-   TestSuite_AddFull (
-      suite,
-      "/loadbalanced/server_selection_establishes_connection/single",
-      test_loadbalanced_server_selection_establishes_connection_single,
-      NULL /* ctx */,
-      NULL /* dtor */,
-      skip_if_not_loadbalanced);
+   TestSuite_AddFull (suite,
+                      "/loadbalanced/server_selection_establishes_connection/single",
+                      test_loadbalanced_server_selection_establishes_connection_single,
+                      NULL /* ctx */,
+                      NULL /* dtor */,
+                      skip_if_not_loadbalanced);
 
    TestSuite_AddFull (suite,
                       "/loadbalanced/cooldown_is_bypassed/single",
@@ -862,22 +775,15 @@ test_loadbalanced_install (TestSuite *suite)
                       skip_if_not_loadbalanced,
                       test_framework_skip_if_no_failpoint);
 
-   TestSuite_AddMockServerTest (suite,
-                                "/loadbalanced/handshake_sends_loadbalanced",
-                                test_loadbalanced_handshake_sends_loadbalanced);
+   TestSuite_AddMockServerTest (
+      suite, "/loadbalanced/handshake_sends_loadbalanced", test_loadbalanced_handshake_sends_loadbalanced);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/loadbalanced/handshake_rejects_non_loadbalanced",
-      test_loadbalanced_handshake_rejects_non_loadbalanced);
+      suite, "/loadbalanced/handshake_rejects_non_loadbalanced", test_loadbalanced_handshake_rejects_non_loadbalanced);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/loadbalanced/pre_handshake_error_does_not_clear_pool",
-      test_pre_handshake_error_does_not_clear_pool);
+      suite, "/loadbalanced/pre_handshake_error_does_not_clear_pool", test_pre_handshake_error_does_not_clear_pool);
 
    TestSuite_AddMockServerTest (
-      suite,
-      "/loadbalanced/post_handshake_error_clears_pool",
-      test_post_handshake_error_clears_pool);
+      suite, "/loadbalanced/post_handshake_error_clears_pool", test_post_handshake_error_clears_pool);
 }

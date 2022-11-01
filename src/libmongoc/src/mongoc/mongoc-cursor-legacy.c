@@ -36,8 +36,7 @@
 #include <bson/bson-dsl.h>
 
 static bool
-_mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor,
-                                        mongoc_server_stream_t *server_stream)
+_mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_stream_t *server_stream)
 {
    bson_t doc;
    char *db;
@@ -101,9 +100,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
    /* simulate a MongoDB 3.2+ "find" command */
    _mongoc_cursor_prepare_find_command (cursor, filter, &doc);
 
-   bsonBuildAppend (
-      cursor->opts,
-      insert (doc, not(key ("serverId", "maxAwaitTimeMS", "sessionId"))));
+   bsonBuildAppend (cursor->opts, insert (doc, not(key ("serverId", "maxAwaitTimeMS", "sessionId"))));
 
    r = _mongoc_cursor_monitor_command (cursor, server_stream, &doc, "find");
 
@@ -115,8 +112,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
 
 
 void
-_mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
-                           mongoc_cursor_response_legacy_t *response)
+_mongoc_cursor_op_getmore (mongoc_cursor_t *cursor, mongoc_cursor_response_legacy_t *response)
 {
    int64_t started;
    mongoc_rpc_t rpc;
@@ -162,8 +158,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
          GOTO (fail);
       }
 
-      if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-             cluster, &rpc, server_stream, &cursor->error)) {
+      if (!mongoc_cluster_legacy_rpc_sendv_to_server (cluster, &rpc, server_stream, &cursor->error)) {
          GOTO (fail);
       }
    }
@@ -173,11 +168,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
    /* reset the last known cursor id. */
    cursor->cursor_id = 0;
 
-   if (!_mongoc_client_recv (cursor->client,
-                             &response->rpc,
-                             &response->buffer,
-                             server_stream,
-                             &cursor->error)) {
+   if (!_mongoc_client_recv (cursor->client, &response->rpc, &response->buffer, server_stream, &cursor->error)) {
       GOTO (fail);
    }
 
@@ -201,10 +192,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       GOTO (fail);
    }
 
-   if (!_mongoc_rpc_check_ok (&response->rpc,
-                              cursor->client->error_api_version,
-                              &cursor->error,
-                              &cursor->error_doc)) {
+   if (!_mongoc_rpc_check_ok (&response->rpc, cursor->client->error_api_version, &cursor->error, &cursor->error_doc)) {
       GOTO (fail);
    }
 
@@ -215,8 +203,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
    cursor->cursor_id = response->rpc.reply.cursor_id;
 
    response->reader =
-      bson_reader_new_from_data (response->rpc.reply.documents,
-                                 (size_t) response->rpc.reply.documents_len);
+      bson_reader_new_from_data (response->rpc.reply.documents, (size_t) response->rpc.reply.documents_len);
 
    _mongoc_cursor_monitor_succeeded (cursor,
                                      response,
@@ -227,8 +214,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
 
    GOTO (done);
 fail:
-   _mongoc_cursor_monitor_failed (
-      cursor, bson_get_monotonic_time () - started, server_stream, "getMore");
+   _mongoc_cursor_monitor_failed (cursor, bson_get_monotonic_time () - started, server_stream, "getMore");
 done:
    mongoc_server_stream_cleanup (server_stream);
 }
@@ -261,21 +247,17 @@ done:
    } while (false)
 
 
-#define OPT_ERR(_msg)                                   \
-   do {                                                 \
-      bson_set_error (&cursor->error,                   \
-                      MONGOC_ERROR_COMMAND,             \
-                      MONGOC_ERROR_COMMAND_INVALID_ARG, \
-                      _msg);                            \
-      return NULL;                                      \
+#define OPT_ERR(_msg)                                                                                \
+   do {                                                                                              \
+      bson_set_error (&cursor->error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, _msg); \
+      return NULL;                                                                                   \
    } while (false)
 
 
-#define OPT_BSON_ERR(_msg)                                                    \
-   do {                                                                       \
-      bson_set_error (                                                        \
-         &cursor->error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, _msg); \
-      return NULL;                                                            \
+#define OPT_BSON_ERR(_msg)                                                                 \
+   do {                                                                                    \
+      bson_set_error (&cursor->error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, _msg); \
+      return NULL;                                                                         \
    } while (false)
 
 
@@ -416,14 +398,10 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
        * maxAwaitTimeMS is handled in _mongoc_cursor_prepare_getmore_command
        * sessionId is used to retrieve the mongoc_client_session_t
        */
-      else if (strcmp (key, MONGOC_CURSOR_SINGLE_BATCH) &&
-               strcmp (key, MONGOC_CURSOR_LIMIT) &&
-               strcmp (key, MONGOC_CURSOR_BATCH_SIZE) &&
-               strcmp (key, MONGOC_CURSOR_EXHAUST) &&
-               strcmp (key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT) &&
-               strcmp (key, MONGOC_CURSOR_OPLOG_REPLAY) &&
-               strcmp (key, MONGOC_CURSOR_TAILABLE) &&
-               strcmp (key, MONGOC_CURSOR_MAX_AWAIT_TIME_MS)) {
+      else if (strcmp (key, MONGOC_CURSOR_SINGLE_BATCH) && strcmp (key, MONGOC_CURSOR_LIMIT) &&
+               strcmp (key, MONGOC_CURSOR_BATCH_SIZE) && strcmp (key, MONGOC_CURSOR_EXHAUST) &&
+               strcmp (key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT) && strcmp (key, MONGOC_CURSOR_OPLOG_REPLAY) &&
+               strcmp (key, MONGOC_CURSOR_TAILABLE) && strcmp (key, MONGOC_CURSOR_MAX_AWAIT_TIME_MS)) {
          /* pass unrecognized options to server, prefixed with $ */
          PUSH_DOLLAR_QUERY ();
          dollar_modifier = bson_strdup_printf ("$%s", key);
@@ -456,9 +434,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
 
 
 bool
-_mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
-                              bson_t *filter,
-                              mongoc_cursor_response_legacy_t *response)
+_mongoc_cursor_op_query_find (mongoc_cursor_t *cursor, bson_t *filter, mongoc_cursor_response_legacy_t *response)
 {
    int64_t started;
    uint32_t request_id;
@@ -484,8 +460,7 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
     * doesn't support readConcern, we must error:
     * https://github.com/mongodb/specifications/blob/master/source/read-write-concern/read-write-concern.rst#errors-1
     */
-   if (cursor->read_concern->level != NULL &&
-       server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
+   if (cursor->read_concern->level != NULL && server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
@@ -507,16 +482,15 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
    rpc.query.n_return = 0;
    rpc.query.fields = NULL;
 
-   query_ptr = _mongoc_cursor_parse_opts_for_op_query (
-      cursor, server_stream, filter, &query, &fields, &flags, &rpc.query.skip);
+   query_ptr =
+      _mongoc_cursor_parse_opts_for_op_query (cursor, server_stream, filter, &query, &fields, &flags, &rpc.query.skip);
 
    if (!query_ptr) {
       /* invalid opts. cursor->error is set */
       GOTO (done);
    }
 
-   assemble_query (
-      cursor->read_prefs, server_stream, query_ptr, flags, &result);
+   assemble_query (cursor->read_prefs, server_stream, query_ptr, flags, &result);
 
    rpc.query.query = bson_get_data (result.assembled_query);
    rpc.query.flags = result.flags;
@@ -531,18 +505,13 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-          &cursor->client->cluster, &rpc, server_stream, &cursor->error)) {
+   if (!mongoc_cluster_legacy_rpc_sendv_to_server (&cursor->client->cluster, &rpc, server_stream, &cursor->error)) {
       GOTO (done);
    }
 
    _mongoc_buffer_clear (&response->buffer, false);
 
-   if (!_mongoc_client_recv (cursor->client,
-                             &response->rpc,
-                             &response->buffer,
-                             server_stream,
-                             &cursor->error)) {
+   if (!_mongoc_client_recv (cursor->client, &response->rpc, &response->buffer, server_stream, &cursor->error)) {
       GOTO (done);
    }
 
@@ -566,10 +535,7 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   if (!_mongoc_rpc_check_ok (&response->rpc,
-                              cursor->client->error_api_version,
-                              &cursor->error,
-                              &cursor->error_doc)) {
+   if (!_mongoc_rpc_check_ok (&response->rpc, cursor->client->error_api_version, &cursor->error, &cursor->error_doc)) {
       GOTO (done);
    }
 
@@ -580,8 +546,7 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
    cursor->cursor_id = response->rpc.reply.cursor_id;
 
    response->reader =
-      bson_reader_new_from_data (response->rpc.reply.documents,
-                                 (size_t) response->rpc.reply.documents_len);
+      bson_reader_new_from_data (response->rpc.reply.documents, (size_t) response->rpc.reply.documents_len);
 
    if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
       cursor->in_exhaust = true;
@@ -598,8 +563,7 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
 
 done:
    if (!succeeded) {
-      _mongoc_cursor_monitor_failed (
-         cursor, bson_get_monotonic_time () - started, server_stream, "find");
+      _mongoc_cursor_monitor_failed (cursor, bson_get_monotonic_time () - started, server_stream, "find");
    }
 
    mongoc_server_stream_cleanup (server_stream);
@@ -618,8 +582,7 @@ _mongoc_cursor_response_legacy_init (mongoc_cursor_response_legacy_t *response)
 
 
 void
-_mongoc_cursor_response_legacy_destroy (
-   mongoc_cursor_response_legacy_t *response)
+_mongoc_cursor_response_legacy_destroy (mongoc_cursor_response_legacy_t *response)
 {
    if (response->reader) {
       bson_reader_destroy (response->reader);

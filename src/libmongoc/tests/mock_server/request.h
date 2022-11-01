@@ -68,16 +68,10 @@ request_matches_query (const request_t *request,
                        bool is_command);
 
 bool
-request_matches_insert (const request_t *request,
-                        const char *ns,
-                        mongoc_insert_flags_t flags,
-                        const char *doc_json);
+request_matches_insert (const request_t *request, const char *ns, mongoc_insert_flags_t flags, const char *doc_json);
 
 bool
-request_matches_bulk_insert (const request_t *request,
-                             const char *ns,
-                             mongoc_insert_flags_t flags,
-                             int n);
+request_matches_bulk_insert (const request_t *request, const char *ns, mongoc_insert_flags_t flags, int n);
 
 bool
 request_matches_update (const request_t *request,
@@ -93,19 +87,13 @@ request_matches_delete (const request_t *request,
                         const char *selector_json);
 
 bool
-request_matches_getmore (const request_t *request,
-                         const char *ns,
-                         int32_t n_return,
-                         int64_t cursor_id);
+request_matches_getmore (const request_t *request, const char *ns, int32_t n_return, int64_t cursor_id);
 
 bool
 request_matches_kill_cursors (const request_t *request, int64_t cursor_id);
 
 bool
-request_matches_msg (const request_t *request,
-                     uint32_t flags,
-                     const bson_t **docs,
-                     size_t n_docs);
+request_matches_msg (const request_t *request, uint32_t flags, const bson_t **docs, size_t n_docs);
 
 bool
 request_matches_msgv (const request_t *request, uint32_t flags, va_list *args);

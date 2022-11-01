@@ -63,16 +63,13 @@ bson_streaming_remote_open (const char *hostname, const char *port)
    hints.ai_family = PF_UNSPEC;
    hints.ai_socktype = SOCK_STREAM;
    hints.ai_protocol = IPPROTO_TCP;
-   error =
-      getaddrinfo ((!hostname || !strlen (hostname)) ? DEFAULT_HOST : hostname,
-                   (!port || !strlen (port)) ? DEFAULT_PORT : port,
-                   &hints,
-                   &server_list);
+   error = getaddrinfo ((!hostname || !strlen (hostname)) ? DEFAULT_HOST : hostname,
+                        (!port || !strlen (port)) ? DEFAULT_PORT : port,
+                        &hints,
+                        &server_list);
 
    if (error) {
-      fprintf (stderr,
-               "bson-streaming-remote-open: Failed to get server info: %s\n",
-               gai_strerror (error));
+      fprintf (stderr, "bson-streaming-remote-open: Failed to get server info: %s\n", gai_strerror (error));
       return -1;
    }
 
@@ -102,8 +99,7 @@ bson_streaming_remote_open (const char *hostname, const char *port)
 
    freeaddrinfo (server_list);
    if (ptr == NULL) {
-      fprintf (stderr,
-               "bson-streaming-remote-open: failed to connect to server\n");
+      fprintf (stderr, "bson-streaming-remote-open: failed to connect to server\n");
       return -1;
    }
 
@@ -140,8 +136,7 @@ main (int argc, char *argv[])
    while ((opt = getopt (argc, argv, "hs:p:")) != -1) {
       switch (opt) {
       case 'h':
-         fprintf (
-            stdout, "Usage: %s [-s SERVER_NAME] [-p PORT_NUM]\n", argv[0]);
+         fprintf (stdout, "Usage: %s [-s SERVER_NAME] [-p PORT_NUM]\n", argv[0]);
          free (hostname);
          free (port);
          return EXIT_SUCCESS;

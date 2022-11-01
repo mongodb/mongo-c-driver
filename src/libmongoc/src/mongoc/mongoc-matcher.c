@@ -24,10 +24,7 @@
 
 
 static mongoc_matcher_op_t *
-_mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode,
-                               bson_iter_t *iter,
-                               bool is_root,
-                               bson_error_t *error);
+_mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode, bson_iter_t *iter, bool is_root, bson_error_t *error);
 
 
 /*
@@ -65,60 +62,43 @@ _mongoc_matcher_parse_compare (bson_iter_t *iter,   /* IN */
 
    if (bson_iter_type (iter) == BSON_TYPE_DOCUMENT) {
       if (!bson_iter_recurse (iter, &child) || !bson_iter_next (&child)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_MATCHER,
-                         MONGOC_ERROR_MATCHER_INVALID,
-                         "Document contains no operations.");
+         bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Document contains no operations.");
          return NULL;
       }
 
       key = bson_iter_key (&child);
 
       if (key[0] != '$') {
-         op = _mongoc_matcher_op_compare_new (
-            MONGOC_MATCHER_OPCODE_EQ, path, iter);
+         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_EQ, path, iter);
       } else if (strcmp (key, "$not") == 0) {
-         if (!(op_child =
-                  _mongoc_matcher_parse_compare (&child, path, error))) {
+         if (!(op_child = _mongoc_matcher_parse_compare (&child, path, error))) {
             return NULL;
          }
          op = _mongoc_matcher_op_not_new (path, op_child);
       } else if (strcmp (key, "$gt") == 0) {
-         op = _mongoc_matcher_op_compare_new (
-            MONGOC_MATCHER_OPCODE_GT, path, &child);
+         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_GT, path, &child);
       } else if (strcmp (key, "$gte") == 0) {
-         op = _mongoc_matcher_op_compare_new (
-            MONGOC_MATCHER_OPCODE_GTE, path, &child);
+         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_GTE, path, &child);
       } else if (strcmp (key, "$in") == 0) {
-         op = _mongoc_matcher_op_compare_new (
-            MONGOC_MATCHER_OPCODE_IN, path, &child);
+         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_IN, path, &child);
       } else if (strcmp (key, "$lt") == 0) {
-         op = _mongoc_matcher_op_compare_new (
-            MONGOC_MATCHER_OPCODE_LT, path, &child);
+         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_LT, path, &child);
       } else if (strcmp (key, "$lte") == 0) {
-         op = _mongoc_matcher_op_compare_new (
-            MONGOC_MATCHER_OPCODE_LTE, path, &child);
+         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_LTE, path, &child);
       } else if (strcmp (key, "$ne") == 0) {
-         op = _mongoc_matcher_op_compare_new (
-            MONGOC_MATCHER_OPCODE_NE, path, &child);
+         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_NE, path, &child);
       } else if (strcmp (key, "$nin") == 0) {
-         op = _mongoc_matcher_op_compare_new (
-            MONGOC_MATCHER_OPCODE_NIN, path, &child);
+         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_NIN, path, &child);
       } else if (strcmp (key, "$exists") == 0) {
          op = _mongoc_matcher_op_exists_new (path, bson_iter_bool (&child));
       } else if (strcmp (key, "$type") == 0) {
          op = _mongoc_matcher_op_type_new (path, bson_iter_type (&child));
       } else {
-         bson_set_error (error,
-                         MONGOC_ERROR_MATCHER,
-                         MONGOC_ERROR_MATCHER_INVALID,
-                         "Invalid operator \"%s\"",
-                         key);
+         bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid operator \"%s\"", key);
          return NULL;
       }
    } else {
-      op =
-         _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_EQ, path, iter);
+      op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_EQ, path, iter);
    }
 
    BSON_ASSERT (op);
@@ -161,31 +141,21 @@ _mongoc_matcher_parse (bson_iter_t *iter,   /* IN */
       BSON_ASSERT (bson_iter_type (iter) == BSON_TYPE_ARRAY);
 
       if (!bson_iter_recurse (iter, &child)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_MATCHER,
-                         MONGOC_ERROR_MATCHER_INVALID,
-                         "Invalid value for operator \"%s\"",
-                         key);
+         bson_set_error (
+            error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid value for operator \"%s\"", key);
          return NULL;
       }
 
       if (strcmp (key, "$or") == 0) {
-         return _mongoc_matcher_parse_logical (
-            MONGOC_MATCHER_OPCODE_OR, &child, false, error);
+         return _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_OR, &child, false, error);
       } else if (strcmp (key, "$and") == 0) {
-         return _mongoc_matcher_parse_logical (
-            MONGOC_MATCHER_OPCODE_AND, &child, false, error);
+         return _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_AND, &child, false, error);
       } else if (strcmp (key, "$nor") == 0) {
-         return _mongoc_matcher_parse_logical (
-            MONGOC_MATCHER_OPCODE_NOR, &child, false, error);
+         return _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_NOR, &child, false, error);
       }
    }
 
-   bson_set_error (error,
-                   MONGOC_ERROR_MATCHER,
-                   MONGOC_ERROR_MATCHER_INVALID,
-                   "Invalid operator \"%s\"",
-                   key);
+   bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid operator \"%s\"", key);
 
    return NULL;
 }
@@ -230,10 +200,7 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode, /* IN */
    BSON_ASSERT (iter);
 
    if (!bson_iter_next (iter)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_MATCHER,
-                      MONGOC_ERROR_MATCHER_INVALID,
-                      "Invalid logical operator.");
+      bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Invalid logical operator.");
       return NULL;
    }
 
@@ -243,26 +210,17 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode, /* IN */
       }
    } else {
       if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_MATCHER,
-                         MONGOC_ERROR_MATCHER_INVALID,
-                         "Expected document in value.");
+         bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Expected document in value.");
          return NULL;
       }
 
       if (!bson_iter_recurse (iter, &child)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "corrupt BSON");
+         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "corrupt BSON");
          return NULL;
       }
 
       if (!bson_iter_next (&child)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "corrupt BSON");
+         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "corrupt BSON");
          return NULL;
       }
 
@@ -281,26 +239,17 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode, /* IN */
       }
    } else {
       if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_MATCHER,
-                         MONGOC_ERROR_MATCHER_INVALID,
-                         "Expected document in value.");
+         bson_set_error (error, MONGOC_ERROR_MATCHER, MONGOC_ERROR_MATCHER_INVALID, "Expected document in value.");
          return NULL;
       }
 
       if (!bson_iter_recurse (iter, &child)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "bson_iter_recurse failed.");
+         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "bson_iter_recurse failed.");
          return NULL;
       }
 
       if (!bson_iter_next (&child)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "corrupt BSON");
+         bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "corrupt BSON");
          return NULL;
       }
 
@@ -361,8 +310,7 @@ mongoc_matcher_new (const bson_t *query, /* IN */
       goto failure;
    }
 
-   if (!(op = _mongoc_matcher_parse_logical (
-            MONGOC_MATCHER_OPCODE_AND, &iter, true, error))) {
+   if (!(op = _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_AND, &iter, true, error))) {
       goto failure;
    }
 

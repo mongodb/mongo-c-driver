@@ -60,11 +60,9 @@ context_init (context_t *context)
 {
    bson_init (&context->events);
    context->n_events = 0;
-   _mongoc_array_init (&context->heartbeat_succeeded_durations,
-                       sizeof (int64_t));
+   _mongoc_array_init (&context->heartbeat_succeeded_durations, sizeof (int64_t));
    _mongoc_array_init (&context->heartbeat_failed_durations, sizeof (int64_t));
-   bson_oid_init_from_string (&context->topology_id,
-                              "000000000000000000000000");
+   bson_oid_init_from_string (&context->topology_id, "000000000000000000000000");
 }
 
 static void
@@ -144,8 +142,7 @@ td_to_bson (const mongoc_topology_description_t *td, bson_t *bson)
    }
 
    bson_init (bson);
-   BSON_APPEND_UTF8 (
-      bson, "topologyType", mongoc_topology_description_type (td));
+   BSON_APPEND_UTF8 (bson, "topologyType", mongoc_topology_description_type (td));
 
    if (td->set_name) {
       BSON_APPEND_UTF8 (bson, "setName", td->set_name);
@@ -172,8 +169,7 @@ server_changed (const mongoc_apm_server_changed_t *event)
    ASSERT (bson_oid_equal (&topology_id, &ctx->topology_id));
 
    host_and_port = mongoc_apm_server_changed_get_host (event)->host_and_port;
-   sd_to_bson (mongoc_apm_server_changed_get_previous_description (event),
-               &prev_sd);
+   sd_to_bson (mongoc_apm_server_changed_get_previous_description (event), &prev_sd);
    sd_to_bson (mongoc_apm_server_changed_get_new_description (event), &new_sd);
 
    context_append (ctx,
@@ -206,14 +202,10 @@ server_opening (const mongoc_apm_server_opening_t *event)
    ASSERT (bson_oid_equal (&topology_id, &ctx->topology_id));
 
    host_and_port = mongoc_apm_server_opening_get_host (event)->host_and_port;
-   context_append (ctx,
-                   BCON_NEW ("server_opening_event",
-                             "{",
-                             "address",
-                             BCON_UTF8 (host_and_port),
-                             "topologyId",
-                             BCON_UTF8 ("42"),
-                             "}"));
+   context_append (
+      ctx,
+      BCON_NEW (
+         "server_opening_event", "{", "address", BCON_UTF8 (host_and_port), "topologyId", BCON_UTF8 ("42"), "}"));
 }
 
 static void
@@ -229,14 +221,9 @@ server_closed (const mongoc_apm_server_closed_t *event)
    ASSERT (bson_oid_equal (&topology_id, &ctx->topology_id));
 
    host_and_port = mongoc_apm_server_closed_get_host (event)->host_and_port;
-   context_append (ctx,
-                   BCON_NEW ("server_closed_event",
-                             "{",
-                             "address",
-                             BCON_UTF8 (host_and_port),
-                             "topologyId",
-                             BCON_UTF8 ("42"),
-                             "}"));
+   context_append (
+      ctx,
+      BCON_NEW ("server_closed_event", "{", "address", BCON_UTF8 (host_and_port), "topologyId", BCON_UTF8 ("42"), "}"));
 }
 
 static void
@@ -252,10 +239,8 @@ topology_changed (const mongoc_apm_topology_changed_t *event)
    mongoc_apm_topology_changed_get_topology_id (event, &topology_id);
    ASSERT (bson_oid_equal (&topology_id, &ctx->topology_id));
 
-   td_to_bson (mongoc_apm_topology_changed_get_previous_description (event),
-               &prev_td);
-   td_to_bson (mongoc_apm_topology_changed_get_new_description (event),
-               &new_td);
+   td_to_bson (mongoc_apm_topology_changed_get_previous_description (event), &prev_td);
+   td_to_bson (mongoc_apm_topology_changed_get_new_description (event), &new_td);
 
    context_append (ctx,
                    BCON_NEW ("topology_description_changed_event",
@@ -284,10 +269,7 @@ topology_opening (const mongoc_apm_topology_opening_t *event)
 
    ctx = (context_t *) mongoc_apm_topology_opening_get_context (event);
    mongoc_apm_topology_opening_get_topology_id (event, &ctx->topology_id);
-   context_append (
-      ctx,
-      BCON_NEW (
-         "topology_opening_event", "{", "topologyId", BCON_UTF8 ("42"), "}"));
+   context_append (ctx, BCON_NEW ("topology_opening_event", "{", "topologyId", BCON_UTF8 ("42"), "}"));
 }
 
 static void
@@ -299,10 +281,7 @@ topology_closed (const mongoc_apm_topology_closed_t *event)
    ctx = (context_t *) mongoc_apm_topology_closed_get_context (event);
    mongoc_apm_topology_closed_get_topology_id (event, &topology_id);
    ASSERT (bson_oid_equal (&topology_id, &ctx->topology_id));
-   context_append (
-      ctx,
-      BCON_NEW (
-         "topology_closed_event", "{", "topologyId", BCON_UTF8 ("42"), "}"));
+   context_append (ctx, BCON_NEW ("topology_closed_event", "{", "topologyId", BCON_UTF8 ("42"), "}"));
 }
 
 /* no standard tests in the specs repo for heartbeat events, so invent some */
@@ -314,39 +293,33 @@ server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
 
    ctx = (context_t *) mongoc_apm_server_heartbeat_started_get_context (event);
    host = mongoc_apm_server_heartbeat_started_get_host (event);
-   context_append (
-      ctx,
-      BCON_NEW (
-         "heartbeat_started_event",
-         "{",
-         "host",
-         BCON_UTF8 (host->host_and_port),
-         "awaited",
-         BCON_BOOL (mongoc_apm_server_heartbeat_started_get_awaited (event)),
-         "}"));
+   context_append (ctx,
+                   BCON_NEW ("heartbeat_started_event",
+                             "{",
+                             "host",
+                             BCON_UTF8 (host->host_and_port),
+                             "awaited",
+                             BCON_BOOL (mongoc_apm_server_heartbeat_started_get_awaited (event)),
+                             "}"));
 }
 
 static void
-server_heartbeat_succeeded (
-   const mongoc_apm_server_heartbeat_succeeded_t *event)
+server_heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    context_t *ctx;
    const mongoc_host_list_t *host;
    int64_t duration;
 
-   ctx =
-      (context_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
+   ctx = (context_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
    host = mongoc_apm_server_heartbeat_succeeded_get_host (event);
-   context_append (
-      ctx,
-      BCON_NEW (
-         "heartbeat_succeeded_event",
-         "{",
-         "host",
-         BCON_UTF8 (host->host_and_port),
-         "awaited",
-         BCON_BOOL (mongoc_apm_server_heartbeat_succeeded_get_awaited (event)),
-         "}"));
+   context_append (ctx,
+                   BCON_NEW ("heartbeat_succeeded_event",
+                             "{",
+                             "host",
+                             BCON_UTF8 (host->host_and_port),
+                             "awaited",
+                             BCON_BOOL (mongoc_apm_server_heartbeat_succeeded_get_awaited (event)),
+                             "}"));
 
    duration = mongoc_apm_server_heartbeat_succeeded_get_duration (event);
    _mongoc_array_append_val (&ctx->heartbeat_succeeded_durations, duration);
@@ -361,16 +334,14 @@ server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
 
    ctx = (context_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
    host = mongoc_apm_server_heartbeat_failed_get_host (event);
-   context_append (
-      ctx,
-      BCON_NEW (
-         "heartbeat_failed_event",
-         "{",
-         "host",
-         BCON_UTF8 (host->host_and_port),
-         "awaited",
-         BCON_BOOL (mongoc_apm_server_heartbeat_failed_get_awaited (event)),
-         "}"));
+   context_append (ctx,
+                   BCON_NEW ("heartbeat_failed_event",
+                             "{",
+                             "host",
+                             BCON_UTF8 (host->host_and_port),
+                             "awaited",
+                             BCON_BOOL (mongoc_apm_server_heartbeat_failed_get_awaited (event)),
+                             "}"));
 
    duration = mongoc_apm_server_heartbeat_failed_get_duration (event);
    _mongoc_array_append_val (&ctx->heartbeat_failed_durations, duration);
@@ -393,8 +364,7 @@ topology_event_callbacks (void)
 }
 
 static void
-client_set_topology_event_callbacks (mongoc_client_t *client,
-                                     context_t *context)
+client_set_topology_event_callbacks (mongoc_client_t *client, context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
@@ -404,8 +374,7 @@ client_set_topology_event_callbacks (mongoc_client_t *client,
 }
 
 static void
-pool_set_topology_event_callbacks (mongoc_client_pool_t *pool,
-                                   context_t *context)
+pool_set_topology_event_callbacks (mongoc_client_pool_t *pool, context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
@@ -420,19 +389,15 @@ heartbeat_event_callbacks (void)
    mongoc_apm_callbacks_t *callbacks;
 
    callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_server_heartbeat_started_cb (callbacks,
-                                               server_heartbeat_started);
-   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks,
-                                                 server_heartbeat_succeeded);
-   mongoc_apm_set_server_heartbeat_failed_cb (callbacks,
-                                              server_heartbeat_failed);
+   mongoc_apm_set_server_heartbeat_started_cb (callbacks, server_heartbeat_started);
+   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks, server_heartbeat_succeeded);
+   mongoc_apm_set_server_heartbeat_failed_cb (callbacks, server_heartbeat_failed);
 
    return callbacks;
 }
 
 static void
-client_set_heartbeat_event_callbacks (mongoc_client_t *client,
-                                      context_t *context)
+client_set_heartbeat_event_callbacks (mongoc_client_t *client, context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
@@ -442,8 +407,7 @@ client_set_heartbeat_event_callbacks (mongoc_client_t *client,
 }
 
 static void
-pool_set_heartbeat_event_callbacks (mongoc_client_pool_t *pool,
-                                    context_t *context)
+pool_set_heartbeat_event_callbacks (mongoc_client_pool_t *pool, context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
@@ -516,9 +480,7 @@ test_sdam_monitoring_cb (bson_t *test)
             bson_iter_bson (&outcome_iter, &events_expected);
             check_json_sdam_events (&context.events, &events_expected);
          } else {
-            fprintf (stderr,
-                     "ERROR: unparsed test field %s\n",
-                     bson_iter_key (&outcome_iter));
+            fprintf (stderr, "ERROR: unparsed test field %s\n", bson_iter_key (&outcome_iter));
             BSON_ASSERT (false);
          }
       }
@@ -538,10 +500,7 @@ test_sdam_monitoring_cb (bson_t *test)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   install_json_test_suite (suite,
-                            JSON_DIR,
-                            "server_discovery_and_monitoring/monitoring",
-                            &test_sdam_monitoring_cb);
+   install_json_test_suite (suite, JSON_DIR, "server_discovery_and_monitoring/monitoring", &test_sdam_monitoring_cb);
 }
 
 static void
@@ -567,8 +526,7 @@ _test_topology_events (bool pooled)
       client_set_topology_event_callbacks (client, &context);
    }
 
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    if (pooled) {
@@ -626,8 +584,7 @@ test_topology_events_disabled (void)
    client = test_framework_new_default_client ();
    client_set_topology_event_callbacks (client, &context);
 
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    /* disable callbacks before destroying so we don't see a topology closed
@@ -710,8 +667,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    }
 
    /* trigger "hello" handshake */
-   future = future_client_command_simple (
-      client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
+   future = future_client_command_simple (client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
    /* topology scanner calls hello once */
    request = mock_server_receives_any_hello (server);
@@ -723,9 +679,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
          0,
          0,
          1,
-         tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
-                  WIRE_VERSION_MIN,
-                  WIRE_VERSION_MAX));
+         tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}", WIRE_VERSION_MIN, WIRE_VERSION_MAX));
       request_destroy (request);
    } else {
       mock_server_hangs_up (request);
@@ -741,9 +695,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
          0,
          0,
          1,
-         tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
-                  WIRE_VERSION_MIN,
-                  WIRE_VERSION_MAX));
+         tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}", WIRE_VERSION_MIN, WIRE_VERSION_MAX));
       request_destroy (request);
    }
 
@@ -766,19 +718,17 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    /* even if pooled, only topology scanner sends events, so we get one pair */
    if (succeeded) {
       durations = &context.heartbeat_succeeded_durations;
-      expected_json = bson_strdup_printf (
-         "{'0': {'heartbeat_started_event': {'host': '%s', 'awaited': false}},"
-         " '1': {'heartbeat_succeeded_event': {'host': '%s', 'awaited': "
-         "false}}}",
-         mock_server_get_host_and_port (server),
-         mock_server_get_host_and_port (server));
+      expected_json = bson_strdup_printf ("{'0': {'heartbeat_started_event': {'host': '%s', 'awaited': false}},"
+                                          " '1': {'heartbeat_succeeded_event': {'host': '%s', 'awaited': "
+                                          "false}}}",
+                                          mock_server_get_host_and_port (server),
+                                          mock_server_get_host_and_port (server));
    } else {
       durations = &context.heartbeat_failed_durations;
-      expected_json = bson_strdup_printf (
-         "{'0': {'heartbeat_started_event': {'host': '%s', 'awaited': false}},"
-         " '1': {'heartbeat_failed_event': {'host': '%s', 'awaited': false}}}",
-         mock_server_get_host_and_port (server),
-         mock_server_get_host_and_port (server));
+      expected_json = bson_strdup_printf ("{'0': {'heartbeat_started_event': {'host': '%s', 'awaited': false}},"
+                                          " '1': {'heartbeat_failed_event': {'host': '%s', 'awaited': false}}}",
+                                          mock_server_get_host_and_port (server),
+                                          mock_server_get_host_and_port (server));
    }
 
    ASSERT_CMPSIZE_T (durations->len, >, (size_t) 0);
@@ -839,8 +789,7 @@ _test_heartbeat_fails_dns (bool pooled)
    /* Track time before scanning starts (which is triggered by popping the first
     * client for a client pool). */
    start = bson_get_monotonic_time ();
-   uri = mongoc_uri_new (
-      "mongodb://doesntexist.foobar/?serverSelectionTimeoutMS=3000");
+   uri = mongoc_uri_new ("mongodb://doesntexist.foobar/?serverSelectionTimeoutMS=3000");
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
       pool_set_heartbeat_event_callbacks (pool, &context);
@@ -851,16 +800,12 @@ _test_heartbeat_fails_dns (bool pooled)
    }
 
    /* trigger "hello" handshake */
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
+   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
    /* This should result in either a DNS failure or connection failure depending
     * on the network. We assert the domain/code but not the message string. */
    ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_SERVER_SELECTION,
-                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "");
 
    duration = bson_get_monotonic_time () - start;
 
@@ -966,38 +911,29 @@ test_no_duplicates (void)
 
    /* Perform a ping, which creates a new connection, which performs the
     * hello handshake before sending the ping command. */
-   future = future_client_command_simple (client,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL /* read prefs */,
-                                          NULL /* reply */,
-                                          &error);
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
    request = mock_server_receives_any_hello (server);
-   mock_server_replies_simple (
-      request,
-      tmp_str (
-         "{'ok': 1.0,"
-         " 'isWritablePrimary': true,"
-         " 'minWireVersion': %d,"
-         " 'maxWireVersion': %d,"
-         " 'lastWrite': {"
-         "   'lastWriteDate': {'$date': {'$numberLong': '123'}}, 'opTime': 2}}",
-         WIRE_VERSION_MIN,
-         WIRE_VERSION_4_4));
+   mock_server_replies_simple (request,
+                               tmp_str ("{'ok': 1.0,"
+                                        " 'isWritablePrimary': true,"
+                                        " 'minWireVersion': %d,"
+                                        " 'maxWireVersion': %d,"
+                                        " 'lastWrite': {"
+                                        "   'lastWriteDate': {'$date': {'$numberLong': '123'}}, 'opTime': 2}}",
+                                        WIRE_VERSION_MIN,
+                                        WIRE_VERSION_4_4));
    request_destroy (request);
-   request = mock_server_receives_msg (
-      server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+   request = mock_server_receives_msg (server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
-   ASSERT_CMPINT (
-      duplicates_counter.num_server_description_changed_events, ==, 1);
+   ASSERT_CMPINT (duplicates_counter.num_server_description_changed_events, ==, 1);
    /* There should be two topology changed events. One for the initial topology
     * (where the server is set to Unknown), and one for the first hello (but
     * not the second) */
-   ASSERT_CMPINT (
-      duplicates_counter.num_topology_description_changed_events, ==, 2);
+   ASSERT_CMPINT (duplicates_counter.num_topology_description_changed_events, ==, 2);
 
    /* Even though no topology description changed event was emitted, the newly
     * created server description should still overwrite the old one in the
@@ -1019,54 +955,38 @@ test_sdam_monitoring_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
    TestSuite_AddLive (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/topology/single",
-      test_topology_events_single);
+      suite, "/server_discovery_and_monitoring/monitoring/topology/single", test_topology_events_single);
    TestSuite_AddLive (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/topology/pooled",
-      test_topology_events_pooled);
+      suite, "/server_discovery_and_monitoring/monitoring/topology/pooled", test_topology_events_pooled);
    TestSuite_AddLive (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/topology/disabled",
-      test_topology_events_disabled);
+      suite, "/server_discovery_and_monitoring/monitoring/topology/disabled", test_topology_events_disabled);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_discovery_and_monitoring/monitoring/heartbeat/single/succeeded",
+                                test_heartbeat_events_single_succeeded);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_discovery_and_monitoring/monitoring/heartbeat/single/failed",
+                                test_heartbeat_events_single_failed);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/succeeded",
+                                test_heartbeat_events_pooled_succeeded);
+   _TestSuite_AddMockServerTest (suite,
+                                 "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
+                                 test_heartbeat_events_pooled_failed,
+                                 test_framework_skip_if_time_sensitive,
+                                 NULL);
+   TestSuite_AddFull (suite,
+                      "/server_discovery_and_monitoring/monitoring/heartbeat/single/dns",
+                      test_heartbeat_fails_dns_single,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_offline);
+   TestSuite_AddFull (suite,
+                      "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns",
+                      test_heartbeat_fails_dns_pooled,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_offline,
+                      test_framework_skip_if_rhel8_zseries);
    TestSuite_AddMockServerTest (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/heartbeat/single/succeeded",
-      test_heartbeat_events_single_succeeded);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/heartbeat/single/failed",
-      test_heartbeat_events_single_failed);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/succeeded",
-      test_heartbeat_events_pooled_succeeded);
-   _TestSuite_AddMockServerTest (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
-      test_heartbeat_events_pooled_failed,
-      test_framework_skip_if_time_sensitive,
-      NULL);
-   TestSuite_AddFull (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/heartbeat/single/dns",
-      test_heartbeat_fails_dns_single,
-      NULL,
-      NULL,
-      test_framework_skip_if_offline);
-   TestSuite_AddFull (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns",
-      test_heartbeat_fails_dns_pooled,
-      NULL,
-      NULL,
-      test_framework_skip_if_offline,
-      test_framework_skip_if_rhel8_zseries);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/server_discovery_and_monitoring/monitoring/no_duplicates",
-      test_no_duplicates,
-      NULL,
-      NULL);
+      suite, "/server_discovery_and_monitoring/monitoring/no_duplicates", test_no_duplicates, NULL, NULL);
 }

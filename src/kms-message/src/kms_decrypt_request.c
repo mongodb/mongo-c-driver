@@ -22,9 +22,7 @@
 
 
 kms_request_t *
-kms_decrypt_request_new (const uint8_t *ciphertext_blob,
-                         size_t len,
-                         const kms_request_opt_t *opt)
+kms_decrypt_request_new (const uint8_t *ciphertext_blob, size_t len, const kms_request_opt_t *opt)
 {
    kms_request_t *request;
    size_t b64_len;
@@ -36,19 +34,15 @@ kms_decrypt_request_new (const uint8_t *ciphertext_blob,
       goto done;
    }
 
-   if (!(kms_request_add_header_field (
-            request, "Content-Type", "application/x-amz-json-1.1") &&
-         kms_request_add_header_field (
-            request, "X-Amz-Target", "TrentService.Decrypt"))) {
+   if (!(kms_request_add_header_field (request, "Content-Type", "application/x-amz-json-1.1") &&
+         kms_request_add_header_field (request, "X-Amz-Target", "TrentService.Decrypt"))) {
       goto done;
    }
 
    b64_len = (len / 3 + 1) * 4 + 1;
 
    if (!(b64 = malloc (b64_len))) {
-      KMS_ERROR (request,
-                 "Could not allocate %d bytes for base64-encoding payload",
-                 (int) b64_len);
+      KMS_ERROR (request, "Could not allocate %d bytes for base64-encoding payload", (int) b64_len);
       goto done;
    }
 

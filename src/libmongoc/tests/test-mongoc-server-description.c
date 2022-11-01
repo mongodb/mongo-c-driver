@@ -26,10 +26,7 @@ reset_basic_sd (mongoc_server_description_t *sd)
    bson_error_t error;
    bson_t *hello;
 
-   hello = BCON_NEW ("minWireVersion",
-                     BCON_INT32 (WIRE_VERSION_MIN),
-                     "maxWireVersion",
-                     BCON_INT32 (WIRE_VERSION_MAX));
+   hello = BCON_NEW ("minWireVersion", BCON_INT32 (WIRE_VERSION_MIN), "maxWireVersion", BCON_INT32 (WIRE_VERSION_MAX));
 
    mongoc_server_description_reset (sd);
    memset (&error, 0, sizeof (bson_error_t));
@@ -277,8 +274,7 @@ test_server_description_ignores_rtt (void)
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, MONGOC_RTT_UNSET);
    BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
    /* If MONGOC_RTT_UNSET is passed as the RTT, it remains MONGOC_RTT_UNSET. */
-   mongoc_server_description_handle_hello (
-      &sd, &hello, MONGOC_RTT_UNSET, &error);
+   mongoc_server_description_handle_hello (&sd, &hello, MONGOC_RTT_UNSET, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, MONGOC_RTT_UNSET);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
    /* The first real RTT overwrites the stored RTT. */
@@ -286,8 +282,7 @@ test_server_description_ignores_rtt (void)
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
    /* But subsequent MONGOC_RTT_UNSET values do not effect it. */
-   mongoc_server_description_handle_hello (
-      &sd, &hello, MONGOC_RTT_UNSET, &error);
+   mongoc_server_description_handle_hello (&sd, &hello, MONGOC_RTT_UNSET, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
 
@@ -344,8 +339,7 @@ test_server_description_legacy_hello (void)
    bson_t hello_response;
 
    bson_init (&hello_response);
-   BCON_APPEND (
-      &hello_response, HANDSHAKE_RESPONSE_LEGACY_HELLO, BCON_BOOL (true));
+   BCON_APPEND (&hello_response, HANDSHAKE_RESPONSE_LEGACY_HELLO, BCON_BOOL (true));
 
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_server_description_init (&sd, "host:1234", 1);
@@ -366,8 +360,7 @@ test_server_description_legacy_hello_ok (void)
    bson_t hello_response;
 
    bson_init (&hello_response);
-   BCON_APPEND (
-      &hello_response, HANDSHAKE_RESPONSE_LEGACY_HELLO, BCON_BOOL (true));
+   BCON_APPEND (&hello_response, HANDSHAKE_RESPONSE_LEGACY_HELLO, BCON_BOOL (true));
    BCON_APPEND (&hello_response, "helloOk", BCON_BOOL (true));
 
    memset (&error, 0, sizeof (bson_error_t));
@@ -422,28 +415,24 @@ test_server_description_hello_type_error (void)
 {
    mongoc_server_description_t sd;
    bson_error_t error;
-   const char *hello =
-      "{"
-      "  'ok' : { '$numberInt' : '1' },"
-      " 'ismaster' : true,"
-      " 'maxBsonObjectSize' : { '$numberInt' : '16777216' },"
-      " 'maxMessageSizeBytes' : { '$numberInt' : '48000000'},"
-      " 'maxWriteBatchSize' : { '$numberLong' : '565160423'},"
-      " 'logicalSessionTimeoutMinutes' : { '$numberInt' : '30'},"
-      " 'connectionId' : { '$numberLong' : '565160423'},"
-      " 'minWireVersion' : { '$numberInt' : '0'},"
-      " 'maxWireVersion' : { '$numberInt' : '15'},"
-      " 'readOnly' : true"
-      "}";
+   const char *hello = "{"
+                       "  'ok' : { '$numberInt' : '1' },"
+                       " 'ismaster' : true,"
+                       " 'maxBsonObjectSize' : { '$numberInt' : '16777216' },"
+                       " 'maxMessageSizeBytes' : { '$numberInt' : '48000000'},"
+                       " 'maxWriteBatchSize' : { '$numberLong' : '565160423'},"
+                       " 'logicalSessionTimeoutMinutes' : { '$numberInt' : '30'},"
+                       " 'connectionId' : { '$numberLong' : '565160423'},"
+                       " 'minWireVersion' : { '$numberInt' : '0'},"
+                       " 'maxWireVersion' : { '$numberInt' : '15'},"
+                       " 'readOnly' : true"
+                       "}";
    mongoc_server_description_init (&sd, "host:1234", 1);
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_server_description_handle_hello (&sd, tmp_bson (hello), 0, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
    BSON_ASSERT (sd.error.code == MONGOC_ERROR_STREAM_INVALID_TYPE);
-   ASSERT_ERROR_CONTAINS (sd.error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_INVALID_TYPE,
-                          "unexpected type");
+   ASSERT_ERROR_CONTAINS (sd.error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_TYPE, "unexpected type");
 
    mongoc_server_description_cleanup (&sd);
 }
@@ -451,29 +440,13 @@ test_server_description_hello_type_error (void)
 void
 test_server_description_install (TestSuite *suite)
 {
-   TestSuite_Add (
-      suite, "/server_description/equal", test_server_description_equal);
-   TestSuite_Add (suite,
-                  "/server_description/msg_without_isdbgrid",
-                  test_server_description_msg_without_isdbgrid);
-   TestSuite_Add (suite,
-                  "/server_description/ignores_unset_rtt",
-                  test_server_description_ignores_rtt);
-   TestSuite_Add (
-      suite, "/server_description/hello", test_server_description_hello);
-   TestSuite_Add (suite,
-                  "/server_description/hello_cmd_not_found",
-                  test_server_description_hello_cmd_not_found);
-   TestSuite_Add (suite,
-                  "/server_description/legacy_hello",
-                  test_server_description_legacy_hello);
-   TestSuite_Add (suite,
-                  "/server_description/legacy_hello_ok",
-                  test_server_description_legacy_hello_ok);
-   TestSuite_Add (suite,
-                  "/server_description/connection_id",
-                  test_server_description_connection_id);
-   TestSuite_Add (suite,
-                  "/server_description/hello_type_error",
-                  test_server_description_hello_type_error);
+   TestSuite_Add (suite, "/server_description/equal", test_server_description_equal);
+   TestSuite_Add (suite, "/server_description/msg_without_isdbgrid", test_server_description_msg_without_isdbgrid);
+   TestSuite_Add (suite, "/server_description/ignores_unset_rtt", test_server_description_ignores_rtt);
+   TestSuite_Add (suite, "/server_description/hello", test_server_description_hello);
+   TestSuite_Add (suite, "/server_description/hello_cmd_not_found", test_server_description_hello_cmd_not_found);
+   TestSuite_Add (suite, "/server_description/legacy_hello", test_server_description_legacy_hello);
+   TestSuite_Add (suite, "/server_description/legacy_hello_ok", test_server_description_legacy_hello_ok);
+   TestSuite_Add (suite, "/server_description/connection_id", test_server_description_connection_id);
+   TestSuite_Add (suite, "/server_description/hello_type_error", test_server_description_hello_type_error);
 }

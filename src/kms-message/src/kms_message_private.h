@@ -51,12 +51,7 @@ struct _kms_response_t {
    kms_request_str_t *body;
 };
 
-typedef enum {
-   PARSING_STATUS_LINE,
-   PARSING_HEADER,
-   PARSING_BODY,
-   PARSING_DONE
-} kms_response_parser_state_t;
+typedef enum { PARSING_STATUS_LINE, PARSING_HEADER, PARSING_BODY, PARSING_DONE } kms_response_parser_state_t;
 
 struct _kms_response_parser_t {
    char error[512];
@@ -84,10 +79,10 @@ set_error (char *error, size_t size, const char *fmt, ...);
       set_error (obj->error, sizeof (obj->error), __VA_ARGS__); \
    } while (0)
 
-#define KMS_ASSERT(stmt) \
-if (!(stmt)) { \
-    fprintf (stderr, "%s failed\n", #stmt); \
-    abort (); \
-}
+#define KMS_ASSERT(stmt)                      \
+   if (!(stmt)) {                             \
+      fprintf (stderr, "%s failed\n", #stmt); \
+      abort ();                               \
+   }
 
 #endif /* KMS_MESSAGE_PRIVATE_H */

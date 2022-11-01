@@ -87,27 +87,23 @@ _has_write_key (bson_iter_t *iter)
  */
 
 static bool
-_make_agg_cmd (const char *ns,
-               const bson_t *pipeline,
-               mongoc_aggregate_opts_t *opts,
-               bson_t *command,
-               bson_error_t *err)
+_make_agg_cmd (
+   const char *ns, const bson_t *pipeline, mongoc_aggregate_opts_t *opts, bson_t *command, bson_error_t *err)
 {
    const char *const dot = strstr (ns, ".");
    const char *error = NULL;
    const char *error_hint = "";
 
-   bsonBuild (
-      *command,
-      kv ("aggregate",
-          if (dot,
-              /* Note: we're not validating that the collection name's length is
-                 one or more characters, as functions such as
-                 mongoc_client_get_collection also do not validate. */
-              // If 'ns' contains a dot, insert the string after the dot:
-              then (cstr (dot + 1)),
-              // Otherwise just an integer 1:
-              else(int32 (1)))));
+   bsonBuild (*command,
+              kv ("aggregate",
+                  if (dot,
+                      /* Note: we're not validating that the collection name's length is
+                         one or more characters, as functions such as
+                         mongoc_client_get_collection also do not validate. */
+                      // If 'ns' contains a dot, insert the string after the dot:
+                      then (cstr (dot + 1)),
+                      // Otherwise just an integer 1:
+                      else (int32 (1)))));
    if ((error_hint = "append-aggregate", error = bsonBuildError)) {
       goto fail;
    }
@@ -116,14 +112,13 @@ _make_agg_cmd (const char *ns,
     * The following will allow @pipeline to be either an array of
     * items for the pipeline, or {"pipeline": [...]}.
     */
-   bsonParse (
-      *pipeline,
-      find (keyWithType ("pipeline", array),
-            // There is a "pipeline" array in the document
-            append (*command, kv ("pipeline", iterValue (bsonVisitIter)))),
-      else( // We did not find a "pipeline" array. copy the pipeline as
-            // an array into the command
-         append (*command, kv ("pipeline", array (insert (*pipeline, true))))));
+   bsonParse (*pipeline,
+              find (keyWithType ("pipeline", array),
+                    // There is a "pipeline" array in the document
+                    append (*command, kv ("pipeline", iterValue (bsonVisitIter)))),
+              else ( // We did not find a "pipeline" array. copy the pipeline as
+                     // an array into the command
+                 append (*command, kv ("pipeline", array (insert (*pipeline, true))))));
    if ((error_hint = "append-pipeline", error = bsonParseError)) {
       goto fail;
    }
@@ -139,21 +134,18 @@ _make_agg_cmd (const char *ns,
                     find (lastElement,
                           // If it has an "$out" or "$merge" key, it is a
                           // writing aggregate command.
-                          parse (find (key ("$out", "$merge"),
-                                       do(has_write_key = true)))))));
+                          parse (find (key ("$out", "$merge"), do (has_write_key = true)))))));
    if ((error_hint = "parse-pipeline", error = bsonParseError)) {
       goto fail;
    }
 
-   bsonBuildAppend (
-      *command,
-      kv ("cursor",
-          // If batchSize is set, and if we are not a writing command with zero
-          // batchSize, append 'batchSize' to the cursor, otherwise leave the
-          // 'cursor' as an empty subdocument.
-          doc (if (opts->batchSize_is_set &&
-                      !(has_write_key && opts->batchSize == 0),
-                   then (kv ("batchSize", int32 (opts->batchSize)))))));
+   bsonBuildAppend (*command,
+                    kv ("cursor",
+                        // If batchSize is set, and if we are not a writing command with zero
+                        // batchSize, append 'batchSize' to the cursor, otherwise leave the
+                        // 'cursor' as an empty subdocument.
+                        doc (if (opts->batchSize_is_set && !(has_write_key && opts->batchSize == 0),
+                                 then (kv ("batchSize", int32 (opts->batchSize)))))));
    if ((error_hint = "build-cursor", error = bsonBuildError)) {
       goto fail;
    }
@@ -248,23 +240,16 @@ _mongoc_aggregate (mongoc_client_t *client,
       bson_concat (&cursor_opts /* destination */, opts /* source */);
    }
 
-   parsed_opts =
-      _mongoc_aggregate_opts_parse (client, opts, &aggregate_opts, &opts_err);
+   parsed_opts = _mongoc_aggregate_opts_parse (client, opts, &aggregate_opts, &opts_err);
 
    if (parsed_opts) {
-      created_command = _make_agg_cmd (
-         ns, pipeline, &aggregate_opts, &command, &create_cmd_err);
+      created_command = _make_agg_cmd (ns, pipeline, &aggregate_opts, &command, &create_cmd_err);
    } else {
       created_command = false;
    }
 
-   cursor = _mongoc_cursor_cmd_new (client,
-                                    ns,
-                                    created_command ? &command : NULL,
-                                    &cursor_opts,
-                                    user_rp,
-                                    default_rp,
-                                    default_rc);
+   cursor = _mongoc_cursor_cmd_new (
+      client, ns, created_command ? &command : NULL, &cursor_opts, user_rp, default_rp, default_rc);
 
    bson_destroy (&command);
    bson_destroy (&cursor_opts);
@@ -289,15 +274,12 @@ _mongoc_aggregate (mongoc_client_t *client,
    }
 
    /* pipeline could be like {pipeline: [{$out: 'test'}]} or [{$out: 'test'}] */
-   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
-       BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &ar)) {
+   if (bson_iter_init_find (&iter, pipeline, "pipeline") && BSON_ITER_HOLDS_ARRAY (&iter) &&
+       bson_iter_recurse (&iter, &ar)) {
       has_write_key = _has_write_key (&ar);
    } else {
       if (!bson_iter_init (&iter, pipeline)) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Pipeline is invalid BSON");
+         bson_set_error (&cursor->error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Pipeline is invalid BSON");
          GOTO (done);
       }
       has_write_key = _has_write_key (&iter);
@@ -315,15 +297,14 @@ _mongoc_aggregate (mongoc_client_t *client,
 
    if (aggregate_opts.write_concern_owned && has_write_key &&
        server_stream->sd->max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
-      bson_set_error (
-         &cursor->error,
-         MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-         "\"aggregate\" with \"$out\" or \"$merge\" does not support "
-         "writeConcern with wire version %d, wire version %d is "
-         "required",
-         server_stream->sd->max_wire_version,
-         WIRE_VERSION_CMD_WRITE_CONCERN);
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                      "\"aggregate\" with \"$out\" or \"$merge\" does not support "
+                      "writeConcern with wire version %d, wire version %d is "
+                      "required",
+                      server_stream->sd->max_wire_version,
+                      WIRE_VERSION_CMD_WRITE_CONCERN);
       GOTO (done);
    }
 

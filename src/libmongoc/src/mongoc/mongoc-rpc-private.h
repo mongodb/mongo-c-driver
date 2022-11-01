@@ -109,10 +109,8 @@ typedef union {
 
 BSON_STATIC_ASSERT2 (sizeof_rpc_header, sizeof (mongoc_rpc_header_t) == 16);
 BSON_STATIC_ASSERT2 (offsetof_rpc_header,
-                     offsetof (mongoc_rpc_header_t, opcode) ==
-                        offsetof (mongoc_rpc_reply_t, opcode));
-BSON_STATIC_ASSERT2 (sizeof_reply_header,
-                     sizeof (mongoc_rpc_reply_header_t) == 36);
+                     offsetof (mongoc_rpc_header_t, opcode) == offsetof (mongoc_rpc_reply_t, opcode));
+BSON_STATIC_ASSERT2 (sizeof_reply_header, sizeof (mongoc_rpc_reply_header_t) == 36);
 
 
 #undef RPC
@@ -141,9 +139,7 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc);
 bool
 _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen);
 bool
-_mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t *rpc,
-                                       const uint8_t *buf,
-                                       size_t buflen);
+_mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen);
 
 bool
 _mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply);
@@ -153,23 +149,17 @@ bool
 _mongoc_rpc_reply_get_first_msg (mongoc_rpc_msg_t *reply, bson_t *bson);
 
 void
-_mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
-                          const char *cmd_ns,
-                          mongoc_cmd_t *cmd);
+_mongoc_rpc_prep_command (mongoc_rpc_t *rpc, const char *cmd_ns, mongoc_cmd_t *cmd);
 bool
 _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
                       int32_t error_api_version,
                       bson_error_t *error /* OUT */,
                       bson_t *error_doc /* OUT */);
 bool
-_mongoc_cmd_check_ok (const bson_t *doc,
-                      int32_t error_api_version,
-                      bson_error_t *error);
+_mongoc_cmd_check_ok (const bson_t *doc, int32_t error_api_version, bson_error_t *error);
 
 bool
-_mongoc_cmd_check_ok_no_wce (const bson_t *doc,
-                             int32_t error_api_version,
-                             bson_error_t *error);
+_mongoc_cmd_check_ok_no_wce (const bson_t *doc, int32_t error_api_version, bson_error_t *error);
 
 bool
 _mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen);
@@ -181,9 +171,7 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
                       bson_error_t *error);
 
 bool
-_mongoc_rpc_decompress_if_necessary (mongoc_rpc_t *rpc,
-                                     mongoc_buffer_t *buffer,
-                                     bson_error_t *error);
+_mongoc_rpc_decompress_if_necessary (mongoc_rpc_t *rpc, mongoc_buffer_t *buffer, bson_error_t *error);
 
 BSON_END_DECLS
 

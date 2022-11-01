@@ -19,7 +19,8 @@
 #include "TestSuite.h"
 
 static void
-test_generation_map_basic (void) {
+test_generation_map_basic (void)
+{
    bson_oid_t oid_a;
    bson_oid_t oid_b;
    mongoc_generation_map_t *gm;
@@ -49,6 +50,8 @@ test_generation_map_basic (void) {
    mongoc_generation_map_destroy (gm);
 }
 
-void test_generation_map_install (TestSuite *suite) {
+void
+test_generation_map_install (TestSuite *suite)
+{
    TestSuite_Add (suite, "/generation_map/basic", test_generation_map_basic);
 }

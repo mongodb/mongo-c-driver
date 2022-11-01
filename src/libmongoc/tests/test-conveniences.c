@@ -121,8 +121,7 @@ tmp_bson (const char *json, ...)
       doc = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
 
       if (!doc) {
-         fprintf (
-            stderr, "tmp_bson error %s: parsing: %s\n", error.message, json);
+         fprintf (stderr, "tmp_bson error %s: parsing: %s\n", error.message, json);
          abort ();
       }
 
@@ -178,8 +177,7 @@ bson_lookup (const bson_t *bson, const char *path, bson_iter_t *out)
 
    bson_iter_init (&iter, bson);
    if (!bson_iter_find_descendant (&iter, path, out)) {
-      fprintf (
-         stderr, "'%s' field not found in BSON: %s", path, tmp_json (bson));
+      fprintf (stderr, "'%s' field not found in BSON: %s", path, tmp_json (bson));
       abort ();
    }
 }
@@ -197,8 +195,7 @@ bson_iter_bson (const bson_iter_t *iter, bson_t *bson)
    uint32_t len;
    const uint8_t *data;
 
-   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (iter) ||
-                BSON_ITER_HOLDS_ARRAY (iter));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (iter) || BSON_ITER_HOLDS_ARRAY (iter));
 
    if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
       bson_iter_document (iter, &len, &data);
@@ -224,10 +221,7 @@ bson_lookup_utf8 (const bson_t *b, const char *key)
    bson_iter_t iter;
 
    bson_lookup (b, key, &iter);
-   ASSERT_WITH_MSG (BSON_ITER_HOLDS_UTF8 (&iter),
-                    "'%s' is not a string: %s",
-                    key,
-                    tmp_json (b));
+   ASSERT_WITH_MSG (BSON_ITER_HOLDS_UTF8 (&iter), "'%s' is not a string: %s", key, tmp_json (b));
 
    return bson_iter_utf8 (&iter, NULL);
 }
@@ -312,10 +306,7 @@ bson_lookup_bool (const bson_t *b, const char *key)
    bson_iter_t iter;
 
    bson_lookup (b, key, &iter);
-   ASSERT_WITH_MSG (BSON_ITER_HOLDS_BOOL (&iter),
-                    "'%s' is not a bool: %s",
-                    key,
-                    tmp_json (b));
+   ASSERT_WITH_MSG (BSON_ITER_HOLDS_BOOL (&iter), "'%s' is not a bool: %s", key, tmp_json (b));
 
    return bson_iter_bool (&iter);
 }
@@ -335,10 +326,7 @@ bson_lookup_int32 (const bson_t *b, const char *key)
    bson_iter_t iter;
 
    bson_lookup (b, key, &iter);
-   ASSERT_WITH_MSG (BSON_ITER_HOLDS_INT32 (&iter),
-                    "'%s' is not a int32: %s",
-                    key,
-                    tmp_json (b));
+   ASSERT_WITH_MSG (BSON_ITER_HOLDS_INT32 (&iter), "'%s' is not a int32: %s", key, tmp_json (b));
 
    return bson_iter_int32 (&iter);
 }
@@ -358,10 +346,7 @@ bson_lookup_int64 (const bson_t *b, const char *key)
    bson_iter_t iter;
 
    bson_lookup (b, key, &iter);
-   ASSERT_WITH_MSG (BSON_ITER_HOLDS_INT64 (&iter),
-                    "'%s' is not a int64: %s",
-                    key,
-                    tmp_json (b));
+   ASSERT_WITH_MSG (BSON_ITER_HOLDS_INT64 (&iter), "'%s' is not a int64: %s", key, tmp_json (b));
 
    return bson_iter_int64 (&iter);
 }
@@ -427,8 +412,7 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
    }
 
    if (bson_has_field (&doc, "wtimeout")) {
-      mongoc_write_concern_set_wtimeout_int64 (
-         wc, bson_lookup_int32 (&doc, "wtimeout"));
+      mongoc_write_concern_set_wtimeout_int64 (wc, bson_lookup_int32 (&doc, "wtimeout"));
    }
 
    if (bson_has_field (&doc, "j")) {
@@ -486,9 +470,7 @@ bson_lookup_read_prefs (const bson_t *b, const char *key)
  *--------------------------------------------------------------------------
  */
 void
-bson_lookup_database_opts (const bson_t *b,
-                           const char *key,
-                           mongoc_database_t *database)
+bson_lookup_database_opts (const bson_t *b, const char *key, mongoc_database_t *database)
 {
    bson_t doc;
    mongoc_read_concern_t *rc;
@@ -526,9 +508,7 @@ bson_lookup_database_opts (const bson_t *b,
  *--------------------------------------------------------------------------
  */
 void
-bson_lookup_collection_opts (const bson_t *b,
-                             const char *key,
-                             mongoc_collection_t *collection)
+bson_lookup_collection_opts (const bson_t *b, const char *key, mongoc_collection_t *collection)
 {
    bson_t doc;
    mongoc_read_concern_t *rc;
@@ -622,8 +602,7 @@ bson_lookup_session_opts (const bson_t *b, const char *key)
    bson_lookup_doc (b, key, &doc);
    opts = mongoc_session_opts_new ();
 
-   mongoc_session_opts_set_causal_consistency (
-      opts, _mongoc_lookup_bool (&doc, "causalConsistency", true));
+   mongoc_session_opts_set_causal_consistency (opts, _mongoc_lookup_bool (&doc, "causalConsistency", true));
 
    if (bson_has_field (&doc, "defaultTransactionOptions")) {
       mongoc_transaction_opt_t *txn_opts;
@@ -673,12 +652,7 @@ static bool
 is_empty_doc_or_array (const bson_value_t *value);
 
 static bool
-find (bson_iter_t *iter,
-      const bson_t *doc,
-      const char *key,
-      bool is_command,
-      bool is_first,
-      bool retain_dots_in_keys);
+find (bson_iter_t *iter, const bson_t *doc, const char *key, bool is_command, bool is_first, bool retain_dots_in_keys);
 
 
 /*--------------------------------------------------------------------------
@@ -749,8 +723,7 @@ match_json (const bson_t *doc,
    bool matches;
 
    va_start (args, json_pattern);
-   json_pattern_formatted =
-      bson_strdupv_printf (json_pattern ? json_pattern : "{}", args);
+   json_pattern_formatted = bson_strdupv_printf (json_pattern ? json_pattern : "{}", args);
    va_end (args);
 
    double_quoted = single_quotes_to_double (json_pattern_formatted);
@@ -765,8 +738,7 @@ match_json (const bson_t *doc,
    matches = match_bson_with_ctx (doc, pattern, &ctx);
 
    if (!matches) {
-      char *as_string =
-         doc ? bson_as_canonical_extended_json (doc, NULL) : NULL;
+      char *as_string = doc ? bson_as_canonical_extended_json (doc, NULL) : NULL;
       fprintf (stderr,
                "ASSERT_MATCH failed with document:\n\n"
                "%s\n"
@@ -864,8 +836,7 @@ match_err (match_ctx_t *ctx, const char *fmt, ...)
    formatted = bson_strdupv_printf (fmt, args);
    va_end (args);
 
-   bson_snprintf (
-      ctx->errmsg, sizeof ctx->errmsg, "%s: %s", ctx->path, formatted);
+   bson_snprintf (ctx->errmsg, sizeof ctx->errmsg, "%s: %s", ctx->path, formatted);
 
    bson_free (formatted);
 }
@@ -883,8 +854,7 @@ derive (match_ctx_t *ctx, match_ctx_t *derived, const char *key)
    derived->strict_numeric_types = ctx->strict_numeric_types;
 
    if (strlen (ctx->path) > 0) {
-      bson_snprintf (
-         derived->path, sizeof derived->path, "%s.%s", ctx->path, key);
+      bson_snprintf (derived->path, sizeof derived->path, "%s.%s", ctx->path, key);
    } else {
       bson_snprintf (derived->path, sizeof derived->path, "%s", key);
    }
@@ -959,12 +929,7 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
       key = bson_iter_key (&pattern_iter);
       value = bson_iter_value (&pattern_iter);
 
-      found = find (&doc_iter,
-                    doc,
-                    key,
-                    ctx->is_command,
-                    is_first,
-                    ctx->retain_dots_in_keys);
+      found = find (&doc_iter, doc, key, ctx->is_command, is_first, ctx->retain_dots_in_keys);
       if (found) {
          bson_value_copy (bson_iter_value (&doc_iter), &doc_value);
       }
@@ -981,8 +946,7 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
       derive (ctx, &derived, key);
 
       if (ctx->visitor_fn) {
-         match_action_t action =
-            ctx->visitor_fn (ctx, &pattern_iter, found ? &doc_iter : NULL);
+         match_action_t action = ctx->visitor_fn (ctx, &pattern_iter, found ? &doc_iter : NULL);
          if (action == MATCH_ACTION_ABORT) {
             goto fail;
          } else if (action == MATCH_ACTION_SKIP) {
@@ -1056,12 +1020,8 @@ fail:
  */
 
 static bool
-find (bson_iter_t *iter_out,
-      const bson_t *doc,
-      const char *key,
-      bool is_command,
-      bool is_first,
-      bool retain_dots_in_keys)
+find (
+   bson_iter_t *iter_out, const bson_t *doc, const char *key, bool is_command, bool is_first, bool retain_dots_in_keys)
 {
    bson_iter_t iter;
    bson_iter_t descendent;
@@ -1091,8 +1051,7 @@ find (bson_iter_t *iter_out,
 bool
 bson_init_from_value (bson_t *b, const bson_value_t *v)
 {
-   BSON_ASSERT (v->value_type == BSON_TYPE_ARRAY ||
-                v->value_type == BSON_TYPE_DOCUMENT);
+   BSON_ASSERT (v->value_type == BSON_TYPE_ARRAY || v->value_type == BSON_TYPE_DOCUMENT);
 
    return bson_init_static (b, v->value.v_doc.data, v->value.v_doc.data_len);
 }
@@ -1104,8 +1063,7 @@ _is_operator (const char *op_name, const bson_value_t *value, bool *op_val)
    bson_t bson;
    bson_iter_t iter;
 
-   if (value->value_type == BSON_TYPE_DOCUMENT &&
-       bson_init_from_value (&bson, value) &&
+   if (value->value_type == BSON_TYPE_DOCUMENT && bson_init_from_value (&bson, value) &&
        bson_iter_init_find (&iter, &bson, op_name)) {
       *op_val = bson_iter_as_bool (&iter);
       return true;
@@ -1196,8 +1154,7 @@ get_type_operator (const bson_value_t *value, bson_type_t *out)
 
    /* See list of aliases on this page:
     * https://docs.mongodb.com/manual/reference/bson-types/ */
-   if (value->value_type == BSON_TYPE_DOCUMENT &&
-       bson_init_from_value (&bson, value) &&
+   if (value->value_type == BSON_TYPE_DOCUMENT && bson_init_from_value (&bson, value) &&
        bson_iter_init_find (&iter, &bson, "$$type")) {
       value_string = bson_iter_utf8 (&iter, NULL);
       if (0 == strcasecmp ("double", value_string)) {
@@ -1267,12 +1224,10 @@ is_empty_doc_or_array (const bson_value_t *value)
 {
    bson_t doc;
 
-   if (!(value->value_type == BSON_TYPE_ARRAY ||
-         value->value_type == BSON_TYPE_DOCUMENT)) {
+   if (!(value->value_type == BSON_TYPE_ARRAY || value->value_type == BSON_TYPE_DOCUMENT)) {
       return false;
    }
-   BSON_ASSERT (bson_init_static (
-      &doc, value->value.v_doc.data, value->value.v_doc.data_len));
+   BSON_ASSERT (bson_init_static (&doc, value->value.v_doc.data, value->value.v_doc.data_len));
 
    return bson_count_keys (&doc) == 0;
 }
@@ -1293,10 +1248,7 @@ match_bson_arrays (const bson_t *array, const bson_t *pattern, match_ctx_t *ctx)
    pattern_count = bson_count_keys (pattern);
 
    if (array_count != pattern_count) {
-      match_err (ctx,
-                 "expected %" PRIu32 " keys, not %" PRIu32,
-                 pattern_count,
-                 array_count);
+      match_err (ctx, "expected %" PRIu32 " keys, not %" PRIu32, pattern_count, array_count);
       return false;
    }
 
@@ -1340,17 +1292,14 @@ bson_value_as_int64 (const bson_value_t *value)
    } else if (value->value_type == BSON_TYPE_INT64) {
       return value->value.v_int64;
    } else {
-      test_error ("bson_value_as_int64 called on value of type %d",
-                  value->value_type);
+      test_error ("bson_value_as_int64 called on value of type %d", value->value_type);
       abort ();
    }
 }
 
 
 bool
-match_bson_value (const bson_value_t *doc,
-                  const bson_value_t *pattern,
-                  match_ctx_t *ctx)
+match_bson_value (const bson_value_t *doc, const bson_value_t *pattern, match_ctx_t *ctx)
 {
    bson_t subdoc;
    bson_t pattern_subdoc;
@@ -1361,12 +1310,10 @@ match_bson_value (const bson_value_t *doc,
    if (ctx && ctx->allow_placeholders) {
       /* The change streams spec tests use the value 42 as a placeholder. */
       bool is_placeholder = false;
-      if (is_number_type (pattern->value_type) &&
-          bson_value_as_int64 (pattern) == 42) {
+      if (is_number_type (pattern->value_type) && bson_value_as_int64 (pattern) == 42) {
          is_placeholder = true;
       }
-      if (pattern->value_type == BSON_TYPE_UTF8 &&
-          !strcmp (pattern->value.v_utf8.str, "42")) {
+      if (pattern->value_type == BSON_TYPE_UTF8 && !strcmp (pattern->value.v_utf8.str, "42")) {
          is_placeholder = true;
       }
       if (is_placeholder) {
@@ -1374,17 +1321,12 @@ match_bson_value (const bson_value_t *doc,
       }
    }
 
-   if (is_number_type (doc->value_type) &&
-       is_number_type (pattern->value_type) && ctx &&
-       !ctx->strict_numeric_types) {
+   if (is_number_type (doc->value_type) && is_number_type (pattern->value_type) && ctx && !ctx->strict_numeric_types) {
       doc_int64 = bson_value_as_int64 (doc);
       pattern_int64 = bson_value_as_int64 (pattern);
 
       if (doc_int64 != pattern_int64) {
-         match_err (ctx,
-                    "expected %" PRId64 ", got %" PRId64,
-                    pattern_int64,
-                    doc_int64);
+         match_err (ctx, "expected %" PRId64 ", got %" PRId64, pattern_int64, doc_int64);
          return false;
       }
 
@@ -1425,42 +1367,32 @@ match_bson_value (const bson_value_t *doc,
 
    case BSON_TYPE_BINARY:
       ret = doc->value.v_binary.data_len == pattern->value.v_binary.data_len &&
-            !memcmp (doc->value.v_binary.data,
-                     pattern->value.v_binary.data,
-                     doc->value.v_binary.data_len);
+            !memcmp (doc->value.v_binary.data, pattern->value.v_binary.data, doc->value.v_binary.data_len);
       break;
 
    case BSON_TYPE_BOOL:
       ret = doc->value.v_bool == pattern->value.v_bool;
 
       if (!ret) {
-         match_err (ctx,
-                    "expected %d, got %d",
-                    pattern->value.v_bool,
-                    doc->value.v_bool);
+         match_err (ctx, "expected %d, got %d", pattern->value.v_bool, doc->value.v_bool);
       }
 
       return ret;
 
    case BSON_TYPE_CODE:
       ret = doc->value.v_code.code_len == pattern->value.v_code.code_len &&
-            !memcmp (doc->value.v_code.code,
-                     pattern->value.v_code.code,
-                     doc->value.v_code.code_len);
+            !memcmp (doc->value.v_code.code, pattern->value.v_code.code, doc->value.v_code.code_len);
 
       break;
 
    case BSON_TYPE_CODEWSCOPE:
-      ret = doc->value.v_codewscope.code_len ==
-               pattern->value.v_codewscope.code_len &&
-            !memcmp (doc->value.v_codewscope.code,
-                     pattern->value.v_codewscope.code,
-                     doc->value.v_codewscope.code_len) &&
-            doc->value.v_codewscope.scope_len ==
-               pattern->value.v_codewscope.scope_len &&
-            !memcmp (doc->value.v_codewscope.scope_data,
-                     pattern->value.v_codewscope.scope_data,
-                     doc->value.v_codewscope.scope_len);
+      ret =
+         doc->value.v_codewscope.code_len == pattern->value.v_codewscope.code_len &&
+         !memcmp (doc->value.v_codewscope.code, pattern->value.v_codewscope.code, doc->value.v_codewscope.code_len) &&
+         doc->value.v_codewscope.scope_len == pattern->value.v_codewscope.scope_len &&
+         !memcmp (doc->value.v_codewscope.scope_data,
+                  pattern->value.v_codewscope.scope_data,
+                  doc->value.v_codewscope.scope_len);
 
       break;
 
@@ -1468,10 +1400,7 @@ match_bson_value (const bson_value_t *doc,
       ret = doc->value.v_datetime == pattern->value.v_datetime;
 
       if (!ret) {
-         match_err (ctx,
-                    "expected %" PRId64 ", got %" PRId64,
-                    pattern->value.v_datetime,
-                    doc->value.v_datetime);
+         match_err (ctx, "expected %" PRId64 ", got %" PRId64, pattern->value.v_datetime, doc->value.v_datetime);
       }
 
       return ret;
@@ -1480,10 +1409,7 @@ match_bson_value (const bson_value_t *doc,
       ret = doc->value.v_double == pattern->value.v_double;
 
       if (!ret) {
-         match_err (ctx,
-                    "expected %f, got %f",
-                    pattern->value.v_double,
-                    doc->value.v_double);
+         match_err (ctx, "expected %f, got %f", pattern->value.v_double, doc->value.v_double);
       }
 
       return ret;
@@ -1492,10 +1418,7 @@ match_bson_value (const bson_value_t *doc,
       ret = doc->value.v_int32 == pattern->value.v_int32;
 
       if (!ret) {
-         match_err (ctx,
-                    "expected %" PRId32 ", got %" PRId32,
-                    pattern->value.v_int32,
-                    doc->value.v_int32);
+         match_err (ctx, "expected %" PRId32 ", got %" PRId32, pattern->value.v_int32, doc->value.v_int32);
       }
 
       return ret;
@@ -1504,10 +1427,7 @@ match_bson_value (const bson_value_t *doc,
       ret = doc->value.v_int64 == pattern->value.v_int64;
 
       if (!ret) {
-         match_err (ctx,
-                    "expected %" PRId64 ", got %" PRId64,
-                    pattern->value.v_int64,
-                    doc->value.v_int64);
+         match_err (ctx, "expected %" PRId64 ", got %" PRId64, pattern->value.v_int64, doc->value.v_int64);
       }
 
       return ret;
@@ -1517,39 +1437,29 @@ match_bson_value (const bson_value_t *doc,
       break;
 
    case BSON_TYPE_REGEX:
-      ret =
-         !strcmp (doc->value.v_regex.regex, pattern->value.v_regex.regex) &&
-         !strcmp (doc->value.v_regex.options, pattern->value.v_regex.options);
+      ret = !strcmp (doc->value.v_regex.regex, pattern->value.v_regex.regex) &&
+            !strcmp (doc->value.v_regex.options, pattern->value.v_regex.options);
 
       break;
 
    case BSON_TYPE_SYMBOL:
       ret = doc->value.v_symbol.len == pattern->value.v_symbol.len &&
-            !strncmp (doc->value.v_symbol.symbol,
-                      pattern->value.v_symbol.symbol,
-                      doc->value.v_symbol.len);
+            !strncmp (doc->value.v_symbol.symbol, pattern->value.v_symbol.symbol, doc->value.v_symbol.len);
 
       break;
 
    case BSON_TYPE_TIMESTAMP:
-      ret = doc->value.v_timestamp.timestamp ==
-               pattern->value.v_timestamp.timestamp &&
-            doc->value.v_timestamp.increment ==
-               pattern->value.v_timestamp.increment;
+      ret = doc->value.v_timestamp.timestamp == pattern->value.v_timestamp.timestamp &&
+            doc->value.v_timestamp.increment == pattern->value.v_timestamp.increment;
 
       break;
 
    case BSON_TYPE_UTF8:
       ret = doc->value.v_utf8.len == pattern->value.v_utf8.len &&
-            !strncmp (doc->value.v_utf8.str,
-                      pattern->value.v_utf8.str,
-                      doc->value.v_utf8.len);
+            !strncmp (doc->value.v_utf8.str, pattern->value.v_utf8.str, doc->value.v_utf8.len);
 
       if (!ret) {
-         match_err (ctx,
-                    "expected \"%s\", got \"%s\"",
-                    pattern->value.v_utf8.str,
-                    doc->value.v_utf8.str);
+         match_err (ctx, "expected \"%s\", got \"%s\"", pattern->value.v_utf8.str, doc->value.v_utf8.str);
       }
 
       return ret;
@@ -1564,10 +1474,8 @@ match_bson_value (const bson_value_t *doc,
       return true;
 
    case BSON_TYPE_DBPOINTER:
-      ret = (0 == strcmp (doc->value.v_dbpointer.collection,
-                          pattern->value.v_dbpointer.collection) &&
-             bson_oid_equal (&doc->value.v_dbpointer.oid,
-                             &pattern->value.v_dbpointer.oid));
+      ret = (0 == strcmp (doc->value.v_dbpointer.collection, pattern->value.v_dbpointer.collection) &&
+             bson_oid_equal (&doc->value.v_dbpointer.oid, &pattern->value.v_dbpointer.oid));
       break;
 
    case BSON_TYPE_DECIMAL128:
@@ -1580,29 +1488,23 @@ match_bson_value (const bson_value_t *doc,
       }
       break;
    default:
-      test_error ("unexpected value type %d: %s",
-                  doc->value_type,
-                  _mongoc_bson_type_to_str (doc->value_type));
+      test_error ("unexpected value type %d: %s", doc->value_type, _mongoc_bson_type_to_str (doc->value_type));
       abort ();
    }
 
    if (!ret) {
-      match_err (ctx,
-                 "%s values mismatch",
-                 _mongoc_bson_type_to_str (pattern->value_type));
+      match_err (ctx, "%s values mismatch", _mongoc_bson_type_to_str (pattern->value_type));
    }
 
    return ret;
 }
 
 bool
-mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,
-                                 bson_t *command)
+mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern, bson_t *command)
 {
    mongoc_write_concern_t *wc = mongoc_write_concern_copy (write_concern);
 
-   if (!bson_append_document (
-          command, "writeConcern", 12, _mongoc_write_concern_get_bson (wc))) {
+   if (!bson_append_document (command, "writeConcern", 12, _mongoc_write_concern_get_bson (wc))) {
       MONGOC_ERROR ("Could not append writeConcern to command.");
       mongoc_write_concern_destroy (wc);
       return false;
@@ -1699,12 +1601,8 @@ assert_no_duplicate_keys (const bson_t *doc)
    BSON_ASSERT (bson_iter_init (&iter, doc));
 
    while (bson_iter_next (&iter)) {
-      if (mongoc_set_find_item (
-             keys, find_key, (void *) bson_iter_key (&iter))) {
-         fprintf (stderr,
-                  "Duplicate key \"%s\" in document:\n%s",
-                  bson_iter_key (&iter),
-                  bson_as_json (doc, NULL));
+      if (mongoc_set_find_item (keys, find_key, (void *) bson_iter_key (&iter))) {
+         fprintf (stderr, "Duplicate key \"%s\" in document:\n%s", bson_iter_key (&iter), bson_as_json (doc, NULL));
          abort ();
       }
 
@@ -1759,11 +1657,9 @@ bson_with_all_types ()
    bson_oid_init_from_string (&oid, "000000000000000000000000");
    BSON_ASSERT (BSON_APPEND_DOUBLE (bson, "double", 1.0));
    BSON_ASSERT (BSON_APPEND_UTF8 (bson, "string", "string_example"));
-   BSON_ASSERT (
-      BSON_APPEND_DOCUMENT (bson, "document", tmp_bson ("{'x': 'y'}")));
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (bson, "document", tmp_bson ("{'x': 'y'}")));
    BSON_ASSERT (BSON_APPEND_ARRAY (bson, "document", tmp_bson ("{'0': 'x'}")));
-   BSON_ASSERT (BSON_APPEND_BINARY (
-      bson, "binary", BSON_SUBTYPE_BINARY, (uint8_t *) "data", 4));
+   BSON_ASSERT (BSON_APPEND_BINARY (bson, "binary", BSON_SUBTYPE_BINARY, (uint8_t *) "data", 4));
    BSON_ASSERT (BSON_APPEND_UNDEFINED (bson, "undefined"));
    BSON_ASSERT (BSON_APPEND_OID (bson, "oid", &oid));
    BSON_ASSERT (BSON_APPEND_BOOL (bson, "bool", true));
@@ -1774,8 +1670,7 @@ bson_with_all_types ()
    BSON_ASSERT (BSON_APPEND_CODE (bson, "code", "var x = 1;"));
    BSON_ASSERT (BSON_APPEND_SYMBOL (bson, "symbol", "symbol_example"));
    BSON_ASSERT (BSON_APPEND_CODE (bson, "code", "var x = 1;"));
-   BSON_ASSERT (BSON_APPEND_CODE_WITH_SCOPE (
-      bson, "code_w_scope", "var x = 1;", tmp_bson ("{}")));
+   BSON_ASSERT (BSON_APPEND_CODE_WITH_SCOPE (bson, "code_w_scope", "var x = 1;", tmp_bson ("{}")));
    BSON_ASSERT (BSON_APPEND_INT32 (bson, "int32", 1));
    BSON_ASSERT (BSON_APPEND_TIMESTAMP (bson, "timestamp", 2, 3));
    BSON_ASSERT (BSON_APPEND_INT64 (bson, "int64", 4));
@@ -1876,18 +1771,13 @@ json_with_all_types ()
 void
 assert_wc_oob_error (bson_error_t *error)
 {
-   if (test_framework_get_server_version () >=
-       test_framework_str_to_version ("4.3.3")) {
+   if (test_framework_get_server_version () >= test_framework_str_to_version ("4.3.3")) {
       /* Error reporting changed in SERVER-45584 */
       ASSERT_ERROR_CONTAINS (
-         (*error),
-         MONGOC_ERROR_SERVER,
-         9,
-         "w has to be a non-negative number and not greater than 50");
+         (*error), MONGOC_ERROR_SERVER, 9, "w has to be a non-negative number and not greater than 50");
    } else {
       if (test_framework_is_replset ()) { /* replset */
-         ASSERT_ERROR_CONTAINS (
-            (*error), MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
+         ASSERT_ERROR_CONTAINS ((*error), MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
       } else { /* standalone */
          ASSERT_CMPINT (error->domain, ==, MONGOC_ERROR_SERVER);
          ASSERT_CMPINT (error->code, ==, 2);
@@ -1926,10 +1816,8 @@ server_semver (mongoc_client_t *client, semver_t *out)
    bson_error_t error;
    const char *server_version_str;
 
-   ASSERT_OR_PRINT (
-      mongoc_client_command_simple (
-         client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_client_command_simple (client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
+                    error);
 
    server_version_str = bson_lookup_utf8 (&reply, "version");
    semver_parse (server_version_str, out);

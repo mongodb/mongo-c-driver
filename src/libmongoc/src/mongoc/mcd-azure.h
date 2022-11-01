@@ -58,8 +58,7 @@ bool
 mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
                                                const char *json,
                                                int len,
-                                               bson_error_t *error)
-   BSON_GNUC_WARN_UNUSED_RESULT;
+                                               bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 
 /**
  * @brief Destroy and zero-fill an access token object

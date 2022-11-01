@@ -74,10 +74,8 @@ mongoc_async_run (mongoc_async_t *async)
    while (async->ncmds) {
       /* ncmds grows if we discover a replica & start calling hello on it */
       if (poll_size < async->ncmds) {
-         poller = (mongoc_stream_poll_t *) bson_realloc (
-            poller, sizeof (*poller) * async->ncmds);
-         acmds_polled = (mongoc_async_cmd_t **) bson_realloc (
-            acmds_polled, sizeof (*acmds_polled) * async->ncmds);
+         poller = (mongoc_stream_poll_t *) bson_realloc (poller, sizeof (*poller) * async->ncmds);
+         acmds_polled = (mongoc_async_cmd_t **) bson_realloc (acmds_polled, sizeof (*acmds_polled) * async->ncmds);
          poll_size = async->ncmds;
       }
 
@@ -99,8 +97,7 @@ mongoc_async_run (mongoc_async_t *async)
                }
             } else {
                /* don't poll longer than the earliest cmd ready to init. */
-               expire_at = BSON_MIN (
-                  expire_at, acmd->connect_started + acmd->initiate_delay_ms);
+               expire_at = BSON_MIN (expire_at, acmd->connect_started + acmd->initiate_delay_ms);
             }
          }
 
@@ -109,8 +106,7 @@ mongoc_async_run (mongoc_async_t *async)
             poller[nstreams].stream = acmd->stream;
             poller[nstreams].events = acmd->events;
             poller[nstreams].revents = 0;
-            expire_at = BSON_MIN (
-               expire_at, acmd->connect_started + acmd->timeout_msec * 1000);
+            expire_at = BSON_MIN (expire_at, acmd->connect_started + acmd->timeout_msec * 1000);
             ++nstreams;
          }
       }
@@ -125,8 +121,7 @@ mongoc_async_run (mongoc_async_t *async)
 
       if (nstreams > 0) {
          /* we need at least one stream to poll. */
-         nactive =
-            mongoc_stream_poll (poller, nstreams, (int32_t) poll_timeout_msec);
+         nactive = mongoc_stream_poll (poller, nstreams, (int32_t) poll_timeout_msec);
       } else {
          /* currently this does not get hit. we always have at least one command
           * initialized with a stream. */
@@ -142,21 +137,18 @@ mongoc_async_run (mongoc_async_t *async)
                   bson_set_error (&iter->error,
                                   MONGOC_ERROR_STREAM,
                                   MONGOC_ERROR_STREAM_CONNECT,
-                                  hup ? "connection refused"
-                                      : "unknown connection error");
+                                  hup ? "connection refused" : "unknown connection error");
                } else {
                   bson_set_error (&iter->error,
                                   MONGOC_ERROR_STREAM,
                                   MONGOC_ERROR_STREAM_SOCKET,
-                                  hup ? "connection closed"
-                                      : "unknown socket error");
+                                  hup ? "connection closed" : "unknown socket error");
                }
 
                iter->state = MONGOC_ASYNC_CMD_ERROR_STATE;
             }
 
-            if ((poller[i].revents & poller[i].events) ||
-                iter->state == MONGOC_ASYNC_CMD_ERROR_STATE) {
+            if ((poller[i].revents & poller[i].events) || iter->state == MONGOC_ASYNC_CMD_ERROR_STATE) {
                (void) mongoc_async_cmd_run (iter);
                nactive--;
             }
@@ -173,14 +165,11 @@ mongoc_async_run (mongoc_async_t *async)
          mongoc_async_cmd_result_t result;
 
          /* check if an initiated cmd has passed the connection timeout.  */
-         if (acmd->state != MONGOC_ASYNC_CMD_INITIATE &&
-             now > acmd->connect_started + acmd->timeout_msec * 1000) {
+         if (acmd->state != MONGOC_ASYNC_CMD_INITIATE && now > acmd->connect_started + acmd->timeout_msec * 1000) {
             bson_set_error (&acmd->error,
                             MONGOC_ERROR_STREAM,
                             MONGOC_ERROR_STREAM_CONNECT,
-                            acmd->state == MONGOC_ASYNC_CMD_SEND
-                               ? "connection timeout"
-                               : "socket timeout");
+                            acmd->state == MONGOC_ASYNC_CMD_SEND ? "connection timeout" : "socket timeout");
 
             remove_cmd = true;
             result = MONGOC_ASYNC_CMD_TIMEOUT;

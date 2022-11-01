@@ -11,20 +11,14 @@
 
 
 static bool
-retryable_writes_test_run_operation (json_test_ctx_t *ctx,
-                                     const bson_t *test,
-                                     const bson_t *operation)
+retryable_writes_test_run_operation (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
 {
    bool *explicit_session = (bool *) ctx->config->ctx;
    bson_t reply;
    bool res;
 
-   res = json_test_operation (ctx,
-                              test,
-                              operation,
-                              ctx->collection,
-                              *explicit_session ? ctx->sessions[0] : NULL,
-                              &reply);
+   res =
+      json_test_operation (ctx, test, operation, ctx->collection, *explicit_session ? ctx->sessions[0] : NULL, &reply);
 
    bson_destroy (&reply);
 
@@ -33,9 +27,7 @@ retryable_writes_test_run_operation (json_test_ctx_t *ctx,
 
 
 static test_skip_t skips[] = {
-   {"InsertOne fails after multiple retryable writeConcernErrors",
-    "Waiting on CDRIVER-3790"},
-   {0}};
+   {"InsertOne fails after multiple retryable writeConcernErrors", "Waiting on CDRIVER-3790"}, {0}};
 
 /* Callback for JSON tests from Retryable Writes Spec */
 static void
@@ -73,10 +65,7 @@ test_rs_failover (void)
    bson_error_t error;
    bson_t *b = tmp_bson ("{}");
 
-   rs = mock_rs_with_auto_hello (WIRE_VERSION_OP_MSG,
-                                 true /* has primary */,
-                                 2 /* secondaries */,
-                                 0 /* arbiters */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_OP_MSG, true /* has primary */, 2 /* secondaries */, 0 /* arbiters */);
 
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
@@ -89,8 +78,7 @@ test_rs_failover (void)
 
    /* initial insert triggers replica set discovery */
    future = future_collection_insert_one (collection, b, &opts, NULL, &error);
-   request =
-      mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
+   request = mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    mock_server_replies_ok_and_destroys (request);
    BSON_ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -100,18 +88,14 @@ test_rs_failover (void)
    mock_rs_elect (rs, 1 /* server id */);
 
    /* insert receives "not primary" from old primary, reselects and retries */
-   future = future_collection_insert_one (
-      collection, tmp_bson ("{}"), &opts, NULL, &error);
+   future = future_collection_insert_one (collection, tmp_bson ("{}"), &opts, NULL, &error);
 
-   request =
-      mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
+   request = mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
-   mock_server_replies_simple (
-      request, "{'ok': 0, 'code': 10107, 'errmsg': 'not primary'}");
+   mock_server_replies_simple (request, "{'ok': 0, 'code': 10107, 'errmsg': 'not primary'}");
    request_destroy (request);
 
-   request =
-      mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
+   request = mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
    mock_server_replies_ok_and_destroys (request);
    BSON_ASSERT (future_get_bool (future));
@@ -151,8 +135,7 @@ test_command_with_opts (void *ctx)
    mongoc_uri_destroy (uri);
 
    /* clean up in case a previous test aborted */
-   server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   server_id = mongoc_topology_select_server_id (client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 
@@ -165,25 +148,21 @@ test_command_with_opts (void *ctx)
       }
    }
 
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (
-         collection, tmp_bson ("{'_id':1, 'x': 1}"), NULL, NULL, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (collection, tmp_bson ("{'_id':1, 'x': 1}"), NULL, NULL, &error),
+                    error);
 
    cmd = tmp_bson ("{'configureFailPoint': 'onPrimaryTransactionalWrite',"
                    " 'mode': {'times': 1},"
                    " 'data': {'failBeforeCommitExceptionCode': 1}}");
 
-   ASSERT_OR_PRINT (mongoc_client_command_simple_with_server_id (
-                       client, "admin", cmd, NULL, server_id, NULL, &error),
+   ASSERT_OR_PRINT (mongoc_client_command_simple_with_server_id (client, "admin", cmd, NULL, server_id, NULL, &error),
                     error);
 
    cmd = tmp_bson ("{'findAndModify': '%s', 'query': {'_id': 1}, 'update': "
                    "{'$inc': {'x': 1}}, 'new': true}",
                    collection->collection);
 
-   ASSERT_OR_PRINT (mongoc_collection_read_write_command_with_opts (
-                       collection, cmd, NULL, NULL, &reply, &error),
+   ASSERT_OR_PRINT (mongoc_collection_read_write_command_with_opts (collection, cmd, NULL, NULL, &reply, &error),
                     error);
 
    bson_lookup_doc (&reply, "value", &reply_result);
@@ -225,15 +204,12 @@ test_insert_one_unacknowledged (void)
    mongoc_write_concern_set_journal (wc, false);
    mongoc_write_concern_append (wc, &opts);
 
-   future = future_collection_insert_one (
-      collection, tmp_bson ("{}"), &opts, NULL, &error);
+   future = future_collection_insert_one (collection, tmp_bson ("{}"), &opts, NULL, &error);
 
-   request = mock_server_receives_msg (
-      server,
-      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
-      tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
-      tmp_bson ("{}"));
+   request = mock_server_receives_msg (server,
+                                       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+                                       tmp_bson ("{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+                                       tmp_bson ("{}"));
    ASSERT (future_get_bool (future));
    mock_server_auto_endsessions (server);
 
@@ -273,19 +249,13 @@ test_update_one_unacknowledged (void)
    mongoc_write_concern_set_journal (wc, false);
    mongoc_write_concern_append (wc, &opts);
 
-   future = future_collection_update_one (collection,
-                                          tmp_bson ("{}"),
-                                          tmp_bson ("{'$set': {'x': 1}}"),
-                                          &opts,
-                                          NULL,
-                                          &error);
+   future =
+      future_collection_update_one (collection, tmp_bson ("{}"), tmp_bson ("{'$set': {'x': 1}}"), &opts, NULL, &error);
 
-   request = mock_server_receives_msg (
-      server,
-      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
-      tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
-      tmp_bson ("{'q': {}, 'u': {'$set': {'x': 1}}}"));
+   request = mock_server_receives_msg (server,
+                                       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+                                       tmp_bson ("{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+                                       tmp_bson ("{'q': {}, 'u': {'$set': {'x': 1}}}"));
    ASSERT (future_get_bool (future));
 
    mongoc_write_concern_destroy (wc);
@@ -324,15 +294,12 @@ test_delete_one_unacknowledged (void)
    mongoc_write_concern_set_journal (wc, false);
    mongoc_write_concern_append (wc, &opts);
 
-   future = future_collection_delete_one (
-      collection, tmp_bson ("{}"), &opts, NULL, &error);
+   future = future_collection_delete_one (collection, tmp_bson ("{}"), &opts, NULL, &error);
 
-   request = mock_server_receives_msg (
-      server,
-      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
-      tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
-      tmp_bson ("{'q': {}, 'limit': 1}"));
+   request = mock_server_receives_msg (server,
+                                       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+                                       tmp_bson ("{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+                                       tmp_bson ("{'q': {}, 'limit': 1}"));
    ASSERT (future_get_bool (future));
 
    mongoc_write_concern_destroy (wc);
@@ -376,12 +343,10 @@ test_bulk_operation_execute_unacknowledged (void)
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    future = future_bulk_operation_execute (bulk, NULL, &error);
 
-   request = mock_server_receives_msg (
-      server,
-      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
-      tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
-      tmp_bson ("{'_id': 1}"));
+   request = mock_server_receives_msg (server,
+                                       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+                                       tmp_bson ("{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+                                       tmp_bson ("{'_id': 1}"));
    ASSERT (future_get_uint32_t (future) == 1);
 
    mongoc_write_concern_destroy (wc);
@@ -420,15 +385,12 @@ test_remove_unacknowledged (void)
    mongoc_write_concern_set_w (wc, 0);
    mongoc_write_concern_set_journal (wc, false);
 
-   future = future_collection_remove (
-      collection, MONGOC_REMOVE_NONE, tmp_bson ("{'a': 1}"), wc, &error);
+   future = future_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{'a': 1}"), wc, &error);
 
-   request = mock_server_receives_msg (
-      server,
-      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
-      tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
-      tmp_bson ("{'q': {'a': 1}, 'limit': 0}"));
+   request = mock_server_receives_msg (server,
+                                       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+                                       tmp_bson ("{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+                                       tmp_bson ("{'q': {'a': 1}, 'limit': 0}"));
    ASSERT (future_get_bool (future));
 
    mongoc_write_concern_destroy (wc);
@@ -456,8 +418,7 @@ test_retry_no_crypto (void *ctx)
    /* Test that no warning is logged if retryWrites is disabled. Warning logic
     * is implemented in mongoc_topology_new, but test all public APIs that use
     * the common code path. */
-   client = test_framework_client_new ("mongodb://localhost/?retryWrites=false",
-                                       NULL);
+   client = test_framework_client_new ("mongodb://localhost/?retryWrites=false", NULL);
    BSON_ASSERT (client);
    ASSERT_NO_CAPTURED_LOGS ("test_framework_client_new and retryWrites=false");
    mongoc_client_destroy (client);
@@ -467,26 +428,22 @@ test_retry_no_crypto (void *ctx)
 
    client = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client);
-   ASSERT_NO_CAPTURED_LOGS (
-      "test_framework_client_new_from_uri and retryWrites=false");
+   ASSERT_NO_CAPTURED_LOGS ("test_framework_client_new_from_uri and retryWrites=false");
    mongoc_client_destroy (client);
 
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
    BSON_ASSERT (pool);
-   ASSERT_NO_CAPTURED_LOGS (
-      "test_framework_client_pool_new_from_uri and retryWrites=false");
+   ASSERT_NO_CAPTURED_LOGS ("test_framework_client_pool_new_from_uri and retryWrites=false");
    mongoc_client_pool_destroy (pool);
 
    mongoc_uri_destroy (uri);
 
    /* Test that a warning is logged if retryWrites is enabled. */
-   client =
-      test_framework_client_new ("mongodb://localhost/?retryWrites=true", NULL);
+   client = test_framework_client_new ("mongodb://localhost/?retryWrites=true", NULL);
    BSON_ASSERT (client);
-   ASSERT_CAPTURED_LOG (
-      "test_framework_client_new and retryWrites=true",
-      MONGOC_LOG_LEVEL_WARNING,
-      "retryWrites not supported without an SSL crypto library");
+   ASSERT_CAPTURED_LOG ("test_framework_client_new and retryWrites=true",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "retryWrites not supported without an SSL crypto library");
    mongoc_client_destroy (client);
 
    clear_captured_logs ();
@@ -496,20 +453,18 @@ test_retry_no_crypto (void *ctx)
 
    client = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client);
-   ASSERT_CAPTURED_LOG (
-      "test_framework_client_new_from_uri and retryWrites=true",
-      MONGOC_LOG_LEVEL_WARNING,
-      "retryWrites not supported without an SSL crypto library");
+   ASSERT_CAPTURED_LOG ("test_framework_client_new_from_uri and retryWrites=true",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "retryWrites not supported without an SSL crypto library");
    mongoc_client_destroy (client);
 
    clear_captured_logs ();
 
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
    BSON_ASSERT (pool);
-   ASSERT_CAPTURED_LOG (
-      "test_framework_client_pool_new_from_uri and retryWrites=true",
-      MONGOC_LOG_LEVEL_WARNING,
-      "retryWrites not supported without an SSL crypto library");
+   ASSERT_CAPTURED_LOG ("test_framework_client_pool_new_from_uri and retryWrites=true",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "retryWrites not supported without an SSL crypto library");
    mongoc_client_pool_destroy (pool);
 
    mongoc_uri_destroy (uri);
@@ -539,21 +494,13 @@ test_unsupported_storage_engine_error (void)
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "test", "test");
    bson_init (&opts);
-   ASSERT_OR_PRINT (mongoc_client_session_append (session, &opts, &error),
-                    error);
+   ASSERT_OR_PRINT (mongoc_client_session_append (session, &opts, &error), error);
    /* findandmodify is retryable through mongoc_client_write_command_with_opts.
     */
    future = future_client_write_command_with_opts (
-      client,
-      "test",
-      tmp_bson ("{'findandmodify': 'coll' }"),
-      &opts,
-      &reply,
-      &error);
+      client, "test", tmp_bson ("{'findandmodify': 'coll' }"), &opts, &reply, &error);
    request = mock_rs_receives_request (rs);
-   mock_server_replies_simple (
-      request,
-      "{'ok': 0, 'code': 20, 'errmsg': 'Transaction numbers are great'}");
+   mock_server_replies_simple (request, "{'ok': 0, 'code': 20, 'errmsg': 'Transaction numbers are great'}");
    request_destroy (request);
 
    BSON_ASSERT (!future_get_bool (future));
@@ -599,9 +546,7 @@ _tracks_new_server_cb (const mongoc_apm_command_started_t *event)
    _tracks_new_server_counters_t *counters;
 
    cmd_name = mongoc_apm_command_started_get_command_name (event);
-   counters =
-      (_tracks_new_server_counters_t *) mongoc_apm_command_started_get_context (
-         event);
+   counters = (_tracks_new_server_counters_t *) mongoc_apm_command_started_get_context (event);
 
    if (0 == strcmp (cmd_name, "insert")) {
       counters->num_inserts++;
@@ -640,19 +585,14 @@ test_bulk_retry_tracks_new_server (void *unused)
 
    /* The bulk write contains two operations, an insert, followed by an update.
     */
-   ret = mongoc_bulk_operation_insert_with_opts (
-      bulk, tmp_bson ("{'x': 1}"), NULL /* opts */, &error);
+   ret = mongoc_bulk_operation_insert_with_opts (bulk, tmp_bson ("{'x': 1}"), NULL /* opts */, &error);
    ASSERT_OR_PRINT (ret, error);
-   mongoc_bulk_operation_update_one (bulk,
-                                     tmp_bson ("{}"),
-                                     tmp_bson ("{'$inc': {'x': 1}}"),
-                                     false /* upsert */);
+   mongoc_bulk_operation_update_one (bulk, tmp_bson ("{}"), tmp_bson ("{'$inc': {'x': 1}}"), false /* upsert */);
 
    /* Explicitly tell the bulk write to use a secondary. That will result in a
     * retryable error, causing the first command to be sent twice. */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-   sd = mongoc_client_select_server (
-      client, false /* for_writes */, read_prefs, &error);
+   sd = mongoc_client_select_server (client, false /* for_writes */, read_prefs, &error);
    ASSERT_OR_PRINT (sd, error);
    mongoc_bulk_operation_set_hint (bulk, mongoc_server_description_id (sd));
    ret = mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
@@ -664,9 +604,7 @@ test_bulk_retry_tracks_new_server (void *unused)
     * try. */
    ASSERT_CMPINT (counters.num_inserts, ==, 2);
    ASSERT_CMPINT (counters.num_updates, ==, 1);
-   ASSERT_CMPINT (mongoc_bulk_operation_get_hint (bulk),
-                  !=,
-                  mongoc_server_description_id (sd));
+   ASSERT_CMPINT (mongoc_bulk_operation_get_hint (bulk), !=, mongoc_server_description_id (sd));
 
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_server_description_destroy (sd);
@@ -680,10 +618,8 @@ void
 test_retryable_writes_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_AddMockServerTest (suite,
-                                "/retryable_writes/failover",
-                                test_rs_failover,
-                                test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (
+      suite, "/retryable_writes/failover", test_rs_failover, test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/command_with_opts",
                       test_command_with_opts,
@@ -702,26 +638,18 @@ test_retryable_writes_install (TestSuite *suite)
                                 "/retryable_writes/delete_one_unacknowledged",
                                 test_delete_one_unacknowledged,
                                 test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (
+      suite, "/retryable_writes/remove_unacknowledged", test_remove_unacknowledged, test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
-                                "/retryable_writes/remove_unacknowledged",
-                                test_remove_unacknowledged,
+                                "/retryable_writes/bulk_operation_execute_unacknowledged",
+                                test_bulk_operation_execute_unacknowledged,
                                 test_framework_skip_if_no_crypto);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/retryable_writes/bulk_operation_execute_unacknowledged",
-      test_bulk_operation_execute_unacknowledged,
-      test_framework_skip_if_no_crypto);
-   TestSuite_AddFull (suite,
-                      "/retryable_writes/no_crypto",
-                      test_retry_no_crypto,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_crypto);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/retryable_writes/unsupported_storage_engine_error",
-      test_unsupported_storage_engine_error,
-      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (
+      suite, "/retryable_writes/no_crypto", test_retry_no_crypto, NULL, NULL, test_framework_skip_if_crypto);
+   TestSuite_AddMockServerTest (suite,
+                                "/retryable_writes/unsupported_storage_engine_error",
+                                test_unsupported_storage_engine_error,
+                                test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/bulk_tracks_new_server",
                       test_bulk_retry_tracks_new_server,

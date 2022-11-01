@@ -22,8 +22,7 @@
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
-   (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
 static EVP_MD_CTX *
 EVP_MD_CTX_new (void)
 {
@@ -50,10 +49,7 @@ kms_crypto_cleanup (void)
 }
 
 bool
-kms_sha256 (void *unused_ctx,
-            const char *input,
-            size_t len,
-            unsigned char *hash_out)
+kms_sha256 (void *unused_ctx, const char *input, size_t len, unsigned char *hash_out)
 {
    EVP_MD_CTX *digest_ctxp = EVP_MD_CTX_new ();
    bool rval = false;
@@ -75,20 +71,10 @@ cleanup:
 }
 
 bool
-kms_sha256_hmac (void *unused_ctx,
-                 const char *key_input,
-                 size_t key_len,
-                 const char *input,
-                 size_t len,
-                 unsigned char *hash_out)
+kms_sha256_hmac (
+   void *unused_ctx, const char *key_input, size_t key_len, const char *input, size_t len, unsigned char *hash_out)
 {
-   return HMAC (EVP_sha256 (),
-                key_input,
-                key_len,
-                (unsigned char *) input,
-                len,
-                hash_out,
-                NULL) != NULL;
+   return HMAC (EVP_sha256 (), key_input, key_len, (unsigned char *) input, len, hash_out, NULL) != NULL;
 }
 
 #endif /* KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO */

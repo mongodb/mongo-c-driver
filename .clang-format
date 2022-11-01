@@ -13,7 +13,7 @@ AlwaysBreakAfterReturnType: All
 BinPackArguments: 'false'
 BinPackParameters: 'false'
 BreakBeforeBraces: Linux
-ColumnLimit: '80'
+ColumnLimit: '120'
 ContinuationIndentWidth: '3'
 IndentCaseLabels: 'false'
 IndentWidth: '3'

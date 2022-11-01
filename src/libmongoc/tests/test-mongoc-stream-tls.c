@@ -10,8 +10,7 @@
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
 
-#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
-   !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
 
 static void
 test_mongoc_tls_no_certs (void)
@@ -364,8 +363,8 @@ test_mongoc_tls_ip (void)
 #endif
 
 
-#if !defined(__APPLE__) && !defined(_WIN32) && \
-   defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10000000L
+#if !defined(__APPLE__) && !defined(_WIN32) && defined(MONGOC_ENABLE_SSL_OPENSSL) && \
+   OPENSSL_VERSION_NUMBER >= 0x10000000L
 static void
 test_mongoc_tls_trust_dir (void)
 {
@@ -402,12 +401,8 @@ test_mongoc_tls_insecure_nowarning (void)
    client = test_framework_client_new_from_uri (uri, NULL);
 
    capture_logs (true);
-   mongoc_client_command_simple (client,
-                                 "admin",
-                                 tmp_bson ("{'ping': 1}"),
-                                 NULL /* read prefs */,
-                                 NULL /* reply */,
-                                 NULL /* error */);
+   mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, NULL /* error */);
    ASSERT_NO_CAPTURED_LOGS ("has no effect");
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
@@ -416,8 +411,7 @@ test_mongoc_tls_insecure_nowarning (void)
 void
 test_stream_tls_install (TestSuite *suite)
 {
-#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
-   !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
 
    /* Disable /TLS/commonName on macOS due to CDRIVER-4256. */
 #if !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
@@ -425,9 +419,7 @@ test_stream_tls_install (TestSuite *suite)
 #endif
    TestSuite_Add (suite, "/TLS/altname", test_mongoc_tls_altname);
    TestSuite_Add (suite, "/TLS/basic", test_mongoc_tls_basic);
-   TestSuite_Add (suite,
-                  "/TLS/allow_invalid_hostname",
-                  test_mongoc_tls_allow_invalid_hostname);
+   TestSuite_Add (suite, "/TLS/allow_invalid_hostname", test_mongoc_tls_allow_invalid_hostname);
    TestSuite_Add (suite, "/TLS/wild", test_mongoc_tls_wild);
    TestSuite_Add (suite, "/TLS/no_verify", test_mongoc_tls_no_verify);
    TestSuite_Add (suite, "/TLS/bad_verify", test_mongoc_tls_bad_verify);
@@ -439,17 +431,15 @@ test_stream_tls_install (TestSuite *suite)
    TestSuite_Add (suite, "/TLS/ip", test_mongoc_tls_ip);
    TestSuite_Add (suite, "/TLS/password", test_mongoc_tls_password);
    TestSuite_Add (suite, "/TLS/bad_password", test_mongoc_tls_bad_password);
-   TestSuite_Add (
-      suite, "/TLS/weak_cert_validation", test_mongoc_tls_weak_cert_validation);
+   TestSuite_Add (suite, "/TLS/weak_cert_validation", test_mongoc_tls_weak_cert_validation);
    TestSuite_Add (suite, "/TLS/crl", test_mongoc_tls_crl);
 #endif
 
-#if !defined(__APPLE__) && !defined(_WIN32) && \
-   defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10000000L
+#if !defined(__APPLE__) && !defined(_WIN32) && defined(MONGOC_ENABLE_SSL_OPENSSL) && \
+   OPENSSL_VERSION_NUMBER >= 0x10000000L
    TestSuite_Add (suite, "/TLS/trust_dir", test_mongoc_tls_trust_dir);
 #endif
 
-   TestSuite_AddLive (
-      suite, "/TLS/insecure_nowarning", test_mongoc_tls_insecure_nowarning);
+   TestSuite_AddLive (suite, "/TLS/insecure_nowarning", test_mongoc_tls_insecure_nowarning);
 #endif
 }

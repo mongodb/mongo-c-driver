@@ -70,8 +70,7 @@ txn_opts_cleanup (mongoc_transaction_opt_t *opts)
 
 
 static void
-txn_opts_copy (const mongoc_transaction_opt_t *src,
-               mongoc_transaction_opt_t *dst)
+txn_opts_copy (const mongoc_transaction_opt_t *src, mongoc_transaction_opt_t *dst)
 {
    txn_opts_cleanup (dst);
    /* null inputs are ok for these copy functions */
@@ -99,8 +98,7 @@ txn_abort (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
    }
 
    if (session->txn.opts.write_concern) {
-      if (!mongoc_write_concern_append (session->txn.opts.write_concern,
-                                        &opts)) {
+      if (!mongoc_write_concern_append (session->txn.opts.write_concern, &opts)) {
          bson_set_error (err_ptr,
                          MONGOC_ERROR_TRANSACTION,
                          MONGOC_ERROR_TRANSACTION_INVALID_STATE,
@@ -116,8 +114,7 @@ txn_abort (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
 
    /* will be reinitialized by mongoc_client_write_command_with_opts */
    bson_destroy (&reply_local);
-   r = mongoc_client_write_command_with_opts (
-      session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
+   r = mongoc_client_write_command_with_opts (session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
 
    /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
     * after it fails with a retryable error", same for abort. Note that a
@@ -125,8 +122,7 @@ txn_abort (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
    if (mongoc_error_has_label (&reply_local, RETRYABLE_WRITE_ERROR)) {
       _mongoc_client_session_unpin (session);
       bson_destroy (&reply_local);
-      r = mongoc_client_write_command_with_opts (
-         session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
+      r = mongoc_client_write_command_with_opts (session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
    }
 
    if (!r) {
@@ -149,16 +145,14 @@ create_commit_retry_wc (const mongoc_write_concern_t *existing_wc)
 {
    mongoc_write_concern_t *wc;
 
-   wc = existing_wc ? mongoc_write_concern_copy (existing_wc)
-                    : mongoc_write_concern_new ();
+   wc = existing_wc ? mongoc_write_concern_copy (existing_wc) : mongoc_write_concern_new ();
 
    /* Transactions spec: "If the modified write concern does not include a
     * wtimeout value, drivers MUST also apply wtimeout: 10000 to the write
     * concern in order to avoid waiting forever if the majority write concern
     * cannot be satisfied." */
    if (mongoc_write_concern_get_wtimeout_int64 (wc) <= 0) {
-      mongoc_write_concern_set_wtimeout_int64 (
-         wc, MONGOC_DEFAULT_WTIMEOUT_FOR_COMMIT_RETRY);
+      mongoc_write_concern_set_wtimeout_int64 (wc, MONGOC_DEFAULT_WTIMEOUT_FOR_COMMIT_RETRY);
    }
 
    /* Transactions spec: "If the transaction is using a write concern that is
@@ -171,10 +165,7 @@ create_commit_retry_wc (const mongoc_write_concern_t *existing_wc)
 
 
 static bool
-txn_commit (mongoc_client_session_t *session,
-            bool explicitly_retrying,
-            bson_t *reply,
-            bson_error_t *error)
+txn_commit (mongoc_client_session_t *session, bool explicitly_retrying, bson_t *reply, bson_error_t *error)
 {
    bson_t cmd = BSON_INITIALIZER;
    bson_t opts = BSON_INITIALIZER;
@@ -199,12 +190,8 @@ retry:
    }
 
    if (session->txn.opts.max_commit_time_ms != DEFAULT_MAX_COMMIT_TIME_MS) {
-      if (!bson_append_int64 (
-             &opts, "maxTimeMS", -1, session->txn.opts.max_commit_time_ms)) {
-         bson_set_error (err_ptr,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "error appending maxCommitTimeMS");
+      if (!bson_append_int64 (&opts, "maxTimeMS", -1, session->txn.opts.max_commit_time_ms)) {
+         bson_set_error (err_ptr, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "error appending maxCommitTimeMS");
          GOTO (done);
       }
    }
@@ -214,14 +201,12 @@ retry:
     * commitTransaction again, drivers MUST apply w:majority to the write
     * concern of the commitTransaction command." */
    if (!retry_wc && (retrying_after_error || explicitly_retrying)) {
-      retry_wc = create_commit_retry_wc (session->txn.opts.write_concern
-                                            ? session->txn.opts.write_concern
-                                            : session->client->write_concern);
+      retry_wc = create_commit_retry_wc (session->txn.opts.write_concern ? session->txn.opts.write_concern
+                                                                         : session->client->write_concern);
    }
 
    if (retry_wc || session->txn.opts.write_concern) {
-      if (!mongoc_write_concern_append (
-             retry_wc ? retry_wc : session->txn.opts.write_concern, &opts)) {
+      if (!mongoc_write_concern_append (retry_wc ? retry_wc : session->txn.opts.write_concern, &opts)) {
          bson_set_error (err_ptr,
                          MONGOC_ERROR_TRANSACTION,
                          MONGOC_ERROR_TRANSACTION_INVALID_STATE,
@@ -232,8 +217,7 @@ retry:
 
    /* will be reinitialized by mongoc_client_write_command_with_opts */
    bson_destroy (&reply_local);
-   r = mongoc_client_write_command_with_opts (
-      session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
+   r = mongoc_client_write_command_with_opts (session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
 
    /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
     * after it fails with a retryable error", same for abort. Note that a
@@ -249,20 +233,16 @@ retry:
    /* Transactions Spec: "add the UnknownTransactionCommitResult error label
     * when commitTransaction fails with a network error, server selection
     * error, MaxTimeMSExpired error, or write concern failed / timeout." */
-   if (!r && (err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION ||
-              error_type == MONGOC_WRITE_ERR_RETRY ||
-              error_type == MONGOC_WRITE_ERR_WRITE_CONCERN ||
-              err_ptr->code == MONGOC_ERROR_MAX_TIME_MS_EXPIRED)) {
+   if (!r && (err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION || error_type == MONGOC_WRITE_ERR_RETRY ||
+              error_type == MONGOC_WRITE_ERR_WRITE_CONCERN || err_ptr->code == MONGOC_ERROR_MAX_TIME_MS_EXPIRED)) {
       /* Drivers MUST unpin a ClientSession when any individual
        * commitTransaction command attempt fails with an
        * UnknownTransactionCommitResult error label. Do this even if we won't
        * actually apply the error label due to reply being NULL */
       _mongoc_client_session_unpin (session);
       if (reply) {
-         bsonBuildAppend (*reply,
-                          insert (reply_local, not(key ("errorLabels"))));
-         _mongoc_error_copy_labels_and_upsert (
-            &reply_local, reply, UNKNOWN_COMMIT_RESULT);
+         bsonBuildAppend (*reply, insert (reply_local, not(key ("errorLabels"))));
+         _mongoc_error_copy_labels_and_upsert (&reply_local, reply, UNKNOWN_COMMIT_RESULT);
       }
    } else if (reply) {
       /* maintain invariants: reply & reply_local are valid until the end */
@@ -288,8 +268,7 @@ mongoc_transaction_opt_t *
 mongoc_transaction_opts_new (void)
 {
    mongoc_transaction_opt_t *opts;
-   opts = (mongoc_transaction_opt_t *) bson_malloc0 (
-      sizeof (mongoc_transaction_opt_t));
+   opts = (mongoc_transaction_opt_t *) bson_malloc0 (sizeof (mongoc_transaction_opt_t));
    opts->max_commit_time_ms = DEFAULT_MAX_COMMIT_TIME_MS;
 
    return opts;
@@ -329,8 +308,7 @@ mongoc_transaction_opts_destroy (mongoc_transaction_opt_t *opts)
 
 
 void
-mongoc_transaction_opts_set_max_commit_time_ms (mongoc_transaction_opt_t *opts,
-                                                int64_t max_commit_time_ms)
+mongoc_transaction_opts_set_max_commit_time_ms (mongoc_transaction_opt_t *opts, int64_t max_commit_time_ms)
 {
    BSON_ASSERT (opts);
    opts->max_commit_time_ms = max_commit_time_ms;
@@ -346,8 +324,7 @@ mongoc_transaction_opts_get_max_commit_time_ms (mongoc_transaction_opt_t *opts)
 
 
 void
-mongoc_transaction_opts_set_read_concern (
-   mongoc_transaction_opt_t *opts, const mongoc_read_concern_t *read_concern)
+mongoc_transaction_opts_set_read_concern (mongoc_transaction_opt_t *opts, const mongoc_read_concern_t *read_concern)
 {
    BSON_ASSERT (opts);
    mongoc_read_concern_destroy (opts->read_concern);
@@ -364,8 +341,7 @@ mongoc_transaction_opts_get_read_concern (const mongoc_transaction_opt_t *opts)
 
 
 void
-mongoc_transaction_opts_set_write_concern (
-   mongoc_transaction_opt_t *opts, const mongoc_write_concern_t *write_concern)
+mongoc_transaction_opts_set_write_concern (mongoc_transaction_opt_t *opts, const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT (opts);
    mongoc_write_concern_destroy (opts->write_concern);
@@ -382,8 +358,7 @@ mongoc_transaction_opts_get_write_concern (const mongoc_transaction_opt_t *opts)
 
 
 void
-mongoc_transaction_opts_set_read_prefs (mongoc_transaction_opt_t *opts,
-                                        const mongoc_read_prefs_t *read_prefs)
+mongoc_transaction_opts_set_read_prefs (mongoc_transaction_opt_t *opts, const mongoc_read_prefs_t *read_prefs)
 {
    BSON_ASSERT (opts);
    mongoc_read_prefs_destroy (opts->read_prefs);
@@ -407,8 +382,7 @@ mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts)
 
    /* Causal Consistency spec: If no value is provided for causalConsistency
     * and snapshot reads are not requested a value of true is implied. */
-   if (!mongoc_optional_is_set (&opts->causal_consistency) &&
-       !mongoc_optional_value (&opts->snapshot)) {
+   if (!mongoc_optional_is_set (&opts->causal_consistency) && !mongoc_optional_value (&opts->snapshot)) {
       RETURN (true);
    }
 
@@ -426,8 +400,7 @@ mongoc_session_opts_get_snapshot (const mongoc_session_opt_t *opts)
 }
 
 void
-mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts,
-                                            bool causal_consistency)
+mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts, bool causal_consistency)
 {
    ENTRY;
 
@@ -462,8 +435,7 @@ mongoc_session_opts_new (void)
 }
 
 void
-mongoc_session_opts_set_default_transaction_opts (
-   mongoc_session_opt_t *opts, const mongoc_transaction_opt_t *txn_opts)
+mongoc_session_opts_set_default_transaction_opts (mongoc_session_opt_t *opts, const mongoc_transaction_opt_t *txn_opts)
 {
    ENTRY;
 
@@ -481,8 +453,7 @@ mongoc_session_opts_set_default_transaction_opts (
 
 
 const mongoc_transaction_opt_t *
-mongoc_session_opts_get_default_transaction_opts (
-   const mongoc_session_opt_t *opts)
+mongoc_session_opts_get_default_transaction_opts (const mongoc_session_opt_t *opts)
 {
    ENTRY;
 
@@ -493,8 +464,7 @@ mongoc_session_opts_get_default_transaction_opts (
 
 
 mongoc_transaction_opt_t *
-mongoc_session_opts_get_transaction_opts (
-   const mongoc_client_session_t *session)
+mongoc_session_opts_get_transaction_opts (const mongoc_client_session_t *session)
 {
    ENTRY;
 
@@ -508,8 +478,7 @@ mongoc_session_opts_get_transaction_opts (
 }
 
 static void
-_mongoc_session_opts_copy (const mongoc_session_opt_t *src,
-                           mongoc_session_opt_t *dst)
+_mongoc_session_opts_copy (const mongoc_session_opt_t *src, mongoc_session_opt_t *dst)
 {
    mongoc_optional_copy (&src->causal_consistency, &dst->causal_consistency);
    mongoc_optional_copy (&src->snapshot, &dst->snapshot);
@@ -593,15 +562,12 @@ _mongoc_server_session_uuid (uint8_t *data /* OUT */, bson_error_t *error)
 
 
 bool
-_mongoc_parse_cluster_time (const bson_t *cluster_time,
-                            uint32_t *timestamp,
-                            uint32_t *increment)
+_mongoc_parse_cluster_time (const bson_t *cluster_time, uint32_t *timestamp, uint32_t *increment)
 {
    bson_iter_t iter;
    char *s;
 
-   if (!cluster_time ||
-       !bson_iter_init_find (&iter, cluster_time, "clusterTime") ||
+   if (!cluster_time || !bson_iter_init_find (&iter, cluster_time, "clusterTime") ||
        !BSON_ITER_HOLDS_TIMESTAMP (&iter)) {
       s = bson_as_json (cluster_time, NULL);
       MONGOC_ERROR ("Cannot parse cluster time from %s\n", s);
@@ -620,8 +586,7 @@ _mongoc_cluster_time_greater (const bson_t *new, const bson_t *old)
 {
    uint32_t new_t, new_i, old_t, old_i;
 
-   if (!_mongoc_parse_cluster_time (new, &new_t, &new_i) ||
-       !_mongoc_parse_cluster_time (old, &old_t, &old_i)) {
+   if (!_mongoc_parse_cluster_time (new, &new_t, &new_i) || !_mongoc_parse_cluster_time (old, &old_t, &old_i)) {
       return false;
    }
 
@@ -653,8 +618,7 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
    }
 
    is_find_aggregate_distinct =
-      (!strcmp (cmd_name, "find") || !strcmp (cmd_name, "aggregate") ||
-       !strcmp (cmd_name, "distinct"));
+      (!strcmp (cmd_name, "find") || !strcmp (cmd_name, "aggregate") || !strcmp (cmd_name, "distinct"));
 
    if (mongoc_error_has_label (reply, "TransientTransactionError")) {
       /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
@@ -666,31 +630,24 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
    }
 
    while (bson_iter_next (&iter)) {
-      if (!strcmp (bson_iter_key (&iter), "$clusterTime") &&
-          BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "$clusterTime") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          bson_iter_document (&iter, &len, &data);
          BSON_ASSERT (bson_init_static (&cluster_time, data, (size_t) len));
 
          mongoc_client_session_advance_cluster_time (session, &cluster_time);
-      } else if (!strcmp (bson_iter_key (&iter), "operationTime") &&
-                 BSON_ITER_HOLDS_TIMESTAMP (&iter) && is_acknowledged) {
+      } else if (!strcmp (bson_iter_key (&iter), "operationTime") && BSON_ITER_HOLDS_TIMESTAMP (&iter) &&
+                 is_acknowledged) {
          bson_iter_timestamp (&iter, &operation_t, &operation_i);
-         mongoc_client_session_advance_operation_time (
-            session, operation_t, operation_i);
-      } else if (is_find_aggregate_distinct &&
-                 !strcmp (bson_iter_key (&iter), "atClusterTime") &&
-                 mongoc_session_opts_get_snapshot (&session->opts) &&
-                 !session->snapshot_time_set) {
+         mongoc_client_session_advance_operation_time (session, operation_t, operation_i);
+      } else if (is_find_aggregate_distinct && !strcmp (bson_iter_key (&iter), "atClusterTime") &&
+                 mongoc_session_opts_get_snapshot (&session->opts) && !session->snapshot_time_set) {
          /* If command is "find", "aggregate" or "distinct", atClusterTime is on
           * top level of reply, snapshot is enabled for the session, and
           * snapshot_time has not already been set, set it. */
          bson_iter_timestamp (&iter, &snapshot_t, &snapshot_i);
-         _mongoc_client_session_set_snapshot_time (
-            session, snapshot_t, snapshot_i);
-      } else if (is_find_aggregate_distinct &&
-                 !strcmp (bson_iter_key (&iter), "cursor") &&
-                 mongoc_session_opts_get_snapshot (&session->opts) &&
-                 !session->snapshot_time_set) {
+         _mongoc_client_session_set_snapshot_time (session, snapshot_t, snapshot_i);
+      } else if (is_find_aggregate_distinct && !strcmp (bson_iter_key (&iter), "cursor") &&
+                 mongoc_session_opts_get_snapshot (&session->opts) && !session->snapshot_time_set) {
          /* If command is "find", "aggregate" or "distinct", cursor is present,
           * snapshot is enabled for the session, and snapshot_time has not
           * already been set, try to find atClusterTime in cursor field to set
@@ -700,11 +657,9 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
          while (bson_iter_next (&cursor_iter)) {
             /* If atClusterTime is in cursor and is a valid timestamp, use it to
              * set snapshot_time. */
-            if (!strcmp (bson_iter_key (&cursor_iter), "atClusterTime") &&
-                BSON_ITER_HOLDS_TIMESTAMP (&cursor_iter)) {
+            if (!strcmp (bson_iter_key (&cursor_iter), "atClusterTime") && BSON_ITER_HOLDS_TIMESTAMP (&cursor_iter)) {
                bson_iter_timestamp (&cursor_iter, &snapshot_t, &snapshot_i);
-               _mongoc_client_session_set_snapshot_time (
-                  session, snapshot_t, snapshot_i);
+               _mongoc_client_session_set_snapshot_time (session, snapshot_t, snapshot_i);
             }
          }
       }
@@ -725,15 +680,13 @@ _mongoc_server_session_init (mongoc_server_session_t *self, bson_error_t *error)
    self->txn_number = 0;
    self->last_used_usec = SESSION_NEVER_USED;
    bson_init (&self->lsid);
-   BSON_APPEND_BINARY (
-      &self->lsid, "id", BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
+   BSON_APPEND_BINARY (&self->lsid, "id", BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
 
    RETURN (true);
 }
 
 bool
-_mongoc_server_session_timed_out (const mongoc_server_session_t *server_session,
-                                  int64_t session_timeout_minutes)
+_mongoc_server_session_timed_out (const mongoc_server_session_t *server_session, int64_t session_timeout_minutes)
 {
    int64_t timeout_usec;
    const int64_t minute_to_usec = 60 * 1000 * 1000;
@@ -751,8 +704,7 @@ _mongoc_server_session_timed_out (const mongoc_server_session_t *server_session,
 
    /* Driver Sessions Spec: if a session has less than one minute left before
     * becoming stale, discard it */
-   timeout_usec =
-      server_session->last_used_usec + session_timeout_minutes * minute_to_usec;
+   timeout_usec = server_session->last_used_usec + session_timeout_minutes * minute_to_usec;
 
    RETURN (timeout_usec - bson_get_monotonic_time () < 1 * minute_to_usec);
 }
@@ -794,8 +746,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
                  DEFAULT_MAX_COMMIT_TIME_MS);
 
    if (opts) {
-      mongoc_optional_copy (&opts->causal_consistency,
-                            &session->opts.causal_consistency);
+      mongoc_optional_copy (&opts->causal_consistency, &session->opts.causal_consistency);
       mongoc_optional_copy (&opts->snapshot, &session->opts.snapshot);
       txn_opts_set (&session->opts.default_txn_opts,
                     opts->default_txn_opts.read_concern,
@@ -862,15 +813,13 @@ mongoc_client_session_get_server_id (const mongoc_client_session_t *session)
 }
 
 void
-mongoc_client_session_advance_cluster_time (mongoc_client_session_t *session,
-                                            const bson_t *cluster_time)
+mongoc_client_session_advance_cluster_time (mongoc_client_session_t *session, const bson_t *cluster_time)
 {
    uint32_t t, i;
 
    ENTRY;
 
-   if (bson_empty (&session->cluster_time) &&
-       _mongoc_parse_cluster_time (cluster_time, &t, &i)) {
+   if (bson_empty (&session->cluster_time) && _mongoc_parse_cluster_time (cluster_time, &t, &i)) {
       bson_destroy (&session->cluster_time);
       bson_copy_to (cluster_time, &session->cluster_time);
       EXIT;
@@ -885,10 +834,9 @@ mongoc_client_session_advance_cluster_time (mongoc_client_session_t *session,
 }
 
 void
-mongoc_client_session_get_operation_time (
-   const mongoc_client_session_t *session,
-   uint32_t *timestamp,
-   uint32_t *increment)
+mongoc_client_session_get_operation_time (const mongoc_client_session_t *session,
+                                          uint32_t *timestamp,
+                                          uint32_t *increment)
 {
    BSON_ASSERT (session);
    BSON_ASSERT (timestamp);
@@ -899,17 +847,14 @@ mongoc_client_session_get_operation_time (
 }
 
 void
-mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
-                                              uint32_t timestamp,
-                                              uint32_t increment)
+mongoc_client_session_advance_operation_time (mongoc_client_session_t *session, uint32_t timestamp, uint32_t increment)
 {
    ENTRY;
 
    BSON_ASSERT (session);
 
    if (timestamp > session->operation_timestamp ||
-       (timestamp == session->operation_timestamp &&
-        increment > session->operation_increment)) {
+       (timestamp == session->operation_timestamp && increment > session->operation_increment)) {
       session->operation_timestamp = timestamp;
       session->operation_increment = increment;
    }
@@ -936,17 +881,14 @@ _max_time_ms_failure (bson_t *reply)
 
    /* We can fail with a maxTimeMS error with the error code at the top
       level, or nested within a writeConcernError. */
-   if (bson_iter_init_find (&iter, reply, "codeName") &&
-       BSON_ITER_HOLDS_UTF8 (&iter) &&
+   if (bson_iter_init_find (&iter, reply, "codeName") && BSON_ITER_HOLDS_UTF8 (&iter) &&
        0 == strcmp (bson_iter_utf8 (&iter, NULL), MAX_TIME_MS_EXPIRED)) {
       return true;
    }
 
    bson_iter_init (&iter, reply);
-   if (bson_iter_find_descendant (
-          &iter, "writeConcernError.codeName", &descendant) &&
-       BSON_ITER_HOLDS_UTF8 (&descendant) &&
-       0 == strcmp (bson_iter_utf8 (&descendant, NULL), MAX_TIME_MS_EXPIRED)) {
+   if (bson_iter_find_descendant (&iter, "writeConcernError.codeName", &descendant) &&
+       BSON_ITER_HOLDS_UTF8 (&descendant) && 0 == strcmp (bson_iter_utf8 (&descendant, NULL), MAX_TIME_MS_EXPIRED)) {
       return true;
    }
 
@@ -954,13 +896,12 @@ _max_time_ms_failure (bson_t *reply)
 }
 
 bool
-mongoc_client_session_with_transaction (
-   mongoc_client_session_t *session,
-   mongoc_client_session_with_transaction_cb_t cb,
-   const mongoc_transaction_opt_t *opts,
-   void *ctx,
-   bson_t *reply,
-   bson_error_t *error)
+mongoc_client_session_with_transaction (mongoc_client_session_t *session,
+                                        mongoc_client_session_with_transaction_cb_t cb,
+                                        const mongoc_transaction_opt_t *opts,
+                                        void *ctx,
+                                        bson_t *reply,
+                                        bson_error_t *error)
 {
    mongoc_internal_transaction_state_t state;
    int64_t timeout;
@@ -971,8 +912,7 @@ mongoc_client_session_with_transaction (
 
    ENTRY;
 
-   timeout = session->with_txn_timeout_ms > 0 ? session->with_txn_timeout_ms
-                                              : WITH_TXN_TIMEOUT_MS;
+   timeout = session->with_txn_timeout_ms > 0 ? session->with_txn_timeout_ms : WITH_TXN_TIMEOUT_MS;
 
    expire_at = bson_get_monotonic_time () + ((int64_t) timeout * 1000);
 
@@ -1001,14 +941,11 @@ mongoc_client_session_with_transaction (
       }
 
       if (!res) {
-         if (state == MONGOC_INTERNAL_TRANSACTION_STARTING ||
-             state == MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS) {
-            BSON_ASSERT (
-               mongoc_client_session_abort_transaction (session, NULL));
+         if (state == MONGOC_INTERNAL_TRANSACTION_STARTING || state == MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS) {
+            BSON_ASSERT (mongoc_client_session_abort_transaction (session, NULL));
          }
 
-         if (mongoc_error_has_label (active_reply, TRANSIENT_TXN_ERR) &&
-             !timeout_exceeded (expire_at)) {
+         if (mongoc_error_has_label (active_reply, TRANSIENT_TXN_ERR) && !timeout_exceeded (expire_at)) {
             bson_destroy (active_reply);
             active_reply = NULL;
             continue;
@@ -1018,10 +955,8 @@ mongoc_client_session_with_transaction (
          GOTO (done);
       }
 
-      if (state == MONGOC_INTERNAL_TRANSACTION_ABORTED ||
-          state == MONGOC_INTERNAL_TRANSACTION_NONE ||
-          state == MONGOC_INTERNAL_TRANSACTION_COMMITTED ||
-          state == MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY) {
+      if (state == MONGOC_INTERNAL_TRANSACTION_ABORTED || state == MONGOC_INTERNAL_TRANSACTION_NONE ||
+          state == MONGOC_INTERNAL_TRANSACTION_COMMITTED || state == MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY) {
          GOTO (done);
       }
 
@@ -1038,8 +973,7 @@ mongoc_client_session_with_transaction (
          commit_transaction, which requires this like our other public
          functions that take a bson_t reply. */
       while (true) {
-         res = mongoc_client_session_commit_transaction (
-            session, active_reply, error);
+         res = mongoc_client_session_commit_transaction (session, active_reply, error);
 
          if (!res) {
             /* If we have a MaxTimeMsExpired error, fail and propogate
@@ -1048,8 +982,7 @@ mongoc_client_session_with_transaction (
                GOTO (done);
             }
 
-            if (mongoc_error_has_label (active_reply, UNKNOWN_COMMIT_RESULT) &&
-                !timeout_exceeded (expire_at)) {
+            if (mongoc_error_has_label (active_reply, UNKNOWN_COMMIT_RESULT) && !timeout_exceeded (expire_at)) {
                /* Commit_transaction applies majority write concern on retry
                 * attempts.
                 *
@@ -1060,8 +993,7 @@ mongoc_client_session_with_transaction (
                continue;
             }
 
-            if (mongoc_error_has_label (active_reply, TRANSIENT_TXN_ERR) &&
-                !timeout_exceeded (expire_at)) {
+            if (mongoc_error_has_label (active_reply, TRANSIENT_TXN_ERR) && !timeout_exceeded (expire_at)) {
                /* In the case of a transient txn error, go back to outside loop.
                   We must set the reply to NULL so it may be used by the cb. */
                bson_destroy (active_reply);
@@ -1104,8 +1036,7 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    BSON_ASSERT (session);
 
    ret = true;
-   server_stream = mongoc_cluster_stream_for_writes (
-      &session->client->cluster, session, NULL /* reply */, error);
+   server_stream = mongoc_cluster_stream_for_writes (&session->client->cluster, session, NULL /* reply */, error);
    if (!server_stream) {
       ret = false;
       GOTO (done);
@@ -1121,8 +1052,7 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    }
 
    if (server_stream->sd->max_wire_version < 7 ||
-       (server_stream->sd->max_wire_version < 8 &&
-        server_stream->sd->type == MONGOC_SERVER_MONGOS)) {
+       (server_stream->sd->max_wire_version < 8 && server_stream->sd->type == MONGOC_SERVER_MONGOS)) {
       bson_set_error (error,
                       MONGOC_ERROR_TRANSACTION,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
@@ -1136,15 +1066,12 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    switch (session->txn.state) {
    case MONGOC_INTERNAL_TRANSACTION_STARTING:
    case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
-      bson_set_error (error,
-                      MONGOC_ERROR_TRANSACTION,
-                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "Transaction already in progress");
+      bson_set_error (
+         error, MONGOC_ERROR_TRANSACTION, MONGOC_ERROR_TRANSACTION_INVALID_STATE, "Transaction already in progress");
       ret = false;
       GOTO (done);
    case MONGOC_INTERNAL_TRANSACTION_ENDING:
-      MONGOC_ERROR (
-         "starting txn in invalid state MONGOC_INTERNAL_TRANSACTION_ENDING");
+      MONGOC_ERROR ("starting txn in invalid state MONGOC_INTERNAL_TRANSACTION_ENDING");
       abort ();
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
@@ -1163,20 +1090,15 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
                  session->opts.default_txn_opts.max_commit_time_ms);
 
    if (opts) {
-      txn_opts_set (&session->txn.opts,
-                    opts->read_concern,
-                    opts->write_concern,
-                    opts->read_prefs,
-                    opts->max_commit_time_ms);
+      txn_opts_set (
+         &session->txn.opts, opts->read_concern, opts->write_concern, opts->read_prefs, opts->max_commit_time_ms);
    }
 
-   if (!mongoc_write_concern_is_acknowledged (
-          session->txn.opts.write_concern)) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_TRANSACTION,
-         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-         "Transactions do not support unacknowledged write concern");
+   if (!mongoc_write_concern_is_acknowledged (session->txn.opts.write_concern)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Transactions do not support unacknowledged write concern");
       ret = false;
       GOTO (done);
    }
@@ -1210,8 +1132,7 @@ mongoc_client_session_in_transaction (const mongoc_client_session_t *session)
 
 
 mongoc_transaction_state_t
-mongoc_client_session_get_transaction_state (
-   const mongoc_client_session_t *session)
+mongoc_client_session_get_transaction_state (const mongoc_client_session_t *session)
 {
    ENTRY;
 
@@ -1234,17 +1155,14 @@ mongoc_client_session_get_transaction_state (
                     "getting transaction state");
       abort ();
    default:
-      MONGOC_ERROR ("invalid state %d when getting transaction state",
-                    (int) session->txn.state);
+      MONGOC_ERROR ("invalid state %d when getting transaction state", (int) session->txn.state);
       abort ();
       break;
    }
 }
 
 bool
-mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
-                                          bson_t *reply,
-                                          bson_error_t *error)
+mongoc_client_session_commit_transaction (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
 {
    bool r = false;
 
@@ -1275,10 +1193,8 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
 
    switch (session->txn.state) {
    case MONGOC_INTERNAL_TRANSACTION_NONE:
-      bson_set_error (error,
-                      MONGOC_ERROR_TRANSACTION,
-                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "No transaction started");
+      bson_set_error (
+         error, MONGOC_ERROR_TRANSACTION, MONGOC_ERROR_TRANSACTION_INVALID_STATE, "No transaction started");
       _mongoc_bson_init_if_set (reply);
       break;
    case MONGOC_INTERNAL_TRANSACTION_STARTING:
@@ -1290,8 +1206,7 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
       break;
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
    case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS: {
-      bool explicitly_retrying =
-         (session->txn.state == MONGOC_INTERNAL_TRANSACTION_COMMITTED);
+      bool explicitly_retrying = (session->txn.state == MONGOC_INTERNAL_TRANSACTION_COMMITTED);
       /* in MONGOC_INTERNAL_TRANSACTION_ENDING we add txnNumber and autocommit:
        * false to the commitTransaction command, but if it fails with network
        * error we add UnknownTransactionCommitResult not
@@ -1302,16 +1217,14 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
       break;
    }
    case MONGOC_INTERNAL_TRANSACTION_ENDING:
-      MONGOC_ERROR (
-         "commit called in invalid state MONGOC_INTERNAL_TRANSACTION_ENDING");
+      MONGOC_ERROR ("commit called in invalid state MONGOC_INTERNAL_TRANSACTION_ENDING");
       abort ();
    case MONGOC_INTERNAL_TRANSACTION_ABORTED:
    default:
-      bson_set_error (
-         error,
-         MONGOC_ERROR_TRANSACTION,
-         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-         "Cannot call commitTransaction after calling abortTransaction");
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Cannot call commitTransaction after calling abortTransaction");
       _mongoc_bson_init_if_set (reply);
       break;
    }
@@ -1321,8 +1234,7 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
 
 
 bool
-mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
-                                         bson_error_t *error)
+mongoc_client_session_abort_transaction (mongoc_client_session_t *session, bson_error_t *error)
 {
    ENTRY;
 
@@ -1348,28 +1260,22 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
       RETURN (true);
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
-      bson_set_error (
-         error,
-         MONGOC_ERROR_TRANSACTION,
-         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-         "Cannot call abortTransaction after calling commitTransaction");
-      RETURN (false);
-   case MONGOC_INTERNAL_TRANSACTION_ABORTED:
       bson_set_error (error,
                       MONGOC_ERROR_TRANSACTION,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "Cannot call abortTransaction twice");
+                      "Cannot call abortTransaction after calling commitTransaction");
+      RETURN (false);
+   case MONGOC_INTERNAL_TRANSACTION_ABORTED:
+      bson_set_error (
+         error, MONGOC_ERROR_TRANSACTION, MONGOC_ERROR_TRANSACTION_INVALID_STATE, "Cannot call abortTransaction twice");
       RETURN (false);
    case MONGOC_INTERNAL_TRANSACTION_ENDING:
-      MONGOC_ERROR (
-         "abort called in invalid state MONGOC_INTERNAL_TRANSACTION_ENDING");
+      MONGOC_ERROR ("abort called in invalid state MONGOC_INTERNAL_TRANSACTION_ENDING");
       abort ();
    case MONGOC_INTERNAL_TRANSACTION_NONE:
    default:
-      bson_set_error (error,
-                      MONGOC_ERROR_TRANSACTION,
-                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "No transaction started");
+      bson_set_error (
+         error, MONGOC_ERROR_TRANSACTION, MONGOC_ERROR_TRANSACTION_INVALID_STATE, "No transaction started");
       RETURN (false);
    }
 }
@@ -1385,15 +1291,11 @@ _mongoc_client_session_from_iter (mongoc_client_t *client,
 
    /* must be int64 that fits in uint32 */
    if (!BSON_ITER_HOLDS_INT64 (iter) || bson_iter_int64 (iter) > 0xffffffff) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Invalid sessionId");
+      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid sessionId");
       RETURN (false);
    }
 
-   RETURN (_mongoc_client_lookup_session (
-      client, (uint32_t) bson_iter_int64 (iter), cs, error));
+   RETURN (_mongoc_client_lookup_session (client, (uint32_t) bson_iter_int64 (iter), cs, error));
 }
 
 /* Returns true if in the middle of a transaction. Note: this returns false if
@@ -1474,9 +1376,7 @@ _mongoc_client_session_txn_in_progress (const mongoc_client_session_t *session)
  */
 
 bool
-_mongoc_client_session_append_txn (mongoc_client_session_t *session,
-                                   bson_t *cmd,
-                                   bson_error_t *error)
+_mongoc_client_session_append_txn (mongoc_client_session_t *session, bson_t *cmd, bson_error_t *error)
 {
    mongoc_transaction_t *txn;
 
@@ -1487,10 +1387,7 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session,
    }
 
    if (bson_empty0 (cmd)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Empty command in transaction");
+      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Empty command in transaction");
       RETURN (false);
    }
 
@@ -1505,15 +1402,13 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session,
    /* FALL THROUGH */
    case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
    case MONGOC_INTERNAL_TRANSACTION_ENDING:
-      bson_append_int64 (
-         cmd, "txnNumber", 9, session->server_session->txn_number);
+      bson_append_int64 (cmd, "txnNumber", 9, session->server_session->txn_number);
       bson_append_bool (cmd, "autocommit", 10, false);
       RETURN (true);
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
       if (!strcmp (_mongoc_get_command_name (cmd), "commitTransaction")) {
          /* send commitTransaction again */
-         bson_append_int64 (
-            cmd, "txnNumber", 9, session->server_session->txn_number);
+         bson_append_int64 (cmd, "txnNumber", 9, session->server_session->txn_number);
          bson_append_bool (cmd, "autocommit", 10, false);
          RETURN (true);
       }
@@ -1579,14 +1474,11 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
       return;
    }
 
-   has_timestamp =
-      (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING || is_read_command) &&
-      mongoc_session_opts_get_causal_consistency (&cs->opts) &&
-      cs->operation_timestamp;
+   has_timestamp = (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING || is_read_command) &&
+                   mongoc_session_opts_get_causal_consistency (&cs->opts) && cs->operation_timestamp;
    is_snapshot = mongoc_session_opts_get_snapshot (&cs->opts);
    user_rc_has_level = rc && bson_has_field (rc, "level");
-   txn_has_level = txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING &&
-                   !mongoc_read_concern_is_default (txn_rc);
+   txn_has_level = txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING && !mongoc_read_concern_is_default (txn_rc);
    has_level = user_rc_has_level || txn_has_level;
 
    /* do not append read concern if no causal consistency, snapshot disabled and
@@ -1608,25 +1500,16 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
       }
    }
    if (is_snapshot) {
-      bson_append_utf8 (
-         &child, "level", 5, MONGOC_READ_CONCERN_LEVEL_SNAPSHOT, -1);
+      bson_append_utf8 (&child, "level", 5, MONGOC_READ_CONCERN_LEVEL_SNAPSHOT, -1);
    }
 
    /* append afterClusterTime if causal consistency and operation_time is set.
     * otherwise append atClusterTime if snapshot enabled and snapshot_time is
     * set. */
    if (has_timestamp) {
-      bson_append_timestamp (&child,
-                             "afterClusterTime",
-                             16,
-                             cs->operation_timestamp,
-                             cs->operation_increment);
+      bson_append_timestamp (&child, "afterClusterTime", 16, cs->operation_timestamp, cs->operation_increment);
    } else if (is_snapshot && cs->snapshot_time_set) {
-      bson_append_timestamp (&child,
-                             "atClusterTime",
-                             13,
-                             cs->snapshot_time_timestamp,
-                             cs->snapshot_time_increment);
+      bson_append_timestamp (&child, "atClusterTime", 13, cs->snapshot_time_timestamp, cs->snapshot_time_increment);
    }
 
    bson_append_document_end (cmd, &child);
@@ -1634,19 +1517,15 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
 
 
 bool
-mongoc_client_session_append (const mongoc_client_session_t *client_session,
-                              bson_t *opts,
-                              bson_error_t *error)
+mongoc_client_session_append (const mongoc_client_session_t *client_session, bson_t *opts, bson_error_t *error)
 {
    ENTRY;
 
    BSON_ASSERT (client_session);
    BSON_ASSERT (opts);
 
-   if (!bson_append_int64 (
-          opts, "sessionId", 9, client_session->client_session_id)) {
-      bson_set_error (
-         error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "invalid opts");
+   if (!bson_append_int64 (opts, "sessionId", 9, client_session->client_session_id)) {
+      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "invalid opts");
 
       RETURN (false);
    }
@@ -1670,13 +1549,11 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
       }
 
       _mongoc_client_unregister_session (session->client, session);
-      _mongoc_client_push_server_session (session->client,
-                                          session->server_session);
+      _mongoc_client_push_server_session (session->client, session->server_session);
    } else {
       /** If the client has been reset, destroy the server session instead of
        * pushing it back into the topology's pool. */
-      mongoc_server_session_pool_drop (session->client->topology->session_pool,
-                                       session->server_session);
+      mongoc_server_session_pool_drop (session->client->topology->session_pool, session->server_session);
    }
 
    txn_opts_cleanup (&session->opts.default_txn_opts);
@@ -1698,8 +1575,7 @@ _mongoc_client_session_unpin (mongoc_client_session_t *session)
 }
 
 void
-_mongoc_client_session_pin (mongoc_client_session_t *session,
-                            uint32_t server_id)
+_mongoc_client_session_pin (mongoc_client_session_t *session, uint32_t server_id)
 {
    BSON_ASSERT (session);
 
@@ -1707,9 +1583,7 @@ _mongoc_client_session_pin (mongoc_client_session_t *session,
 }
 
 void
-_mongoc_client_session_set_snapshot_time (mongoc_client_session_t *session,
-                                          uint32_t t,
-                                          uint32_t i)
+_mongoc_client_session_set_snapshot_time (mongoc_client_session_t *session, uint32_t t, uint32_t i)
 {
    BSON_ASSERT (session);
    BSON_ASSERT (!session->snapshot_time_set);

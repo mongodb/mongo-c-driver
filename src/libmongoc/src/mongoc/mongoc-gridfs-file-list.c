@@ -34,9 +34,7 @@
 
 
 mongoc_gridfs_file_list_t *
-_mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
-                              const bson_t *query,
-                              uint32_t limit)
+_mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs, const bson_t *query, uint32_t limit)
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_cursor_t *cursor;
@@ -45,8 +43,7 @@ _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
    bson_t unwrapped;
    bson_error_t error;
    bson_init (&opts);
-   use_unwrapped = _mongoc_cursor_translate_dollar_query_opts (
-      query, &opts, &unwrapped, &error);
+   use_unwrapped = _mongoc_cursor_translate_dollar_query_opts (query, &opts, &unwrapped, &error);
 
 
    cursor = _mongoc_cursor_find_new (gridfs->client,
@@ -76,15 +73,12 @@ _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
 
 
 mongoc_gridfs_file_list_t *
-_mongoc_gridfs_file_list_new_with_opts (mongoc_gridfs_t *gridfs,
-                                        const bson_t *filter,
-                                        const bson_t *opts)
+_mongoc_gridfs_file_list_new_with_opts (mongoc_gridfs_t *gridfs, const bson_t *filter, const bson_t *opts)
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_cursor_t *cursor;
 
-   cursor = mongoc_collection_find_with_opts (
-      gridfs->files, filter, opts, NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (gridfs->files, filter, opts, NULL /* read prefs */);
 
    BSON_ASSERT (cursor);
 
@@ -113,8 +107,7 @@ mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list)
 
 
 bool
-mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
-                               bson_error_t *error)
+mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list, bson_error_t *error)
 {
    return mongoc_cursor_error (list->cursor, error);
 }
