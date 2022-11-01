@@ -1,0 +1,39 @@
+[CentOS-$version-Vault-base]
+name=CentOS-$version - Base
+baseurl=http://vault.centos.org/$version/os/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-$majorversion
+enabled=1
+metadata_expire=never
+
+[CentOS-$version-Vault-updates]
+name=CentOS-$version - Updates
+baseurl=http://vault.centos.org/$version/updates/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-$majorversion
+enabled=1
+metadata_expire=never
+
+[CentOS-$version-Vault-extras]
+name=CentOS-$version - Extras
+baseurl=http://vault.centos.org/$version/extras/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-$majorversion
+enabled=1
+metadata_expire=never
+
+[CentOS-$version-Vault-contrib]
+name=CentOS-$version - Contrib
+baseurl=http://vault.centos.org/$version/contrib/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-$majorversion
+enabled=0
+metadata_expire=never
+
+[CentOS-$version-Vault-centosplus]
+name=CentOS-$version - CentOSPlus
+baseurl=http://vault.centos.org/$version/centosplus/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-$majorversion
+enabled=0
+metadata_expire=never

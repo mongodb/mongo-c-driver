@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+
+# Write the given string to the named file
+# Usage: __write <filepath> <content>
+
+set -eu
+
+# Ensure the parent directory exists
+pardir="$(dirname "$1")"
+mkdir -p "$pardir"
+
+# Write the content of the file
+printf "%s" "$2" > "$1"
