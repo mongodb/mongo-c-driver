@@ -2729,6 +2729,15 @@ mongoc_client_encryption_create_encrypted_collection (
    const mongoc_client_encryption_datakey_opts_t *dk_opts,
    bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (enc);
+   BSON_ASSERT_PARAM (database);
+   BSON_ASSERT_PARAM (name);
+   BSON_ASSERT_PARAM (in_options);
+   BSON_ASSERT (out_options || true);
+   BSON_ASSERT_PARAM (kms_provider);
+   BSON_ASSERT_PARAM (dk_opts);
+   BSON_ASSERT (error || true);
+
    mongoc_collection_t *ret = NULL;
 
    bson_t in_encryptedFields = BSON_INITIALIZER;
@@ -2826,6 +2835,11 @@ _init_1_encryptedField (bson_t *out_field,
                         void *fac_userdata,
                         bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (out_field);
+   BSON_ASSERT_PARAM (in_field);
+   BSON_ASSERT_PARAM (fac);
+   BSON_ASSERT (fac_userdata || true);
+   BSON_ASSERT (error || true);
    bsonVisitEach (
       *in_field,
       // If it is not a "keyId":null element, just copy it to the output.
@@ -2859,6 +2873,11 @@ _init_encryptedFields (bson_t *out_fields,
                        void *fac_userdata,
                        bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (out_fields);
+   BSON_ASSERT_PARAM (in_fields);
+   BSON_ASSERT_PARAM (fac);
+   BSON_ASSERT (fac_userdata || true);
+   BSON_ASSERT (error || true);
    // Ref to one encyrptedField
    bson_t cur_field;
    bsonVisitEach (

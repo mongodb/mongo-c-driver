@@ -1256,6 +1256,13 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
                                         bson_t *encryptedFields,
                                         bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (dbName);
+   BSON_ASSERT_PARAM (collName);
+   BSON_ASSERT (opts || true);
+   BSON_ASSERT_PARAM (encryptedFields);
+   BSON_ASSERT (error || true);
+
    bson_init (encryptedFields); // Initially empty
 
    if (opts) {
@@ -1302,6 +1309,11 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                    const bson_t *opts,
                                    bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (database);
+   BSON_ASSERT_PARAM (name);
+   BSON_ASSERT (opts || true);
+   BSON_ASSERT (error || true);
+
    bson_t encryptedFields = BSON_INITIALIZER;
    if (!_mongoc_get_collection_encryptedFields (
           database->client,
