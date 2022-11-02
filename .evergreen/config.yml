@@ -24122,17 +24122,27 @@ tasks:
   - command: shell.exec
     params:
       shell: bash
-      script: "set -o errexit\necho \"Building test-gcpkms ... begin\"\npushd mongoc\n\
-        ./.evergreen/compile-test-gcpkms.sh\npopd\necho \"Building test-gcpkms ...\
-        \ end\"\necho \"Copying files ... begin\"\nexport GCPKMS_GCLOUD=${GCPKMS_GCLOUD}\n\
-        export GCPKMS_PROJECT=${GCPKMS_PROJECT}\nexport GCPKMS_ZONE=${GCPKMS_ZONE}\n\
-        export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}\nDRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools\n\
-        mkdir testgcpkms\ncp ./mongoc/src/libmongoc/test-gcpkms ./mongoc/install/lib/libmongocrypt.*\
-        \ testgcpkms\ntar czf testgcpkms.tgz testgcpkms/*\nGCPKMS_SRC=\"testgcpkms.tgz\"\
-        \ GCPKMS_DST=$GCPKMS_INSTANCENAME: $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/copy-file.sh\n\
-        echo \"Copying files ... end\"            \necho \"Untarring file ... begin\"\
-        \nGCPKMS_CMD=\"tar xf testgcpkms.tgz\" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh\n\
-        echo \"Untarring file ... end\""
+      script: |-
+        set -o errexit
+        echo "Building test-gcpkms ... begin"
+        pushd mongoc
+        ./.evergreen/compile-test-gcpkms.sh
+        popd
+        echo "Building test-gcpkms ... end"
+        echo "Copying files ... begin"
+        export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
+        export GCPKMS_PROJECT=${GCPKMS_PROJECT}
+        export GCPKMS_ZONE=${GCPKMS_ZONE}
+        export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
+        DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
+        mkdir testgcpkms
+        cp ./mongoc/src/libmongoc/test-gcpkms ./mongoc/install/lib/libmongocrypt.* testgcpkms
+        tar czf testgcpkms.tgz testgcpkms/*
+        GCPKMS_SRC="testgcpkms.tgz" GCPKMS_DST=$GCPKMS_INSTANCENAME: $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/copy-file.sh
+        echo "Copying files ... end"
+        echo "Untarring file ... begin"
+        GCPKMS_CMD="tar xf testgcpkms.tgz" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
+        echo "Untarring file ... end"
   - command: shell.exec
     type: test
     params:
@@ -24151,8 +24161,11 @@ tasks:
   - command: shell.exec
     params:
       shell: bash
-      script: "set -o errexit\npushd mongoc\n./.evergreen/compile-test-gcpkms.sh\n\
-        popd "
+      script: |-
+        set -o errexit
+        pushd mongoc
+        ./.evergreen/compile-test-gcpkms.sh
+        popd
   - command: shell.exec
     type: test
     params:

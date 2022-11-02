@@ -42,11 +42,11 @@ def _create_tasks():
             cp ./mongoc/src/libmongoc/test-gcpkms ./mongoc/install/lib/libmongocrypt.* testgcpkms
             tar czf testgcpkms.tgz testgcpkms/*
             GCPKMS_SRC="testgcpkms.tgz" GCPKMS_DST=$GCPKMS_INSTANCENAME: $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/copy-file.sh
-            echo "Copying files ... end"            
+            echo "Copying files ... end"
             echo "Untarring file ... begin"
             GCPKMS_CMD="tar xf testgcpkms.tgz" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
             echo "Untarring file ... end"
-           ''', test=False),
+            ''', test=False),
            shell_exec (r'''
             export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}
@@ -62,7 +62,7 @@ def _create_tasks():
         shell_exec (r'''
             pushd mongoc
             ./.evergreen/compile-test-gcpkms.sh
-            popd ''', test=False),
+            popd''', test=False),
          shell_exec (r'''
             export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}
