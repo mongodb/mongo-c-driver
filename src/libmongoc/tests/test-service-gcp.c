@@ -1,5 +1,5 @@
 #include <mongoc/service-gcp.h>
-
+#include <mongoc/mongoc-host-list-private.h>
 #include "TestSuite.h"
 
 static void
@@ -92,7 +92,8 @@ _run_http_test_case (const char *case_,
    gcp_service_account_token token = {0};
    char *const header =
       bson_strdup_printf ("X-MongoDB-HTTP-TestParams: case=%s\r\n", case_);
-   gcp_access_token_from_api (&token, host.host, host.port, header, &error);
+   gcp_access_token_from_gcp_server (
+      &token, host.host, host.port, header, &error);
    bson_free (header);
    gcp_access_token_destroy (&token);
    ASSERT_ERROR_CONTAINS (

@@ -68,7 +68,7 @@ def _create_tasks():
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}
             export GCPKMS_ZONE=${GCPKMS_ZONE}
             export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
-            LD_LIBRARY_PATH=./install MONGODB_URI='mongodb://localhost:27017' EXPECT_ERROR='Failed to connect to: metadata.google.internal' ./mongoc/src/libmongoc/test-gcpkms
+            LD_LIBRARY_PATH=$(pwd)/install MONGODB_URI='mongodb://localhost:27017' EXPECT_ERROR='Failed to connect to: metadata.google.internal' ./mongoc/src/libmongoc/test-gcpkms
           ''')]
     
     return [passtask, failtask]
@@ -90,7 +90,7 @@ def _create_task_group():
     task_group.setup_group = [
         # Create and set up a GCE instance using driver tools script
         shell_exec(r'''
-            git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git
+            git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
             DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
             echo '${testgcpkms_key_file}' > /tmp/testgcpkms_key_file.json
             export GCPKMS_KEYFILE=/tmp/testgcpkms_key_file.json

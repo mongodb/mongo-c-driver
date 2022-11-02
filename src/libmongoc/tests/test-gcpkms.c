@@ -91,7 +91,6 @@ main (void)
       }
    }
    MONGOC_DEBUG ("Created key\n");
-   return EXIT_SUCCESS;
 
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
@@ -101,4 +100,6 @@ main (void)
    mongoc_client_encryption_opts_destroy (ceopts);
    mongoc_client_destroy (keyvault_client);
    mongoc_cleanup ();
+
+   return EXIT_SUCCESS;
 }

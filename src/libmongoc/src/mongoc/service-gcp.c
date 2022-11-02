@@ -123,11 +123,11 @@ done:
 }
 
 bool
-gcp_access_token_from_api (gcp_service_account_token *out,
-                           const char *opt_host,
-                           int opt_port,
-                           const char *opt_extra_headers,
-                           bson_error_t *error)
+gcp_access_token_from_gcp_server (gcp_service_account_token *out,
+                                  const char *opt_host,
+                                  int opt_port,
+                                  const char *opt_extra_headers,
+                                  bson_error_t *error)
 {
    BSON_ASSERT_PARAM (out);
    bool okay = false;
@@ -142,7 +142,6 @@ gcp_access_token_from_api (gcp_service_account_token *out,
    gcp_request_init (&req, opt_host, opt_port, opt_extra_headers);
 
    if (!_mongoc_http_send (&req.req, 3 * 1000, false, NULL, &resp, error)) {
-      _mongoc_http_response_cleanup (&resp);
       goto fail;
    }
 

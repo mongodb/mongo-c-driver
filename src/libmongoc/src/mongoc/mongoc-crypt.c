@@ -823,7 +823,7 @@ _check_gcp_kms_auto (const bson_t *kmsprov, bson_error_t *error)
 static bool
 _request_new_gcp_token (gcp_service_account_token *out, bson_error_t *error)
 {
-   return (gcp_access_token_from_api (out, NULL, 0, NULL, error));
+   return (gcp_access_token_from_gcp_server (out, NULL, 0, NULL, error));
 }
 
 /**
@@ -936,6 +936,9 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
       }
    }
 
+   size_t len;
+   printf (
+      "%s%s\n", "GILLOG: ", bson_as_canonical_extended_json (&creds, &len));
    // Now actually send that data to libmongocrypt
    mongocrypt_binary_t *const def = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (&creds), creds.len);
