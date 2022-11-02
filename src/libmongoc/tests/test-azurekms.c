@@ -8,7 +8,7 @@ main (void)
    char *keyName = getenv ("KEY_NAME");
    char *keyVaultEndpoint = getenv ("KEY_VAULT_ENDPOINT");
 
-   if (!mongodb_uri) {
+   if (!mongodb_uri || !keyName || !keyVaultEndpoint) {
       MONGOC_ERROR ("Error: expecting environment variables to be set: "
                     "MONGODB_URI, KEY_NAME, KEY_VAULT_ENDPOINT");
       return EXIT_FAILURE;
