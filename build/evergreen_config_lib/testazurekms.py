@@ -99,8 +99,7 @@ def _create_task_group():
     task_group.setup_group_timeout_secs = 1800  # 30 minutes
     task_group.setup_group = [
         shell_exec(r'''
-            # TODO: update once https://github.com/mongodb-labs/drivers-evergreen-tools/pull/239 is merged.
-            git clone https://github.com/kevinAlbs/drivers-evergreen-tools.git --branch DRIVERS-2411 drivers-evergreen-tools
+            git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git --depth=1 drivers-evergreen-tools
             DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
             echo '${testazurekms_publickey}' > /tmp/testazurekms_publickey
             echo '${testazurekms_privatekey}' > /tmp/testazurekms_privatekey
