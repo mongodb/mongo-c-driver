@@ -19,10 +19,8 @@ main (void)
    mongoc_client_t *keyvault_client = mongoc_client_new (mongodb_uri);
    MONGOC_DEBUG ("libmongoc version: %s", mongoc_get_version ());
 
-   mongoc_client_encryption_t *ce;
-   mongoc_client_encryption_opts_t *ceopts;
-
-   ceopts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_t *ceopts =
+      mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_keyvault_client (ceopts, keyvault_client);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       ceopts, "keyvault", "datakeys");
@@ -32,7 +30,8 @@ main (void)
    mongoc_client_encryption_opts_set_kms_providers (ceopts, kms_providers);
 
    bson_error_t error;
-   ce = mongoc_client_encryption_new (ceopts, &error);
+   mongoc_client_encryption_t *ce =
+      mongoc_client_encryption_new (ceopts, &error);
    if (!ce) {
       MONGOC_ERROR ("Error in mongoc_client_encryption_new: %s", error.message);
       return EXIT_FAILURE;
