@@ -43,7 +43,7 @@ def _create_tasks():
           cp ./mongoc/src/libmongoc/test-azurekms ./mongoc/install/lib/libmongocrypt.* testazurekms
           tar czf testazurekms.tgz testazurekms/*
           AZUREKMS_SRC="testazurekms.tgz" \
-          AZUREKMS_DST="~/" \
+          AZUREKMS_DST="./" \
             $DRIVERS_TOOLS/.evergreen/csfle/azurekms/copy-file.sh
           echo "Copying files ... end"
 
