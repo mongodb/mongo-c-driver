@@ -69,7 +69,7 @@ def _create_tasks():
             export GCPKMS_ZONE=${GCPKMS_ZONE}
             export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
             LD_LIBRARY_PATH=$(pwd)/install MONGODB_URI='mongodb://localhost:27017' EXPECT_ERROR='Failed to connect to: metadata.google.internal' ./mongoc/src/libmongoc/test-gcpkms
-          ''')]
+            ''')]
     
     return [passtask, failtask]
 
@@ -96,13 +96,12 @@ def _create_task_group():
             export GCPKMS_KEYFILE=/tmp/testgcpkms_key_file.json
             export GCPKMS_DRIVERS_TOOLS=$DRIVERS_TOOLS
             export GCPKMS_SERVICEACCOUNT="${testgcpkms_service_account}"
-            $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/create-and-setup-instance.sh''', test=False), 
+            $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/create-and-setup-instance.sh''', test=False),
 
            # Load the GCPKMS_GCLOUD, GCPKMS_INSTANCE, GCPKMS_PROJECT, and GCPKMS_ZONE expansions.
             OD([('command', 'expansions.update'),
             ('params', OD([
-                ('file', 'testgcpkms-expansions.yml'),
-            ]))])]
+                ('file', 'testgcpkms-expansions.yml')]))])]
     
     task_group.teardown_group = [
         shell_exec(r'''
