@@ -936,9 +936,6 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
       }
    }
 
-   size_t len;
-   printf (
-      "%s%s\n", "GILLOG: ", bson_as_canonical_extended_json (&creds, &len));
    // Now actually send that data to libmongocrypt
    mongocrypt_binary_t *const def = mongocrypt_binary_new_from_data (
       (uint8_t *) bson_get_data (&creds), creds.len);
