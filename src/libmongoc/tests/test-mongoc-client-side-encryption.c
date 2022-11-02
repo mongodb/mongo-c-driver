@@ -5476,6 +5476,79 @@ test_auto_datakeys (void *unused)
    bson_destroy (&in_fields);
 }
 
+static void
+test_create_encrypted_collection (void *unused)
+{
+   BSON_UNUSED (unused);
+   bson_error_t error = {0};
+   mongoc_client_t *const client = test_framework_new_default_client ();
+   bson_t *const kmsProviders = _make_kms_providers (false, true);
+
+   const char *const dbName = "cec-test-db";
+
+   // Drop prior data
+   {
+      mongoc_collection_t *const coll =
+         mongoc_client_get_collection (client, "keyvault", "datakeys");
+      if (coll) {
+         mongoc_collection_drop (coll, &error);
+         bool okay = strstr (error.message, "ns not found") != NULL;
+         ASSERT_OR_PRINT (okay, error);
+      }
+      mongoc_collection_destroy (coll);
+
+      mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
+      ASSERT_OR_PRINT (mongoc_database_drop (db, &error), error);
+      mongoc_database_destroy (db);
+   }
+
+   // Create a CE
+   mongoc_client_encryption_opts_t *const ceOpts =
+      mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_kms_providers (ceOpts, kmsProviders);
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      ceOpts, "keyvaule", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (ceOpts, client);
+   mongoc_client_encryption_t *const ce =
+      mongoc_client_encryption_new (ceOpts, &error);
+   mongoc_client_encryption_opts_destroy (ceOpts);
+   ASSERT_OR_PRINT (ce, error);
+
+   // Create the encrypted collection
+   bsonBuildDecl (ccOpts,
+                  kv ("encryptedFields",
+                      doc (kv ("fields",
+                               array (doc (kv ("path", cstr ("ssn")),
+                                           kv ("bsonType", cstr ("string")),
+                                           kv ("keyId", null)))))));
+   mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
+   mongoc_client_encryption_datakey_opts_t *const dkOpts =
+      mongoc_client_encryption_datakey_opts_new ();
+   mongoc_collection_t *const coll =
+      mongoc_client_encryption_create_encrypted_collection (
+         ce, db, "test-coll", &ccOpts, NULL, "local", dkOpts, &error);
+   ASSERT_OR_PRINT (coll, error);
+   bson_destroy (&ccOpts);
+
+   bsonBuildDecl (doc, kv ("ssn", cstr ("123-45-6789")));
+   const bool okay =
+      mongoc_collection_insert_one (coll, &doc, NULL, NULL, &error);
+   // Expect a failure: We didn't encrypt the field, and we don't have
+   // auto-encryption enabled, but the server expects this to be encrypted.
+   ASSERT (!okay);
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COLLECTION, 121, "failed validation");
+   bson_destroy (&doc);
+
+   bson_destroy (kmsProviders);
+   mongoc_client_encryption_datakey_opts_destroy (dkOpts);
+   mongoc_collection_destroy (coll);
+   mongoc_database_drop (db, &error);
+   mongoc_database_destroy (db);
+   mongoc_client_encryption_destroy (ce);
+   mongoc_client_destroy (client);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -5783,4 +5856,12 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       NULL);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/createEncryptedCollection",
+                      test_create_encrypted_collection,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
 }
