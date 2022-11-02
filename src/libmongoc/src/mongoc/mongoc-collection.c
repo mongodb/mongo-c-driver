@@ -1163,6 +1163,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
           opts,
           &encryptedFields,
           error)) {
+      bson_destroy (&encryptedFields);
       return false;
    }
 
@@ -1176,6 +1177,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
                 mongoc_collection_get_name (collection),
                 &encryptedFields,
                 error)) {
+            bson_destroy (&encryptedFields);
             return false;
          }
       }
@@ -1197,6 +1199,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
       collection, &opts_without_encryptedFields, &encryptedFields, error);
 
    bson_destroy (&opts_without_encryptedFields);
+   bson_destroy (&encryptedFields);
    return ret;
 }
 
