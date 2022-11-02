@@ -68,8 +68,7 @@ def _create_tasks():
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}
             export GCPKMS_ZONE=${GCPKMS_ZONE}
             export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
-            LD_LIBRARY_PATH=$(pwd)/install MONGODB_URI='mongodb://localhost:27017' EXPECT_ERROR='Failed to connect to: metadata.google.internal' ./mongoc/src/libmongoc/test-gcpkms
-            ''')]
+            LD_LIBRARY_PATH=$(pwd)/install MONGODB_URI='mongodb://localhost:27017' EXPECT_ERROR='Failed to connect to: metadata.google.internal' ./mongoc/src/libmongoc/test-gcpkms''')]
     
     return [passtask, failtask]
 
