@@ -17,14 +17,14 @@ _test_gcp_parse (void)
    // server output must contain access_token
    ASSERT (!gcp_access_token_try_parse_from_json (&token, "{}", -1, &error));
    ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_GCP, MONGOC_ERROR_GCP_BAD_JSON, "");
+      error, MONGOC_ERROR_GCP, MONGOC_ERROR_KMS_SERVER_BAD_JSON, "");
 
    // server output must contain a value for access_token
    ASSERT (!gcp_access_token_try_parse_from_json (
       &token, BSON_STR ({"access_token" : null}), -1, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_GCP,
-                          MONGOC_ERROR_GCP_BAD_JSON,
+                          MONGOC_ERROR_KMS_SERVER_BAD_JSON,
                           "One or more required JSON");
 
    // server output must contain token_type
@@ -32,7 +32,7 @@ _test_gcp_parse (void)
       &token, BSON_STR ({"access_token" : "helloworld"}), -1, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_GCP,
-                          MONGOC_ERROR_GCP_BAD_JSON,
+                          MONGOC_ERROR_KMS_SERVER_BAD_JSON,
                           "One or more required JSON");
 
    // can successfully parse JSON datat into a gcp_service_account_token
@@ -105,11 +105,12 @@ _test_with_mock_server (void *ctx)
 {
    BSON_UNUSED (ctx);
    _run_http_test_case ("", 0, 0, ""); // (No error)
-   _run_http_test_case ("404", MONGOC_ERROR_GCP, MONGOC_ERROR_GCP_HTTP, "");
+   _run_http_test_case (
+      "404", MONGOC_ERROR_GCP, MONGOC_ERROR_KMS_SERVER_HTTP, "");
    _run_http_test_case (
       "slow", MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Timeout");
    _run_http_test_case (
-      "empty-json", MONGOC_ERROR_GCP, MONGOC_ERROR_GCP_BAD_JSON, "");
+      "empty-json", MONGOC_ERROR_GCP, MONGOC_ERROR_KMS_SERVER_BAD_JSON, "");
    _run_http_test_case (
       "bad-json", MONGOC_ERROR_CLIENT, MONGOC_ERROR_STREAM_INVALID_TYPE, "");
    _run_http_test_case (

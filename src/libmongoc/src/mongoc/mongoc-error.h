@@ -137,13 +137,10 @@ typedef enum {
 
    MONGOC_ERROR_CLIENT_INVALID_LOAD_BALANCER,
 
-   // Azure errors
-   MONGOC_ERROR_AZURE_HTTP,
-   MONGOC_ERROR_AZURE_BAD_JSON,
+   /* An error related to either GCP metadata or Azure IMDS server */
+   MONGOC_ERROR_KMS_SERVER_HTTP,
+   MONGOC_ERROR_KMS_SERVER_BAD_JSON,
 
-   // GCP errors
-   MONGOC_ERROR_GCP_HTTP,
-   MONGOC_ERROR_GCP_BAD_JSON
 } mongoc_error_code_t;
 
 MONGOC_EXPORT (bool)

@@ -103,7 +103,7 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out,
    if (!(access_token && token_type)) {
       bson_set_error (error,
                       MONGOC_ERROR_GCP,
-                      MONGOC_ERROR_GCP_BAD_JSON,
+                      MONGOC_ERROR_KMS_SERVER_BAD_JSON,
                       "One or more required JSON properties are "
                       "missing/invalid: data: %.*s",
                       len,
@@ -149,7 +149,7 @@ gcp_access_token_from_gcp_server (gcp_service_account_token *out,
    if (resp.status != 200) {
       bson_set_error (error,
                       MONGOC_ERROR_GCP,
-                      MONGOC_ERROR_GCP_HTTP,
+                      MONGOC_ERROR_KMS_SERVER_HTTP,
                       "Error from the GCP metadata server while looking for "
                       "access token: %.*s",
                       resp.body_len,

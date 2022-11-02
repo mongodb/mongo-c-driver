@@ -19,12 +19,12 @@ _test_oauth_parse (void)
    ASSERT (!mcd_azure_access_token_try_init_from_json_str (
       &token, "{}", -1, &error));
    ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_BAD_JSON, "");
+      error, MONGOC_ERROR_AZURE, MONGOC_ERROR_KMS_SERVER_BAD_JSON, "");
 
    ASSERT (!mcd_azure_access_token_try_init_from_json_str (
       &token, RAW_STRING ({"access_token" : null}), -1, &error));
    ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_BAD_JSON, "");
+      error, MONGOC_ERROR_AZURE, MONGOC_ERROR_KMS_SERVER_BAD_JSON, "");
 
    error = (bson_error_t){0};
    ASSERT (mcd_azure_access_token_try_init_from_json_str (
@@ -100,11 +100,12 @@ _test_with_mock_server (void *ctx)
    BSON_UNUSED (ctx);
 
    _run_http_test_case ("", 0, 0, ""); // (No error)
-   _run_http_test_case ("404", MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_HTTP, "");
+   _run_http_test_case (
+      "404", MONGOC_ERROR_AZURE, MONGOC_ERROR_KMS_SERVER_HTTP, "");
    _run_http_test_case (
       "slow", MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Timeout");
    _run_http_test_case (
-      "empty-json", MONGOC_ERROR_AZURE, MONGOC_ERROR_AZURE_BAD_JSON, "");
+      "empty-json", MONGOC_ERROR_AZURE, MONGOC_ERROR_KMS_SERVER_BAD_JSON, "");
    _run_http_test_case (
       "bad-json", MONGOC_ERROR_CLIENT, MONGOC_ERROR_STREAM_INVALID_TYPE, "");
    _run_http_test_case (
