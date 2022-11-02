@@ -855,7 +855,6 @@ mongoc_client_encryption_create_encrypted_collection (
    BSON_UNUSED (out_options);
    BSON_UNUSED (kms_provider);
    BSON_UNUSED (dk_opts);
-   BSON_UNUSED (error);
 
    _disabled_error (error);
    return NULL;
