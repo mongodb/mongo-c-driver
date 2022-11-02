@@ -837,6 +837,30 @@ _mongoc_cse_is_enabled (mongoc_client_t *client)
    return false;
 }
 
+mongoc_collection_t *
+mongoc_client_encryption_create_encrypted_collection (
+   mongoc_client_encryption_t *enc,
+   mongoc_database_t *database,
+   const char *const name,
+   const bson_t *in_options,
+   bson_t *out_options,
+   const char *const kms_provider,
+   const mongoc_client_encryption_datakey_opts_t *dk_opts,
+   bson_error_t *error)
+{
+   BSON_UNUSED (enc);
+   BSON_UNUSED (database);
+   BSON_UNUSED (name);
+   BSON_UNUSED (in_options);
+   BSON_UNUSED (out_options);
+   BSON_UNUSED (kms_provider);
+   BSON_UNUSED (dk_opts);
+   BSON_UNUSED (error);
+
+   _disabled_error (error);
+   return NULL;
+}
+
 #else
 
 /*--------------------------------------------------------------------------
