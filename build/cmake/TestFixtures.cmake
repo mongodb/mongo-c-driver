@@ -44,6 +44,6 @@ mongo_define_subprocess_fixture(
     SPAWN_WAIT 0.2
     COMMAND
         "$<TARGET_FILE:Python3::Interpreter>" -u --
-        "${_MONGOC_BUILD_SCRIPT_DIR}/bottle.py" fake_azure:imds
+        "${_MONGOC_BUILD_SCRIPT_DIR}/bottle.py" fake_kms_provider_server:kms_provider
             --bind localhost:14987  # Port 14987 chosen arbitrarily
     )

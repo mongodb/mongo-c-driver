@@ -9,8 +9,10 @@ INSTALL_DIR=$ROOT/install
 . .evergreen/find-cmake.sh
 echo "Installing libmongocrypt ... begin"
 git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.6.0
+cd libmongocrypt
 $CMAKE [...] "-H$ROOT/libmongocrypt" "-B$ROOT/libmongocrypt"
 $CMAKE --build "$ROOT/libmongocrypt" --target install
+cd ..
 echo "Installing libmongocrypt ... end"
 
 echo "Compile test-gcpkms ... begin"

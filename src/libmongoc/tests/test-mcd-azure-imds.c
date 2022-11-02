@@ -68,7 +68,7 @@ _test_http_req (void)
 static const char *
 _get_test_imds_host (void)
 {
-   return getenv ("MCD_TEST_AZURE_IMDS_HOST");
+   return getenv ("TEST_KMS_PROVIDER_HOST");
 }
 
 static void

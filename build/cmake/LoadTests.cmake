@@ -27,9 +27,9 @@ endif ()
 string (REPLACE "\n" ";" lines "${tests_out}")
 
 # TODO: Allow individual test cases to specify the fixtures they want.
-set (all_fixtures "mongoc/fixtures/fake_imds")
+set (all_fixtures "mongoc/fixtures/fake_kms_provider_server")
 set (all_env
-    MCD_TEST_AZURE_IMDS_HOST=localhost:14987  # Refer: Fixtures.cmake
+    TEST_KMS_PROVIDER_HOST=localhost:14987  # Refer: Fixtures.cmake
     )
 
 # Generate the test definitions
