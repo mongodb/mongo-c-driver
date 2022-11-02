@@ -82,7 +82,7 @@ struct auto_datakey_context {
  * @retval true Upon success
  * @retval false Otherwise.
  *
- * @note Errors should be written out through the context.
+ * @note Errors should be written into `ctx->out_error`.
  */
 typedef bool (*auto_datakey_factory) (struct auto_datakey_context *ctx);
 

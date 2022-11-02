@@ -2760,7 +2760,8 @@ mongoc_client_encryption_create_encrypted_collection (
                  }
               }))));
    if (bsonParseError) {
-      // Error creating the new datakeys
+      // Error creating the new datakeys.
+      // `error` was set by _mongoc_encryptedFields_fill_auto_datakeys
       goto done;
    }
 

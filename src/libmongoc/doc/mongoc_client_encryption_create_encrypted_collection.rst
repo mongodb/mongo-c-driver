@@ -11,10 +11,10 @@ Synopsis
   mongoc_collection_t*
   mongoc_client_encryption_create_encrypted_collection (
         mongoc_client_encryption_t *enc,
-        mongoc_database_t *db,
+        mongoc_database_t *database,
         const char *name,
         const bson_t *in_options,
-        bson_t *opt_out_options,
+        bson_t *out_options,
         const char *kms_provider,
         const mongoc_client_encryption_datakey_opts_t *dk_opts,
         bson_error_t *error)
@@ -38,11 +38,11 @@ Parameters
 
 * ``enc``: The :symbol:`mongoc_client_encryption_t` to be used to configure
   encryption for the new collection.
-* ``db``: The :symbol:`mongoc_database_t` in which the new collection will be
-  created.
+* ``database``: The :symbol:`mongoc_database_t` in which the new collection will
+  be created.
 * ``name``: The name of the new collection.
 * ``in_options``: The options for the new collection. (See below).
-* ``opt_out_options``: An optional output option for the final create-collection
+* ``out_options``: An optional output option for the final create-collection
   options. Should point to storage for a :symbol:`bson_t`. The pointed-to object
   must be destroyed by the caller. If ``NULL``, has no effect.
 * ``kms_provider``: The name of the KMS provider to use for generating new data
@@ -59,7 +59,7 @@ Returns
 
 If successful, this function returns a new :symbol:`mongoc_collection_t` object.
 Upon failure, returns ``NULL`` and initializes ``*error`` with an error
-indicating the reason for failure. The returns collection object must be freed
+indicating the reason for failure. The returned collection object must be freed
 by the caller.
 
 
@@ -92,5 +92,5 @@ This function has the following as-if effect:
       within `F`.
 
 3. A collection will be created using the options `O`.
-4. If ``opt_out_options`` is not ``NULL``, `O` will be written to
-   ``opt_out_options``.
+4. If ``out_options`` is not ``NULL``, `O` will be written to
+   ``out_options``.
