@@ -71,7 +71,7 @@ def _create_tasks():
           popd
         ''', test=False),
         shell_exec (r'''
-          LD_LIBRARY_PATH=./install \
+          LD_LIBRARY_PATH=$PWD/install \
           MONGODB_URI='mongodb://localhost:27017' \
           KEY_NAME='${testazurekms_keyname}' \
           KEY_VAULT_ENDPOINT='${testazurekms_keyvaultendpoint}' \
