@@ -5492,7 +5492,8 @@ test_create_encrypted_collection (void *unused)
          mongoc_client_get_collection (client, "keyvault", "datakeys");
       if (coll) {
          mongoc_collection_drop (coll, &error);
-         bool okay = strstr (error.message, "ns not found") != NULL;
+         bool okay =
+            error.code == 0 || strstr (error.message, "ns not found") != NULL;
          ASSERT_OR_PRINT (okay, error);
       }
       mongoc_collection_destroy (coll);
