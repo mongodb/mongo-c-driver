@@ -18,9 +18,7 @@ echo "Installing libmongocrypt ... end"
 
 echo "Compile test-azurekms ... begin"
 # Disable unnecessary dependencies. test-azurekms is copied to a remote host for testing, which may not have all dependent libraries.
-$CMAKE -DCMAKE_C_STANDARD=99 \
-    -DCMAKE_C_STANDARD_REQUIRED=ON \
-    -DCMAKE_C_EXTENSIONS=OFF \
+$CMAKE \
     -DENABLE_SASL=OFF \
     -DENABLE_SNAPPY=OFF \
     -DENABLE_ZSTD=OFF \
