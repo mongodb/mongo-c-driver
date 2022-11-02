@@ -1151,8 +1151,10 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
                                   const bson_t *opts,
                                   bson_error_t *error)
 {
-   // The encryptedFields for the collection. View-only.
+   // The encryptedFields for the collection.
    bson_t encryptedFields = BSON_INITIALIZER;
+   bson_t opts_without_encryptedFields = BSON_INITIALIZER;
+   bool okay = false;
 
    // Try to find the encryptedFields from the collection options or from the
    // encryptedFieldsMap.
@@ -1163,8 +1165,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
           opts,
           &encryptedFields,
           error)) {
-      bson_destroy (&encryptedFields);
-      return false;
+      goto done;
    }
 
    if (bson_empty (&encryptedFields)) {
@@ -1177,8 +1178,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
                 mongoc_collection_get_name (collection),
                 &encryptedFields,
                 error)) {
-            bson_destroy (&encryptedFields);
-            return false;
+            goto done;
          }
       }
    }
@@ -1186,21 +1186,31 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
    if (bson_empty (&encryptedFields)) {
       // There are no encryptedFields with this collection, so we can just do a
       // regular drop
-      return drop_with_opts (collection, opts, error);
+      okay = drop_with_opts (collection, opts, error);
+      goto done;
    }
 
    // We've found the encryptedFields, so we need to do something different
    // to drop this collection:
-   bsonBuildDecl (
+   bsonBuildAppend (
       opts_without_encryptedFields,
       if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+   if (bsonBuildError) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Error while updating drop options: %s",
+                      bsonBuildError);
+      goto done;
+   }
 
-   bool ret = drop_with_opts_with_encryptedFields (
+   okay = drop_with_opts_with_encryptedFields (
       collection, &opts_without_encryptedFields, &encryptedFields, error);
 
+done:
    bson_destroy (&opts_without_encryptedFields);
    bson_destroy (&encryptedFields);
-   return ret;
+   return okay;
 }
 
 

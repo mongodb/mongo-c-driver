@@ -2894,6 +2894,24 @@ _init_encryptedFields (bson_t *out_fields,
             // Construct the encryptedField document from the input:
             doc (do(_init_1_encryptedField (
                bsonBuildContext.doc, &cur_field, fac, fac_userdata, error))))));
+   if (error && error->code == 0) {
+      // The factory/internal code did not set error, so we may have to set it
+      // for an error while BSON parsing/generating.
+      if (bsonParseError) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Error while generating datakeys: %s",
+                         bsonParseError);
+      }
+      if (bsonBuildError) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Error while generating datakeys: %s",
+                         bsonBuildError);
+      }
+   }
 }
 
 bool
@@ -2914,24 +2932,6 @@ _mongoc_encryptedFields_fill_auto_datakeys (bson_t *const out_fields,
 
    _init_encryptedFields (out_fields, in_fields, factory, userdata, error);
 
-   if (error && error->code == 0) {
-      // The factory/internal code did not set error, so we may have to set it
-      // for an error while BSON parsing/generating.
-      if (bsonParseError) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Error while generating datakeys: %s",
-                         bsonParseError);
-      }
-      if (bsonBuildError) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Error while generating datakeys: %s",
-                         bsonBuildError);
-      }
-   }
    // DSL errors will be set in case of failure
    return bsonParseError == NULL && bsonBuildError == NULL;
 }

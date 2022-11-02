@@ -1276,9 +1276,7 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
                // Update encryptedFields to be a reference to the subdocument:
                storeDocRef (*encryptedFields),
                do(found = true)));
-      if (found) {
-         return true;
-      } else if (bsonParseError) {
+      if (bsonParseError) {
          // Error while parsing
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -1286,6 +1284,9 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
                          "Invalid createCollection command options: %s",
                          bsonParseError);
          return false;
+      } else if (found) {
+         // Found it!
+         return true;
       } else {
          // Nothing found in the options
       }
@@ -1323,6 +1324,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
           &encryptedFields,
           error)) {
       // Error during fields lookup
+      bson_destroy (&encryptedFields);
       return false;
    }
 
@@ -1339,10 +1341,12 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                                  &encryptedFields,
                                                  error);
 
+      bson_destroy (&encryptedFields);
       bson_destroy (&opts_without_encryptedFields);
       return ret;
    }
 
+   bson_destroy (&encryptedFields);
    return create_collection (database, name, opts, error);
 }
 
