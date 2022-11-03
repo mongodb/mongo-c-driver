@@ -568,6 +568,82 @@ test_unsupported_storage_engine_error (void)
    mongoc_client_destroy (client);
    mock_rs_destroy (rs);
 }
+
+/* Test requires a 6.0+ replica set*/
+static void
+test_no_writes_performed_correct_error (void *ctx)
+{
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_t *fail_point;
+   uint32_t server_id;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   // bson_t reply;
+
+   // need to add command monitoring to check if there is a commandsucceeded
+   // event
+   BSON_UNUSED (ctx);
+   uri = test_framework_get_uri ();
+   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+
+   client = test_framework_client_new_from_uri (uri, NULL);
+   test_framework_set_ssl_opts (client);
+   mongoc_uri_destroy (uri);
+
+   // /* clean up from previous tests */
+   server_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   ASSERT_OR_PRINT (server_id, error);
+   deactivate_fail_points (client, server_id);
+
+   fail_point =
+      tmp_bson ("{'configureFailPoint': 'failCommand',"
+                " 'mode': {'times': 1},"
+                " 'data': { 'writeConcernError': { 'code': 91, 'errorLabels': "
+                "['RetryableWriteError']}, 'failCommands': ['insert']}}");
+
+   ASSERT_OR_PRINT (
+      mongoc_client_command_simple_with_server_id (
+         client, "admin", fail_point, NULL, server_id, NULL, &error),
+      error);
+
+   bool configured_second_fail_point = false;
+
+
+   // ASSERT (configured_second_fail_point);
+
+   fail_point = tmp_bson (
+      "{'configureFailPoint': 'failCommand',"
+      " 'mode': {'times': 1},"
+      " 'data': {'errorCode': 10107, 'errorLabels': ['RetryableWriteError', "
+      "'NoWritesPerformed'], 'failCommands': ['insert']}}");
+
+   ASSERT_OR_PRINT (
+      mongoc_client_command_simple_with_server_id (
+         client, "admin", fail_point, NULL, server_id, NULL, &error),
+      error);
+
+   collection = get_test_collection (client, "retryable_writes");
+
+   // attempt an insertOne operation
+   mongoc_collection_write_command_with_opts (
+      collection,
+      tmp_bson ("{'insertOne': {'_id':1, 'x': 1}}"),
+      NULL,
+      NULL,
+      &error);
+
+   // Check that the associated error code is 91
+   printf ("%s\n", error.message);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 91, "");
+
+   printf ("%s\n", "GILLOG");
+   // disable the fail point
+   deactivate_fail_points (client, server_id);
+   mongoc_client_destroy (client);
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -729,4 +805,11 @@ test_retryable_writes_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_not_rs_version_6,
                       test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/retryable_writes/no_writes_performed",
+                      test_no_writes_performed_correct_error,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset,
+                      test_framework_skip_if_max_wire_version_less_than_17);
 }
