@@ -1061,6 +1061,7 @@ endif ()
 mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
+mongoc_add_test (test-azurekms FALSE ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
 mongoc_add_test (test-gcpkms FALSE ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c)
 
 if (ENABLE_TESTS)

@@ -166,7 +166,7 @@ export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
 export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
 export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
 
-CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_C_STANDARD=$C_STD_VERSION -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=OFF"
+CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_C_STANDARD=$C_STD_VERSION"
 
 case "$MARCH" in
    i386)

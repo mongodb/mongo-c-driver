@@ -21,6 +21,8 @@
 #include <fcntl.h>
 #include <time.h>
 
+#include <bson/bson-dsl.h>
+
 #include "TestSuite.h"
 #include "test-conveniences.h"
 
@@ -2508,6 +2510,307 @@ test_bson_as_json_string (void)
    bson_free (actual);
 }
 
+#define JSON_STRING(...) #__VA_ARGS__
+#define TMP_BSON_FROM_JSON(...) tmp_bson (JSON_STRING (__VA_ARGS__))
+
+/**
+ * @brief Test the parsing component of the BSON EDSL
+ */
+static void
+test_bson_dsl_parse (void)
+{
+   // Do nothing:
+   bsonParse (*TMP_BSON_FROM_JSON ({}), do());
+   BSON_ASSERT (!bsonParseError);
+
+   // Generate an error
+   bsonParse (*TMP_BSON_FROM_JSON ({}), error ("failed 1"));
+   ASSERT_CMPSTR (bsonParseError, "failed 1");
+
+   // Error is reset on each entry
+   bsonParse (*TMP_BSON_FROM_JSON ({}), do());
+   BSON_ASSERT (!bsonParseError);
+
+   // Find an element
+   bson_t *simple_foo_bar = TMP_BSON_FROM_JSON ({"foo" : "bar"});
+   bool found = false;
+   bsonParse (*simple_foo_bar, find (key ("foo"), do(found = true)));
+   BSON_ASSERT (found);
+
+   // Store a reference to the string
+   const char *found_string = NULL;
+   bsonParse (*simple_foo_bar, find (key ("foo"), storeStrRef (found_string)));
+   ASSERT_CMPSTR (found_string, "bar");
+
+   // We can fail to find too
+   found = false;
+   bool not_found = false;
+   bsonParse (*simple_foo_bar,
+              find (key ("bad"), do(found = true)),
+              else(do(not_found = true)));
+   BSON_ASSERT (!found);
+   BSON_ASSERT (not_found);
+
+   // We can find two items
+   int32_t a = 0, b = 0;
+   bsonParse (*TMP_BSON_FROM_JSON ({"foo" : 1729, "bar" : 42}),
+              find (key ("foo"), do(a = bsonAs (int32))),
+              find (key ("bar"), do(b = bsonAs (int32))));
+   ASSERT_CMPINT (a, ==, 1729);
+   ASSERT_CMPINT (b, ==, 42);
+
+   // Wrong types are zeroed
+   a = 91;
+   found = false;
+   bsonParse (*TMP_BSON_FROM_JSON ({"foo" : "string"}),
+              find (key ("foo"), do(found = true; a = bsonAs (int32))));
+   BSON_ASSERT (found);
+   ASSERT_CMPINT (a, ==, 0);
+
+   // Nested errors do not continue
+   found = false;
+   bsonParse (*TMP_BSON_FROM_JSON ({"foo" : null, "bar" : null}),
+              find (key ("foo"), error ("got foo")),
+              find (key ("bar"), do(found = true)));
+   ASSERT_CMPSTR (bsonParseError, "got foo");
+   BSON_ASSERT (!found);
+
+   // Halting does not continue
+   found = false;
+   bsonParse (*TMP_BSON_FROM_JSON ({"foo" : null, "bar" : null}),
+              find (key ("foo"), halt),
+              find (key ("bar"), do(found = true)));
+   BSON_ASSERT (!bsonParseError);
+   BSON_ASSERT (!found);
+
+   // "if" will branch
+   a = 812;
+   b = 0;
+   bsonParse (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 2}),
+              if (a == 812,
+                  then (find (key ("foo"), do(b = bsonAs (int32)))),
+                  else(find (key ("bar"), do(b = bsonAs (int32))))));
+   ASSERT_CMPINT (b, ==, 1);
+   a = 4;
+   bsonParse (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 2}),
+              if (a == 812,
+                  then (find (key ("foo"), do(b = bsonAs (int32)))),
+                  else(find (key ("bar"), do(b = bsonAs (int32))))));
+   ASSERT_CMPINT (b, ==, 2);
+
+   bson_t tmp = BSON_INITIALIZER;
+   for (int i = 0; i < 1024; ++i) {
+      BSON_APPEND_BOOL (&tmp, ".", true);
+   }
+   BSON_APPEND_BOOL (&tmp, "final", true);
+   int unvisited = 0;
+   bsonParse (tmp, find (key ("final"), nop), visitOthers (do(++unvisited)));
+   ASSERT_CMPINT (unvisited, ==, 1024);
+   bson_destroy (&tmp);
+}
+
+static void
+test_bson_dsl_visit (void)
+{
+   // Count elements
+   int count = 0;
+   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 1}), do(++count));
+   ASSERT_CMPINT (count, ==, 2);
+
+   // Branch on keys
+   int foo_val = 0;
+   int bar_val = 0;
+   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : 61, "bar" : 951}),
+                  if (key ("foo"), then (do(foo_val = bsonAs (int32)))),
+                  if (key ("bar"), then (do(bar_val = bsonAs (int32)))));
+   ASSERT_CMPINT (foo_val, ==, 61);
+   ASSERT_CMPINT (bar_val, ==, 951);
+
+   // Store reference to subdocs
+   bson_t subdoc;
+   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : {"bar" : 42}}),
+                  storeDocRef (subdoc));
+   bar_val = 0;
+   bsonVisitEach (subdoc, do(bar_val = bsonAs (int32)));
+   ASSERT_CMPINT (bar_val, ==, 42);
+
+   // Visit subdocs directly
+   const char *baz_str = NULL;
+   char *path = NULL;
+   bsonVisitEach (
+      *TMP_BSON_FROM_JSON ({"foo" : {"bar" : {"baz" : "baz_string"}}}),
+      visitEach (visitEach (storeStrRef (baz_str), dupPath (path))));
+   ASSERT_CMPSTR (baz_str, "baz_string");
+   ASSERT_CMPSTR (path, "$.foo.bar.baz");
+   bson_free (path);
+}
+
+static void
+test_bson_dsl_predicate (void)
+{
+   bson_t *document = TMP_BSON_FROM_JSON ({
+      "number1" : 1,
+      "number2" : 2.1,
+      "zero" : 0,
+      "string" : "hello",
+      "doc" : {"hello" : null},
+      "null" : null,
+      "empty_string" : "",
+      "empty_array" : [],
+      "empty_doc" : {},
+      "with_last" : {"a" : null, "b" : "lastElement"},
+      "unhandled" : 12
+   });
+   bool saw_other = false;
+   bsonParse ( //
+      *document,
+      require (key ("number1"), //
+               require (type (int32)),
+               require (isNumeric),
+               require (isTrue)),
+      require (key ("number2"), //
+               require (isNumeric),
+               require (type (double)),
+               require (isTrue)),
+      require (key ("zero"), //
+               require (isFalse)),
+      require (key ("string"), //
+               require (type (utf8)),
+               require (strEqual ("hello")),
+               require (not(strEqual ("goodbye"))),
+               require (iStrEqual ("HELLO")),
+               require (not(iStrEqual ("GOODBYE")))),
+      require (key ("doc"),
+               require (type (doc)),
+               require (not(empty)),
+               visitEach (require (key ("hello")), require (type (null)))),
+      require (key ("null"), require (type (null))),
+      require (key ("empty_string"), require (type (utf8))),
+      require (key ("empty_array"), require (type (array)), require (empty)),
+      require (key ("empty_doc"), require (type (doc)), require (empty)),
+      require (
+         key ("with_last"),
+         require (type (doc)),
+         visitEach (if (lastElement,
+                        then (require (key ("b")), require (type (utf8))),
+                        else(require (key ("a")), require (type (null)))))),
+      require (
+         key ("with_last"),
+         visitEach (case (when (key ("a"), require (type (null))),
+                          when (key ("b"), require (strEqual ("lastElement"))),
+                          else(do(abort ()))))),
+      require (key ("string"),
+               case (when (strEqual ("goodbye"), do(abort ())),
+                     when (strEqual ("hello"), nop),
+                     // Not eached since the prior case matched:
+                     when (strEqual ("hello"), do(abort ())),
+                     else(do(abort ())))),
+      visitOthers (if (key ("unhandled"),
+                       then (do(saw_other = true)),
+                       else(do(abort ())))));
+   BSON_ASSERT (saw_other);
+}
+
+static void
+do_assert_bson_equal (const bson_t *actual,
+                      const bson_t *expected,
+                      const char *file,
+                      int line)
+{
+   char *actual_str = bson_as_canonical_extended_json (actual, NULL);
+   char *expected_str = bson_as_canonical_extended_json (expected, NULL);
+   if (strcmp (actual_str, expected_str) != 0) {
+      test_error ("%s:%d: BSON documents are not equal:\n  Expected: %s\n    "
+                  "Actual: %s\n",
+                  file,
+                  line,
+                  expected_str,
+                  actual_str);
+   }
+   bson_free (actual_str);
+   bson_free (expected_str);
+}
+
+#define ASSERT_BSON_EQUAL(Actual, ...) \
+   do_assert_bson_equal (              \
+      &(Actual), TMP_BSON_FROM_JSON (__VA_ARGS__), __FILE__, __LINE__)
+
+static void
+test_bson_dsl_build (void)
+{
+   // Create a very simple empty document
+   bsonBuildDecl (doc, do());
+   BSON_ASSERT (!bsonBuildError);
+   ASSERT_BSON_EQUAL (doc, {});
+   bson_destroy (&doc);
+
+   bsonBuild (doc, kv ("foo", cstr ("bar")));
+   ASSERT_BSON_EQUAL (doc, {"foo" : "bar"});
+   bson_destroy (&doc);
+
+   bsonBuild (doc, kv ("foo", int32 (92)));
+   ASSERT_BSON_EQUAL (doc, {"foo" : 92});
+   bson_destroy (&doc);
+
+   bsonBuild (doc, kvl ("hello", 1, int32 (9)));
+   ASSERT_BSON_EQUAL (doc, {"h" : 9});
+   bson_destroy (&doc);
+
+   // Conditional insert
+   bsonBuild (doc,
+              if (0, then (kv ("never", null)), else(kv ("truth", int32 (1)))));
+   ASSERT_BSON_EQUAL (doc, {"truth" : 1});
+   bson_destroy (&doc);
+
+   // Insert a subdoc
+   bson_t *subdoc =
+      TMP_BSON_FROM_JSON ({"child" : [ 1, 2, 3 ], "other" : null});
+
+   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, true))));
+   ASSERT_BSON_EQUAL (doc,
+                      {"subdoc" : {"child" : [ 1, 2, 3 ], "other" : null}});
+   bson_destroy (&doc);
+
+   // Conditional insert
+   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, key ("other")))));
+   ASSERT_BSON_EQUAL (doc, {"subdoc" : {"other" : null}});
+   bson_destroy (&doc);
+
+   // Nested DSL docs
+   bsonBuild (doc,
+              kv ("top",
+                  doc (kv ("inner1", array ()),
+                       kv ("inner2", null),
+                       kv ("inner3", array (int32 (1), int32 (2), int32 (3))),
+                       insert (*subdoc, true),
+                       kv ("inner4", doc (kv ("innermost", int32 (42)))))));
+   ASSERT_BSON_EQUAL (doc, {
+      "top" : {
+         "inner1" : [],
+         "inner2" : null,
+         "inner3" : [ 1, 2, 3 ],
+         "child" : [ 1, 2, 3 ],
+         "other" : null,
+         "inner4" : {"innermost" : 42}
+      }
+   });
+
+   // Do not destroy doc, but append to it
+   bsonBuildAppend (doc, kv ("anotherTop", null));
+   ASSERT_BSON_EQUAL (doc, {
+      "top" : {
+         "inner1" : [],
+         "inner2" : null,
+         "inner3" : [ 1, 2, 3 ],
+         "child" : [ 1, 2, 3 ],
+         "other" : null,
+         "inner4" : {"innermost" : 42}
+      },
+      "anotherTop" : null
+   });
+   bson_destroy (&doc);
+}
+
 void
 test_bson_install (TestSuite *suite)
 {
@@ -2606,4 +2909,9 @@ test_bson_install (TestSuite *suite)
                   "/bson/append_null_from_utf8_or_symbol",
                   test_bson_append_null_from_utf8_or_symbol);
    TestSuite_Add (suite, "/bson/as_json_string", test_bson_as_json_string);
+
+   TestSuite_Add (suite, "/bson/dsl/predicate", test_bson_dsl_predicate);
+   TestSuite_Add (suite, "/bson/dsl/parse", test_bson_dsl_parse);
+   TestSuite_Add (suite, "/bson/dsl/visit", test_bson_dsl_visit);
+   TestSuite_Add (suite, "/bson/dsl/build", test_bson_dsl_build);
 }

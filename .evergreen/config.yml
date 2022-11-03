@@ -17255,7 +17255,7 @@ tasks:
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         . .evergreen/find-cmake.sh
         export CC='${CC}'
-        $CMAKE -DCMAKE_C_STANDARD=99 -DCMAKE_C_STANDARD_REQUIRED=ON -DCMAKE_C_EXTENSIONS=OFF -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+        $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
   - func: upload build
 - name: test-aws-openssl-regular-latest
@@ -24116,6 +24116,70 @@ tasks:
       AUTH: noauth
       LOADBALANCED: loadbalanced
       SSL: nossl
+- name: testazurekms-task
+  commands:
+  - func: fetch source
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        echo "Building test-azurekms ... begin"
+        pushd mongoc
+        ./.evergreen/compile-test-azurekms.sh
+        popd
+        echo "Building test-azurekms ... end"
+        echo "Copying files ... begin"
+        export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
+        export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
+        export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
+        DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
+        mkdir testazurekms
+        cp ./mongoc/src/libmongoc/test-azurekms ./mongoc/install/lib/libmongocrypt.* testazurekms
+        tar czf testazurekms.tgz testazurekms/*
+        AZUREKMS_SRC="testazurekms.tgz" \
+        AZUREKMS_DST="./" \
+          $DRIVERS_TOOLS/.evergreen/csfle/azurekms/copy-file.sh
+        echo "Copying files ... end"
+        echo "Untarring file ... begin"
+        AZUREKMS_CMD="tar xf testazurekms.tgz" \
+          $DRIVERS_TOOLS/.evergreen/csfle/azurekms/run-command.sh
+        echo "Untarring file ... end"
+  - command: shell.exec
+    type: test
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
+        export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
+        export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
+        DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
+        AZUREKMS_CMD="LD_LIBRARY_PATH=./testazurekms MONGODB_URI='mongodb://localhost:27017' KEY_NAME='${testazurekms_keyname}' KEY_VAULT_ENDPOINT='${testazurekms_keyvaultendpoint}' ./testazurekms/test-azurekms" \
+          $DRIVERS_TOOLS/.evergreen/csfle/azurekms/run-command.sh
+- name: testazurekms-fail-task
+  commands:
+  - func: fetch source
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        pushd mongoc
+        ./.evergreen/compile-test-azurekms.sh
+        popd
+  - command: shell.exec
+    type: test
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        LD_LIBRARY_PATH=$PWD/install \
+        MONGODB_URI='mongodb://localhost:27017' \
+        KEY_NAME='${testazurekms_keyname}' \
+        KEY_VAULT_ENDPOINT='${testazurekms_keyvaultendpoint}' \
+        EXPECT_ERROR='Error from Azure IMDS server' \
+          ./mongoc/src/libmongoc/test-azurekms
 - name: testgcpkms-task
   commands:
   - func: fetch source
@@ -24178,6 +24242,46 @@ tasks:
         export GCPKMS_INSTANCENAME=${GCPKMS_INSTANCENAME}
         LD_LIBRARY_PATH=$(pwd)/install MONGODB_URI='mongodb://localhost:27017' EXPECT_ERROR='Failed to connect to: metadata.google.internal' ./mongoc/src/libmongoc/test-gcpkms
 task_groups:
+- name: testazurekms_task_group
+  setup_group:
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git --depth=1 drivers-evergreen-tools
+        DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
+        echo '${testazurekms_publickey}' > /tmp/testazurekms_publickey
+        echo '${testazurekms_privatekey}' > /tmp/testazurekms_privatekey
+        # Set 600 permissions on private key file. Otherwise ssh / scp may error with permissions "are too open".
+        chmod 600 /tmp/testazurekms_privatekey
+        export AZUREKMS_CLIENTID=${testazurekms_clientid}
+        export AZUREKMS_TENANTID=${testazurekms_tenantid}
+        export AZUREKMS_SECRET=${testazurekms_secret}
+        export AZUREKMS_DRIVERS_TOOLS=$DRIVERS_TOOLS
+        export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
+        export AZUREKMS_PUBLICKEYPATH=/tmp/testazurekms_publickey
+        export AZUREKMS_PRIVATEKEYPATH=/tmp/testazurekms_privatekey
+        export AZUREKMS_SCOPE=${testazurekms_scope}
+        export AZUREKMS_VMNAME_PREFIX=CDRIVER
+        $DRIVERS_TOOLS/.evergreen/csfle/azurekms/create-and-setup-vm.sh
+  - command: expansions.update
+    params:
+      file: testazurekms-expansions.yml
+  teardown_group:
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
+            export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
+            export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
+            $DRIVERS_TOOLS/.evergreen/csfle/azurekms/delete-vm.sh
+  setup_group_can_fail_task: true
+  setup_group_timeout_secs: 1800
+  tasks:
+  - testazurekms-task
 - name: testgcpkms_task_group
   setup_group:
   - command: shell.exec
@@ -24973,6 +25077,13 @@ buildvariants:
   run_on: macos-1100-arm64
   tasks:
   - debug-compile-sasl-darwinssl
+- name: testazurekms-variant
+  display_name: Azure KMS
+  run_on: debian10-small
+  tasks:
+  - testazurekms_task_group
+  - testazurekms-fail-task
+  batchtime: 20160
 - name: testgcpkms-variant
   display_name: GCP KMS
   run_on: debian10-small

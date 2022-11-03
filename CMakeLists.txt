@@ -246,6 +246,18 @@ set (CMAKE_MACOSX_RPATH ON)
 # silence a CMake 3.11 warning that the old behavior is deprecated.
 cmake_policy (SET CMP0042 NEW)
 
+# By default, ensure conformance with a minimum C standard.
+# Required extensions to the language (i.e. POSIX) are (re)enabled further below.
+if (NOT DEFINED CMAKE_C_STANDARD)
+   set (CMAKE_C_STANDARD 99)
+endif ()
+if (NOT DEFINED CMAKE_C_STANDARD_REQUIRED)
+   set (CMAKE_C_STANDARD_REQUIRED ON)
+endif ()
+if (NOT DEFINED CMAKE_C_EXTENSIONS)
+   set (CMAKE_C_EXTENSIONS OFF)
+endif ()
+
 # https://man7.org/linux/man-pages/man7/feature_test_macros.7.html
 # https://pubs.opengroup.org/onlinepubs/7908799/xsh/compilation.html
 # Enable POSIX features up to POSIX.1-2008 plus the XSI extension and BSD-derived definitions.

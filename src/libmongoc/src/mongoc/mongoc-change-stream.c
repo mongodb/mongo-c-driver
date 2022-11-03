@@ -129,6 +129,11 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
    if (stream->full_document_before_change) {
       bson_concat (&change_stream_doc, stream->full_document_before_change);
    }
+   if (stream->show_expanded_events) {
+      BSON_APPEND_BOOL (&change_stream_doc,
+                        "showExpandedEvents",
+                        stream->show_expanded_events);
+   }
 
    if (stream->resumed) {
       /* Change stream spec: Resume Process */
@@ -433,6 +438,7 @@ _change_stream_init (mongoc_change_stream_t *stream,
 
    stream->batch_size = stream->opts.batchSize;
    stream->max_await_time_ms = stream->opts.maxAwaitTimeMS;
+   stream->show_expanded_events = stream->opts.showExpandedEvents;
 
    /* Accept two forms of user pipeline:
     * 1. A document like: { "pipeline": [...] }

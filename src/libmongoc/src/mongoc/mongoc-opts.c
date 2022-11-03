@@ -1583,6 +1583,7 @@ _mongoc_change_stream_opts_parse (
    mongoc_change_stream_opts->maxAwaitTimeMS = 0;
    mongoc_change_stream_opts->fullDocument = NULL;
    mongoc_change_stream_opts->fullDocumentBeforeChange = NULL;
+   mongoc_change_stream_opts->showExpandedEvents = false;
    memset (&mongoc_change_stream_opts->comment, 0, sizeof (bson_value_t));
    bson_init (&mongoc_change_stream_opts->extra);
 
@@ -1658,6 +1659,15 @@ _mongoc_change_stream_opts_parse (
                client,
                &iter,
                &mongoc_change_stream_opts->fullDocumentBeforeChange,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "showExpandedEvents")) {
+         if (!_mongoc_convert_bool (
+               client,
+               &iter,
+               &mongoc_change_stream_opts->showExpandedEvents,
                error)) {
             return false;
          }
