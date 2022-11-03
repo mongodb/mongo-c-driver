@@ -492,10 +492,8 @@ class IntegrationTask(MatrixTask):
         elif self.coverage:
             self.add_tags('test-coverage')
             self.add_tags(self.version)
-            self.options['exec_timeout_secs'] = 3600
         elif self.sanitizer == "asan":
             self.add_tags('test-asan', self.version)
-            self.options['exec_timeout_secs'] = 3600
         elif self.sanitizer == "tsan":
             self.add_tags('tsan')
             self.add_tags(self.version)
@@ -855,7 +853,6 @@ all_tasks = chain(all_tasks, [
     NamedTask(
         'test-coverage-latest-server-dns',
         tags=['test-coverage'],
-        exec_timeout_secs=3600,
         commands=[func('debug-compile-coverage-notest-nosasl-openssl'),
                   bootstrap(TOPOLOGY='replica_set', AUTH='auth', SSL='ssl'),
                   run_tests(AUTH='auth', SSL='ssl', DNS='on'),
@@ -863,7 +860,6 @@ all_tasks = chain(all_tasks, [
     NamedTask(
         'authentication-tests-memcheck',
         tags=['authentication-tests', 'valgrind'],
-        exec_timeout_seconds=3600,
         commands=[
             shell_mongoc("""
                 VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO \
@@ -1120,7 +1116,6 @@ class LoadBalancedTask(MatrixTask):
                 "unimplemented configuration for LoadBalancedTask")
 
         self.add_tags(self.version)
-        self.options['exec_timeout_secs'] = 3600
 
     # Return the task name.
     # Example: test-loadbalanced-asan-auth-openssl-latest
