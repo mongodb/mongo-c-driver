@@ -579,8 +579,9 @@ test_no_writes_performed_correct_error (void *ctx)
    uint32_t server_id;
    mongoc_collection_t *collection;
    bson_error_t error;
-   // bson_t reply;
-
+   bson_t reply;
+   mongoc_apm_command_succeeded_t *succeeded_event;
+   mongoc_server_stream_t *stream;
    // need to add command monitoring to check if there is a commandsucceeded
    // event
    BSON_UNUSED (ctx);
@@ -610,9 +611,23 @@ test_no_writes_performed_correct_error (void *ctx)
 
    bool configured_second_fail_point = false;
 
+   stream = mongoc_cluster_stream_for_writes (
+      &(client->cluster), NULL, &reply, &error);
 
-   // ASSERT (configured_second_fail_point);
+   ASSERT_OR_PRINT (stream, error);
 
+   mongoc_apm_command_succeeded_init (succeeded_event,
+                                      100,
+                                      &reply,
+                                      "insertOne",
+                                      "",
+                                      &stream->sd->host,
+                                      stream->sd->id,
+                                      &stream->sd->service_id,
+                                      stream->sd->server_connection_id,
+                                      false,
+                                      client->apm_context);
+   // mongoc_apm_command_succeeded_get_reply ();
    fail_point = tmp_bson (
       "{'configureFailPoint': 'failCommand',"
       " 'mode': {'times': 1},"
