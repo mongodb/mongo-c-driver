@@ -32,6 +32,7 @@
 #include "mongoc-http-private.h"
 #include "mcd-azure.h"
 #include "mcd-time.h"
+#include "service-gcp.h"
 
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
@@ -782,6 +783,86 @@ _try_add_azure_from_env (_mongoc_crypt_t *crypt,
    return okay;
 }
 
+/**
+ * @brief Check whether the given kmsProviders object requests automatic GCP
+ * credentials
+ *
+ * @param kmsprov The input kmsProviders that may have an "gcp" property
+ * @param error An output error
+ * @retval true If success AND `kmsprov` requests automatic GCP credentials
+ * @retval false Otherwise. Check error->code for failure.
+ */
+static bool
+_check_gcp_kms_auto (const bson_t *kmsprov, bson_error_t *error)
+{
+   if (error) {
+      *error = (bson_error_t){0};
+   }
+
+   bson_iter_t iter;
+   if (!bson_iter_init_find (&iter, kmsprov, "gcp")) {
+      return false;
+   }
+
+   bson_t gcp_subdoc;
+   if (!_mongoc_iter_document_as_bson (&iter, &gcp_subdoc, error)) {
+      return false;
+   }
+
+   return bson_empty (&gcp_subdoc);
+}
+
+/**
+ * @brief Attempt to request a new GCP access token from the HTTP server
+ *
+ * @param out The token to populate. Must later be destroyed by the caller.
+ * @param error An output parameter to capture any errors
+ * @retval true Upon successfully obtaining and parsing a token
+ * @retval false If any error occurs.
+ */
+static bool
+_request_new_gcp_token (gcp_service_account_token *out, bson_error_t *error)
+{
+   return (gcp_access_token_from_gcp_server (out, NULL, 0, NULL, error));
+}
+
+/**
+ * @brief Attempt to load an GCP access token from the environment and append
+ * them to the kmsProviders
+ *
+ * @param out A kmsProviders object to update
+ * @param error An error-out parameter
+ * @retval true If there was no error and we loaded credentials
+ * @retval false If there was an error obtaining or appending credentials
+ */
+static bool
+_try_add_gcp_from_env (bson_t *out, bson_error_t *error)
+{
+   // Not caching gcp tokens, so we will always request a new one from the gcp
+   // server.
+   gcp_service_account_token gcp_token;
+   if (!_request_new_gcp_token (&gcp_token, error)) {
+      return false;
+   }
+
+   // Build the new KMS credentials
+   bson_t new_gcp_creds = BSON_INITIALIZER;
+   const bool okay = BSON_APPEND_UTF8 (&new_gcp_creds,
+                                       "accessToken",
+                                       gcp_token.access_token) &&
+                     BSON_APPEND_DOCUMENT (out, "gcp", &new_gcp_creds);
+   bson_destroy (&new_gcp_creds);
+   gcp_access_token_destroy (&gcp_token);
+   if (!okay) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Failed to build new 'gcp' credentials");
+   }
+
+   return okay;
+}
+
 static bool
 _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
 {
@@ -835,6 +916,22 @@ _state_need_kms_credentials (_state_machine_t *sm, bson_error_t *error)
    const bool wants_auto_azure = orig_wants_auto_azure && !cb_provided_azure;
    if (wants_auto_azure) {
       if (!_try_add_azure_from_env (sm->crypt, &creds, error)) {
+         goto fail;
+      }
+   }
+
+   // Whether the callback provided GCP credentials
+   const bool cb_provided_gcp = bson_iter_init_find (&iter, &creds, "gcp");
+   // Whether the original kmsProviders requested auto-GCP credentials:
+   const bool orig_wants_auto_gcp =
+      _check_gcp_kms_auto (&sm->crypt->kms_providers, error);
+   if (error->code) {
+      // _check_gcp_kms_auto failed
+      goto fail;
+   }
+   const bool wants_auto_gcp = orig_wants_auto_gcp && !cb_provided_gcp;
+   if (wants_auto_gcp) {
+      if (!_try_add_gcp_from_env (&creds, error)) {
          goto fail;
       }
    }

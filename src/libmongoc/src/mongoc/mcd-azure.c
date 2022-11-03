@@ -110,7 +110,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
       bson_set_error (
          error,
          MONGOC_ERROR_AZURE,
-         MONGOC_ERROR_AZURE_BAD_JSON,
+         MONGOC_ERROR_KMS_SERVER_BAD_JSON,
          "One or more required JSON properties are missing/invalid: data: %.*s",
          len,
          json);
@@ -131,7 +131,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
          bson_set_error (
             error,
             MONGOC_ERROR_AZURE,
-            MONGOC_ERROR_AZURE_BAD_JSON,
+            MONGOC_ERROR_KMS_SERVER_BAD_JSON,
             "Invalid 'expires_in' string \"%.*s\" from IMDS server",
             expires_in_len,
             expires_in_str);
@@ -188,7 +188,7 @@ mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
    if (resp.status != 200) {
       bson_set_error (error,
                       MONGOC_ERROR_AZURE,
-                      MONGOC_ERROR_AZURE_HTTP,
+                      MONGOC_ERROR_KMS_SERVER_HTTP,
                       "Error from Azure IMDS server while looking for "
                       "Managed Identity access token: %.*s",
                       resp.body_len,

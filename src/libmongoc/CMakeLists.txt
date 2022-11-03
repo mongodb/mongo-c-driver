@@ -441,10 +441,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.5.2)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.6.0)
       message ("--   libmongocrypt found at ${mongocrypt_DIR}")
       message ("--   libmongocrypt version ${mongocrypt_VERSION} found")
-      message ("--   libmongocrypt version 1.5.2 is required to enable Client-Side Field Level Encryption Support.")
+      message ("--   libmongocrypt version 1.6.0 is required to enable Client-Side Field Level Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -583,6 +583,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-command-legacy.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/service-gcp.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-b64.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-md5.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-thread.c
@@ -1029,6 +1030,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
+   ${PROJECT_SOURCE_DIR}/tests/test-service-gcp.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-integer.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
    ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
@@ -1060,6 +1062,7 @@ mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 mongoc_add_test (test-azurekms FALSE ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
+mongoc_add_test (test-gcpkms FALSE ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c)
 
 if (ENABLE_TESTS)
    # "make test" doesn't compile tests, so we create "make check" which compiles
