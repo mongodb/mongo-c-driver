@@ -1362,15 +1362,23 @@ test_add_and_scan_failure (void)
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
-   sd = mongoc_topology_description_server_by_id_const (
-      mc_tpld_unsafe_get_const (client->topology), 1, NULL);
-   ASSERT (sd);
-   ASSERT_CMPSTR (mongoc_server_description_type (sd), "RSPrimary");
+   {
+      mc_shared_tpld shared_tpld = mc_tpld_take_ref (client->topology);
+      sd = mongoc_topology_description_server_by_id_const (
+         shared_tpld.ptr, 1, NULL);
+      ASSERT (sd);
+      ASSERT_CMPSTR (mongoc_server_description_type (sd), "RSPrimary");
+      mc_tpld_drop_ref (&shared_tpld);
+   }
 
-   sd = mongoc_topology_description_server_by_id_const (
-      mc_tpld_unsafe_get_const (client->topology), 2, NULL);
-   ASSERT (sd);
-   ASSERT_CMPSTR (mongoc_server_description_type (sd), "Unknown");
+   {
+      mc_shared_tpld shared_tpld = mc_tpld_take_ref (client->topology);
+      sd = mongoc_topology_description_server_by_id_const (
+         mc_tpld_unsafe_get_const (client->topology), 2, NULL);
+      ASSERT (sd);
+      ASSERT_CMPSTR (mongoc_server_description_type (sd), "Unknown");
+      mc_tpld_drop_ref (&shared_tpld);
+   }
 
    future_destroy (future);
    mongoc_client_pool_push (pool, client);
