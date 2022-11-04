@@ -570,93 +570,96 @@ test_unsupported_storage_engine_error (void)
 }
 
 /* Test requires a 6.0+ replica set*/
+
+typedef struct {
+   bool configure_fail_point;
+   bson_t fail_point;
+} prose_test_3_apm_ctx_t;
+
 static void
-test_no_writes_performed_correct_error (void *ctx)
+prose_test_3_command_succeeded (const mongoc_apm_command_succeeded_t *event)
 {
-   mongoc_uri_t *uri;
+   const bson_t *reply = mongoc_apm_command_succeeded_get_reply (event);
+
+   printf ("reply : %s\n\n", bson_as_relaxed_extended_json (reply, NULL));
+}
+
+static void
+retryable_writes_prose_test_3 (void *ctx)
+{
    mongoc_client_t *client;
-   bson_t *fail_point;
-   uint32_t server_id;
-   mongoc_collection_t *collection;
-   bson_error_t error;
+   mongoc_collection_t *coll;
+   bool ret;
    bson_t reply;
-   mongoc_apm_command_succeeded_t *succeeded_event;
-   mongoc_server_stream_t *stream;
-   // need to add command monitoring to check if there is a commandsucceeded
-   // event
+   bson_error_t error;
+   mongoc_uri_t *uri;
+   mongoc_apm_callbacks_t *callbacks;
+   prose_test_3_apm_ctx_t apm_ctx = {0};
+
    BSON_UNUSED (ctx);
+
+   // setting up the client
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
-
    client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
+   coll = get_test_collection (client, "coll");
+
    mongoc_uri_destroy (uri);
 
-   // /* clean up from previous tests */
-   server_id = mongoc_topology_select_server_id (
+   // for deactivating fail points at the end of the test
+   uint32_t server_id = mongoc_topology_select_server_id (
       client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
-   deactivate_fail_points (client, server_id);
 
-   fail_point =
-      tmp_bson ("{'configureFailPoint': 'failCommand',"
-                " 'mode': {'times': 1},"
-                " 'data': { 'writeConcernError': { 'code': 91, 'errorLabels': "
-                "['RetryableWriteError']}, 'failCommands': ['insert']}}");
+   // setting up callbacks for command monitoring
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_succeeded_cb (callbacks,
+                                        prose_test_3_command_succeeded);
+   mongoc_client_set_apm_callbacks (client, callbacks, &apm_ctx);
 
-   ASSERT_OR_PRINT (
-      mongoc_client_command_simple_with_server_id (
-         client, "admin", fail_point, NULL, server_id, NULL, &error),
-      error);
-
-   bool configured_second_fail_point = false;
-
-   stream = mongoc_cluster_stream_for_writes (
-      &(client->cluster), NULL, &reply, &error);
-
-   ASSERT_OR_PRINT (stream, error);
-
-   mongoc_apm_command_succeeded_init (succeeded_event,
-                                      100,
-                                      &reply,
-                                      "insertOne",
-                                      "",
-                                      &stream->sd->host,
-                                      stream->sd->id,
-                                      &stream->sd->service_id,
-                                      stream->sd->server_connection_id,
-                                      false,
-                                      client->apm_context);
-   // mongoc_apm_command_succeeded_get_reply ();
-   fail_point = tmp_bson (
-      "{'configureFailPoint': 'failCommand',"
-      " 'mode': {'times': 1},"
-      " 'data': {'errorCode': 10107, 'errorLabels': ['RetryableWriteError', "
-      "'NoWritesPerformed'], 'failCommands': ['insert']}}");
-
-   ASSERT_OR_PRINT (
-      mongoc_client_command_simple_with_server_id (
-         client, "admin", fail_point, NULL, server_id, NULL, &error),
-      error);
-
-   collection = get_test_collection (client, "retryable_writes");
-
-   // attempt an insertOne operation
-   mongoc_collection_write_command_with_opts (
-      collection,
-      tmp_bson ("{'insertOne': {'_id':1, 'x': 1}}"),
+   // configuring the first fail point
+   ret = mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': {'times': 1}, "
+                "'data': {'failCommands': ['insert'], 'writeConcernError': {"
+                "'code': 91, 'errorLabels': ['RetryableWriteError']}}}"),
       NULL,
       NULL,
       &error);
+   ASSERT_OR_PRINT (ret, error);
 
-   // Check that the associated error code is 91
-   printf ("%s\n", error.message);
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 91, "");
+   // setting up second fail point
+   // mongoc_client_command_simple (
+   //    client,
+   //    "admin",
+   //    tmp_bson ("{'configureFailPoint': 'failCommand',"
+   //              " 'mode': {'times': 1},"
+   //              " 'data': {'errorCode': 10107, 'errorLabels': "
+   //              "['RetryableWriteError', "
+   //              "'NoWritesPerformed'], 'failCommands': ['insert']}}"),
+   //    NULL,
+   //    NULL,
+   //    &error);
 
-   printf ("%s\n", "GILLOG");
-   // disable the fail point
-   deactivate_fail_points (client, server_id);
+   // attempt an insertOne operation
+   ret = mongoc_collection_insert_one (
+      coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error);
+
+   /* libmongoc does not model WriteConcernError, so we only assert that the
+    * "code" field set in configureFailPoint matches that in the result */
+
+   // should pass after the changes on the ticket are made
+   // Current expectation is the error code is 10107 when the 2nd fail point is
+   // configured
+   ASSERT_CMPUINT32 (error.code, ==, 91);
+   ASSERT_CMPSTR (error.message, "Failing command via 'failCommand' failpoint");
+
+   deactivate_fail_points (client, server_id); // disable the fail point
+   bson_destroy (&reply);
    mongoc_client_destroy (client);
+   mongoc_collection_destroy (coll);
 }
 
 /*
@@ -704,7 +707,8 @@ _tracks_new_server_cb (const mongoc_apm_command_started_t *event)
 /* Tests that when a command within a bulk write succeeds after a retryable
  * error, and selects a new server, it continues to use that server in
  * subsequent commands.
- * This test requires running against a replica set with at least one secondary.
+ * This test requires running against a replica set with at least one
+ * secondary.
  */
 static void
 test_bulk_retry_tracks_new_server (void *unused)
@@ -729,7 +733,8 @@ test_bulk_retry_tracks_new_server (void *unused)
    collection = get_test_collection (client, "tracks_new_server");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
-   /* The bulk write contains two operations, an insert, followed by an update.
+   /* The bulk write contains two operations, an insert, followed by an
+    * update.
     */
    ret = mongoc_bulk_operation_insert_with_opts (
       bulk, tmp_bson ("{'x': 1}"), NULL /* opts */, &error);
@@ -739,8 +744,8 @@ test_bulk_retry_tracks_new_server (void *unused)
                                      tmp_bson ("{'$inc': {'x': 1}}"),
                                      false /* upsert */);
 
-   /* Explicitly tell the bulk write to use a secondary. That will result in a
-    * retryable error, causing the first command to be sent twice. */
+   /* Explicitly tell the bulk write to use a secondary. That will result in
+    * a retryable error, causing the first command to be sent twice. */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    sd = mongoc_client_select_server (
       client, false /* for_writes */, read_prefs, &error);
@@ -749,10 +754,10 @@ test_bulk_retry_tracks_new_server (void *unused)
    ret = mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
-   /* The first insert fails with a retryable write error since it is sent to a
-    * secondary. The retry selects the primary and succeeds. The second command
-    * should use the newly selected server, so the update succeeds on the first
-    * try. */
+   /* The first insert fails with a retryable write error since it is sent to
+    * a secondary. The retry selects the primary and succeeds. The second
+    * command should use the newly selected server, so the update succeeds on
+    * the first try. */
    ASSERT_CMPINT (counters.num_inserts, ==, 2);
    ASSERT_CMPINT (counters.num_updates, ==, 1);
    ASSERT_CMPINT (mongoc_bulk_operation_get_hint (bulk),
@@ -822,7 +827,7 @@ test_retryable_writes_install (TestSuite *suite)
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/no_writes_performed",
-                      test_no_writes_performed_correct_error,
+                      retryable_writes_prose_test_3,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_replset,

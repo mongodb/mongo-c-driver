@@ -132,6 +132,11 @@ _mongoc_write_error_handle_labels (bool cmd_ret,
    }
 
    if (server_max_wire_version >= WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL) {
+      if (mongoc_error_has_label (reply, "RetryableWriteError") &&
+          mongoc_error_has_label (reply, "NoWritesPerformed")) {
+         printf ("GILLOG%d\n",
+                 mongoc_error_has_label (reply, "RetryableWriteError"));
+      }
       return;
    }
 
@@ -270,7 +275,8 @@ _mongoc_error_is_not_primary (bson_error_t *error)
    case MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK:
    case MONGOC_SERVER_ERR_LEGACYNOTPRIMARY:
       return true;
-      /* All errors where no code was found are marked as MONGOC_ERROR_QUERY_FAILURE */
+      /* All errors where no code was found are marked as
+       * MONGOC_ERROR_QUERY_FAILURE*/
    case MONGOC_ERROR_QUERY_FAILURE:
       return NULL != strstr (error->message, "not master");
    default:
@@ -291,7 +297,8 @@ _mongoc_error_is_recovering (bson_error_t *error)
    case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
    case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
       return true;
-   /* All errors where no code was found are marked as MONGOC_ERROR_QUERY_FAILURE */
+   /* All errors where no code was found are marked as
+    * MONGOC_ERROR_QUERY_FAILURE */
    case MONGOC_ERROR_QUERY_FAILURE:
       return NULL != strstr (error->message, "not master or secondary") ||
              NULL != strstr (error->message, "node is recovering");
