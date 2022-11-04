@@ -572,16 +572,36 @@ test_unsupported_storage_engine_error (void)
 /* Test requires a 6.0+ replica set*/
 
 typedef struct {
-   bool configure_fail_point;
-   bson_t fail_point;
+   mongoc_client_t *client;
+   bool configure_second_fail;
 } prose_test_3_apm_ctx_t;
 
 static void
 prose_test_3_command_succeeded (const mongoc_apm_command_succeeded_t *event)
 {
+   bson_iter_t iter;
+   bson_error_t error;
    const bson_t *reply = mongoc_apm_command_succeeded_get_reply (event);
+   prose_test_3_apm_ctx_t *ctx =
+      mongoc_apm_command_succeeded_get_context (event);
+   mongoc_client_t *client = ctx->client;
 
-   printf ("reply : %s\n\n", bson_as_relaxed_extended_json (reply, NULL));
+   if (bson_iter_init_find (&iter, reply, "writeConcernError") &&
+       ctx->configure_second_fail) {
+      ctx->configure_second_fail = false;
+      ASSERT_OR_PRINT (
+         mongoc_client_command_simple (
+            client,
+            "admin",
+            tmp_bson (
+               "{'configureFailPoint': 'failCommand', 'mode': {'times': 1},"
+               " 'data': { 'failCommands': ['insert'], 'errorCode': 10107, "
+               "'errorLabels': ['RetryableWriteError', 'NoWritesPerformed']}}"),
+            NULL,
+            NULL,
+            &error),
+         error);
+   }
 }
 
 static void
@@ -603,16 +623,19 @@ retryable_writes_prose_test_3 (void *ctx)
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
    client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
-   coll = get_test_collection (client, "coll");
+   coll = get_test_collection (client, "retryable_writes");
 
    mongoc_uri_destroy (uri);
 
-   // for deactivating fail points at the end of the test
+   /* clean up in case a previous test aborted */
    uint32_t server_id = mongoc_topology_select_server_id (
       client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
+   deactivate_fail_points (client, server_id);
 
    // setting up callbacks for command monitoring
+   apm_ctx.client = client;
+   apm_ctx.configure_second_fail = true;
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_succeeded_cb (callbacks,
                                         prose_test_3_command_succeeded);
@@ -630,31 +653,14 @@ retryable_writes_prose_test_3 (void *ctx)
       &error);
    ASSERT_OR_PRINT (ret, error);
 
-   // setting up second fail point
-   // mongoc_client_command_simple (
-   //    client,
-   //    "admin",
-   //    tmp_bson ("{'configureFailPoint': 'failCommand',"
-   //              " 'mode': {'times': 1},"
-   //              " 'data': {'errorCode': 10107, 'errorLabels': "
-   //              "['RetryableWriteError', "
-   //              "'NoWritesPerformed'], 'failCommands': ['insert']}}"),
-   //    NULL,
-   //    NULL,
-   //    &error);
-
    // attempt an insertOne operation
-   ret = mongoc_collection_insert_one (
+   mongoc_collection_insert_one (
       coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error);
 
-   /* libmongoc does not model WriteConcernError, so we only assert that the
-    * "code" field set in configureFailPoint matches that in the result */
-
    // should pass after the changes on the ticket are made
-   // Current expectation is the error code is 10107 when the 2nd fail point is
-   // configured
+   // expected behavior now is the error code is 10107
    ASSERT_CMPUINT32 (error.code, ==, 91);
-   ASSERT_CMPSTR (error.message, "Failing command via 'failCommand' failpoint");
+   (error.message, "Failing command via 'failCommand' failpoint");
 
    deactivate_fail_points (client, server_id); // disable the fail point
    bson_destroy (&reply);
