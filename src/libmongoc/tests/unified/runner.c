@@ -596,7 +596,7 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.8"};
+   const char *supported_version_strs[] = {"1.8", "1.12"};
    int i;
 
    for (i = 0; i < sizeof (supported_version_strs) /
@@ -755,13 +755,14 @@ check_run_on_requirement (test_runner_t *test_runner,
       if (0 == strcmp (key, "csfle")) {
          const bool csfle_required = bson_iter_bool (&req_iter);
          semver_t min_server_version;
-         
+
          semver_parse ("4.2.0", &min_server_version);
          if (semver_cmp (server_version, &min_server_version) < 0) {
-            *fail_reason = bson_strdup_printf (
-               "Server version %s is lower than minServerVersion %s required by CSFLE",
-               semver_to_string (server_version),
-               semver_to_string (&min_server_version));
+            *fail_reason =
+               bson_strdup_printf ("Server version %s is lower than "
+                                   "minServerVersion %s required by CSFLE",
+                                   semver_to_string (server_version),
+                                   semver_to_string (&min_server_version));
             return false;
          }
 

@@ -360,6 +360,7 @@ result_check (result_t *result,
    bson_t *error_labels_contain;
    bson_t *error_labels_omit;
    bson_val_t *error_expect_result;
+   bson_t *error_response;
 
    if (!expect_result && !expect_error) {
       if (!result->ok) {
@@ -404,6 +405,7 @@ result_check (result_t *result,
       bson_parser_array_optional (
          parser, "errorLabelsOmit", &error_labels_omit);
       bson_parser_any_optional (parser, "expectResult", &error_expect_result);
+      bson_parser_doc_optional (parser, "errorResponse", &error_response);
       if (!bson_parser_parse (parser, expect_error, error)) {
          goto done;
       }
@@ -565,6 +567,9 @@ result_check (result_t *result,
             goto done;
          }
       }
+
+      // if (error_response) {
+      // }
    }
 
    ret = true;
