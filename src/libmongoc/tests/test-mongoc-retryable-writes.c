@@ -671,7 +671,6 @@ retryable_writes_prose_test_3 (void *ctx)
    mongoc_client_destroy (client);
    mongoc_collection_destroy (coll);
    mongoc_apm_callbacks_destroy (callbacks);
-   mongoc_cleanup ();
 }
 
 /*
