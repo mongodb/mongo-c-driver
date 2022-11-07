@@ -1722,8 +1722,13 @@ retry:
     * original error to be reported. */
    if (is_retryable &&
        _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
-      _mongoc_cmd_check_ok_no_wce (
-         reply, MONGOC_ERROR_API_VERSION_2, &original_error);
+      if (error->code) {
+         bson_set_error (
+            &original_error, error->domain, error->code, "%s", error->message);
+      } else { // have a writeConcernError
+         _mongoc_cmd_check_ok_no_wce (
+            reply, MONGOC_ERROR_API_VERSION_2, &original_error);
+      }
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
