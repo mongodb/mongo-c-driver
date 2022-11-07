@@ -579,7 +579,7 @@ _mongoc_bson_array_copy_labels_to (const bson_t *reply, bson_t *dst)
  * _mongoc_add_transient_txn_error --
  *
  *       If @cs is not NULL and in a transaction, add errorLabels:
- *       ["TransientTransactionError"] to @cs.
+ *       ["TransientTransactionError"] to @reply.
  *
  *       Transactions Spec: TransientTransactionError includes "server
  *       selection error encountered running any command besides
