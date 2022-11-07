@@ -43,7 +43,6 @@ struct _mongoc_crud_opts_t;
 #define BSON_OBJECT_ALLOWANCE (16 * 1024)
 
 #define RETRYABLE_WRITE_ERROR "RetryableWriteError"
-#define NO_WRITES_PERFORMED_ERROR "NoWritesPerformed"
 
 struct _mongoc_bulk_write_flags_t {
    bool ordered;
