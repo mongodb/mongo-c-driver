@@ -138,6 +138,7 @@ _mongoc_write_error_handle_labels (bool cmd_ret,
             cmd_err, orig_err->domain, orig_err->code, orig_err->message);
          return;
       }
+      return;
    }
 
    /* check for a server error. */
