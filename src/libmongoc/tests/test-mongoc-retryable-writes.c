@@ -843,5 +843,6 @@ test_retryable_writes_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_replset,
-                      test_framework_skip_if_max_wire_version_less_than_17);
+                      test_framework_skip_if_max_wire_version_less_than_17,
+                      test_framework_skip_if_no_crypto);
 }
