@@ -135,7 +135,7 @@ _mongoc_write_error_handle_labels (bool cmd_ret,
       if (mongoc_error_has_label (reply, "RetryableWriteError") &&
           mongoc_error_has_label (reply, "NoWritesPerformed")) {
          bson_set_error (
-            cmd_err, orig_err->domain, orig_err->code, orig_err->message);
+            cmd_err, orig_err->domain, orig_err->code, "%s", orig_err->message);
          return;
       }
       return;
