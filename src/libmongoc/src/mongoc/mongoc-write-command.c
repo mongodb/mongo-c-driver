@@ -581,13 +581,18 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
                &txn_number_iter,
                ++parts.assembled.session->server_session->txn_number);
          }
+         bson_error_t original_error = {0};
       retry:
          ret = mongoc_cluster_run_command_monitored (
             &client->cluster, &parts.assembled, &reply, error);
 
          if (parts.is_retryable_write) {
             _mongoc_write_error_handle_labels (
-               ret, error, &reply, server_stream->sd->max_wire_version);
+               ret,
+               error,
+               &reply,
+               server_stream->sd->max_wire_version,
+               &original_error);
          }
 
          /* Add this batch size so we skip these documents next time */
@@ -599,11 +604,17 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
           * the selected server does not support retryable writes, fall through
           * and allow the original error to be reported. */
          error_type = _mongoc_write_error_get_type (&reply);
+
          if (is_retryable) {
             _mongoc_write_error_update_if_unsupported_storage_engine (
                ret, error, &reply);
          }
          if (is_retryable && error_type == MONGOC_WRITE_ERR_RETRY) {
+            original_error.code = error->code;
+            original_error.domain = error->domain;
+
+            // _mongoc_cmd_check_ok_no_wce (
+            //    &reply, MONGOC_ERROR_API_VERSION_2, &original_error);
             bson_error_t ignored_error;
 
             /* each write command may be retried at most once */

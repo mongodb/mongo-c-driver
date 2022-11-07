@@ -569,8 +569,9 @@ test_unsupported_storage_engine_error (void)
    mock_rs_destroy (rs);
 }
 
-/* Test requires a 6.0+ replica set*/
-
+/* Tests original error is returned after encountering a
+ * WriteConcernError with a RetryableWriteError label.
+   The test requires a 6.0+ replica set */
 typedef struct {
    mongoc_client_t *client;
    bool configure_second_fail;
@@ -586,6 +587,7 @@ prose_test_3_command_succeeded (const mongoc_apm_command_succeeded_t *event)
       mongoc_apm_command_succeeded_get_context (event);
    mongoc_client_t *client = ctx->client;
 
+   // wait for a writeConcernError and then set a second failpoint
    if (bson_iter_init_find (&iter, reply, "writeConcernError") &&
        ctx->configure_second_fail) {
       ctx->configure_second_fail = false;
@@ -616,6 +618,7 @@ retryable_writes_prose_test_3 (void *ctx)
    mongoc_apm_callbacks_t *callbacks;
    prose_test_3_apm_ctx_t apm_ctx = {0};
 
+   int write_concern_error_code = 91;
    BSON_UNUSED (ctx);
 
    // setting up the client
@@ -627,13 +630,13 @@ retryable_writes_prose_test_3 (void *ctx)
 
    mongoc_uri_destroy (uri);
 
-   /* clean up in case a previous test aborted */
+   // clean up in case a previous test aborted
    uint32_t server_id = mongoc_topology_select_server_id (
       client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 
-   // setting up callbacks for command monitoring
+   // set up callbacks for command monitoring
    apm_ctx.client = client;
    apm_ctx.configure_second_fail = true;
    callbacks = mongoc_apm_callbacks_new ();
@@ -641,7 +644,7 @@ retryable_writes_prose_test_3 (void *ctx)
                                         prose_test_3_command_succeeded);
    mongoc_client_set_apm_callbacks (client, callbacks, &apm_ctx);
 
-   // configuring the first fail point
+   // configure the first fail point
    ret = mongoc_client_command_simple (
       client,
       "admin",
@@ -657,10 +660,11 @@ retryable_writes_prose_test_3 (void *ctx)
    mongoc_collection_insert_one (
       coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error);
 
-   // should pass after the changes on the ticket are made
-   // expected behavior now is the error code is 10107
-   ASSERT_CMPUINT32 (error.code, ==, 91);
-   (error.message, "Failing command via 'failCommand' failpoint");
+   // the original error code is returned
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER,
+                          write_concern_error_code,
+                          "Unknown command error");
 
    deactivate_fail_points (client, server_id); // disable the fail point
    bson_destroy (&reply);
@@ -832,7 +836,7 @@ test_retryable_writes_install (TestSuite *suite)
                       test_framework_skip_if_not_rs_version_6,
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
-                      "/retryable_writes/no_writes_performed",
+                      "/retryable_writes/prose_test_3",
                       retryable_writes_prose_test_3,
                       NULL,
                       NULL,

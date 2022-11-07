@@ -1703,12 +1703,13 @@ _mongoc_client_retryable_write_command_with_stream (
    bson_iter_overwrite_int64 (
       &txn_number_iter, ++parts->assembled.session->server_session->txn_number);
 
+   bson_error_t original_error = {0};
 retry:
    ret = mongoc_cluster_run_command_monitored (
       &client->cluster, &parts->assembled, reply, error);
 
    _mongoc_write_error_handle_labels (
-      ret, error, reply, server_stream->sd->max_wire_version);
+      ret, error, reply, server_stream->sd->max_wire_version, &original_error);
 
    if (is_retryable) {
       _mongoc_write_error_update_if_unsupported_storage_engine (
@@ -1721,6 +1722,8 @@ retry:
     * original error to be reported. */
    if (is_retryable &&
        _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY) {
+      _mongoc_cmd_check_ok_no_wce (
+         reply, MONGOC_ERROR_API_VERSION_2, &original_error);
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */

@@ -66,9 +66,10 @@ _mongoc_error_copy_labels_and_upsert (const bson_t *src,
 
 void
 _mongoc_write_error_handle_labels (bool cmd_ret,
-                                   const bson_error_t *cmd_err,
+                                   bson_error_t *cmd_err,
                                    bson_t *reply,
-                                   int32_t server_max_wire_version);
+                                   int32_t server_max_wire_version,
+                                   const bson_error_t *orig_err);
 
 bool
 _mongoc_error_is_shutdown (bson_error_t *error);

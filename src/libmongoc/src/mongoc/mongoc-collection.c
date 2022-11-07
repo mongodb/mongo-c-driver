@@ -3565,14 +3565,19 @@ mongoc_collection_find_and_modify_with_opts (
          &txn_number_iter,
          ++parts.assembled.session->server_session->txn_number);
    }
+   bson_error_t original_error = {0};
+
 retry:
    bson_destroy (reply_ptr);
    ret = mongoc_cluster_run_command_monitored (
       cluster, &parts.assembled, reply_ptr, error);
 
    if (parts.is_retryable_write) {
-      _mongoc_write_error_handle_labels (
-         ret, error, reply_ptr, server_stream->sd->max_wire_version);
+      _mongoc_write_error_handle_labels (ret,
+                                         error,
+                                         reply_ptr,
+                                         server_stream->sd->max_wire_version,
+                                         &original_error);
    }
 
    if (is_retryable) {
@@ -3586,6 +3591,8 @@ retry:
     * original error to be reported. */
    if (is_retryable &&
        _mongoc_write_error_get_type (reply_ptr) == MONGOC_WRITE_ERR_RETRY) {
+      _mongoc_cmd_check_ok_no_wce (
+         reply, MONGOC_ERROR_API_VERSION_2, &original_error);
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
