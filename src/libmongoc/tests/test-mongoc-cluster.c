@@ -1439,14 +1439,8 @@ test_cluster_command_error (void)
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
-
-   {
-      mongoc_uri_t *const uri = mongoc_uri_copy (mock_server_get_uri (server));
-      mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
-      client = test_framework_client_new_from_uri (uri, NULL);
-      mongoc_uri_destroy (uri);
-   }
-
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    future = future_client_command_simple (client,
                                           "db",
                                           tmp_bson ("{'ping': 1}"),
