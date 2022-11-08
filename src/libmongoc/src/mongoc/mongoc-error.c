@@ -116,12 +116,12 @@ _mongoc_write_error_append_retryable_label (bson_t *reply)
 
 void
 _mongoc_write_error_handle_labels (bool cmd_ret,
-                                   bson_error_t *cmd_err,
+                                   const bson_error_t *cmd_err,
                                    bson_t *reply,
-                                   int32_t server_max_wire_version,
-                                   const bson_error_t *orig_err)
+                                   int32_t server_max_wire_version)
 {
    bson_error_t error;
+
    /* check for a client error. */
    if (!cmd_ret && _mongoc_error_is_network (cmd_err)) {
       /* Retryable writes spec: When the driver encounters a network error
@@ -132,12 +132,6 @@ _mongoc_write_error_handle_labels (bool cmd_ret,
    }
 
    if (server_max_wire_version >= WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL) {
-      if (mongoc_error_has_label (reply, "RetryableWriteError") &&
-          mongoc_error_has_label (reply, "NoWritesPerformed")) {
-         bson_set_error (
-            cmd_err, orig_err->domain, orig_err->code, "%s", orig_err->message);
-         return;
-      }
       return;
    }
 
@@ -277,7 +271,7 @@ _mongoc_error_is_not_primary (bson_error_t *error)
    case MONGOC_SERVER_ERR_LEGACYNOTPRIMARY:
       return true;
       /* All errors where no code was found are marked as
-       * MONGOC_ERROR_QUERY_FAILURE*/
+       * MONGOC_ERROR_QUERY_FAILURE */
    case MONGOC_ERROR_QUERY_FAILURE:
       return NULL != strstr (error->message, "not master");
    default:

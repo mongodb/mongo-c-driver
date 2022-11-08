@@ -581,18 +581,22 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
                &txn_number_iter,
                ++parts.assembled.session->server_session->txn_number);
          }
-         bson_error_t original_error = {0};
+
+         // Store the original error and reply if needed.
+         struct {
+            bson_t reply;
+            bson_error_t error;
+            bool set;
+         } original_error;
+
+         original_error.set = false;
       retry:
          ret = mongoc_cluster_run_command_monitored (
             &client->cluster, &parts.assembled, &reply, error);
 
          if (parts.is_retryable_write) {
             _mongoc_write_error_handle_labels (
-               ret,
-               error,
-               &reply,
-               server_stream->sd->max_wire_version,
-               &original_error);
+               ret, error, &reply, server_stream->sd->max_wire_version);
          }
 
          /* Add this batch size so we skip these documents next time */
@@ -608,17 +612,8 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             _mongoc_write_error_update_if_unsupported_storage_engine (
                ret, error, &reply);
          }
+
          if (is_retryable && error_type == MONGOC_WRITE_ERR_RETRY) {
-            if (error->code) {
-               bson_set_error (&original_error,
-                               error->domain,
-                               error->code,
-                               "%s",
-                               error->message);
-            } else { // have a writeConcernError
-               _mongoc_cmd_check_ok_no_wce (
-                  &reply, MONGOC_ERROR_API_VERSION_2, &original_error);
-            }
             bson_error_t ignored_error;
 
             /* each write command may be retried at most once */
@@ -635,6 +630,15 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
                 retry_server_stream->sd->max_wire_version >=
                    WIRE_VERSION_RETRY_WRITES) {
                parts.assembled.server_stream = retry_server_stream;
+               {
+                  // Store the original error and reply before retry.
+                  BSON_ASSERT (!original_error.set); // Retry only happens once.
+                  original_error.set = true;
+                  bson_copy_to (&reply, &original_error.reply);
+                  if (NULL != error) {
+                     original_error.error = *error;
+                  }
+               }
                bson_destroy (&reply);
                GOTO (retry);
             }
@@ -650,6 +654,16 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             }
          }
 
+         // If a retry attempt fails with an error labeled NoWritesPerformed,
+         // drivers MUST return the original error.
+         if (mongoc_error_has_label (&reply, "NoWritesPerformed") &&
+             original_error.set) {
+            if (error) {
+               *error = original_error.error;
+            }
+            bson_copy_to (&original_error.reply, &reply);
+         }
+
          /* Result merge needs to know the absolute index for a document
           * so it can rewrite the error message which contains the relative
           * document index per batch
@@ -658,6 +672,9 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          index_offset += document_count;
          document_count = 0;
          bson_destroy (&reply);
+         if (original_error.set) {
+            bson_destroy (&original_error.reply);
+         }
       }
       /* While we have more documents to write */
    } while (payload_total_offset < command->payload.len && !result->must_stop);

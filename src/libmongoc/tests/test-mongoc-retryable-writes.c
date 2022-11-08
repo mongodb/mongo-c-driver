@@ -569,7 +569,7 @@ test_unsupported_storage_engine_error (void)
    mock_rs_destroy (rs);
 }
 
-/* Tests original error is returned after encountering a
+/* Tests original reply is returned after encountering a
  * WriteConcernError with a RetryableWriteError label.
    The test requires a 6.0+ replica set */
 typedef struct {
@@ -618,7 +618,6 @@ retryable_writes_prose_test_3 (void *ctx)
    mongoc_apm_callbacks_t *callbacks;
    prose_test_3_apm_ctx_t apm_ctx = {0};
 
-   int write_concern_error_code = 91;
    BSON_UNUSED (ctx);
 
    // setting up the client
@@ -660,11 +659,13 @@ retryable_writes_prose_test_3 (void *ctx)
    mongoc_collection_insert_one (
       coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error);
 
-   // the original error code is returned
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_SERVER,
-                          write_concern_error_code,
-                          "Unknown command error");
+   // writeConcernErrors are returned in the reply and not as an error
+   ASSERT_ERROR_CONTAINS (error, 0, 0, "");
+
+   // the reply holds the original error information
+   ASSERT_MATCH (&reply,
+                 "{'insertedCount': 1, 'writeConcernErrors': [{ 'code': 91, "
+                 "'errorLabels': ['RetryableWriteError']}]}");
 
    deactivate_fail_points (client, server_id); // disable the fail point
    bson_destroy (&reply);

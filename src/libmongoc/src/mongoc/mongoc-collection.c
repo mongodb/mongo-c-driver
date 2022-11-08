@@ -3565,19 +3565,23 @@ mongoc_collection_find_and_modify_with_opts (
          &txn_number_iter,
          ++parts.assembled.session->server_session->txn_number);
    }
-   bson_error_t original_error = {0};
 
+   // Store the original error and reply if needed.
+   struct {
+      bson_t reply;
+      bson_error_t error;
+      bool set;
+   } original_error;
+
+   original_error.set = false;
 retry:
    bson_destroy (reply_ptr);
    ret = mongoc_cluster_run_command_monitored (
       cluster, &parts.assembled, reply_ptr, error);
 
    if (parts.is_retryable_write) {
-      _mongoc_write_error_handle_labels (ret,
-                                         error,
-                                         reply_ptr,
-                                         server_stream->sd->max_wire_version,
-                                         &original_error);
+      _mongoc_write_error_handle_labels (
+         ret, error, reply_ptr, server_stream->sd->max_wire_version);
    }
 
    if (is_retryable) {
@@ -3591,13 +3595,6 @@ retry:
     * original error to be reported. */
    if (is_retryable &&
        _mongoc_write_error_get_type (reply_ptr) == MONGOC_WRITE_ERR_RETRY) {
-      if (error->code) {
-         bson_set_error (
-            &original_error, error->domain, error->code, "%s", error->message);
-      } else { // have a writeConcernError
-         _mongoc_cmd_check_ok_no_wce (
-            reply, MONGOC_ERROR_API_VERSION_2, &original_error);
-      }
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
@@ -3608,8 +3605,27 @@ retry:
       if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
                                     WIRE_VERSION_RETRY_WRITES) {
          parts.assembled.server_stream = retry_server_stream;
+         {
+            // Store the original error and reply before retry.
+            BSON_ASSERT (!original_error.set); // Retry only happens once.
+            original_error.set = true;
+            bson_copy_to (reply_ptr, &original_error.reply);
+            if (NULL != error) {
+               original_error.error = *error;
+            }
+         }
          GOTO (retry);
       }
+   }
+
+   // If a retry attempt fails with an error labeled NoWritesPerformed,
+   // drivers MUST return the original error.
+   if (mongoc_error_has_label (reply_ptr, "NoWritesPerformed") &&
+       original_error.set) {
+      if (error) {
+         *error = original_error.error;
+      }
+      bson_copy_to (&original_error.reply, reply_ptr);
    }
 
    if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") &&
@@ -3641,6 +3657,9 @@ done:
    if (ret && error) {
       /* if a retry succeeded, clear the initial error */
       memset (error, 0, sizeof (bson_error_t));
+   }
+   if (original_error.set) {
+      bson_destroy (&original_error.reply);
    }
    mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
