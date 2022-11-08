@@ -1151,52 +1151,66 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
                                   const bson_t *opts,
                                   bson_error_t *error)
 {
-   bson_iter_t iter;
+   // The encryptedFields for the collection.
    bson_t encryptedFields = BSON_INITIALIZER;
+   bson_t opts_without_encryptedFields = BSON_INITIALIZER;
+   bool okay = false;
 
-   if (opts && bson_iter_init_find (&iter, opts, "encryptedFields")) {
-      if (!_mongoc_iter_document_as_bson (&iter, &encryptedFields, error)) {
-         return false;
+   // Try to find the encryptedFields from the collection options or from the
+   // encryptedFieldsMap.
+   if (!_mongoc_get_collection_encryptedFields (
+          collection->client,
+          collection->db,
+          mongoc_collection_get_name (collection),
+          opts,
+          &encryptedFields,
+          error)) {
+      goto done;
+   }
+
+   if (bson_empty (&encryptedFields)) {
+      // We didn't find the encryptedFields (yet)
+      if (collection->client->topology->encrypted_fields_map != NULL) {
+         // but we can ask the server for them:
+         if (!_mongoc_get_encryptedFields_from_server (
+                collection->client,
+                collection->db,
+                mongoc_collection_get_name (collection),
+                &encryptedFields,
+                error)) {
+            goto done;
+         }
       }
    }
 
    if (bson_empty (&encryptedFields)) {
-      if (!_mongoc_get_encryptedFields_from_map (
-             collection->client,
-             collection->db,
-             mongoc_collection_get_name (collection),
-             &encryptedFields,
-             error)) {
-         return false;
-      }
+      // There are no encryptedFields with this collection, so we can just do a
+      // regular drop
+      okay = drop_with_opts (collection, opts, error);
+      goto done;
    }
 
-   if (bson_empty (&encryptedFields) &&
-       collection->client->topology->encrypted_fields_map != NULL) {
-      if (!_mongoc_get_encryptedFields_from_server (
-             collection->client,
-             collection->db,
-             mongoc_collection_get_name (collection),
-             &encryptedFields,
-             error)) {
-         return false;
-      }
+   // We've found the encryptedFields, so we need to do something different
+   // to drop this collection:
+   bsonBuildAppend (
+      opts_without_encryptedFields,
+      if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+   if (bsonBuildError) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Error while updating drop options: %s",
+                      bsonBuildError);
+      goto done;
    }
 
-   if (!bson_empty (&encryptedFields)) {
-      bsonBuildDecl (
-         opts_without_encryptedFields,
-         if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+   okay = drop_with_opts_with_encryptedFields (
+      collection, &opts_without_encryptedFields, &encryptedFields, error);
 
-      bool ret = drop_with_opts_with_encryptedFields (
-         collection, &opts_without_encryptedFields, &encryptedFields, error);
-
-      bson_destroy (&opts_without_encryptedFields);
-      bson_destroy (&encryptedFields);
-      return ret;
-   }
-
-   return drop_with_opts (collection, opts, error);
+done:
+   bson_destroy (&opts_without_encryptedFields);
+   bson_destroy (&encryptedFields);
+   return okay;
 }
 
 
