@@ -612,7 +612,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             _mongoc_write_error_update_if_unsupported_storage_engine (
                ret, error, &reply);
          }
-
          if (is_retryable && error_type == MONGOC_WRITE_ERR_RETRY) {
             bson_error_t ignored_error;
 

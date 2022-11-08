@@ -458,7 +458,7 @@ _in_sharded_txn (const mongoc_client_session_t *session)
 
 static void
 _handle_txn_error_labels (bool cmd_ret,
-                          bson_error_t *cmd_err,
+                          const bson_error_t *cmd_err,
                           const mongoc_cmd_t *cmd,
                           bson_t *reply)
 {
