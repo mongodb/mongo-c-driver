@@ -2475,7 +2475,7 @@ done:
 
 
 static void
-test_example_59 (mongoc_database_t *db)
+test_example_59 (mongoc_database_t *_db)
 {
    /*
       Python example code from: https://jira.mongodb.org/browse/DRIVERS-2181
@@ -2501,6 +2501,60 @@ test_example_59 (mongoc_database_t *db)
 
       // Start Snapshot Query Example 2
    */
+
+   mongoc_client_t *client = NULL;
+   mongoc_client_session_t *cs = NULL;
+   mongoc_database_t *db = NULL;
+   mongoc_collection_t *collection = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   const bson_t *doc;
+   bson_t *pipeline = NULL;
+   ssize_t adoptablePetsCount = 0;
+   bson_error_t error;
+
+   client = test_framework_new_default_client ();
+
+   /* cannot fail / mongoc_client_get_database aborts on failure */
+   db = mongoc_client_get_database (client, "pets");
+
+   cs = mongoc_client_start_session (client, NULL, &error);
+   if (!cs) {
+      MONGOC_ERROR ("Could not start session: %s", error.message);
+      goto cleanup;
+   }
+
+   /* cannot fail / mongoc_database_get_collection aborts on failure */
+   collection = mongoc_database_get_collection (db, "cats");
+
+   /*
+   adoptablePetsCount = db.cats.aggregate(
+       [ { "$match": { "adoptable": true } }, { "$count": "adoptableCatsCount" } ],
+       session=s
+   ).next()["adoptableCatsCount"]
+   */
+
+   pipeline = BCON_NEW ("pipeline",
+       "[", "{", "$match", "{", BCON_UTF8("adoptable"), BCON_BOOL("true"), "}", "}", "{", "$count", BCON_UTF8("adoptableCatsCount"), "}", "]"
+   );
+
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+   bson_destroy (pipeline);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      /* Do something with each doc here */
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   mongoc_cursor_destroy (cursor);
+
+cleanup:
+   mongoc_collection_destroy (collection);
+   mongoc_client_session_destroy (cs);
+   mongoc_database_destroy (db);
 }
 
 
