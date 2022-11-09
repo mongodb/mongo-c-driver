@@ -319,6 +319,7 @@ result_from_cursor (result_t *result, mongoc_cursor_t *cursor)
    }
 
    mongoc_cursor_error_document (cursor, &error, &reply);
+
    val = bson_val_from_array (documents);
 
    _result_init (result, val, (bson_t *) reply, &error);
@@ -360,7 +361,7 @@ result_check (result_t *result,
    bson_t *error_labels_contain;
    bson_t *error_labels_omit;
    bson_val_t *error_expect_result;
-   bson_t *error_response;
+   bson_val_t *error_response;
 
    if (!expect_result && !expect_error) {
       if (!result->ok) {
@@ -405,7 +406,7 @@ result_check (result_t *result,
       bson_parser_array_optional (
          parser, "errorLabelsOmit", &error_labels_omit);
       bson_parser_any_optional (parser, "expectResult", &error_expect_result);
-      bson_parser_doc_optional (parser, "errorResponse", &error_response);
+      bson_parser_any_optional (parser, "errorResponse", &error_response);
       if (!bson_parser_parse (parser, expect_error, error)) {
          goto done;
       }
@@ -568,8 +569,24 @@ result_check (result_t *result,
          }
       }
 
-      // if (error_response) {
-      // }
+      if (error_response) {
+         if (!result->reply) {
+            test_set_error (
+               error, "%s", "expected error with a reply, but result unset");
+            goto done;
+         }
+
+         if (!bson_match (error_response,
+                          bson_val_from_bson (result->reply),
+                          result->array_of_root_docs,
+                          error)) {
+            test_diagnostics_error_info (
+               "error.errorResponse mismatch:\nExpected: %s\nActual: %s\n",
+               bson_val_to_json (error_response),
+               bson_as_json (result->reply, NULL));
+            goto done;
+         }
+      }
    }
 
    ret = true;
