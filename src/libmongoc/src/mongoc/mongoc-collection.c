@@ -3662,7 +3662,6 @@ done:
       /* if a retry succeeded, clear the initial error */
       memset (error, 0, sizeof (bson_error_t));
    }
-
    mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
    if (&reply_local == reply_ptr) {
