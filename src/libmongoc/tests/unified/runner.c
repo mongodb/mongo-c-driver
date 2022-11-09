@@ -33,32 +33,41 @@ typedef struct {
 
 #define SKIP_ALL_TESTS NULL
 
-/* clang-format off */
+// clang-format off
 skipped_unified_test_t SKIPPED_TESTS[] = {
-   /* CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior */
+   // CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
-   /* CDRIVER-3867: drivers atlas testing (schema version 1.2) */
+   // CDRIVER-3867: drivers atlas testing (schema version 1.2)
    {"entity-client-storeEventsAsEntities", SKIP_ALL_TESTS},
-   /* libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality */
+   // libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality
    {"snapshot-sessions", "Distinct operation with snapshot"},
    {"snapshot-sessions", "Mixed operation with snapshot"},
-   /* CDRIVER-3886: serverless testing (schema version 1.4) */
+   // CDRIVER-3886: serverless testing (schema version 1.4)
    {"poc-crud", SKIP_ALL_TESTS},
    {"db-aggregate", SKIP_ALL_TESTS},
    {"mongos-unpin", SKIP_ALL_TESTS},
-   /* CDRIVER-2871: CMAP is not implemented */
+   // CDRIVER-2871: CMAP is not implemented
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
-   /* CDRIVER-4115: listCollections does not support batchSize. */
+   // CDRIVER-4115: listCollections does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
-   /* CDRIVER-4116: listIndexes does not support batchSize. */
+   // CDRIVER-4116: listIndexes does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
-   /* libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode. */
+   // libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode.
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
+   // libmongoc does not support the optional findOne helper.
+   {"retryable reads handshake failures", "findOne succeeds after retryable handshake network error"},
+   {"retryable reads handshake failures", "findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
+   // libmongoc does not support the optional count helper.
+   {"retryable reads handshake failures", "count succeeds after retryable handshake network error"},
+   {"retryable reads handshake failures", "count succeeds after retryable handshake server error (ShutdownInProgress)"},
+   // libmongoc does not support the optional listIndexNames helper.
+   {"retryable reads handshake failures", "listIndexNames succeeds after retryable handshake network error"},
+   {"retryable reads handshake failures", "listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
    {0},
 };
-/* clang-format on */
+// clang-format on
 
 static bool
 is_test_file_skipped (test_file_t *test_file)
