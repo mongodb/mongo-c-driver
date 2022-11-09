@@ -587,9 +587,8 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             bson_t reply;
             bson_error_t error;
             bool set;
-         } original_error;
+         } original_error = {0};
 
-         original_error.set = false;
       retry:
          ret = mongoc_cluster_run_command_monitored (
             &client->cluster, &parts.assembled, &reply, error);
@@ -634,7 +633,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
                   BSON_ASSERT (!original_error.set); // Retry only happens once.
                   original_error.set = true;
                   bson_copy_to (&reply, &original_error.reply);
-                  if (NULL != error) {
+                  if (error) {
                      original_error.error = *error;
                   }
                }
@@ -655,11 +654,12 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
 
          // If a retry attempt fails with an error labeled NoWritesPerformed,
          // drivers MUST return the original error.
-         if (mongoc_error_has_label (&reply, "NoWritesPerformed") &&
-             original_error.set) {
+         if (original_error.set &&
+             mongoc_error_has_label (&reply, "NoWritesPerformed")) {
             if (error) {
                *error = original_error.error;
             }
+            bson_destroy (&reply);
             bson_copy_to (&original_error.reply, &reply);
          }
 

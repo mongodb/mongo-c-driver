@@ -3571,9 +3571,8 @@ mongoc_collection_find_and_modify_with_opts (
       bson_t reply;
       bson_error_t error;
       bool set;
-   } original_error;
+   } original_error = {0};
 
-   original_error.set = false;
 retry:
    bson_destroy (reply_ptr);
    ret = mongoc_cluster_run_command_monitored (
@@ -3610,7 +3609,7 @@ retry:
             BSON_ASSERT (!original_error.set); // Retry only happens once.
             original_error.set = true;
             bson_copy_to (reply_ptr, &original_error.reply);
-            if (NULL != error) {
+            if (error) {
                original_error.error = *error;
             }
          }
@@ -3620,11 +3619,12 @@ retry:
 
    // If a retry attempt fails with an error labeled NoWritesPerformed,
    // drivers MUST return the original error.
-   if (mongoc_error_has_label (reply_ptr, "NoWritesPerformed") &&
-       original_error.set) {
+   if (original_error.set &&
+       mongoc_error_has_label (reply_ptr, "NoWritesPerformed")) {
       if (error) {
          *error = original_error.error;
       }
+      bson_destroy (reply_ptr);
       bson_copy_to (&original_error.reply, reply_ptr);
    }
 
