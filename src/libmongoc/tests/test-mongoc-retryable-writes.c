@@ -633,7 +633,6 @@ set_up_original_error_test (mongoc_apm_callbacks_t *callbacks,
    apm_ctx->client = client;
    apm_ctx->failCommand = failCommand;
    apm_ctx->configure_second_fail = true;
-   callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_succeeded_cb (callbacks,
                                         prose_test_3_on_command_success);
    mongoc_client_set_apm_callbacks (client, callbacks, apm_ctx);
@@ -683,6 +682,7 @@ retryable_writes_prose_test_3 (void *ctx)
    // setting up the client
    client = test_framework_new_default_client ();
    coll = get_test_collection (client, "retryable_writes");
+   callbacks = mongoc_apm_callbacks_new ();
 
    // setup test
    const uint32_t server_id =
@@ -720,6 +720,7 @@ retryable_writes_original_error_find_modify (void *ctx)
    // setting up the client
    client = test_framework_new_default_client ();
    coll = get_test_collection (client, "retryable_writes");
+   callbacks = mongoc_apm_callbacks_new ();
 
    // setup the test
    const uint32_t server_id =
@@ -767,6 +768,7 @@ retryable_writes_original_error_general_command (void *ctx)
    // setting up the client
    client = test_framework_new_default_client ();
    coll = get_test_collection (client, "retryable_writes");
+   callbacks = mongoc_apm_callbacks_new ();
 
    // setup test
    const uint32_t server_id =
