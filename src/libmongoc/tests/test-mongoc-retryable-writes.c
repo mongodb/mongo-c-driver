@@ -720,12 +720,6 @@ retryable_writes_original_error_find_modify (void *ctx)
    client = test_framework_new_default_client ();
    coll = get_test_collection (client, "retryable_writes");
 
-   // insert document to findAndModify later
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (
-         coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error),
-      error);
-
    // setup the test
    const uint32_t server_id = set_up_original_error_test (
       callbacks, error, &apm_ctx, "findAndModify", client);
@@ -749,8 +743,7 @@ retryable_writes_original_error_find_modify (void *ctx)
       &reply,
       "{'lastErrorObject' : { 'n': 0, 'updatedExisting' : false }, 'value' : "
       "null, 'writeConcernError' : { 'code': 91, 'errorLabels' : [ "
-      "'RetryableWriteError' ]}, 'ok' : 1.0, 'errorLabels' : [ "
-      "'RetryableWriteError', 'NoWritesPerformed' ]}");
+      "'RetryableWriteError' ]}, 'ok' : 1.0}");
 
    cleanup_original_error_test (client, server_id, &reply, coll, callbacks);
    mongoc_find_and_modify_opts_destroy (opts);
