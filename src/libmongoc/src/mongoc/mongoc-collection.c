@@ -3628,6 +3628,10 @@ retry:
       bson_copy_to (&original_error.reply, reply_ptr);
    }
 
+   if (original_error.set) {
+      bson_destroy (&original_error.reply);
+   }
+
    if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") &&
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       const char *errmsg = NULL;
@@ -3658,9 +3662,7 @@ done:
       /* if a retry succeeded, clear the initial error */
       memset (error, 0, sizeof (bson_error_t));
    }
-   if (original_error.set) {
-      bson_destroy (&original_error.reply);
-   }
+
    mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
    if (&reply_local == reply_ptr) {
