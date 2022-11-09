@@ -622,8 +622,9 @@ set_up_original_error_test (mongoc_apm_callbacks_t *callbacks,
                             char *failCommand,
                             mongoc_client_t *client)
 {
+   uint32_t server_id;
    // clean up in case a previous test aborted
-   const uint32_t server_id = mongoc_topology_select_server_id (
+   server_id = mongoc_topology_select_server_id (
       client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
@@ -684,7 +685,7 @@ retryable_writes_prose_test_3 (void *ctx)
    coll = get_test_collection (client, "retryable_writes");
 
    // setup test
-   const u_int32_t server_id =
+   const uint32_t server_id =
       set_up_original_error_test (callbacks, error, &apm_ctx, "insert", client);
 
    // attempt an insertOne operation
@@ -768,7 +769,7 @@ retryable_writes_original_error_general_command (void *ctx)
    coll = get_test_collection (client, "retryable_writes");
 
    // setup test
-   const u_int32_t server_id =
+   const uint32_t server_id =
       set_up_original_error_test (callbacks, error, &apm_ctx, "insert", client);
 
    bson_t *cmd = BCON_NEW ("insert",
