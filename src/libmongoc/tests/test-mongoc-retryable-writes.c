@@ -617,12 +617,12 @@ prose_test_3_on_command_success (const mongoc_apm_command_succeeded_t *event)
 
 uint32_t
 set_up_original_error_test (mongoc_apm_callbacks_t *callbacks,
-                            bson_error_t error,
                             prose_test_3_apm_ctx_t *apm_ctx,
                             char *failCommand,
                             mongoc_client_t *client)
 {
    uint32_t server_id;
+   bson_error_t error;
    // clean up in case a previous test aborted
    server_id = mongoc_topology_select_server_id (
       client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
@@ -686,7 +686,7 @@ retryable_writes_prose_test_3 (void *ctx)
 
    // setup test
    const uint32_t server_id =
-      set_up_original_error_test (callbacks, error, &apm_ctx, "insert", client);
+      set_up_original_error_test (callbacks, &apm_ctx, "insert", client);
 
    // attempt an insertOne operation
    mongoc_collection_insert_one (
@@ -722,8 +722,8 @@ retryable_writes_original_error_find_modify (void *ctx)
    coll = get_test_collection (client, "retryable_writes");
 
    // setup the test
-   const uint32_t server_id = set_up_original_error_test (
-      callbacks, error, &apm_ctx, "findAndModify", client);
+   const uint32_t server_id =
+      set_up_original_error_test (callbacks, &apm_ctx, "findAndModify", client);
 
    // setup for findAndModify
    bson_t query = BSON_INITIALIZER;
@@ -770,7 +770,7 @@ retryable_writes_original_error_general_command (void *ctx)
 
    // setup test
    const uint32_t server_id =
-      set_up_original_error_test (callbacks, error, &apm_ctx, "insert", client);
+      set_up_original_error_test (callbacks, &apm_ctx, "insert", client);
 
    bson_t *cmd = BCON_NEW ("insert",
                            mongoc_collection_get_name (coll),
