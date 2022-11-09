@@ -2474,49 +2474,43 @@ done:
 }
 
 
+/*
+ * JIRA: https://jira.mongodb.org/browse/DRIVERS-2181
+ */
 static void
-test_example_59 (mongoc_database_t *_db)
+test_example_59 (mongoc_database_t *db)
 {
-   /*
-      Python example code from: https://jira.mongodb.org/browse/DRIVERS-2181
-
-      // Start Snapshot Query Example 1
-
-      client = MongoClient()
-      db = client.pets
-      with client.start_session(snapshot=True) as s:
-         adoptablePetsCount = db.cats.aggregate(
-             [ { "$match": { "adoptable": true } }, { "$count": "adoptableCatsCount" } ],
-             session=s
-         ).next()["adoptableCatsCount"]
-
-         adoptablePetsCount += db.dogs.aggregate(
-             [ { "$match": { "adoptable": True} }, { "$count": "adoptableDogsCount" } ],
-             session=s
-         ).next()["adoptableDogsCount"]
-
-      print(adoptablePetsCount)
-
-      // End Snapshot Query Example 1
-
-      // Start Snapshot Query Example 2
-   */
-
    mongoc_client_t *client = NULL;
    mongoc_client_session_t *cs = NULL;
-   mongoc_database_t *db = NULL;
    mongoc_collection_t *collection = NULL;
+   mongoc_collection_t *cats_collection = NULL;
    mongoc_cursor_t *cursor = NULL;
    const bson_t *doc;
    bson_t *pipeline = NULL;
    ssize_t adoptablePetsCount = 0;
    bson_error_t error;
    bool has_next = false;
+   bool ok = false;
 
    client = test_framework_new_default_client ();
 
-   /* cannot fail / mongoc_client_get_database aborts on failure */
-   db = mongoc_client_get_database (client, "pets");
+   /* Seed 'pets.cats' and 'pets.dogs' */
+   cats_collection = mongoc_client_get_collection (client, "pets", "cats");
+   ok = mongoc_collection_drop (cats_collection, &error);
+   if (!ok) {
+      /* TODO: This seems to fail on every other test. Why?
+      MONGOC_ERROR ("Could not drop collection 'pets.cats': %s", error.message);
+      goto cleanup;
+      */
+   }
+
+   doc = BCON_NEW ("adoptable", BCON_BOOL("true"));
+
+   ok = mongoc_collection_insert_one (cats_collection, doc, NULL, NULL, &error);
+   if (!ok) {
+      MONGOC_ERROR ("insert into pets.cats failed: %s", error.message);
+      goto cleanup;
+   }
 
    cs = mongoc_client_start_session (client, NULL, &error);
    if (!cs) {
@@ -2524,28 +2518,17 @@ test_example_59 (mongoc_database_t *_db)
       goto cleanup;
    }
 
-   /* cannot fail / mongoc_database_get_collection aborts on failure */
-   collection = mongoc_database_get_collection (db, "cats");
-
-   /*
-   adoptablePetsCount = db.cats.aggregate(
-       [ { "$match": { "adoptable": true } }, { "$count": "adoptableCatsCount" } ],
-       session=s
-   ).next()["adoptableCatsCount"]
-   */
-
    pipeline = BCON_NEW ("pipeline",
        "[", "{", "$match", "{", BCON_UTF8("adoptable"), BCON_BOOL("true"), "}", "}", "{", "$count", BCON_UTF8("adoptableCatsCount"), "}", "]"
    );
 
    cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+      cats_collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
    bson_destroy (pipeline);
 
    has_next = mongoc_cursor_next (cursor, &doc);
    if (!has_next) {
-      fprintf(stderr, "cursor has no results\n"); /* TODO: use existing logging */
-      abort();
+      MONGOC_ERROR ("%s", "cursor has no results");
    }
 
    ASSERT_HAS_FIELD (doc, "adoptableCatsCount");
@@ -2561,9 +2544,9 @@ test_example_59 (mongoc_database_t *_db)
    mongoc_cursor_destroy (cursor);
 
 cleanup:
+   mongoc_collection_destroy (cats_collection);
    mongoc_collection_destroy (collection);
    mongoc_client_session_destroy (cs);
-   mongoc_database_destroy (db);
 }
 
 
