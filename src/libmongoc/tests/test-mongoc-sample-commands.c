@@ -2522,15 +2522,16 @@ test_example_59 (mongoc_database_t *db)
 
    cursor = mongoc_collection_aggregate (
       cats_collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
-   bson_destroy (pipeline);
 
    has_next = mongoc_cursor_next (cursor, &doc);
    if (!has_next) {
       MONGOC_ERROR ("%s", "cursor has no results");
+      goto cleanup;
    }
 
    if (mongoc_cursor_error (cursor, &error)) {
       MONGOC_ERROR ("%s\n", error.message);
+      goto cleanup;
    }
 
    ASSERT_HAS_FIELD (doc, "adoptableCatsCount");
@@ -2538,14 +2539,17 @@ test_example_59 (mongoc_database_t *db)
    is_equal = bson_equal(control, doc);
    if (!is_equal) {
       MONGOC_ERROR ("%s", "documents are not equal!");
+      goto cleanup;
    }
 
    has_next = mongoc_cursor_next (cursor, &doc);
    if (has_next) {
       MONGOC_ERROR ("%s", "not expecting any more results from pipeline");
+      goto cleanup;
    }
 
 cleanup:
+   bson_destroy (pipeline);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (cats_collection);
    mongoc_collection_destroy (collection);
