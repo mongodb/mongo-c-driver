@@ -319,7 +319,6 @@ result_from_cursor (result_t *result, mongoc_cursor_t *cursor)
    }
 
    mongoc_cursor_error_document (cursor, &error, &reply);
-
    val = bson_val_from_array (documents);
 
    _result_init (result, val, (bson_t *) reply, &error);
