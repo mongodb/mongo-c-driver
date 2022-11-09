@@ -615,7 +615,7 @@ prose_test_3_on_command_success (const mongoc_apm_command_succeeded_t *event)
    }
 }
 
-uint32_t
+static uint32_t
 set_up_original_error_test (mongoc_apm_callbacks_t *callbacks,
                             prose_test_3_apm_ctx_t *apm_ctx,
                             char *failCommand,
@@ -653,7 +653,7 @@ set_up_original_error_test (mongoc_apm_callbacks_t *callbacks,
    return server_id;
 }
 
-void
+static void
 cleanup_original_error_test (mongoc_client_t *client,
                              uint32_t server_id,
                              bson_t *reply,
@@ -662,9 +662,9 @@ cleanup_original_error_test (mongoc_client_t *client,
 {
    deactivate_fail_points (client, server_id); // disable the fail point
    bson_destroy (reply);
-   mongoc_client_destroy (client);
    mongoc_collection_destroy (coll);
    mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_client_destroy (client);
 }
 
 static void
@@ -689,8 +689,8 @@ retryable_writes_prose_test_3 (void *ctx)
       set_up_original_error_test (callbacks, &apm_ctx, "insert", client);
 
    // attempt an insertOne operation
-   mongoc_collection_insert_one (
-      coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error);
+   ASSERT (!mongoc_collection_insert_one (
+      coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error));
 
    // writeConcernErrors are returned in the reply and not as an error
    ASSERT_ERROR_CONTAINS (error, 0, 0, "");
@@ -734,8 +734,8 @@ retryable_writes_original_error_find_modify (void *ctx)
    mongoc_find_and_modify_opts_set_update (opts, update);
 
    // attempt a findAndModify operation
-   mongoc_collection_find_and_modify_with_opts (
-      coll, &query, opts, &reply, &error);
+   ASSERT (!mongoc_collection_find_and_modify_with_opts (
+      coll, &query, opts, &reply, &error));
 
    // assert error contains a writeConcernError with original error code
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 91, "");
@@ -783,10 +783,11 @@ retryable_writes_original_error_general_command (void *ctx)
                            "]");
 
    // attempt an insert operation
-   mongoc_client_command_simple (client, "admin", cmd, NULL, &reply, &error);
+   ASSERT (!mongoc_client_write_command_with_opts (
+      client, "test", cmd, NULL, &reply, &error));
 
-   // writeConcernErrors are returned in the reply and not as an error
-   ASSERT_ERROR_CONTAINS (error, 0, 0, "");
+   // assert error contains a writeConcernError with original error code
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 91, "");
 
    // the reply holds the original error information
    ASSERT_MATCH (&reply,
