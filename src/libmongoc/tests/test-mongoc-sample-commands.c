@@ -2491,18 +2491,16 @@ test_example_59 (mongoc_database_t *db)
    bson_error_t error;
    bool has_next = false;
    bool ok = false;
+   const bson_t *control;
+   bool is_equal = false;
+
+   control = BCON_NEW ("adoptableCatsCount", BCON_INT32(1));
 
    client = test_framework_new_default_client ();
 
    /* Seed 'pets.cats' and 'pets.dogs' */
    cats_collection = mongoc_client_get_collection (client, "pets", "cats");
-   ok = mongoc_collection_drop (cats_collection, &error);
-   if (!ok) {
-      /* TODO: This seems to fail on every other test. Why?
-      MONGOC_ERROR ("Could not drop collection 'pets.cats': %s", error.message);
-      goto cleanup;
-      */
-   }
+   mongoc_collection_drop (cats_collection, &error);
 
    doc = BCON_NEW ("adoptable", BCON_BOOL("true"));
 
@@ -2531,19 +2529,24 @@ test_example_59 (mongoc_database_t *db)
       MONGOC_ERROR ("%s", "cursor has no results");
    }
 
-   ASSERT_HAS_FIELD (doc, "adoptableCatsCount");
-
-   while (mongoc_cursor_next (cursor, &doc)) {
-      /* Do something with each doc here */
-   }
-
    if (mongoc_cursor_error (cursor, &error)) {
       MONGOC_ERROR ("%s\n", error.message);
    }
 
-   mongoc_cursor_destroy (cursor);
+   ASSERT_HAS_FIELD (doc, "adoptableCatsCount");
+
+   is_equal = bson_equal(control, doc);
+   if (!is_equal) {
+      MONGOC_ERROR ("%s", "documents are not equal!");
+   }
+
+   has_next = mongoc_cursor_next (cursor, &doc);
+   if (has_next) {
+      MONGOC_ERROR ("%s", "not expecting any more results from pipeline");
+   }
 
 cleanup:
+   mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (cats_collection);
    mongoc_collection_destroy (collection);
    mongoc_client_session_destroy (cs);
