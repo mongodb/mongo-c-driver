@@ -2511,6 +2511,7 @@ test_example_59 (mongoc_database_t *_db)
    bson_t *pipeline = NULL;
    ssize_t adoptablePetsCount = 0;
    bson_error_t error;
+   bool has_next = false;
 
    client = test_framework_new_default_client ();
 
@@ -2540,6 +2541,14 @@ test_example_59 (mongoc_database_t *_db)
    cursor = mongoc_collection_aggregate (
       collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
    bson_destroy (pipeline);
+
+   has_next = mongoc_cursor_next (cursor, &doc);
+   if (!has_next) {
+      fprintf(stderr, "cursor has no results\n"); /* TODO: use existing logging */
+      abort();
+   }
+
+   ASSERT_HAS_FIELD (doc, "adoptableCatsCount");
 
    while (mongoc_cursor_next (cursor, &doc)) {
       /* Do something with each doc here */
