@@ -2474,6 +2474,36 @@ done:
 }
 
 
+static void
+test_example_59 (mongoc_database_t *db)
+{
+   /*
+      Python example code from: https://jira.mongodb.org/browse/DRIVERS-2181
+
+      // Start Snapshot Query Example 1
+
+      client = MongoClient()
+      db = client.pets
+      with client.start_session(snapshot=True) as s:
+         adoptablePetsCount = db.cats.aggregate(
+             [ { "$match": { "adoptable": true } }, { "$count": "adoptableCatsCount" } ],
+             session=s
+         ).next()["adoptableCatsCount"]
+
+         adoptablePetsCount += db.dogs.aggregate(
+             [ { "$match": { "adoptable": True} }, { "$count": "adoptableDogsCount" } ],
+             session=s
+         ).next()["adoptableDogsCount"]
+
+      print(adoptablePetsCount)
+
+      // End Snapshot Query Example 1
+
+      // Start Snapshot Query Example 2
+   */
+}
+
+
 typedef struct {
    bson_mutex_t lock;
    mongoc_collection_t *collection;
@@ -3992,6 +4022,7 @@ test_sample_commands (void)
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
    test_sample_command (test_example_56, 56, db, collection, true);
+   test_sample_command (test_example_59, 59, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
