@@ -1313,6 +1313,7 @@ operation_create_index (test_t *test,
    bson_parser_t *bp = NULL;
    char *name = NULL;
    bson_t *keys = NULL;
+   bool *unique = false;
    bson_t *create_indexes = NULL;
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
@@ -1324,10 +1325,16 @@ operation_create_index (test_t *test,
    }
 
    bp = bson_parser_new ();
-   bson_parser_utf8 (bp, "name", &name);
    bson_parser_doc (bp, "keys", &keys);
+   bson_parser_utf8_optional (bp, "name", &name);
+   bson_parser_bool_optional (bp, "unique", &unique);
+
    if (!bson_parser_parse (bp, op->arguments, error)) {
       goto done;
+   }
+
+   if (!name) {
+      name = mongoc_collection_keys_to_index_string (keys);
    }
 
    /* libmongoc has no create index helper. Use runCommand. */
@@ -1338,10 +1345,13 @@ operation_create_index (test_t *test,
                               "{",
                               "name",
                               name,
+                              "unique",
+                              BCON_BOOL (unique),
                               "key",
                               BCON_DOCUMENT (keys),
                               "}",
                               "]");
+
    if (op->session) {
       if (!mongoc_client_session_append (op->session, opts, error)) {
          goto done;
