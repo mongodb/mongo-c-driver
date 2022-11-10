@@ -1440,8 +1440,8 @@ _mongoc_write_result_complete (
       domain = MONGOC_ERROR_COLLECTION;
    }
 
-   // if there is a raw error response then we know a server error has occurred.
-   // Should add the raw result to the reply.
+   /* If there is a raw error response then we know a server error has occurred.
+    * We should add the raw result to the reply. */
    if (bson && !bson_empty (&result->raw_error_response)) {
       bson_copy_to (&result->raw_error_response, bson);
    }
