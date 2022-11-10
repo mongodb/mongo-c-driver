@@ -2573,7 +2573,6 @@ test_example_59 (mongoc_database_t *db)
    mongoc_collection_t *cats_collection = NULL;
    mongoc_collection_t *dogs_collection = NULL;
    long long adoptable_pets_count = 0;
-   bool is_equal = false;
    bson_error_t error;
    mongoc_session_opt_t *session_opts;
 
