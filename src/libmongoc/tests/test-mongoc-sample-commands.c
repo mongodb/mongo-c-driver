@@ -2500,7 +2500,8 @@ cleanup:
 
 
 /*
- * Increment 'count' by the amount of adoptable pets in the given collection.
+ * Increment 'accumulator' by the amount of adoptable pets in the given
+ * collection.
  */
 static bool
 accumulate_adoptable_count (mongoc_collection_t *collection,
@@ -2549,14 +2550,11 @@ accumulate_adoptable_count (mongoc_collection_t *collection,
    rc = bson_iter_init_find (&iter, doc, "adoptableCount");
    if (rc) {
       value = bson_iter_value (&iter);
-      switch (value->value_type) {
-      case BSON_TYPE_INT32:
+      if (value->value_type == BSON_TYPE_INT32) {
          *accumulator += value->value.v_int32;
-         break;
-      case BSON_TYPE_INT64:
+      } else if (value->value_type == BSON_TYPE_INT32) {
          *accumulator += value->value.v_int64;
-         break;
-      default:
+      } else {
          MONGOC_ERROR ("%s", "'adoptableCount' must be an integer");
          rc = false;
          goto cleanup;
@@ -2579,6 +2577,7 @@ cleanup:
 static void
 test_example_59 (mongoc_database_t *db)
 {
+   /* Start Example 59 */
    mongoc_client_t *client = NULL;
    mongoc_client_session_t *cs = NULL;
    mongoc_collection_t *cats_collection = NULL;
@@ -2608,6 +2607,7 @@ test_example_59 (mongoc_database_t *db)
       goto cleanup;
    }
 
+   /* start a snapshot session */
    session_opts = mongoc_session_opts_new ();
    mongoc_session_opts_set_snapshot (session_opts, true);
    cs = mongoc_client_start_session (client, session_opts, &error);
@@ -2621,12 +2621,15 @@ test_example_59 (mongoc_database_t *db)
    accumulate_adoptable_count (dogs_collection, &adoptable_pets_count);
 
    printf ("there are %lld adoptable pets\n", adoptable_pets_count);
+   /* End Example 59 */
 
+   /* Start Example 59 Post */
 cleanup:
    mongoc_collection_destroy (dogs_collection);
    mongoc_collection_destroy (cats_collection);
    mongoc_client_session_destroy (cs);
    mongoc_client_destroy (client);
+   /* End Example 59 Post */
 }
 
 /* clang-format off */
