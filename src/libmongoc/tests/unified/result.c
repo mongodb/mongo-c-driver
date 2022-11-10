@@ -571,7 +571,7 @@ result_check (result_t *result,
       if (error_response) {
          if (!result->reply) {
             test_set_error (
-               error, "%s", "expected error with a reply, but result unset");
+               error, "%s", "expected error with a reply, but reply unset");
             goto done;
          }
 

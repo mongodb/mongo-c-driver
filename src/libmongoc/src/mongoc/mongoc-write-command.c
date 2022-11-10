@@ -1326,9 +1326,10 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
       result->n_writeConcernErrors++;
    }
 
-   // have an error from the server and should append the entire reply to the
-   // result.
-   if (result->failed || result->n_writeConcernErrors) {
+   /* We have an error from the server and should append the entire reply to the
+    * result. */
+   if (result->failed || result->n_writeConcernErrors ||
+       _mongoc_error_is_server (&result->error)) {
       bson_copy_to (reply, &result->raw_error_response);
    }
 
