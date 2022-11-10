@@ -587,17 +587,21 @@ result_check (result_t *result,
             bson_copy_to (result->reply, &doc_to_match);
          }
 
+         bson_val_t *val_to_match = bson_val_from_bson (&doc_to_match);
+
          if (!bson_match (error_response,
-                          bson_val_from_bson (&doc_to_match),
+                          val_to_match,
                           result->array_of_root_docs,
                           error)) {
             test_diagnostics_error_info (
                "error.errorResponse mismatch:\nExpected: %s\nActual: %s\n",
                bson_val_to_json (error_response),
                bson_as_json (result->reply, NULL));
+            bson_val_destroy (val_to_match);
             bson_destroy (&doc_to_match);
             goto done;
          }
+         bson_val_destroy (val_to_match);
          bson_destroy (&doc_to_match);
       }
    }
