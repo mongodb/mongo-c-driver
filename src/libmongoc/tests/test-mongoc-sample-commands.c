@@ -2571,6 +2571,33 @@ cleanup:
 }
 
 
+static bool
+pet_setup (mongoc_collection_t *cats_collection,
+           mongoc_collection_t *dogs_collection)
+{
+   bool ok = true;
+
+   mongoc_collection_drop (cats_collection, NULL);
+   mongoc_collection_drop (dogs_collection, NULL);
+
+   ok = insert_pet (cats_collection, true);
+   if (!ok) {
+      goto done;
+   }
+
+   ok = insert_pet (dogs_collection, true);
+   if (!ok) {
+      goto done;
+   }
+
+   ok = insert_pet (dogs_collection, false);
+   if (!ok) {
+      goto done;
+   }
+done:
+   return ok;
+}
+
 /*
  * JIRA: https://jira.mongodb.org/browse/DRIVERS-2181
  */
@@ -2588,22 +2615,11 @@ test_example_59 (mongoc_database_t *db)
 
    client = test_framework_new_default_client ();
 
-   /* Seed 'pets.cats' and 'pets.dogs' */
    cats_collection = mongoc_client_get_collection (client, "pets", "cats");
-   mongoc_collection_drop (cats_collection, &error);
-
    dogs_collection = mongoc_client_get_collection (client, "pets", "dogs");
-   mongoc_collection_drop (dogs_collection, &error);
 
-   if (!insert_pet (cats_collection, true)) {
-      goto cleanup;
-   }
-
-   if (!insert_pet (dogs_collection, true)) {
-      goto cleanup;
-   }
-
-   if (!insert_pet (dogs_collection, false)) {
+   /* Seed 'pets.cats' and 'pets.dogs' with example data */
+   if (!pet_setup (cats_collection, dogs_collection)) {
       goto cleanup;
    }
 
