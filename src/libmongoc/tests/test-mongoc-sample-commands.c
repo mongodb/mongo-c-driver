@@ -2487,7 +2487,7 @@ test_example_59 (mongoc_database_t *db)
    mongoc_cursor_t *cursor = NULL;
    const bson_t *doc;
    bson_t *pipeline = NULL;
-   ssize_t adoptablePetsCount = 0;
+   long long adoptable_pets_count = 0;
    bson_error_t error;
    bool has_next = false;
    bool ok = false;
@@ -2541,6 +2541,31 @@ test_example_59 (mongoc_database_t *db)
       MONGOC_ERROR ("%s", "documents are not equal!");
       goto cleanup;
    }
+
+   bson_iter_t iter;
+   const bson_value_t *value = NULL;
+
+   //if (bson_iter_init (&iter, doc)) {
+   //   while (bson_iter_next (&iter)) {
+   //      printf ("Found element key: \"%s\", type: %x\n", bson_iter_key (&iter), bson_iter_type(&iter));
+   //      value = bson_iter_value(&iter);
+   //      if (value->value_type == BSON_TYPE_INT32) {
+   //         adoptable_pets_count = value->value.v_int32;
+   //      }
+   //   }
+   //}
+
+   if (bson_iter_init (&iter, doc)) {
+      while (bson_iter_next (&iter)) {
+         if (strcmp(bson_iter_key(&iter), "adoptableCatsCount") == 0) {
+            value = bson_iter_value(&iter);
+            if (value->value_type == BSON_TYPE_INT32) {
+               adoptable_pets_count = value->value.v_int32;
+            }
+         }
+      }
+   }
+   printf("there are %lld adoptable pets\n", adoptable_pets_count);
 
    has_next = mongoc_cursor_next (cursor, &doc);
    if (has_next) {
