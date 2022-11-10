@@ -2623,9 +2623,10 @@ test_example_59 (mongoc_database_t *db)
    printf ("there are %lld adoptable pets\n", adoptable_pets_count);
 
 cleanup:
-   mongoc_collection_destroy (cats_collection);
    mongoc_collection_destroy (dogs_collection);
+   mongoc_collection_destroy (cats_collection);
    mongoc_client_session_destroy (cs);
+   mongoc_client_destroy (client);
 }
 
 /* clang-format off */
