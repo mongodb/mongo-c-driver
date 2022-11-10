@@ -1351,7 +1351,6 @@ operation_create_index (test_t *test,
                               BCON_DOCUMENT (keys),
                               "}",
                               "]");
-
    if (op->session) {
       if (!mongoc_client_session_append (op->session, opts, error)) {
          goto done;

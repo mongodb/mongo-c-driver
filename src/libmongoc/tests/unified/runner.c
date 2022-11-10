@@ -755,6 +755,7 @@ check_run_on_requirement (test_runner_t *test_runner,
       if (0 == strcmp (key, "csfle")) {
          const bool csfle_required = bson_iter_bool (&req_iter);
          semver_t min_server_version;
+
          semver_parse ("4.2.0", &min_server_version);
          if (semver_cmp (server_version, &min_server_version) < 0) {
             *fail_reason =
