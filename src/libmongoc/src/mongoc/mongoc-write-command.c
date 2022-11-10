@@ -1330,6 +1330,7 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
     * result. */
    if (result->failed || result->n_writeConcernErrors ||
        _mongoc_error_is_server (&result->error)) {
+      bson_destroy (&result->raw_error_response);
       bson_copy_to (reply, &result->raw_error_response);
    }
 
