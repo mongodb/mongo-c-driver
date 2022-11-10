@@ -3619,7 +3619,7 @@ retry:
 
    // If a retry attempt fails with an error labeled NoWritesPerformed,
    // drivers MUST return the original error.
-   if (original_error.set && !ret &&
+   if (original_error.set &&
        mongoc_error_has_label (reply_ptr, "NoWritesPerformed")) {
       if (error) {
          *error = original_error.error;

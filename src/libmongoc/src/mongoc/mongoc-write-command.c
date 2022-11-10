@@ -650,17 +650,17 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
                                              &client->cluster, server_stream)) {
                result->must_stop = true;
             }
+         }
 
-            // If a retry attempt fails with an error labeled NoWritesPerformed,
-            // drivers MUST return the original error.
-            if (original_error.set &&
-                mongoc_error_has_label (&reply, "NoWritesPerformed")) {
-               if (error) {
-                  *error = original_error.error;
-               }
-               bson_destroy (&reply);
-               bson_copy_to (&original_error.reply, &reply);
+         // If a retry attempt fails with an error labeled NoWritesPerformed,
+         // drivers MUST return the original error.
+         if (original_error.set &&
+             mongoc_error_has_label (&reply, "NoWritesPerformed")) {
+            if (error) {
+               *error = original_error.error;
             }
+            bson_destroy (&reply);
+            bson_copy_to (&original_error.reply, &reply);
          }
 
          /* Result merge needs to know the absolute index for a document
