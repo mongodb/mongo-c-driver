@@ -2499,6 +2499,34 @@ cleanup:
 }
 
 
+static bool
+pet_setup (mongoc_collection_t *cats_collection,
+           mongoc_collection_t *dogs_collection)
+{
+   bool ok = true;
+
+   mongoc_collection_drop (cats_collection, NULL);
+   mongoc_collection_drop (dogs_collection, NULL);
+
+   ok = insert_pet (cats_collection, true);
+   if (!ok) {
+      goto done;
+   }
+
+   ok = insert_pet (dogs_collection, true);
+   if (!ok) {
+      goto done;
+   }
+
+   ok = insert_pet (dogs_collection, false);
+   if (!ok) {
+      goto done;
+   }
+done:
+   return ok;
+}
+
+
 /*
  * Increment 'accumulator' by the amount of adoptable pets in the given
  * collection.
@@ -2568,34 +2596,6 @@ cleanup:
    bson_destroy (pipeline);
    mongoc_cursor_destroy (cursor);
    return rc;
-}
-
-
-static bool
-pet_setup (mongoc_collection_t *cats_collection,
-           mongoc_collection_t *dogs_collection)
-{
-   bool ok = true;
-
-   mongoc_collection_drop (cats_collection, NULL);
-   mongoc_collection_drop (dogs_collection, NULL);
-
-   ok = insert_pet (cats_collection, true);
-   if (!ok) {
-      goto done;
-   }
-
-   ok = insert_pet (dogs_collection, true);
-   if (!ok) {
-      goto done;
-   }
-
-   ok = insert_pet (dogs_collection, false);
-   if (!ok) {
-      goto done;
-   }
-done:
-   return ok;
 }
 
 /*
