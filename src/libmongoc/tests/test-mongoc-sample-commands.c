@@ -2474,6 +2474,82 @@ done:
 }
 
 
+static bool
+insert_pet(mongoc_collection_t *collection, bool is_adoptable) {
+   bson_t *doc = NULL;
+   bson_error_t error;
+   bool rc;
+
+   doc = BCON_NEW ("adoptable", BCON_BOOL(is_adoptable));
+
+   rc = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
+   if (!rc) {
+      MONGOC_ERROR ("insert into pets.%s failed: %s", mongoc_collection_get_name(collection), error.message);
+      goto cleanup;
+   }
+
+cleanup:
+   bson_destroy (doc);
+   return rc;
+}
+
+
+static bool
+get_adoptable_count(mongoc_collection_t *collection, long long *count /* OUT */) {
+   bson_t *pipeline = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   bool rc;
+   const bson_t *doc = NULL;
+   bson_error_t error;
+   const bson_value_t *value = NULL;
+   bson_iter_t iter;
+
+   pipeline = BCON_NEW ("pipeline",
+       "[", "{", "$match", "{", BCON_UTF8("adoptable"), BCON_BOOL("true"), "}", "}", "{", "$count", BCON_UTF8("adoptableCount"), "}", "]"
+   );
+
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+
+   rc = mongoc_cursor_next (cursor, &doc);
+   if (!rc) {
+      MONGOC_ERROR ("%s", "cursor has no results");
+      goto cleanup;
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("%s\n", error.message);
+      rc = false;
+      goto cleanup;
+   }
+
+   rc = bson_iter_init_find (&iter, doc, "adoptableCount");
+   if (rc) {
+      value = bson_iter_value (&iter);
+      switch (value->value_type) {
+      case BSON_TYPE_INT32:
+         *count += value->value.v_int32;
+         break;
+      case BSON_TYPE_INT64:
+         *count += value->value.v_int64;
+         break;
+      default:
+         MONGOC_ERROR ("%s", "'adoptableCount' must be an integer");
+         rc = false;
+         goto cleanup;
+      }
+   } else {
+      MONGOC_ERROR ("%s", "missing key: 'adoptableCount'");
+      goto cleanup;
+   }
+
+cleanup:
+   bson_destroy (pipeline);
+   mongoc_cursor_destroy (cursor);
+   return rc;
+}
+
+
 /*
  * JIRA: https://jira.mongodb.org/browse/DRIVERS-2181
  */
@@ -2484,14 +2560,9 @@ test_example_59 (mongoc_database_t *db)
    mongoc_client_session_t *cs = NULL;
    mongoc_collection_t *cats_collection = NULL;
    mongoc_collection_t *dogs_collection = NULL;
-   mongoc_cursor_t *cursor = NULL;
-   const bson_t *doc = NULL;
-   bson_t *pipeline = NULL;
    long long adoptable_pets_count = 0;
-   bson_error_t error;
    bool is_equal = false;
-   bson_iter_t iter;
-   const bson_value_t *value = NULL;
+   bson_error_t error;
 
    client = test_framework_new_default_client ();
 
@@ -2499,20 +2570,18 @@ test_example_59 (mongoc_database_t *db)
    cats_collection = mongoc_client_get_collection (client, "pets", "cats");
    mongoc_collection_drop (cats_collection, &error);
 
-   doc = BCON_NEW ("adoptable", BCON_BOOL("true"));
-
-   if (!mongoc_collection_insert_one (cats_collection, doc, NULL, NULL, &error)) {
-      MONGOC_ERROR ("insert into pets.cats failed: %s", error.message);
-      goto cleanup;
-   }
-
    dogs_collection = mongoc_client_get_collection (client, "pets", "dogs");
    mongoc_collection_drop (dogs_collection, &error);
 
-   doc = BCON_NEW ("adoptable", BCON_BOOL("true"));
+   if (!insert_pet(cats_collection, true)) {
+      goto cleanup;
+   }
 
-   if (!mongoc_collection_insert_one (dogs_collection, doc, NULL, NULL, &error)) {
-      MONGOC_ERROR ("insert into pets.dogs failed: %s", error.message);
+   if (!insert_pet(dogs_collection, true)) {
+      goto cleanup;
+   }
+
+   if (!insert_pet(dogs_collection, false)) {
       goto cleanup;
    }
 
@@ -2522,47 +2591,12 @@ test_example_59 (mongoc_database_t *db)
       goto cleanup;
    }
 
-   pipeline = BCON_NEW ("pipeline",
-       "[", "{", "$match", "{", BCON_UTF8("adoptable"), BCON_BOOL("true"), "}", "}", "{", "$count", BCON_UTF8("adoptableCatsCount"), "}", "]"
-   );
-
-   cursor = mongoc_collection_aggregate (
-      cats_collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
-
-   bson_destroy (pipeline);
-
-   if (!mongoc_cursor_next (cursor, &doc)) {
-      MONGOC_ERROR ("%s", "cursor has no results");
-      goto cleanup;
-   }
-
-   if (mongoc_cursor_error (cursor, &error)) {
-      MONGOC_ERROR ("%s\n", error.message);
-      goto cleanup;
-   }
-
-   if (bson_iter_init_find (&iter, doc, "adoptableCatsCount")) {
-      value = bson_iter_value (&iter);
-      switch (value->value_type) {
-      case BSON_TYPE_INT32:
-         adoptable_pets_count = value->value.v_int32;
-         break;
-      case BSON_TYPE_INT64:
-         adoptable_pets_count = value->value.v_int64;
-         break;
-      default:
-         MONGOC_ERROR ("%s", "'adoptableCatsCount' must be an integer");
-         goto cleanup;
-      }
-   } else {
-      MONGOC_ERROR ("%s", "missing key: 'adoptableCatsCount'");
-      goto cleanup;
-   }
+   get_adoptable_count(cats_collection, &adoptable_pets_count);
+   get_adoptable_count(dogs_collection, &adoptable_pets_count);
 
    printf("there are %lld adoptable pets\n", adoptable_pets_count);
 
 cleanup:
-   mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (cats_collection);
    mongoc_collection_destroy (dogs_collection);
    mongoc_client_session_destroy (cs);
