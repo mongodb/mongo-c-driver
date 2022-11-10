@@ -575,16 +575,30 @@ result_check (result_t *result,
             goto done;
          }
 
+         /* Write operations have the raw response wrapped in a serverRespons
+          * document. Read operations return the raw response as the reply. */
+         bson_iter_t iter;
+         bson_t doc_to_match;
+         bson_init (&doc_to_match);
+
+         if (bson_iter_init_find (&iter, result->reply, "serverResponse")) {
+            bson_lookup_doc (result->reply, "serverResponse", &doc_to_match);
+         } else {
+            bson_copy_to (result->reply, &doc_to_match);
+         }
+
          if (!bson_match (error_response,
-                          bson_val_from_bson (result->reply),
+                          bson_val_from_bson (&doc_to_match),
                           result->array_of_root_docs,
                           error)) {
             test_diagnostics_error_info (
                "error.errorResponse mismatch:\nExpected: %s\nActual: %s\n",
                bson_val_to_json (error_response),
                bson_as_json (result->reply, NULL));
+            bson_destroy (&doc_to_match);
             goto done;
          }
+         bson_destroy (&doc_to_match);
       }
    }
 

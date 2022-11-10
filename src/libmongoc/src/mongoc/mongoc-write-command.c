@@ -1440,15 +1440,10 @@ _mongoc_write_result_complete (
       domain = MONGOC_ERROR_COLLECTION;
    }
 
-   /* If there is a raw error response then we know a server error has occurred.
-    * We should add the raw result to the reply. */
-   if (bson && !bson_empty (&result->raw_error_response)) {
-      bson_copy_to (&result->raw_error_response, bson);
-   }
-
    /* produce either old fields like nModified from the deprecated Bulk API Spec
     * or new fields like modifiedCount from the CRUD Spec, which we partly obey
     */
+
    if (bson && mongoc_write_concern_is_acknowledged (wc)) {
       n_args = 0;
       va_start (args, error);
@@ -1511,6 +1506,13 @@ _mongoc_write_result_complete (
          BSON_APPEND_ARRAY (
             bson, "writeConcernErrors", &result->writeConcernErrors);
       }
+   }
+
+   /* If there is a raw error response then we know a server error has occurred.
+    * We should add the raw result to the reply. */
+   if (bson && !bson_empty (&result->raw_error_response)) {
+      bson_append_document (
+         bson, "serverResponse", -1, &result->raw_error_response);
    }
 
    /* set bson_error_t from first write error or write concern error */
