@@ -2534,14 +2534,15 @@ accumulate_adoptable_count (mongoc_collection_t *collection,
       collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
 
    rc = mongoc_cursor_next (cursor, &doc);
-   if (!rc) {
-      MONGOC_ERROR ("%s", "cursor has no results");
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("could not get adoptableCount: %s", error.message);
+      rc = false;
       goto cleanup;
    }
 
-   if (mongoc_cursor_error (cursor, &error)) {
-      MONGOC_ERROR ("%s\n", error.message);
-      rc = false;
+   if (!rc) {
+      MONGOC_ERROR ("%s", "cursor has no results");
       goto cleanup;
    }
 
