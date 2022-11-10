@@ -1116,6 +1116,7 @@ _mongoc_write_result_init (mongoc_write_result_t *result) /* IN */
    bson_init (&result->writeConcernErrors);
    bson_init (&result->writeErrors);
    bson_init (&result->errorLabels);
+   bson_init (&result->raw_error_response);
 
    EXIT;
 }
@@ -1132,6 +1133,7 @@ _mongoc_write_result_destroy (mongoc_write_result_t *result)
    bson_destroy (&result->writeConcernErrors);
    bson_destroy (&result->writeErrors);
    bson_destroy (&result->errorLabels);
+   bson_destroy (&result->raw_error_response);
 
    EXIT;
 }
@@ -1324,6 +1326,12 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
       result->n_writeConcernErrors++;
    }
 
+   // have an error from the server and should append the entire reply to the
+   // result.
+   if (result->failed || result->n_writeConcernErrors) {
+      bson_copy_to (reply, &result->raw_error_response);
+   }
+
    /* inefficient if there are ever large numbers: for each label in each err,
     * we linear-search result->errorLabels to see if it's included yet */
    _mongoc_bson_array_copy_labels_to (reply, &result->errorLabels);
@@ -1429,6 +1437,12 @@ _mongoc_write_result_complete (
       domain = (mongoc_error_domain_t) result->error.domain;
    } else {
       domain = MONGOC_ERROR_COLLECTION;
+   }
+
+   // if there is a raw error response then we know a server error has occurred.
+   // Should add the raw result to the reply.
+   if (bson && !bson_empty (&result->raw_error_response)) {
+      bson_copy_to (&result->raw_error_response, bson);
    }
 
    /* produce either old fields like nModified from the deprecated Bulk API Spec

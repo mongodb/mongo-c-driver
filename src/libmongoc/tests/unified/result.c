@@ -191,6 +191,7 @@ result_from_insert_one (result_t *result,
    }
 
    val = bson_val_from_bson (write_result);
+
    _result_init (result, val, reply, error);
    bson_val_destroy (val);
    bson_destroy (write_result);
