@@ -2484,7 +2484,10 @@ insert_pet(mongoc_collection_t *collection, bool is_adoptable) {
 
    rc = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
    if (!rc) {
-      MONGOC_ERROR ("insert into pets.%s failed: %s", mongoc_collection_get_name(collection), error.message);
+      MONGOC_ERROR (
+         "insert into pets.%s failed: %s",
+         mongoc_collection_get_name(collection), error.message
+      );
       goto cleanup;
    }
 
@@ -2498,7 +2501,10 @@ cleanup:
  * Increment 'count' by the amount of adoptable pets in the given collection.
  */
 static bool
-accumulate_adoptable_count(mongoc_collection_t *collection, long long *count /* OUT */) {
+accumulate_adoptable_count(
+   mongoc_collection_t *collection,
+   long long *count /* OUT */
+) {
    bson_t *pipeline = NULL;
    mongoc_cursor_t *cursor = NULL;
    bool rc;
@@ -2508,7 +2514,10 @@ accumulate_adoptable_count(mongoc_collection_t *collection, long long *count /* 
    bson_iter_t iter;
 
    pipeline = BCON_NEW ("pipeline",
-       "[", "{", "$match", "{", BCON_UTF8("adoptable"), BCON_BOOL("true"), "}", "}", "{", "$count", BCON_UTF8("adoptableCount"), "}", "]"
+      "[",
+      "{", "$match", "{", BCON_UTF8("adoptable"), BCON_BOOL("true"), "}", "}",
+      "{", "$count", BCON_UTF8("adoptableCount"), "}",
+      "]"
    );
 
    cursor = mongoc_collection_aggregate (
