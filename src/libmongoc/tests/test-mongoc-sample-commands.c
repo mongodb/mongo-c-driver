@@ -3616,6 +3616,8 @@ _test_sample_versioned_api_example_1 (void)
 
    mongoc_client_destroy (client);
    mongoc_server_api_destroy (server_api);
+
+   BSON_UNUSED (error);
 }
 
 static void
@@ -3650,6 +3652,8 @@ _test_sample_versioned_api_example_2 (void)
 
    mongoc_client_destroy (client);
    mongoc_server_api_destroy (server_api);
+
+   BSON_UNUSED (error);
 }
 
 static void
@@ -3684,6 +3688,8 @@ _test_sample_versioned_api_example_3 (void)
 
    mongoc_client_destroy (client);
    mongoc_server_api_destroy (server_api);
+
+   BSON_UNUSED (error);
 }
 
 static void
@@ -3718,6 +3724,8 @@ _test_sample_versioned_api_example_4 (void)
 
    mongoc_client_destroy (client);
    mongoc_server_api_destroy (server_api);
+
+   BSON_UNUSED (error);
 }
 
 static int64_t
