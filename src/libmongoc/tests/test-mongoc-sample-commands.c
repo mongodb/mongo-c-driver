@@ -2474,20 +2474,22 @@ done:
 }
 
 
+/* clang-format on */
+
 static bool
-insert_pet(mongoc_collection_t *collection, bool is_adoptable) {
+insert_pet (mongoc_collection_t *collection, bool is_adoptable)
+{
    bson_t *doc = NULL;
    bson_error_t error;
    bool rc;
 
-   doc = BCON_NEW ("adoptable", BCON_BOOL(is_adoptable));
+   doc = BCON_NEW ("adoptable", BCON_BOOL (is_adoptable));
 
    rc = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
    if (!rc) {
-      MONGOC_ERROR (
-         "insert into pets.%s failed: %s",
-         mongoc_collection_get_name(collection), error.message
-      );
+      MONGOC_ERROR ("insert into pets.%s failed: %s",
+                    mongoc_collection_get_name (collection),
+                    error.message);
       goto cleanup;
    }
 
@@ -2501,10 +2503,10 @@ cleanup:
  * Increment 'count' by the amount of adoptable pets in the given collection.
  */
 static bool
-accumulate_adoptable_count(
-   mongoc_collection_t *collection,
-   long long *count /* OUT */
-) {
+accumulate_adoptable_count (mongoc_collection_t *collection,
+                            long long *accumulator /* OUT */
+)
+{
    bson_t *pipeline = NULL;
    mongoc_cursor_t *cursor = NULL;
    bool rc;
@@ -2514,11 +2516,19 @@ accumulate_adoptable_count(
    bson_iter_t iter;
 
    pipeline = BCON_NEW ("pipeline",
-      "[",
-      "{", "$match", "{", BCON_UTF8("adoptable"), BCON_BOOL("true"), "}", "}",
-      "{", "$count", BCON_UTF8("adoptableCount"), "}",
-      "]"
-   );
+                        "[",
+                        "{",
+                        "$match",
+                        "{",
+                        BCON_UTF8 ("adoptable"),
+                        BCON_BOOL ("true"),
+                        "}",
+                        "}",
+                        "{",
+                        "$count",
+                        BCON_UTF8 ("adoptableCount"),
+                        "}",
+                        "]");
 
    cursor = mongoc_collection_aggregate (
       collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
@@ -2540,10 +2550,10 @@ accumulate_adoptable_count(
       value = bson_iter_value (&iter);
       switch (value->value_type) {
       case BSON_TYPE_INT32:
-         *count += value->value.v_int32;
+         *accumulator += value->value.v_int32;
          break;
       case BSON_TYPE_INT64:
-         *count += value->value.v_int64;
+         *accumulator += value->value.v_int64;
          break;
       default:
          MONGOC_ERROR ("%s", "'adoptableCount' must be an integer");
@@ -2585,15 +2595,15 @@ test_example_59 (mongoc_database_t *db)
    dogs_collection = mongoc_client_get_collection (client, "pets", "dogs");
    mongoc_collection_drop (dogs_collection, &error);
 
-   if (!insert_pet(cats_collection, true)) {
+   if (!insert_pet (cats_collection, true)) {
       goto cleanup;
    }
 
-   if (!insert_pet(dogs_collection, true)) {
+   if (!insert_pet (dogs_collection, true)) {
       goto cleanup;
    }
 
-   if (!insert_pet(dogs_collection, false)) {
+   if (!insert_pet (dogs_collection, false)) {
       goto cleanup;
    }
 
@@ -2606,10 +2616,10 @@ test_example_59 (mongoc_database_t *db)
       goto cleanup;
    }
 
-   accumulate_adoptable_count(cats_collection, &adoptable_pets_count);
-   accumulate_adoptable_count(dogs_collection, &adoptable_pets_count);
+   accumulate_adoptable_count (cats_collection, &adoptable_pets_count);
+   accumulate_adoptable_count (dogs_collection, &adoptable_pets_count);
 
-   printf("there are %lld adoptable pets\n", adoptable_pets_count);
+   printf ("there are %lld adoptable pets\n", adoptable_pets_count);
 
 cleanup:
    mongoc_collection_destroy (cats_collection);
@@ -2617,6 +2627,7 @@ cleanup:
    mongoc_client_session_destroy (cs);
 }
 
+/* clang-format off */
 
 typedef struct {
    bson_mutex_t lock;
