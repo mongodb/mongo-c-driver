@@ -3579,6 +3579,14 @@ mongoc_collection_find_and_modify_with_opts (
          &txn_number_iter,
          ++parts.assembled.session->server_session->txn_number);
    }
+
+   // Store the original error and reply if needed.
+   struct {
+      bson_t reply;
+      bson_error_t error;
+      bool set;
+   } original_error = {0};
+
 retry:
    bson_destroy (reply_ptr);
    ret = mongoc_cluster_run_command_monitored (
@@ -3610,8 +3618,32 @@ retry:
       if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
                                     WIRE_VERSION_RETRY_WRITES) {
          parts.assembled.server_stream = retry_server_stream;
+         {
+            // Store the original error and reply before retry.
+            BSON_ASSERT (!original_error.set); // Retry only happens once.
+            original_error.set = true;
+            bson_copy_to (reply_ptr, &original_error.reply);
+            if (error) {
+               original_error.error = *error;
+            }
+         }
          GOTO (retry);
       }
+   }
+
+   // If a retry attempt fails with an error labeled NoWritesPerformed,
+   // drivers MUST return the original error.
+   if (original_error.set &&
+       mongoc_error_has_label (reply_ptr, "NoWritesPerformed")) {
+      if (error) {
+         *error = original_error.error;
+      }
+      bson_destroy (reply_ptr);
+      bson_copy_to (&original_error.reply, reply_ptr);
+   }
+
+   if (original_error.set) {
+      bson_destroy (&original_error.reply);
    }
 
    if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") &&
