@@ -2494,8 +2494,11 @@ cleanup:
 }
 
 
+/*
+ * Increment 'count' by the amount of adoptable pets in the given collection.
+ */
 static bool
-get_adoptable_count(mongoc_collection_t *collection, long long *count /* OUT */) {
+accumulate_adoptable_count(mongoc_collection_t *collection, long long *count /* OUT */) {
    bson_t *pipeline = NULL;
    mongoc_cursor_t *cursor = NULL;
    bool rc;
@@ -2563,6 +2566,7 @@ test_example_59 (mongoc_database_t *db)
    long long adoptable_pets_count = 0;
    bool is_equal = false;
    bson_error_t error;
+   mongoc_session_opt_t *session_opts;
 
    client = test_framework_new_default_client ();
 
@@ -2585,14 +2589,17 @@ test_example_59 (mongoc_database_t *db)
       goto cleanup;
    }
 
-   cs = mongoc_client_start_session (client, NULL, &error);
+   session_opts = mongoc_session_opts_new ();
+   mongoc_session_opts_set_snapshot (session_opts, true);
+   cs = mongoc_client_start_session (client, session_opts, &error);
+   mongoc_session_opts_destroy (session_opts);
    if (!cs) {
       MONGOC_ERROR ("Could not start session: %s", error.message);
       goto cleanup;
    }
 
-   get_adoptable_count(cats_collection, &adoptable_pets_count);
-   get_adoptable_count(dogs_collection, &adoptable_pets_count);
+   accumulate_adoptable_count(cats_collection, &adoptable_pets_count);
+   accumulate_adoptable_count(dogs_collection, &adoptable_pets_count);
 
    printf("there are %lld adoptable pets\n", adoptable_pets_count);
 
