@@ -86,6 +86,6 @@ bool
 _mongoc_error_is_network (const bson_error_t *error);
 
 bool
-_mongoc_error_is_server (bson_error_t *error);
+_mongoc_error_is_server (const bson_error_t *error);
 
 BSON_END_DECLS
