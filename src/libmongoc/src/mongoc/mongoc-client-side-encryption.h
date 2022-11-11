@@ -26,6 +26,9 @@ struct _mongoc_client_t;
 struct _mongoc_client_pool_t;
 struct _mongoc_cursor_t;
 
+struct _mongoc_collection_t;
+struct _mongoc_database_t;
+
 #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM \
    "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
 #define MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC \
@@ -158,7 +161,7 @@ MONGOC_EXPORT (bool)
 mongoc_client_encryption_create_datakey (
    mongoc_client_encryption_t *client_encryption,
    const char *kms_provider,
-   mongoc_client_encryption_datakey_opts_t *opts,
+   const mongoc_client_encryption_datakey_opts_t *opts,
    bson_value_t *keyid,
    bson_error_t *error);
 
@@ -277,6 +280,17 @@ mongoc_client_encryption_datakey_opts_set_keymaterial (
 MONGOC_EXPORT (const char *)
 mongoc_client_encryption_get_crypt_shared_version (
    mongoc_client_encryption_t const *enc) BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT (struct _mongoc_collection_t *)
+mongoc_client_encryption_create_encrypted_collection (
+   mongoc_client_encryption_t *enc,
+   struct _mongoc_database_t *database,
+   const char *name,
+   const bson_t *in_options,
+   bson_t *opt_out_options,
+   const char *const kms_provider,
+   const mongoc_client_encryption_datakey_opts_t *dk_opts,
+   bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS
 

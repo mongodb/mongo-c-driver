@@ -9,7 +9,7 @@
 ####################################
 stepback: true
 command_type: system
-exec_timeout_secs: 2400
+exec_timeout_secs: 3600
 functions:
   fetch source:
   - command: git.get_project
@@ -3092,7 +3092,6 @@ tasks:
   - client-side-encryption
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
@@ -3118,7 +3117,6 @@ tasks:
   tags:
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3141,7 +3139,6 @@ tasks:
   tags:
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3165,7 +3162,6 @@ tasks:
   - client-side-encryption
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
@@ -3191,7 +3187,6 @@ tasks:
   tags:
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3214,7 +3209,6 @@ tasks:
   tags:
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3237,7 +3231,6 @@ tasks:
   tags:
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3260,7 +3253,6 @@ tasks:
   tags:
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3284,7 +3276,6 @@ tasks:
   - '6.0'
   - client-side-encryption
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
@@ -3310,7 +3301,6 @@ tasks:
   tags:
   - '6.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3333,7 +3323,6 @@ tasks:
   tags:
   - '6.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3357,7 +3346,6 @@ tasks:
   - '6.0'
   - client-side-encryption
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
@@ -3383,7 +3371,6 @@ tasks:
   tags:
   - '6.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3406,7 +3393,6 @@ tasks:
   tags:
   - '6.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3429,7 +3415,6 @@ tasks:
   tags:
   - '6.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3452,7 +3437,6 @@ tasks:
   tags:
   - '6.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3476,7 +3460,6 @@ tasks:
   - '5.0'
   - client-side-encryption
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
@@ -3502,7 +3485,6 @@ tasks:
   tags:
   - '5.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3525,7 +3507,6 @@ tasks:
   tags:
   - '5.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3548,7 +3529,6 @@ tasks:
   tags:
   - '5.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3571,7 +3551,6 @@ tasks:
   tags:
   - '5.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3594,7 +3573,6 @@ tasks:
   tags:
   - '5.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3617,7 +3595,6 @@ tasks:
   tags:
   - '5.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3641,7 +3618,6 @@ tasks:
   - '4.4'
   - client-side-encryption
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
@@ -3667,7 +3643,6 @@ tasks:
   tags:
   - '4.4'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3690,7 +3665,6 @@ tasks:
   tags:
   - '4.4'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3713,7 +3687,6 @@ tasks:
   tags:
   - '4.4'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3736,7 +3709,6 @@ tasks:
   tags:
   - '4.4'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3759,7 +3731,6 @@ tasks:
   tags:
   - '4.4'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3782,7 +3753,6 @@ tasks:
   tags:
   - '4.4'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3806,7 +3776,6 @@ tasks:
   - '4.2'
   - client-side-encryption
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
@@ -3832,7 +3801,6 @@ tasks:
   tags:
   - '4.2'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3855,7 +3823,6 @@ tasks:
   tags:
   - '4.2'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3878,7 +3845,6 @@ tasks:
   tags:
   - '4.2'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3901,7 +3867,6 @@ tasks:
   tags:
   - '4.2'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3924,7 +3889,6 @@ tasks:
   tags:
   - '4.2'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3947,7 +3911,6 @@ tasks:
   tags:
   - '4.2'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -3970,7 +3933,6 @@ tasks:
   tags:
   - '4.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -3993,7 +3955,6 @@ tasks:
   tags:
   - '4.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -4016,7 +3977,6 @@ tasks:
   tags:
   - '4.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -4039,7 +3999,6 @@ tasks:
   tags:
   - '4.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -4062,7 +4021,6 @@ tasks:
   tags:
   - '4.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -4085,7 +4043,6 @@ tasks:
   tags:
   - '4.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -4108,7 +4065,6 @@ tasks:
   tags:
   - '3.6'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -4131,7 +4087,6 @@ tasks:
   tags:
   - '3.6'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -4154,7 +4109,6 @@ tasks:
   tags:
   - '3.6'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -4177,7 +4131,6 @@ tasks:
   tags:
   - '3.6'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -4200,7 +4153,6 @@ tasks:
   tags:
   - '3.6'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -4223,7 +4175,6 @@ tasks:
   tags:
   - '3.6'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang
   commands:
@@ -5170,7 +5121,6 @@ tasks:
   tags:
   - latest
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5190,7 +5140,6 @@ tasks:
   tags:
   - latest
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5210,7 +5159,6 @@ tasks:
   tags:
   - latest
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5230,7 +5178,6 @@ tasks:
   tags:
   - latest
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5250,7 +5197,6 @@ tasks:
   tags:
   - latest
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5270,7 +5216,6 @@ tasks:
   tags:
   - latest
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5290,7 +5235,6 @@ tasks:
   tags:
   - '6.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5310,7 +5254,6 @@ tasks:
   tags:
   - '6.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5330,7 +5273,6 @@ tasks:
   tags:
   - '6.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5350,7 +5292,6 @@ tasks:
   tags:
   - '6.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5370,7 +5311,6 @@ tasks:
   tags:
   - '6.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5390,7 +5330,6 @@ tasks:
   tags:
   - '6.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5410,7 +5349,6 @@ tasks:
   tags:
   - '5.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5430,7 +5368,6 @@ tasks:
   tags:
   - '5.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5450,7 +5387,6 @@ tasks:
   tags:
   - '5.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5470,7 +5406,6 @@ tasks:
   tags:
   - '5.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5490,7 +5425,6 @@ tasks:
   tags:
   - '5.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5510,7 +5444,6 @@ tasks:
   tags:
   - '5.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5530,7 +5463,6 @@ tasks:
   tags:
   - '4.4'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5550,7 +5482,6 @@ tasks:
   tags:
   - '4.4'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5570,7 +5501,6 @@ tasks:
   tags:
   - '4.4'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5590,7 +5520,6 @@ tasks:
   tags:
   - '4.4'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5610,7 +5539,6 @@ tasks:
   tags:
   - '4.4'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5630,7 +5558,6 @@ tasks:
   tags:
   - '4.4'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5650,7 +5577,6 @@ tasks:
   tags:
   - '4.2'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5670,7 +5596,6 @@ tasks:
   tags:
   - '4.2'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5690,7 +5615,6 @@ tasks:
   tags:
   - '4.2'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5710,7 +5634,6 @@ tasks:
   tags:
   - '4.2'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5730,7 +5653,6 @@ tasks:
   tags:
   - '4.2'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5750,7 +5672,6 @@ tasks:
   tags:
   - '4.2'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5770,7 +5691,6 @@ tasks:
   tags:
   - '4.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5790,7 +5710,6 @@ tasks:
   tags:
   - '4.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5810,7 +5729,6 @@ tasks:
   tags:
   - '4.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5830,7 +5748,6 @@ tasks:
   tags:
   - '4.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5850,7 +5767,6 @@ tasks:
   tags:
   - '4.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5870,7 +5786,6 @@ tasks:
   tags:
   - '4.0'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5890,7 +5805,6 @@ tasks:
   tags:
   - '3.6'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5910,7 +5824,6 @@ tasks:
   tags:
   - '3.6'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5930,7 +5843,6 @@ tasks:
   tags:
   - '3.6'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5950,7 +5862,6 @@ tasks:
   tags:
   - '3.6'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -5970,7 +5881,6 @@ tasks:
   tags:
   - '3.6'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -5990,7 +5900,6 @@ tasks:
   tags:
   - '3.6'
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-nossl
   - func: bootstrap mongo-orchestration
@@ -16940,7 +16849,6 @@ tasks:
 - name: test-coverage-latest-server-dns
   tags:
   - test-coverage
-  exec_timeout_secs: 3600
   commands:
   - func: debug-compile-coverage-notest-nosasl-openssl
   - func: bootstrap mongo-orchestration
@@ -24012,7 +23920,6 @@ tasks:
   tags:
   - '5.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -24039,7 +23946,6 @@ tasks:
   tags:
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -24066,7 +23972,6 @@ tasks:
   tags:
   - '5.0'
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
@@ -24093,7 +23998,6 @@ tasks:
   tags:
   - latest
   - test-asan
-  exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:

@@ -685,6 +685,9 @@ _mock_rs_receives_msg (mock_rs_t *rs, uint32_t flags, ...)
 
    request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
 
+   ASSERT_WITH_MSG (request,
+                    "expected an OP_MSG request but did not receive one!");
+
    va_start (args, flags);
    r = request_matches_msgv (request, flags, &args);
    va_end (args);

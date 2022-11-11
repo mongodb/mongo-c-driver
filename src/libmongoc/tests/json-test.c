@@ -1974,15 +1974,15 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
    int i;
    bool skip = false;
    const char *unsupported_tests[] = {
-      "/retryable_reads/gridfs-downloadByName",
-      "/retryable_reads/gridfs-downloadByName-serverErrors",
-      "/retryable_reads/listCollectionObjects",
-      "/retryable_reads/listCollectionObjects-serverErrors",
-      "/retryable_reads/listDatabaseObjects",
-      "/retryable_reads/listDatabaseObjects-serverErrors",
-      "/retryable_reads/listIndexNames",
-      "/retryable_reads/listIndexNames-serverErrors",
-      "/retryable_reads/mapReduce"};
+      "/retryable_reads/legacy/gridfs-downloadByName",
+      "/retryable_reads/legacy/gridfs-downloadByName-serverErrors",
+      "/retryable_reads/legacy/listCollectionObjects",
+      "/retryable_reads/legacy/listCollectionObjects-serverErrors",
+      "/retryable_reads/legacy/listDatabaseObjects",
+      "/retryable_reads/legacy/listDatabaseObjects-serverErrors",
+      "/retryable_reads/legacy/listIndexNames",
+      "/retryable_reads/legacy/listIndexNames-serverErrors",
+      "/retryable_reads/legacy/mapReduce"};
 
    for (i = 0; i < sizeof (unsupported_tests) / sizeof (unsupported_tests[0]);
         i++) {

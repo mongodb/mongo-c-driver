@@ -667,12 +667,18 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
       }
    } else {
       server_stream =
-         mongoc_cluster_stream_for_reads (&cursor->client->cluster,
-                                          cursor->read_prefs,
-                                          cursor->client_session,
-                                          &reply,
-                                          cursor->is_aggr_with_write_stage,
-                                          &cursor->error);
+         cursor->is_aggr_with_write_stage
+            ? mongoc_cluster_stream_for_aggr_with_write (
+                 &cursor->client->cluster,
+                 cursor->read_prefs,
+                 cursor->client_session,
+                 &reply,
+                 &cursor->error)
+            : mongoc_cluster_stream_for_reads (&cursor->client->cluster,
+                                               cursor->read_prefs,
+                                               cursor->client_session,
+                                               &reply,
+                                               &cursor->error);
 
       if (server_stream) {
          /* Remember the selected server_id and whether primary read mode was
@@ -1095,13 +1101,11 @@ retry:
       BSON_ASSERT (!cursor->is_aggr_with_write_stage &&
                    "Cannot attempt a retry on an aggregate operation that "
                    "contains write stages");
-      server_stream =
-         mongoc_cluster_stream_for_reads (&cursor->client->cluster,
-                                          cursor->read_prefs,
-                                          cursor->client_session,
-                                          reply,
-                                          /* Not aggregate-with-write */ false,
-                                          &cursor->error);
+      server_stream = mongoc_cluster_stream_for_reads (&cursor->client->cluster,
+                                                       cursor->read_prefs,
+                                                       cursor->client_session,
+                                                       reply,
+                                                       &cursor->error);
 
       if (server_stream &&
           server_stream->sd->max_wire_version >= WIRE_VERSION_RETRY_READS) {

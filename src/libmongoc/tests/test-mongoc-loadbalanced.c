@@ -564,6 +564,7 @@ test_pre_handshake_error_does_not_clear_pool (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
    pool = mongoc_client_pool_new (uri);
    client_1 = mongoc_client_pool_pop (pool);
    client_2 = mongoc_client_pool_pop (pool);

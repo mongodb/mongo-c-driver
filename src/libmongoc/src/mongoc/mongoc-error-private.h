@@ -65,6 +65,9 @@ _mongoc_error_copy_labels_and_upsert (const bson_t *src,
                                       char *label);
 
 void
+_mongoc_write_error_append_retryable_label (bson_t *reply);
+
+void
 _mongoc_write_error_handle_labels (bool cmd_ret,
                                    const bson_error_t *cmd_err,
                                    bson_t *reply,
@@ -87,5 +90,8 @@ _mongoc_error_is_network (const bson_error_t *error);
 
 bool
 _mongoc_error_is_server (const bson_error_t *error);
+
+bool
+_mongoc_error_is_auth (const bson_error_t *error);
 
 BSON_END_DECLS

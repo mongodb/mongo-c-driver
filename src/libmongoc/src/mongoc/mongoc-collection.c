@@ -814,13 +814,8 @@ mongoc_collection_estimated_document_count (
 
    BSON_ASSERT_PARAM (coll);
 
-   server_stream =
-      mongoc_cluster_stream_for_reads (&coll->client->cluster,
-                                       read_prefs,
-                                       NULL,
-                                       reply,
-                                       /* Not aggregate-with-write */ false,
-                                       error);
+   server_stream = mongoc_cluster_stream_for_reads (
+      &coll->client->cluster, read_prefs, NULL, reply, error);
 
    if (opts && bson_has_field (opts, "sessionId")) {
       bson_set_error (error,
@@ -1151,52 +1146,66 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
                                   const bson_t *opts,
                                   bson_error_t *error)
 {
-   bson_iter_t iter;
+   // The encryptedFields for the collection.
    bson_t encryptedFields = BSON_INITIALIZER;
+   bson_t opts_without_encryptedFields = BSON_INITIALIZER;
+   bool okay = false;
 
-   if (opts && bson_iter_init_find (&iter, opts, "encryptedFields")) {
-      if (!_mongoc_iter_document_as_bson (&iter, &encryptedFields, error)) {
-         return false;
+   // Try to find the encryptedFields from the collection options or from the
+   // encryptedFieldsMap.
+   if (!_mongoc_get_collection_encryptedFields (
+          collection->client,
+          collection->db,
+          mongoc_collection_get_name (collection),
+          opts,
+          &encryptedFields,
+          error)) {
+      goto done;
+   }
+
+   if (bson_empty (&encryptedFields)) {
+      // We didn't find the encryptedFields (yet)
+      if (collection->client->topology->encrypted_fields_map != NULL) {
+         // but we can ask the server for them:
+         if (!_mongoc_get_encryptedFields_from_server (
+                collection->client,
+                collection->db,
+                mongoc_collection_get_name (collection),
+                &encryptedFields,
+                error)) {
+            goto done;
+         }
       }
    }
 
    if (bson_empty (&encryptedFields)) {
-      if (!_mongoc_get_encryptedFields_from_map (
-             collection->client,
-             collection->db,
-             mongoc_collection_get_name (collection),
-             &encryptedFields,
-             error)) {
-         return false;
-      }
+      // There are no encryptedFields with this collection, so we can just do a
+      // regular drop
+      okay = drop_with_opts (collection, opts, error);
+      goto done;
    }
 
-   if (bson_empty (&encryptedFields) &&
-       collection->client->topology->encrypted_fields_map != NULL) {
-      if (!_mongoc_get_encryptedFields_from_server (
-             collection->client,
-             collection->db,
-             mongoc_collection_get_name (collection),
-             &encryptedFields,
-             error)) {
-         return false;
-      }
+   // We've found the encryptedFields, so we need to do something different
+   // to drop this collection:
+   bsonBuildAppend (
+      opts_without_encryptedFields,
+      if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+   if (bsonBuildError) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Error while updating drop options: %s",
+                      bsonBuildError);
+      goto done;
    }
 
-   if (!bson_empty (&encryptedFields)) {
-      bsonBuildDecl (
-         opts_without_encryptedFields,
-         if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+   okay = drop_with_opts_with_encryptedFields (
+      collection, &opts_without_encryptedFields, &encryptedFields, error);
 
-      bool ret = drop_with_opts_with_encryptedFields (
-         collection, &opts_without_encryptedFields, &encryptedFields, error);
-
-      bson_destroy (&opts_without_encryptedFields);
-      bson_destroy (&encryptedFields);
-      return ret;
-   }
-
-   return drop_with_opts (collection, opts, error);
+done:
+   bson_destroy (&opts_without_encryptedFields);
+   bson_destroy (&encryptedFields);
+   return okay;
 }
 
 
@@ -3565,6 +3574,14 @@ mongoc_collection_find_and_modify_with_opts (
          &txn_number_iter,
          ++parts.assembled.session->server_session->txn_number);
    }
+
+   // Store the original error and reply if needed.
+   struct {
+      bson_t reply;
+      bson_error_t error;
+      bool set;
+   } original_error = {0};
+
 retry:
    bson_destroy (reply_ptr);
    ret = mongoc_cluster_run_command_monitored (
@@ -3596,8 +3613,32 @@ retry:
       if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
                                     WIRE_VERSION_RETRY_WRITES) {
          parts.assembled.server_stream = retry_server_stream;
+         {
+            // Store the original error and reply before retry.
+            BSON_ASSERT (!original_error.set); // Retry only happens once.
+            original_error.set = true;
+            bson_copy_to (reply_ptr, &original_error.reply);
+            if (error) {
+               original_error.error = *error;
+            }
+         }
          GOTO (retry);
       }
+   }
+
+   // If a retry attempt fails with an error labeled NoWritesPerformed,
+   // drivers MUST return the original error.
+   if (original_error.set &&
+       mongoc_error_has_label (reply_ptr, "NoWritesPerformed")) {
+      if (error) {
+         *error = original_error.error;
+      }
+      bson_destroy (reply_ptr);
+      bson_copy_to (&original_error.reply, reply_ptr);
+   }
+
+   if (original_error.set) {
+      bson_destroy (&original_error.reply);
    }
 
    if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") &&

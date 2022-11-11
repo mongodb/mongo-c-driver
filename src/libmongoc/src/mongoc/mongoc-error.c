@@ -96,7 +96,7 @@ _mongoc_write_error_is_retryable (bson_error_t *error)
    }
 }
 
-static void
+void
 _mongoc_write_error_append_retryable_label (bson_t *reply)
 {
    bson_t reply_local = BSON_INITIALIZER;
@@ -326,4 +326,15 @@ _mongoc_error_is_network (const bson_error_t *error)
    }
 
    return false;
+}
+
+bool
+_mongoc_error_is_auth (const bson_error_t *error)
+{
+   if (!error) {
+      return false;
+   }
+
+   return error->domain == MONGOC_ERROR_CLIENT &&
+          error->code == MONGOC_ERROR_CLIENT_AUTHENTICATE;
 }

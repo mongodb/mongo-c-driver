@@ -568,6 +568,237 @@ test_unsupported_storage_engine_error (void)
    mongoc_client_destroy (client);
    mock_rs_destroy (rs);
 }
+
+/* The following 3 tests check that the original reply and error is returned
+ * after encountering an error with a RetryableWriteError and a
+ * NoWritesPerformed label. The tests use the same callback function.
+ *
+ * Each test checks a different code path for retryable writes:
+ * mongoc_collection_insert_one, mongoc_client_command_simple, and
+ * mongoc_collection_find_and_modify_with_opts
+ *
+ * These tests require a >=6.0 replica set.
+ */
+typedef struct {
+   mongoc_client_t *client;
+   bool configure_second_fail;
+   char *failCommand;
+} prose_test_3_apm_ctx_t;
+
+static void
+prose_test_3_on_command_success (const mongoc_apm_command_succeeded_t *event)
+{
+   bson_iter_t iter;
+   bson_error_t error;
+   const bson_t *reply = mongoc_apm_command_succeeded_get_reply (event);
+   prose_test_3_apm_ctx_t *ctx =
+      mongoc_apm_command_succeeded_get_context (event);
+
+   // wait for a writeConcernError and then set a second failpoint
+   if (bson_iter_init_find (&iter, reply, "writeConcernError") &&
+       ctx->configure_second_fail) {
+      ctx->configure_second_fail = false;
+      ASSERT_OR_PRINT (
+         mongoc_client_command_simple (
+            ctx->client,
+            "admin",
+            tmp_bson (
+               "{'configureFailPoint': 'failCommand', 'mode': {'times': 1},"
+               " 'data': { 'failCommands': ['%s'], 'errorCode': "
+               "10107, "
+               "'errorLabels': ['RetryableWriteError', 'NoWritesPerformed']}}",
+               ctx->failCommand),
+            NULL,
+            NULL,
+            &error),
+         error);
+   }
+}
+
+static uint32_t
+set_up_original_error_test (mongoc_apm_callbacks_t *callbacks,
+                            prose_test_3_apm_ctx_t *apm_ctx,
+                            char *failCommand,
+                            mongoc_client_t *client)
+{
+   uint32_t server_id;
+   bson_error_t error;
+   // clean up in case a previous test aborted
+   server_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
+   ASSERT_OR_PRINT (server_id, error);
+   deactivate_fail_points (client, server_id);
+
+   // set up callbacks for command monitoring
+   apm_ctx->client = client;
+   apm_ctx->failCommand = failCommand;
+   apm_ctx->configure_second_fail = true;
+   mongoc_apm_set_command_succeeded_cb (callbacks,
+                                        prose_test_3_on_command_success);
+   mongoc_client_set_apm_callbacks (client, callbacks, apm_ctx);
+
+   // configure the first fail point
+   bool ret = mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': {'times': 1}, "
+                "'data': {'failCommands': ['%s'], 'writeConcernError': {"
+                "'code': 91, 'errorLabels': ['RetryableWriteError']}}}",
+                failCommand),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   return server_id;
+}
+
+static void
+cleanup_original_error_test (mongoc_client_t *client,
+                             uint32_t server_id,
+                             bson_t *reply,
+                             mongoc_collection_t *coll,
+                             mongoc_apm_callbacks_t *callbacks)
+{
+   deactivate_fail_points (client, server_id); // disable the fail point
+   bson_destroy (reply);
+   mongoc_collection_destroy (coll);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_client_destroy (client);
+}
+
+static void
+retryable_writes_prose_test_3 (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_t reply;
+   bson_error_t error = {0};
+   mongoc_apm_callbacks_t *callbacks = {0};
+   prose_test_3_apm_ctx_t apm_ctx = {0};
+
+   BSON_UNUSED (ctx);
+
+   // setting up the client
+   client = test_framework_new_default_client ();
+   coll = get_test_collection (client, "retryable_writes");
+   callbacks = mongoc_apm_callbacks_new ();
+
+   // setup test
+   const uint32_t server_id =
+      set_up_original_error_test (callbacks, &apm_ctx, "insert", client);
+
+   // attempt an insertOne operation
+   ASSERT (!mongoc_collection_insert_one (
+      coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error));
+
+   // writeConcernErrors are returned in the reply and not as an error
+   ASSERT_ERROR_CONTAINS (error, 0, 0, "");
+
+   // the reply holds the original error information
+   ASSERT_MATCH (&reply,
+                 "{'insertedCount': 1, 'writeConcernErrors': [{ 'code': 91, "
+                 "'errorLabels': ['RetryableWriteError']}]}");
+
+   cleanup_original_error_test (client, server_id, &reply, coll, callbacks);
+}
+
+
+static void
+retryable_writes_original_error_find_modify (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_t reply;
+   bson_error_t error = {0};
+   mongoc_apm_callbacks_t *callbacks = {0};
+   prose_test_3_apm_ctx_t apm_ctx = {0};
+   mongoc_find_and_modify_opts_t *opts;
+
+   BSON_UNUSED (ctx);
+
+   // setting up the client
+   client = test_framework_new_default_client ();
+   coll = get_test_collection (client, "retryable_writes");
+   callbacks = mongoc_apm_callbacks_new ();
+
+   // setup the test
+   const uint32_t server_id =
+      set_up_original_error_test (callbacks, &apm_ctx, "findAndModify", client);
+
+   // setup for findAndModify
+   bson_t query = BSON_INITIALIZER;
+   BSON_APPEND_UTF8 (&query, "x", "1");
+   bson_t *update = BCON_NEW ("$inc", "{", "x", BCON_INT32 (1), "}");
+   opts = mongoc_find_and_modify_opts_new ();
+   mongoc_find_and_modify_opts_set_update (opts, update);
+
+   // attempt a findAndModify operation
+   ASSERT (!mongoc_collection_find_and_modify_with_opts (
+      coll, &query, opts, &reply, &error));
+
+   // assert error contains a writeConcernError with original error code
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 91, "");
+
+   // the reply holds the original error information
+   ASSERT_MATCH (
+      &reply,
+      "{'lastErrorObject' : { 'n': 0, 'updatedExisting' : false }, 'value' : "
+      "null, 'writeConcernError' : { 'code': 91, 'errorLabels' : [ "
+      "'RetryableWriteError' ]}, 'ok' : 1.0}");
+
+   cleanup_original_error_test (client, server_id, &reply, coll, callbacks);
+   mongoc_find_and_modify_opts_destroy (opts);
+   bson_destroy (&query);
+   bson_destroy (update);
+}
+
+static void
+retryable_writes_original_error_general_command (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_t reply;
+   bson_error_t error = {0};
+   mongoc_apm_callbacks_t *callbacks = {0};
+   prose_test_3_apm_ctx_t apm_ctx = {0};
+
+   BSON_UNUSED (ctx);
+
+   // setting up the client
+   client = test_framework_new_default_client ();
+   coll = get_test_collection (client, "retryable_writes");
+   callbacks = mongoc_apm_callbacks_new ();
+
+   // setup test
+   const uint32_t server_id =
+      set_up_original_error_test (callbacks, &apm_ctx, "insert", client);
+
+   bson_t *cmd = BCON_NEW ("insert",
+                           mongoc_collection_get_name (coll),
+                           "documents",
+                           "[",
+                           "{",
+                           "}",
+                           "]");
+
+   // attempt an insert operation
+   ASSERT (!mongoc_client_write_command_with_opts (
+      client, "test", cmd, NULL, &reply, &error));
+
+   // assert error contains a writeConcernError with original error code
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 91, "");
+
+   // the reply holds the original error information
+   ASSERT_MATCH (&reply,
+                 "{'writeConcernError' : { 'code' : { '$numberInt' : '91' }, "
+                 "'errorLabels' : [ 'RetryableWriteError' ] }, 'ok': { "
+                 "'$numberDouble' : '1.0' }}");
+
+   cleanup_original_error_test (client, server_id, &reply, coll, callbacks);
+   bson_destroy (cmd);
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -580,7 +811,7 @@ test_all_spec_tests (TestSuite *suite)
 {
    install_json_test_suite_with_check (suite,
                                        JSON_DIR,
-                                       "retryable_writes",
+                                       "retryable_writes/legacy",
                                        test_retryable_writes_cb,
                                        test_framework_skip_if_no_crypto,
                                        test_framework_skip_if_slow);
@@ -613,7 +844,8 @@ _tracks_new_server_cb (const mongoc_apm_command_started_t *event)
 /* Tests that when a command within a bulk write succeeds after a retryable
  * error, and selects a new server, it continues to use that server in
  * subsequent commands.
- * This test requires running against a replica set with at least one secondary.
+ * This test requires running against a replica set with at least one
+ * secondary.
  */
 static void
 test_bulk_retry_tracks_new_server (void *unused)
@@ -638,7 +870,8 @@ test_bulk_retry_tracks_new_server (void *unused)
    collection = get_test_collection (client, "tracks_new_server");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
-   /* The bulk write contains two operations, an insert, followed by an update.
+   /* The bulk write contains two operations, an insert, followed by an
+    * update.
     */
    ret = mongoc_bulk_operation_insert_with_opts (
       bulk, tmp_bson ("{'x': 1}"), NULL /* opts */, &error);
@@ -648,8 +881,8 @@ test_bulk_retry_tracks_new_server (void *unused)
                                      tmp_bson ("{'$inc': {'x': 1}}"),
                                      false /* upsert */);
 
-   /* Explicitly tell the bulk write to use a secondary. That will result in a
-    * retryable error, causing the first command to be sent twice. */
+   /* Explicitly tell the bulk write to use a secondary. That will result in
+    * a retryable error, causing the first command to be sent twice. */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    sd = mongoc_client_select_server (
       client, false /* for_writes */, read_prefs, &error);
@@ -658,10 +891,10 @@ test_bulk_retry_tracks_new_server (void *unused)
    ret = mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
 
-   /* The first insert fails with a retryable write error since it is sent to a
-    * secondary. The retry selects the primary and succeeds. The second command
-    * should use the newly selected server, so the update succeeds on the first
-    * try. */
+   /* The first insert fails with a retryable write error since it is sent to
+    * a secondary. The retry selects the primary and succeeds. The second
+    * command should use the newly selected server, so the update succeeds on
+    * the first try. */
    ASSERT_CMPINT (counters.num_inserts, ==, 2);
    ASSERT_CMPINT (counters.num_updates, ==, 1);
    ASSERT_CMPINT (mongoc_bulk_operation_get_hint (bulk),
@@ -728,5 +961,29 @@ test_retryable_writes_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/retryable_writes/prose_test_3",
+                      retryable_writes_prose_test_3,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset,
+                      test_framework_skip_if_max_wire_version_less_than_17,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/retryable_writes/prose_test_3/find_modify",
+                      retryable_writes_original_error_find_modify,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset,
+                      test_framework_skip_if_max_wire_version_less_than_17,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/retryable_writes/prose_test_3/general_command",
+                      retryable_writes_original_error_general_command,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset,
+                      test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_no_crypto);
 }

@@ -707,6 +707,10 @@ _allow_txn_number (const mongoc_cmd_parts_t *parts,
       return false;
    }
 
+   if (server_stream->retry_attempted) {
+      return false;
+   }
+
    if (server_stream->sd->max_wire_version < WIRE_VERSION_RETRY_WRITES) {
       return false;
    }
@@ -737,6 +741,10 @@ _is_retryable_write (const mongoc_cmd_parts_t *parts,
    }
 
    if (parts->allow_txn_number != MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES) {
+      return false;
+   }
+
+   if (server_stream->retry_attempted) {
       return false;
    }
 
@@ -774,6 +782,10 @@ _is_retryable_read (const mongoc_cmd_parts_t *parts,
    /* Commands that go through read_write_command helpers are also write
     * commands. Prohibit from read retry. */
    if (parts->is_write_command) {
+      return false;
+   }
+
+   if (server_stream->retry_attempted) {
       return false;
    }
 
