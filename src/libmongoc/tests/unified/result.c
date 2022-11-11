@@ -581,8 +581,8 @@ result_check (result_t *result,
          bson_t doc_to_match;
          bson_init (&doc_to_match);
 
-         if (bson_iter_init_find (&iter, result->reply, "serverResponse")) {
-            bson_lookup_doc (result->reply, "serverResponse", &doc_to_match);
+         if (bson_iter_init_find (&iter, result->reply, "errorReplies")) {
+            bson_lookup_doc (result->reply, "errorReplies.0", &doc_to_match);
          } else {
             bson_copy_to (result->reply, &doc_to_match);
          }

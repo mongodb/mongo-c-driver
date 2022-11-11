@@ -596,7 +596,7 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.8", "1.12"};
+   const char *supported_version_strs[] = {"1.8", "1.12" /* 1.12 is partially supported to run tests with `errorResponse` */};
    int i;
 
    for (i = 0; i < sizeof (supported_version_strs) /

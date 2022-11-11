@@ -4933,6 +4933,67 @@ test_bulk_let_multi (void)
    mock_server_destroy (mock_server);
 }
 
+// Test a bulk write operation that receives two error replies from two
+// commands.
+static void
+test_bulk_write_multiple_errors (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_new_default_client ();
+   BSON_ASSERT (client);
+
+   collection = get_test_collection (client, "test_bulk_write_multiple_errors");
+   BSON_ASSERT (collection);
+
+   // Use ordered:false so the bulk operation continues to send commands after
+   // the first error.
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
+   // Insert three documents. This is sent as one "insert" command to the
+   // server.
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 0}"));
+   mongoc_bulk_operation_insert (
+      bulk, tmp_bson ("{'_id': 0}")); // Error: duplicate key.
+   mongoc_bulk_operation_insert (
+      bulk, tmp_bson ("{'_id': 1}")); // Error: duplicate key.
+   // Delete one document. This is sent as a "delete" command to the server.
+   mongoc_bulk_operation_delete_one (bulk, tmp_bson ("{'_id': 1}"));
+   // Insert another duplicate key. This is sent in a second "insert"
+   // command to the server.
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 0}"));
+
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+   BSON_ASSERT (!r);
+
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 2,"
+                 " 'nMatched':  0,"
+                 " 'nModified': 0,"
+                 " 'nRemoved':  1,"
+                 " 'nUpserted': 0,"
+                 " 'errorReplies': [{'n': 2, 'writeErrors': [{ 'index' : 1, "
+                 "'code': {'$exists': true}}]}, "
+                 "{'n' : 1}, {'n' : 0, 'writeErrors': [{ 'index' : 0, 'code': "
+                 "{'$exists': true}}]}],"
+                 " 'writeErrors': [{'index': 1}, {'index': 4}]}");
+
+   assert_error_count (2, &reply);
+   ASSERT_COUNT (1, collection);
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 
 void
 test_bulk_install (TestSuite *suite)
@@ -5230,4 +5291,6 @@ test_bulk_install (TestSuite *suite)
       suite, "/BulkOperation/opts/let", test_bulk_let);
    TestSuite_AddMockServerTest (
       suite, "/BulkOperation/opts/let/multi", test_bulk_let_multi);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/multiple_errors", test_bulk_write_multiple_errors);
 }
