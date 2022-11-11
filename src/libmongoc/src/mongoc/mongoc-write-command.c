@@ -1326,8 +1326,8 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
       result->n_writeConcernErrors++;
    }
 
-   /* If have server error need to append the raw response to the error_replies
-    * array. */
+   /* If a server error ocurred, then append the raw response to the
+    * error_replies array. */
    if (result->failed || result->n_writeConcernErrors ||
        _mongoc_error_is_server (&result->error)) {
       char str[16];
