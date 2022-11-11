@@ -1313,7 +1313,7 @@ operation_create_index (test_t *test,
    bson_parser_t *bp = NULL;
    char *name = NULL;
    bson_t *keys = NULL;
-   bool *unique = false;
+   bool *unique = NULL;
    bson_t *create_indexes = NULL;
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
@@ -1338,19 +1338,31 @@ operation_create_index (test_t *test,
    }
 
    /* libmongoc has no create index helper. Use runCommand. */
-   create_indexes = BCON_NEW ("createIndexes",
-                              mongoc_collection_get_name (coll),
-                              "indexes",
-                              "[",
-                              "{",
-                              "name",
-                              name,
-                              "unique",
-                              BCON_BOOL (unique),
-                              "key",
-                              BCON_DOCUMENT (keys),
-                              "}",
-                              "]");
+   /* tests will fail if unique field is included if unique is not set */
+   create_indexes = unique ? BCON_NEW ("createIndexes",
+                                       mongoc_collection_get_name (coll),
+                                       "indexes",
+                                       "[",
+                                       "{",
+                                       "name",
+                                       name,
+                                       "unique",
+                                       BCON_BOOL (unique),
+                                       "key",
+                                       BCON_DOCUMENT (keys),
+                                       "}",
+                                       "]")
+                           : BCON_NEW ("createIndexes",
+                                       mongoc_collection_get_name (coll),
+                                       "indexes",
+                                       "[",
+                                       "{",
+                                       "name",
+                                       name,
+                                       "key",
+                                       BCON_DOCUMENT (keys),
+                                       "}",
+                                       "]");
    if (op->session) {
       if (!mongoc_client_session_append (op->session, opts, error)) {
          goto done;
