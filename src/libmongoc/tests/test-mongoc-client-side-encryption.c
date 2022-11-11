@@ -5557,26 +5557,46 @@ test_bypass_mongocryptd_shared_library (void *unused)
    mongoc_client_t *client_encrypted;
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
    bson_t *kms_providers;
+   mongoc_database_t *db;
+   mongoc_socket_t *socket;
    bson_error_t error;
-   mongoc_uri_t *uri;
+   struct sockaddr_in server_addr = {0};
 
-   // Start a new thread
    // create a TcpListener on 127.0.0.1 endpoint
+   socket = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
+   BSON_ASSERT (socket);
+
+   server_addr.sin_family = AF_INET;
+   server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+   server_addr.sin_port = htons (0);
+   mongoc_socklen_t addr_len = (mongoc_socklen_t) sizeof server_addr;
+
+   int r =
+      mongoc_socket_bind (socket, (struct sockaddr *) &server_addr, addr_len);
+   BSON_ASSERT (r == 0);
+
+   r = mongoc_socket_getsockname (
+      socket, (struct sockaddr *) &server_addr, &addr_len);
+   BSON_ASSERT (r == 0);
+   int port = ntohs (server_addr.sin_port);
 
    // configure mongoclient with auto encryption
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
-   kms_providers = _make_kms_providers (true /* aws */, true /* local */);
+   kms_providers = BCON_NEW (
+      "local", "{", "key", BCON_BIN (0, (uint8_t *) LOCAL_MASTERKEY, 96), "}");
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
+
    mongoc_auto_encryption_opts_set_keyvault_namespace (
       auto_encryption_opts, "keyvault", "datakeys");
 
    // configure extra options
-   uri = "";
-   const bson_t *extra =
-      tmp_bson ("{'mongocryptdURI': %s, 'cryptSharedLibPath': %s}",
-                uri,
+   bson_t *extra =
+      tmp_bson ("{'mongocryptdURI': 'mongodb://127.0.0.1:%d', "
+                "'cryptSharedLibPath': '%s'}",
+                port,
                 test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH"));
+
    mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra);
 
    client_encrypted = test_framework_new_default_client ();
@@ -5584,12 +5604,25 @@ test_bypass_mongocryptd_shared_library (void *unused)
       client_encrypted, auto_encryption_opts, &error);
    ASSERT_OR_PRINT (ret, error);
 
+   // listen on socket
+   r = mongoc_socket_listen (socket, 10);
+   BSON_ASSERT (r == 0);
+
    // insert a document
+   db = mongoc_client_get_database (client_encrypted, "db");
+   ret =
+      mongoc_collection_insert_one (mongoc_database_get_collection (db, "coll"),
+                                    tmp_bson ("{'unencrypted': 'test'}"),
+                                    NULL,
+                                    NULL,
+                                    &error);
 
-   // expect signal from listener thread.
+   // expect no signal from listener thread and therefore insert errors.
+   ASSERT (!ret);
 
-   mongoc_uri_destroy (uri);
+   bson_destroy (extra);
    bson_destroy (kms_providers);
+   mongoc_database_destroy (db);
    mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
    mongoc_client_destroy (client_encrypted);
 }
