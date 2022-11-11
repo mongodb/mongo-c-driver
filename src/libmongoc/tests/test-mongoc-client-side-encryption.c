@@ -5550,6 +5550,50 @@ test_create_encrypted_collection (void *unused)
    mongoc_client_destroy (client);
 }
 
+static void
+test_bypass_mongocryptd_shared_library (void *unused)
+{
+   BSON_UNUSED (unused);
+   mongoc_client_t *client_encrypted;
+   mongoc_auto_encryption_opts_t *auto_encryption_opts;
+   bson_t *kms_providers;
+   bson_error_t error;
+   mongoc_uri_t *uri;
+
+   // Start a new thread
+   // create a TcpListener on 127.0.0.1 endpoint
+
+   // configure mongoclient with auto encryption
+   auto_encryption_opts = mongoc_auto_encryption_opts_new ();
+   kms_providers = _make_kms_providers (true /* aws */, true /* local */);
+   mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
+                                                  kms_providers);
+   mongoc_auto_encryption_opts_set_keyvault_namespace (
+      auto_encryption_opts, "keyvault", "datakeys");
+
+   // configure extra options
+   uri = "";
+   const bson_t *extra =
+      tmp_bson ("{'mongocryptdURI': %s, 'cryptSharedLibPath': %s}",
+                uri,
+                test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH"));
+   mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra);
+
+   client_encrypted = test_framework_new_default_client ();
+   bool ret = mongoc_client_enable_auto_encryption (
+      client_encrypted, auto_encryption_opts, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   // insert a document
+
+   // expect signal from listener thread.
+
+   mongoc_uri_destroy (uri);
+   bson_destroy (kms_providers);
+   mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
+   mongoc_client_destroy (client_encrypted);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -5866,4 +5910,13 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/bypass_mongocryptd_shared_library",
+      test_bypass_mongocryptd_shared_library,
+      NULL,
+      NULL,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_17,
+      _skip_if_no_crypt_shared);
 }
