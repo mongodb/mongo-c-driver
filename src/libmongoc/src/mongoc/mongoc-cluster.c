@@ -2896,10 +2896,10 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    // original retryable error.
    {
       if (reply) {
-         bson_steal (reply, &first_reply);
-      } else {
-         bson_destroy (&first_reply);
+         bson_copy_to (&first_reply, reply);
       }
+
+      bson_destroy (&first_reply);
 
       if (error) {
          *error = first_error;
