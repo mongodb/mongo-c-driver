@@ -33,32 +33,41 @@ typedef struct {
 
 #define SKIP_ALL_TESTS NULL
 
-/* clang-format off */
+// clang-format off
 skipped_unified_test_t SKIPPED_TESTS[] = {
-   /* CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior */
+   // CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
-   /* CDRIVER-3867: drivers atlas testing (schema version 1.2) */
+   // CDRIVER-3867: drivers atlas testing (schema version 1.2)
    {"entity-client-storeEventsAsEntities", SKIP_ALL_TESTS},
-   /* libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality */
+   // libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality
    {"snapshot-sessions", "Distinct operation with snapshot"},
    {"snapshot-sessions", "Mixed operation with snapshot"},
-   /* CDRIVER-3886: serverless testing (schema version 1.4) */
+   // CDRIVER-3886: serverless testing (schema version 1.4)
    {"poc-crud", SKIP_ALL_TESTS},
    {"db-aggregate", SKIP_ALL_TESTS},
    {"mongos-unpin", SKIP_ALL_TESTS},
-   /* CDRIVER-2871: CMAP is not implemented */
+   // CDRIVER-2871: CMAP is not implemented
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
-   /* CDRIVER-4115: listCollections does not support batchSize. */
+   // CDRIVER-4115: listCollections does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
-   /* CDRIVER-4116: listIndexes does not support batchSize. */
+   // CDRIVER-4116: listIndexes does not support batchSize.
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
-   /* libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode. */
+   // libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode.
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
+   // libmongoc does not support the optional findOne helper.
+   {"retryable reads handshake failures", "findOne succeeds after retryable handshake network error"},
+   {"retryable reads handshake failures", "findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
+   // libmongoc does not support the optional count helper.
+   {"retryable reads handshake failures", "count succeeds after retryable handshake network error"},
+   {"retryable reads handshake failures", "count succeeds after retryable handshake server error (ShutdownInProgress)"},
+   // libmongoc does not support the optional listIndexNames helper.
+   {"retryable reads handshake failures", "listIndexNames succeeds after retryable handshake network error"},
+   {"retryable reads handshake failures", "listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
    {0},
 };
-/* clang-format on */
+// clang-format on
 
 static bool
 is_test_file_skipped (test_file_t *test_file)
@@ -755,13 +764,14 @@ check_run_on_requirement (test_runner_t *test_runner,
       if (0 == strcmp (key, "csfle")) {
          const bool csfle_required = bson_iter_bool (&req_iter);
          semver_t min_server_version;
-         
+
          semver_parse ("4.2.0", &min_server_version);
          if (semver_cmp (server_version, &min_server_version) < 0) {
-            *fail_reason = bson_strdup_printf (
-               "Server version %s is lower than minServerVersion %s required by CSFLE",
-               semver_to_string (server_version),
-               semver_to_string (&min_server_version));
+            *fail_reason =
+               bson_strdup_printf ("Server version %s is lower than "
+                                   "minServerVersion %s required by CSFLE",
+                                   semver_to_string (server_version),
+                                   semver_to_string (&min_server_version));
             return false;
          }
 
@@ -1730,4 +1740,8 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "load_balancers");
 
    run_unified_tests (suite, JSON_DIR, "client_side_encryption/unified");
+
+   run_unified_tests (suite, JSON_DIR, "retryable_reads/unified");
+
+   run_unified_tests (suite, JSON_DIR, "retryable_writes/unified");
 }

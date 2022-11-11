@@ -116,7 +116,6 @@ _handle_not_primary_error (mongoc_cluster_t *cluster,
 static void
 _handle_network_error (mongoc_cluster_t *cluster,
                        mongoc_server_stream_t *server_stream,
-                       bool handshake_complete,
                        const bson_error_t *why)
 {
    mongoc_topology_t *topology;
@@ -135,7 +134,7 @@ _handle_network_error (mongoc_cluster_t *cluster,
 
    _mongoc_topology_handle_app_error (topology,
                                       server_id,
-                                      handshake_complete,
+                                      true, // handshake_complete
                                       type,
                                       NULL,
                                       why,
@@ -314,8 +313,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
                                     cluster->iov.len,
                                     cluster->sockettimeoutms,
                                     error)) {
-      _handle_network_error (
-         cluster, cmd->server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, cmd->server_stream, error);
 
       /* add info about the command to writev_full's error message */
       RUN_CMD_ERR_DECORATE;
@@ -331,8 +329,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
                    MONGOC_ERROR_STREAM_SOCKET,
                    "socket error or timeout");
 
-      _handle_network_error (
-         cluster, cmd->server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, cmd->server_stream, error);
       GOTO (done);
    }
 
@@ -340,15 +337,13 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    msg_len = BSON_UINT32_FROM_LE (msg_len);
    if ((msg_len < reply_header_size) ||
        (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
-      _handle_network_error (
-         cluster, cmd->server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, cmd->server_stream, error);
       GOTO (done);
    }
 
    if (!_mongoc_rpc_scatter_reply_header_only (
           &rpc, reply_header_buf, reply_header_size)) {
-      _handle_network_error (
-         cluster, cmd->server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, cmd->server_stream, error);
       GOTO (done);
    }
    doc_len = (size_t) msg_len - reply_header_size;
@@ -370,8 +365,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
          RUN_CMD_ERR (MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "socket error or timeout");
-         _handle_network_error (
-            cluster, cmd->server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, cmd->server_stream, error);
          GOTO (done);
       }
       if (!_mongoc_rpc_scatter (&rpc, reply_buf, msg_len)) {
@@ -414,8 +408,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
          RUN_CMD_ERR (MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "socket error or timeout");
-         _handle_network_error (
-            cluster, cmd->server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, cmd->server_stream, error);
          GOTO (done);
       }
       _mongoc_rpc_swab_from_le (&rpc);
@@ -2261,7 +2254,7 @@ _try_get_server_stream (mongoc_cluster_t *cluster,
    }
 }
 
-mongoc_server_stream_t *
+static mongoc_server_stream_t *
 _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                    uint32_t server_id,
                                    bool reconnect_ok,
@@ -2298,11 +2291,13 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
        * into account.
        */
 
+      _mongoc_bson_init_if_set (reply);
+
+      // Add a transient transaction label if applicable.
+      _mongoc_add_transient_txn_error (cs, reply);
+
       /* Update the topology */
       tdmod = mc_tpld_modify_begin (topology);
-
-      /* Add a transient transaction label if applicable. */
-      _mongoc_bson_init_with_transient_txn_error (cs, reply);
 
       /* When establishing a new connection in load balanced mode, drivers MUST
        * NOT perform SDAM error handling for any errors that occur before the
@@ -2362,8 +2357,10 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
-   mongoc_server_stream_t *server_stream = NULL;
-   bson_error_t err_local = {0};
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT (cs || true);
+   BSON_ASSERT (reply || true);
+   BSON_ASSERT (error || true);
 
    ENTRY;
 
@@ -2378,12 +2375,10 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       RETURN (NULL);
    }
 
-   if (!error) {
-      error = &err_local;
-   }
 
-   server_stream = _mongoc_cluster_stream_for_server (
-      cluster, server_id, reconnect_ok, cs, reply, error);
+   mongoc_server_stream_t *const server_stream =
+      _mongoc_cluster_stream_for_server (
+         cluster, server_id, reconnect_ok, cs, reply, error);
 
    if (_in_sharded_txn (cs)) {
       _mongoc_client_session_pin (cs, server_id);
@@ -2747,6 +2742,12 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
                                   bool *must_use_primary,
                                   bson_error_t *error)
 {
+   BSON_ASSERT (cs || true);
+   BSON_ASSERT_PARAM (topology);
+   BSON_ASSERT (read_prefs || true);
+   BSON_ASSERT_PARAM (must_use_primary);
+   BSON_ASSERT (error || true);
+
    uint32_t server_id;
 
    if (_in_sharded_txn (cs)) {
@@ -2795,9 +2796,16 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
                                    mongoc_ss_optype_t optype,
                                    const mongoc_read_prefs_t *read_prefs,
                                    mongoc_client_session_t *cs,
+                                   bool is_retryable,
                                    bson_t *reply,
                                    bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT (read_prefs || true);
+   BSON_ASSERT (cs || true);
+   BSON_ASSERT (reply || true);
+   BSON_ASSERT (error || true);
+
    mongoc_server_stream_t *server_stream;
    uint32_t server_id;
    mongoc_topology_t *topology = cluster->client->topology;
@@ -2811,7 +2819,10 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
       cs, topology, optype, read_prefs, &must_use_primary, error);
 
    if (!server_id) {
-      _mongoc_bson_init_with_transient_txn_error (cs, reply);
+      if (reply) {
+         bson_init (reply);
+         _mongoc_add_transient_txn_error (cs, reply);
+      }
       RETURN (NULL);
    }
 
@@ -2821,19 +2832,81 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
          cs, topology, optype, read_prefs, &must_use_primary, error);
 
       if (!server_id) {
-         _mongoc_bson_init_with_transient_txn_error (cs, reply);
+         if (reply) {
+            bson_init (reply);
+            _mongoc_add_transient_txn_error (cs, reply);
+         }
          RETURN (NULL);
       }
    }
 
-   /* connect or reconnect to server if necessary */
-   server_stream = _mongoc_cluster_stream_for_server (
-      cluster, server_id, true /* reconnect_ok */, cs, reply, error);
+   bson_t first_reply;
+   bson_error_t first_error = {0};
+
+   server_stream = _mongoc_cluster_stream_for_server (cluster,
+                                                      server_id,
+                                                      true /* reconnect_ok */,
+                                                      cs,
+                                                      &first_reply,
+                                                      &first_error);
+
    if (server_stream) {
       server_stream->must_use_primary = must_use_primary;
+      RETURN (server_stream);
    }
 
-   RETURN (server_stream);
+   // Important: authentication errors are also considered retryable even if
+   // they not considered a network error.
+   const bool retryable_error = _mongoc_error_is_network (&first_error) ||
+                                _mongoc_error_is_auth (&first_error);
+
+   if (is_retryable && retryable_error) {
+      bson_t retry_reply;
+      bson_error_t retry_error = {0};
+
+      server_stream =
+         _mongoc_cluster_stream_for_server (cluster,
+                                            server_id,
+                                            true /* reconnect_ok */,
+                                            cs,
+                                            &retry_reply,
+                                            &retry_error);
+
+      if (server_stream) {
+         server_stream->must_use_primary = must_use_primary;
+         server_stream->retry_attempted = true;
+         bson_destroy (&first_reply);
+         RETURN (server_stream);
+      }
+
+      if (optype != MONGOC_SS_READ) {
+         // Retryable Writes Spec: When the driver encounters a network error
+         // establishing an initial connection to a server, it MUST add a
+         // RetryableWriteError label to that error if the MongoClient
+         // performing the operation has the retryWrites configuration option
+         // set to true.
+         _mongoc_write_error_append_retryable_label (&first_reply);
+      }
+
+      bson_destroy (&retry_reply);
+   }
+
+   // Retryable Writes Spec: If the driver cannot select a server for the retry
+   // attempt [...], retrying is not possible and drivers MUST raise the
+   // original retryable error.
+   {
+      if (reply) {
+         bson_copy_to (&first_reply, reply);
+      }
+
+      bson_destroy (&first_reply);
+
+      if (error) {
+         *error = first_error;
+      }
+   }
+
+   RETURN (NULL);
 }
 
 mongoc_server_stream_t *
@@ -2841,23 +2914,19 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
                                  bson_t *reply,
-                                 bool has_write_stage,
                                  bson_error_t *error)
 {
-   const mongoc_read_prefs_t *prefs_override = read_prefs;
+   const mongoc_read_prefs_t *const prefs_override =
+      _mongoc_client_session_in_txn (cs) ? cs->txn.opts.read_prefs : read_prefs;
 
-   if (_mongoc_client_session_in_txn (cs)) {
-      prefs_override = cs->txn.opts.read_prefs;
-   }
+   // Retryable Reads Spec: This boolean option determines whether retryable
+   // behavior will be applied to all read operations executed within the
+   // MongoClient.
+   const bool is_retryable = mongoc_uri_get_option_as_bool (
+      cluster->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
 
    return _mongoc_cluster_stream_for_optype (
-      cluster,
-      /* Narrow down the optype if this is an aggregate op with a write stage */
-      has_write_stage ? MONGOC_SS_AGGREGATE_WITH_WRITE : MONGOC_SS_READ,
-      prefs_override,
-      cs,
-      reply,
-      error);
+      cluster, MONGOC_SS_READ, prefs_override, cs, is_retryable, reply, error);
 }
 
 mongoc_server_stream_t *
@@ -2866,8 +2935,34 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
+   const bool is_retryable = mongoc_uri_get_option_as_bool (
+      cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
+
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_WRITE, NULL, cs, reply, error);
+      cluster, MONGOC_SS_WRITE, NULL, cs, is_retryable, reply, error);
+}
+
+mongoc_server_stream_t *
+mongoc_cluster_stream_for_aggr_with_write (
+   mongoc_cluster_t *cluster,
+   const mongoc_read_prefs_t *read_prefs,
+   mongoc_client_session_t *cs,
+   bson_t *reply,
+   bson_error_t *error)
+{
+   const mongoc_read_prefs_t *const prefs_override =
+      _mongoc_client_session_in_txn (cs) ? cs->txn.opts.read_prefs : read_prefs;
+
+   const bool is_retryable = mongoc_uri_get_option_as_bool (
+      cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
+
+   return _mongoc_cluster_stream_for_optype (cluster,
+                                             MONGOC_SS_AGGREGATE_WITH_WRITE,
+                                             prefs_override,
+                                             cs,
+                                             is_retryable,
+                                             reply,
+                                             error);
 }
 
 static bool
@@ -3273,8 +3368,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       MONGOC_DEBUG (
          "Could not read 4 bytes, stream probably closed or timed out");
       mongoc_counter_protocol_ingress_error_inc ();
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       RETURN (false);
    }
 
@@ -3289,8 +3383,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Corrupt or malicious reply received.");
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -3303,8 +3396,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                                            msg_len - 4,
                                            cluster->sockettimeoutms,
                                            error)) {
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -3317,8 +3409,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Failed to decode reply from server.");
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -3477,8 +3568,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    if (!ok) {
       /* add info about the command to writev_full's error message */
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error (
-         cluster, server_stream, true /* handshake complete */, error);
+      _handle_network_error (cluster, server_stream, error);
       server_stream->stream = NULL;
       bson_free (output);
       network_error_reply (reply, cmd);
@@ -3492,8 +3582,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          &buffer, server_stream->stream, 4, cluster->sockettimeoutms, error);
       if (!ok) {
          RUN_CMD_ERR_DECORATE;
-         _handle_network_error (
-            cluster, server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, server_stream, error);
          server_stream->stream = NULL;
          bson_free (output);
          network_error_reply (reply, cmd);
@@ -3511,8 +3600,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
             "Message size %d is not within expected range 16-%d bytes",
             msg_len,
             server_stream->sd->max_msg_size);
-         _handle_network_error (
-            cluster, server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, server_stream, error);
          server_stream->stream = NULL;
          bson_free (output);
          network_error_reply (reply, cmd);
@@ -3527,8 +3615,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                                               error);
       if (!ok) {
          RUN_CMD_ERR_DECORATE;
-         _handle_network_error (
-            cluster, server_stream, true /* handshake complete */, error);
+         _handle_network_error (cluster, server_stream, error);
          server_stream->stream = NULL;
          bson_free (output);
          network_error_reply (reply, cmd);
@@ -3555,8 +3642,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
             RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                          "Could not decompress message from server");
-            _handle_network_error (
-               cluster, server_stream, true /* handshake complete */, error);
+            _handle_network_error (cluster, server_stream, error);
             server_stream->stream = NULL;
             bson_free (output);
             network_error_reply (reply, cmd);

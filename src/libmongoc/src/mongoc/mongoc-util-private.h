@@ -138,8 +138,8 @@ void
 _mongoc_bson_array_copy_labels_to (const bson_t *reply, bson_t *dst);
 
 void
-_mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
-                                            bson_t *reply);
+_mongoc_add_transient_txn_error (const mongoc_client_session_t *cs,
+                                 bson_t *reply);
 
 bool
 _mongoc_document_is_pipeline (const bson_t *document);

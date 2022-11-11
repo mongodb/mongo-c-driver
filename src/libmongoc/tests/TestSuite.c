@@ -670,9 +670,9 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    }
 
    t2 = bson_get_monotonic_time ();
+   // CDRIVER-2567: check that bson_get_monotonic_time does not wrap.
+   ASSERT_CMPINT64 (t2, >=, t1);
    t3 = t2 - t1;
-   /* CDRIVER-2567: check that bson_get_monotonic_time does not wrap. */
-   BSON_ASSERT (t3 >= 0);
 
    bson_string_append_printf (buf,
                               "    { \"status\": \"%s\", "

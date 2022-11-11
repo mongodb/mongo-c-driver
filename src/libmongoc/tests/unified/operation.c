@@ -176,6 +176,69 @@ done:
 }
 
 static bool
+operation_list_database_names (test_t *test,
+                               operation_t *op,
+                               result_t *result,
+                               bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_client_t *client = NULL;
+   bson_t *opts = NULL;
+
+   opts = bson_new ();
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+   if (op->arguments) {
+      bson_concat (opts, op->arguments);
+   }
+
+   client = entity_map_get_client (test->entity_map, op->object, error);
+   if (!client) {
+      goto done;
+   }
+
+   char **names =
+      mongoc_client_get_database_names_with_opts (client, opts, error);
+
+   {
+      bson_val_t *val = NULL;
+      if (names) {
+         bson_t bson = BSON_INITIALIZER;
+         bson_t element;
+         uint32_t idx = 0u;
+
+         BSON_APPEND_ARRAY_BEGIN (&bson, "v", &element);
+         for (char **names_iter = names; *names_iter != NULL; ++names_iter) {
+            char buffer[16];
+            const char *key = NULL;
+            const size_t key_len =
+               bson_uint32_to_string (idx++, &key, buffer, sizeof (buffer));
+            bson_append_utf8 (&element, key, key_len, *names_iter, -1);
+         }
+         bson_append_array_end (&bson, &element);
+
+         bson_iter_t iter;
+         bson_iter_init_find (&iter, &bson, "v");
+         val = bson_val_from_iter (&iter);
+
+         bson_destroy (&bson);
+      }
+      result_from_val_and_reply (result, val, NULL, error);
+      bson_val_destroy (val);
+   }
+
+   bson_strfreev (names);
+
+   ret = true;
+done:
+   bson_destroy (opts);
+   return ret;
+}
+
+static bool
 operation_create_datakey (test_t *test,
                           operation_t *op,
                           result_t *result,
@@ -769,7 +832,9 @@ operation_list_collections (test_t *test,
          goto done;
       }
    }
-   bson_concat (opts, op->arguments);
+   if (op->arguments) {
+      bson_concat (opts, op->arguments);
+   }
 
    db = entity_map_get_database (test->entity_map, op->object, error);
    if (!db) {
@@ -3215,6 +3280,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       /* Client operations */
       {"createChangeStream", operation_create_change_stream},
       {"listDatabases", operation_list_databases},
+      {"listDatabaseNames", operation_list_database_names},
 
       /* ClientEncryption operations */
       {"createDataKey", operation_create_datakey},

@@ -31,12 +31,16 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_server_stream_t {
    mongoc_topology_description_type_t topology_type;
-   mongoc_server_description_t *sd; /* owned */
-   bson_t cluster_time;             /* owned */
-   mongoc_stream_t *stream;         /* borrowed */
-   /** If the stream was created in a way that may have overwritten the user's
-    * readPreference, we need to know if server selection forced that change. */
+   mongoc_server_description_t *sd; // owned
+   bson_t cluster_time;             // owned
+   mongoc_stream_t *stream;         // borrowed
+   // If the stream was created in a way that may have overwritten the user's
+   // readPreference, we need to know if server selection forced that change.
    bool must_use_primary;
+   // True if this server stream was acquired during a retry attempt triggered
+   // by a network error establishing an initial connection. Used to avoid
+   // further retry attempts.
+   bool retry_attempted;
 } mongoc_server_stream_t;
 
 

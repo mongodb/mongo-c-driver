@@ -811,7 +811,7 @@ test_all_spec_tests (TestSuite *suite)
 {
    install_json_test_suite_with_check (suite,
                                        JSON_DIR,
-                                       "retryable_writes",
+                                       "retryable_writes/legacy",
                                        test_retryable_writes_cb,
                                        test_framework_skip_if_no_crypto,
                                        test_framework_skip_if_slow);
