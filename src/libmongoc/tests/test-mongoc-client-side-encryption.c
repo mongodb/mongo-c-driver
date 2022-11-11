@@ -5578,7 +5578,11 @@ test_bypass_mongocryptd_shared_library (void *unused)
    r = mongoc_socket_getsockname (
       socket, (struct sockaddr *) &server_addr, &addr_len);
    BSON_ASSERT (r == 0);
+
+   // get address and port to use for mongocryptdURI
    int port = ntohs (server_addr.sin_port);
+   char ip[16];
+   inet_ntop (AF_INET, &server_addr.sin_addr, ip, sizeof (ip));
 
    // configure mongoclient with auto encryption
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
@@ -5592,8 +5596,9 @@ test_bypass_mongocryptd_shared_library (void *unused)
 
    // configure extra options
    bson_t *extra =
-      tmp_bson ("{'mongocryptdURI': 'mongodb://127.0.0.1:%d', "
+      tmp_bson ("{'mongocryptdURI': 'mongodb://%s:%d', "
                 "'cryptSharedLibPath': '%s'}",
+                ip,
                 port,
                 test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH"));
 
@@ -5617,10 +5622,9 @@ test_bypass_mongocryptd_shared_library (void *unused)
                                     NULL,
                                     &error);
 
-   // expect no signal from listener thread and therefore insert errors.
-   ASSERT (!ret);
+   // expect no signal from listener thread.
+   ASSERT (ret);
 
-   bson_destroy (extra);
    bson_destroy (kms_providers);
    mongoc_database_destroy (db);
    mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
