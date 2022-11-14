@@ -32,7 +32,7 @@ typedef bool (*remove_with_opts_fn) (mongoc_bulk_operation_t *bulk,
 
 /*--------------------------------------------------------------------------
  *
- * assert_error_count --
+ * assert_write_error_count --
  *
  *       Check the length of a bulk operation reply's writeErrors.
  *
@@ -46,7 +46,7 @@ typedef bool (*remove_with_opts_fn) (mongoc_bulk_operation_t *bulk,
  */
 
 static void
-assert_error_count (int len, const bson_t *reply)
+assert_write_error_count (int len, const bson_t *reply)
 {
    bson_iter_t iter;
    bson_iter_t error_iter;
@@ -2311,7 +2311,7 @@ test_insert_continue_on_error (void)
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index': 1}, {'index': 3}]}");
 
-   assert_error_count (2, &reply);
+   assert_write_error_count (2, &reply);
    ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
@@ -2368,7 +2368,7 @@ test_update_continue_on_error (void)
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index': 1}]}");
 
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (2, collection);
    ASSERT_CMPINT (
       1,
@@ -2428,7 +2428,7 @@ test_remove_continue_on_error (void)
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index': 1}]}");
 
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
@@ -2483,7 +2483,7 @@ test_single_error_ordered_bulk (void)
                   *                       " 'writeErrors.0.op':     ...,"
                   */
                  "}");
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
@@ -2546,7 +2546,7 @@ test_multiple_error_ordered_bulk (void)
                   * 'u': {'$set': {'a': 1}}, 'multi': false}"
                   */
                  "}");
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
@@ -2649,7 +2649,7 @@ test_single_error_unordered_bulk (void)
                  " 'writeErrors': [{'index': 1,"
                  "                  'code': {'$exists': true},"
                  "                  'errmsg': {'$exists': true}}]}");
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
@@ -3084,7 +3084,7 @@ test_multiple_error_unordered_bulk (void)
                  /* " 'writeErrors.1.op': {'_id': '...', 'b': 6, 'a': 1}," */
                  " 'writeErrors.1.code':   {'$exists': true},"
                  " 'writeErrors.1.errmsg': {'$exists': true}}");
-   assert_error_count (2, &reply);
+   assert_write_error_count (2, &reply);
 
    /*
     * assume the update at index 1 runs before the update at index 3,
@@ -3251,7 +3251,7 @@ test_large_inserts_ordered (void *ctx)
                  " 'nRemoved': 0,"
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index':  1}]}");
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (1, collection);
 
    cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
@@ -4996,7 +4996,7 @@ test_bulk_write_multiple_errors (void)
                  " 'errorReplies': [{'code': 8}, {'code': 8}],"
                  " 'writeErrors': [{ 'index' : 5 }]}");
 
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
