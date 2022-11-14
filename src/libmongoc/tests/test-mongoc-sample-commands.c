@@ -2637,13 +2637,13 @@ test_example_59 (mongoc_database_t *db)
 
    printf ("there are %" PRId64 " adoptable pets\n", adoptable_pets_count);
 
+   /* End Example 59 */
+
    if (adoptable_pets_count != 2) {
       MONGOC_ERROR (
          "there should be exatly 2 adoptable_pets_count, found: %" PRId64,
          adoptable_pets_count);
    }
-
-   /* End Example 59 */
 
    /* Start Example 59 Post */
 cleanup:
