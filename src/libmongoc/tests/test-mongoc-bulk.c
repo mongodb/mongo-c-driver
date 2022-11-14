@@ -4958,16 +4958,31 @@ test_bulk_write_multiple_errors (void)
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    // Insert three documents. This is sent as one "insert" command to the
    // server.
-   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 0}"));
+   // configure fail point
+   bool ret = mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson (
+         "{'configureFailPoint': 'failCommand', 'mode': {'times': 2}, "
+         "'data': {'failCommands': ['insert', 'delete'], 'errorCode': 8}}"),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   mongoc_bulk_operation_insert (bulk,
+                                 tmp_bson ("{'_id': 1}")); // fail via failPoint
+   mongoc_bulk_operation_delete (bulk,
+                                 tmp_bson ("{'_id': 1}")); // fail via failPoint
+
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 4}")); // succeed
+
+   mongoc_bulk_operation_delete (bulk, tmp_bson ("{'_id': 4}")); // suceed
+
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 5}")); // suceed
    mongoc_bulk_operation_insert (
-      bulk, tmp_bson ("{'_id': 0}")); // Error: duplicate key.
-   mongoc_bulk_operation_insert (
-      bulk, tmp_bson ("{'_id': 1}")); // Error: duplicate key.
-   // Delete one document. This is sent as a "delete" command to the server.
-   mongoc_bulk_operation_delete_one (bulk, tmp_bson ("{'_id': 1}"));
-   // Insert another duplicate key. This is sent in a second "insert"
-   // command to the server.
-   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 0}"));
+      bulk, tmp_bson ("{'_id': 5}")); // duplicate key error
+
 
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
    BSON_ASSERT (!r);
@@ -4978,13 +4993,10 @@ test_bulk_write_multiple_errors (void)
                  " 'nModified': 0,"
                  " 'nRemoved':  1,"
                  " 'nUpserted': 0,"
-                 " 'errorReplies': [{'n': 2, 'writeErrors': [{ 'index' : 1, "
-                 "'code': {'$exists': true}}]}, "
-                 "{'n' : 1}, {'n' : 0, 'writeErrors': [{ 'index' : 0, 'code': "
-                 "{'$exists': true}}]}],"
-                 " 'writeErrors': [{'index': 1}, {'index': 4}]}");
+                 " 'errorReplies': [{'code': 8}, {'code': 8}],"
+                 " 'writeErrors': [{ 'index' : 5 }]}");
 
-   assert_error_count (2, &reply);
+   assert_error_count (1, &reply);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
