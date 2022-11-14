@@ -2648,7 +2648,7 @@ test_example_59 (mongoc_database_t *db)
     *
     * Remember in order to apply the client session to
     * this operation, you must append the client session to the options passed
-    * to `mongoc_collection_aggregate, i.e.,
+    * to `mongoc_collection_aggregate`, i.e.,
     *
     * mongoc_client_session_append (cs, &opts, &error);
     * cursor = mongoc_collection_aggregate (
