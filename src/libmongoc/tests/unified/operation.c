@@ -1418,6 +1418,9 @@ operation_create_index (test_t *test,
    bson_append_document_end (array, arguments);
    bson_append_array_end (create_indexes, array);
 
+   bson_destroy (array);
+   bson_destroy (arguments);
+
    if (op->session) {
       if (!mongoc_client_session_append (op->session, opts, error)) {
          goto done;
@@ -1438,8 +1441,6 @@ done:
    bson_destroy (&op_reply);
    bson_destroy (opts);
    bson_destroy (create_indexes);
-   bson_destroy (array);
-   bson_destroy (arguments);
 
    return ret;
 }
