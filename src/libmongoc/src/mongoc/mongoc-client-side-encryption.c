@@ -2764,6 +2764,16 @@ mongoc_client_encryption_create_encrypted_collection (
       goto done;
    }
 
+   if (bson_empty (&in_encryptedFields)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "No 'encryptedFields' are defined for the creation of "
+                      "the '%s' collection",
+                      name);
+      goto done;
+   }
+
    // Add the keyIds to the encryptedFields.
    // Context for the creation of new datakeys:
    struct cec_context ctx = {
