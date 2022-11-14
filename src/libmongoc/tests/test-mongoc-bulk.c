@@ -4936,8 +4936,9 @@ test_bulk_let_multi (void)
 // Test a bulk write operation that receives two error replies from two
 // commands.
 static void
-test_bulk_write_multiple_errors (void)
+test_bulk_write_multiple_errors (void *unused)
 {
+   BSON_UNUSED (unused);
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_t opts = BSON_INITIALIZER;
@@ -5303,6 +5304,10 @@ test_bulk_install (TestSuite *suite)
       suite, "/BulkOperation/opts/let", test_bulk_let);
    TestSuite_AddMockServerTest (
       suite, "/BulkOperation/opts/let/multi", test_bulk_let_multi);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/multiple_errors", test_bulk_write_multiple_errors);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/multiple_errors",
+                      test_bulk_write_multiple_errors,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_failpoint);
 }

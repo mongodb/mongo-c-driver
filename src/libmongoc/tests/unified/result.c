@@ -579,7 +579,6 @@ result_check (result_t *result,
           * array. Read operations return the raw response as the reply. */
          bson_iter_t iter;
          bson_t doc_to_match;
-         // bson_init (&doc_to_match);
 
          if (bson_iter_init_find (&iter, result->reply, "errorReplies")) {
             bson_lookup_doc_null_ok (
