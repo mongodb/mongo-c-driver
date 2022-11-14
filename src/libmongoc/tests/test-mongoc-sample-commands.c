@@ -2542,7 +2542,6 @@ accumulate_adoptable_count (const mongoc_client_session_t *cs,
    bool rc = false;
    const bson_t *doc = NULL;
    bson_error_t error;
-   const bson_value_t *value = NULL;
    bson_iter_t iter;
    bson_t opts;
 
@@ -2636,11 +2635,11 @@ test_example_59 (mongoc_database_t *db)
    accumulate_adoptable_count (cs, cats_collection, &adoptable_pets_count);
    accumulate_adoptable_count (cs, dogs_collection, &adoptable_pets_count);
 
-   printf ("there are %lld adoptable pets\n", adoptable_pets_count);
+   printf ("there are %" PRId64 " adoptable pets\n", adoptable_pets_count);
 
    if (adoptable_pets_count != 2) {
       MONGOC_ERROR (
-         "there should be exatly 2 adoptable_pets_count, found: %lld",
+         "there should be exatly 2 adoptable_pets_count, found: %" PRId64,
          adoptable_pets_count);
    }
 
