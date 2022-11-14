@@ -1379,10 +1379,12 @@ operation_create_index (test_t *test,
    char *name = NULL;
    bson_t *keys = NULL;
    bool *unique = NULL;
-   bson_t *create_indexes = NULL;
+   bson_t *create_indexes = bson_new ();
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
    bson_t *opts = bson_new ();
+   bson_t *arguments = bson_new ();
+   bson_t *array = bson_new ();
 
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
@@ -1403,31 +1405,19 @@ operation_create_index (test_t *test,
    }
 
    /* libmongoc has no create index helper. Use runCommand. */
-   /* tests will fail if unique field is included if unique is not set */
-   create_indexes = unique ? BCON_NEW ("createIndexes",
-                                       mongoc_collection_get_name (coll),
-                                       "indexes",
-                                       "[",
-                                       "{",
-                                       "name",
-                                       name,
-                                       "unique",
-                                       BCON_BOOL (unique),
-                                       "key",
-                                       BCON_DOCUMENT (keys),
-                                       "}",
-                                       "]")
-                           : BCON_NEW ("createIndexes",
-                                       mongoc_collection_get_name (coll),
-                                       "indexes",
-                                       "[",
-                                       "{",
-                                       "name",
-                                       name,
-                                       "key",
-                                       BCON_DOCUMENT (keys),
-                                       "}",
-                                       "]");
+   /* Building the command */
+   BSON_APPEND_UTF8 (
+      create_indexes, "createIndexes", mongoc_collection_get_name (coll));
+   BSON_APPEND_ARRAY_BEGIN (create_indexes, "indexes", array);
+   BSON_APPEND_DOCUMENT_BEGIN (array, "0", arguments);
+   BSON_APPEND_DOCUMENT (arguments, "key", keys);
+   BSON_APPEND_UTF8 (arguments, "name", name);
+   if (unique) {
+      BSON_APPEND_BOOL (arguments, "unique", unique);
+   }
+   bson_append_document_end (array, arguments);
+   bson_append_array_end (create_indexes, array);
+
    if (op->session) {
       if (!mongoc_client_session_append (op->session, opts, error)) {
          goto done;
@@ -1448,6 +1438,9 @@ done:
    bson_destroy (&op_reply);
    bson_destroy (opts);
    bson_destroy (create_indexes);
+   bson_destroy (array);
+   bson_destroy (arguments);
+
    return ret;
 }
 
