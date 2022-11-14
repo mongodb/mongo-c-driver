@@ -2532,17 +2532,25 @@ done:
  * collection.
  */
 static bool
-accumulate_adoptable_count (mongoc_collection_t *collection,
-                            long long *accumulator /* OUT */
+accumulate_adoptable_count (const mongoc_client_session_t *cs,
+                            mongoc_collection_t *collection,
+                            int64_t *accumulator /* OUT */
 )
 {
    bson_t *pipeline = NULL;
    mongoc_cursor_t *cursor = NULL;
-   bool rc;
+   bool rc = false;
    const bson_t *doc = NULL;
    bson_error_t error;
    const bson_value_t *value = NULL;
    bson_iter_t iter;
+   bson_t opts;
+
+   rc = mongoc_client_session_append (cs, &opts, &error);
+   if (!rc) {
+      MONGOC_ERROR ("could not apply session options: %s", error.message);
+      goto cleanup;
+   }
 
    pipeline = BCON_NEW ("pipeline",
                         "[",
@@ -2560,7 +2568,8 @@ accumulate_adoptable_count (mongoc_collection_t *collection,
                         "]");
 
    cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+      collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
+   bson_destroy (&opts);
 
    rc = mongoc_cursor_next (cursor, &doc);
 
@@ -2577,16 +2586,7 @@ accumulate_adoptable_count (mongoc_collection_t *collection,
 
    rc = bson_iter_init_find (&iter, doc, "adoptableCount");
    if (rc) {
-      value = bson_iter_value (&iter);
-      if (value->value_type == BSON_TYPE_INT32) {
-         *accumulator += value->value.v_int32;
-      } else if (value->value_type == BSON_TYPE_INT32) {
-         *accumulator += value->value.v_int64;
-      } else {
-         MONGOC_ERROR ("%s", "'adoptableCount' must be an integer");
-         rc = false;
-         goto cleanup;
-      }
+      *accumulator += bson_iter_as_int64 (&iter);
    } else {
       MONGOC_ERROR ("%s", "missing key: 'adoptableCount'");
       goto cleanup;
@@ -2609,7 +2609,7 @@ test_example_59 (mongoc_database_t *db)
    mongoc_client_session_t *cs = NULL;
    mongoc_collection_t *cats_collection = NULL;
    mongoc_collection_t *dogs_collection = NULL;
-   long long adoptable_pets_count = 0;
+   int64_t adoptable_pets_count = 0;
    bson_error_t error;
    mongoc_session_opt_t *session_opts;
 
@@ -2633,10 +2633,17 @@ test_example_59 (mongoc_database_t *db)
       goto cleanup;
    }
 
-   accumulate_adoptable_count (cats_collection, &adoptable_pets_count);
-   accumulate_adoptable_count (dogs_collection, &adoptable_pets_count);
+   accumulate_adoptable_count (cs, cats_collection, &adoptable_pets_count);
+   accumulate_adoptable_count (cs, dogs_collection, &adoptable_pets_count);
 
    printf ("there are %lld adoptable pets\n", adoptable_pets_count);
+
+   if (adoptable_pets_count != 2) {
+      MONGOC_ERROR (
+         "there should be exatly 2 adoptable_pets_count, found: %lld",
+         adoptable_pets_count);
+   }
+
    /* End Example 59 */
 
    /* Start Example 59 Post */
