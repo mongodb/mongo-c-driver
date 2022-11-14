@@ -1404,7 +1404,6 @@ operation_create_index (test_t *test,
       name = mongoc_collection_keys_to_index_string (keys);
    }
 
-   // bson_init (&arguments);
    /* libmongoc has no create index helper. Use runCommand. */
    /* Building the command */
    BSON_APPEND_UTF8 (
