@@ -2632,6 +2632,28 @@ test_example_59 (mongoc_database_t *db)
       goto cleanup;
    }
 
+   /*
+    * Perform the following aggregation pipeline, and accumulate the count in
+    * `adoptable_pets_count`.
+    *
+    *  adoptablePetsCount = db.cats.aggregate(
+    *      [ { "$match": { "adoptable": true } },
+    *        { "$count": "adoptableCatsCount" } ], session=s
+    *  ).next()["adoptableCatsCount"]
+    *
+    *  adoptablePetsCount += db.dogs.aggregate(
+    *      [ { "$match": { "adoptable": True} },
+    *        { "$count": "adoptableDogsCount" } ], session=s
+    *  ).next()["adoptableDogsCount"]
+    *
+    * Remember in order to apply the client session to
+    * this operation, you must append the client session to the options passed
+    * to `mongoc_collection_aggregate, i.e.,
+    *
+    * mongoc_client_session_append (cs, &opts, &error);
+    * cursor = mongoc_collection_aggregate (
+    *    collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
+    */
    accumulate_adoptable_count (cs, cats_collection, &adoptable_pets_count);
    accumulate_adoptable_count (cs, dogs_collection, &adoptable_pets_count);
 
