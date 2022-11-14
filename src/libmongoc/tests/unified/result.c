@@ -575,14 +575,22 @@ result_check (result_t *result,
             goto done;
          }
 
-         /* Write operations have the raw response wrapped in a serverRespons
-          * document. Read operations return the raw response as the reply. */
+         /* Write operations have the raw response wrapped in a errorReplies
+          * array. Read operations return the raw response as the reply. */
          bson_iter_t iter;
          bson_t doc_to_match;
-         bson_init (&doc_to_match);
+         // bson_init (&doc_to_match);
 
          if (bson_iter_init_find (&iter, result->reply, "errorReplies")) {
-            bson_lookup_doc (result->reply, "errorReplies.0", &doc_to_match);
+            bson_lookup_doc_null_ok (
+               result->reply, "errorReplies.0", &doc_to_match);
+            if (bson_empty (&doc_to_match)) {
+               test_set_error (error,
+                               "%s",
+                               "expected errorReplies to be set, but received "
+                               "an empty document.");
+               goto done;
+            }
          } else {
             bson_copy_to (result->reply, &doc_to_match);
          }

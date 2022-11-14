@@ -1147,7 +1147,7 @@ _mongoc_write_result_init (mongoc_write_result_t *result) /* IN */
    bson_init (&result->writeConcernErrors);
    bson_init (&result->writeErrors);
    bson_init (&result->errorLabels);
-   bson_init (&result->raw_error_replies);
+   bson_init (&result->rawErrorReplies);
 
    EXIT;
 }
@@ -1164,7 +1164,7 @@ _mongoc_write_result_destroy (mongoc_write_result_t *result)
    bson_destroy (&result->writeConcernErrors);
    bson_destroy (&result->writeErrors);
    bson_destroy (&result->errorLabels);
-   bson_destroy (&result->raw_error_replies);
+   bson_destroy (&result->rawErrorReplies);
 
    EXIT;
 }
@@ -1359,14 +1359,14 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
 
    /* If a server error ocurred, then append the raw response to the
     * error_replies array. */
-   if (result->failed || result->n_writeConcernErrors ||
-       _mongoc_error_is_server (&result->error)) {
+   if (!_mongoc_cmd_check_ok (
+          reply, MONGOC_ERROR_API_VERSION_2, NULL /* error */)) {
       char str[16];
       const char *key;
 
       bson_uint32_to_string (result->n_errorReplies, &key, str, sizeof str);
 
-      if (!bson_append_document (&result->raw_error_replies, key, -1, reply)) {
+      if (!bson_append_document (&result->rawErrorReplies, key, -1, reply)) {
          MONGOC_ERROR ("Error adding \"%s\" to errorReplies.\n", key);
       }
 
@@ -1550,8 +1550,8 @@ _mongoc_write_result_complete (
 
    /* If there is a raw error response then we know a server error has occurred.
     * We should add the raw result to the reply. */
-   if (bson && !bson_empty (&result->raw_error_replies)) {
-      BSON_APPEND_ARRAY (bson, "errorReplies", &result->raw_error_replies);
+   if (bson && !bson_empty (&result->rawErrorReplies)) {
+      BSON_APPEND_ARRAY (bson, "errorReplies", &result->rawErrorReplies);
    }
 
    /* set bson_error_t from first write error or write concern error */
