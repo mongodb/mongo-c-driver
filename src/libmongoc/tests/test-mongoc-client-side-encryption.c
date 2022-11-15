@@ -5665,6 +5665,7 @@ test_bypass_mongocryptd_shared_library (void *unused)
    ASSERT_OR_PRINT (ret, error);
    // checking for signal on thread
    ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
+   // failed should be false if the signal did not receive a connection
    BSON_ASSERT (!args->failed);
    mcommon_thread_join (socket_thread);
 
