@@ -578,18 +578,27 @@ result_check (result_t *result,
          /* Write operations have the raw response wrapped in a errorReplies
           * array. Read operations return the raw response as the reply. */
          bson_iter_t iter;
+         bson_iter_t child;
          bson_t doc_to_match;
 
          if (bson_iter_init_find (&iter, result->reply, "errorReplies")) {
-            bson_lookup_doc_null_ok (
-               result->reply, "errorReplies.0", &doc_to_match);
-            if (bson_empty (&doc_to_match)) {
-               test_set_error (error,
-                               "%s",
-                               "expected errorReplies to be set, but received "
-                               "an empty document.");
+            if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
+               test_set_error (
+                  error,
+                  "expected errorReplies to be an array, but received %s",
+                  bson_type_to_string (bson_iter_type (&iter)));
                goto done;
             }
+            bson_iter_recurse (&iter, &child);
+            bson_iter_next (&child);
+            if (!BSON_ITER_HOLDS_DOCUMENT (&child)) {
+               test_set_error (
+                  error,
+                  "expected errorReplies to be an array, but received %s",
+                  bson_type_to_string (bson_iter_type (&iter)));
+               goto done;
+            }
+            bson_iter_bson (&child, &doc_to_match);
          } else {
             bson_copy_to (result->reply, &doc_to_match);
          }
