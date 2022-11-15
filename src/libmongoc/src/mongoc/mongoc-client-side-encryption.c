@@ -1712,7 +1712,6 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
          GOTO (fail);
       }
 
-      /* Should not create a mongocryptd_client if shared library is loaded. */
       client->topology->mongocryptd_client =
          mongoc_client_new_from_uri (mongocryptd_uri);
 
@@ -1723,7 +1722,6 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
                          "Unable to create client to mongocryptd");
          GOTO (fail);
       }
-
       /* Similarly, single threaded clients will by default wait for 5 second
        * cooldown period after failing to connect to a server before making
        * another attempt. Meaning if the first attempt to mongocryptd fails
