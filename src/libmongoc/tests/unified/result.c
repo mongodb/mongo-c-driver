@@ -594,7 +594,7 @@ result_check (result_t *result,
             if (!BSON_ITER_HOLDS_DOCUMENT (&child)) {
                test_set_error (
                   error,
-                  "expected errorReplies to be an array, but received %s",
+                  "expected errorReplies.0 to be a document but received %s",
                   bson_type_to_string (bson_iter_type (&iter)));
                goto done;
             }
