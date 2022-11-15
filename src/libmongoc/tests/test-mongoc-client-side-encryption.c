@@ -5593,18 +5593,16 @@ static BSON_THREAD_FUN (listen_socket, arg)
    // listen on socket
    r = mongoc_socket_listen (socket, 100);
    BSON_ASSERT (r == 0);
-
+   _mongoc_usleep (1000); // wait to see if received connection
    mongoc_socket_t *ret = mongoc_socket_accept (socket, 100);
-   printf ("finished accepting\n");
    if (ret) {
       // not null received a connection and test should fail
       bson_mutex_lock (&args->mutex);
-      printf ("received a connection\n");
       args->failed = true;
       mongoc_cond_signal (&args->cond);
       bson_mutex_unlock (&args->mutex);
    }
-
+   mongoc_socket_destroy (socket);
    BSON_THREAD_RETURN;
 }
 
@@ -5658,18 +5656,20 @@ test_bypass_mongocryptd_shared_library (void *unused)
 
    // insert a document
    db = mongoc_client_get_database (client_encrypted, "db");
-   printf ("gillog about to insert one\n");
    ret =
       mongoc_collection_insert_one (mongoc_database_get_collection (db, "coll"),
                                     tmp_bson ("{'unencrypted': 'test'}"),
                                     NULL /* opts */,
                                     NULL /* reply */,
                                     &error);
+   ASSERT_OR_PRINT (ret, error);
    // checking for signal on thread
    ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
    BSON_ASSERT (!args->failed);
    mcommon_thread_join (socket_thread);
 
+   bson_mutex_destroy (&args->mutex);
+   mongoc_cond_destroy (&args->cond);
    mongoc_database_destroy (db);
    mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
    bson_destroy (kms_providers);
