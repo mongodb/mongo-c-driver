@@ -5745,6 +5745,7 @@ test_bypass_mongocryptd_shared_library (void *unused)
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
    bson_t *kms_providers;
    mongoc_database_t *db;
+   mongoc_collection_t *coll;
    bson_error_t error;
    bson_thread_t socket_thread;
 
@@ -5789,12 +5790,12 @@ test_bypass_mongocryptd_shared_library (void *unused)
 
    // insert a document
    db = mongoc_client_get_database (client_encrypted, "db");
-   ret =
-      mongoc_collection_insert_one (mongoc_database_get_collection (db, "coll"),
-                                    tmp_bson ("{'unencrypted': 'test'}"),
-                                    NULL /* opts */,
-                                    NULL /* reply */,
-                                    &error);
+   coll = mongoc_database_get_collection (db, "coll");
+   ret = mongoc_collection_insert_one (coll,
+                                       tmp_bson ("{'unencrypted': 'test'}"),
+                                       NULL /* opts */,
+                                       NULL /* reply */,
+                                       &error);
    ASSERT_OR_PRINT (ret, error);
    // checking for signal on thread
    ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
@@ -5804,9 +5805,10 @@ test_bypass_mongocryptd_shared_library (void *unused)
 
    bson_mutex_destroy (&args->mutex);
    mongoc_cond_destroy (&args->cond);
-   mongoc_database_destroy (db);
-   mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
    bson_destroy (kms_providers);
+   mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
+   mongoc_collection_destroy (coll);
+   mongoc_database_destroy (db);
    mongoc_client_destroy (client_encrypted);
    bson_free (args);
 }
