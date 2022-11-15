@@ -1713,26 +1713,25 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       }
 
       /* Should not create a mongocryptd_client if shared library is loaded. */
-      if (!have_crypt_shared) {
-         client->topology->mongocryptd_client =
-            mongoc_client_new_from_uri (mongocryptd_uri);
+      client->topology->mongocryptd_client =
+         mongoc_client_new_from_uri (mongocryptd_uri);
 
-         if (!client->topology->mongocryptd_client) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                            "Unable to create client to mongocryptd");
-            GOTO (fail);
-         }
-
-         /* Similarly, single threaded clients will by default wait for 5 second
-          * cooldown period after failing to connect to a server before making
-          * another attempt. Meaning if the first attempt to mongocryptd fails
-          * to connect, then the user observes a 5 second delay. This is not
-          * configurable in the URI, so override. */
-         _mongoc_topology_bypass_cooldown (
-            client->topology->mongocryptd_client->topology);
+      if (!client->topology->mongocryptd_client) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "Unable to create client to mongocryptd");
+         GOTO (fail);
       }
+
+      /* Similarly, single threaded clients will by default wait for 5 second
+       * cooldown period after failing to connect to a server before making
+       * another attempt. Meaning if the first attempt to mongocryptd fails
+       * to connect, then the user observes a 5 second delay. This is not
+       * configurable in the URI, so override. */
+      _mongoc_topology_bypass_cooldown (
+         client->topology->mongocryptd_client->topology);
+
       /* Also, since single threaded server selection can foreseeably take
        * connectTimeoutMS (which by default is longer than 10 seconds), reduce
        * this as well. */
