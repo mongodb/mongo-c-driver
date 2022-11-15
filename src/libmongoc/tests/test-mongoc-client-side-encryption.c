@@ -2675,13 +2675,27 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
       mongoc_auto_encryption_opts_set_bypass_query_analysis (
          auto_encryption_opts, true);
    } else if (0 == strcmp (auto_encryption_opt, "cryptSharedLibRequired")) {
+      bson_t *schema =
+         get_bson_from_json_file ("./src/libmongoc/tests/"
+                                  "client_side_encryption_prose/external/"
+                                  "external-schema.json");
+      BSON_ASSERT (schema);
+      bson_t *schema_map = BCON_NEW ("db.coll", BCON_DOCUMENT (schema));
+      mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts,
+                                                  schema_map);
       check_crypt_shared = true;
       char *env_cryptSharedLibPath =
          test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
       BSON_ASSERT (env_cryptSharedLibPath);
       BSON_APPEND_UTF8 (extra, "cryptSharedLibPath", env_cryptSharedLibPath);
       BSON_APPEND_BOOL (extra, "cryptSharedLibRequired", true);
+      BSON_APPEND_UTF8 (
+         extra,
+         "mongocryptdURI",
+         "mongodb://localhost:27021/db?serverSelectionTimeoutMS=1000");
       bson_free (env_cryptSharedLibPath);
+      bson_destroy (schema);
+      bson_destroy (schema_map);
    } else {
       test_error ("Unexpected 'auto_encryption_opt' argument: %s",
                   auto_encryption_opt);
@@ -2706,7 +2720,7 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
                    NULL);
    }
 
-   /* Insert { 'encrypt': 'test' }. Should succeed. */
+   /* Insert { 'unencrypted': 'test' }. Should succeed. */
    coll = mongoc_client_get_collection (client_encrypted, "db", "coll");
    doc_to_insert = BCON_NEW ("unencrypted", "test");
    ret = mongoc_collection_insert_one (
