@@ -181,7 +181,7 @@ test_topology_client_creation (void)
 
    /* ensure that we are sharing streams with the client */
    server_stream = mongoc_cluster_stream_for_reads (
-      &client_a->cluster, NULL, NULL, NULL, false, &error);
+      &client_a->cluster, NULL, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (server_stream, error);
    node = mongoc_topology_scanner_get_node (client_a->topology->scanner,
@@ -496,7 +496,7 @@ _test_topology_invalidate_server (bool pooled)
 
    /* call explicitly */
    server_stream = mongoc_cluster_stream_for_reads (
-      &client->cluster, NULL, NULL, NULL, false, &error);
+      &client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    sd = server_stream->sd;
    id = server_stream->sd->id;
@@ -603,7 +603,7 @@ test_invalid_cluster_node (void *ctx)
 
    /* load stream into cluster */
    server_stream = mongoc_cluster_stream_for_reads (
-      &client->cluster, NULL, NULL, NULL, false, &error);
+      &client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
    mongoc_server_stream_cleanup (server_stream);
@@ -676,7 +676,7 @@ test_max_wire_version_race_condition (void *ctx)
 
    /* load stream into cluster */
    server_stream = mongoc_cluster_stream_for_reads (
-      &client->cluster, NULL, NULL, NULL, false, &error);
+      &client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
    mongoc_server_stream_cleanup (server_stream);
@@ -788,7 +788,6 @@ static void
 test_cooldown_rs (void)
 {
    mock_server_t *servers[2]; /* two secondaries, no primary */
-   char *uri_str;
    int i;
    mongoc_client_t *client;
    mongoc_read_prefs_t *primary_pref;
@@ -804,12 +803,25 @@ test_cooldown_rs (void)
       mock_server_run (servers[i]);
    }
 
-   uri_str = bson_strdup_printf ("mongodb://localhost:%hu/?replicaSet=rs"
-                                 "&serverSelectionTimeoutMS=100"
-                                 "&connectTimeoutMS=100",
-                                 mock_server_get_port (servers[0]));
+   {
+      char *uri_str =
+         bson_strdup_printf ("mongodb://localhost:%hu/?replicaSet=rs"
+                             "&serverSelectionTimeoutMS=100"
+                             "&connectTimeoutMS=100",
+                             mock_server_get_port (servers[0]));
 
-   client = test_framework_client_new (uri_str, NULL);
+      mongoc_uri_t *const uri = mongoc_uri_new_with_error (uri_str, &error);
+      ASSERT_OR_PRINT (uri, error);
+
+      // Prevent retryable handshakes from interfering with mock server hangups.
+      mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
+
+      client = test_framework_client_new_from_uri (uri, NULL);
+
+      bson_free (uri_str);
+      mongoc_uri_destroy (uri);
+   }
+
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    secondary_response =
@@ -894,7 +906,6 @@ test_cooldown_rs (void)
    mongoc_client_destroy (client);
    bson_free (secondary_response);
    bson_free (primary_response);
-   bson_free (uri_str);
    mock_server_destroy (servers[0]);
    mock_server_destroy (servers[1]);
 }
@@ -1362,15 +1373,23 @@ test_add_and_scan_failure (void)
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
-   sd = mongoc_topology_description_server_by_id_const (
-      mc_tpld_unsafe_get_const (client->topology), 1, NULL);
-   ASSERT (sd);
-   ASSERT_CMPSTR (mongoc_server_description_type (sd), "RSPrimary");
+   {
+      mc_shared_tpld shared_tpld = mc_tpld_take_ref (client->topology);
+      sd = mongoc_topology_description_server_by_id_const (
+         shared_tpld.ptr, 1, NULL);
+      ASSERT (sd);
+      ASSERT_CMPSTR (mongoc_server_description_type (sd), "RSPrimary");
+      mc_tpld_drop_ref (&shared_tpld);
+   }
 
-   sd = mongoc_topology_description_server_by_id_const (
-      mc_tpld_unsafe_get_const (client->topology), 2, NULL);
-   ASSERT (sd);
-   ASSERT_CMPSTR (mongoc_server_description_type (sd), "Unknown");
+   {
+      mc_shared_tpld shared_tpld = mc_tpld_take_ref (client->topology);
+      sd = mongoc_topology_description_server_by_id_const (
+         mc_tpld_unsafe_get_const (client->topology), 2, NULL);
+      ASSERT (sd);
+      ASSERT_CMPSTR (mongoc_server_description_type (sd), "Unknown");
+      mc_tpld_drop_ref (&shared_tpld);
+   }
 
    future_destroy (future);
    mongoc_client_pool_push (pool, client);

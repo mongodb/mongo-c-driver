@@ -25,8 +25,8 @@ server_id_for_reads (mongoc_cluster_t *cluster)
    mongoc_server_stream_t *server_stream;
    uint32_t id;
 
-   server_stream = mongoc_cluster_stream_for_reads (
-      cluster, NULL, NULL, NULL, false, &error);
+   server_stream =
+      mongoc_cluster_stream_for_reads (cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
 
@@ -1372,7 +1372,9 @@ _test_cluster_hello_fails (bool hangup)
    mock_server_run (mock_server);
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    /* increase heartbeatFrequencyMS to prevent background server selection. */
-   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
+   /* prevent retryable handshakes from interfering with mock server hangups */
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
    mongoc_client_pool_set_error_api (pool, 2);
    mongoc_uri_destroy (uri);

@@ -51,8 +51,8 @@ testgcpkms_generate(all_tasks, all_variants, all_task_groups)
 config = OD([
     ('stepback', True),
     ('command_type', 'system'),
-    # 40 minute max except valgrind tasks, which get 2 hours.
-    ('exec_timeout_secs', 2400),
+    # 60 minute max except valgrind tasks, which get 2 hours.
+    ('exec_timeout_secs', 3600),
     ('functions', all_functions),
     ('pre', [
         OD([('func', 'fetch source')]),

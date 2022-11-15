@@ -480,7 +480,6 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
    mongoc_collection_t *collection;
    mongoc_client_t *auth_client;
    mongoc_client_pool_t *pool;
-   mongoc_uri_t *uri;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
@@ -516,16 +515,21 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
    uri_str_auth =
       test_framework_add_user_password (uri_str_no_auth, username, "testpass");
 
-   if (pooled) {
-      uri = mongoc_uri_new (uri_str_auth);
-      pool = test_framework_client_pool_new_from_uri (uri, NULL);
-      mongoc_uri_destroy (uri);
+   {
+      mongoc_uri_t *const uri = mongoc_uri_new (uri_str_auth);
 
-      test_framework_set_pool_ssl_opts (pool);
-      auth_client = mongoc_client_pool_pop (pool);
-   } else {
-      auth_client = test_framework_client_new (uri_str_auth, NULL);
-      test_framework_set_ssl_opts (auth_client);
+      ASSERT (
+         mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false));
+
+      if (pooled) {
+         pool = test_framework_client_pool_new_from_uri (uri, NULL);
+         test_framework_set_pool_ssl_opts (pool);
+         auth_client = mongoc_client_pool_pop (pool);
+      } else {
+         auth_client = test_framework_client_new_from_uri (uri, NULL);
+         test_framework_set_ssl_opts (auth_client);
+      }
+      mongoc_uri_destroy (uri);
    }
 
    collection = mongoc_client_get_collection (auth_client, "test", "test");
@@ -631,11 +635,22 @@ test_mongoc_client_authenticate_cached (bool pooled)
    int i = 0;
    uint32_t server_id;
 
-   if (pooled) {
-      pool = test_framework_new_default_client_pool ();
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = test_framework_new_default_client ();
+   {
+      mongoc_uri_t *const uri = test_framework_get_uri ();
+
+      // Avoid retryable handshakes from interfering with screwed-up cache.
+      mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
+
+      if (pooled) {
+         pool = test_framework_client_pool_new_from_uri (uri, NULL);
+         test_framework_set_pool_ssl_opts (pool);
+         client = mongoc_client_pool_pop (pool);
+      } else {
+         client = test_framework_client_new_from_uri (uri, NULL);
+         test_framework_set_ssl_opts (client);
+      }
+
+      mongoc_uri_destroy (uri);
    }
 
    collection = mongoc_client_get_collection (client, "test", "test");

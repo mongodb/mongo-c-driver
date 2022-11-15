@@ -343,12 +343,12 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       /* evaluate once */                                                      \
       const char *_a = a;                                                      \
       const char *_b = b;                                                      \
-      if (((_a) != (_b)) && !!strcmp ((_a), (_b))) {                           \
+      if ((_a != _b) && (!_a || !_b || (strcmp (_a, _b) != 0))) {              \
          fprintf (stderr,                                                      \
                   "FAIL\n\nAssert Failure:\n  \"%s\"\n  !=\n  \"%s\"\n %s:%d " \
                   " %s()\n",                                                   \
-                  _a,                                                          \
-                  _b,                                                          \
+                  _a ? _a : "(null)",                                          \
+                  _b ? _b : "(null)",                                          \
                   __FILE__,                                                    \
                   __LINE__,                                                    \
                   BSON_FUNC);                                                  \
