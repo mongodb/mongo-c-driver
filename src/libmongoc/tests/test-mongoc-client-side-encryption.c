@@ -2754,6 +2754,7 @@ test_bypass_spawning_via_bypassQueryAnalysis (void *unused)
    test_bypass_spawning_via_helper ("bypass_query_analysis");
 }
 
+/* Prose Test 8: Bypass Spawning mongocryptd - Via loading shared library */
 static void
 test_bypass_spawning_via_cryptSharedLibLoaded (void *unused)
 {
