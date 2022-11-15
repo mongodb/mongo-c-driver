@@ -57,14 +57,11 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode.
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
    // libmongoc does not support the optional findOne helper.
-   {"retryable reads handshake failures", "findOne succeeds after retryable handshake network error"},
-   {"retryable reads handshake failures", "findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
-   // libmongoc does not support the optional count helper.
-   {"retryable reads handshake failures", "count succeeds after retryable handshake network error"},
-   {"retryable reads handshake failures", "count succeeds after retryable handshake server error (ShutdownInProgress)"},
+   {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake network error"},
+   {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
    // libmongoc does not support the optional listIndexNames helper.
-   {"retryable reads handshake failures", "listIndexNames succeeds after retryable handshake network error"},
-   {"retryable reads handshake failures", "listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
+   {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
+   {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
    {0},
 };
 // clang-format on
