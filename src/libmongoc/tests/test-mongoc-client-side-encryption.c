@@ -2674,7 +2674,7 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
    } else if (0 == strcmp (auto_encryption_opt, "bypass_query_analysis")) {
       mongoc_auto_encryption_opts_set_bypass_query_analysis (
          auto_encryption_opts, true);
-   } else if (0 == strcmp (auto_encryption_opt, "cryptSharedLibRequired")) {
+   } else if (0 == strcmp (auto_encryption_opt, "crypt_shared_lib_loaded")) {
       bson_t *schema =
          get_bson_from_json_file ("./src/libmongoc/tests/"
                                   "client_side_encryption_prose/external/"
@@ -2755,10 +2755,10 @@ test_bypass_spawning_via_bypassQueryAnalysis (void *unused)
 }
 
 static void
-test_bypass_spawning_via_cryptSharedLibRequired (void *unused)
+test_bypass_spawning_via_cryptSharedLibLoaded (void *unused)
 {
    BSON_UNUSED (unused);
-   test_bypass_spawning_via_helper ("cryptSharedLibRequired");
+   test_bypass_spawning_via_helper ("crypt_shared_lib_loaded");
 }
 
 static int
@@ -5787,8 +5787,8 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
-                      "cryptSharedLibRequired",
-                      test_bypass_spawning_via_cryptSharedLibRequired,
+                      "cryptSharedLibLoaded",
+                      test_bypass_spawning_via_cryptSharedLibLoaded,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
