@@ -2489,6 +2489,8 @@ static bool
 pet_setup (mongoc_collection_t *cats_collection,
            mongoc_collection_t *dogs_collection);
 
+   static void test_snapshot_query (void);
+
 static void
 test_example_59 (mongoc_database_t *db)
 {
