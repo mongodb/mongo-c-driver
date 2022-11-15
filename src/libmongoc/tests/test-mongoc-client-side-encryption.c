@@ -5735,6 +5735,8 @@ static BSON_THREAD_FUN (listen_socket, arg)
    BSON_THREAD_RETURN;
 }
 
+/* Prose Test 20: Bypass creating mongocryptd client when shared library is
+ * loaded */
 static void
 test_bypass_mongocryptd_shared_library (void *unused)
 {
