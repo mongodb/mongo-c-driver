@@ -5755,6 +5755,9 @@ test_bypass_mongocryptd_shared_library (void *unused)
    mcommon_thread_create (&socket_thread, listen_socket, args);
 
    // configure mongoclient with auto encryption
+   char *env_cryptSharedLibPath =
+      test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+   BSON_ASSERT (env_cryptSharedLibPath);
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
    kms_providers = BCON_NEW (
       "local", "{", "key", BCON_BIN (0, (uint8_t *) LOCAL_MASTERKEY, 96), "}");
@@ -5771,14 +5774,13 @@ test_bypass_mongocryptd_shared_library (void *unused)
    }
 
    // configure extra options
-   bson_t *extra =
-      tmp_bson ("{'mongocryptdURI': 'mongodb://%s:%d', "
-                "'cryptSharedLibPath': '%s'}",
-                args->ip,
-                args->port,
-                test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH"));
+   bson_t *extra = tmp_bson ("{'mongocryptdURI': 'mongodb://%s:%d', "
+                             "'cryptSharedLibPath': '%s'}",
+                             args->ip,
+                             args->port,
+                             env_cryptSharedLibPath);
    mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra);
-
+   bson_free (env_cryptSharedLibPath);
    // get the client
    client_encrypted = test_framework_new_default_client ();
    bool ret = mongoc_client_enable_auto_encryption (
