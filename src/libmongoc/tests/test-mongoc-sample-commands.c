@@ -2543,7 +2543,7 @@ accumulate_adoptable_count (const mongoc_client_session_t *cs,
    const bson_t *doc = NULL;
    bson_error_t error;
    bson_iter_t iter;
-   bson_t opts;
+   bson_t opts = BSON_INITIALIZER;
 
    rc = mongoc_client_session_append (cs, &opts, &error);
    if (!rc) {
