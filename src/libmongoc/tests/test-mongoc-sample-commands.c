@@ -2474,6 +2474,210 @@ done:
 }
 
 
+/* clang-format on */
+
+static bool
+insert_pet (mongoc_collection_t *collection, bool is_adoptable)
+{
+   bson_t *doc = NULL;
+   bson_error_t error;
+   bool rc;
+
+   doc = BCON_NEW ("adoptable", BCON_BOOL (is_adoptable));
+
+   rc = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
+   if (!rc) {
+      MONGOC_ERROR ("insert into pets.%s failed: %s",
+                    mongoc_collection_get_name (collection),
+                    error.message);
+      goto cleanup;
+   }
+
+cleanup:
+   bson_destroy (doc);
+   return rc;
+}
+
+
+static bool
+pet_setup (mongoc_collection_t *cats_collection,
+           mongoc_collection_t *dogs_collection)
+{
+   bool ok = true;
+
+   mongoc_collection_drop (cats_collection, NULL);
+   mongoc_collection_drop (dogs_collection, NULL);
+
+   ok = insert_pet (cats_collection, true);
+   if (!ok) {
+      goto done;
+   }
+
+   ok = insert_pet (dogs_collection, true);
+   if (!ok) {
+      goto done;
+   }
+
+   ok = insert_pet (dogs_collection, false);
+   if (!ok) {
+      goto done;
+   }
+done:
+   return ok;
+}
+
+
+/*
+ * Increment 'accumulator' by the amount of adoptable pets in the given
+ * collection.
+ */
+static bool
+accumulate_adoptable_count (const mongoc_client_session_t *cs,
+                            mongoc_collection_t *collection,
+                            int64_t *accumulator /* OUT */
+)
+{
+   bson_t *pipeline = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   bool rc = false;
+   const bson_t *doc = NULL;
+   bson_error_t error;
+   bson_iter_t iter;
+   bson_t opts = BSON_INITIALIZER;
+
+   rc = mongoc_client_session_append (cs, &opts, &error);
+   if (!rc) {
+      MONGOC_ERROR ("could not apply session options: %s", error.message);
+      goto cleanup;
+   }
+
+   pipeline = BCON_NEW ("pipeline",
+                        "[",
+                        "{",
+                        "$match",
+                        "{",
+                       "adoptable",
+                        BCON_BOOL (true),
+                        "}",
+                        "}",
+                        "{",
+                        "$count",
+                        BCON_UTF8 ("adoptableCount"),
+                        "}",
+                        "]");
+
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
+   bson_destroy (&opts);
+
+   rc = mongoc_cursor_next (cursor, &doc);
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("could not get adoptableCount: %s", error.message);
+      rc = false;
+      goto cleanup;
+   }
+
+   if (!rc) {
+      MONGOC_ERROR ("%s", "cursor has no results");
+      goto cleanup;
+   }
+
+   rc = bson_iter_init_find (&iter, doc, "adoptableCount");
+   if (rc) {
+      *accumulator += bson_iter_as_int64 (&iter);
+   } else {
+      MONGOC_ERROR ("%s", "missing key: 'adoptableCount'");
+      goto cleanup;
+   }
+
+cleanup:
+   bson_destroy (pipeline);
+   mongoc_cursor_destroy (cursor);
+   return rc;
+}
+
+/*
+ * JIRA: https://jira.mongodb.org/browse/DRIVERS-2181
+ */
+static void
+test_example_59 (mongoc_database_t *db)
+{
+   /* Start Example 59 */
+   mongoc_client_t *client = NULL;
+   mongoc_client_session_t *cs = NULL;
+   mongoc_collection_t *cats_collection = NULL;
+   mongoc_collection_t *dogs_collection = NULL;
+   int64_t adoptable_pets_count = 0;
+   bson_error_t error;
+   mongoc_session_opt_t *session_opts;
+
+   client = test_framework_new_default_client ();
+
+   cats_collection = mongoc_client_get_collection (client, "pets", "cats");
+   dogs_collection = mongoc_client_get_collection (client, "pets", "dogs");
+
+   /* Seed 'pets.cats' and 'pets.dogs' with example data */
+   if (!pet_setup (cats_collection, dogs_collection)) {
+      goto cleanup;
+   }
+
+   /* start a snapshot session */
+   session_opts = mongoc_session_opts_new ();
+   mongoc_session_opts_set_snapshot (session_opts, true);
+   cs = mongoc_client_start_session (client, session_opts, &error);
+   mongoc_session_opts_destroy (session_opts);
+   if (!cs) {
+      MONGOC_ERROR ("Could not start session: %s", error.message);
+      goto cleanup;
+   }
+
+   /*
+    * Perform the following aggregation pipeline, and accumulate the count in
+    * `adoptable_pets_count`.
+    *
+    *  adoptablePetsCount = db.cats.aggregate(
+    *      [ { "$match": { "adoptable": true } },
+    *        { "$count": "adoptableCatsCount" } ], session=s
+    *  ).next()["adoptableCatsCount"]
+    *
+    *  adoptablePetsCount += db.dogs.aggregate(
+    *      [ { "$match": { "adoptable": True} },
+    *        { "$count": "adoptableDogsCount" } ], session=s
+    *  ).next()["adoptableDogsCount"]
+    *
+    * Remember in order to apply the client session to
+    * this operation, you must append the client session to the options passed
+    * to `mongoc_collection_aggregate`, i.e.,
+    *
+    * mongoc_client_session_append (cs, &opts, &error);
+    * cursor = mongoc_collection_aggregate (
+    *    collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
+    */
+   accumulate_adoptable_count (cs, cats_collection, &adoptable_pets_count);
+   accumulate_adoptable_count (cs, dogs_collection, &adoptable_pets_count);
+
+   printf ("there are %" PRId64 " adoptable pets\n", adoptable_pets_count);
+
+   /* End Example 59 */
+
+   if (adoptable_pets_count != 2) {
+      MONGOC_ERROR (
+         "there should be exatly 2 adoptable_pets_count, found: %" PRId64,
+         adoptable_pets_count);
+   }
+
+   /* Start Example 59 Post */
+cleanup:
+   mongoc_collection_destroy (dogs_collection);
+   mongoc_collection_destroy (cats_collection);
+   mongoc_client_session_destroy (cs);
+   mongoc_client_destroy (client);
+   /* End Example 59 Post */
+}
+
+/* clang-format off */
+
 typedef struct {
    bson_mutex_t lock;
    mongoc_collection_t *collection;
@@ -4000,6 +4204,7 @@ test_sample_commands (void)
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
    test_sample_command (test_example_56, 56, db, collection, true);
+   test_sample_command (test_example_59, 59, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
