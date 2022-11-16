@@ -32,7 +32,7 @@ typedef bool (*remove_with_opts_fn) (mongoc_bulk_operation_t *bulk,
 
 /*--------------------------------------------------------------------------
  *
- * assert_error_count --
+ * assert_write_error_count --
  *
  *       Check the length of a bulk operation reply's writeErrors.
  *
@@ -46,7 +46,7 @@ typedef bool (*remove_with_opts_fn) (mongoc_bulk_operation_t *bulk,
  */
 
 static void
-assert_error_count (int len, const bson_t *reply)
+assert_write_error_count (int len, const bson_t *reply)
 {
    bson_iter_t iter;
    bson_iter_t error_iter;
@@ -2311,7 +2311,7 @@ test_insert_continue_on_error (void)
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index': 1}, {'index': 3}]}");
 
-   assert_error_count (2, &reply);
+   assert_write_error_count (2, &reply);
    ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
@@ -2368,7 +2368,7 @@ test_update_continue_on_error (void)
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index': 1}]}");
 
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (2, collection);
    ASSERT_CMPINT (
       1,
@@ -2428,7 +2428,7 @@ test_remove_continue_on_error (void)
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index': 1}]}");
 
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
@@ -2483,7 +2483,7 @@ test_single_error_ordered_bulk (void)
                   *                       " 'writeErrors.0.op':     ...,"
                   */
                  "}");
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
@@ -2546,7 +2546,7 @@ test_multiple_error_ordered_bulk (void)
                   * 'u': {'$set': {'a': 1}}, 'multi': false}"
                   */
                  "}");
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
@@ -2649,7 +2649,7 @@ test_single_error_unordered_bulk (void)
                  " 'writeErrors': [{'index': 1,"
                  "                  'code': {'$exists': true},"
                  "                  'errmsg': {'$exists': true}}]}");
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
@@ -3084,7 +3084,7 @@ test_multiple_error_unordered_bulk (void)
                  /* " 'writeErrors.1.op': {'_id': '...', 'b': 6, 'a': 1}," */
                  " 'writeErrors.1.code':   {'$exists': true},"
                  " 'writeErrors.1.errmsg': {'$exists': true}}");
-   assert_error_count (2, &reply);
+   assert_write_error_count (2, &reply);
 
    /*
     * assume the update at index 1 runs before the update at index 3,
@@ -3251,7 +3251,7 @@ test_large_inserts_ordered (void *ctx)
                  " 'nRemoved': 0,"
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index':  1}]}");
-   assert_error_count (1, &reply);
+   assert_write_error_count (1, &reply);
    ASSERT_COUNT (1, collection);
 
    cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
@@ -4933,6 +4933,80 @@ test_bulk_let_multi (void)
    mock_server_destroy (mock_server);
 }
 
+// Test a bulk write operation that receives two error replies from two
+// commands.
+static void
+test_bulk_write_multiple_errors (void *unused)
+{
+   BSON_UNUSED (unused);
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_new_default_client ();
+   BSON_ASSERT (client);
+
+   collection = get_test_collection (client, "test_bulk_write_multiple_errors");
+   BSON_ASSERT (collection);
+
+   // Use ordered:false so the bulk operation continues to send commands after
+   // the first error.
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
+   // Insert three documents. This is sent as one "insert" command to the
+   // server.
+   // configure fail point
+   bool ret = mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson (
+         "{'configureFailPoint': 'failCommand', 'mode': {'times': 2}, "
+         "'data': {'failCommands': ['insert', 'delete'], 'errorCode': 8}}"),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   mongoc_bulk_operation_insert (bulk,
+                                 tmp_bson ("{'_id': 1}")); // fail via failPoint
+   mongoc_bulk_operation_delete (bulk,
+                                 tmp_bson ("{'_id': 1}")); // fail via failPoint
+
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 4}")); // succeed
+
+   mongoc_bulk_operation_delete (bulk, tmp_bson ("{'_id': 4}")); // suceed
+
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 5}")); // suceed
+   mongoc_bulk_operation_insert (
+      bulk, tmp_bson ("{'_id': 5}")); // duplicate key error
+
+
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+   BSON_ASSERT (!r);
+
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 2,"
+                 " 'nMatched':  0,"
+                 " 'nModified': 0,"
+                 " 'nRemoved':  1,"
+                 " 'nUpserted': 0,"
+                 " 'errorReplies': [{'code': 8}, {'code': 8}],"
+                 " 'writeErrors': [{ 'index' : 5 }]}");
+
+   assert_write_error_count (1, &reply);
+   ASSERT_COUNT (1, collection);
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 
 void
 test_bulk_install (TestSuite *suite)
@@ -5230,4 +5304,10 @@ test_bulk_install (TestSuite *suite)
       suite, "/BulkOperation/opts/let", test_bulk_let);
    TestSuite_AddMockServerTest (
       suite, "/BulkOperation/opts/let/multi", test_bulk_let_multi);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/multiple_errors",
+                      test_bulk_write_multiple_errors,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_failpoint);
 }

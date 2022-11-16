@@ -59,8 +59,8 @@ mongoc_error_has_label (const bson_t *reply, const char *label)
    return false;
 }
 
-static bool
-_mongoc_error_is_server (bson_error_t *error)
+bool
+_mongoc_error_is_server (const bson_error_t *error)
 {
    if (!error) {
       return false;

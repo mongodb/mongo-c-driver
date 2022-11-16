@@ -1147,6 +1147,7 @@ _mongoc_write_result_init (mongoc_write_result_t *result) /* IN */
    bson_init (&result->writeConcernErrors);
    bson_init (&result->writeErrors);
    bson_init (&result->errorLabels);
+   bson_init (&result->rawErrorReplies);
 
    EXIT;
 }
@@ -1163,6 +1164,7 @@ _mongoc_write_result_destroy (mongoc_write_result_t *result)
    bson_destroy (&result->writeConcernErrors);
    bson_destroy (&result->writeErrors);
    bson_destroy (&result->errorLabels);
+   bson_destroy (&result->rawErrorReplies);
 
    EXIT;
 }
@@ -1355,6 +1357,22 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
       result->n_writeConcernErrors++;
    }
 
+   /* If a server error ocurred, then append the raw response to the
+    * error_replies array. */
+   if (!_mongoc_cmd_check_ok (
+          reply, MONGOC_ERROR_API_VERSION_2, NULL /* error */)) {
+      char str[16];
+      const char *key;
+
+      bson_uint32_to_string (result->n_errorReplies, &key, str, sizeof str);
+
+      if (!bson_append_document (&result->rawErrorReplies, key, -1, reply)) {
+         MONGOC_ERROR ("Error adding \"%s\" to errorReplies.\n", key);
+      }
+
+      result->n_errorReplies++;
+   }
+
    /* inefficient if there are ever large numbers: for each label in each err,
     * we linear-search result->errorLabels to see if it's included yet */
    _mongoc_bson_array_copy_labels_to (reply, &result->errorLabels);
@@ -1465,6 +1483,7 @@ _mongoc_write_result_complete (
    /* produce either old fields like nModified from the deprecated Bulk API Spec
     * or new fields like modifiedCount from the CRUD Spec, which we partly obey
     */
+
    if (bson && mongoc_write_concern_is_acknowledged (wc)) {
       n_args = 0;
       va_start (args, error);
@@ -1527,6 +1546,12 @@ _mongoc_write_result_complete (
          BSON_APPEND_ARRAY (
             bson, "writeConcernErrors", &result->writeConcernErrors);
       }
+   }
+
+   /* If there is a raw error response then we know a server error has occurred.
+    * We should add the raw result to the reply. */
+   if (bson && !bson_empty (&result->rawErrorReplies)) {
+      BSON_APPEND_ARRAY (bson, "errorReplies", &result->rawErrorReplies);
    }
 
    /* set bson_error_t from first write error or write concern error */

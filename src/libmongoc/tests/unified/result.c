@@ -360,6 +360,7 @@ result_check (result_t *result,
    bson_t *error_labels_contain;
    bson_t *error_labels_omit;
    bson_val_t *error_expect_result;
+   bson_val_t *error_response;
 
    if (!expect_result && !expect_error) {
       if (!result->ok) {
@@ -404,6 +405,7 @@ result_check (result_t *result,
       bson_parser_array_optional (
          parser, "errorLabelsOmit", &error_labels_omit);
       bson_parser_any_optional (parser, "expectResult", &error_expect_result);
+      bson_parser_any_optional (parser, "errorResponse", &error_response);
       if (!bson_parser_parse (parser, expect_error, error)) {
          goto done;
       }
@@ -564,6 +566,60 @@ result_check (result_t *result,
                bson_val_to_json (result->value));
             goto done;
          }
+      }
+
+      if (error_response) {
+         if (!result->reply) {
+            test_set_error (
+               error, "%s", "expected error with a reply, but reply unset");
+            goto done;
+         }
+
+         /* Write operations have the raw response wrapped in a errorReplies
+          * array. Read operations return the raw response as the reply. */
+         bson_t doc_to_match;
+         bson_iter_t iter;
+
+         if (bson_iter_init_find (&iter, result->reply, "errorReplies")) {
+            bson_iter_t child;
+
+            if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
+               test_set_error (
+                  error,
+                  "expected errorReplies to be an array, but received %s",
+                  bson_type_to_string (bson_iter_type (&iter)));
+               goto done;
+            }
+            bson_iter_recurse (&iter, &child);
+            bson_iter_next (&child);
+            if (!BSON_ITER_HOLDS_DOCUMENT (&child)) {
+               test_set_error (
+                  error,
+                  "expected errorReplies.0 to be a document but received %s",
+                  bson_type_to_string (bson_iter_type (&iter)));
+               goto done;
+            }
+            bson_iter_bson (&child, &doc_to_match);
+         } else {
+            bson_copy_to (result->reply, &doc_to_match);
+         }
+
+         bson_val_t *val_to_match = bson_val_from_bson (&doc_to_match);
+
+         if (!bson_match (error_response,
+                          val_to_match,
+                          result->array_of_root_docs,
+                          error)) {
+            test_diagnostics_error_info (
+               "error.errorResponse mismatch:\nExpected: %s\nActual: %s\n",
+               bson_val_to_json (error_response),
+               bson_as_json (result->reply, NULL));
+            bson_val_destroy (val_to_match);
+            bson_destroy (&doc_to_match);
+            goto done;
+         }
+         bson_val_destroy (val_to_match);
+         bson_destroy (&doc_to_match);
       }
    }
 
