@@ -2674,7 +2674,7 @@ test_bypass_spawning_via_helper (const char *auto_encryption_opt)
    } else if (0 == strcmp (auto_encryption_opt, "bypass_query_analysis")) {
       mongoc_auto_encryption_opts_set_bypass_query_analysis (
          auto_encryption_opts, true);
-   } else if (0 == strcmp (auto_encryption_opt, "crypt_shared_lib_loaded")) {
+   } else if (0 == strcmp (auto_encryption_opt, "cryptSharedLibRequired")) {
       bson_t *schema =
          get_bson_from_json_file ("./src/libmongoc/tests/"
                                   "client_side_encryption_prose/external/"
@@ -2759,7 +2759,7 @@ static void
 test_bypass_spawning_via_cryptSharedLibLoaded (void *unused)
 {
    BSON_UNUSED (unused);
-   test_bypass_spawning_via_helper ("crypt_shared_lib_loaded");
+   test_bypass_spawning_via_helper ("cryptSharedLibRequired");
 }
 
 static int
