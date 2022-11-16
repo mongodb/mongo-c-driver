@@ -577,11 +577,12 @@ result_check (result_t *result,
 
          /* Write operations have the raw response wrapped in a errorReplies
           * array. Read operations return the raw response as the reply. */
-         bson_iter_t iter;
-         bson_iter_t child;
          bson_t doc_to_match;
+         bson_iter_t iter;
 
          if (bson_iter_init_find (&iter, result->reply, "errorReplies")) {
+            bson_iter_t child;
+
             if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
                test_set_error (
                   error,
