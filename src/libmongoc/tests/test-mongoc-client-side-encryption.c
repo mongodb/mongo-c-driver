@@ -5726,11 +5726,13 @@ static BSON_THREAD_FUN (listen_socket, arg)
    mongoc_socket_t *ret = mongoc_socket_accept (socket, 100);
    if (ret) {
       // not null received a connection and test should fail
-      bson_mutex_lock (&args->mutex);
       args->failed = true;
-      mongoc_cond_signal (&args->cond);
-      bson_mutex_unlock (&args->mutex);
    }
+   // signal that test is complete.
+   bson_mutex_lock (&args->mutex);
+   mongoc_cond_signal (&args->cond);
+   bson_mutex_unlock (&args->mutex);
+
    mongoc_socket_destroy (socket);
    BSON_THREAD_RETURN;
 }
@@ -5797,8 +5799,9 @@ test_bypass_mongocryptd_shared_library (void *unused)
                                        NULL /* reply */,
                                        &error);
    ASSERT_OR_PRINT (ret, error);
-   // checking for signal on thread
    ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
+   /* ret non-zero indicates an error (a timeout) */
+   BSON_ASSERT (!ret);
    // failed should be false if the signal did not receive a connection
    BSON_ASSERT (!args->failed);
    mcommon_thread_join (socket_thread);
