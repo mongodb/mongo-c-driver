@@ -1565,13 +1565,14 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                          "must set options for range algorithm");
          goto fail;
       }
-      mongocrypt_binary_t *binary_range = mongocrypt_binary_new_from_data (
+      mongocrypt_binary_t *binary_range_opts = mongocrypt_binary_new_from_data (
          (uint8_t *) bson_get_data (range_opts), range_opts->len);
       if (!mongocrypt_ctx_setopt_algorithm_range (state_machine->ctx,
-                                                  binary_range)) {
+                                                  binary_range_opts)) {
          _ctx_check_error (state_machine->ctx, error, true);
          goto fail;
       }
+      mongocrypt_binary_destroy (binary_range_opts);
    }
 
    if (query_type != NULL) {

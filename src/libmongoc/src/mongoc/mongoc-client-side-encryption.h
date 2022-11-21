@@ -258,6 +258,20 @@ MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_query_type (
    mongoc_client_encryption_encrypt_opts_t *opts, const char *query_type);
 
+MONGOC_EXPORT (mongoc_client_encryption_range_opts_t *)
+mongoc_client_encryption_range_opts_new (void);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_range_opts_set_sparsity (
+   mongoc_client_encryption_range_opts_t *range_opts, int64_t sparsity);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_range_opts_set_min_max_precision (
+   mongoc_client_encryption_range_opts_t *range_opts,
+   bson_value_t min,
+   bson_value_t max,
+   int32_t precision);
+
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_range_opts (
    mongoc_client_encryption_encrypt_opts_t *opts,

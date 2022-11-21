@@ -568,35 +568,21 @@ mongoc_client_encryption_range_opts_set_sparsity (
 }
 
 void
-mongoc_client_encryption_range_opts_set_min (
-   mongoc_client_encryption_range_opts_t *range_opts, bson_value_t min)
+mongoc_client_encryption_range_opts_set_min_max_precision (
+   mongoc_client_encryption_range_opts_t *range_opts,
+   bson_value_t min,
+   bson_value_t max,
+   int32_t precision)
 {
    if (!range_opts) {
       return;
    }
    range_opts->min.set = true;
-   range_opts->min.value = min;
-}
-
-void
-mongoc_client_encryption_range_opts_set_max (
-   mongoc_client_encryption_range_opts_t *range_opts, bson_value_t max)
-{
-   if (!range_opts) {
-      return;
-   }
    range_opts->max.set = true;
-   range_opts->max.value = max;
-}
-
-void
-mongoc_client_encryption_range_opts_set_precision (
-   mongoc_client_encryption_range_opts_t *range_opts, int32_t precision)
-{
-   if (!range_opts) {
-      return;
-   }
    range_opts->precision.set = true;
+
+   range_opts->min.value = min;
+   range_opts->max.value = max;
    range_opts->precision.value = precision;
 }
 
