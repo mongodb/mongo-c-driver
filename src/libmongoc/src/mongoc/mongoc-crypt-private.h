@@ -97,7 +97,7 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 char *keyaltname,
                                 const char *query_type,
                                 const int64_t *contention_factor,
-                                bson_t *rangeopts,
+                                bson_t *range_opts,
                                 const bson_value_t *value_in,
                                 bson_value_t *value_out,
                                 bson_error_t *error);
