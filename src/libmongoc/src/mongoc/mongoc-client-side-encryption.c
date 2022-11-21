@@ -433,6 +433,22 @@ mongoc_client_encryption_datakey_opts_set_keymaterial (
  * Explicit Encryption options.
  *--------------------------------------------------------------------------
  */
+struct _mongoc_client_encryption_range_opts_t {
+   struct {
+      bson_value_t value;
+      bool set;
+   } min;
+   struct {
+      bson_value_t value;
+      bool set;
+   } max;
+   int64_t sparsity;
+   struct {
+      int32_t value;
+      bool set;
+   } precision;
+};
+
 struct _mongoc_client_encryption_encrypt_opts_t {
    bson_value_t keyid;
    char *algorithm;
@@ -442,6 +458,11 @@ struct _mongoc_client_encryption_encrypt_opts_t {
       bool set;
    } contention_factor;
    char *query_type;
+   struct {
+      mongoc_client_encryption_range_opts_t *value;
+      bson_t bson_options;
+      bool set;
+   } rangeopts;
 };
 
 mongoc_client_encryption_encrypt_opts_t *
@@ -450,12 +471,16 @@ mongoc_client_encryption_encrypt_opts_new (void)
    return bson_malloc0 (sizeof (mongoc_client_encryption_encrypt_opts_t));
 }
 
+
 void
 mongoc_client_encryption_encrypt_opts_destroy (
    mongoc_client_encryption_encrypt_opts_t *opts)
 {
    if (!opts) {
       return;
+   }
+   if (opts->rangeopts.set) {
+      bson_free (opts->rangeopts.value);
    }
    bson_value_destroy (&opts->keyid);
    bson_free (opts->algorithm);
@@ -522,6 +547,98 @@ mongoc_client_encryption_encrypt_opts_set_query_type (
    }
    bson_free (opts->query_type);
    opts->query_type = query_type ? bson_strdup (query_type) : NULL;
+}
+
+/*--------------------------------------------------------------------------
+ * Explicit Encryption Range Options
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_encryption_range_opts_t *
+mongoc_client_encryption_range_opts_new (void)
+{
+   return bson_malloc0 (sizeof (mongoc_client_encryption_range_opts_t));
+}
+
+void
+mongoc_client_encryption_range_opts_set_sparsity (
+   mongoc_client_encryption_range_opts_t *rangeopts, int64_t sparsity)
+{
+   if (!rangeopts) {
+      return;
+   }
+   rangeopts->sparsity = sparsity;
+}
+
+void
+mongoc_client_encryption_range_opts_set_min (
+   mongoc_client_encryption_range_opts_t *rangeopts, bson_value_t min)
+{
+   if (!rangeopts) {
+      return;
+   }
+   rangeopts->min.set = true;
+   rangeopts->min.value = min;
+}
+
+void
+mongoc_client_encryption_range_opts_set_max (
+   mongoc_client_encryption_range_opts_t *rangeopts, bson_value_t max)
+{
+   if (!rangeopts) {
+      return;
+   }
+   rangeopts->max.set = true;
+   rangeopts->max.value = max;
+}
+
+void
+mongoc_client_encryption_range_opts_set_precision (
+   mongoc_client_encryption_range_opts_t *rangeopts, int32_t precision)
+{
+   if (!rangeopts) {
+      return;
+   }
+   rangeopts->precision.set = true;
+   rangeopts->precision.value = precision;
+}
+
+void
+mongoc_client_encryption_encrypt_opts_set_range_opts (
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   mongoc_client_encryption_range_opts_t *rangeopts)
+{
+   if (!opts) {
+      return;
+   }
+   if (rangeopts) {
+      opts->rangeopts.set = true;
+      opts->rangeopts.value = rangeopts;
+   }
+}
+
+void
+mongoc_client_encryption_get_bson_range_opts (
+   bson_t *bson_range_opts, mongoc_client_encryption_encrypt_opts_t *opts)
+{
+   if (!opts) {
+      return;
+   }
+
+   BSON_ASSERT (bson_range_opts);
+   mongoc_client_encryption_range_opts_t *range_opts = opts->rangeopts.value;
+   if (range_opts->max.set) {
+      BSON_APPEND_VALUE (bson_range_opts, "max", &range_opts->max.value);
+   }
+   if (range_opts->min.set) {
+      BSON_APPEND_VALUE (bson_range_opts, "min", &range_opts->min.value);
+   }
+   if (range_opts->precision.set) {
+      BSON_APPEND_INT32 (
+         bson_range_opts, "precision", range_opts->precision.value);
+   }
+   if (range_opts->sparsity) {
+      BSON_APPEND_INT64 (bson_range_opts, "sparsity", range_opts->sparsity);
+   }
 }
 
 /*--------------------------------------------------------------------------
@@ -2618,6 +2735,10 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
                       "required 'opts' unset");
       GOTO (fail);
    }
+   bson_t *range_opts = bson_new ();
+   if (opts->rangeopts.set) {
+      mongoc_client_encryption_get_bson_range_opts (range_opts, opts);
+   }
 
    if (!_mongoc_crypt_explicit_encrypt (
           client_encryption->crypt,
@@ -2627,12 +2748,14 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
           opts->keyaltname,
           opts->query_type,
           opts->contention_factor.set ? &opts->contention_factor.value : NULL,
+          range_opts,
           value,
           ciphertext,
           error)) {
+      bson_destroy (range_opts);
       GOTO (fail);
    }
-
+   bson_destroy (range_opts);
    ret = true;
 fail:
    RETURN (ret);

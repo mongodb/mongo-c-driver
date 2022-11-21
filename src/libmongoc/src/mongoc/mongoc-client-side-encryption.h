@@ -35,8 +35,10 @@ struct _mongoc_database_t;
    "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
 #define MONGOC_ENCRYPT_ALGORITHM_INDEXED "Indexed"
 #define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
+#define MONGOC_ENCRYPT_ALGORITHM_RANGE "Range"
 
 #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
+#define MONGOC_ENCRYPT_QUERY_TYPE_RANGE "range"
 
 
 BSON_BEGIN_DECLS
@@ -100,6 +102,8 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback (
 
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
+typedef struct _mongoc_client_encryption_range_opts_t
+   mongoc_client_encryption_range_opts_t;
 typedef struct _mongoc_client_encryption_encrypt_opts_t
    mongoc_client_encryption_encrypt_opts_t;
 typedef struct _mongoc_client_encryption_datakey_opts_t
@@ -253,6 +257,11 @@ mongoc_client_encryption_encrypt_opts_set_contention_factor (
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_query_type (
    mongoc_client_encryption_encrypt_opts_t *opts, const char *query_type);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_opts_set_range_opts (
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   mongoc_client_encryption_range_opts_t *rangeopts);
 
 MONGOC_EXPORT (mongoc_client_encryption_datakey_opts_t *)
 mongoc_client_encryption_datakey_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;

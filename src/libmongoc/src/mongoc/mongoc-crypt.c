@@ -1528,6 +1528,7 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 char *keyaltname,
                                 const char *query_type,
                                 const int64_t *contention_factor,
+                                bson_t *range_opts,
                                 const bson_value_t *value_in,
                                 bson_value_t *value_out,
                                 bson_error_t *error)
@@ -1553,6 +1554,24 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
    if (!mongocrypt_ctx_setopt_algorithm (state_machine->ctx, algorithm, -1)) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
+   }
+
+   /* Pass the range options to mongocrypt if the algorithm is range */
+   if (0 == strcmp (algorithm, MONGOC_ENCRYPT_ALGORITHM_RANGE)) {
+      if (bson_empty (range_opts)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "must set options for range algorithm");
+         goto fail;
+      }
+      mongocrypt_binary_t *binary_range = mongocrypt_binary_new_from_data (
+         (uint8_t *) bson_get_data (range_opts), range_opts->len);
+      if (!mongocrypt_ctx_setopt_algorithm_range (state_machine->ctx,
+                                                  binary_range)) {
+         _ctx_check_error (state_machine->ctx, error, true);
+         goto fail;
+      }
    }
 
    if (query_type != NULL) {
