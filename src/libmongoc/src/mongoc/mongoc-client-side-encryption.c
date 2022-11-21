@@ -438,15 +438,9 @@ struct _mongoc_client_encryption_range_opts_t {
       bson_value_t value;
       bool set;
    } min;
-   struct {
-      bson_value_t value;
-      bool set;
-   } max;
+   bson_value_t max;
    int64_t sparsity;
-   struct {
-      int32_t value;
-      bool set;
-   } precision;
+   int32_t precision;
 };
 
 struct _mongoc_client_encryption_encrypt_opts_t {
@@ -577,13 +571,16 @@ mongoc_client_encryption_range_opts_set_min_max_precision (
    if (!range_opts) {
       return;
    }
+
+   BSON_ASSERT_PARAM (&min);
+   BSON_ASSERT_PARAM (&max);
+   BSON_ASSERT_PARAM (precision);
+
    range_opts->min.set = true;
-   range_opts->max.set = true;
-   range_opts->precision.set = true;
 
    range_opts->min.value = min;
-   range_opts->max.value = max;
-   range_opts->precision.value = precision;
+   range_opts->max = max;
+   range_opts->precision = precision;
 }
 
 void
@@ -610,15 +607,10 @@ mongoc_client_encryption_get_bson_range_opts (
 
    BSON_ASSERT (bson_range_opts);
    mongoc_client_encryption_range_opts_t *range_opts = opts->range_opts.value;
-   if (range_opts->max.set) {
-      BSON_APPEND_VALUE (bson_range_opts, "max", &range_opts->max.value);
-   }
    if (range_opts->min.set) {
+      BSON_APPEND_VALUE (bson_range_opts, "max", &range_opts->max);
       BSON_APPEND_VALUE (bson_range_opts, "min", &range_opts->min.value);
-   }
-   if (range_opts->precision.set) {
-      BSON_APPEND_INT32 (
-         bson_range_opts, "precision", range_opts->precision.value);
+      BSON_APPEND_INT32 (bson_range_opts, "precision", range_opts->precision);
    }
    if (range_opts->sparsity) {
       BSON_APPEND_INT64 (bson_range_opts, "sparsity", range_opts->sparsity);

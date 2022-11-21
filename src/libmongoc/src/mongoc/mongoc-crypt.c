@@ -1557,14 +1557,18 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
    }
 
    /* Pass the range options to mongocrypt if the algorithm is range */
-   if (0 == strcmp (algorithm, MONGOC_ENCRYPT_ALGORITHM_RANGE)) {
+   if (0 == strncasecmp (algorithm,
+                         MONGOC_ENCRYPT_ALGORITHM_RANGE,
+                         strlen (MONGOC_ENCRYPT_ALGORITHM_RANGE))) {
       if (bson_empty (range_opts)) {
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                         "must set options for range algorithm");
+                         "must set range options for a range algorithm");
          goto fail;
       }
+
+      /* mongocrypt error checks and parses range options */
       mongocrypt_binary_t *binary_range_opts = mongocrypt_binary_new_from_data (
          (uint8_t *) bson_get_data (range_opts), range_opts->len);
       if (!mongocrypt_ctx_setopt_algorithm_range (state_machine->ctx,
