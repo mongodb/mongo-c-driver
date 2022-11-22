@@ -483,7 +483,9 @@ mongoc_client_encryption_encrypt_opts_destroy (
       return;
    }
    if (opts->range_opts.set) {
-      mongoc_client_encryption_encrypt_range_opts_destroy (&opts->range_opts);
+      mongoc_client_encryption_encrypt_range_opts_destroy (
+         &opts->range_opts.value);
+      bson_free (&opts->range_opts);
    }
    bson_value_destroy (&opts->keyid);
    bson_free (opts->algorithm);
