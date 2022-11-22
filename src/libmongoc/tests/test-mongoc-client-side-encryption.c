@@ -3763,9 +3763,10 @@ test_explicit_encryption_range (void *unused)
 
       bson_value_destroy (&insertPayload);
       bson_destroy (&to_insert);
-      mongoc_client_encryption_encrypt_opts_destroy (eopts);
+      mongoc_client_encryption_encrypt_opts_destroy (
+         eopts); // will destroy range_opts too
    }
-   // find operation
+   /*  Find the inserted document with an encrypted range query */
    {
       bson_value_t findPayload;
       mongoc_cursor_t *cursor;
@@ -3818,6 +3819,7 @@ test_explicit_encryption_range (void *unused)
               "expected one document to be returned, got more than one");
 
       bson_value_destroy (&findPayload);
+      bson_destroy (findBson);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
       bson_destroy (&filter);
