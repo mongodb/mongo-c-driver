@@ -470,7 +470,7 @@ mongoc_client_encryption_encrypt_range_opts_destroy (
 {
    if (range_opts->min.set) {
       bson_value_destroy (&range_opts->min.value);
-      bson_value_destroy (&range_opts->max.value);
+      bson_value_destroy (&range_opts->max);
    }
    bson_free (range_opts);
 }
@@ -484,8 +484,7 @@ mongoc_client_encryption_encrypt_opts_destroy (
    }
    if (opts->range_opts.set) {
       mongoc_client_encryption_encrypt_range_opts_destroy (
-         &opts->range_opts.value);
-      bson_free (&opts->range_opts);
+         opts->range_opts.value);
    }
    bson_value_destroy (&opts->keyid);
    bson_free (opts->algorithm);
@@ -623,7 +622,9 @@ mongoc_client_encryption_get_bson_range_opts (
    if (range_opts->min.set) {
       BSON_APPEND_VALUE (bson_range_opts, "max", &range_opts->max);
       BSON_APPEND_VALUE (bson_range_opts, "min", &range_opts->min.value);
-      BSON_APPEND_INT32 (bson_range_opts, "precision", range_opts->precision);
+      // TODO: add back in when MONGOCRYPT-490 is merged
+      // BSON_APPEND_INT32 (bson_range_opts, "precision",
+      // range_opts->precision);
    }
    if (range_opts->sparsity) {
       BSON_APPEND_INT64 (bson_range_opts, "sparsity", range_opts->sparsity);
