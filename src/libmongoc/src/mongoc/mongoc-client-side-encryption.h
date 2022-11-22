@@ -262,6 +262,10 @@ MONGOC_EXPORT (mongoc_client_encryption_range_opts_t *)
 mongoc_client_encryption_range_opts_new (void);
 
 MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_range_opts_destroy (
+   mongoc_client_encryption_range_opts_t *range_opts);
+
+MONGOC_EXPORT (void)
 mongoc_client_encryption_range_opts_set_sparsity (
    mongoc_client_encryption_range_opts_t *range_opts, int64_t sparsity);
 

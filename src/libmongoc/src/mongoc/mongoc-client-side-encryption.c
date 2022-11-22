@@ -465,6 +465,17 @@ mongoc_client_encryption_encrypt_opts_new (void)
 }
 
 void
+mongoc_client_encryption_encrypt_range_opts_destroy (
+   mongoc_client_encryption_range_opts_t *range_opts)
+{
+   if (range_opts->min.set) {
+      bson_value_destroy (&range_opts->min.value);
+      bson_value_destroy (&range_opts->max.value);
+   }
+   bson_free (range_opts);
+}
+
+void
 mongoc_client_encryption_encrypt_opts_destroy (
    mongoc_client_encryption_encrypt_opts_t *opts)
 {
@@ -472,7 +483,7 @@ mongoc_client_encryption_encrypt_opts_destroy (
       return;
    }
    if (opts->range_opts.set) {
-      bson_free (opts->range_opts.value);
+      mongoc_client_encryption_encrypt_range_opts_destroy (&opts->range_opts);
    }
    bson_value_destroy (&opts->keyid);
    bson_free (opts->algorithm);
@@ -574,7 +585,7 @@ mongoc_client_encryption_range_opts_set_min_max_precision (
 
    BSON_ASSERT_PARAM (&min);
    BSON_ASSERT_PARAM (&max);
-   BSON_ASSERT_PARAM (precision);
+   BSON_ASSERT_PARAM (&precision);
 
    range_opts->min.set = true;
 

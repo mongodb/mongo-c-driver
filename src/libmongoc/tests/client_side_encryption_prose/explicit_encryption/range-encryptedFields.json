@@ -1,0 +1,51 @@
+{
+    "fields": [
+      {
+        "keyId": {
+          "$binary": {
+            "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+            "subType": "04"
+          }
+        },
+        "path": "encryptedInt",
+        "bsonType": "int",
+        "queries": {
+          "queryType": "rangePreview",
+          "sparsity": {
+            "$numberInt": "1"
+          },
+          "min": {
+            "$numberInt": "0"
+          },
+          "max": {
+            "$numberInt": "250"
+          }
+        }
+      },
+      {
+        "keyId": {
+            "$binary": {
+              "base64": "q83vqxI0mHYSNBI0VniQEg==",
+              "subType": "04"
+            }
+          },
+        "path": "encryptedDoublePrecision",
+        "bsonType": "double",
+        "queries": {
+          "queryType": "rangePreview",
+          "sparsity": {
+            "$numberInt": "1"
+          },
+          "min": {
+            "$numberDouble": "10.234"
+          },
+          "max": {
+            "$numberDouble": "1999.999"
+          },
+          "precision": {
+            "$numberInt": "3"
+          }
+        }
+      }
+    ]
+  }

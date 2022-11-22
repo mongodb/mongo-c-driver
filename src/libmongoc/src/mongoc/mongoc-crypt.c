@@ -1573,6 +1573,7 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
          (uint8_t *) bson_get_data (range_opts), range_opts->len);
       if (!mongocrypt_ctx_setopt_algorithm_range (state_machine->ctx,
                                                   binary_range_opts)) {
+         mongocrypt_binary_destroy (binary_range_opts);
          _ctx_check_error (state_machine->ctx, error, true);
          goto fail;
       }
