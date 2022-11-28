@@ -2556,7 +2556,7 @@ accumulate_adoptable_count (const mongoc_client_session_t *cs,
                         "{",
                         "$match",
                         "{",
-                       "adoptable",
+                        "adoptable",
                         BCON_BOOL (true),
                         "}",
                         "}",
@@ -2603,7 +2603,7 @@ cleanup:
 static void
 test_example_59 (mongoc_database_t *db)
 {
-   /* Start Example 59 */
+   /* Start Snapshot Query Example 1 */
    mongoc_client_t *client = NULL;
    mongoc_client_session_t *cs = NULL;
    mongoc_collection_t *cats_collection = NULL;
@@ -2659,7 +2659,7 @@ test_example_59 (mongoc_database_t *db)
 
    printf ("there are %" PRId64 " adoptable pets\n", adoptable_pets_count);
 
-   /* End Example 59 */
+   /* End Snapshot Query Example 1 */
 
    if (adoptable_pets_count != 2) {
       MONGOC_ERROR (
@@ -2667,13 +2667,13 @@ test_example_59 (mongoc_database_t *db)
          adoptable_pets_count);
    }
 
-   /* Start Example 59 Post */
+   /* Start Snapshot Query Example 1 Post */
 cleanup:
    mongoc_collection_destroy (dogs_collection);
    mongoc_collection_destroy (cats_collection);
    mongoc_client_session_destroy (cs);
    mongoc_client_destroy (client);
-   /* End Example 59 Post */
+   /* End Snapshot Query Example 1 Post */
 }
 
 /* clang-format off */
