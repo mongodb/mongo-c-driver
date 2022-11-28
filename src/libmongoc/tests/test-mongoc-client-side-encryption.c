@@ -3833,8 +3833,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected three documents, got more than two");
 
-      bson_destroy (find);
       bson_destroy (findBson);
+      bson_destroy (find);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -3897,8 +3897,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected 1 document, got more than one");
 
-      bson_destroy (find);
       bson_destroy (findBson);
+      bson_destroy (find);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -3952,8 +3952,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected 1 document, got more than one");
 
-      bson_destroy (find);
       bson_destroy (findBson);
+      bson_destroy (find);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -4021,8 +4021,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected 3 documents, got more than two");
 
-      bson_destroy (find);
       bson_destroy (findBson);
+      bson_destroy (find);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -4085,8 +4085,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected 1 document, got more than one");
 
-      bson_destroy (find);
       bson_destroy (findBson);
+      bson_destroy (find);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -4149,8 +4149,8 @@ read_prefs
               "expected 0 documents, got some documents");
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
-      bson_destroy (find);
       bson_destroy (findBson);
+      bson_destroy (find);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
