@@ -2742,7 +2742,7 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
 
    bson_t range_opts = BSON_INITIALIZER;
    if (opts->range_opts.set) {
-      mongoc_client_encryption_get_bson_range_opts (&range_opts, opts);
+      mongoc_client_encryption_encrypt_get_bson_range_opts (&range_opts, opts);
    }
 
    if (!_mongoc_crypt_explicit_encrypt (
