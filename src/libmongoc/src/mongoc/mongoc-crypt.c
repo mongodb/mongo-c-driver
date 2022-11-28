@@ -1558,8 +1558,8 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
 
    /* Pass the range options to mongocrypt if the algorithm is range */
    if (0 == strncasecmp (algorithm,
-                         MONGOC_ENCRYPT_ALGORITHM_RANGE,
-                         strlen (MONGOC_ENCRYPT_ALGORITHM_RANGE))) {
+                         MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW,
+                         strlen (MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW))) {
       if (bson_empty (range_opts)) {
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,

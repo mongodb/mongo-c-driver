@@ -3552,7 +3552,7 @@ explicit_encryption_setup (bool range)
       encryptedFields = get_bson_from_json_file (
          "./src/libmongoc/tests/client_side_encryption_prose/"
          "explicit_encryption/"
-         "range-encryptedFields.json");
+         "range-encryptedFields-Int.json");
    } else {
       encryptedFields = get_bson_from_json_file (
          "./src/libmongoc/tests/client_side_encryption_prose/"
@@ -3710,7 +3710,7 @@ explicit_encryption_set_range_opts_int (
 {
    mongoc_client_encryption_encrypt_opts_set_keyid (eopts, &eef->key1ID);
    mongoc_client_encryption_encrypt_opts_set_algorithm (
-      eopts, MONGOC_ENCRYPT_ALGORITHM_RANGE);
+      eopts, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
 
    mongoc_client_encryption_range_opts_set_sparsity (rangeopts, 1);
    mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
@@ -3720,8 +3720,7 @@ explicit_encryption_set_range_opts_int (
    bson_value_t max = {0};
    max.value_type = BSON_TYPE_INT32;
    max.value.v_int32 = 250;
-   mongoc_client_encryption_range_opts_set_min_max_precision (
-      rangeopts, min, max, 1);
+   mongoc_client_encryption_range_opts_set_min_max (rangeopts, min, max);
    mongoc_client_encryption_encrypt_opts_set_range_opts (eopts, rangeopts);
 }
 
@@ -3782,7 +3781,7 @@ test_explicit_encryption_range (void *unused)
       eopts = mongoc_client_encryption_encrypt_opts_new ();
       rangeopts = mongoc_client_encryption_range_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_query_type (
-         eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGE);
+         eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
       explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
 
       bson_value_t find_doc = {0};
@@ -3841,7 +3840,7 @@ test_explicit_encryption_range (void *unused)
       eopts = mongoc_client_encryption_encrypt_opts_new ();
       rangeopts = mongoc_client_encryption_range_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_query_type (
-         eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGE);
+         eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
       explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
 
       bson_value_t find_doc = {0};
@@ -3915,7 +3914,6 @@ test_explicit_encryption_range_error (void *unused)
       explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
-
       ASSERT_ERROR_CONTAINS (
          error,
          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
