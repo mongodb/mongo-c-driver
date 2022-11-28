@@ -3721,12 +3721,12 @@ explicit_encryption_set_range_opts_int (
    max.value_type = BSON_TYPE_INT32;
    max.value.v_int32 = 250;
    mongoc_client_encryption_encrypt_range_opts_set_min_max (
-      rangeopts, min, max);
+      rangeopts, &min, &max);
    mongoc_client_encryption_encrypt_opts_set_range_opts (eopts, rangeopts);
 }
 
 static void
-test_explicit_encryption_range (void *unused)
+test_explicit_encryption_range_int (void *unused)
 {
    bson_error_t error;
    bool ok;
@@ -3737,16 +3737,15 @@ test_explicit_encryption_range (void *unused)
 
    BSON_UNUSED (unused);
 
-   /* Use ``encryptedClient`` to insert 2 documents of the form ``{
-    * "encryptedInt": <insertPayload> }``. */
+   /* Use ``encryptedClient`` to insert 4 documents of the form ``{
+    * "encryptedInt": <insertPayload>, _id: i }``. */
    {
       plaintext.value_type = BSON_TYPE_INT32;
       plaintext.value.v_int32 = 6;
+      int32_t doc_value[4] = {6, 30, 250, 0};
       int i = 0;
-      for (i = 0; i < 2; i++) {
-         if (i > 0) {
-            plaintext.value.v_int32 = 30;
-         }
+      for (i = 0; i < 4; i++) {
+         plaintext.value.v_int32 = doc_value[i];
          bson_value_t insertPayload;
          bson_t to_insert = BSON_INITIALIZER;
          eopts = mongoc_client_encryption_encrypt_opts_new ();
@@ -3759,6 +3758,7 @@ test_explicit_encryption_range (void *unused)
 
          ASSERT (
             BSON_APPEND_VALUE (&to_insert, "encryptedInt", &insertPayload));
+         ASSERT (BSON_APPEND_INT32 (&to_insert, "_id", i));
 
          ok = mongoc_collection_insert_one (eef->encryptedColl,
                                             &to_insert,
@@ -3772,7 +3772,7 @@ test_explicit_encryption_range (void *unused)
          mongoc_client_encryption_encrypt_opts_destroy (eopts);
       }
    }
-   // find operation to return both documents
+   // find operation to return 3 documents, including the maximum
    {
       bson_value_t findPayload;
       mongoc_cursor_t *cursor;
@@ -3800,7 +3800,7 @@ test_explicit_encryption_range (void *unused)
                                "encryptedInt",
                                "{",
                                "$lte",
-                               BCON_INT32 (30),
+                               BCON_INT32 (250),
                                "}",
                                "}",
                                "]");
@@ -3815,23 +3815,281 @@ test_explicit_encryption_range (void *unused)
          bson_new_from_data (findPayload.value.v_doc.data,
                              (size_t) findPayload.value.v_doc.data_len);
       ASSERT (!bson_empty (findBson));
-      cursor = mongoc_collection_find_with_opts (
-         eef->encryptedColl, findBson, NULL /* opts */, NULL /* read_prefs
-         */);
+      bson_t *findOpts = tmp_bson ("{'sort': { '_id': 1 }}");
+
+      cursor = mongoc_collection_find_with_opts (eef->encryptedColl,
+                                                 findBson,
+                                                 findOpts /* opts */,
+                                                 NULL /*
+read_prefs
+*/);
       ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
       ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
       ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 250}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected 2 documents, got more than two");
+              "expected three documents, got more than two");
 
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
       bson_destroy (&filter);
    }
-   // find operation to return one document
+
+   // find operation to return one document (the minimum)
+   {
+      bson_value_t findPayload;
+      mongoc_cursor_t *cursor;
+      bson_t filter = BSON_INITIALIZER;
+      const bson_t *got;
+
+      eopts = mongoc_client_encryption_encrypt_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_query_type (
+         eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
+
+      bson_value_t find_doc = {0};
+      find_doc.value_type = BSON_TYPE_DOCUMENT;
+      bson_t *find = BCON_NEW ("$and",
+                               "[",
+                               "{",
+                               "encryptedInt",
+                               "{",
+                               "$gte",
+                               BCON_INT32 (0),
+                               "}",
+                               "}",
+                               "{",
+                               "encryptedInt",
+                               "{",
+                               "$lt",
+                               BCON_INT32 (6),
+                               "}",
+                               "}",
+                               "]");
+      find_doc.value.v_doc.data = (uint8_t *) bson_get_data (find);
+      find_doc.value.v_doc.data_len = find->len;
+
+      ok = mongoc_client_encryption_encrypt (
+         eef->clientEncryption, &find_doc, eopts, &findPayload, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      bson_t *findBson =
+         bson_new_from_data (findPayload.value.v_doc.data,
+                             (size_t) findPayload.value.v_doc.data_len);
+      ASSERT (!bson_empty (findBson));
+      bson_t *findOpts = tmp_bson ("{'sort': { '_id': 1 }}");
+      cursor = mongoc_collection_find_with_opts (eef->encryptedColl,
+                                                 findBson,
+                                                 findOpts /* opts */,
+                                                 NULL /*
+read_prefs
+*/);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected 1 document, got more than one");
+
+      bson_value_destroy (&findPayload);
+      mongoc_cursor_destroy (cursor);
+      mongoc_client_encryption_encrypt_opts_destroy (eopts);
+      bson_destroy (&filter);
+   }
+
+   // find operation: open range queries
+   {
+      bson_value_t findPayload;
+      mongoc_cursor_t *cursor;
+      bson_t filter = BSON_INITIALIZER;
+      const bson_t *got;
+
+      eopts = mongoc_client_encryption_encrypt_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_query_type (
+         eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
+
+      bson_value_t find_doc = {0};
+      find_doc.value_type = BSON_TYPE_DOCUMENT;
+      bson_t *find = BCON_NEW ("$and",
+                               "[",
+                               "{",
+                               "encryptedInt",
+                               "{",
+                               "$lt",
+                               BCON_INT32 (4),
+                               "}",
+                               "}",
+                               "]");
+      find_doc.value.v_doc.data = (uint8_t *) bson_get_data (find);
+      find_doc.value.v_doc.data_len = find->len;
+
+      ok = mongoc_client_encryption_encrypt (
+         eef->clientEncryption, &find_doc, eopts, &findPayload, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      bson_t *findBson =
+         bson_new_from_data (findPayload.value.v_doc.data,
+                             (size_t) findPayload.value.v_doc.data_len);
+      ASSERT (!bson_empty (findBson));
+      bson_t *findOpts = tmp_bson ("{'sort': { '_id': 1 }}");
+      cursor = mongoc_collection_find_with_opts (eef->encryptedColl,
+                                                 findBson,
+                                                 findOpts /* opts */,
+                                                 NULL /* read_prefs */);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected 1 document, got more than one");
+
+      bson_value_destroy (&findPayload);
+      mongoc_cursor_destroy (cursor);
+      mongoc_client_encryption_encrypt_opts_destroy (eopts);
+      bson_destroy (&filter);
+   }
+
+   // aggregate operation to return 3 documents, including the maximum
+   {
+      bson_value_t findPayload;
+      mongoc_cursor_t *cursor;
+      bson_t filter = BSON_INITIALIZER;
+      const bson_t *got;
+
+      eopts = mongoc_client_encryption_encrypt_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_query_type (
+         eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
+
+      bson_value_t find_doc = {0};
+      find_doc.value_type = BSON_TYPE_DOCUMENT;
+      bson_t *find = BCON_NEW ("$and",
+                               "[",
+                               "{",
+                               "encryptedInt",
+                               "{",
+                               "$gte",
+                               BCON_INT32 (5),
+                               "}",
+                               "}",
+                               "{",
+                               "encryptedInt",
+                               "{",
+                               "$lte",
+                               BCON_INT32 (250),
+                               "}",
+                               "}",
+                               "]");
+      find_doc.value.v_doc.data = (uint8_t *) bson_get_data (find);
+      find_doc.value.v_doc.data_len = find->len;
+
+      ok = mongoc_client_encryption_encrypt (
+         eef->clientEncryption, &find_doc, eopts, &findPayload, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      bson_t *findBson =
+         bson_new_from_data (findPayload.value.v_doc.data,
+                             (size_t) findPayload.value.v_doc.data_len);
+      bson_t *pipeline = BCON_NEW (
+         "pipeline", "[", "{", "$match", BCON_DOCUMENT (findBson), "}", "]");
+      cursor = mongoc_collection_aggregate (eef->encryptedColl,
+                                            MONGOC_QUERY_NONE,
+                                            pipeline,
+                                            NULL, /* opts */
+                                            NULL /* read prefs */);
+      bson_destroy (pipeline);
+
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 250}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected 3 documents, got more than two");
+
+      bson_destroy (findBson);
+      bson_destroy (find);
+      bson_value_destroy (&findPayload);
+      mongoc_cursor_destroy (cursor);
+      mongoc_client_encryption_encrypt_opts_destroy (eopts);
+      bson_destroy (&filter);
+   }
+   // aggregate operation to return one document
+   {
+      bson_value_t findPayload;
+      mongoc_cursor_t *cursor;
+      bson_t filter = BSON_INITIALIZER;
+      const bson_t *got;
+
+      eopts = mongoc_client_encryption_encrypt_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_query_type (
+         eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
+
+      bson_value_t find_doc = {0};
+      find_doc.value_type = BSON_TYPE_DOCUMENT;
+      bson_t *find = BCON_NEW ("$and",
+                               "[",
+                               "{",
+                               "encryptedInt",
+                               "{",
+                               "$gte",
+                               BCON_INT32 (6),
+                               "}",
+                               "}",
+                               "{",
+                               "encryptedInt",
+                               "{",
+                               "$lte",
+                               BCON_INT32 (29),
+                               "}",
+                               "}",
+                               "]");
+      find_doc.value.v_doc.data = (uint8_t *) bson_get_data (find);
+      find_doc.value.v_doc.data_len = find->len;
+
+      ok = mongoc_client_encryption_encrypt (
+         eef->clientEncryption, &find_doc, eopts, &findPayload, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      bson_t *findBson =
+         bson_new_from_data (findPayload.value.v_doc.data,
+                             (size_t) findPayload.value.v_doc.data_len);
+      bson_t *pipeline = BCON_NEW (
+         "pipeline", "[", "{", "$match", BCON_DOCUMENT (findBson), "}", "]");
+      cursor = mongoc_collection_aggregate (eef->encryptedColl,
+                                            MONGOC_QUERY_NONE,
+                                            pipeline,
+                                            NULL, /* opts */
+                                            NULL /* read prefs */);
+      bson_destroy (pipeline);
+
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected 1 document, got more than one");
+
+      bson_destroy (findBson);
+      bson_destroy (find);
+      bson_value_destroy (&findPayload);
+      mongoc_cursor_destroy (cursor);
+      mongoc_client_encryption_encrypt_opts_destroy (eopts);
+      bson_destroy (&filter);
+   }
+
+   // aggregate operation to return zero documents
+   // Note: the difference between this test and the test above is using lt and
+   // not lte
    {
       bson_value_t findPayload;
       mongoc_cursor_t *cursor;
@@ -3852,14 +4110,14 @@ test_explicit_encryption_range (void *unused)
                                "encryptedInt",
                                "{",
                                "$gt",
-                               BCON_INT32 (8),
+                               BCON_INT32 (6),
                                "}",
                                "}",
                                "{",
                                "encryptedInt",
                                "{",
-                               "$lt",
-                               BCON_INT32 (32),
+                               "$lte",
+                               BCON_INT32 (29),
                                "}",
                                "}",
                                "]");
@@ -3873,22 +4131,25 @@ test_explicit_encryption_range (void *unused)
       bson_t *findBson =
          bson_new_from_data (findPayload.value.v_doc.data,
                              (size_t) findPayload.value.v_doc.data_len);
-      ASSERT (!bson_empty (findBson));
-      cursor = mongoc_collection_find_with_opts (
-         eef->encryptedColl, findBson, NULL /* opts */, NULL /* read_prefs
-         */);
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-      ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
+      bson_t *pipeline = BCON_NEW (
+         "pipeline", "[", "{", "$match", BCON_DOCUMENT (findBson), "}", "]");
+      cursor = mongoc_collection_aggregate (eef->encryptedColl,
+                                            MONGOC_QUERY_NONE,
+                                            pipeline,
+                                            NULL, /* opts */
+                                            NULL /* read prefs */);
+      bson_destroy (pipeline);
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected 1 document, got more than one");
+              "expected 0 documents, got some documents");
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
+      bson_destroy (findBson);
+      bson_destroy (find);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
       bson_destroy (&filter);
    }
-
    explicit_encryption_destroy (eef);
 }
 
@@ -3942,6 +4203,28 @@ test_explicit_encryption_range_error (void *unused)
                              MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "got min: 0, max: 250, value: -1");
+      bson_value_destroy (&insertPayload);
+      bson_destroy (&to_insert);
+      mongoc_client_encryption_encrypt_opts_destroy (eopts);
+   }
+
+   /* Can't encrypt document that is of a different type*/
+   {
+      plaintext.value_type = BSON_TYPE_DOUBLE;
+      plaintext.value.v_double = 10.123;
+      bson_value_t insertPayload;
+      bson_t to_insert = BSON_INITIALIZER;
+      eopts = mongoc_client_encryption_encrypt_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
+      explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
+      ok = mongoc_client_encryption_encrypt (
+         eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
+
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_STREAM_INVALID_TYPE,
+         "Got range option 'min' of type INT32 and value of type DOUBLE");
       bson_value_destroy (&insertPayload);
       bson_destroy (&to_insert);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -6289,12 +6572,12 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
-                      "/client_side_encryption/explicit_encryption/range",
-                      test_explicit_encryption_range,
+                      "/client_side_encryption/explicit_encryption/range_int",
+                      test_explicit_encryption_range_int,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
+                      test_framework_skip_if_max_wire_version_less_than_19,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/explicit_encryption/range_error",
@@ -6302,6 +6585,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
+                      test_framework_skip_if_max_wire_version_less_than_19,
                       test_framework_skip_if_single);
 }
