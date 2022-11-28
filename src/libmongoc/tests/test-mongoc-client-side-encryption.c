@@ -3742,7 +3742,7 @@ test_explicit_encryption_range_int (void *unused)
    {
       plaintext.value_type = BSON_TYPE_INT32;
       plaintext.value.v_int32 = 6;
-      int32_t doc_value[4] = {6, 30, 250, 0};
+      int32_t doc_value[4] = {6, 30, 250, 0}; // includes min and max values
       int i = 0;
       for (i = 0; i < 4; i++) {
          plaintext.value.v_int32 = doc_value[i];
@@ -3833,6 +3833,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected three documents, got more than two");
 
+      bson_destroy (find);
+      bson_destroy (findBson);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -3895,6 +3897,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected 1 document, got more than one");
 
+      bson_destroy (find);
+      bson_destroy (findBson);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -3948,6 +3952,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected 1 document, got more than one");
 
+      bson_destroy (find);
+      bson_destroy (findBson);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -3997,7 +4003,7 @@ read_prefs
          bson_new_from_data (findPayload.value.v_doc.data,
                              (size_t) findPayload.value.v_doc.data_len);
       bson_t *pipeline = BCON_NEW (
-         "pipeline", "[", "{", "$match", BCON_DOCUMENT (findBson), "}", "]");
+         "pipeline", "[", "{", "$match", BCON_DOCUMENT (findBson), "}", "{", "$sort", "{", "_id", BCON_INT32 (1), "}", "}", "]");
       cursor = mongoc_collection_aggregate (eef->encryptedColl,
                                             MONGOC_QUERY_NONE,
                                             pipeline,
@@ -4015,8 +4021,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected 3 documents, got more than two");
 
-      bson_destroy (findBson);
       bson_destroy (find);
+      bson_destroy (findBson);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -4065,7 +4071,7 @@ read_prefs
          bson_new_from_data (findPayload.value.v_doc.data,
                              (size_t) findPayload.value.v_doc.data_len);
       bson_t *pipeline = BCON_NEW (
-         "pipeline", "[", "{", "$match", BCON_DOCUMENT (findBson), "}", "]");
+         "pipeline", "[", "{", "$match", BCON_DOCUMENT (findBson), "}", "{", "$sort", "{", "_id", BCON_INT32 (1), "}", "}", "]");
       cursor = mongoc_collection_aggregate (eef->encryptedColl,
                                             MONGOC_QUERY_NONE,
                                             pipeline,
@@ -4079,8 +4085,8 @@ read_prefs
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected 1 document, got more than one");
 
-      bson_destroy (findBson);
       bson_destroy (find);
+      bson_destroy (findBson);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -4132,7 +4138,7 @@ read_prefs
          bson_new_from_data (findPayload.value.v_doc.data,
                              (size_t) findPayload.value.v_doc.data_len);
       bson_t *pipeline = BCON_NEW (
-         "pipeline", "[", "{", "$match", BCON_DOCUMENT (findBson), "}", "]");
+         "pipeline", "[", "{", "$match", BCON_DOCUMENT (findBson), "}", "{", "$sort", "{", "_id", BCON_INT32 (1), "}", "}", "]");
       cursor = mongoc_collection_aggregate (eef->encryptedColl,
                                             MONGOC_QUERY_NONE,
                                             pipeline,
@@ -4143,8 +4149,8 @@ read_prefs
               "expected 0 documents, got some documents");
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
-      bson_destroy (findBson);
       bson_destroy (find);
+      bson_destroy (findBson);
       bson_value_destroy (&findPayload);
       mongoc_cursor_destroy (cursor);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
@@ -4229,6 +4235,7 @@ test_explicit_encryption_range_error (void *unused)
       bson_destroy (&to_insert);
       mongoc_client_encryption_encrypt_opts_destroy (eopts);
    }
+
    explicit_encryption_destroy (eef);
 }
 
