@@ -102,8 +102,8 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback (
 
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
-typedef struct _mongoc_client_encryption_range_opts_t
-   mongoc_client_encryption_range_opts_t;
+typedef struct _mongoc_client_encryption_encrypt_range_opts_t
+   mongoc_client_encryption_encrypt_range_opts_t;
 typedef struct _mongoc_client_encryption_encrypt_opts_t
    mongoc_client_encryption_encrypt_opts_t;
 typedef struct _mongoc_client_encryption_datakey_opts_t
@@ -258,31 +258,32 @@ MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_query_type (
    mongoc_client_encryption_encrypt_opts_t *opts, const char *query_type);
 
-MONGOC_EXPORT (mongoc_client_encryption_range_opts_t *)
-mongoc_client_encryption_range_opts_new (void);
+MONGOC_EXPORT (mongoc_client_encryption_encrypt_range_opts_t *)
+mongoc_client_encryption_encrypt_range_opts_new (void);
 
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_range_opts_destroy (
-   mongoc_client_encryption_range_opts_t *range_opts);
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts);
 
 MONGOC_EXPORT (void)
-mongoc_client_encryption_range_opts_set_sparsity (
-   mongoc_client_encryption_range_opts_t *range_opts, int64_t sparsity);
+mongoc_client_encryption_encrypt_range_opts_set_sparsity (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts, int64_t sparsity);
 
 MONGOC_EXPORT (void)
-mongoc_client_encryption_range_opts_set_min_max (
-   mongoc_client_encryption_range_opts_t *range_opts,
+mongoc_client_encryption_encrypt_range_opts_set_min_max (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts,
    bson_value_t min,
    bson_value_t max);
 
 MONGOC_EXPORT (void)
-mongoc_client_encryption_range_opts_set_precision (
-   mongoc_client_encryption_range_opts_t *range_opts, int32_t precision);
+mongoc_client_encryption_encrypt_range_opts_set_precision (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts,
+   int32_t precision);
 
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_range_opts (
    mongoc_client_encryption_encrypt_opts_t *opts,
-   mongoc_client_encryption_range_opts_t *range_opts);
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts);
 
 MONGOC_EXPORT (mongoc_client_encryption_datakey_opts_t *)
 mongoc_client_encryption_datakey_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;

@@ -3705,14 +3705,14 @@ explicit_encryption_destroy (ee_fixture *eef)
 static void
 explicit_encryption_set_range_opts_int (
    mongoc_client_encryption_encrypt_opts_t *eopts,
-   mongoc_client_encryption_range_opts_t *rangeopts,
+   mongoc_client_encryption_encrypt_range_opts_t *rangeopts,
    ee_fixture *eef)
 {
    mongoc_client_encryption_encrypt_opts_set_keyid (eopts, &eef->key1ID);
    mongoc_client_encryption_encrypt_opts_set_algorithm (
       eopts, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
 
-   mongoc_client_encryption_range_opts_set_sparsity (rangeopts, 1);
+   mongoc_client_encryption_encrypt_range_opts_set_sparsity (rangeopts, 1);
    mongoc_client_encryption_encrypt_opts_set_contention_factor (eopts, 0);
    bson_value_t min = {0};
    min.value_type = BSON_TYPE_INT32;
@@ -3720,7 +3720,8 @@ explicit_encryption_set_range_opts_int (
    bson_value_t max = {0};
    max.value_type = BSON_TYPE_INT32;
    max.value.v_int32 = 250;
-   mongoc_client_encryption_range_opts_set_min_max (rangeopts, min, max);
+   mongoc_client_encryption_encrypt_range_opts_set_min_max (
+      rangeopts, min, max);
    mongoc_client_encryption_encrypt_opts_set_range_opts (eopts, rangeopts);
 }
 
@@ -3730,7 +3731,7 @@ test_explicit_encryption_range (void *unused)
    bson_error_t error;
    bool ok;
    mongoc_client_encryption_encrypt_opts_t *eopts;
-   mongoc_client_encryption_range_opts_t *rangeopts;
+   mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
    bson_value_t plaintext = {0};
    ee_fixture *eef = explicit_encryption_setup (true);
 
@@ -3749,7 +3750,7 @@ test_explicit_encryption_range (void *unused)
          bson_value_t insertPayload;
          bson_t to_insert = BSON_INITIALIZER;
          eopts = mongoc_client_encryption_encrypt_opts_new ();
-         rangeopts = mongoc_client_encryption_range_opts_new ();
+         rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
          explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
 
          ok = mongoc_client_encryption_encrypt (
@@ -3779,7 +3780,7 @@ test_explicit_encryption_range (void *unused)
       const bson_t *got;
 
       eopts = mongoc_client_encryption_encrypt_opts_new ();
-      rangeopts = mongoc_client_encryption_range_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_query_type (
          eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
       explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
@@ -3838,7 +3839,7 @@ test_explicit_encryption_range (void *unused)
       const bson_t *got;
 
       eopts = mongoc_client_encryption_encrypt_opts_new ();
-      rangeopts = mongoc_client_encryption_range_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
       mongoc_client_encryption_encrypt_opts_set_query_type (
          eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
       explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
@@ -3897,7 +3898,7 @@ test_explicit_encryption_range_error (void *unused)
    bson_error_t error;
    bool ok;
    mongoc_client_encryption_encrypt_opts_t *eopts;
-   mongoc_client_encryption_range_opts_t *rangeopts;
+   mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
    bson_value_t plaintext = {0};
    ee_fixture *eef = explicit_encryption_setup (true);
 
@@ -3910,7 +3911,7 @@ test_explicit_encryption_range_error (void *unused)
       bson_value_t insertPayload;
       bson_t to_insert = BSON_INITIALIZER;
       eopts = mongoc_client_encryption_encrypt_opts_new ();
-      rangeopts = mongoc_client_encryption_range_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
       explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
@@ -3932,7 +3933,7 @@ test_explicit_encryption_range_error (void *unused)
       bson_value_t insertPayload;
       bson_t to_insert = BSON_INITIALIZER;
       eopts = mongoc_client_encryption_encrypt_opts_new ();
-      rangeopts = mongoc_client_encryption_range_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
       explicit_encryption_set_range_opts_int (eopts, rangeopts, eef);
       ok = mongoc_client_encryption_encrypt (
          eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
