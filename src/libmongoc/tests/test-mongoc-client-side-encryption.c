@@ -3829,7 +3829,7 @@ test_explicit_encryption_range_insert (ee_range_test_fixture *eef_range,
    mongoc_client_encryption_encrypt_opts_t *eopts;
    mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
    int i = 0;
-   
+
    for (i = 0; i < 2; i++) {
       bson_value_t insertPayload;
       bson_t to_insert = BSON_INITIALIZER;
@@ -3837,8 +3837,11 @@ test_explicit_encryption_range_insert (ee_range_test_fixture *eef_range,
       rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
       explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
 
-      ok = mongoc_client_encryption_encrypt (
-         eef->clientEncryption, &eef_range->doc_value[i], eopts, &insertPayload, &error);
+      ok = mongoc_client_encryption_encrypt (eef->clientEncryption,
+                                             &eef_range->doc_value[i],
+                                             eopts,
+                                             &insertPayload,
+                                             &error);
       ASSERT_OR_PRINT (ok, error);
 
       ASSERT (
@@ -4145,38 +4148,38 @@ test_explicit_encryption_range_int_error (void *unused)
       bson_error_t error =
          test_explicit_encryption_range_error_helper (eef_range, eef);
       ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-      MONGOC_ERROR_STREAM_INVALID_TYPE,
-      "Value must be greater than or equal to the minimum value and less "
-      "than or equal to the maximum value");
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_STREAM_INVALID_TYPE,
+         "Value must be greater than or equal to the minimum value and less "
+         "than or equal to the maximum value");
    }
    /* Can't encrypt document that is less than min */
    {
-       eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
-       eef_range->doc_value[0].value.v_int32 = -1;
-       bson_error_t error =
-          test_explicit_encryption_range_error_helper (eef_range, eef);
-       ASSERT_ERROR_CONTAINS (error,
-                              MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                              MONGOC_ERROR_STREAM_INVALID_TYPE,
-                              "got min: 0, max: 250, value: -1");
+      eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
+      eef_range->doc_value[0].value.v_int32 = -1;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                             MONGOC_ERROR_STREAM_INVALID_TYPE,
+                             "got min: 0, max: 250, value: -1");
    }
-    /* Can't encrypt document that is of a different type*/
-    {
-       eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
-       eef_range->doc_value[0].value.v_double = 4.44;
-       bson_error_t error =
-          test_explicit_encryption_range_error_helper (eef_range, eef);
-       ASSERT_ERROR_CONTAINS (
-          error,
-          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-          MONGOC_ERROR_STREAM_INVALID_TYPE,
-          "Got range option 'min' of type INT32 and value of type DOUBLE");
-    }
+   /* Can't encrypt document that is of a different type*/
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
+      eef_range->doc_value[0].value.v_double = 4.44;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_STREAM_INVALID_TYPE,
+         "Got range option 'min' of type INT32 and value of type DOUBLE");
+   }
 
-    explicit_encryption_range_destroy (eef_range);
-    explicit_encryption_destroy (eef);
+   explicit_encryption_range_destroy (eef_range);
+   explicit_encryption_destroy (eef);
 }
 
 static void
@@ -6159,7 +6162,7 @@ test_create_encrypted_collection_bad_keyId (void *unused)
                       doc (kv ("fields",
                                array (doc (kv ("path", cstr ("ssn")),
                                            kv ("bsonType", cstr ("string")),
-                                           kv ("keyId", bool (true))))))));
+                                           kv ("keyId", bool(true))))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    mongoc_client_encryption_datakey_opts_t *const dkOpts =
       mongoc_client_encryption_datakey_opts_new ();
@@ -6525,12 +6528,13 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_19,
                       test_framework_skip_if_single);
-   TestSuite_AddFull (suite,
-                      "/client_side_encryption/explicit_encryption/range/int_error",
-                      test_explicit_encryption_range_int_error,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_19,
-                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/explicit_encryption/range/int_error",
+      test_explicit_encryption_range_int_error,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_19,
+      test_framework_skip_if_single);
 }
