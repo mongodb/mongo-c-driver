@@ -4756,6 +4756,17 @@ test_explicit_encryption_range_int_error (void *unused)
          MONGOC_ERROR_STREAM_INVALID_TYPE,
          "Got range option 'min' of type INT32 and value of type DOUBLE");
    }
+   /* Can't set precision with type int */
+   {
+      eef_range->precision = 2;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                             MONGOC_ERROR_STREAM_INVALID_TYPE,
+                             "expected 'precision' to be set with double or "
+                             "decimal128 index, but got: INT32 min");
+   }
 
    explicit_encryption_range_destroy (eef_range);
    explicit_encryption_destroy (eef);
@@ -4813,6 +4824,20 @@ test_explicit_encryption_range_long_error (void *unused)
          MONGOC_ERROR_STREAM_INVALID_TYPE,
          "Got range option 'min' of type INT64 and value of type INT32");
    }
+   /* Can't set precision with type long */
+   {
+      eef_range->precision = 2;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                             MONGOC_ERROR_STREAM_INVALID_TYPE,
+                             "expected 'precision' to be set with double or "
+                             "decimal128 index, but got: INT64 min");
+   }
+
+   explicit_encryption_range_destroy (eef_range);
+   explicit_encryption_destroy (eef);
 }
 
 static void
@@ -4869,6 +4894,8 @@ test_explicit_encryption_range_double_precision_error (void *unused)
          MONGOC_ERROR_STREAM_INVALID_TYPE,
          "Got range option 'min' of type DOUBLE and value of type INT64");
    }
+   explicit_encryption_range_destroy (eef_range);
+   explicit_encryption_destroy (eef);
 }
 
 static void
@@ -4922,6 +4949,17 @@ test_explicit_encryption_range_date_error (void *unused)
          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
          MONGOC_ERROR_STREAM_INVALID_TYPE,
          "Got range option 'min' of type INT64 and value of type DOUBLE");
+   }
+   /* Can't set precision with type date */
+   {
+      eef_range->precision = 2;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                             MONGOC_ERROR_STREAM_INVALID_TYPE,
+                             "expected 'precision' to be set with double or "
+                             "decimal128 index, but got: INT64 min");
    }
 
    explicit_encryption_range_destroy (eef_range);
