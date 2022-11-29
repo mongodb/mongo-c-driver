@@ -15,10 +15,14 @@
             "$numberInt": "1"
           },
           "min": {
-            "$numberLong": "0"
+            "$date": {
+              "$numberLong": "0"
+          }
           },
           "max": {
-            "$numberLong": "200"
+            "$date": {
+              "$numberLong": "200"
+          }
           }
         }
       }

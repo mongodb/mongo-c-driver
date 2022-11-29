@@ -3544,22 +3544,16 @@ typedef struct {
 } ee_fixture;
 
 static ee_fixture *
-explicit_encryption_setup (bool range)
+explicit_encryption_setup (char *file_path)
 {
    ee_fixture *eef = (ee_fixture *) bson_malloc0 (sizeof (ee_fixture));
-   bson_t *encryptedFields;
 
-   if (range) {
-      encryptedFields = get_bson_from_json_file (
-         "./src/libmongoc/tests/client_side_encryption_prose/"
-         "explicit_encryption/"
-         "range-encryptedFields-Int.json");
-   } else {
-      encryptedFields = get_bson_from_json_file (
-         "./src/libmongoc/tests/client_side_encryption_prose/"
-         "explicit_encryption/"
-         "encryptedFields.json");
-   }
+   bson_t *encryptedFields = get_bson_from_json_file (
+      file_path
+         ? file_path
+         : "./src/libmongoc/tests/client_side_encryption_prose/"
+           "explicit_encryption/encryptedFields.json"); // default to not range
+                                                        // encryptedFields
    bson_t *key1Document = get_bson_from_json_file (
       "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
       "key1-document.json");
@@ -3711,7 +3705,6 @@ typedef struct {
    } minmax;
    int32_t precision;
    int64_t sparsity;
-   char *file_path;
    char *field_name;
    bson_value_t doc_value[2];
    bson_t *query;
@@ -3916,13 +3909,13 @@ static void
 test_explicit_encryption_range_int (void *unused)
 {
    BSON_UNUSED (unused);
-   ee_fixture *eef = explicit_encryption_setup (true);
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-Int.json");
+   ;
    ee_range_test_fixture *eef_range =
       (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
    eef_range->field_name = "encryptedInt";
-   eef_range->file_path = "./src/libmongoc/tests/client_side_encryption_prose/"
-                          "explicit_encryption/"
-                          "range-encryptedFields-Int.json";
    eef_range->sparsity = 1;
    eef_range->minmax.set = true;
    eef_range->minmax.min.value_type = BSON_TYPE_INT32;
@@ -4082,8 +4075,8 @@ test_explicit_encryption_range_int (void *unused)
               "expected one document, got more than one");
    }
    // aggregate command to return zero documents
-   // Note the only difference between this and the previous test is using lt
-   // and not lte
+   // The difference between this and the previous test is using lt and not lte
+
    {
       const bson_t *got;
       eef_range->query = BCON_NEW ("$and",
@@ -4139,15 +4132,211 @@ test_explicit_encryption_range_error_helper (ee_range_test_fixture *eef_range,
 }
 
 static void
+test_explicit_encryption_range_double_precision (void *unused)
+{
+   BSON_UNUSED (unused);
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-DoublePrecision.json");
+   ;
+   ee_range_test_fixture *eef_range =
+      (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
+   eef_range->field_name = "encryptedDoublePrecision";
+   eef_range->sparsity = 1;
+   eef_range->minmax.set = true;
+   eef_range->minmax.min.value_type = BSON_TYPE_DOUBLE;
+   eef_range->minmax.min.value.v_double = 0.0;
+   eef_range->minmax.max.value_type = BSON_TYPE_DOUBLE;
+   eef_range->minmax.max.value.v_double = 199.9;
+   eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
+   eef_range->doc_value[0].value.v_double = 6.0;
+   eef_range->doc_value[1].value_type = BSON_TYPE_DOUBLE;
+   eef_range->doc_value[1].value.v_double = 30.0;
+   eef_range->precision = 2;
+
+   /* Use ``encryptedClient`` to insert 4 documents of the form ``{
+    * "encrypted<Type>": <insertPayload>, _id: i }``. */
+   test_explicit_encryption_range_insert (eef_range, eef);
+   // run find command to return 3 documents including maximum
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$gt",
+                                   BCON_DOUBLE (5),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$lte",
+                                   BCON_DOUBLE (199.9),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 6.0}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 30.0}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 199.9}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected three documents, got more than three");
+      mongoc_cursor_destroy (cursor);
+   }
+   // run find command to return two documents, including minimum
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$gte",
+                                   BCON_DOUBLE (0.0),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$lte",
+                                   BCON_DOUBLE (6.0),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 6.0}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 0.0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
+   }
+   // run find command with an open range query
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$gt",
+                                   BCON_DOUBLE (150.0),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 199.9}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
+   }
+   // aggregate command to return 3 documents, including minimum
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$gte",
+                                   BCON_DOUBLE (0.0),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$lte",
+                                   BCON_DOUBLE (30.0),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 30}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 0.0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected three documents, got more than three");
+   }
+   // aggregate command to return one document
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$gte",
+                                   BCON_DOUBLE (7),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$lte",
+                                   BCON_DOUBLE (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 30.0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+   }
+   // aggregate command to return zero documents
+   // The difference between this and the previous test is using lt and not lte
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$gte",
+                                   BCON_DOUBLE (7),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoublePrecision",
+                                   "{",
+                                   "$lt",
+                                   BCON_DOUBLE (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected zero documents, got more than none");
+   }
+   explicit_encryption_range_destroy (eef_range);
+   explicit_encryption_destroy (eef);
+}
+
+static void
 test_explicit_encryption_range_int_error (void *unused)
 {
-   ee_fixture *eef = explicit_encryption_setup (true);
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-Int.json");
    ee_range_test_fixture *eef_range =
       (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
    eef_range->field_name = "encryptedInt";
-   eef_range->file_path = "./src/libmongoc/tests/client_side_encryption_prose/"
-                          "explicit_encryption/"
-                          "range-encryptedFields-Int.json";
    eef_range->sparsity = 1;
    eef_range->minmax.set = true;
    eef_range->minmax.min.value_type = BSON_TYPE_INT32;
@@ -4197,6 +4386,173 @@ test_explicit_encryption_range_int_error (void *unused)
 }
 
 static void
+test_explicit_encryption_range_long_error (void *unused)
+{
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-Long.json");
+   ee_range_test_fixture *eef_range =
+      (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
+   eef_range->field_name = "encryptedLong";
+   eef_range->sparsity = 1;
+   eef_range->minmax.set = true;
+   eef_range->minmax.min.value_type = BSON_TYPE_INT64;
+   eef_range->minmax.min.value.v_int64 = 0;
+   eef_range->minmax.max.value_type = BSON_TYPE_INT64;
+   eef_range->minmax.max.value.v_int64 = 250;
+
+   /* Can't encrypt document that is greater than max */
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
+      eef_range->doc_value[0].value.v_int32 = 251;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_STREAM_INVALID_TYPE,
+         "Value must be greater than or equal to the minimum value and less "
+         "than or equal to the maximum value");
+   }
+   /* Can't encrypt document that is less than min */
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
+      eef_range->doc_value[0].value.v_int64 = -1;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                             MONGOC_ERROR_STREAM_INVALID_TYPE,
+                             "got min: 0, max: 250, value: -1");
+   }
+   /* Can't encrypt document that is of a different type*/
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
+      eef_range->doc_value[0].value.v_int32 = 3;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_STREAM_INVALID_TYPE,
+         "Got range option 'min' of type INT64 and value of type INT32");
+   }
+}
+
+static void
+test_explicit_encryption_range_double_precision_error (void *unused)
+{
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-DoublePrecision.json");
+   ee_range_test_fixture *eef_range =
+      (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
+   eef_range->field_name = "encryptedDoublePrecision";
+   eef_range->sparsity = 1;
+   eef_range->minmax.set = true;
+   eef_range->minmax.min.value_type = BSON_TYPE_DOUBLE;
+   eef_range->minmax.min.value.v_double = 0.0;
+   eef_range->minmax.max.value_type = BSON_TYPE_DOUBLE;
+   eef_range->minmax.max.value.v_double = 199.9;
+   eef_range->precision = 2;
+
+   /* Can't encrypt document that is greater than max */
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
+      eef_range->doc_value[0].value.v_double = 200.0;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_STREAM_INVALID_TYPE,
+         "Value must be greater than or equal to the minimum value and less "
+         "than or equal to the maximum value");
+   }
+
+   /* Can't encrypt document that is less than min */
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
+      eef_range->doc_value[0].value.v_double = -0.5;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                             MONGOC_ERROR_STREAM_INVALID_TYPE,
+                             "got min: 0, max: 199.9, value: -0.5");
+   }
+   /* Can't encrypt document that is of a different type*/
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
+      eef_range->doc_value[0].value.v_int64 = 100;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_STREAM_INVALID_TYPE,
+         "Got range option 'min' of type DOUBLE and value of type INT64");
+   }
+}
+
+static void
+test_explicit_encryption_range_date_error (void *unused)
+{
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-Date.json");
+   ee_range_test_fixture *eef_range =
+      (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
+   eef_range->field_name = "encryptedDate";
+   eef_range->sparsity = 1;
+   eef_range->minmax.set = true;
+   eef_range->minmax.min.value_type = BSON_TYPE_INT64;
+   eef_range->minmax.min.value.v_int64 = 0;
+   eef_range->minmax.max.value_type = BSON_TYPE_INT64;
+   eef_range->minmax.max.value.v_int64 = 200;
+
+   /* Can't encrypt document that is greater than max */
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
+      eef_range->doc_value[0].value.v_int64 = 201;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_STREAM_INVALID_TYPE,
+         "Value must be greater than or equal to the minimum value and less "
+         "than or equal to the maximum value");
+   }
+   /* Can't encrypt document that is less than min */
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
+      eef_range->doc_value[0].value.v_int64 = -1;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                             MONGOC_ERROR_STREAM_INVALID_TYPE,
+                             "got min: 0, max: 200, value: -1");
+   }
+   /* Can't encrypt document that is of a different type*/
+   {
+      eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
+      eef_range->doc_value[0].value.v_double = 4.44;
+      bson_error_t error =
+         test_explicit_encryption_range_error_helper (eef_range, eef);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_STREAM_INVALID_TYPE,
+         "Got range option 'min' of type INT64 and value of type DOUBLE");
+   }
+
+   explicit_encryption_range_destroy (eef_range);
+   explicit_encryption_destroy (eef);
+}
+
+static void
 test_explicit_encryption_case1 (void *unused)
 {
    /* Case 1: can insert encrypted indexed and find */
@@ -4204,7 +4560,7 @@ test_explicit_encryption_case1 (void *unused)
    bool ok;
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
-   ee_fixture *eef = explicit_encryption_setup (false);
+   ee_fixture *eef = explicit_encryption_setup (NULL);
 
    BSON_UNUSED (unused);
 
@@ -4292,7 +4648,7 @@ test_explicit_encryption_case2 (void *unused)
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
    int i = 0;
-   ee_fixture *eef = explicit_encryption_setup (false);
+   ee_fixture *eef = explicit_encryption_setup (NULL);
 
    BSON_UNUSED (unused);
 
@@ -4421,7 +4777,7 @@ test_explicit_encryption_case3 (void *unused)
    bool ok;
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
-   ee_fixture *eef = explicit_encryption_setup (false);
+   ee_fixture *eef = explicit_encryption_setup (NULL);
 
    BSON_UNUSED (unused);
 
@@ -4494,7 +4850,7 @@ test_explicit_encryption_case4 (void *unused)
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
    bson_value_t payload;
-   ee_fixture *eef = explicit_encryption_setup (false);
+   ee_fixture *eef = explicit_encryption_setup (NULL);
 
    BSON_UNUSED (unused);
 
@@ -4543,7 +4899,7 @@ test_explicit_encryption_case5 (void *unused)
    mongoc_client_encryption_encrypt_opts_t *eopts;
    bson_value_t plaintext = {0};
    bson_value_t payload;
-   ee_fixture *eef = explicit_encryption_setup (false);
+   ee_fixture *eef = explicit_encryption_setup (NULL);
 
    BSON_UNUSED (unused);
 
@@ -6546,6 +6902,42 @@ test_client_side_encryption_install (TestSuite *suite)
       suite,
       "/client_side_encryption/explicit_encryption/range/int_error",
       test_explicit_encryption_range_int_error,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_19,
+      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/explicit_encryption/range/long_error",
+      test_explicit_encryption_range_long_error,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_19,
+      test_framework_skip_if_single);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/explicit_encryption/range/"
+                      "double_precision_error",
+                      test_explicit_encryption_range_double_precision_error,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_19,
+                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/explicit_encryption/range/date_error",
+      test_explicit_encryption_range_date_error,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_19,
+      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/explicit_encryption/range/double_precision",
+      test_explicit_encryption_range_double_precision,
       NULL /* dtor */,
       NULL /* ctx */,
       test_framework_skip_if_no_client_side_encryption,
