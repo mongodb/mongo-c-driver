@@ -315,11 +315,11 @@ all_functions = OD([
           export AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
           export AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
           export AWS_DEFAULT_REGION="us-east-1"
-          echo "Running activate_venv.sh..."
-          . ./activate_venv.sh
-          echo "Running activate_venv.sh... done."
+          echo "Running activate-kmstlsvenv.sh..."
+          . ./activate-kmstlsvenv.sh
+          echo "Running activate-kmstlsvenv.sh... done."
           echo "Running set-temp-creds.sh..."
-          PYTHON="$(type -P python)" . ./set-temp-creds.sh
+          . ./set-temp-creds.sh
           echo "Running set-temp-creds.sh... done."
           deactivate
           popd
@@ -581,7 +581,9 @@ all_functions = OD([
         set +o xtrace
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
-        . ../drivers-evergreen-tools/.evergreen/auth_aws/activate_venv.sh
+        pushd ../drivers-evergreen-tools/.evergreen/auth_aws
+        . .activate-authawsvenv.sh
+        popd # ../drivers-evergreen-tools/.evergreen/auth_aws
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
         ''')
     )),
@@ -596,19 +598,19 @@ all_functions = OD([
         shell_exec(r'''
         echo "Preparing CSFLE venv environment..."
         cd ./drivers-evergreen-tools/.evergreen/csfle
-        # This function ensures future invocations of activate_venv.sh conducted in
+        # This function ensures future invocations of activate-kmstlsvenv.sh conducted in
         # parallel do not race to setup a venv environment; it has already been prepared.
         # This primarily addresses the situation where the "run tests" and "run kms servers"
-        # functions invoke 'activate_venv.sh' simultaneously.
+        # functions invoke 'activate-kmstlsvenv.sh' simultaneously.
         # TODO: remove this function along with the "run kms servers" function.
-        . ./activate_venv.sh
+        . ./activate-kmstlsvenv.sh
         deactivate
         echo "Preparing CSFLE venv environment... done."
         ''', test=False),
         shell_exec(r'''
         echo "Starting mock KMS servers..."
         cd ./drivers-evergreen-tools/.evergreen/csfle
-        . ./activate_venv.sh
+        . ./activate-kmstlsvenv.sh
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999 &
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000 &
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001 &
