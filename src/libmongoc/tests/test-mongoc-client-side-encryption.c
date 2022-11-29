@@ -3829,19 +3829,26 @@ test_explicit_encryption_range_insert (ee_range_test_fixture *eef_range,
    mongoc_client_encryption_encrypt_opts_t *eopts;
    mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
    int i = 0;
-
-   for (i = 0; i < 2; i++) {
+   int limit = 2;
+   // if min and max are set insert those documents too
+   if (eef_range->minmax.set) {
+      limit = 4; // increase limit to insert 4 documents
+   }
+   for (i = 0; i < limit; i++) {
+      bson_value_t plaintext = {0};
+      if (i < 2) {
+         plaintext = eef_range->doc_value[i];
+      } else {
+         plaintext = (i == 2) ? eef_range->minmax.min : eef_range->minmax.max;
+      }
       bson_value_t insertPayload;
       bson_t to_insert = BSON_INITIALIZER;
       eopts = mongoc_client_encryption_encrypt_opts_new ();
       rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
       explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
 
-      ok = mongoc_client_encryption_encrypt (eef->clientEncryption,
-                                             &eef_range->doc_value[i],
-                                             eopts,
-                                             &insertPayload,
-                                             &error);
+      ok = mongoc_client_encryption_encrypt (
+         eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
       ASSERT_OR_PRINT (ok, error);
 
       ASSERT (
@@ -3927,9 +3934,10 @@ test_explicit_encryption_range_int (void *unused)
    eef_range->doc_value[1].value_type = BSON_TYPE_INT32;
    eef_range->doc_value[1].value.v_int32 = 30;
 
-   /* Use ``encryptedClient`` to insert 2 documents of the form ``{
+   /* Use ``encryptedClient`` to insert 4 documents of the form ``{
     * "encrypted<Type>": <insertPayload>, _id: i }``. */
    test_explicit_encryption_range_insert (eef_range, eef);
+
    // run find command to return 3 documents including maximum
    {
       const bson_t *got;
@@ -3957,11 +3965,13 @@ test_explicit_encryption_range_int (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
       ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 250}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected two documents, got more than two");
+              "expected three documents, got more than three");
       mongoc_cursor_destroy (cursor);
    }
-   // run find command to return one document
+   // run find command to return two documents, including minimum
    {
       const bson_t *got;
       eef_range->query = BCON_NEW ("$and",
@@ -3986,8 +3996,10 @@ test_explicit_encryption_range_int (void *unused)
 
       ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected one document, got more than one");
+              "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
    // run find command with an open range query
@@ -3999,19 +4011,19 @@ test_explicit_encryption_range_int (void *unused)
                                    "encryptedInt",
                                    "{",
                                    "$gt",
-                                   BCON_INT32 (10),
+                                   BCON_INT32 (200),
                                    "}",
                                    "}",
                                    "]");
       mongoc_cursor_t *cursor =
          test_explicit_encryption_range_find_helper (eef_range, eef);
       ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
+      ASSERT_MATCH (got, "{ 'encryptedInt': 250}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // aggregate operation to return 2 documents
+   // aggregate command to return 3 documents, including minimum
    {
       const bson_t *got;
       eef_range->query = BCON_NEW ("$and",
@@ -4020,14 +4032,14 @@ test_explicit_encryption_range_int (void *unused)
                                    "encryptedInt",
                                    "{",
                                    "$gte",
-                                   BCON_INT32 (5),
+                                   BCON_INT32 (0),
                                    "}",
                                    "}",
                                    "{",
                                    "encryptedInt",
                                    "{",
                                    "$lte",
-                                   BCON_INT32 (40),
+                                   BCON_INT32 (30),
                                    "}",
                                    "}",
                                    "]");
@@ -4037,10 +4049,12 @@ test_explicit_encryption_range_int (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
       ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected two documents, got more than two");
+              "expected three documents, got more than three");
    }
-   // aggregate operation to return one document
+   // aggregate command to return one document
    {
       const bson_t *got;
       eef_range->query = BCON_NEW ("$and",
@@ -4067,7 +4081,7 @@ test_explicit_encryption_range_int (void *unused)
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected one document, got more than one");
    }
-   // aggregate operation to return zero documents
+   // aggregate command to return zero documents
    // Note the only difference between this and the previous test is using lt
    // and not lte
    {
