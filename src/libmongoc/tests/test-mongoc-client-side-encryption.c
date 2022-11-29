@@ -3912,7 +3912,6 @@ test_explicit_encryption_range_int (void *unused)
    ee_fixture *eef = explicit_encryption_setup (
       "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
       "range-encryptedFields-Int.json");
-   ;
    ee_range_test_fixture *eef_range =
       (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
    eef_range->field_name = "encryptedInt";
@@ -4129,6 +4128,383 @@ test_explicit_encryption_range_error_helper (ee_range_test_fixture *eef_range,
    bson_destroy (&to_insert);
    mongoc_client_encryption_encrypt_opts_destroy (eopts);
    return error;
+}
+
+static void
+test_explicit_encryption_range_double (void *unused)
+{
+   BSON_UNUSED (unused);
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-DoubleNoPrecision.json");
+   ee_range_test_fixture *eef_range =
+      (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
+   eef_range->field_name = "encryptedDoubleNoPrecision";
+   eef_range->sparsity = 1;
+   eef_range->minmax.set = false;
+   eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
+   eef_range->doc_value[0].value.v_double = 6.0;
+   eef_range->doc_value[1].value_type = BSON_TYPE_DOUBLE;
+   eef_range->doc_value[1].value.v_double = 30.0;
+   test_explicit_encryption_range_insert (eef_range, eef);
+   // run find command to return 2 documents
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$gt",
+                                   BCON_DOUBLE (5),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$lte",
+                                   BCON_DOUBLE (199.9),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoubleNoPrecision': 6.0}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoubleNoPrecision': 30.0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
+   }
+   // run find command to return one document
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$gte",
+                                   BCON_DOUBLE (0.0),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$lte",
+                                   BCON_DOUBLE (6.0),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoubleNoPrecision': 6.0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
+   }
+   // run find command with an open range query
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$gt",
+                                   BCON_DOUBLE (25.0),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoubleNoPrecision': 30.0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
+   }
+   // aggregate command to return 2 documents
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$gte",
+                                   BCON_DOUBLE (0.0),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$lte",
+                                   BCON_DOUBLE (30.0),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoubleNoPrecision': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoubleNoPrecision': 30}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected two documents, got more than two");
+   }
+   // aggregate command to return one document
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$gte",
+                                   BCON_DOUBLE (7),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$lte",
+                                   BCON_DOUBLE (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDoubleNoPrecision': 30.0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+   }
+   // aggregate command to return zero documents
+   // The difference between this and the previous test is using lt and not lte
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$gte",
+                                   BCON_DOUBLE (7),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDoubleNoPrecision",
+                                   "{",
+                                   "$lt",
+                                   BCON_DOUBLE (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected zero documents, got more than none");
+   }
+   explicit_encryption_range_destroy (eef_range);
+   explicit_encryption_destroy (eef);
+}
+
+static void
+test_explicit_encryption_range_long (void *unused)
+{
+   BSON_UNUSED (unused);
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-Long.json");
+   ee_range_test_fixture *eef_range =
+      (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
+   eef_range->field_name = "encryptedLong";
+   eef_range->sparsity = 1;
+   eef_range->minmax.set = true;
+   eef_range->minmax.min.value_type = BSON_TYPE_INT64;
+   eef_range->minmax.min.value.v_int64 = 0;
+   eef_range->minmax.max.value_type = BSON_TYPE_INT64;
+   eef_range->minmax.max.value.v_int64 = 200;
+   eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
+   eef_range->doc_value[0].value.v_int64 = 6;
+   eef_range->doc_value[1].value_type = BSON_TYPE_INT64;
+   eef_range->doc_value[1].value.v_int64 = 30;
+   /* Use ``encryptedClient`` to insert 4 documents of the form ``{
+    * "encrypted<Type>": <insertPayload>, _id: i }``. */
+   test_explicit_encryption_range_insert (eef_range, eef);
+   // run find command to return 3 documents including maximum
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$gt",
+                                   BCON_INT64 (5),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$lte",
+                                   BCON_INT64 (200),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 30}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 200}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected three documents, got more than three");
+      mongoc_cursor_destroy (cursor);
+   }
+   // run find command to return two documents, including minimum
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$gte",
+                                   BCON_INT64 (0),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$lte",
+                                   BCON_INT64 (6),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
+   }
+   // run find command with an open range query
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$gt",
+                                   BCON_INT64 (150),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 200}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
+   }
+   // aggregate command to return 3 documents, including minimum
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$gte",
+                                   BCON_INT64 (0),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$lte",
+                                   BCON_INT64 (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 30}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected three documents, got more than three");
+   }
+   // aggregate command to return one document
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$gte",
+                                   BCON_INT64 (7),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$lte",
+                                   BCON_INT64 (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedLong': 30}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+   }
+   // aggregate command to return zero documents
+   // The difference between this and the previous test is using lt and not lte
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$gte",
+                                   BCON_INT64 (7),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedLong",
+                                   "{",
+                                   "$lt",
+                                   BCON_INT64 (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected zero documents, got more than none");
+   }
+   explicit_encryption_range_destroy (eef_range);
+   explicit_encryption_destroy (eef);
 }
 
 static void
@@ -6943,4 +7319,29 @@ test_client_side_encryption_install (TestSuite *suite)
       test_framework_skip_if_no_client_side_encryption,
       test_framework_skip_if_max_wire_version_less_than_19,
       test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/explicit_encryption/range/double",
+      test_explicit_encryption_range_double,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_19,
+      test_framework_skip_if_single);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/explicit_encryption/range/long",
+                      test_explicit_encryption_range_long,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_19,
+                      test_framework_skip_if_single);
+   // TestSuite_AddFull (suite,
+   //                    "/client_side_encryption/explicit_encryption/range/date",
+   //                    test_explicit_encryption_range_date,
+   //                    NULL /* dtor */,
+   //                    NULL /* ctx */,
+   //                    test_framework_skip_if_no_client_side_encryption,
+   //                    test_framework_skip_if_max_wire_version_less_than_19,
+   //                    test_framework_skip_if_single);
 }
