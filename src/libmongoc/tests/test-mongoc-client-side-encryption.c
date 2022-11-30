@@ -3753,7 +3753,7 @@ explicit_encryption_set_range_opts (
 }
 
 
-mongoc_cursor_t *
+static mongoc_cursor_t *
 test_explicit_encryption_range_agg_helper (ee_range_test_fixture *eef_range,
                                            ee_fixture *eef)
 {
@@ -3875,7 +3875,7 @@ test_explicit_encryption_range_insert_decrypt (ee_range_test_fixture *eef_range,
    bson_value_destroy (&insertPayload);
 }
 
-mongoc_cursor_t *
+static mongoc_cursor_t *
 test_explicit_encryption_range_find_helper (ee_range_test_fixture *eef_range,
                                             ee_fixture *eef)
 {
