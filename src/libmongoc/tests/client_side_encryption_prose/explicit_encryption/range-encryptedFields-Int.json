@@ -18,7 +18,7 @@
             "$numberInt": "0"
           },
           "max": {
-            "$numberInt": "250"
+            "$numberInt": "200"
           }
         }
       }

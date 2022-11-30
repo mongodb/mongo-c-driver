@@ -3934,7 +3934,7 @@ test_explicit_encryption_range_int (void *unused)
    eef_range->minmax.min.value_type = BSON_TYPE_INT32;
    eef_range->minmax.min.value.v_int32 = 0;
    eef_range->minmax.max.value_type = BSON_TYPE_INT32;
-   eef_range->minmax.max.value.v_int32 = 250;
+   eef_range->minmax.max.value.v_int32 = 200;
    eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
    eef_range->doc_value[0].value.v_int32 = 6;
    eef_range->doc_value[1].value_type = BSON_TYPE_INT32;
@@ -3960,7 +3960,7 @@ test_explicit_encryption_range_int (void *unused)
                                    "encryptedInt",
                                    "{",
                                    "$lte",
-                                   BCON_INT32 (250),
+                                   BCON_INT32 (200),
                                    "}",
                                    "}",
                                    "]");
@@ -3972,7 +3972,7 @@ test_explicit_encryption_range_int (void *unused)
       ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
       ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 250}");
+      ASSERT_MATCH (got, "{ 'encryptedInt': 200}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected three documents, got more than three");
       mongoc_cursor_destroy (cursor);
@@ -4017,14 +4017,14 @@ test_explicit_encryption_range_int (void *unused)
                                    "encryptedInt",
                                    "{",
                                    "$gt",
-                                   BCON_INT32 (200),
+                                   BCON_INT32 (150),
                                    "}",
                                    "}",
                                    "]");
       mongoc_cursor_t *cursor =
          test_explicit_encryption_range_find_helper (eef_range, eef);
       ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 250}");
+      ASSERT_MATCH (got, "{ 'encryptedInt': 200}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
@@ -4928,12 +4928,12 @@ test_explicit_encryption_range_int_error (void *unused)
    eef_range->minmax.min.value_type = BSON_TYPE_INT32;
    eef_range->minmax.min.value.v_int32 = 0;
    eef_range->minmax.max.value_type = BSON_TYPE_INT32;
-   eef_range->minmax.max.value.v_int32 = 250;
+   eef_range->minmax.max.value.v_int32 = 200;
 
    /* Can't encrypt document that is greater than max */
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
-      eef_range->doc_value[0].value.v_int32 = 251;
+      eef_range->doc_value[0].value.v_int32 = 201;
       bson_error_t error =
          test_explicit_encryption_range_error_helper (eef_range, eef);
       ASSERT_ERROR_CONTAINS (
@@ -4952,7 +4952,7 @@ test_explicit_encryption_range_int_error (void *unused)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
-                             "got min: 0, max: 250, value: -1");
+                             "got min: 0, max: 200, value: -1");
    }
    /* Can't encrypt document that is of a different type*/
    {
@@ -4996,12 +4996,12 @@ test_explicit_encryption_range_long_error (void *unused)
    eef_range->minmax.min.value_type = BSON_TYPE_INT64;
    eef_range->minmax.min.value.v_int64 = 0;
    eef_range->minmax.max.value_type = BSON_TYPE_INT64;
-   eef_range->minmax.max.value.v_int64 = 250;
+   eef_range->minmax.max.value.v_int64 = 200;
 
    /* Can't encrypt document that is greater than max */
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
-      eef_range->doc_value[0].value.v_int32 = 251;
+      eef_range->doc_value[0].value.v_int32 = 201;
       bson_error_t error =
          test_explicit_encryption_range_error_helper (eef_range, eef);
       ASSERT_ERROR_CONTAINS (
@@ -5020,7 +5020,7 @@ test_explicit_encryption_range_long_error (void *unused)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
-                             "got min: 0, max: 250, value: -1");
+                             "got min: 0, max: 200, value: -1");
    }
    /* Can't encrypt document that is of a different type*/
    {
