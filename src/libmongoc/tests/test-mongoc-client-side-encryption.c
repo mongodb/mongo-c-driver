@@ -3814,51 +3814,65 @@ test_explicit_encryption_range_agg_helper (ee_range_test_fixture *eef_range,
 }
 
 static void
-test_explicit_encryption_range_insert (ee_range_test_fixture *eef_range,
-                                       ee_fixture *eef)
+test_explicit_encryption_range_insert_decrypt (ee_range_test_fixture *eef_range,
+                                               ee_fixture *eef)
 {
    bson_error_t error;
    bool ok;
-   mongoc_client_encryption_encrypt_opts_t *eopts;
-   mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
-   int i = 0;
-   int limit = 2;
-   // if min and max are set insert those documents too
-   if (eef_range->minmax.set) {
-      limit = 4; // increase limit to insert 4 documents
-   }
-   for (i = 0; i < limit; i++) {
-      bson_value_t plaintext = {0};
-      if (i < 2) {
-         plaintext = eef_range->doc_value[i];
-      } else {
-         plaintext = (i == 2) ? eef_range->minmax.min : eef_range->minmax.max;
+   bson_value_t insertPayload;
+
+   {
+      mongoc_client_encryption_encrypt_opts_t *eopts;
+      mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
+      int i = 0;
+      int limit = 2;
+      // if min and max are set insert those documents too
+      if (eef_range->minmax.set) {
+         limit = 4; // increase limit to insert 4 documents
       }
-      bson_value_t insertPayload;
-      bson_t to_insert = BSON_INITIALIZER;
-      eopts = mongoc_client_encryption_encrypt_opts_new ();
-      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
-      explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
+      for (i = 0; i < limit; i++) {
+         bson_value_t plaintext = {0};
+         if (i < 2) {
+            plaintext = eef_range->doc_value[i];
+         } else {
+            plaintext =
+               (i == 2) ? eef_range->minmax.min : eef_range->minmax.max;
+         }
+         bson_t to_insert = BSON_INITIALIZER;
+         eopts = mongoc_client_encryption_encrypt_opts_new ();
+         rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
+         explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
 
-      ok = mongoc_client_encryption_encrypt (
-         eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
-      ASSERT_OR_PRINT (ok, error);
+         ok = mongoc_client_encryption_encrypt (
+            eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
+         ASSERT_OR_PRINT (ok, error);
 
-      ASSERT (
-         BSON_APPEND_VALUE (&to_insert, eef_range->field_name, &insertPayload));
-      ASSERT (BSON_APPEND_INT32 (&to_insert, "_id", i));
+         ASSERT (BSON_APPEND_VALUE (
+            &to_insert, eef_range->field_name, &insertPayload));
+         ASSERT (BSON_APPEND_INT32 (&to_insert, "_id", i));
 
-      ok = mongoc_collection_insert_one (eef->encryptedColl,
-                                         &to_insert,
-                                         NULL /* opts */,
-                                         NULL /* reply */,
-                                         &error);
-      ASSERT_OR_PRINT (ok, error);
+         ok = mongoc_collection_insert_one (eef->encryptedColl,
+                                            &to_insert,
+                                            NULL /* opts */,
+                                            NULL /* reply */,
+                                            &error);
+         ASSERT_OR_PRINT (ok, error);
 
-      bson_value_destroy (&insertPayload);
-      bson_destroy (&to_insert);
-      mongoc_client_encryption_encrypt_opts_destroy (eopts);
+         bson_destroy (&to_insert);
+         mongoc_client_encryption_encrypt_opts_destroy (eopts);
+      }
    }
+   /* Decrypt the first document added */
+   {
+      bson_value_t got;
+
+      ok = mongoc_client_encryption_decrypt (
+         eef->clientEncryption, &insertPayload, &got, &error);
+      ASSERT_OR_PRINT (ok, error);
+      ASSERT (got.value_type == eef_range->doc_value[0].value_type);
+      bson_value_destroy (&got);
+   }
+   bson_value_destroy (&insertPayload);
 }
 
 mongoc_cursor_t *
@@ -3928,7 +3942,7 @@ test_explicit_encryption_range_int (void *unused)
 
    /* Use ``encryptedClient`` to insert 4 documents of the form ``{
     * "encrypted<Type>": <insertPayload>, _id: i }``. */
-   test_explicit_encryption_range_insert (eef_range, eef);
+   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
 
    // run find command to return 3 documents including maximum
    {
@@ -4146,7 +4160,7 @@ test_explicit_encryption_range_double (void *unused)
    eef_range->doc_value[0].value.v_double = 6.0;
    eef_range->doc_value[1].value_type = BSON_TYPE_DOUBLE;
    eef_range->doc_value[1].value.v_double = 30.0;
-   test_explicit_encryption_range_insert (eef_range, eef);
+   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
    // run find command to return 2 documents
    {
       const bson_t *got;
@@ -4313,6 +4327,202 @@ test_explicit_encryption_range_double (void *unused)
 }
 
 static void
+test_explicit_encryption_range_date (void *unused)
+{
+   BSON_UNUSED (unused);
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-Date.json");
+   ee_range_test_fixture *eef_range =
+      (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
+   eef_range->field_name = "encryptedDate";
+   eef_range->sparsity = 1;
+   eef_range->minmax.set = true;
+   eef_range->minmax.min.value_type = BSON_TYPE_DATE_TIME;
+   eef_range->minmax.min.value.v_int64 = 0;
+   eef_range->minmax.max.value_type = BSON_TYPE_DATE_TIME;
+   eef_range->minmax.max.value.v_int64 = 200;
+   eef_range->doc_value[0].value_type = BSON_TYPE_DATE_TIME;
+   eef_range->doc_value[0].value.v_int64 = 6;
+   eef_range->doc_value[1].value_type = BSON_TYPE_DATE_TIME;
+   eef_range->doc_value[1].value.v_int64 = 30;
+   /* Use ``encryptedClient`` to insert 4 documents of the form ``{
+    * "encrypted<Type>": <insertPayload>, _id: i }``. */
+   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
+   // run find command to return 3 documents including maximum
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$gt",
+                                   BCON_DATE_TIME (5),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$lte",
+                                   BCON_DATE_TIME (200),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate': { '$date' : 6 }}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate': { '$date' : 30 }}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate': { '$date' : 200 }}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected three documents, got more than three");
+      mongoc_cursor_destroy (cursor);
+   }
+   // run find command to return two documents, including minimum
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$gte",
+                                   BCON_DATE_TIME (0),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$lte",
+                                   BCON_DATE_TIME (6),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate':  { '$date' : 6 }}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate':  { '$date' : 0 }}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
+   }
+   {
+      // run find command with an open range query
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$gt",
+                                   BCON_DATE_TIME (150),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate':  { '$date' : 200 }}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
+   }
+   // aggregate command to return 3 documents, including minimum
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$gte",
+                                   BCON_DATE_TIME (0),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$lte",
+                                   BCON_DATE_TIME (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate': { '$date' : 6 }}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate': { '$date' : 30 }}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate': { '$date' : 0 }}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected three documents, got more than three");
+   }
+   // aggregate command to return one document
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$gte",
+                                   BCON_DATE_TIME (7),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$lte",
+                                   BCON_DATE_TIME (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedDate':  { '$date' : 30}}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+   }
+   // aggregate command to return zero documents
+   // The difference between this and the previous test is using lt and not
+   // lte
+   {
+      const bson_t *got;
+      eef_range->query = BCON_NEW ("$and",
+                                   "[",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$gte",
+                                   BCON_DATE_TIME (7),
+                                   "}",
+                                   "}",
+                                   "{",
+                                   "encryptedDate",
+                                   "{",
+                                   "$lt",
+                                   BCON_DATE_TIME (30),
+                                   "}",
+                                   "}",
+                                   "]");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected zero documents, got more than none");
+   }
+   explicit_encryption_range_destroy (eef_range);
+   explicit_encryption_destroy (eef);
+}
+
+static void
 test_explicit_encryption_range_long (void *unused)
 {
    BSON_UNUSED (unused);
@@ -4334,7 +4544,7 @@ test_explicit_encryption_range_long (void *unused)
    eef_range->doc_value[1].value.v_int64 = 30;
    /* Use ``encryptedClient`` to insert 4 documents of the form ``{
     * "encrypted<Type>": <insertPayload>, _id: i }``. */
-   test_explicit_encryption_range_insert (eef_range, eef);
+   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
    // run find command to return 3 documents including maximum
    {
       const bson_t *got;
@@ -4532,7 +4742,7 @@ test_explicit_encryption_range_double_precision (void *unused)
 
    /* Use ``encryptedClient`` to insert 4 documents of the form ``{
     * "encrypted<Type>": <insertPayload>, _id: i }``. */
-   test_explicit_encryption_range_insert (eef_range, eef);
+   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
    // run find command to return 3 documents including maximum
    {
       const bson_t *got;
@@ -4909,14 +5119,14 @@ test_explicit_encryption_range_date_error (void *unused)
    eef_range->field_name = "encryptedDate";
    eef_range->sparsity = 1;
    eef_range->minmax.set = true;
-   eef_range->minmax.min.value_type = BSON_TYPE_INT64;
+   eef_range->minmax.min.value_type = BSON_TYPE_DATE_TIME;
    eef_range->minmax.min.value.v_int64 = 0;
-   eef_range->minmax.max.value_type = BSON_TYPE_INT64;
+   eef_range->minmax.max.value_type = BSON_TYPE_DATE_TIME;
    eef_range->minmax.max.value.v_int64 = 200;
 
    /* Can't encrypt document that is greater than max */
    {
-      eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
+      eef_range->doc_value[0].value_type = BSON_TYPE_DATE_TIME;
       eef_range->doc_value[0].value.v_int64 = 201;
       bson_error_t error =
          test_explicit_encryption_range_error_helper (eef_range, eef);
@@ -4929,7 +5139,7 @@ test_explicit_encryption_range_date_error (void *unused)
    }
    /* Can't encrypt document that is less than min */
    {
-      eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
+      eef_range->doc_value[0].value_type = BSON_TYPE_DATE_TIME;
       eef_range->doc_value[0].value.v_int64 = -1;
       bson_error_t error =
          test_explicit_encryption_range_error_helper (eef_range, eef);
@@ -4948,7 +5158,7 @@ test_explicit_encryption_range_date_error (void *unused)
          error,
          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
          MONGOC_ERROR_STREAM_INVALID_TYPE,
-         "Got range option 'min' of type INT64 and value of type DOUBLE");
+         "Got range option 'min' of type DATE_TIME and value of type DOUBLE");
    }
    /* Can't set precision with type date */
    {
@@ -4959,7 +5169,7 @@ test_explicit_encryption_range_date_error (void *unused)
                              MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "expected 'precision' to be set with double or "
-                             "decimal128 index, but got: INT64 min");
+                             "decimal128 index, but got: DATE_TIME min");
    }
 
    explicit_encryption_range_destroy (eef_range);
@@ -7374,12 +7584,12 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_19,
                       test_framework_skip_if_single);
-   // TestSuite_AddFull (suite,
-   //                    "/client_side_encryption/explicit_encryption/range/date",
-   //                    test_explicit_encryption_range_date,
-   //                    NULL /* dtor */,
-   //                    NULL /* ctx */,
-   //                    test_framework_skip_if_no_client_side_encryption,
-   //                    test_framework_skip_if_max_wire_version_less_than_19,
-   //                    test_framework_skip_if_single);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/explicit_encryption/range/date",
+                      test_explicit_encryption_range_date,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_19,
+                      test_framework_skip_if_single);
 }
