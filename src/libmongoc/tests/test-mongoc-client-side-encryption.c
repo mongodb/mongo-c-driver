@@ -3876,7 +3876,7 @@ test_explicit_encryption_range_insert_decrypt (ee_range_test_fixture *eef_range,
 static mongoc_cursor_t *
 test_explicit_encryption_range_find_helper (ee_range_test_fixture *eef_range,
                                             ee_fixture *eef,
-                                            bool expr)
+                                            bool aggExpr)
 {
    bson_error_t error;
    bool ok;
@@ -3903,7 +3903,7 @@ test_explicit_encryption_range_find_helper (ee_range_test_fixture *eef_range,
    ASSERT_OR_PRINT (ok, error);
 
    bson_t *findBson = NULL;
-   if (expr) {
+   if (aggExpr) {
       bson_t *bsonData =
          bson_new_from_data (findPayload.value.v_doc.data,
                              (size_t) findPayload.value.v_doc.data_len);

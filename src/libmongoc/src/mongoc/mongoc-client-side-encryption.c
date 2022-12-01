@@ -486,7 +486,7 @@ mongoc_client_encryption_encrypt_opts_destroy (
    if (!opts) {
       return;
    }
-   if (opts->range_opts == NULL) {
+   if (opts->range_opts) {
       mongoc_client_encryption_encrypt_range_opts_destroy (opts->range_opts);
    }
    bson_value_destroy (&opts->keyid);
@@ -2765,7 +2765,7 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
    }
 
    bson_t range_opts = BSON_INITIALIZER;
-   if (opts->range_opts != NULL) {
+   if (opts->range_opts) {
       append_bson_range_opts (&range_opts, opts);
    }
 
