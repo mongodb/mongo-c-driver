@@ -632,10 +632,12 @@ mongoc_client_encryption_encrypt_opts_set_range_opts (
       return;
    }
 
-   mongoc_client_encryption_encrypt_range_opts_destroy (opts->range_opts);
-   opts->range_opts = NULL;
+   if (opts->range_opts) {
+      mongoc_client_encryption_encrypt_range_opts_destroy (opts->range_opts);
+      opts->range_opts = NULL;
+   }
 
-   opts->range_opts = copy_range_opts(range_opts);
+   opts->range_opts = copy_range_opts (range_opts);
 }
 
 /*--------------------------------------------------------------------------
