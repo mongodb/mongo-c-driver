@@ -3808,6 +3808,7 @@ test_explicit_encryption_range_agg_helper (ee_range_test_fixture *eef_range,
    bson_destroy (aggregateBson);
    bson_value_destroy (&aggregatePayload);
    mongoc_client_encryption_encrypt_opts_destroy (eopts);
+   mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);
    return cursor;
 }
 
@@ -3858,6 +3859,7 @@ test_explicit_encryption_range_insert_decrypt (ee_range_test_fixture *eef_range,
 
          bson_destroy (&to_insert);
          mongoc_client_encryption_encrypt_opts_destroy (eopts);
+         mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);
       }
    }
    /* Decrypt the last payload added */
@@ -3909,6 +3911,7 @@ test_explicit_encryption_range_find_helper (ee_range_test_fixture *eef_range,
                              (size_t) findPayload.value.v_doc.data_len);
       findBson = bson_new ();
       BSON_APPEND_DOCUMENT (findBson, "$expr", bsonData);
+      bson_destroy (bsonData);
    } else {
       findBson = bson_new_from_data (findPayload.value.v_doc.data,
                                      (size_t) findPayload.value.v_doc.data_len);
@@ -3923,8 +3926,10 @@ test_explicit_encryption_range_find_helper (ee_range_test_fixture *eef_range,
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    bson_destroy (findBson);
    bson_value_destroy (&findPayload);
-   mongoc_client_encryption_encrypt_opts_destroy (eopts);
    bson_destroy (&filter);
+   mongoc_client_encryption_encrypt_opts_destroy (eopts);
+   mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);
+
    return cursor;
 }
 
@@ -4094,6 +4099,7 @@ test_explicit_encryption_range_error_helper (ee_range_test_fixture *eef_range,
    ASSERT (!ok);
    bson_value_destroy (&insertPayload);
    mongoc_client_encryption_encrypt_opts_destroy (eopts);
+   mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);
    return error;
 }
 
@@ -4410,10 +4416,10 @@ test_explicit_encryption_range_long (void *unused)
    // run find command to return 3 documents including maximum.
    {
       const bson_t *got;
-      eef_range->query =
-         tmp_bson ("{'$and': ["
-                   "  { 'encryptedLong': { '$gt': { '$numberLong': '5' } } },"
-                   "  { 'encryptedLong': { '$lte': { '$numberLong': '200' } } } ] }");
+      eef_range->query = tmp_bson (
+         "{'$and': ["
+         "  { 'encryptedLong': { '$gt': { '$numberLong': '5' } } },"
+         "  { 'encryptedLong': { '$lte': { '$numberLong': '200' } } } ] }");
       mongoc_cursor_t *cursor =
          test_explicit_encryption_range_find_helper (eef_range, eef, false);
 
@@ -7400,7 +7406,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
-      TestSuite_AddFull (
+   TestSuite_AddFull (
       suite,
       "/client_side_encryption/bypass_mongocryptd_shared_library",
       test_bypass_mongocryptd_shared_library,
