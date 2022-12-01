@@ -4035,6 +4035,7 @@ test_explicit_encryption_range_int (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedInt': 200}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return one document: the minimum.
    {
@@ -4050,6 +4051,7 @@ test_explicit_encryption_range_int (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return zero documents.
    // The difference between this and the previous test is using gt/lt and not
@@ -4065,6 +4067,7 @@ test_explicit_encryption_range_int (void *unused)
          test_explicit_encryption_range_agg_helper (eef_range, eef);
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected zero documents, got more than none");
+      mongoc_cursor_destroy (cursor);
    }
    explicit_encryption_range_destroy (eef_range);
    explicit_encryption_destroy (eef);
@@ -4080,7 +4083,6 @@ test_explicit_encryption_range_error_helper (ee_range_test_fixture *eef_range,
    mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
 
    bson_value_t insertPayload;
-   bson_t to_insert = BSON_INITIALIZER;
    eopts = mongoc_client_encryption_encrypt_opts_new ();
    rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
    explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
@@ -4091,7 +4093,6 @@ test_explicit_encryption_range_error_helper (ee_range_test_fixture *eef_range,
                                           &error);
    ASSERT (!ok);
    bson_value_destroy (&insertPayload);
-   bson_destroy (&to_insert);
    mongoc_client_encryption_encrypt_opts_destroy (eopts);
    return error;
 }
@@ -4193,6 +4194,7 @@ test_explicit_encryption_range_double (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedDoubleNoPrecision': 30}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return one document.
    {
@@ -4209,6 +4211,7 @@ test_explicit_encryption_range_double (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedDoubleNoPrecision': 30.0}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return zero documents.
    // The difference between this and the previous test is using gt/lt and not
@@ -4225,6 +4228,7 @@ test_explicit_encryption_range_double (void *unused)
          test_explicit_encryption_range_agg_helper (eef_range, eef);
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected zero documents, got more than none");
+      mongoc_cursor_destroy (cursor);
    }
    explicit_encryption_range_destroy (eef_range);
    explicit_encryption_destroy (eef);
@@ -4340,6 +4344,7 @@ test_explicit_encryption_range_date (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedDate': { '$date' : 200 }}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return one document: the minimum.
    {
@@ -4356,6 +4361,7 @@ test_explicit_encryption_range_date (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedDate':  { '$date' : 0}}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return zero documents.
    // The difference between this and the previous test is using gt/lt and not
@@ -4372,6 +4378,7 @@ test_explicit_encryption_range_date (void *unused)
          test_explicit_encryption_range_agg_helper (eef_range, eef);
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected zero documents, got more than none");
+      mongoc_cursor_destroy (cursor);
    }
    explicit_encryption_range_destroy (eef_range);
    explicit_encryption_destroy (eef);
@@ -4482,6 +4489,7 @@ test_explicit_encryption_range_long (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedLong': 200}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return one document: the minimum.
    {
@@ -4497,6 +4505,7 @@ test_explicit_encryption_range_long (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedLong': 0}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return zero documents.
    // The difference between this and the previous test is using gt/lt and not
@@ -4512,6 +4521,7 @@ test_explicit_encryption_range_long (void *unused)
          test_explicit_encryption_range_agg_helper (eef_range, eef);
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected zero documents, got more than none");
+      mongoc_cursor_destroy (cursor);
    }
    explicit_encryption_range_destroy (eef_range);
    explicit_encryption_destroy (eef);
@@ -4628,6 +4638,7 @@ test_explicit_encryption_range_double_precision (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 199.9}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return one document: the minimum.
    {
@@ -4644,6 +4655,7 @@ test_explicit_encryption_range_double_precision (void *unused)
       ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 0.0}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
    }
    // run aggregate command to return zero documents.
    // The difference between this and the previous test is using gt/lt and not
@@ -4660,6 +4672,7 @@ test_explicit_encryption_range_double_precision (void *unused)
          test_explicit_encryption_range_agg_helper (eef_range, eef);
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected zero documents, got more than none");
+      mongoc_cursor_destroy (cursor);
    }
    explicit_encryption_range_destroy (eef_range);
    explicit_encryption_destroy (eef);
