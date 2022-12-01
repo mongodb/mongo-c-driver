@@ -23,7 +23,7 @@
 
 #include <mongoc/mongoc-http-private.h>
 
-#include <mcd-time.h>
+#include <mongoc/mcd-time.h>
 
 /**
  * @brief An Azure OAuth2 access token obtained from the Azure API
