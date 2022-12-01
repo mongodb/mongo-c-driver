@@ -3866,12 +3866,10 @@ test_explicit_encryption_range_insert_decrypt (ee_range_test_fixture *eef_range,
          } 
          bson_value_destroy (&insertPayload);
       }
-
    }
    /* Decrypt the last payload added */
    {
       bson_value_t got;
-
       ok = mongoc_client_encryption_decrypt (
          eef->clientEncryption, &decryptPayload, &got, &error);
       ASSERT_OR_PRINT (ok, error);
