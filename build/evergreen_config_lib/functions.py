@@ -603,8 +603,23 @@ all_functions = OD([
         # This primarily addresses the situation where the "run tests" and "run kms servers"
         # functions invoke 'activate-kmstlsvenv.sh' simultaneously.
         # TODO: remove this function along with the "run kms servers" function.
-        . ./activate-kmstlsvenv.sh
-        deactivate
+        if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
+            # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
+            # See CDRIVER-4530.
+            . ../venv-utils.sh
+            if [[ -f "C:/python/Python39/python.exe" ]]; then
+                # windows-2017
+                venvcreate "C:/python/Python39/python.exe" kmstlsvenv
+            elif [[ -f "C:/python/Python38/python.exe" ]]; then
+                # windows-2015
+                venvcreate "C:/python/Python38/python.exe" kmstlsvenv
+            fi
+            python -m pip install --upgrade boto3~=1.19 pykmip~=0.10.0
+            deactivate
+        else
+            . ./activate-kmstlsvenv.sh
+            deactivate
+        fi
         echo "Preparing CSFLE venv environment... done."
         ''', test=False),
         shell_exec(r'''
