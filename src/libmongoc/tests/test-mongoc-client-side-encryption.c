@@ -6914,6 +6914,143 @@ test_create_encrypted_collection_bad_keyId (void *unused)
    mongoc_client_destroy (client);
 }
 
+typedef struct listen_socket {
+   mongoc_socket_t *socket;
+   mongoc_cond_t cond;
+   bson_mutex_t mutex;
+   bool failed;
+   char ip[16];
+   unsigned short port;
+} listen_socket_args_t;
+
+static BSON_THREAD_FUN (listen_socket, arg)
+{
+   listen_socket_args_t *args = arg;
+   mongoc_socket_t *socket;
+   struct sockaddr_in server_addr = {0};
+   args->failed = false;
+
+   // create a TcpListener on 127.0.0.1 endpoint
+   socket = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
+   BSON_ASSERT (socket);
+
+   server_addr.sin_family = AF_INET;
+   server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+   server_addr.sin_port = htons (0);
+   mongoc_socklen_t addr_len = (mongoc_socklen_t) sizeof server_addr;
+
+   int r =
+      mongoc_socket_bind (socket, (struct sockaddr *) &server_addr, addr_len);
+   BSON_ASSERT (r == 0);
+
+   // forward the port and ip for mongocryptdURI
+   r = mongoc_socket_getsockname (
+      socket, (struct sockaddr *) &server_addr, &addr_len);
+   BSON_ASSERT (r == 0);
+
+   bson_mutex_lock (&args->mutex);
+   args->port = ntohs (server_addr.sin_port);
+   inet_ntop (AF_INET, &server_addr.sin_addr, args->ip, sizeof (args->ip));
+   mongoc_cond_signal (&args->cond);
+   bson_mutex_unlock (&args->mutex);
+
+   // listen on socket
+   r = mongoc_socket_listen (socket, 100);
+   BSON_ASSERT (r == 0);
+   _mongoc_usleep (1000); // wait to see if received connection
+   mongoc_socket_t *ret = mongoc_socket_accept (socket, 100);
+   if (ret) {
+      // not null received a connection and test should fail
+      args->failed = true;
+   }
+   // signal that test is complete.
+   bson_mutex_lock (&args->mutex);
+   mongoc_cond_signal (&args->cond);
+   bson_mutex_unlock (&args->mutex);
+
+   mongoc_socket_destroy (socket);
+   BSON_THREAD_RETURN;
+}
+
+/* Prose Test 20: Bypass creating mongocryptd client when shared library is
+ * loaded */
+static void
+test_bypass_mongocryptd_shared_library (void *unused)
+{
+   BSON_UNUSED (unused);
+   mongoc_client_t *client_encrypted;
+   mongoc_auto_encryption_opts_t *auto_encryption_opts;
+   bson_t *kms_providers;
+   mongoc_database_t *db;
+   mongoc_collection_t *coll;
+   bson_error_t error;
+   bson_thread_t socket_thread;
+
+   // start the socket on a thread
+   listen_socket_args_t *args = bson_malloc0 (sizeof (listen_socket_args_t));
+   bson_mutex_init (&args->mutex);
+   mongoc_cond_init (&args->cond);
+   mcommon_thread_create (&socket_thread, listen_socket, args);
+
+   // configure mongoclient with auto encryption
+   char *env_cryptSharedLibPath =
+      test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+   BSON_ASSERT (env_cryptSharedLibPath);
+   auto_encryption_opts = mongoc_auto_encryption_opts_new ();
+   kms_providers = BCON_NEW (
+      "local", "{", "key", BCON_BIN (0, (uint8_t *) LOCAL_MASTERKEY, 96), "}");
+   mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
+                                                  kms_providers);
+   mongoc_auto_encryption_opts_set_keyvault_namespace (
+      auto_encryption_opts, "keyvault", "datakeys");
+
+   // wait for port and ip to be set on the other thread
+   while (!args->port) {
+      int ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
+      /* ret non-zero indicates an error (a timeout) */
+      BSON_ASSERT (!ret);
+   }
+
+   // configure extra options
+   bson_t *extra = tmp_bson ("{'mongocryptdURI': 'mongodb://%s:%d', "
+                             "'cryptSharedLibPath': '%s'}",
+                             args->ip,
+                             args->port,
+                             env_cryptSharedLibPath);
+   mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra);
+   bson_free (env_cryptSharedLibPath);
+   // get the client
+   client_encrypted = test_framework_new_default_client ();
+   bool ret = mongoc_client_enable_auto_encryption (
+      client_encrypted, auto_encryption_opts, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   // insert a document
+   db = mongoc_client_get_database (client_encrypted, "db");
+   coll = mongoc_database_get_collection (db, "coll");
+   ret = mongoc_collection_insert_one (coll,
+                                       tmp_bson ("{'unencrypted': 'test'}"),
+                                       NULL /* opts */,
+                                       NULL /* reply */,
+                                       &error);
+   ASSERT_OR_PRINT (ret, error);
+   ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
+   /* ret non-zero indicates an error (a timeout) */
+   BSON_ASSERT (!ret);
+   // failed should be false if the signal did not receive a connection
+   BSON_ASSERT (!args->failed);
+   mcommon_thread_join (socket_thread);
+
+   bson_mutex_destroy (&args->mutex);
+   mongoc_cond_destroy (&args->cond);
+   bson_destroy (kms_providers);
+   mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
+   mongoc_collection_destroy (coll);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client_encrypted);
+   bson_free (args);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -7250,6 +7387,15 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
+      TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/bypass_mongocryptd_shared_library",
+      test_bypass_mongocryptd_shared_library,
+      NULL,
+      NULL,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_17,
+      _skip_if_no_crypt_shared);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/explicit_encryption/range/int",
                       test_explicit_encryption_range_int,
