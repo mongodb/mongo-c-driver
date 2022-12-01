@@ -3818,19 +3818,20 @@ test_explicit_encryption_range_insert_decrypt (ee_range_test_fixture *eef_range,
 {
    bson_error_t error;
    bool ok;
-   bson_value_t insertPayload;
+   bson_value_t decryptPayload;
 
    {
       mongoc_client_encryption_encrypt_opts_t *eopts;
       mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
       int i = 0;
-      int limit = 2;
+      int limit = 1;
       // if min and max are set insert those documents too
       if (eef_range->minmax.set) {
-         limit = 4; // increase limit to insert 4 documents
+         limit = 3; // increase limit to insert 4 documents
       }
-      for (i = 0; i < limit; i++) {
+      for (i = 0; i < limit + 1; i++) {
          bson_value_t plaintext = {0};
+         bson_value_t insertPayload;
          if (i < 2) {
             plaintext = eef_range->doc_value[i];
          } else {
@@ -3860,19 +3861,24 @@ test_explicit_encryption_range_insert_decrypt (ee_range_test_fixture *eef_range,
          bson_destroy (&to_insert);
          mongoc_client_encryption_encrypt_opts_destroy (eopts);
          mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);
+         if(i == limit) {
+            bson_value_copy(&insertPayload, &decryptPayload);
+         } 
+         bson_value_destroy (&insertPayload);
       }
+
    }
    /* Decrypt the last payload added */
    {
       bson_value_t got;
 
       ok = mongoc_client_encryption_decrypt (
-         eef->clientEncryption, &insertPayload, &got, &error);
+         eef->clientEncryption, &decryptPayload, &got, &error);
       ASSERT_OR_PRINT (ok, error);
       ASSERT (got.value_type == eef_range->doc_value[0].value_type);
       bson_value_destroy (&got);
+      bson_value_destroy (&decryptPayload);
    }
-   bson_value_destroy (&insertPayload);
 }
 
 static mongoc_cursor_t *
