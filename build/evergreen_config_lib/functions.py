@@ -582,7 +582,7 @@ all_functions = OD([
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
         pushd ../drivers-evergreen-tools/.evergreen/auth_aws
-        . .activate-authawsvenv.sh
+        . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
         ''')
