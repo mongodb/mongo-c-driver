@@ -2816,6 +2816,8 @@ test_example_60 (mongoc_database_t *db)
 cleanup:
    mongoc_collection_destroy (sales_collection);
    mongoc_client_session_destroy (cs);
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (pipeline);
    mongoc_client_destroy (client);
    /* End Snapshot Query Example 1 Post */
 }
