@@ -819,13 +819,8 @@ functions:
             # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
             # See CDRIVER-4530.
             . ../venv-utils.sh
-            if [[ -f "C:/python/Python39/python.exe" ]]; then
-                # windows-2017
-                venvcreate "C:/python/Python39/python.exe" kmstlsvenv
-            elif [[ -f "C:/python/Python38/python.exe" ]]; then
-                # windows-2015
-                venvcreate "C:/python/Python38/python.exe" kmstlsvenv
-            fi
+            venvcreate "C:/python/Python39/python.exe" kmstlsvenv || # windows-2017
+            venvcreate "C:/python/Python38/python.exe" kmstlsvenv    # windows-2015
             python -m pip install --upgrade boto3~=1.19 pykmip~=0.10.0
             deactivate
         else
