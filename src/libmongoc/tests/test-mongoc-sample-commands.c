@@ -2685,8 +2685,8 @@ retail_setup (mongoc_collection_t *sales_collection)
    struct timeval tv;
    int64_t unix_time_now = 0;
 
-   if (bson_gettimeofday(&tv)) {
-      MONGOC_ERROR("could not get time of day");
+   if (bson_gettimeofday (&tv)) {
+      MONGOC_ERROR ("could not get time of day");
       goto cleanup;
    }
    unix_time_now = 1000 * tv.tv_sec;
@@ -2728,7 +2728,7 @@ test_example_60 (mongoc_database_t *db)
    const bson_t *doc = NULL;
    bool ok = true;
    bson_iter_t iter;
-   int64_t accumulator = 0;
+   int64_t total_sales = 0;
 
    client = test_framework_new_default_client ();
 
@@ -2754,7 +2754,7 @@ test_example_60 (mongoc_database_t *db)
       goto cleanup;
    }
 
-/* clang-format off */
+   /* clang-format off */
    pipeline = BCON_NEW(
       "pipeline", "[",
          "{",
@@ -2778,7 +2778,7 @@ test_example_60 (mongoc_database_t *db)
          "$count", BCON_UTF8("totalDailySales"),
       "}",
    "]");
-/* clang-format on */
+   /* clang-format on */
 
    cursor = mongoc_collection_aggregate (
       sales_collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
@@ -2799,15 +2799,18 @@ test_example_60 (mongoc_database_t *db)
 
    ok = bson_iter_init_find (&iter, doc, "totalDailySales");
    if (ok) {
-      accumulator += bson_iter_as_int64 (&iter);
+      total_sales += bson_iter_as_int64 (&iter);
    } else {
       MONGOC_ERROR ("%s", "missing key: 'totalDailySales'");
       goto cleanup;
    }
 
-   printf("TOTAL SALES: %d\n", accumulator);
-
    /* End Snapshot Query Example 1 */
+
+   if (total_sales != 1) {
+      MONGOC_ERROR ("there should be exactly 1 total_sales, found: %" PRId64,
+                    total_sales);
+   }
 
    /* Start Snapshot Query Example 1 Post */
 cleanup:
