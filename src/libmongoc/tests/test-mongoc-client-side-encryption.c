@@ -3696,6 +3696,8 @@ explicit_encryption_destroy (ee_fixture *eef)
    bson_free (eef);
 }
 
+/* eef_range_test_fixture is a fixture for the Range Explicit Encryption prose
+ * tests */
 typedef struct {
    struct {
       bson_value_t min;
@@ -3750,7 +3752,7 @@ explicit_encryption_set_range_opts (
    mongoc_client_encryption_encrypt_opts_set_range_opts (eopts, rangeopts);
 }
 
-
+/* Helper functions for the Range Explicit Encryption prose tests */
 static mongoc_cursor_t *
 test_explicit_encryption_range_agg_helper (ee_range_test_fixture *eef_range,
                                            ee_fixture *eef)
@@ -3813,69 +3815,52 @@ test_explicit_encryption_range_agg_helper (ee_range_test_fixture *eef_range,
 }
 
 static void
-test_explicit_encryption_range_insert_decrypt (ee_range_test_fixture *eef_range,
-                                               ee_fixture *eef)
+test_explicit_encryption_range_insert (ee_range_test_fixture *eef_range,
+                                       ee_fixture *eef)
 {
-   bson_error_t error;
-   bool ok;
-   bson_value_t decryptPayload;
-
-   {
+   int i = 0;
+   int limit = 1;
+   // if min and max are set insert those documents too
+   if (eef_range->minmax.set) {
+      limit = 3; // increase limit to insert 4 documents
+   }
+   for (i = 0; i < limit + 1; i++) {
       mongoc_client_encryption_encrypt_opts_t *eopts;
       mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
-      int i = 0;
-      int limit = 1;
-      // if min and max are set insert those documents too
-      if (eef_range->minmax.set) {
-         limit = 3; // increase limit to insert 4 documents
+      bson_value_t plaintext = {0};
+      bson_value_t insertPayload;
+      bool ok;
+      bson_error_t error;
+
+      if (i < 2) {
+         plaintext = eef_range->doc_value[i];
+      } else {
+         plaintext = (i == 2) ? eef_range->minmax.min : eef_range->minmax.max;
       }
-      for (i = 0; i < limit + 1; i++) {
-         bson_value_t plaintext = {0};
-         bson_value_t insertPayload;
-         if (i < 2) {
-            plaintext = eef_range->doc_value[i];
-         } else {
-            plaintext =
-               (i == 2) ? eef_range->minmax.min : eef_range->minmax.max;
-         }
-         bson_t to_insert = BSON_INITIALIZER;
-         eopts = mongoc_client_encryption_encrypt_opts_new ();
-         rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
-         explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
+      bson_t to_insert = BSON_INITIALIZER;
+      eopts = mongoc_client_encryption_encrypt_opts_new ();
+      rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
+      explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
 
-         ok = mongoc_client_encryption_encrypt (
-            eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
-         ASSERT_OR_PRINT (ok, error);
-
-         ASSERT (BSON_APPEND_VALUE (
-            &to_insert, eef_range->field_name, &insertPayload));
-         ASSERT (BSON_APPEND_INT32 (&to_insert, "_id", i));
-
-         ok = mongoc_collection_insert_one (eef->encryptedColl,
-                                            &to_insert,
-                                            NULL /* opts */,
-                                            NULL /* reply */,
-                                            &error);
-         ASSERT_OR_PRINT (ok, error);
-
-         bson_destroy (&to_insert);
-         mongoc_client_encryption_encrypt_opts_destroy (eopts);
-         mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);
-         if(i == limit) {
-            bson_value_copy(&insertPayload, &decryptPayload);
-         } 
-         bson_value_destroy (&insertPayload);
-      }
-   }
-   /* Decrypt the last payload added */
-   {
-      bson_value_t got;
-      ok = mongoc_client_encryption_decrypt (
-         eef->clientEncryption, &decryptPayload, &got, &error);
+      ok = mongoc_client_encryption_encrypt (
+         eef->clientEncryption, &plaintext, eopts, &insertPayload, &error);
       ASSERT_OR_PRINT (ok, error);
-      ASSERT (got.value_type == eef_range->doc_value[0].value_type);
-      bson_value_destroy (&got);
-      bson_value_destroy (&decryptPayload);
+
+      ASSERT (
+         BSON_APPEND_VALUE (&to_insert, eef_range->field_name, &insertPayload));
+      ASSERT (BSON_APPEND_INT32 (&to_insert, "_id", i));
+
+      ok = mongoc_collection_insert_one (eef->encryptedColl,
+                                         &to_insert,
+                                         NULL /* opts */,
+                                         NULL /* reply */,
+                                         &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      bson_destroy (&to_insert);
+      mongoc_client_encryption_encrypt_opts_destroy (eopts);
+      mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);
+      bson_value_destroy (&insertPayload);
    }
 }
 
@@ -3937,153 +3922,6 @@ test_explicit_encryption_range_find_helper (ee_range_test_fixture *eef_range,
    return cursor;
 }
 
-static void
-test_explicit_encryption_range_int (void *unused)
-{
-   BSON_UNUSED (unused);
-   ee_fixture *eef = explicit_encryption_setup (
-      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-      "range-encryptedFields-Int.json");
-   ee_range_test_fixture *eef_range =
-      (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
-   eef_range->field_name = "encryptedInt";
-   eef_range->sparsity = 1;
-   eef_range->minmax.set = true;
-   eef_range->minmax.min.value_type = BSON_TYPE_INT32;
-   eef_range->minmax.min.value.v_int32 = 0;
-   eef_range->minmax.max.value_type = BSON_TYPE_INT32;
-   eef_range->minmax.max.value.v_int32 = 200;
-   eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
-   eef_range->doc_value[0].value.v_int32 = 6;
-   eef_range->doc_value[1].value_type = BSON_TYPE_INT32;
-   eef_range->doc_value[1].value.v_int32 = 30;
-
-   /* Use ``encryptedClient`` to insert 4 documents of the form ``{
-    * "encrypted<Type>": <insertPayload>, _id: i }``. */
-   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
-   // run find command to return 3 documents including maximum.
-   {
-      const bson_t *got;
-      eef_range->query =
-         tmp_bson ("{'$and': ["
-                   "  { 'encryptedInt': { '$gt': { '$numberInt': '5' } } },"
-                   "  { 'encryptedInt': { '$lte': { '$numberInt': '200' } } }"
-                   "] }");
-      mongoc_cursor_t *cursor =
-         test_explicit_encryption_range_find_helper (eef_range, eef, false);
-
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 200}");
-      ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected three documents, got more than three");
-      mongoc_cursor_destroy (cursor);
-   }
-   // run find command to return two documents, including minimum.
-   {
-      const bson_t *got;
-      eef_range->query =
-         tmp_bson ("{'$and': ["
-                   "  { 'encryptedInt': { '$gte': { '$numberInt': '0' } } },"
-                   "  { 'encryptedInt': { '$lte': { '$numberInt': '6' } } }"
-                   "] }");
-      mongoc_cursor_t *cursor =
-         test_explicit_encryption_range_find_helper (eef_range, eef, false);
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
-      ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected two documents, got more than two");
-      mongoc_cursor_destroy (cursor);
-   }
-   // run find command with an open range query.
-   {
-      const bson_t *got;
-      eef_range->query = tmp_bson (
-         "{'$and': [{ 'encryptedInt': { '$gt': { '$numberInt': '150' } } }] }");
-      mongoc_cursor_t *cursor =
-         test_explicit_encryption_range_find_helper (eef_range, eef, false);
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 200}");
-      ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected one document, got more than one");
-      mongoc_cursor_destroy (cursor);
-   }
-   // run an aggregate expression with an open range query.
-   {
-      const bson_t *got;
-      eef_range->query =
-         tmp_bson ("{'$and': [ { '$lt': [ '$encryptedInt', 10 ] } ] }");
-      mongoc_cursor_t *cursor =
-         test_explicit_encryption_range_find_helper (eef_range, eef, true);
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
-      ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected two documents, got more than two");
-      mongoc_cursor_destroy (cursor);
-   }
-   // run aggregate command to return 2 documents, including maximum.
-   {
-      const bson_t *got;
-      eef_range->query =
-         tmp_bson ("{'$and': ["
-                   "  { 'encryptedInt': { '$gte': { '$numberInt': '30' } } },"
-                   "  { 'encryptedInt': { '$lte': { '$numberInt': '200' } } }"
-                   "] }");
-      mongoc_cursor_t *cursor =
-         test_explicit_encryption_range_agg_helper (eef_range, eef);
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 200}");
-      ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected two documents, got more than two");
-      mongoc_cursor_destroy (cursor);
-   }
-   // run aggregate command to return two documents, including the minimum.
-   {
-      const bson_t *got;
-      eef_range->query =
-         tmp_bson ("{'$and': ["
-                   "  { 'encryptedInt': { '$gte': { '$numberInt': '0' } } },"
-                   "  { 'encryptedInt': { '$lte': { '$numberInt': '6' } } }"
-                   "] }");
-      mongoc_cursor_t *cursor =
-         test_explicit_encryption_range_agg_helper (eef_range, eef);
-               ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
-      ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
-      ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected one document, got more than one");
-      mongoc_cursor_destroy (cursor);
-   }
-   // run aggregate command to return zero documents.
-   // The difference between this and the previous test is using gt/lt and not
-   // gte/lte.
-   {
-      const bson_t *got;
-      eef_range->query =
-         tmp_bson ("{'$and': ["
-                   "  { 'encryptedInt': { '$gt': { '$numberInt': '0' } } },"
-                   "  { 'encryptedInt': { '$lt': { '$numberInt': '6' } } }"
-                   "] }");
-      mongoc_cursor_t *cursor =
-         test_explicit_encryption_range_agg_helper (eef_range, eef);
-      ASSERT (!mongoc_cursor_next (cursor, &got) &&
-              "expected zero documents, got more than none");
-      mongoc_cursor_destroy (cursor);
-   }
-   explicit_encryption_range_destroy (eef_range);
-   explicit_encryption_destroy (eef);
-}
-
 bson_error_t
 test_explicit_encryption_range_error_helper (ee_range_test_fixture *eef_range,
                                              ee_fixture *eef)
@@ -4109,6 +3947,191 @@ test_explicit_encryption_range_error_helper (ee_range_test_fixture *eef_range,
    return error;
 }
 
+bson_value_t
+test_explicit_encryption_range_decrypt_helper (ee_range_test_fixture *eef_range,
+                                               ee_fixture *eef)
+{
+   mongoc_client_encryption_encrypt_opts_t *eopts;
+   mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
+   bson_value_t insertPayload;
+   bson_value_t got;
+   bson_error_t error;
+
+   eopts = mongoc_client_encryption_encrypt_opts_new ();
+   rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
+   explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
+   bool ok = mongoc_client_encryption_encrypt (eef->clientEncryption,
+                                               &eef_range->doc_value[0],
+                                               eopts,
+                                               &insertPayload,
+                                               &error);
+   ASSERT_OR_PRINT (ok, error);
+   ok = mongoc_client_encryption_decrypt (
+      eef->clientEncryption, &insertPayload, &got, &error);
+   ASSERT_OR_PRINT (ok, error);
+   mongoc_client_encryption_encrypt_opts_destroy (eopts);
+   mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);
+   bson_value_destroy (&insertPayload);
+   return got;
+}
+
+/* Prose Test 22: Range Explicit Encryption Tests */
+static void
+test_explicit_encryption_range_int (void *unused)
+{
+   BSON_UNUSED (unused);
+   ee_fixture *eef = explicit_encryption_setup (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "range-encryptedFields-Int.json");
+   ee_range_test_fixture *eef_range =
+      (ee_range_test_fixture *) bson_malloc0 (sizeof (ee_range_test_fixture));
+   eef_range->field_name = "encryptedInt";
+   eef_range->sparsity = 1;
+   eef_range->minmax.set = true;
+   eef_range->minmax.min.value_type = BSON_TYPE_INT32;
+   eef_range->minmax.min.value.v_int32 = 0;
+   eef_range->minmax.max.value_type = BSON_TYPE_INT32;
+   eef_range->minmax.max.value.v_int32 = 200;
+   eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
+   eef_range->doc_value[0].value.v_int32 = 6;
+   eef_range->doc_value[1].value_type = BSON_TYPE_INT32;
+   eef_range->doc_value[1].value.v_int32 = 30;
+
+   /* Use ``encryptedClient`` to insert 4 documents of the form ``{
+    * "encrypted<Type>": <insertPayload>, _id: i }``. */
+   test_explicit_encryption_range_insert (eef_range, eef);
+
+   // Case 1: can decrypt a payload
+   {
+      bson_value_t got =
+         test_explicit_encryption_range_decrypt_helper (eef_range, eef);
+      ASSERT (got.value.v_int32 == 6);
+      bson_value_destroy (&got);
+   }
+   // Case 2: run find command to return 3 documents including maximum.
+   {
+      const bson_t *got;
+      eef_range->query =
+         tmp_bson ("{'$and': ["
+                   "  { 'encryptedInt': { '$gt': { '$numberInt': '5' } } },"
+                   "  { 'encryptedInt': { '$lte': { '$numberInt': '200' } } }"
+                   "] }");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef, false);
+
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 200}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected three documents, got more than three");
+      mongoc_cursor_destroy (cursor);
+   }
+   // Case 3: run find command to return two documents, including minimum.
+   {
+      const bson_t *got;
+      eef_range->query =
+         tmp_bson ("{'$and': ["
+                   "  { 'encryptedInt': { '$gte': { '$numberInt': '0' } } },"
+                   "  { 'encryptedInt': { '$lte': { '$numberInt': '6' } } }"
+                   "] }");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef, false);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
+   }
+   // Case 4: run find command with an open range query.
+   {
+      const bson_t *got;
+      eef_range->query = tmp_bson (
+         "{'$and': [{ 'encryptedInt': { '$gt': { '$numberInt': '150' } } }] }");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef, false);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 200}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
+   }
+   // Case 5: run an aggregate expression with an open range query.
+   {
+      const bson_t *got;
+      eef_range->query =
+         tmp_bson ("{'$and': [ { '$lt': [ '$encryptedInt', 10 ] } ] }");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_find_helper (eef_range, eef, true);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
+   }
+   // Case 6: run aggregate command to return 2 documents, including maximum.
+   {
+      const bson_t *got;
+      eef_range->query =
+         tmp_bson ("{'$and': ["
+                   "  { 'encryptedInt': { '$gte': { '$numberInt': '30' } } },"
+                   "  { 'encryptedInt': { '$lte': { '$numberInt': '200' } } }"
+                   "] }");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 30}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 200}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected two documents, got more than two");
+      mongoc_cursor_destroy (cursor);
+   }
+   // Case 7: run aggregate command to return two documents, including the
+   // minimum.
+   {
+      const bson_t *got;
+      eef_range->query =
+         tmp_bson ("{'$and': ["
+                   "  { 'encryptedInt': { '$gte': { '$numberInt': '0' } } },"
+                   "  { 'encryptedInt': { '$lte': { '$numberInt': '6' } } }"
+                   "] }");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 6}");
+      ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT_MATCH (got, "{ 'encryptedInt': 0}");
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected one document, got more than one");
+      mongoc_cursor_destroy (cursor);
+   }
+   // Case 8: run aggregate command to return zero documents.
+   // The difference between this and the previous test is using gt/lt and not
+   // gte/lte.
+   {
+      const bson_t *got;
+      eef_range->query =
+         tmp_bson ("{'$and': ["
+                   "  { 'encryptedInt': { '$gt': { '$numberInt': '0' } } },"
+                   "  { 'encryptedInt': { '$lt': { '$numberInt': '6' } } }"
+                   "] }");
+      mongoc_cursor_t *cursor =
+         test_explicit_encryption_range_agg_helper (eef_range, eef);
+      ASSERT (!mongoc_cursor_next (cursor, &got) &&
+              "expected zero documents, got more than none");
+      mongoc_cursor_destroy (cursor);
+   }
+   explicit_encryption_range_destroy (eef_range);
+   explicit_encryption_destroy (eef);
+}
+
 static void
 test_explicit_encryption_range_double (void *unused)
 {
@@ -4125,15 +4148,22 @@ test_explicit_encryption_range_double (void *unused)
    eef_range->doc_value[0].value.v_double = 6.0;
    eef_range->doc_value[1].value_type = BSON_TYPE_DOUBLE;
    eef_range->doc_value[1].value.v_double = 30.0;
-   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
-   // run find command to return 2 documents.
+   test_explicit_encryption_range_insert (eef_range, eef);
+   // Case 1: can decrypt a payload
+   {
+      bson_value_t got =
+         test_explicit_encryption_range_decrypt_helper (eef_range, eef);
+      ASSERT (got.value.v_double == 6.0);
+      bson_value_destroy (&got);
+   }
+   // Case 2: run find command to return 2 documents.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
                                    "  { 'encryptedDoubleNoPrecision': { '$gt': "
                                    "{ '$numberDouble': '5.0' } } },"
                                    "  { 'encryptedDoubleNoPrecision': { "
-                                   "'$lte': { '$numberDouble': '199.9' } } }"
+                                   "'$lte': { '$numberDouble': '200.0' } } }"
                                    "] }");
       mongoc_cursor_t *cursor =
          test_explicit_encryption_range_find_helper (eef_range, eef, false);
@@ -4145,7 +4175,7 @@ test_explicit_encryption_range_double (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run find command to return one document.
+   // Case 3: run find command to return one document.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4162,7 +4192,7 @@ test_explicit_encryption_range_double (void *unused)
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // run find command with an open range query.
+   // Case 4: run find command with an open range query.
    {
       const bson_t *got;
       eef_range->query =
@@ -4176,7 +4206,7 @@ test_explicit_encryption_range_double (void *unused)
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // run an aggregate expression with an open range query.
+   // Case 5: run an aggregate expression with an open range query.
    {
       const bson_t *got;
       eef_range->query = tmp_bson (
@@ -4189,7 +4219,7 @@ test_explicit_encryption_range_double (void *unused)
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return 2 documents.
+   // Case 6: run aggregate command to return 2 documents.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4208,7 +4238,7 @@ test_explicit_encryption_range_double (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return one document.
+   // Case 7: run aggregate command to return one document.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4225,7 +4255,7 @@ test_explicit_encryption_range_double (void *unused)
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return zero documents.
+   // Case 8: run aggregate command to return zero documents.
    // The difference between this and the previous test is using gt/lt and not
    // gte/lte.
    {
@@ -4268,8 +4298,15 @@ test_explicit_encryption_range_date (void *unused)
    eef_range->doc_value[1].value.v_int64 = 30;
    /* Use ``encryptedClient`` to insert 4 documents of the form ``{
     * "encrypted<Type>": <insertPayload>, _id: i }``. */
-   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
-   // run find command to return 3 documents including maximum.
+   test_explicit_encryption_range_insert (eef_range, eef);
+   // Case 1: can decrypt a payload
+   {
+      bson_value_t got =
+         test_explicit_encryption_range_decrypt_helper (eef_range, eef);
+      ASSERT (got.value.v_int64 == eef_range->doc_value[0].value.v_int64);
+      bson_value_destroy (&got);
+   }
+   // Case 2: run find command to return 3 documents including maximum.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4291,7 +4328,7 @@ test_explicit_encryption_range_date (void *unused)
               "expected three documents, got more than three");
       mongoc_cursor_destroy (cursor);
    }
-   // run find command to return two documents, including minimum.
+   // Case 3: run find command to return two documents, including minimum.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4310,7 +4347,7 @@ test_explicit_encryption_range_date (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run find command with an open range query.
+   // Case 4: run find command with an open range query.
    {
       const bson_t *got;
       eef_range->query =
@@ -4324,7 +4361,7 @@ test_explicit_encryption_range_date (void *unused)
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // run an aggregate expression with an open range query.
+   // Case 5: run an aggregate expression with an open range query.
    {
       const bson_t *got;
       eef_range->query = tmp_bson (
@@ -4339,7 +4376,7 @@ test_explicit_encryption_range_date (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return 2 documents, including maximum.
+   // Case 6: run aggregate command to return 2 documents, including maximum.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4358,7 +4395,8 @@ test_explicit_encryption_range_date (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return two documents, including the minimum
+   // Case 7: run aggregate command to return two documents, including the
+   // minimum
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4369,7 +4407,7 @@ test_explicit_encryption_range_date (void *unused)
                                    "] }");
       mongoc_cursor_t *cursor =
          test_explicit_encryption_range_agg_helper (eef_range, eef);
-               ASSERT (mongoc_cursor_next (cursor, &got));
+      ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_MATCH (got, "{ 'encryptedDate':  { '$date' : 6}}");
       ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_MATCH (got, "{ 'encryptedDate':  { '$date' : 0}}");
@@ -4377,7 +4415,7 @@ test_explicit_encryption_range_date (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return zero documents.
+   // Case 8: run aggregate command to return zero documents.
    // The difference between this and the previous test is using gt/lt and not
    // gte/lte.
    {
@@ -4420,8 +4458,15 @@ test_explicit_encryption_range_long (void *unused)
    eef_range->doc_value[1].value.v_int64 = 30;
    /* Use ``encryptedClient`` to insert 4 documents of the form ``{
     * "encrypted<Type>": <insertPayload>, _id: i }``. */
-   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
-   // run find command to return 3 documents including maximum.
+   test_explicit_encryption_range_insert (eef_range, eef);
+   // Case 1: can decrypt a payload
+   {
+      bson_value_t got =
+         test_explicit_encryption_range_decrypt_helper (eef_range, eef);
+      ASSERT (got.value.v_int64 == 6);
+      bson_value_destroy (&got);
+   }
+   // Case 2: run find command to return 3 documents including maximum.
    {
       const bson_t *got;
       eef_range->query = tmp_bson (
@@ -4441,7 +4486,7 @@ test_explicit_encryption_range_long (void *unused)
               "expected three documents, got more than three");
       mongoc_cursor_destroy (cursor);
    }
-   // run find command to return two documents, including minimum.
+   // Case 3: run find command to return two documents, including minimum.
    {
       const bson_t *got;
       eef_range->query =
@@ -4459,7 +4504,7 @@ test_explicit_encryption_range_long (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run find command with an open range query.
+   // Case 4: run find command with an open range query.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': [ { 'encryptedLong': { '$gt': { "
@@ -4472,7 +4517,7 @@ test_explicit_encryption_range_long (void *unused)
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // run an aggregate expression with an open range query.
+   // Case 5: run an aggregate expression with an open range query.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': [ { '$lt': [ '$encryptedLong', { "
@@ -4487,7 +4532,7 @@ test_explicit_encryption_range_long (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return 2 documents, including maximum.
+   // Case 6: run aggregate command to return 2 documents, including maximum.
    {
       const bson_t *got;
       eef_range->query =
@@ -4505,7 +4550,8 @@ test_explicit_encryption_range_long (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return two documents, including the minimum.
+   // Case 7: run aggregate command to return two documents, including the
+   // minimum.
    {
       const bson_t *got;
       eef_range->query =
@@ -4523,7 +4569,7 @@ test_explicit_encryption_range_long (void *unused)
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return zero documents.
+   // Case 8: run aggregate command to return zero documents.
    // The difference between this and the previous test is using gt/lt and not
    // gte/lte.
    {
@@ -4558,7 +4604,7 @@ test_explicit_encryption_range_double_precision (void *unused)
    eef_range->minmax.min.value_type = BSON_TYPE_DOUBLE;
    eef_range->minmax.min.value.v_double = 0.0;
    eef_range->minmax.max.value_type = BSON_TYPE_DOUBLE;
-   eef_range->minmax.max.value.v_double = 199.9;
+   eef_range->minmax.max.value.v_double = 200.0;
    eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
    eef_range->doc_value[0].value.v_double = 6.0;
    eef_range->doc_value[1].value_type = BSON_TYPE_DOUBLE;
@@ -4567,15 +4613,23 @@ test_explicit_encryption_range_double_precision (void *unused)
 
    /* Use ``encryptedClient`` to insert 4 documents of the form ``{
     * "encrypted<Type>": <insertPayload>, _id: i }``. */
-   test_explicit_encryption_range_insert_decrypt (eef_range, eef);
-   // run find command to return 3 documents including maximum.
+   test_explicit_encryption_range_insert (eef_range, eef);
+   
+   // Case 1: can decrypt a payload
+   {
+      bson_value_t got =
+         test_explicit_encryption_range_decrypt_helper (eef_range, eef);
+      ASSERT (got.value.v_double == 6.0);
+      bson_value_destroy (&got); 
+   }
+   // Case 2: run find command to return 3 documents including maximum.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
                                    "  { 'encryptedDoublePrecision': { '$gt': { "
                                    "'$numberDouble': '5' } } },"
                                    "  { 'encryptedDoublePrecision': { '$lte': "
-                                   "{ '$numberDouble': '199.9' } } }"
+                                   "{ '$numberDouble': '200.0' } } }"
                                    "] }");
       mongoc_cursor_t *cursor =
          test_explicit_encryption_range_find_helper (eef_range, eef, false);
@@ -4584,12 +4638,12 @@ test_explicit_encryption_range_double_precision (void *unused)
       ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 30.0}");
       ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 199.9}");
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 200.0}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected three documents, got more than three");
       mongoc_cursor_destroy (cursor);
    }
-   // run find command to return two documents, including minimum.
+   // Case 3: run find command to return two documents, including minimum.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4608,7 +4662,7 @@ test_explicit_encryption_range_double_precision (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run find command with an open range query.
+   // Case 4: run find command with an open range query.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4617,12 +4671,12 @@ test_explicit_encryption_range_double_precision (void *unused)
       mongoc_cursor_t *cursor =
          test_explicit_encryption_range_find_helper (eef_range, eef, false);
       ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 199.9}");
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 200.0}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // run an aggregate expression with an open range query.
+   // Case 5: run an aggregate expression with an open range query.
    {
       const bson_t *got;
       eef_range->query = tmp_bson (
@@ -4637,26 +4691,27 @@ test_explicit_encryption_range_double_precision (void *unused)
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return 2 documents, including maximum.
+   // Case 6: run aggregate command to return 2 documents, including maximum.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
                                    "  { 'encryptedDoublePrecision': { '$gte': "
                                    "{ '$numberDouble': '30.0' } } },"
                                    "  { 'encryptedDoublePrecision': { '$lte': "
-                                   "{ '$numberDouble': '199.9' } } }"
+                                   "{ '$numberDouble': '200.0' } } }"
                                    "] }");
       mongoc_cursor_t *cursor =
          test_explicit_encryption_range_agg_helper (eef_range, eef);
       ASSERT (mongoc_cursor_next (cursor, &got));
       ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 30}");
       ASSERT (mongoc_cursor_next (cursor, &got));
-      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 199.9}");
+      ASSERT_MATCH (got, "{ 'encryptedDoublePrecision': 200.0}");
       ASSERT (!mongoc_cursor_next (cursor, &got) &&
               "expected two documents, got more than two");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return two documents, including the minimum.
+   // Case 7: run aggregate command to return two documents, including the
+   // minimum.
    {
       const bson_t *got;
       eef_range->query = tmp_bson ("{'$and': ["
@@ -4675,7 +4730,7 @@ test_explicit_encryption_range_double_precision (void *unused)
               "expected one document, got more than one");
       mongoc_cursor_destroy (cursor);
    }
-   // run aggregate command to return zero documents.
+   // Case 8: run aggregate command to return zero documents.
    // The difference between this and the previous test is using gt/lt and not
    // gte/lte.
    {
@@ -4712,7 +4767,7 @@ test_explicit_encryption_range_int_error (void *unused)
    eef_range->minmax.max.value_type = BSON_TYPE_INT32;
    eef_range->minmax.max.value.v_int32 = 200;
 
-   // Can't encrypt document that is greater than max.
+   // Case 9: Can't encrypt document that is greater than max.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
       eef_range->doc_value[0].value.v_int32 = 201;
@@ -4723,7 +4778,7 @@ test_explicit_encryption_range_int_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't encrypt document that is less than min.
+   // Case 10: Can't encrypt document that is less than min.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
       eef_range->doc_value[0].value.v_int32 = -1;
@@ -4734,7 +4789,7 @@ test_explicit_encryption_range_int_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't encrypt document that is of a different type.
+   // Case 11: Can't encrypt document that is of a different type.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
       eef_range->doc_value[0].value.v_double = 4.44;
@@ -4745,7 +4800,7 @@ test_explicit_encryption_range_int_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't set precision with type int.
+   // Case 12: Can't set precision with type int.
    {
       eef_range->precision = 2;
       bson_error_t error =
@@ -4776,7 +4831,7 @@ test_explicit_encryption_range_long_error (void *unused)
    eef_range->minmax.max.value_type = BSON_TYPE_INT64;
    eef_range->minmax.max.value.v_int64 = 200;
 
-   // Can't encrypt document that is greater than max.
+   // Case 9: Can't encrypt document that is greater than max.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
       eef_range->doc_value[0].value.v_int32 = 201;
@@ -4787,7 +4842,7 @@ test_explicit_encryption_range_long_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't encrypt document that is less than min.
+   // Case 10: Can't encrypt document that is less than min.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
       eef_range->doc_value[0].value.v_int64 = -1;
@@ -4798,7 +4853,7 @@ test_explicit_encryption_range_long_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't encrypt document that is of a different type.
+   // Case 11: Can't encrypt document that is of a different type.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_INT32;
       eef_range->doc_value[0].value.v_int32 = 3;
@@ -4809,7 +4864,7 @@ test_explicit_encryption_range_long_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't set precision with type long.
+   // Case 12: Can't set precision with type long.
    {
       eef_range->precision = 2;
       bson_error_t error =
@@ -4838,13 +4893,13 @@ test_explicit_encryption_range_double_precision_error (void *unused)
    eef_range->minmax.min.value_type = BSON_TYPE_DOUBLE;
    eef_range->minmax.min.value.v_double = 0.0;
    eef_range->minmax.max.value_type = BSON_TYPE_DOUBLE;
-   eef_range->minmax.max.value.v_double = 199.9;
+   eef_range->minmax.max.value.v_double = 200.0;
    eef_range->precision = 2;
 
-   // Can't encrypt document that is greater than max.
+   // Case 9: Can't encrypt document that is greater than max.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
-      eef_range->doc_value[0].value.v_double = 200.0;
+      eef_range->doc_value[0].value.v_double = 201.0;
       bson_error_t error =
          test_explicit_encryption_range_error_helper (eef_range, eef);
       ASSERT_ERROR_CONTAINS (error,
@@ -4853,7 +4908,7 @@ test_explicit_encryption_range_double_precision_error (void *unused)
                              "");
    }
 
-   // Can't encrypt document that is less than min.
+   // Case 10: Can't encrypt document that is less than min.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
       eef_range->doc_value[0].value.v_double = -0.5;
@@ -4864,7 +4919,7 @@ test_explicit_encryption_range_double_precision_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't encrypt document that is of a different type.
+   // Case 11: Can't encrypt document that is of a different type.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_INT64;
       eef_range->doc_value[0].value.v_int64 = 100;
@@ -4895,7 +4950,7 @@ test_explicit_encryption_range_date_error (void *unused)
    eef_range->minmax.max.value_type = BSON_TYPE_DATE_TIME;
    eef_range->minmax.max.value.v_int64 = 200;
 
-   // Can't encrypt document that is greater than max.
+   // Case 9: Can't encrypt document that is greater than max.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_DATE_TIME;
       eef_range->doc_value[0].value.v_int64 = 201;
@@ -4906,7 +4961,7 @@ test_explicit_encryption_range_date_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't encrypt document that is less than min.
+   // Case 10: Can't encrypt document that is less than min.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_DATE_TIME;
       eef_range->doc_value[0].value.v_int64 = -1;
@@ -4917,7 +4972,7 @@ test_explicit_encryption_range_date_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't encrypt document that is of a different type.
+   // Case 11: Can't encrypt document that is of a different type.
    {
       eef_range->doc_value[0].value_type = BSON_TYPE_DOUBLE;
       eef_range->doc_value[0].value.v_double = 4.44;
@@ -4928,7 +4983,7 @@ test_explicit_encryption_range_date_error (void *unused)
                              MONGOC_ERROR_STREAM_INVALID_TYPE,
                              "");
    }
-   // Can't set precision with type date.
+   // Case 12: Can't set precision with type date.
    {
       eef_range->precision = 2;
       bson_error_t error =
