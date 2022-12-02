@@ -2681,7 +2681,6 @@ retail_setup (mongoc_collection_t *sales_collection)
    bool ok = true;
    bson_t *doc = NULL;
    bson_error_t error;
-   bool rc;
    struct timeval tv;
    int64_t unix_time_now = 0;
 
