@@ -4614,13 +4614,13 @@ test_explicit_encryption_range_double_precision (void *unused)
    /* Use ``encryptedClient`` to insert 4 documents of the form ``{
     * "encrypted<Type>": <insertPayload>, _id: i }``. */
    test_explicit_encryption_range_insert (eef_range, eef);
-   
+
    // Case 1: can decrypt a payload
    {
       bson_value_t got =
          test_explicit_encryption_range_decrypt_helper (eef_range, eef);
       ASSERT (got.value.v_double == 6.0);
-      bson_value_destroy (&got); 
+      bson_value_destroy (&got);
    }
    // Case 2: run find command to return 3 documents including maximum.
    {
