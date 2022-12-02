@@ -2526,7 +2526,6 @@ done:
    return ok;
 }
 
-
 /*
  * Increment 'accumulator' by the amount of adoptable pets in the given
  * collection.
@@ -2671,6 +2670,148 @@ test_example_59 (mongoc_database_t *db)
 cleanup:
    mongoc_collection_destroy (dogs_collection);
    mongoc_collection_destroy (cats_collection);
+   mongoc_client_session_destroy (cs);
+   mongoc_client_destroy (client);
+   /* End Snapshot Query Example 1 Post */
+}
+
+static bool
+retail_setup (mongoc_collection_t *sales_collection)
+{
+   bool ok = true;
+   bson_t *doc = NULL;
+   bson_error_t error;
+   bool rc;
+   struct timeval tv;
+   int64_t unix_time_now = 0;
+
+   if (bson_gettimeofday(&tv)) {
+      MONGOC_ERROR("could not get time of day");
+      goto cleanup;
+   }
+   unix_time_now = 1000 * tv.tv_sec;
+
+   mongoc_collection_drop (sales_collection, NULL);
+
+   doc = BCON_NEW ("showType",
+                   BCON_UTF8 ("boot"),
+                   "price",
+                   BCON_INT64 (30),
+                   "saleDate",
+                   BCON_DATE_TIME (unix_time_now));
+
+   ok =
+      mongoc_collection_insert_one (sales_collection, doc, NULL, NULL, &error);
+   if (!ok) {
+      MONGOC_ERROR ("insert into retail.sales failed: %s", error.message);
+      goto cleanup;
+   }
+
+cleanup:
+   bson_destroy (doc);
+   return ok;
+}
+
+
+static void
+test_example_60 (mongoc_database_t *db)
+{
+   /* Start Snapshot Query Example 1 */
+   mongoc_client_t *client = NULL;
+   mongoc_client_session_t *cs = NULL;
+   mongoc_collection_t *sales_collection = NULL;
+   bson_error_t error;
+   mongoc_session_opt_t *session_opts;
+   bson_t *pipeline = NULL;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor = NULL;
+   const bson_t *doc = NULL;
+   bool ok = true;
+   bson_iter_t iter;
+   int64_t accumulator = 0;
+
+   client = test_framework_new_default_client ();
+
+   sales_collection = mongoc_client_get_collection (client, "retail", "sales");
+
+   /* seed 'retail.sales' with example data */
+   if (!retail_setup (sales_collection)) {
+      goto cleanup;
+   }
+
+   /* start a snapshot session */
+   session_opts = mongoc_session_opts_new ();
+   mongoc_session_opts_set_snapshot (session_opts, true);
+   cs = mongoc_client_start_session (client, session_opts, &error);
+   mongoc_session_opts_destroy (session_opts);
+   if (!cs) {
+      MONGOC_ERROR ("Could not start session: %s", error.message);
+      goto cleanup;
+   }
+
+   if (!mongoc_client_session_append (cs, &opts, &error)) {
+      MONGOC_ERROR ("could not apply session options: %s", error.message);
+      goto cleanup;
+   }
+
+/* clang-format off */
+   pipeline = BCON_NEW(
+      "pipeline", "[",
+         "{",
+            "$match", "{",
+               "$expr", "{",
+                  "$gt", "[", 
+                     "$saleDate",
+                     "{",
+                        "$dateSubtract",
+                        "{",
+                           "startDate", "$$NOW",
+                           "unit", BCON_UTF8("day"),
+                           "amount", BCON_INT64(1),
+                        "}",
+                     "}",
+                  "]",
+               "}",
+            "}",
+         "}",
+      "{",
+         "$count", BCON_UTF8("totalDailySales"),
+      "}",
+   "]");
+/* clang-format on */
+
+   cursor = mongoc_collection_aggregate (
+      sales_collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
+   bson_destroy (&opts);
+
+   ok = mongoc_cursor_next (cursor, &doc);
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("could not get totalDailySales: %s", error.message);
+      ok = false;
+      goto cleanup;
+   }
+
+   if (!ok) {
+      MONGOC_ERROR ("%s", "cursor has no results");
+      goto cleanup;
+   }
+
+   ok = bson_iter_init_find (&iter, doc, "totalDailySales");
+   if (ok) {
+      accumulator += bson_iter_as_int64 (&iter);
+   } else {
+      MONGOC_ERROR ("%s", "missing key: 'totalDailySales'");
+      goto cleanup;
+   }
+
+   printf("TOTAL SALES: %d\n", accumulator);
+
+   /* End Snapshot Query Example 1 */
+
+   /* Start Snapshot Query Example 1 Post */
+cleanup:
+   mongoc_collection_destroy (sales_collection);
    mongoc_client_session_destroy (cs);
    mongoc_client_destroy (client);
    /* End Snapshot Query Example 1 Post */
@@ -4205,6 +4346,7 @@ test_sample_commands (void)
    test_sample_command (test_example_58, 58, db, collection, false);
    test_sample_command (test_example_56, 56, db, collection, true);
    test_sample_command (test_example_59, 59, db, collection, true);
+   test_sample_command (test_example_60, 60, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
