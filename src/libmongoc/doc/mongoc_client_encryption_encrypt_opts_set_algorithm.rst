@@ -18,6 +18,8 @@ Synopsis
    #define MONGOC_ENCRYPT_ALGORITHM_INDEXED "Indexed"
    // (Experimental: See below)
    #define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
+   // (Experimental: See below)
+   #define MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW "RangePreview"
 
 Identifies the algorithm to use for encryption. Valid values of ``algorithm`` are:
 
@@ -40,6 +42,12 @@ Identifies the algorithm to use for encryption. Valid values of ``algorithm`` ar
    for unindexed encryption.
 
    .. note:: |qenc:opt-is-experimental|
+
+``"RangePreview"``
+
+   for range encryption.
+   
+   .. note:: |qenc:range-is-experimental|
 
 Parameters
 ----------

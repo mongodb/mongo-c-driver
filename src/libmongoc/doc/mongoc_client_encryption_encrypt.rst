@@ -20,7 +20,7 @@ Performs explicit encryption.
 
 ``ciphertext`` is always initialized (even on failure). Caller must call :symbol:`bson_value_destroy()` to free.
 
-To insert or query with an "Indexed" encrypted payload, use a
+To insert or query with an "Indexed" or "RangePreview" encrypted payload, use a
 :symbol:`mongoc_client_t` configured with
 :symbol:`mongoc_auto_encryption_opts_t`. The
 :symbol:`mongoc_auto_encryption_opts_t` may be configured to bypass query
@@ -28,7 +28,28 @@ analysis with :symbol:`mongoc_auto_encryption_opts_set_bypass_query_analysis`.
 The :symbol:`mongoc_auto_encryption_opts_t` must not be configured to bypass
 automatic encryption with
 :symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption`. **Note** that
-the ``"Indexed"`` payload type |qenc:is-experimental|
+the ``"Indexed"`` and ``"RangePreview"`` payload type |qenc:is-experimental|
+
+To insert or query with a ``RangePreview`` payload 
+:symbol:`mongoc_client_encryption_encrypt_range_opts_t` must be set in ``opts``.
+
+To query with a ``RangePreview`` payload, value must be one of the following forms: 
+
+#. A Match Expression of the following form: 
+
+.. code-block:: javascript
+   
+   // $gt may also be $gte. $lt may also be $lte.
+   // Can include one of $gt/$gte/$lt/$lte. Don't need to include both
+   {$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}
+
+#. An Aggregation Expression of this form: 
+
+.. code-block:: javascript
+   
+   // $gt may also be $gte. $lt may also be $lte
+   // Can include one of $gt/$gte/$lt/$lte. Don't need to include both
+   {$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]
 
 Parameters
 ----------
