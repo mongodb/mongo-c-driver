@@ -14,7 +14,7 @@ Synopsis
          const bson_value_t *min,
          const bson_value_t *max);
 
-.. important:: |qenc:range-is-experimental|
+.. important:: The |qenc:range-is-experimental| |qenc:api-is-experimental|
 .. versionadded:: 1.24.0
 
 Sets the minimum and maximum values of the range for explicit encryption.

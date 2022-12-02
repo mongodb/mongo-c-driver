@@ -10,7 +10,7 @@ Synopsis
 
   typedef struct _mongoc_client_encryption_encrypt_range_opts_t mongoc_client_encryption_encrypt_range_opts_t;
 
-.. important:: |qenc:range-is-experimental|
+.. important:: The |qenc:range-is-experimental| |qenc:api-is-experimental|
 .. versionadded:: 1.24.0
 
 RangeOpts specifies index options for a Queryable Encryption field supporting "rangePreview" queries. Used to set options for :symbol:`mongoc_client_encryption_encrypt()`.

@@ -47,7 +47,7 @@ Identifies the algorithm to use for encryption. Valid values of ``algorithm`` ar
 
    for range encryption.
    
-   .. note:: |qenc:range-is-experimental|
+   .. note:: The |qenc:range-is-experimental| |qenc:opt-is-experimental|
 
 Parameters
 ----------

@@ -13,7 +13,7 @@ Synopsis
           mongoc_client_encryption_encrypt_opts_t *opts,
           mongoc_client_encryption_encrypt_range_opts_t *range_opts);
 
-.. important:: |qenc:range-is-experimental|
+.. important:: The |qenc:range-is-experimental| |qenc:api-is-experimental|
 .. versionadded:: 1.24.0
 
 Sets the ``range_opts`` for explicit encryption.
