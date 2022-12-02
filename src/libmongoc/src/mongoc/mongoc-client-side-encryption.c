@@ -978,12 +978,10 @@ mongoc_client_encryption_create_encrypted_collection (
 
 #else
 
-/*
- * Parses the range opts set by the user into a bson_t that can be passed to
+/* Appends the range opts set by the user into a bson_t that can be passed to
  * libmongocrypt.
- * Takes in a bson_t that needs to be destroyed by the caller.
+ * bson_range_opts must be initialized by caller.
  */
-
 static void
 append_bson_range_opts (bson_t *bson_range_opts,
                         mongoc_client_encryption_encrypt_opts_t *opts)
