@@ -37,19 +37,19 @@ To query with a ``RangePreview`` payload, value must be one of the following for
 
 #. A Match Expression of the following form: 
 
-.. code-block:: javascript
+   .. code-block:: javascript
    
-   // $gt may also be $gte. $lt may also be $lte.
-   // Can include one of $gt/$gte/$lt/$lte. Don't need to include both
-   {$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}
+      // $gt may also be $gte. $lt may also be $lte.
+      // Can include one of $gt/$gte/$lt/$lte. It is not required to include both.
+      {$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}
 
 #. An Aggregation Expression of this form: 
 
-.. code-block:: javascript
+   .. code-block:: javascript
    
-   // $gt may also be $gte. $lt may also be $lte
-   // Can include one of $gt/$gte/$lt/$lte. Don't need to include both
-   {$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]
+      // $gt may also be $gte. $lt may also be $lte
+      // Can include one of $gt/$gte/$lt/$lte. It is not required to include both.
+      {$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]
 
 **NOTE** that the |qenc:range-is-experimental|
 
