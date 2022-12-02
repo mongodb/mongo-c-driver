@@ -2692,7 +2692,7 @@ retail_setup (mongoc_collection_t *sales_collection)
 
    mongoc_collection_drop (sales_collection, NULL);
 
-   doc = BCON_NEW ("showType",
+   doc = BCON_NEW ("shoeType",
                    BCON_UTF8 ("boot"),
                    "price",
                    BCON_INT64 (30),
