@@ -2803,7 +2803,7 @@ test_example_60 (mongoc_database_t *db)
 
    ok = bson_iter_init_find (&iter, doc, "totalDailySales");
    if (ok) {
-      total_sales += bson_iter_as_int64 (&iter);
+      total_sales = bson_iter_as_int64 (&iter);
    } else {
       MONGOC_ERROR ("%s", "missing key: 'totalDailySales'");
       goto cleanup;
