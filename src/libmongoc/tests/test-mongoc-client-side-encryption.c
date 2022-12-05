@@ -3538,7 +3538,9 @@ test_kms_tls_options_extra_rejected (void *unused)
    mongoc_client_encryption_opts_set_keyvault_client (ce_opts, keyvault_client);
    mongoc_client_encryption_opts_set_kms_providers (ce_opts, kms_providers);
    mongoc_client_encryption_opts_set_tls_opts (
-      ce_opts, tmp_bson ("{'aws': {'tlsDisableOCSPEndpointCheck': true}}"));
+      ce_opts,
+      tmp_bson ("{'aws': {'%s': true}}",
+                MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK));
    ce = mongoc_client_encryption_new (ce_opts, &error);
    ASSERT_OR_PRINT (ce, error);
    mongoc_client_encryption_destroy (ce);
