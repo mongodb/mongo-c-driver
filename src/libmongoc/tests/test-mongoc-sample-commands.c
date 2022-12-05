@@ -2715,7 +2715,7 @@ cleanup:
 static void
 test_example_60 (mongoc_database_t *db)
 {
-   /* Start Snapshot Query Example 1 */
+   /* Start Snapshot Query Example 2 */
    mongoc_client_t *client = NULL;
    mongoc_client_session_t *cs = NULL;
    mongoc_collection_t *sales_collection = NULL;
@@ -2753,31 +2753,36 @@ test_example_60 (mongoc_database_t *db)
       goto cleanup;
    }
 
-   /* clang-format off */
-   pipeline = BCON_NEW(
-      "pipeline", "[",
-         "{",
-            "$match", "{",
-               "$expr", "{",
-                  "$gt", "[", 
-                     "$saleDate",
-                     "{",
+   pipeline = BCON_NEW ("pipeline",
+                        "[",
+                        "{",
+                        "$match",
+                        "{",
+                        "$expr",
+                        "{",
+                        "$gt",
+                        "[",
+                        "$saleDate",
+                        "{",
                         "$dateSubtract",
                         "{",
-                           "startDate", "$$NOW",
-                           "unit", BCON_UTF8("day"),
-                           "amount", BCON_INT64(1),
+                        "startDate",
+                        "$$NOW",
+                        "unit",
+                        BCON_UTF8 ("day"),
+                        "amount",
+                        BCON_INT64 (1),
                         "}",
-                     "}",
-                  "]",
-               "}",
-            "}",
-         "}",
-      "{",
-         "$count", BCON_UTF8("totalDailySales"),
-      "}",
-   "]");
-   /* clang-format on */
+                        "}",
+                        "]",
+                        "}",
+                        "}",
+                        "}",
+                        "{",
+                        "$count",
+                        BCON_UTF8 ("totalDailySales"),
+                        "}",
+                        "]");
 
    cursor = mongoc_collection_aggregate (
       sales_collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
@@ -2804,21 +2809,21 @@ test_example_60 (mongoc_database_t *db)
       goto cleanup;
    }
 
-   /* End Snapshot Query Example 1 */
+   /* End Snapshot Query Example 2 */
 
    if (total_sales != 1) {
       MONGOC_ERROR ("there should be exactly 1 total_sales, found: %" PRId64,
                     total_sales);
    }
 
-   /* Start Snapshot Query Example 1 Post */
+   /* Start Snapshot Query Example 2 Post */
 cleanup:
    mongoc_collection_destroy (sales_collection);
    mongoc_client_session_destroy (cs);
    mongoc_cursor_destroy (cursor);
    bson_destroy (pipeline);
    mongoc_client_destroy (client);
-   /* End Snapshot Query Example 1 Post */
+   /* End Snapshot Query Example 2 Post */
 }
 
 /* clang-format off */
