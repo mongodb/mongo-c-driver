@@ -916,6 +916,10 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
       bson_free (compressors);
    }
 
+   if (test_framework_is_loadbalanced ()) {
+      mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
+   }
+
    client = test_framework_client_new_from_uri (uri, NULL);
 
 #ifdef MONGOC_ENABLE_SSL
