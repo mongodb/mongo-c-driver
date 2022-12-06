@@ -56,8 +56,8 @@
   ],
   "sslParams": {
       "sslOnNormalPorts": true,
-      "sslPEMKeyFile": "ABSOLUTE_PATH_REPLACEMENT_TOKEN/.evergreen/x509gen/server.pem",
-      "sslCAFile": "ABSOLUTE_PATH_REPLACEMENT_TOKEN/.evergreen/x509gen/ca.pem",
+      "sslPEMKeyFile": "/tmp/orchestration-home/server.pem",
+      "sslCAFile": "/tmp/orchestration-home/ca.pem",
       "sslWeakCertificateValidation" : true
   }
 }
