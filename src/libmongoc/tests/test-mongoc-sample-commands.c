@@ -2602,16 +2602,16 @@ cleanup:
 static void
 test_example_59 (mongoc_database_t *db)
 {
-   /* Start Snapshot Query Example 1 */
    mongoc_client_t *client = NULL;
+   client = test_framework_new_default_client ();
+
+   /* Start Snapshot Query Example 1 */
    mongoc_client_session_t *cs = NULL;
    mongoc_collection_t *cats_collection = NULL;
    mongoc_collection_t *dogs_collection = NULL;
    int64_t adoptable_pets_count = 0;
    bson_error_t error;
    mongoc_session_opt_t *session_opts;
-
-   client = test_framework_new_default_client ();
 
    cats_collection = mongoc_client_get_collection (client, "pets", "cats");
    dogs_collection = mongoc_client_get_collection (client, "pets", "dogs");
@@ -2715,8 +2715,10 @@ cleanup:
 static void
 test_example_60 (mongoc_database_t *db)
 {
-   /* Start Snapshot Query Example 2 */
    mongoc_client_t *client = NULL;
+   client = test_framework_new_default_client ();
+
+   /* Start Snapshot Query Example 2 */
    mongoc_client_session_t *cs = NULL;
    mongoc_collection_t *sales_collection = NULL;
    bson_error_t error;
@@ -2728,8 +2730,6 @@ test_example_60 (mongoc_database_t *db)
    bool ok = true;
    bson_iter_t iter;
    int64_t total_sales = 0;
-
-   client = test_framework_new_default_client ();
 
    sales_collection = mongoc_client_get_collection (client, "retail", "sales");
 
