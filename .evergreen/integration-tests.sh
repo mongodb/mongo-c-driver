@@ -61,6 +61,10 @@ if [ -z "$ORCHESTRATION_FILE" ]; then
    if [ "$SSL" != "nossl" ]; then
       ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-ssl"
    fi
+
+   if [ -n "$LOAD_BALANCER" ]; then
+      ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-load-balancer"
+   fi
 fi
 
 # Set up mongo orchestration home.
