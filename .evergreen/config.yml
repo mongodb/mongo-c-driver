@@ -407,6 +407,7 @@ functions:
         export ORCHESTRATION_FILE=${ORCHESTRATION_FILE}
         export OCSP=${OCSP}
         export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
+        export LOAD_BALANCER=${LOAD_BALANCER}
         sh .evergreen/integration-tests.sh
   - command: expansions.update
     params:
@@ -16644,6 +16645,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: noauth
+      LOAD_BALANCER: 'true'
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: latest
@@ -24022,6 +24024,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: auth
+      LOAD_BALANCER: 'true'
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: '5.0'
@@ -24049,6 +24052,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: auth
+      LOAD_BALANCER: 'true'
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: latest
@@ -24076,6 +24080,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: noauth
+      LOAD_BALANCER: 'true'
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: '5.0'
@@ -24103,6 +24108,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: noauth
+      LOAD_BALANCER: 'true'
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: latest

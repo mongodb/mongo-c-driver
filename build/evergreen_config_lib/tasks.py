@@ -669,9 +669,15 @@ class DNSTask(MatrixTask):
         commands.append(
             func('fetch build', BUILD_NAME=self.depends_on['name']))
 
-        orchestration = bootstrap(TOPOLOGY='sharded_cluster' if self.loadbalanced else 'replica_set',
-                                  AUTH='auth' if self.auth else 'noauth',
-                                  SSL='ssl')
+        if not self.loadbalanced:
+            orchestration = bootstrap(TOPOLOGY='replica_set',
+                                      AUTH='auth' if self.auth else 'noauth',
+                                      SSL='ssl')
+        else:
+            orchestration = bootstrap(TOPOLOGY='sharded_cluster',
+                                      AUTH='auth' if self.auth else 'noauth',
+                                      SSL='ssl',
+                                      LOAD_BALANCER='true')
 
         if self.auth:
             orchestration['vars']['AUTHSOURCE'] = 'thisDB'
@@ -1150,7 +1156,8 @@ class LoadBalancedTask(MatrixTask):
         orchestration = bootstrap(TOPOLOGY='sharded_cluster',
                                   AUTH='auth' if self.test_auth else 'noauth',
                                   SSL='ssl' if self.test_ssl else 'nossl',
-                                  VERSION=self.version)
+                                  VERSION=self.version,
+                                  LOAD_BALANCER='true')
         commands.append(orchestration)
         commands.append(func("clone drivers-evergreen-tools"))
         commands.append(func("start load balancer",
