@@ -2819,10 +2819,6 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_mcd_azure_imds_install);
    TEST_INSTALL (test_mcd_integer_install);
 
-   if (test_framework_is_loadbalanced ()) {
-      mongoc_global_mock_service_id = true;
-   }
-
    ret = TestSuite_Run (&suite);
 
    TestSuite_Destroy (&suite);
