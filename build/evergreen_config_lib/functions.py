@@ -281,7 +281,7 @@ all_functions = OD([
         export OCSP=${OCSP}
         export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
         export LOAD_BALANCER=${LOAD_BALANCER}
-        sh .evergreen/integration-tests.sh
+        bash .evergreen/integration-tests.sh
         ''', test=False),
         OD([
             ("command", "expansions.update"),

@@ -408,7 +408,7 @@ functions:
         export OCSP=${OCSP}
         export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
         export LOAD_BALANCER=${LOAD_BALANCER}
-        sh .evergreen/integration-tests.sh
+        bash .evergreen/integration-tests.sh
   - command: expansions.update
     params:
       file: mongoc/mo-expansion.yml
