@@ -14,11 +14,14 @@
 # OCSP: off, on
 # REQUIRE_API_VERSION: set to a non-empty string to set the requireApiVersion parameter
 #   This is currently only supported for standalone servers
+# LOAD_BALANCER: off, on
 #
 # This script may be run locally.
 #
 
 set -o errexit  # Exit the script with error if any of the commands fail
+
+: "${LOAD_BALANCER:=off}"
 
 DIR=$(dirname $0)
 # Functions to fetch MongoDB binaries
