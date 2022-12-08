@@ -62,7 +62,7 @@ if [ -z "$ORCHESTRATION_FILE" ]; then
       ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-ssl"
    fi
 
-   if [ -n "$LOAD_BALANCER" ]; then
+   if [ "$LOAD_BALANCER" = "on" ]; then
       ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-load-balancer"
    fi
 fi

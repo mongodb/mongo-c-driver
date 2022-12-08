@@ -16645,7 +16645,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: noauth
-      LOAD_BALANCER: 'true'
+      LOAD_BALANCER: 'on'
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: latest
@@ -24024,7 +24024,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: auth
-      LOAD_BALANCER: 'true'
+      LOAD_BALANCER: 'on'
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: '5.0'
@@ -24052,7 +24052,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: auth
-      LOAD_BALANCER: 'true'
+      LOAD_BALANCER: 'on'
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: latest
@@ -24080,7 +24080,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: noauth
-      LOAD_BALANCER: 'true'
+      LOAD_BALANCER: 'on'
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: '5.0'
@@ -24108,7 +24108,7 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: noauth
-      LOAD_BALANCER: 'true'
+      LOAD_BALANCER: 'on'
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: latest
