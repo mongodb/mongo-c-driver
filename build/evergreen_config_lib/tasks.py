@@ -669,15 +669,15 @@ class DNSTask(MatrixTask):
         commands.append(
             func('fetch build', BUILD_NAME=self.depends_on['name']))
 
-        if not self.loadbalanced:
-            orchestration = bootstrap(TOPOLOGY='replica_set',
-                                      AUTH='auth' if self.auth else 'noauth',
-                                      SSL='ssl')
-        else:
+        if self.loadbalanced:
             orchestration = bootstrap(TOPOLOGY='sharded_cluster',
                                       AUTH='auth' if self.auth else 'noauth',
                                       SSL='ssl',
                                       LOAD_BALANCER='true')
+        else:
+            orchestration = bootstrap(TOPOLOGY='replica_set',
+                                      AUTH='auth' if self.auth else 'noauth',
+                                      SSL='ssl')
 
         if self.auth:
             orchestration['vars']['AUTHSOURCE'] = 'thisDB'
