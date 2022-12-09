@@ -916,6 +916,10 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
       bson_free (compressors);
    }
 
+   if (test_framework_is_loadbalanced ()) {
+      mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
+   }
+
    client = test_framework_client_new_from_uri (uri, NULL);
 
 #ifdef MONGOC_ENABLE_SSL
@@ -2815,10 +2819,6 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_mcd_azure_imds_install);
    TEST_INSTALL (test_mcd_integer_install);
    TEST_INSTALL (test_service_gcp_install);
-
-   if (test_framework_is_loadbalanced ()) {
-      mongoc_global_mock_service_id = true;
-   }
 
    ret = TestSuite_Run (&suite);
 
