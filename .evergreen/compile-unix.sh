@@ -229,11 +229,8 @@ pkg-config --modversion libssl || true
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
-   git clone https://github.com/mongodb/libmongocrypt
-   cd libmongocrypt
-   # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once a release is available with a fix to MONGOCRYPT-501.
-   git checkout c1dbee1112221568c8568d1804624fa5d69a2d4e
-   cd ..
+   # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
+   git clone https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1
 
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
