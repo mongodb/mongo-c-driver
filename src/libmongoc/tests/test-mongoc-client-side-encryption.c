@@ -6911,7 +6911,7 @@ test_create_encrypted_collection_no_encryptedFields (void *unused)
    ASSERT_OR_PRINT (ce, error);
 
    // Create the encrypted collection
-   bsonBuildDecl (ccOpts);
+   bsonBuildDecl (ccOpts, do ());
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    mongoc_client_encryption_datakey_opts_t *const dkOpts =
       mongoc_client_encryption_datakey_opts_new ();
