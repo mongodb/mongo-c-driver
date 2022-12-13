@@ -11,13 +11,13 @@ Supported Platforms
 The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/waterfall/mongo-c-driver>`_ on a variety of platforms including:
 
 - Archlinux
-- Debian 9.2, 10.0
+- Debian 9.2, 10.0, 11.0
 - macOS 10.14
 - Microsoft Windows Server 2008, 2016
-- RHEL 6.2, 7.0, 7.1, 8.2
-- Ubuntu 16.04, 18.04
+- RHEL 6.2, 7.0, 7.1, 8.1, 8.2, 8.3
+- Ubuntu 16.04, 18.04, 20.04
 - Clang 3.4, 3.5, 3.7, 3.8, 6.0
-- GCC 4.8, 4.9, 5.4, 6.3, 8.2, 8.3
+- GCC 4.8, 4.9, 5.4, 6.3, 7.5, 8.2, 8.3, 9.4, 10.2
 - MinGW-W64
 - Visual Studio 2013, 2015, 2017
 - x86, x86_64, ARM (aarch64), Power8 (ppc64le), zSeries (s390x)
