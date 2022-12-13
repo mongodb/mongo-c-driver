@@ -8,7 +8,7 @@ The following guide will step you through the process of downloading, building, 
 Supported Platforms
 -------------------
 
-The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/waterfall/mongo-c-driver>`_ on a variety of platforms including:
+The MongoDB C Driver is continuously tested on a variety of platforms including:
 
 - Archlinux
 - Debian 9.2, 10.0, 11.0
