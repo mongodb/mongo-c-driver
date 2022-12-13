@@ -20,12 +20,12 @@
 #include "mongoc/mongoc-http-private.h"
 
 void
-test_mongoc_http (void *unused)
+test_mongoc_http_get (void *unused)
 {
    mongoc_http_request_t req;
    mongoc_http_response_t res;
    bool r;
-   bson_error_t error;
+   bson_error_t error = {0};
 
    BSON_UNUSED (unused);
 
@@ -34,24 +34,48 @@ test_mongoc_http (void *unused)
 
    /* Basic GET request */
    req.method = "GET";
-   req.host = "example.com";
+   req.host = "httpbin.org";
+   req.path = "get";
    req.port = 80;
-   // Empty body is okay
-   req.body = "";
-   req.body_len = 0;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
-   ASSERT_CMPINT (res.status, ==, 200);
+   ASSERT_WITH_MSG (res.status == 200,
+                    "unexpected status code %d\n"
+                    "RESPONSE BODY BEGIN\n"
+                    "%s"
+                    "RESPONSE BODY END\n",
+                    res.status,
+                    res.body_len > 0 ? res.body : "");
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (res.body_len, >, 0);
    _mongoc_http_response_cleanup (&res);
+}
+
+void
+test_mongoc_http_post (void *unused)
+{
+   mongoc_http_request_t req;
+   mongoc_http_response_t res;
+   bool r;
+   bson_error_t error = {0};
+
+   BSON_UNUSED (unused);
+
+   _mongoc_http_request_init (&req);
+   _mongoc_http_response_init (&res);
 
    /* Basic POST request with a body. */
    req.method = "POST";
-   req.body = "test";
-   req.body_len = 4;
+   req.host = "httpbin.org";
+   req.path = "post";
    req.port = 80;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
-   ASSERT_CMPINT (res.status, ==, 200);
+   ASSERT_WITH_MSG (res.status == 200,
+                    "unexpected status code %d\n"
+                    "RESPONSE BODY BEGIN\n"
+                    "%s"
+                    "RESPONSE BODY END\n",
+                    res.status,
+                    res.body_len > 0 ? res.body : "");
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (res.body_len, >, 0);
    _mongoc_http_response_cleanup (&res);
@@ -61,8 +85,15 @@ void
 test_http_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
-                      "/http",
-                      test_mongoc_http,
+                      "/http/get",
+                      test_mongoc_http_get,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_offline);
+
+   TestSuite_AddFull (suite,
+                      "/http/post",
+                      test_mongoc_http_post,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_offline);
