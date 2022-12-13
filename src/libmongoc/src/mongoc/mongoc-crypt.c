@@ -232,6 +232,9 @@ _state_machine_new (_mongoc_crypt_t *crypt)
 void
 _state_machine_destroy (_state_machine_t *state_machine)
 {
+   if (!state_machine) {
+      return;
+   }
    mongocrypt_ctx_destroy (state_machine->ctx);
    bson_free (state_machine);
 }
