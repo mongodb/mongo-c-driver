@@ -2792,7 +2792,6 @@ test_example_60 (mongoc_database_t *db)
 
    if (mongoc_cursor_error (cursor, &error)) {
       MONGOC_ERROR ("could not get totalDailySales: %s", error.message);
-      ok = false;
       goto cleanup;
    }
 
