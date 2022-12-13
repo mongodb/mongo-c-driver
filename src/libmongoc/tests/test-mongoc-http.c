@@ -38,6 +38,7 @@ test_mongoc_http_get (void *unused)
    req.path = "get";
    req.port = 80;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
+   ASSERT_OR_PRINT (r, error);
    ASSERT_WITH_MSG (res.status == 200,
                     "unexpected status code %d\n"
                     "RESPONSE BODY BEGIN\n"
@@ -45,7 +46,6 @@ test_mongoc_http_get (void *unused)
                     "RESPONSE BODY END\n",
                     res.status,
                     res.body_len > 0 ? res.body : "");
-   ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (res.body_len, >, 0);
    _mongoc_http_response_cleanup (&res);
 }
@@ -69,6 +69,7 @@ test_mongoc_http_post (void *unused)
    req.path = "post";
    req.port = 80;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
+   ASSERT_OR_PRINT (r, error);
    ASSERT_WITH_MSG (res.status == 200,
                     "unexpected status code %d\n"
                     "RESPONSE BODY BEGIN\n"
@@ -76,7 +77,6 @@ test_mongoc_http_post (void *unused)
                     "RESPONSE BODY END\n",
                     res.status,
                     res.body_len > 0 ? res.body : "");
-   ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (res.body_len, >, 0);
    _mongoc_http_response_cleanup (&res);
 }
