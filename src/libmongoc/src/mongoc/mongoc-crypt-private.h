@@ -87,6 +87,7 @@ returned.
 - value_out is always initialized.
 - query_type may be NULL.
 - contention_factor may be NULL.
+- range_opts may not be NULL.
 - may return false and set error.
 */
 bool
@@ -101,6 +102,29 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 const bson_value_t *value_in,
                                 bson_value_t *value_out,
                                 bson_error_t *error);
+
+/*
+Perform explicit encryption on an expression.
+- exactly one of keyid or keyaltname must be set, the other NULL, or an error is
+returned.
+- expr_out is always initialized.
+- query_type may be NULL.
+- contention_factor may be NULL.
+- range_opts may not be NULL.
+- may return false and set error.
+*/
+bool
+_mongoc_crypt_explicit_encrypt_expression (_mongoc_crypt_t *crypt,
+                                           mongoc_collection_t *key_vault_coll,
+                                           const char *algorithm,
+                                           const bson_value_t *keyid,
+                                           char *keyaltname,
+                                           const char *query_type,
+                                           const int64_t *contention_factor,
+                                           bson_t *range_opts,
+                                           const bson_t *expr_in,
+                                           bson_t *expr_out,
+                                           bson_error_t *error);
 
 /*
 Perform explicit decryption.

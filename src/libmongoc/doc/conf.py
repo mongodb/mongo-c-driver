@@ -73,7 +73,7 @@ rst_prolog = '''
 
 .. |qenc:range-is-experimental| replace::
 
-    Range algorithm is experimental only and not intended for public use.
+    Range algorithm is experimental only and not intended for public use. It is subject to breaking changes.
 
 '''
 

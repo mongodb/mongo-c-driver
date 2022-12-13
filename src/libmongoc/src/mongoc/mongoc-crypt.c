@@ -1523,8 +1523,11 @@ fail:
    return ret;
 }
 
-bool
-_mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
+// _create_explicit_state_machine_t creates a _state_machine_t for explicit
+// encryption. The returned state machine may be used encrypting a value or
+// encrypting an expression.
+static _state_machine_t *
+_create_explicit_state_machine (_mongoc_crypt_t *crypt,
                                 mongoc_collection_t *keyvault_coll,
                                 const char *algorithm,
                                 const bson_value_t *keyid,
@@ -1532,18 +1535,10 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 const char *query_type,
                                 const int64_t *contention_factor,
                                 bson_t *range_opts,
-                                const bson_value_t *value_in,
-                                bson_value_t *value_out,
                                 bson_error_t *error)
 {
    _state_machine_t *state_machine = NULL;
-   bson_t *to_encrypt_doc = NULL;
-   mongocrypt_binary_t *to_encrypt_bin = NULL;
-   bson_iter_t iter;
-   bool ret = false;
-   bson_t result = BSON_INITIALIZER;
-
-   value_out->value_type = BSON_TYPE_EOD;
+   bool ok = false;
 
    /* Create the context for the operation. */
    state_machine = _state_machine_new (crypt);
@@ -1638,6 +1633,50 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
       }
    }
 
+   ok = true;
+fail:
+   if (!ok) {
+      _state_machine_destroy (state_machine);
+      state_machine = NULL;
+   }
+   return state_machine;
+}
+
+bool
+_mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
+                                mongoc_collection_t *keyvault_coll,
+                                const char *algorithm,
+                                const bson_value_t *keyid,
+                                char *keyaltname,
+                                const char *query_type,
+                                const int64_t *contention_factor,
+                                bson_t *range_opts,
+                                const bson_value_t *value_in,
+                                bson_value_t *value_out,
+                                bson_error_t *error)
+{
+   _state_machine_t *state_machine = NULL;
+   bson_t *to_encrypt_doc = NULL;
+   mongocrypt_binary_t *to_encrypt_bin = NULL;
+   bson_iter_t iter;
+   bool ret = false;
+   bson_t result = BSON_INITIALIZER;
+
+   value_out->value_type = BSON_TYPE_EOD;
+
+   state_machine = _create_explicit_state_machine (crypt,
+                                                   keyvault_coll,
+                                                   algorithm,
+                                                   keyid,
+                                                   keyaltname,
+                                                   query_type,
+                                                   contention_factor,
+                                                   range_opts,
+                                                   error);
+   if (!state_machine) {
+      goto fail;
+   }
+
    to_encrypt_doc = bson_new ();
    BSON_APPEND_VALUE (to_encrypt_doc, "v", value_in);
    to_encrypt_bin = mongocrypt_binary_new_from_data (
@@ -1658,13 +1697,99 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                      "encrypted result unexpected");
+                      "encrypted result unexpected: no 'v' found");
       goto fail;
    } else {
       const bson_value_t *tmp;
 
       tmp = bson_iter_value (&iter);
       bson_value_copy (tmp, value_out);
+   }
+
+   ret = true;
+fail:
+   _state_machine_destroy (state_machine);
+   mongocrypt_binary_destroy (to_encrypt_bin);
+   bson_destroy (to_encrypt_doc);
+   bson_destroy (&result);
+   return ret;
+}
+
+bool
+_mongoc_crypt_explicit_encrypt_expression (_mongoc_crypt_t *crypt,
+                                           mongoc_collection_t *keyvault_coll,
+                                           const char *algorithm,
+                                           const bson_value_t *keyid,
+                                           char *keyaltname,
+                                           const char *query_type,
+                                           const int64_t *contention_factor,
+                                           bson_t *range_opts,
+                                           const bson_t *expr_in,
+                                           bson_t *expr_out,
+                                           bson_error_t *error)
+{
+   _state_machine_t *state_machine = NULL;
+   bson_t *to_encrypt_doc = NULL;
+   mongocrypt_binary_t *to_encrypt_bin = NULL;
+   bson_iter_t iter;
+   bool ret = false;
+   bson_t result = BSON_INITIALIZER;
+
+   bson_init (expr_out);
+
+   state_machine = _create_explicit_state_machine (crypt,
+                                                   keyvault_coll,
+                                                   algorithm,
+                                                   keyid,
+                                                   keyaltname,
+                                                   query_type,
+                                                   contention_factor,
+                                                   range_opts,
+                                                   error);
+   if (!state_machine) {
+      goto fail;
+   }
+
+   to_encrypt_doc = bson_new ();
+   BSON_APPEND_DOCUMENT (to_encrypt_doc, "v", expr_in);
+   to_encrypt_bin = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (to_encrypt_doc), to_encrypt_doc->len);
+   if (!mongocrypt_ctx_explicit_encrypt_expression_init (state_machine->ctx,
+                                                         to_encrypt_bin)) {
+      _ctx_check_error (state_machine->ctx, error, true);
+      goto fail;
+   }
+
+   bson_destroy (&result);
+   if (!_state_machine_run (state_machine, &result, error)) {
+      goto fail;
+   }
+
+   /* extract document */
+   if (!bson_iter_init_find (&iter, &result, "v")) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                      "encrypted result unexpected: no 'v' found");
+      goto fail;
+   } else {
+      bson_t tmp;
+
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         bson_set_error (
+            error,
+            MONGOC_ERROR_CLIENT,
+            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+            "encrypted result unexpected: 'v' is not a document, got: %s",
+            _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+         goto fail;
+      }
+
+      if (!_mongoc_iter_document_as_bson (&iter, &tmp, error)) {
+         goto fail;
+      }
+
+      bson_copy_to (&tmp, expr_out);
    }
 
    ret = true;

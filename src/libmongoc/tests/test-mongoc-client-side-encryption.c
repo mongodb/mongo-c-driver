@@ -3763,7 +3763,7 @@ test_explicit_encryption_range_agg_helper (ee_range_test_fixture *eef_range,
    mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
    mongoc_cursor_t *cursor;
    // run a aggregate command and return the resulting cursor
-   bson_value_t aggregatePayload;
+   bson_t aggregatePayload;
 
    eopts = mongoc_client_encryption_encrypt_opts_new ();
    rangeopts = mongoc_client_encryption_encrypt_range_opts_new ();
@@ -3771,19 +3771,14 @@ test_explicit_encryption_range_agg_helper (ee_range_test_fixture *eef_range,
       eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
    explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
 
-   bson_value_t aggregate_doc = {0};
-   aggregate_doc.value_type = BSON_TYPE_DOCUMENT;
-   aggregate_doc.value.v_doc.data =
-      (uint8_t *) bson_get_data (eef_range->query);
-   aggregate_doc.value.v_doc.data_len = eef_range->query->len;
-
-   ok = mongoc_client_encryption_encrypt (
-      eef->clientEncryption, &aggregate_doc, eopts, &aggregatePayload, &error);
+   ok = mongoc_client_encryption_encrypt_expression (eef->clientEncryption,
+                                                     eef_range->query,
+                                                     eopts,
+                                                     &aggregatePayload,
+                                                     &error);
    ASSERT_OR_PRINT (ok, error);
 
-   bson_t *aggregateBson =
-      bson_new_from_data (aggregatePayload.value.v_doc.data,
-                          (size_t) aggregatePayload.value.v_doc.data_len);
+   bson_t *aggregateBson = bson_copy (&aggregatePayload);
    ASSERT (!bson_empty (aggregateBson));
    bson_t *pipeline = BCON_NEW ("pipeline",
                                 "[",
@@ -3808,7 +3803,7 @@ test_explicit_encryption_range_agg_helper (ee_range_test_fixture *eef_range,
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    bson_destroy (pipeline);
    bson_destroy (aggregateBson);
-   bson_value_destroy (&aggregatePayload);
+   bson_destroy (&aggregatePayload);
    mongoc_client_encryption_encrypt_opts_destroy (eopts);
    mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);
    return cursor;
@@ -3875,7 +3870,7 @@ test_explicit_encryption_range_find_helper (ee_range_test_fixture *eef_range,
    mongoc_client_encryption_encrypt_range_opts_t *rangeopts;
    mongoc_cursor_t *cursor;
    // run a find command and return the resulting cursor
-   bson_value_t findPayload;
+   bson_t findPayload;
    bson_t filter = BSON_INITIALIZER;
 
    eopts = mongoc_client_encryption_encrypt_opts_new ();
@@ -3884,26 +3879,16 @@ test_explicit_encryption_range_find_helper (ee_range_test_fixture *eef_range,
       eopts, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
    explicit_encryption_set_range_opts (eopts, rangeopts, eef, eef_range);
 
-   bson_value_t find_doc = {0};
-   find_doc.value_type = BSON_TYPE_DOCUMENT;
-   find_doc.value.v_doc.data = (uint8_t *) bson_get_data (eef_range->query);
-   find_doc.value.v_doc.data_len = eef_range->query->len;
-
-   ok = mongoc_client_encryption_encrypt (
-      eef->clientEncryption, &find_doc, eopts, &findPayload, &error);
+   ok = mongoc_client_encryption_encrypt_expression (
+      eef->clientEncryption, eef_range->query, eopts, &findPayload, &error);
    ASSERT_OR_PRINT (ok, error);
 
    bson_t *findBson = NULL;
    if (aggExpr) {
-      bson_t *bsonData =
-         bson_new_from_data (findPayload.value.v_doc.data,
-                             (size_t) findPayload.value.v_doc.data_len);
       findBson = bson_new ();
-      BSON_APPEND_DOCUMENT (findBson, "$expr", bsonData);
-      bson_destroy (bsonData);
+      BSON_APPEND_DOCUMENT (findBson, "$expr", &findPayload);
    } else {
-      findBson = bson_new_from_data (findPayload.value.v_doc.data,
-                                     (size_t) findPayload.value.v_doc.data_len);
+      findBson = bson_copy (&findPayload);
    }
    ASSERT (!bson_empty (findBson));
 
@@ -3914,7 +3899,7 @@ test_explicit_encryption_range_find_helper (ee_range_test_fixture *eef_range,
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    bson_destroy (findBson);
-   bson_value_destroy (&findPayload);
+   bson_destroy (&findPayload);
    bson_destroy (&filter);
    mongoc_client_encryption_encrypt_opts_destroy (eopts);
    mongoc_client_encryption_encrypt_range_opts_destroy (rangeopts);

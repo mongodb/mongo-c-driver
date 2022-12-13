@@ -45,6 +45,7 @@ The key vault client, configured via :symbol:`mongoc_client_encryption_opts_set_
     mongoc_client_encryption_remove_key_alt_name
     mongoc_client_encryption_get_key_by_alt_name
     mongoc_client_encryption_encrypt
+    mongoc_client_encryption_encrypt_expression
     mongoc_client_encryption_decrypt
 
 .. seealso::

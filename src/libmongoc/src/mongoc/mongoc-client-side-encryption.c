@@ -930,6 +930,25 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
 }
 
 bool
+mongoc_client_encryption_encrypt_expression (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *expr,
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   bson_t *expr_encrypted,
+   bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (expr);
+   BSON_ASSERT_PARAM (opts);
+   BSON_ASSERT_PARAM (expr_encrypted);
+   BSON_ASSERT (error || true);
+
+   bson_init (expr_encrypted)
+
+      return _disabled_error (error);
+}
+
+bool
 mongoc_client_encryption_decrypt (mongoc_client_encryption_t *client_encryption,
                                   const bson_value_t *ciphertext,
                                   bson_value_t *value,
@@ -2786,6 +2805,49 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
    ret = true;
 fail:
    RETURN (ret);
+}
+
+
+bool
+mongoc_client_encryption_encrypt_expression (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *expr,
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   bson_t *expr_encrypted,
+   bson_error_t *error)
+{
+   ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (expr);
+   BSON_ASSERT_PARAM (opts);
+   BSON_ASSERT_PARAM (expr_encrypted);
+   BSON_ASSERT (error || true);
+
+   bson_init (expr_encrypted);
+
+   bson_t range_opts = BSON_INITIALIZER;
+   if (opts->range_opts) {
+      append_bson_range_opts (&range_opts, opts);
+   }
+
+   if (!_mongoc_crypt_explicit_encrypt_expression (
+          client_encryption->crypt,
+          client_encryption->keyvault_coll,
+          opts->algorithm,
+          &opts->keyid,
+          opts->keyaltname,
+          opts->query_type,
+          opts->contention_factor.set ? &opts->contention_factor.value : NULL,
+          &range_opts,
+          expr,
+          expr_encrypted,
+          error)) {
+      bson_destroy (&range_opts);
+      RETURN (false);
+   }
+   bson_destroy (&range_opts);
+   RETURN (true);
 }
 
 bool
