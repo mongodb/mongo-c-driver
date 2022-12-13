@@ -3000,19 +3000,20 @@ mongoc_client_encryption_create_encrypted_collection (
          // We only care about the "fields" array
          when (not(key ("fields")), appendTo (new_encryptedFields)),
          // Automaticall fill in the "keyId" no each field:
-         else(storeDocRef (fields_ref), do({
-                 bson_t new_fields = BSON_INITIALIZER;
-                 // Create the new fields, filling out the 'keyId'
-                 // automatically:
-                 if (!_mongoc_encryptedFields_fill_auto_datakeys (
-                        &new_fields, &fields_ref, _auto_datakey, &ctx, error)) {
-                    bsonParseError = "Error creating datakeys";
-                 } else {
-                    BSON_APPEND_ARRAY (
-                       &new_encryptedFields, "fields", &new_fields);
-                    bson_destroy (&new_fields);
-                 }
-              }))));
+         else (
+            storeDocRef (fields_ref), do ({
+               bson_t new_fields = BSON_INITIALIZER;
+               // Create the new fields, filling out the 'keyId'
+               // automatically:
+               if (!_mongoc_encryptedFields_fill_auto_datakeys (
+                      &new_fields, &fields_ref, _auto_datakey, &ctx, error)) {
+                  bsonParseError = "Error creating datakeys";
+               } else {
+                  BSON_APPEND_ARRAY (
+                     &new_encryptedFields, "fields", &new_fields);
+                  bson_destroy (&new_fields);
+               }
+            }))));
    if (bsonParseError) {
       // Error creating the new datakeys.
       // `error` was set by _mongoc_encryptedFields_fill_auto_datakeys
@@ -3067,7 +3068,7 @@ _init_1_encryptedField (bson_t *out_field,
       if (not(keyWithType ("keyId", null)),
           then (appendTo (*out_field), continue)),
       // Otherwise:
-      do({
+      do ({
          // Set up factory context
          bson_value_t new_key = {0};
          struct auto_datakey_context ctx = {
@@ -3113,7 +3114,7 @@ _init_encryptedFields (bson_t *out_fields,
          kv (
             bson_iter_key (&bsonVisitIter),
             // Construct the encryptedField document from the input:
-            doc (do(_init_1_encryptedField (
+            doc (do (_init_1_encryptedField (
                bsonBuildContext.doc, &cur_field, fac, fac_userdata, error))))));
    if (error && error->code == 0) {
       // The factory/internal code did not set error, so we may have to set it
