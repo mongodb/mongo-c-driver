@@ -6772,9 +6772,10 @@ test_auto_datakeys (void *unused)
       require (
          keyWithType ("0", doc), //
          parse (require (allOf (key ("keyId"), strEqual ("keepme")), nop))),
-      require (keyWithType ("1", doc),
-               parse (require (allOf (keyWithType ("keyId", int32)),
-                               do(ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
+      require (
+         keyWithType ("1", doc),
+         parse (require (allOf (keyWithType ("keyId", int32)),
+                         do (ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
    ASSERT (bsonParseError == NULL);
    bson_destroy (&out_fields);
 
@@ -6978,7 +6979,7 @@ test_create_encrypted_collection_bad_keyId (void *unused)
                       doc (kv ("fields",
                                array (doc (kv ("path", cstr ("ssn")),
                                            kv ("bsonType", cstr ("string")),
-                                           kv ("keyId", bool(true))))))));
+                                           kv ("keyId", bool (true))))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    mongoc_client_encryption_datakey_opts_t *const dkOpts =
       mongoc_client_encryption_datakey_opts_new ();
