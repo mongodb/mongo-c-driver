@@ -17436,7 +17436,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17468,7 +17468,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17500,7 +17500,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17532,7 +17532,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17565,7 +17565,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17598,7 +17598,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17631,7 +17631,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17663,7 +17663,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17695,7 +17695,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17727,7 +17727,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17760,7 +17760,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17793,7 +17793,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17826,7 +17826,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17858,7 +17858,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17890,7 +17890,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17922,7 +17922,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17955,7 +17955,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17988,7 +17988,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18021,7 +18021,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18053,7 +18053,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18085,7 +18085,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18117,7 +18117,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18150,7 +18150,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18183,7 +18183,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18216,7 +18216,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18248,7 +18248,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18280,7 +18280,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18312,7 +18312,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18345,7 +18345,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18378,7 +18378,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18411,7 +18411,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18443,7 +18443,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18475,7 +18475,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18507,7 +18507,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18540,7 +18540,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18573,7 +18573,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18606,7 +18606,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18638,7 +18638,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18670,7 +18670,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18702,7 +18702,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18735,7 +18735,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18768,7 +18768,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18801,7 +18801,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18833,7 +18833,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18865,7 +18865,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18897,7 +18897,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18930,7 +18930,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18963,7 +18963,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18996,7 +18996,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19028,7 +19028,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19060,7 +19060,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19092,7 +19092,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19125,7 +19125,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19158,7 +19158,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19191,7 +19191,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19223,7 +19223,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19255,7 +19255,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19287,7 +19287,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19319,7 +19319,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19351,7 +19351,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19383,7 +19383,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19415,7 +19415,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19447,7 +19447,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19479,7 +19479,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19512,7 +19512,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19545,7 +19545,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19578,7 +19578,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19610,7 +19610,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19642,7 +19642,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19674,7 +19674,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19707,7 +19707,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19740,7 +19740,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19773,7 +19773,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19805,7 +19805,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19837,7 +19837,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19869,7 +19869,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19901,7 +19901,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19933,7 +19933,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19965,7 +19965,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19997,7 +19997,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20029,7 +20029,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20061,7 +20061,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20094,7 +20094,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20127,7 +20127,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20160,7 +20160,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20192,7 +20192,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20224,7 +20224,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20256,7 +20256,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20289,7 +20289,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20322,7 +20322,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20355,7 +20355,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20387,7 +20387,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20419,7 +20419,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20451,7 +20451,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20483,7 +20483,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20515,7 +20515,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20547,7 +20547,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20579,7 +20579,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20611,7 +20611,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20643,7 +20643,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20676,7 +20676,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20709,7 +20709,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20742,7 +20742,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20774,7 +20774,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20806,7 +20806,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20838,7 +20838,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20871,7 +20871,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20904,7 +20904,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20937,7 +20937,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20969,7 +20969,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21001,7 +21001,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21033,7 +21033,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21065,7 +21065,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21097,7 +21097,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21129,7 +21129,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21161,7 +21161,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21193,7 +21193,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21225,7 +21225,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21258,7 +21258,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21291,7 +21291,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21324,7 +21324,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21356,7 +21356,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21388,7 +21388,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21420,7 +21420,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21453,7 +21453,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21486,7 +21486,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21519,7 +21519,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21551,7 +21551,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21583,7 +21583,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21615,7 +21615,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21647,7 +21647,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21679,7 +21679,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21711,7 +21711,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21743,7 +21743,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21775,7 +21775,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21807,7 +21807,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21840,7 +21840,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21873,7 +21873,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21906,7 +21906,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21938,7 +21938,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21970,7 +21970,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22002,7 +22002,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22035,7 +22035,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22068,7 +22068,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22101,7 +22101,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22133,7 +22133,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22165,7 +22165,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22197,7 +22197,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22229,7 +22229,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22261,7 +22261,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22293,7 +22293,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22325,7 +22325,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22357,7 +22357,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22389,7 +22389,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22422,7 +22422,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22455,7 +22455,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22488,7 +22488,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22520,7 +22520,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22552,7 +22552,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22584,7 +22584,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22617,7 +22617,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22650,7 +22650,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22683,7 +22683,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22715,7 +22715,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22747,7 +22747,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22779,7 +22779,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22811,7 +22811,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22843,7 +22843,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22875,7 +22875,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22907,7 +22907,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22939,7 +22939,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -22971,7 +22971,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23004,7 +23004,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23037,7 +23037,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23070,7 +23070,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23102,7 +23102,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23134,7 +23134,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23166,7 +23166,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23199,7 +23199,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23232,7 +23232,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23265,7 +23265,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23297,7 +23297,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23329,7 +23329,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23361,7 +23361,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23393,7 +23393,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23425,7 +23425,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23457,7 +23457,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23490,7 +23490,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23523,7 +23523,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23556,7 +23556,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23588,7 +23588,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23620,7 +23620,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23652,7 +23652,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23685,7 +23685,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23718,7 +23718,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23751,7 +23751,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23783,7 +23783,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23815,7 +23815,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23847,7 +23847,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23880,7 +23880,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -23913,7 +23913,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off bash .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'

@@ -21,8 +21,6 @@
 # CDRIVER_ROOT
 #   Optional. The path to mongo-c-driver source (may be same as CDRIVER_BUILD).
 #   Defaults to $(pwd)
-# SKIP_PIP_INSTALL
-#   Optional. Skip pip install for required packages for mock responder.
 #
 # Example:
 # TEST_COLUMN=TEST_1 CERT_TYPE=rsa ./run-ocsp-test.sh
@@ -44,7 +42,6 @@ echo "CERT_TYPE=$CERT_TYPE"
 echo "USE_DELEGATE=$USE_DELEGATE"
 echo "CDRIVER_ROOT=$CDRIVER_ROOT"
 echo "CDRIVER_BUILD=$CDRIVER_BUILD"
-echo "SKIP_PIP_INSTALL=$SKIP_PIP_INSTALL"
 
 # Make paths absolute
 CDRIVER_ROOT=$(cd "$CDRIVER_ROOT"; pwd)
@@ -75,24 +72,14 @@ fi
 
 if [ -n "$RESPONDER_REQUIRED" ]; then
     echo "Starting mock responder"
-    if [ -z "$SKIP_PIP_INSTALL" ]; then
-        echo "Installing python dependencies"
-        # Installing dependencies.
-        if [ "$OS" = "WINDOWS" ]; then
-            /cygdrive/c/python/Python36/python --version
-            /cygdrive/c/python/Python36/python -m virtualenv venv_ocsp
-            PYTHON="$(pwd)/venv_ocsp/Scripts/python"
-        else
-            /opt/mongodbtoolchain/v3/bin/python3 -m venv ./venv_ocsp
-            PYTHON="$(pwd)/venv_ocsp/bin/python"
-        fi
-
-        REQUIREMENTS="requirements.txt"
-        if [ ! -f "$REQUIREMENTS" ]; then
-           curl https://raw.githubusercontent.com/mongodb-labs/drivers-evergreen-tools/master/.evergreen/ocsp/mock-ocsp-responder-requirements.txt -o $REQUIREMENTS
-        fi
-        $PYTHON -m pip install -r $REQUIREMENTS
+    if [ ! -d "../drivers-evergreen-tools" ]; then
+        git clone --depth=1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
     fi
+
+    pushd ../drivers-evergreen-tools/.evergreen/ocsp
+    . ./activate-ocspvenv.sh
+    popd # ../drivers-evergreen-tools/.evergreen/ocsp
+
     cd "$CDRIVER_ROOT/.evergreen/ocsp/$CERT_TYPE"
     if [ "$RESPONDER_REQUIRED" = "invalid" ]; then
         FAULT="--fault revoked"
