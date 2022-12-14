@@ -99,47 +99,38 @@ export ORCHESTRATION_URL="http://localhost:8889/v1/${TOPOLOGY}s"
 export TMPDIR=$MONGO_ORCHESTRATION_HOME/db
 echo From shell `date` > $MONGO_ORCHESTRATION_HOME/server.log
 
+if [ ! -d ../drivers-evergreen-tools ]; then
+   git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
+fi
+. ../drivers-evergreen-tools/.evergreen/find-python3.sh
+. ../drivers-evergreen-tools/.evergreen/venv-utils.sh
+
 case "$OS" in
    cygwin*)
-      PYTHON=python.exe
       # Python has problems with unix style paths in cygwin. Must use c:\\ paths
       rm -rf /cygdrive/c/mongodb
       cp -r mongodb /cygdrive/c/mongodb
       echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
 
       # Make sure MO is running latest version
-      $PYTHON -m virtualenv venv
+      venvcreate "$(find_python3)" venv
+      PYTHON="python"
       cd venv
-      . Scripts/activate
       rm -rf mongo-orchestration
       git clone --depth 1 git@github.com:10gen/mongo-orchestration.git
       cd mongo-orchestration
-      pip install .
+      python -m pip install .
       cd ../..
       ls `pwd`/mongodb/bin/mongo* || true
       nohup mongo-orchestration -f orchestration.config -e default --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern -s wsgiref start > $MONGO_ORCHESTRATION_HOME/out.log 2> $MONGO_ORCHESTRATION_HOME/err.log < /dev/null &
       ;;
    *)
       echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-      if [ -f /opt/python/2.7/bin/python ]; then
-         # Python toolchain installation.
-         PYTHON=/opt/python/2.7/bin/python
-      elif [ "x$(lsb_release -cs)" = "xtrusty" -a -f /opt/mongodbtoolchain/v2/bin/python ]; then
-         # Python toolchain installation.
-         PYTHON=/opt/mongodbtoolchain/v2/bin/python
-      else
-         PYTHON=python
-      fi
 
-      PIP=pip
-      if ! $PYTHON -c "import virtualenv" ; then
-         PYTHON=python3
-         PIP=pip3
-      fi
-
-      $PYTHON -m virtualenv venv
+      venvcreate "$(find_python3)" venv
+      PYTHON="python"
+      PIP="python -m pip"
       cd venv
-      . bin/activate
       rm -rf mongo-orchestration
       # Make sure MO is running latest version
       git clone --depth 1 git@github.com:10gen/mongo-orchestration.git
@@ -155,15 +146,26 @@ case "$OS" in
       ;;
 esac
 
-sleep 15
-echo "Checking that mongo-orchestration is running"
-curl http://localhost:8889/ -sS --max-time 120 --fail | python -m json.tool
+echo "Waiting for mongo-orchestration to start..."
+wait_for_mongo_orchestration() {
+   for i in $(seq 300); do
+      # Exit code 7: "Failed to connect to host".
+      if curl -s "localhost:$1"; test $? -ne 7; then
+         return 0
+      else
+         sleep 1
+      fi
+   done
+   echo "Could not detect mongo-orchestration on port $1"
+   return 1
+}
+wait_for_mongo_orchestration 8889
+echo "Waiting for mongo-orchestration to start... done."
 
+curl http://localhost:8889/ -sS --fail
 sleep 5
-
 pwd
-curl -sS --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" --max-time 300 --fail | python -m json.tool
-
+curl -sS --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" --fail
 sleep 15
 
 if [ "$AUTH" = "auth" ]; then
