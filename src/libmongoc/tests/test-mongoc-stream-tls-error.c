@@ -93,8 +93,7 @@ static BSON_THREAD_FUN (ssl_error_server, ptr)
       break;
    case SSL_TEST_BEHAVIOR_NORMAL:
    default:
-      fprintf (stderr, "unimplemented ssl_test_behavior_t\n");
-      abort ();
+      test_error ("unimplemented ssl_test_behavior_t");
    }
 
    data->server_result->result = SSL_TEST_SUCCESS;
@@ -281,10 +280,8 @@ static BSON_THREAD_FUN (handshake_stall_client, ptr)
    duration_ms = (bson_get_monotonic_time () - start_time) / 1000;
 
    if (llabs (duration_ms - connect_timeout_ms) > 100) {
-      fprintf (stderr,
-               "expected timeout after about 200ms, not %" PRId64 "\n",
-               duration_ms);
-      abort ();
+      test_error ("expected timeout after about 200ms, not %" PRId64,
+                  duration_ms);
    }
 
    data->client_result->result = SSL_TEST_SUCCESS;

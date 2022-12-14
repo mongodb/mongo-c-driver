@@ -72,12 +72,9 @@ assert_host_in_uri (const mongoc_host_list_t *host, const mongoc_uri_t *uri)
       hosts = hosts->next;
    }
 
-   fprintf (stderr,
-            "Host \"%s\" not in \"%s\"",
-            host->host_and_port,
-            mongoc_uri_get_string (uri));
-   fflush (stderr);
-   abort ();
+   test_error ("Host \"%s\" not in \"%s\"",
+               host->host_and_port,
+               mongoc_uri_get_string (uri));
 }
 
 

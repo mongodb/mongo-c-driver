@@ -262,11 +262,8 @@ test_mongoc_matcher_logic_ops (void)
       test = tests[i];
       spec = bson_new_from_json ((uint8_t *) test.spec, -1, &error);
       if (!spec) {
-         fprintf (stderr,
-                  "couldn't parse JSON query:\n\n%s\n\n%s\n",
-                  test.spec,
-                  error.message);
-         abort ();
+         test_error (
+            "couldn't parse JSON query:\n\n%s\n\n%s", test.spec, error.message);
       }
 
       matcher = mongoc_matcher_new (spec, &error);
@@ -274,21 +271,17 @@ test_mongoc_matcher_logic_ops (void)
 
       doc = bson_new_from_json ((uint8_t *) test.doc, -1, &error);
       if (!doc) {
-         fprintf (stderr,
-                  "couldn't parse JSON document:\n\n%s\n\n%s\n",
-                  test.doc,
-                  error.message);
-         abort ();
+         test_error ("couldn't parse JSON document:\n\n%s\n\n%s",
+                     test.doc,
+                     error.message);
       }
 
       r = mongoc_matcher_match (matcher, doc);
       if (test.match != r) {
-         fprintf (stderr,
-                  "query:\n\n%s\n\nshould %shave matched:\n\n%s\n",
-                  test.match ? "" : "not ",
-                  test.spec,
-                  test.doc);
-         abort ();
+         test_error ("query:\n\n%s\n\nshould %shave matched:\n\n%s",
+                     test.match ? "" : "not ",
+                     test.spec,
+                     test.doc);
       }
 
       mongoc_matcher_destroy (matcher);

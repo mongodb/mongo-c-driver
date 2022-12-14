@@ -47,11 +47,9 @@ _topology_has_description (const mongoc_topology_description_t *topology,
       } else if (strcmp ("type", bson_iter_key (&server_iter)) == 0) {
          server_type = bson_iter_utf8 (&server_iter, NULL);
          if (sd->type != server_type_from_test (server_type)) {
-            fprintf (stderr,
-                     "expected server type %s not %s\n",
-                     server_type,
-                     mongoc_server_description_type (sd));
-            abort ();
+            test_error ("expected server type %s not %s",
+                        server_type,
+                        mongoc_server_description_type (sd));
          }
       } else if (strcmp ("setVersion", bson_iter_key (&server_iter)) == 0) {
          int64_t expected_set_version;

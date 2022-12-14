@@ -220,10 +220,8 @@ _make_gcp_kms_provider (bson_t *kms_providers)
       test_framework_getenv_required ("MONGOC_TEST_GCP_PRIVATEKEY");
 
    if (!gcp_email || !gcp_privatekey) {
-      fprintf (stderr,
-               "Set MONGOC_TEST_GCP_EMAIL and MONGOC_TEST_GCP_PRIVATEKEY to "
-               "enable CSFLE tests.");
-      abort ();
+      test_error ("Set MONGOC_TEST_GCP_EMAIL and MONGOC_TEST_GCP_PRIVATEKEY to "
+                  "enable CSFLE tests.");
    }
 
    if (!kms_providers) {
@@ -5482,9 +5480,10 @@ test_auto_datakeys (void *unused)
       require (
          keyWithType ("0", doc), //
          parse (require (allOf (key ("keyId"), strEqual ("keepme")), nop))),
-      require (keyWithType ("1", doc),
-               parse (require (allOf (keyWithType ("keyId", int32)),
-                               do(ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
+      require (
+         keyWithType ("1", doc),
+         parse (require (allOf (keyWithType ("keyId", int32)),
+                         do (ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
    ASSERT (bsonParseError == NULL);
    bson_destroy (&out_fields);
 

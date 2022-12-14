@@ -320,11 +320,10 @@ test_framework_getenv_bool (const char *name)
       } else if (!strcasecmp (value, "") || !strcasecmp (value, "on")) {
          ret = true;
       } else {
-         fprintf (stderr,
-                  "Unrecognized value for %s: \"%s\". Use \"on\" or \"off\".\n",
-                  name,
-                  value);
-         abort ();
+         test_error (
+            "Unrecognized value for %s: \"%s\". Use \"on\" or \"off\".",
+            name,
+            value);
       }
    }
 
@@ -360,7 +359,7 @@ test_framework_getenv_int64 (const char *name, int64_t default_value)
       ret = bson_ascii_strtoll (value, &endptr, 10);
       if (errno) {
          perror (bson_strdup_printf ("Parsing %s from environment", name));
-         abort ();
+         test_error ("Failed to parse %s as int64", name);
       }
 
       bson_free (value);
@@ -660,18 +659,14 @@ test_framework_get_user_password (char **user, char **password)
    *password = test_framework_get_admin_password ();
 
    if ((*user && !*password) || (!*user && *password)) {
-      fprintf (stderr,
-               "Specify both MONGOC_TEST_USER and"
-               " MONGOC_TEST_PASSWORD, or neither\n");
-      abort ();
+      test_error ("Specify both MONGOC_TEST_USER and"
+                  " MONGOC_TEST_PASSWORD, or neither");
    }
 
 #ifndef MONGOC_ENABLE_CRYPTO
    if (*user && *password) {
-      fprintf (stderr,
-               "You need to configure with ENABLE_SSL"
-               " when providing user+password (for SCRAM-SHA-1)\n");
-      abort ();
+      test_error ("You need to configure with ENABLE_SSL"
+                  " when providing user+password (for SCRAM-SHA-1)");
    }
 #endif
 
@@ -937,9 +932,10 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
              NULL,
              reply,
              &error)) {
-         fprintf (stderr, "error calling legacy hello: '%s'\n", error.message);
-         fprintf (stderr, "URI = %s\n", uri_str);
-         abort ();
+         test_error ("error calling legacy hello: '%s'\n"
+                     "URI = %s",
+                     error.message,
+                     uri_str);
       }
    }
 
@@ -1436,10 +1432,9 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
 
    if (test_framework_get_ssl ()) {
 #ifndef MONGOC_ENABLE_SSL
-      fprintf (stderr,
-               "SSL test config variables are specified in the environment, but"
-               " SSL isn't enabled\n");
-      abort ();
+      test_error (
+         "SSL test config variables are specified in the environment, but"
+         " SSL isn't enabled");
 #else
       mongoc_client_set_ssl_opts (client, &gSSLOptions);
 #endif
@@ -1669,10 +1664,9 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 
    if (test_framework_get_ssl ()) {
 #ifndef MONGOC_ENABLE_SSL
-      fprintf (stderr,
-               "SSL test config variables are specified in the environment, but"
-               " SSL isn't enabled\n");
-      abort ();
+      test_error (
+         "SSL test config variables are specified in the environment, but"
+         " SSL isn't enabled");
 #else
       mongoc_client_pool_set_ssl_opts (pool, &gSSLOptions);
 #endif

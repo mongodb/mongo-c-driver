@@ -45,8 +45,7 @@ session_from_name (json_test_ctx_t *ctx, const char *session_name)
    } else if (!strcmp (session_name, "session1")) {
       return ctx->sessions[1];
    } else {
-      MONGOC_ERROR ("Unrecognized session name: %s", session_name);
-      abort ();
+      test_error ("Unrecognized session name: %s", session_name);
    }
 }
 
@@ -794,7 +793,6 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk,
          bulk, &filter, &update, &opts, error);
    } else {
       test_error ("unrecognized request name %s", name);
-      abort ();
    }
 
    bson_destroy (&opts);
@@ -957,7 +955,6 @@ single_write (mongoc_collection_t *collection,
          collection, &filter, &update, &opts, reply, &error);
    } else {
       test_error ("unrecognized request name %s", name);
-      abort ();
    }
 
    value_init_from_doc (&value, reply);
