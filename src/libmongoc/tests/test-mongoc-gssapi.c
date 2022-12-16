@@ -72,7 +72,9 @@ static BSON_THREAD_FUN (gssapi_kerberos_worker, data)
       client = mongoc_client_pool_pop (pool);
       if (!mongoc_client_command_with_opts (
              client, "test", cmd, NULL, NULL, NULL, &error)) {
+         fflush (stdout);
          fprintf (stderr, "ping command failed: %s\n", error.message);
+         fflush (stderr);
          abort ();
       }
       bson_destroy (cmd);
@@ -82,7 +84,9 @@ static BSON_THREAD_FUN (gssapi_kerberos_worker, data)
 
       if (!mongoc_cursor_next (cursor, &doc) &&
           mongoc_cursor_error (cursor, &error)) {
+         fflush (stdout);
          fprintf (stderr, "Cursor Failure: %s\n", error.message);
+         fflush (stderr);
          abort ();
       }
 

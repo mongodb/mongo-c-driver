@@ -459,12 +459,9 @@ test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
          BSON_ASSERT (!bson_empty0 (test->cluster_time));
          bson_iter_bson (&iter, &client_cluster_time);
          if (!bson_equal (test->cluster_time, &client_cluster_time)) {
-            fprintf (stderr,
-                     "Unequal clusterTimes.\nServer sent %s\nClient sent %s\n",
-                     bson_as_json (test->cluster_time, NULL),
-                     bson_as_json (&client_cluster_time, NULL));
-
-            abort ();
+            test_error ("Unequal clusterTimes.\nServer sent %s\nClient sent %s",
+                        bson_as_json (test->cluster_time, NULL),
+                        bson_as_json (&client_cluster_time, NULL));
          }
 
          bson_destroy (&client_cluster_time);
@@ -813,13 +810,11 @@ receives_with_cluster_time (mock_server_t *server,
    BSON_ASSERT (BSON_ITER_HOLDS_TIMESTAMP (&cluster_time));
    bson_iter_timestamp (&cluster_time, &t, &i);
    if (t != timestamp || i != increment) {
-      fprintf (stderr,
-               "Expected Timestamp(%d, %d), got Timestamp(%d, %d)\n",
-               timestamp,
-               increment,
-               t,
-               i);
-      abort ();
+      test_error ("Expected Timestamp(%d, %d), got Timestamp(%d, %d)",
+                  timestamp,
+                  increment,
+                  t,
+                  i);
    }
 
    return request;

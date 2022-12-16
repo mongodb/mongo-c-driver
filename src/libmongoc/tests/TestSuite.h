@@ -129,12 +129,13 @@ bson_open (const char *filename, int flags, ...)
 void
 _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
-#define test_error(...)                                                 \
-   if (1) {                                                             \
-      MONGOC_STDERR_PRINTF (                                            \
-         "test error in: %s %d:%s()\n", __FILE__, __LINE__, BSON_FUNC); \
-      _test_error (__VA_ARGS__);                                        \
-   } else                                                               \
+#define test_error(...)                                                    \
+   if (1) {                                                                \
+      MONGOC_STDERR_PRINTF (                                               \
+         "test error in: %s %d:%s()\n", __FILE__, __LINE__, BSON_FUNC);    \
+      _test_error (__VA_ARGS__);                                           \
+      abort (); /* suppress missing return errors in non-void functions */ \
+   } else                                                                  \
       ((void) 0)
 
 #define bson_eq_bson(bson, expected)                                          \

@@ -35,8 +35,7 @@ test_topology_scanner_helper (uint32_t id,
    BSON_UNUSED (rtt_msec);
 
    if (error->code) {
-      fprintf (stderr, "scanner error: %s\n", error->message);
-      abort ();
+      test_error ("scanner error: %s", error->message);
    }
 
    /* mock servers are configured to return distinct wire versions */

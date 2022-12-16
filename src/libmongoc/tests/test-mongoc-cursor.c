@@ -61,7 +61,6 @@ _test_common_get_host (void *ctx)
    ret = mongoc_cursor_next (cursor, &doc);
    if (!ret && mongoc_cursor_error (cursor, &err)) {
       test_error ("%s", err.message);
-      abort ();
    }
    mongoc_cursor_get_host (cursor, &cursor_host);
    /* In a production deployment the driver can discover servers not in the seed
@@ -780,8 +779,7 @@ _test_kill_cursors (bool pooled)
 
    if (!future_get_bool (future)) {
       mongoc_cursor_error (cursor, &error);
-      fprintf (stderr, "%s\n", error.message);
-      abort ();
+      test_error ("%s", error.message);
    };
 
    ASSERT_MATCH (doc, "{'b': 1}");

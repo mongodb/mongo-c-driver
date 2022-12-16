@@ -121,9 +121,7 @@ tmp_bson (const char *json, ...)
       doc = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
 
       if (!doc) {
-         fprintf (
-            stderr, "tmp_bson error %s: parsing: %s\n", error.message, json);
-         abort ();
+         test_error ("tmp_bson error %s: parsing: %s", error.message, json);
       }
 
       bson_free (formatted);
@@ -178,9 +176,7 @@ bson_lookup (const bson_t *bson, const char *path, bson_iter_t *out)
 
    bson_iter_init (&iter, bson);
    if (!bson_iter_find_descendant (&iter, path, out)) {
-      fprintf (
-         stderr, "'%s' field not found in BSON: %s", path, tmp_json (bson));
-      abort ();
+      test_error ("'%s' field not found in BSON: %s", path, tmp_json (bson));
    }
 }
 /*--------------------------------------------------------------------------
@@ -470,7 +466,6 @@ bson_lookup_read_prefs (const bson_t *b, const char *key)
       mode = MONGOC_READ_NEAREST;
    } else {
       test_error ("Bad readPreference: {\"mode\": \"%s\"}.", str);
-      abort ();
    }
 
    return mongoc_read_prefs_new (mode);
@@ -757,8 +752,7 @@ match_json (const bson_t *doc,
    pattern = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
 
    if (!pattern) {
-      fprintf (stderr, "couldn't parse JSON: %s\n", error.message);
-      abort ();
+      test_error ("couldn't parse JSON: %s", error.message);
    }
 
    ctx.is_command = is_command;
@@ -1243,8 +1237,7 @@ get_type_operator (const bson_value_t *value, bson_type_t *out)
       } else if (0 == strcasecmp ("maxKey", value_string)) {
          *out = BSON_TYPE_MAXKEY;
       } else {
-         fprintf (stderr, "unrecognized $$type value: %s\n", value_string);
-         abort ();
+         test_error ("unrecognized $$type value: %s", value_string);
       }
       return true;
    }
@@ -1342,7 +1335,6 @@ bson_value_as_int64 (const bson_value_t *value)
    } else {
       test_error ("bson_value_as_int64 called on value of type %d",
                   value->value_type);
-      abort ();
    }
 }
 
@@ -1583,7 +1575,6 @@ match_bson_value (const bson_value_t *doc,
       test_error ("unexpected value type %d: %s",
                   doc->value_type,
                   _mongoc_bson_type_to_str (doc->value_type));
-      abort ();
    }
 
    if (!ret) {
@@ -1701,11 +1692,9 @@ assert_no_duplicate_keys (const bson_t *doc)
    while (bson_iter_next (&iter)) {
       if (mongoc_set_find_item (
              keys, find_key, (void *) bson_iter_key (&iter))) {
-         fprintf (stderr,
-                  "Duplicate key \"%s\" in document:\n%s",
-                  bson_iter_key (&iter),
-                  bson_as_json (doc, NULL));
-         abort ();
+         test_error ("Duplicate key \"%s\" in document:\n%s",
+                     bson_iter_key (&iter),
+                     bson_as_json (doc, NULL));
       }
 
       mongoc_set_add (keys, 0 /* index */, (void *) bson_iter_key (&iter));

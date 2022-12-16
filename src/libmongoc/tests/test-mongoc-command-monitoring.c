@@ -44,10 +44,9 @@ check_operation_ids (const bson_t *events)
          if (first_operation_id == -1) {
             first_operation_id = operation_id;
          } else if (operation_id != first_operation_id) {
-            MONGOC_ERROR (
+            test_error (
                "%s sent wrong operation_id",
                bson_lookup_utf8 (&event, "command_started_event.command_name"));
-            abort ();
          }
       }
    }

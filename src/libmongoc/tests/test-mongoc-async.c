@@ -39,13 +39,8 @@ get_localhost_stream (uint16_t port)
 
    errcode = mongoc_socket_errno (conn_sock);
    if (!(r == 0 || MONGOC_ERRNO_IS_AGAIN (errcode))) {
-      fprintf (stderr,
-               "mongoc_socket_connect unexpected return: "
-               "%d (errno: %d)\n",
-               r,
-               errcode);
-      fflush (stderr);
-      abort ();
+      test_error (
+         "mongoc_socket_connect unexpected return: %d (errno: %d)", r, errcode);
    }
 
    return mongoc_stream_socket_new (conn_sock);
@@ -190,8 +185,7 @@ test_hello_impl (bool with_ssl)
 
    for (i = 0; i < NSERVERS; i++) {
       if (!results[i].finished) {
-         fprintf (stderr, "command %d not finished\n", i);
-         abort ();
+         test_error ("command %d not finished", i);
       }
 
       ASSERT_CMPINT (i, ==, results[i].server_id);

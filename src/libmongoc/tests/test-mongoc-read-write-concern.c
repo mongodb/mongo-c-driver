@@ -136,9 +136,8 @@ test_rw_concern_uri (bson_t *scenario)
       valid = _mongoc_lookup_bool (&test, "valid", true);
 
       if (_mongoc_lookup_bool (&test, "warning", false)) {
-         MONGOC_ERROR ("update the \"%s\" test to handle warning: true",
-                       description);
-         abort ();
+         test_error ("update the \"%s\" test to handle warning: true",
+                     description);
       }
 
       uri = mongoc_uri_new_with_error (uri_str, NULL);

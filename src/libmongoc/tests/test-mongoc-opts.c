@@ -135,27 +135,27 @@ func_ctx_cleanup (func_ctx_t *ctx)
    mongoc_write_concern_destroy (wc); \
    mongoc_read_prefs_destroy (prefs);
 
-#define SET_OPT(_type)                                     \
-   static void set_##_type##_opt (mongoc_##_type##_t *obj, \
-                                  opt_type_t opt_type)     \
-   {                                                       \
-      SET_OPT_PREAMBLE (_type);                            \
-                                                           \
-      switch (opt_type) {                                  \
-      case OPT_READ_CONCERN:                               \
-         mongoc_##_type##_set_read_concern (obj, rc);      \
-         break;                                            \
-      case OPT_WRITE_CONCERN:                              \
-         mongoc_##_type##_set_write_concern (obj, wc);     \
-         break;                                            \
-      case OPT_READ_PREFS:                                 \
-         mongoc_##_type##_set_read_prefs (obj, prefs);     \
-         break;                                            \
-      default:                                             \
-         abort ();                                         \
-      }                                                    \
-                                                           \
-      SET_OPT_CLEANUP;                                     \
+#define SET_OPT(_type)                                        \
+   static void set_##_type##_opt (mongoc_##_type##_t *obj,    \
+                                  opt_type_t opt_type)        \
+   {                                                          \
+      SET_OPT_PREAMBLE (_type);                               \
+                                                              \
+      switch (opt_type) {                                     \
+      case OPT_READ_CONCERN:                                  \
+         mongoc_##_type##_set_read_concern (obj, rc);         \
+         break;                                               \
+      case OPT_WRITE_CONCERN:                                 \
+         mongoc_##_type##_set_write_concern (obj, wc);        \
+         break;                                               \
+      case OPT_READ_PREFS:                                    \
+         mongoc_##_type##_set_read_prefs (obj, prefs);        \
+         break;                                               \
+      default:                                                \
+         test_error ("invalid opt_type: %d", (int) opt_type); \
+      }                                                       \
+                                                              \
+      SET_OPT_CLEANUP;                                        \
    }
 
 SET_OPT (client)
@@ -181,7 +181,7 @@ set_func_opt (bson_t *opts,
       *prefs_ptr = mongoc_read_prefs_copy (prefs);
       break;
    default:
-      abort ();
+      test_error ("invalid opt_type: %d", (int) opt_type);
    }
 
    SET_OPT_CLEANUP;
@@ -206,8 +206,7 @@ add_expected_opt (opt_source_t opt_source, opt_type_t opt_type, bson_t *cmd)
    } else if (opt_source & OPT_SOURCE_CLIENT) {
       source_name = "client";
    } else {
-      MONGOC_ERROR ("opt_json called with OPT_SOURCE_NONE");
-      abort ();
+      test_error ("opt_json called with OPT_SOURCE_NONE");
    }
 
    switch (opt_type) {
@@ -223,7 +222,7 @@ add_expected_opt (opt_source_t opt_source, opt_type_t opt_type, bson_t *cmd)
          source_name);
       break;
    default:
-      abort ();
+      test_error ("invalid opt_type: %d", (int) opt_type);
    }
 
    bson_concat (cmd, opt);
@@ -241,7 +240,7 @@ opt_type_name (opt_type_t opt_type)
    case OPT_READ_PREFS:
       return "readPrefs";
    default:
-      abort ();
+      test_error ("invalid opt_type: %d", (int) opt_type);
    }
 }
 

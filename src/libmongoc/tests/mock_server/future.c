@@ -14,14 +14,23 @@
  *************************************************/
 /* clang-format off */
 
+#define FUTURE_TIMEOUT_ABORT                         \
+   if (1) {                                          \
+      fflush (stdout);                               \
+      fprintf (stderr, "%s timed out\n", BSON_FUNC); \
+      fflush (stderr);                               \
+      abort ();                                      \
+   } else                                            \
+      ((void) 0)
+
 void
 future_get_void (future_t *future)
 {
-   if (!future_wait (future)) {
-      fprintf (stderr, "%s timed out\n", BSON_FUNC);
-      fflush (stderr);
-      abort ();
+   if (future_wait (future)) {
+      return;
    }
+
+   FUTURE_TIMEOUT_ABORT;
 }
 
 
@@ -32,9 +41,7 @@ future_get_bool (future_t *future)
       return future_value_get_bool (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 char_ptr
@@ -44,9 +51,7 @@ future_get_char_ptr (future_t *future)
       return future_value_get_char_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 char_ptr_ptr
@@ -56,9 +61,7 @@ future_get_char_ptr_ptr (future_t *future)
       return future_value_get_char_ptr_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 int
@@ -68,9 +71,7 @@ future_get_int (future_t *future)
       return future_value_get_int (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 int64_t
@@ -80,9 +81,7 @@ future_get_int64_t (future_t *future)
       return future_value_get_int64_t (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 size_t
@@ -92,9 +91,7 @@ future_get_size_t (future_t *future)
       return future_value_get_size_t (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 ssize_t
@@ -104,9 +101,7 @@ future_get_ssize_t (future_t *future)
       return future_value_get_ssize_t (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 uint32_t
@@ -116,9 +111,7 @@ future_get_uint32_t (future_t *future)
       return future_value_get_uint32_t (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 void_ptr
@@ -128,9 +121,7 @@ future_get_void_ptr (future_t *future)
       return future_value_get_void_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 const_char_ptr
@@ -140,9 +131,7 @@ future_get_const_char_ptr (future_t *future)
       return future_value_get_const_char_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 bool_ptr
@@ -152,9 +141,7 @@ future_get_bool_ptr (future_t *future)
       return future_value_get_bool_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 bson_error_ptr
@@ -164,9 +151,7 @@ future_get_bson_error_ptr (future_t *future)
       return future_value_get_bson_error_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 bson_ptr
@@ -176,9 +161,7 @@ future_get_bson_ptr (future_t *future)
       return future_value_get_bson_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 const_bson_ptr
@@ -188,9 +171,7 @@ future_get_const_bson_ptr (future_t *future)
       return future_value_get_const_bson_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 const_bson_ptr_ptr
@@ -200,9 +181,7 @@ future_get_const_bson_ptr_ptr (future_t *future)
       return future_value_get_const_bson_ptr_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_async_ptr
@@ -212,9 +191,7 @@ future_get_mongoc_async_ptr (future_t *future)
       return future_value_get_mongoc_async_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_bulk_operation_ptr
@@ -224,9 +201,7 @@ future_get_mongoc_bulk_operation_ptr (future_t *future)
       return future_value_get_mongoc_bulk_operation_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_client_ptr
@@ -236,9 +211,7 @@ future_get_mongoc_client_ptr (future_t *future)
       return future_value_get_mongoc_client_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_client_pool_ptr
@@ -248,9 +221,7 @@ future_get_mongoc_client_pool_ptr (future_t *future)
       return future_value_get_mongoc_client_pool_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_collection_ptr
@@ -260,9 +231,7 @@ future_get_mongoc_collection_ptr (future_t *future)
       return future_value_get_mongoc_collection_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_cluster_ptr
@@ -272,9 +241,7 @@ future_get_mongoc_cluster_ptr (future_t *future)
       return future_value_get_mongoc_cluster_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_cmd_parts_ptr
@@ -284,9 +251,7 @@ future_get_mongoc_cmd_parts_ptr (future_t *future)
       return future_value_get_mongoc_cmd_parts_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_cursor_ptr
@@ -296,9 +261,7 @@ future_get_mongoc_cursor_ptr (future_t *future)
       return future_value_get_mongoc_cursor_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_database_ptr
@@ -308,9 +271,7 @@ future_get_mongoc_database_ptr (future_t *future)
       return future_value_get_mongoc_database_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_gridfs_file_ptr
@@ -320,9 +281,7 @@ future_get_mongoc_gridfs_file_ptr (future_t *future)
       return future_value_get_mongoc_gridfs_file_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_gridfs_ptr
@@ -332,9 +291,7 @@ future_get_mongoc_gridfs_ptr (future_t *future)
       return future_value_get_mongoc_gridfs_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_insert_flags_t
@@ -344,9 +301,7 @@ future_get_mongoc_insert_flags_t (future_t *future)
       return future_value_get_mongoc_insert_flags_t (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_iovec_ptr
@@ -356,9 +311,7 @@ future_get_mongoc_iovec_ptr (future_t *future)
       return future_value_get_mongoc_iovec_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_server_stream_ptr
@@ -368,9 +321,7 @@ future_get_mongoc_server_stream_ptr (future_t *future)
       return future_value_get_mongoc_server_stream_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_query_flags_t
@@ -380,9 +331,7 @@ future_get_mongoc_query_flags_t (future_t *future)
       return future_value_get_mongoc_query_flags_t (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 const_mongoc_index_opt_t
@@ -392,9 +341,7 @@ future_get_const_mongoc_index_opt_t (future_t *future)
       return future_value_get_const_mongoc_index_opt_t (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_server_description_ptr
@@ -404,9 +351,7 @@ future_get_mongoc_server_description_ptr (future_t *future)
       return future_value_get_mongoc_server_description_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_ss_optype_t
@@ -416,9 +361,7 @@ future_get_mongoc_ss_optype_t (future_t *future)
       return future_value_get_mongoc_ss_optype_t (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_topology_ptr
@@ -428,9 +371,7 @@ future_get_mongoc_topology_ptr (future_t *future)
       return future_value_get_mongoc_topology_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_write_concern_ptr
@@ -440,9 +381,7 @@ future_get_mongoc_write_concern_ptr (future_t *future)
       return future_value_get_mongoc_write_concern_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_change_stream_ptr
@@ -452,9 +391,7 @@ future_get_mongoc_change_stream_ptr (future_t *future)
       return future_value_get_mongoc_change_stream_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 mongoc_remove_flags_t
@@ -464,9 +401,7 @@ future_get_mongoc_remove_flags_t (future_t *future)
       return future_value_get_mongoc_remove_flags_t (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 const_mongoc_find_and_modify_opts_ptr
@@ -476,9 +411,7 @@ future_get_const_mongoc_find_and_modify_opts_ptr (future_t *future)
       return future_value_get_const_mongoc_find_and_modify_opts_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 const_mongoc_iovec_ptr
@@ -488,9 +421,7 @@ future_get_const_mongoc_iovec_ptr (future_t *future)
       return future_value_get_const_mongoc_iovec_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 const_mongoc_read_prefs_ptr
@@ -500,9 +431,7 @@ future_get_const_mongoc_read_prefs_ptr (future_t *future)
       return future_value_get_const_mongoc_read_prefs_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 const_mongoc_write_concern_ptr
@@ -512,9 +441,7 @@ future_get_const_mongoc_write_concern_ptr (future_t *future)
       return future_value_get_const_mongoc_write_concern_ptr (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", BSON_FUNC);
-   fflush (stderr);
-   abort ();
+   FUTURE_TIMEOUT_ABORT;
 }
 
 
@@ -607,4 +534,3 @@ future_destroy (future_t *future)
    bson_mutex_destroy (&future->mutex);
    bson_free (future);
 }
-

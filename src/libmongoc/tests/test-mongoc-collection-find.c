@@ -82,8 +82,7 @@ _check_cursor (mongoc_cursor_t *cursor, test_collection_find_t *test_data)
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    if (i != test_data->n_results) {
-      fprintf (stderr, "expect %d results, got %d\n", test_data->n_results, i);
-      abort ();
+      test_error ("expect %d results, got %d", test_data->n_results, i);
    }
 
    ASSERT (match_json (&actual_result,
@@ -250,9 +249,7 @@ _test_collection_find_command (test_collection_find_t *test_data)
    }
 
    if (i != test_data->n_results) {
-      fprintf (
-         stderr, "Expected %d results, got %d\n", test_data->n_results, i);
-      abort ();
+      test_error ("Expected %d results, got %d\n", test_data->n_results, i);
    }
 
    ASSERT (match_json (&actual_result,

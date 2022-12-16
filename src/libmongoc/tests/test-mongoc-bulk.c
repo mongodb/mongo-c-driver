@@ -716,8 +716,7 @@ test_upserted_index (bool ordered)
 
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
    if (!r) {
-      fprintf (stderr, "bulk failed: %s\n", error.message);
-      abort ();
+      test_error ("bulk failed: %s", error.message);
    }
 
    ASSERT_MATCH (&reply,
@@ -4072,7 +4071,6 @@ test_bulk_write_concern_split (void *unused)
    if (bson_iter_init_find (&iter, &reply, "err") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       test_error ("%s", bson_iter_utf8 (&iter, NULL));
-      abort ();
    }
 
    bson_destroy (&reply);
