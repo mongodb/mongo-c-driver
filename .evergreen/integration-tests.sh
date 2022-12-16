@@ -162,7 +162,6 @@ wait_for_mongo_orchestration() {
 wait_for_mongo_orchestration 8889
 echo "Waiting for mongo-orchestration to start... done."
 
-curl http://localhost:8889/ -sS --fail
 sleep 5
 pwd
 curl -sS --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" --fail
