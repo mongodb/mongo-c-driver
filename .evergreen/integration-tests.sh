@@ -150,7 +150,7 @@ echo "Waiting for mongo-orchestration to start..."
 wait_for_mongo_orchestration() {
    for i in $(seq 300); do
       # Exit code 7: "Failed to connect to host".
-      if curl -s "localhost:$1"; test $? -ne 7; then
+      if curl -s "localhost:$1" 1>|curl_mo.txt; test $? -ne 7; then
          return 0
       else
          sleep 1
@@ -162,9 +162,11 @@ wait_for_mongo_orchestration() {
 wait_for_mongo_orchestration 8889
 echo "Waiting for mongo-orchestration to start... done."
 
+python -m json.tool curl_mo.txt
 sleep 5
 pwd
-curl -sS --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" --fail
+curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" 1>|curl_mo.txt
+python -m json.tool curl_mo.txt
 sleep 15
 
 if [ "$AUTH" = "auth" ]; then
