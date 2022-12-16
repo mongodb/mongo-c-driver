@@ -16,6 +16,9 @@ Synopsis
       bson_t *expr_out,
       bson_error_t *error);
 
+.. important:: The |qenc:range-is-experimental| |qenc:api-is-experimental|
+.. versionadded:: 1.24.0
+
 Encrypts a Match Expression or Aggregate Expression to query a range index.
 
 To query with a ``RangePreview`` encrypted payload, use a
