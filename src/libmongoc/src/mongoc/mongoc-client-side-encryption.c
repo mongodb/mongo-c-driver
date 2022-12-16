@@ -2748,6 +2748,7 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
                                   bson_error_t *error)
 {
    bool ret = false;
+   bson_t *range_opts = NULL;
 
    ENTRY;
 
@@ -2772,9 +2773,9 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
       GOTO (fail);
    }
 
-   bson_t range_opts = BSON_INITIALIZER;
    if (opts->range_opts) {
-      append_bson_range_opts (&range_opts, opts);
+      range_opts = bson_new ();
+      append_bson_range_opts (range_opts, opts);
    }
 
    if (!_mongoc_crypt_explicit_encrypt (
@@ -2785,16 +2786,15 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
           opts->keyaltname,
           opts->query_type,
           opts->contention_factor.set ? &opts->contention_factor.value : NULL,
-          &range_opts,
+          range_opts,
           value,
           ciphertext,
           error)) {
-      bson_destroy (&range_opts);
       GOTO (fail);
    }
-   bson_destroy (&range_opts);
    ret = true;
 fail:
+   bson_destroy (range_opts);
    RETURN (ret);
 }
 

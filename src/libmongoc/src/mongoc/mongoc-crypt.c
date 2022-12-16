@@ -1537,6 +1537,15 @@ _create_explicit_state_machine (_mongoc_crypt_t *crypt,
                                 bson_t *range_opts,
                                 bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (keyvault_coll);
+   BSON_ASSERT (algorithm || true);
+   BSON_ASSERT (keyid || true);
+   BSON_ASSERT (keyaltname || true);
+   BSON_ASSERT (query_type || true);
+   BSON_ASSERT (range_opts || true);
+   BSON_ASSERT_PARAM (error);
+
    _state_machine_t *state_machine = NULL;
    bool ok = false;
 
@@ -1554,18 +1563,7 @@ _create_explicit_state_machine (_mongoc_crypt_t *crypt,
       goto fail;
    }
 
-   /* Pass the range options to mongocrypt if the algorithm is range */
-   if (0 == strncasecmp (algorithm,
-                         MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW,
-                         strlen (MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW))) {
-      if (bson_empty (range_opts)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                         "must set range options for a range algorithm");
-         goto fail;
-      }
-
+   if (range_opts != NULL) {
       /* mongocrypt error checks and parses range options */
       mongocrypt_binary_t *binary_range_opts = mongocrypt_binary_new_from_data (
          (uint8_t *) bson_get_data (range_opts), range_opts->len);
@@ -1655,6 +1653,17 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
                                 bson_value_t *value_out,
                                 bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (keyvault_coll);
+   BSON_ASSERT (algorithm || true);
+   BSON_ASSERT (keyid || true);
+   BSON_ASSERT (keyaltname || true);
+   BSON_ASSERT (query_type || true);
+   BSON_ASSERT (range_opts || true);
+   BSON_ASSERT_PARAM (value_in);
+   BSON_ASSERT_PARAM (value_out);
+   BSON_ASSERT_PARAM (error);
+
    _state_machine_t *state_machine = NULL;
    bson_t *to_encrypt_doc = NULL;
    mongocrypt_binary_t *to_encrypt_bin = NULL;
@@ -1728,6 +1737,17 @@ _mongoc_crypt_explicit_encrypt_expression (_mongoc_crypt_t *crypt,
                                            bson_t *expr_out,
                                            bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (crypt);
+   BSON_ASSERT_PARAM (keyvault_coll);
+   BSON_ASSERT (algorithm || true);
+   BSON_ASSERT (keyid || true);
+   BSON_ASSERT (keyaltname || true);
+   BSON_ASSERT (query_type || true);
+   BSON_ASSERT (range_opts || true);
+   BSON_ASSERT_PARAM (expr_in);
+   BSON_ASSERT_PARAM (expr_out);
+   BSON_ASSERT_PARAM (error);
+
    _state_machine_t *state_machine = NULL;
    bson_t *to_encrypt_doc = NULL;
    mongocrypt_binary_t *to_encrypt_bin = NULL;
