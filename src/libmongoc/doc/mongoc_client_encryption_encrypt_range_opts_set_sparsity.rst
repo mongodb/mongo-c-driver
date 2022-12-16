@@ -1,7 +1,7 @@
 :man_page: mongoc_client_encryption_encrypt_range_opts_set_sparsity
 
 mongoc_client_encryption_encrypt_range_opts_set_sparsity()
-===========================================================
+==========================================================
 
 Synopsis
 --------
