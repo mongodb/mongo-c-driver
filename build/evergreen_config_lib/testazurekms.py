@@ -99,7 +99,9 @@ def _create_task_group():
     task_group.setup_group_timeout_secs = 1800  # 30 minutes
     task_group.setup_group = [
         shell_exec(r'''
-            git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git --depth=1 drivers-evergreen-tools
+            if [ ! -d drivers-evergreen-tools ]; then
+                git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+            fi
             DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
             echo '${testazurekms_publickey}' > /tmp/testazurekms_publickey
             echo '${testazurekms_privatekey}' > /tmp/testazurekms_privatekey

@@ -73,7 +73,7 @@ fi
 if [ -n "$RESPONDER_REQUIRED" ]; then
     echo "Starting mock responder"
     if [ ! -d "../drivers-evergreen-tools" ]; then
-        git clone --depth=1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
+        git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
     fi
 
     pushd ../drivers-evergreen-tools/.evergreen/ocsp

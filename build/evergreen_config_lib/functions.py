@@ -500,7 +500,7 @@ all_functions = OD([
     ('build mongohouse', Function(
         shell_mongoc(r'''
         if [ ! -d "drivers-evergreen-tools" ]; then
-           git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
+           git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
         fi
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
@@ -557,7 +557,9 @@ all_functions = OD([
         shell_mongoc(r'''
         # Add AWS variables to a file.
         # Clone in one directory above so it does not get uploaded in working directory.
-        git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
+        if [ ! -d ../drivers-evergreen-tools ]; then
+            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
+        fi
         cat <<EOF > ../drivers-evergreen-tools/.evergreen/auth_aws/aws_e2e_setup.json
         {
             "iam_auth_ecs_account" : "${iam_auth_ecs_account}",
@@ -591,7 +593,7 @@ all_functions = OD([
     ('clone drivers-evergreen-tools', Function(
         shell_exec(r'''
         if [ ! -d "drivers-evergreen-tools" ]; then
-            git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
+            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
         fi
         ''', test=False)
     )),
