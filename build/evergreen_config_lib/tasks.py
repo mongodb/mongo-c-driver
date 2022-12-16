@@ -1055,7 +1055,7 @@ class OCSPTask(MatrixTask):
         test_column = 'TEST_4' if self.test == 'cache' else self.test.upper()
 
         commands.append(shell_mongoc(
-            'TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-responder.sh' % (
+            'TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s bash .evergreen/run-ocsp-responder.sh' % (
                 test_column, self.cert, 'on' if self.delegate == 'delegate' else 'off')))
         commands.append(orchestration)
         if self.depends_on['name'] == 'debug-compile-nosasl-openssl-1.0.1':
