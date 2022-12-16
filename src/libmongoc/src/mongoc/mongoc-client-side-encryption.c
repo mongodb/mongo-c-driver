@@ -943,9 +943,9 @@ mongoc_client_encryption_encrypt_expression (
    BSON_ASSERT_PARAM (expr_encrypted);
    BSON_ASSERT (error || true);
 
-   bson_init (expr_encrypted)
+   bson_init (expr_encrypted);
 
-      return _disabled_error (error);
+   return _disabled_error (error);
 }
 
 bool
