@@ -38,7 +38,7 @@ To query with a ``RangePreview`` payload, ``expr`` must be one of the following 
    
       // $gt may also be $gte. $lt may also be $lte.
       // Can include one of $gt/$gte/$lt/$lte. It is not required to include both.
-      {$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}
+      {"$and": [{"<field>": {"$gt": "<value1>"}}, {"<field>": {"$lt": "<value2>" }}]}
 
 #. An Aggregation Expression of this form: 
 
@@ -46,9 +46,7 @@ To query with a ``RangePreview`` payload, ``expr`` must be one of the following 
    
       // $gt may also be $gte. $lt may also be $lte
       // Can include one of $gt/$gte/$lt/$lte. It is not required to include both.
-      {$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]
-
-**NOTE** that the |qenc:range-is-experimental|
+      {"$and": [{"$gt": ["<fieldpath>", "<value1>"]}, {"$lt": ["<fieldpath>", "<value2>"]}]
 
 Parameters
 ----------
