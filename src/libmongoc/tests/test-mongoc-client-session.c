@@ -1589,7 +1589,8 @@ parse_reply_time (const bson_t *reply, op_time_t *op_time)
                   (_a).i,                                          \
                   (_b).t,                                          \
                   (_b).i);                                         \
-   }
+   } else                                                          \
+      ((void) 0)
 
 
 static void
