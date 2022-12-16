@@ -30,26 +30,10 @@ automatic encryption with
 :symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption`. **Note** that
 the ``"Indexed"`` and ``"RangePreview"`` payload type |qenc:is-experimental|. The |qenc:range-is-experimental| 
 
-To insert or query with a ``RangePreview`` payload 
+To insert with a ``RangePreview`` payload 
 :symbol:`mongoc_client_encryption_encrypt_range_opts_t` must be set in ``opts``.
 
-To query with a ``RangePreview`` payload, value must be one of the following forms: 
-
-#. A Match Expression of the following form: 
-
-   .. code-block:: javascript
-   
-      // $gt may also be $gte. $lt may also be $lte.
-      // Can include one of $gt/$gte/$lt/$lte. It is not required to include both.
-      {$and: [{<field>: {$gt: <value1>}}, {<field>: {$lt: <value2> }}]}
-
-#. An Aggregation Expression of this form: 
-
-   .. code-block:: javascript
-   
-      // $gt may also be $gte. $lt may also be $lte
-      // Can include one of $gt/$gte/$lt/$lte. It is not required to include both.
-      {$and: [{$gt: [<fieldpath>, <value1>]}, {$lt: [<fieldpath>, <value2>]}]
+To query with a ``RangePreview`` payload, use :symbol:`mongoc_client_encryption_encrypt_expression()`
 
 **NOTE** that the |qenc:range-is-experimental|
 
@@ -75,3 +59,4 @@ Returns ``true`` if successful. Returns ``false`` and sets ``error`` otherwise.
 
   | :symbol:`mongoc_client_encryption_decrypt()`
 
+  | :symbol:`mongoc_client_encryption_encrypt_expression()`
