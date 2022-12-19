@@ -2594,7 +2594,6 @@ test_mongoc_client_descriptions_pooled (void *unused)
          test_error ("still have %d descriptions, not expected %d, after 1 sec",
                      (int) n,
                      (int) expected_n);
-         abort ();
       }
 
       sds = mongoc_client_get_server_descriptions (client, &n);

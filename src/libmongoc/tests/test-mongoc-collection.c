@@ -2846,10 +2846,7 @@ again:
       for (j = 0; j < 2; j++) {
          r = mongoc_cursor_next (cursor, &doc);
          if (mongoc_cursor_error (cursor, &error)) {
-            fprintf (
-               stderr, "[%d.%d] %s", error.domain, error.code, error.message);
-
-            abort ();
+            test_error ("[%d.%d] %s", error.domain, error.code, error.message);
          }
 
          ASSERT (r);
@@ -2861,8 +2858,7 @@ again:
 
       r = mongoc_cursor_next (cursor, &doc);
       if (mongoc_cursor_error (cursor, &error)) {
-         fprintf (stderr, "%s", error.message);
-         abort ();
+         test_error ("%s", error.message);
       }
 
       ASSERT (!r);
@@ -4084,8 +4080,7 @@ test_command_fq (void *context)
    if (bson_iter_init_find (&iter, doc, "db") && BSON_ITER_HOLDS_UTF8 (&iter)) {
       ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "sometest");
    } else {
-      fprintf (stderr, "dbstats didn't return 'db' key?");
-      abort ();
+      test_error ("dbstats didn't return 'db' key?");
    }
 
 

@@ -28,8 +28,7 @@ get_test_file (const char *filename, size_t *length)
 #endif
 
    if (fd == -1) {
-      fprintf (stderr, "Failed to open: %s\n", real_filename);
-      abort ();
+      test_error ("Failed to open: %s", real_filename);
    }
 
    len = 40960;

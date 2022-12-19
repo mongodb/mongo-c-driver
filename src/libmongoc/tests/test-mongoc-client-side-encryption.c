@@ -220,10 +220,8 @@ _make_gcp_kms_provider (bson_t *kms_providers)
       test_framework_getenv_required ("MONGOC_TEST_GCP_PRIVATEKEY");
 
    if (!gcp_email || !gcp_privatekey) {
-      fprintf (stderr,
-               "Set MONGOC_TEST_GCP_EMAIL and MONGOC_TEST_GCP_PRIVATEKEY to "
-               "enable CSFLE tests.");
-      abort ();
+      test_error ("Set MONGOC_TEST_GCP_EMAIL and MONGOC_TEST_GCP_PRIVATEKEY to "
+                  "enable CSFLE tests.");
    }
 
    if (!kms_providers) {
@@ -3528,6 +3526,22 @@ test_kms_tls_options_extra_rejected (void *unused)
                           MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
                           "Error parsing duplicate TLS options for aws");
    ASSERT (NULL == ce);
+   mongoc_client_encryption_opts_destroy (ce_opts);
+
+   /* Test that tlsDisableOCSPEndpointCheck may be set. */
+   memset (&error, 0, sizeof (bson_error_t));
+   ce_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      ce_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (ce_opts, keyvault_client);
+   mongoc_client_encryption_opts_set_kms_providers (ce_opts, kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (
+      ce_opts,
+      tmp_bson ("{'aws': {'%s': true}}",
+                MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK));
+   ce = mongoc_client_encryption_new (ce_opts, &error);
+   ASSERT_OR_PRINT (ce, error);
+   mongoc_client_encryption_destroy (ce);
    mongoc_client_encryption_opts_destroy (ce_opts);
 
    mongoc_client_destroy (keyvault_client);

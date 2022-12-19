@@ -54,8 +54,9 @@ request_new (const mongoc_buffer_t *buffer,
 const bson_t *
 request_get_doc (const request_t *request, int n);
 
-bool
-request_matches_flags (const request_t *request, mongoc_query_flags_t flags);
+void
+assert_request_matches_flags (const request_t *request,
+                              mongoc_query_flags_t flags);
 
 bool
 request_matches_query (const request_t *request,

@@ -66,8 +66,8 @@ test_msg (const char *format, ...)
    va_start (ap, format);
    vprintf (format, ap);
    printf ("\n");
-   fflush (stdout);
    va_end (ap);
+   fflush (stdout);
 }
 
 
@@ -76,11 +76,12 @@ _test_error (const char *format, ...)
 {
    va_list ap;
 
+   fflush (stdout);
    va_start (ap, format);
    vfprintf (stderr, format, ap);
    fprintf (stderr, "\n");
-   fflush (stderr);
    va_end (ap);
+   fflush (stderr);
    abort ();
 }
 
@@ -222,7 +223,6 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       } else {
          test_error ("Unrecognized option: MONGOC_TEST_SERVER_LOG=%s",
                      mock_server_log);
-         abort ();
       }
 
       bson_free (mock_server_log);
@@ -231,7 +231,6 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    if (suite->silent) {
       if (suite->outfile) {
          test_error ("Cannot combine -F with --silent");
-         abort ();
       }
 
       suite->flags &= ~(TEST_DEBUGOUTPUT);
@@ -298,11 +297,11 @@ _TestSuite_AddCheck (Test *test, CheckFunc check, const char *name)
 {
    test->checks[test->num_checks] = check;
    if (++test->num_checks > MAX_TEST_CHECK_FUNCS) {
-      fprintf (stderr,
-               "Too many check funcs for %s, increase MAX_TEST_CHECK_FUNCS "
-               "to more than %d\n",
-               name,
-               MAX_TEST_CHECK_FUNCS);
+      MONGOC_STDERR_PRINTF (
+         "Too many check funcs for %s, increase MAX_TEST_CHECK_FUNCS "
+         "to more than %d\n",
+         name,
+         MAX_TEST_CHECK_FUNCS);
       abort ();
    }
 }

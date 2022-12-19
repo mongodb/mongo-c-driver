@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 # Start up mongo-orchestration (a server to spawn mongodb clusters) and set up a cluster.
 #
 # Specify the following environment variables:
@@ -14,11 +14,14 @@
 # OCSP: off, on
 # REQUIRE_API_VERSION: set to a non-empty string to set the requireApiVersion parameter
 #   This is currently only supported for standalone servers
+# LOAD_BALANCER: off, on
 #
 # This script may be run locally.
 #
 
 set -o errexit  # Exit the script with error if any of the commands fail
+
+: "${LOAD_BALANCER:=off}"
 
 DIR=$(dirname $0)
 # Functions to fetch MongoDB binaries
@@ -60,6 +63,10 @@ if [ -z "$ORCHESTRATION_FILE" ]; then
 
    if [ "$SSL" != "nossl" ]; then
       ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-ssl"
+   fi
+
+   if [ "$LOAD_BALANCER" = "on" ]; then
+      ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-load-balancer"
    fi
 fi
 

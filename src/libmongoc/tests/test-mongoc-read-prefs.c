@@ -216,8 +216,7 @@ _run_server (read_pref_test_type_t test_type)
                               mock_server_get_host_and_port (server));
       break;
    default:
-      fprintf (stderr, "Invalid test_type: : %d\n", test_type);
-      abort ();
+      test_error ("Invalid test_type: %d", (int) test_type);
    }
 
    return server;

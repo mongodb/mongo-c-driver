@@ -505,9 +505,7 @@ auto_hello_generate_response (request_t *request,
    quotes_replaced = single_quotes_to_double (response_json);
 
    if (!bson_init_from_json (hello_response, quotes_replaced, -1, &error)) {
-      fprintf (stderr, "%s\n", error.message);
-      fflush (stderr);
-      abort ();
+      test_error ("%s", error.message);
    }
 
    bson_free (quotes_replaced);
@@ -1785,17 +1783,13 @@ mock_server_replies_to_find (request_t *request,
    /* minimal validation, we're not testing query / find cmd here */
    if (request->is_command && !is_command) {
       test_error ("expected query, got command");
-      abort ();
    }
 
    if (!request->is_command && is_command) {
       test_error ("expected command, got query");
-      abort ();
    }
 
-   if (!request_matches_flags (request, flags)) {
-      abort ();
-   }
+   assert_request_matches_flags (request, flags);
 
    if (is_command) {
       find_reply =
@@ -1866,9 +1860,7 @@ mock_server_destroy (mock_server_t *server)
 
    bson_mutex_lock (&server->mutex);
    if (server->running) {
-      fprintf (stderr, "server still running after timeout\n");
-      fflush (stderr);
-      abort ();
+      test_error ("server still running after timeout");
    }
 
    bson_mutex_unlock (&server->mutex);

@@ -46,29 +46,25 @@ _assert_options_match (const bson_t *test, mongoc_uri_t *uri)
                                                                 : opts_from_uri;
       if (!bson_iter_init_find_case (
              &uri_opts_iter, opts_or_creds, opt_name_canon)) {
-         fprintf (stderr,
-                  "URI options incorrectly set from TXT record: "
-                  "no option named \"%s\"\n"
-                  "expected: %s\n"
-                  "actual: %s\n",
-                  opt_name,
-                  bson_as_json (&opts_from_test, NULL),
-                  bson_as_json (opts_or_creds, NULL));
-         abort ();
+         test_error ("URI options incorrectly set from TXT record: "
+                     "no option named \"%s\"\n"
+                     "expected: %s\n"
+                     "actual: %s",
+                     opt_name,
+                     bson_as_json (&opts_from_test, NULL),
+                     bson_as_json (opts_or_creds, NULL));
       }
 
       test_value = bson_iter_value (&test_opts_iter);
       uri_value = bson_iter_value (&uri_opts_iter);
       if (!match_bson_value (uri_value, test_value, &ctx)) {
-         fprintf (stderr,
-                  "URI option \"%s\" incorrectly set from TXT record: %s\n"
-                  "expected: %s\n"
-                  "actual: %s\n",
-                  opt_name,
-                  ctx.errmsg,
-                  bson_as_json (&opts_from_test, NULL),
-                  bson_as_json (opts_from_uri, NULL));
-         abort ();
+         test_error ("URI option \"%s\" incorrectly set from TXT record: %s\n"
+                     "expected: %s\n"
+                     "actual: %s",
+                     opt_name,
+                     ctx.errmsg,
+                     bson_as_json (&opts_from_test, NULL),
+                     bson_as_json (opts_from_uri, NULL));
       }
    }
 }
@@ -231,10 +227,9 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    const char *uri_str;
 
    if (!test_framework_get_ssl ()) {
-      fprintf (stderr,
-               "Must configure an SSL replica set and set MONGOC_TEST_SSL=on "
-               "and other ssl options to test DNS\n");
-      abort ();
+      test_error (
+         "Must configure an SSL replica set and set MONGOC_TEST_SSL=on "
+         "and other ssl options to test DNS");
    }
 
    uri_str = bson_lookup_utf8 (test, "uri");

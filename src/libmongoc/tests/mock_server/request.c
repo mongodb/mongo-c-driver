@@ -120,8 +120,7 @@ request_new (const mongoc_buffer_t *buffer,
 
    case MONGOC_OPCODE_REPLY:
    default:
-      fprintf (stderr, "Unimplemented opcode %d\n", request->opcode);
-      abort ();
+      test_error ("Unimplemented opcode %d", request->opcode);
    }
 
    return request;
@@ -134,8 +133,9 @@ request_get_doc (const request_t *request, int n)
    return _mongoc_array_index (&request->docs, const bson_t *, n);
 }
 
-bool
-request_matches_flags (const request_t *request, mongoc_query_flags_t flags)
+void
+assert_request_matches_flags (const request_t *request,
+                              mongoc_query_flags_t flags)
 {
    const mongoc_rpc_t *rpc;
 
@@ -146,10 +146,7 @@ request_matches_flags (const request_t *request, mongoc_query_flags_t flags)
       test_error ("request's query flags are %s, expected %s",
                   query_flags_str (rpc->query.flags),
                   query_flags_str (flags));
-      return false;
    }
-
-   return true;
 }
 
 /* TODO: take file, line, function params from caller, wrap in macro */
@@ -223,10 +220,7 @@ request_matches_query (const request_t *request,
       goto done;
    }
 
-   if (!request_matches_flags (request, flags)) {
-      test_error ("%s", doc_as_json);
-      goto done;
-   }
+   assert_request_matches_flags (request, flags);
 
    if (rpc->query.skip != skip) {
       test_error ("requests's skip = %d, expected %d: %s",
@@ -1133,9 +1127,7 @@ request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc)
          bson_string_append (msg_as_str, "]");
          break;
       default:
-         fprintf (
-            stderr, "Unimplemented payload type %d\n", section->payload_type);
-         abort ();
+         test_error ("Unimplemented payload type %d\n", section->payload_type);
       }
    }
 

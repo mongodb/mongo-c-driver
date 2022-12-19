@@ -1116,6 +1116,10 @@ _parse_one_tls_opts (bson_iter_t *iter,
          continue;
       }
 
+      if (0 == bson_strcasecmp (key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK)) {
+         continue;
+      }
+
       bson_set_error (
          error,
          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,

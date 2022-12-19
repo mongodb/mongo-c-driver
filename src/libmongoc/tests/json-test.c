@@ -415,7 +415,6 @@ test_server_selection_logic_cb (bson_t *test)
          sd->round_trip_time_msec = bson_iter_int32 (&sd_iter);
       } else if (sd->type != MONGOC_SERVER_UNKNOWN) {
          test_error ("%s has no avg_rtt_ms", sd->host.host_and_port);
-         abort ();
       }
 
       if (bson_iter_init_find (&sd_iter, &server, "maxWireVersion")) {
@@ -529,7 +528,6 @@ test_server_selection_logic_cb (bson_t *test)
       if (!found) {
          test_error ("Should have been selected but wasn't: %s",
                      bson_iter_utf8 (&host, NULL));
-         abort ();
       }
 
       matched_servers[i] = true;
@@ -543,7 +541,6 @@ test_server_selection_logic_cb (bson_t *test)
 
          test_error ("Shouldn't have been selected but was: %s",
                      sd->host.host_and_port);
-         abort ();
       }
    }
 
@@ -652,9 +649,9 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
 
    dir = opendir (dir_path);
    if (!dir) {
-      MONGOC_ERROR ("Cannot open \"%s\"", dir_path);
-      MONGOC_ERROR ("Run test-libmongoc in repository root directory.\n");
-      abort ();
+      test_error ("Cannot open \"%s\"\n"
+                  "Run test-libmongoc in repository root directory.",
+                  dir_path);
    }
 
    while ((entry = readdir (dir))) {
@@ -720,7 +717,7 @@ get_bson_from_json_file (char *filename)
    /* read entire file into buffer */
    buffer = (const char *) bson_malloc0 (length);
    if (fread ((void *) buffer, 1, length, file) != length) {
-      abort ();
+      test_error ("Failed to read JSON file into buffer");
    }
 
    fclose (file);
@@ -731,8 +728,7 @@ get_bson_from_json_file (char *filename)
    /* convert to bson */
    data = bson_new_from_json ((const uint8_t *) buffer, length, &error);
    if (!data) {
-      fprintf (stderr, "Cannot parse %s: %s\n", filename, error.message);
-      abort ();
+      test_error ("Cannot parse %s: %s", filename, error.message);
    }
 
    bson_free ((void *) buffer);
@@ -1430,10 +1426,9 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
       } else if (mongoc_uri_option_is_utf8 (key)) {
          mongoc_uri_set_option_as_utf8 (uri, key, bson_iter_utf8 (&iter, NULL));
       } else {
-         MONGOC_ERROR ("Unsupported clientOptions field \"%s\" in %s",
-                       key,
-                       bson_as_json (opts, NULL));
-         abort ();
+         test_error ("Unsupported clientOptions field \"%s\" in %s",
+                     key,
+                     bson_as_json (opts, NULL));
       }
    }
 }
@@ -1479,11 +1474,10 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
             test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
 
          if (!secret_access_key || !access_key_id) {
-            fprintf (stderr,
-                     "Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
-                     "MONGOC_TEST_AWS_ACCESS_KEY_ID environment variables to "
-                     "run Client Side Encryption tests.\n");
-            abort ();
+            test_error (
+               "Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
+               "MONGOC_TEST_AWS_ACCESS_KEY_ID environment variables to "
+               "run Client Side Encryption tests.");
          }
 
          {
@@ -1517,19 +1511,16 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
             test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SESSION_TOKEN");
 
          if (!secret_access_key || !access_key_id) {
-            fprintf (stderr,
-                     "Set MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY and "
-                     "MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID environment variables "
-                     "to run Client Side Encryption tests.\n");
-            abort ();
+            test_error (
+               "Set MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY and "
+               "MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID environment variables "
+               "to run Client Side Encryption tests.");
          }
 
          // Only require session token when requested.
          if (!session_token && need_aws_with_session_token) {
-            fprintf (stderr,
-                     "Set MONGOC_TEST_AWS_TEMP_SESSION_TOKEN environment "
-                     "variable to run Client Side Encryption tests.\n");
-            abort ();
+            test_error ("Set MONGOC_TEST_AWS_TEMP_SESSION_TOKEN environment "
+                        "variable to run Client Side Encryption tests.");
          }
 
          {
@@ -1567,12 +1558,10 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
             test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
 
          if (!azure_tenant_id || !azure_client_id || !azure_client_secret) {
-            fprintf (stderr,
-                     "Set MONGOC_TEST_AZURE_TENANT_ID, "
-                     "MONGOC_TEST_AZURE_CLIENT_ID, and "
-                     "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE "
-                     "tests.");
-            abort ();
+            test_error ("Set MONGOC_TEST_AZURE_TENANT_ID, "
+                        "MONGOC_TEST_AZURE_CLIENT_ID, and "
+                        "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE "
+                        "tests.");
          }
 
          bson_concat (&kms_providers,
@@ -1595,11 +1584,9 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          gcp_privatekey = test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
 
          if (!gcp_email || !gcp_privatekey) {
-            fprintf (stderr,
-                     "Set MONGOC_TEST_GCP_EMAIL and "
-                     "MONGOC_TEST_GCP_PRIVATEKEY to enable CSFLE "
-                     "tests.");
-            abort ();
+            test_error ("Set MONGOC_TEST_GCP_EMAIL and "
+                        "MONGOC_TEST_GCP_PRIVATEKEY to enable CSFLE "
+                        "tests.");
          }
 
          bson_concat (

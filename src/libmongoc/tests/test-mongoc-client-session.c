@@ -971,14 +971,12 @@ _test_advance_operation_time (mongoc_client_session_t *cs,
       ASSERT_CMPUINT32 (new_t, ==, t);
       ASSERT_CMPUINT32 (new_i, ==, i);
    } else if (new_t == t && new_i == i) {
-      fprintf (stderr,
-               "Shouldn't have advanced from operationTime %" PRIu32
-               ", %" PRIu32 " to %" PRIu32 ", %" PRIu32 "\n",
-               old_t,
-               old_i,
-               t,
-               i);
-      abort ();
+      test_error ("Shouldn't have advanced from operationTime %" PRIu32
+                  ", %" PRIu32 " to %" PRIu32 ", %" PRIu32,
+                  old_t,
+                  old_i,
+                  t,
+                  i);
    }
 }
 
@@ -1076,8 +1074,7 @@ started (const mongoc_apm_command_started_t *event)
 
    if (test->acknowledged) {
       if (!bson_iter_init_find (&iter, cmd, "lsid")) {
-         fprintf (stderr, "no lsid sent with command %s\n", cmd_name);
-         abort ();
+         test_error ("no lsid sent with command %s", cmd_name);
       }
 
       bson_iter_bson (&iter, &lsid);
@@ -1085,17 +1082,13 @@ started (const mongoc_apm_command_started_t *event)
 
       if (test->expect_explicit_lsid) {
          if (!match_bson_with_ctx (&lsid, client_session_lsid, &ctx)) {
-            fprintf (stderr,
-                     "command %s should have used client session's lsid\n",
-                     cmd_name);
-            abort ();
+            test_error ("command %s should have used client session's lsid",
+                        cmd_name);
          }
       } else {
          if (match_bson_with_ctx (&lsid, client_session_lsid, &ctx)) {
-            fprintf (stderr,
-                     "command %s should not have used client session's lsid\n",
-                     cmd_name);
-            abort ();
+            test_error ("command %s should not have used client session's lsid",
+                        cmd_name);
          }
       }
 
@@ -1104,10 +1097,8 @@ started (const mongoc_apm_command_started_t *event)
          bson_copy_to (&lsid, &test->sent_lsid);
       } else {
          if (!match_bson_with_ctx (&lsid, &test->sent_lsid, &ctx)) {
-            fprintf (stderr,
-                     "command %s used different lsid than previous command\n",
-                     cmd_name);
-            abort ();
+            test_error ("command %s used different lsid than previous command",
+                        cmd_name);
          }
       }
    } else {
@@ -1117,8 +1108,7 @@ started (const mongoc_apm_command_started_t *event)
 
    has_cluster_time = bson_iter_init_find (&iter, cmd, "$clusterTime");
    if (test->acknowledged && !has_cluster_time) {
-      fprintf (stderr, "no $clusterTime sent with command %s\n", cmd_name);
-      abort ();
+      test_error ("no $clusterTime sent with command %s", cmd_name);
    }
 
    if (has_cluster_time) {
@@ -1153,8 +1143,7 @@ succeeded (const mongoc_apm_command_succeeded_t *event)
 
    has_cluster_time = bson_iter_init_find (&iter, reply, "$clusterTime");
    if (test->acknowledged && !has_cluster_time) {
-      fprintf (stderr, "no $clusterTime in reply to command %s\n", cmd_name);
-      abort ();
+      test_error ("no $clusterTime in reply to command %s", cmd_name);
    }
 
    if (strcmp (cmd_name, "endSessions") == 0) {
@@ -1311,10 +1300,8 @@ check_session_returned (session_test_t *test, const bson_t *lsid)
     * been used. It is expected behavior for found to be false if
     * ss->last_used_usec == SESSION_NEVER_USED */
    if (!check_state.found) {
-      fprintf (stderr,
-               "server session %s not returned to pool\n",
-               bson_as_json (lsid, NULL));
-      abort ();
+      test_error ("server session %s not returned to pool",
+                  bson_as_json (lsid, NULL));
    }
 }
 
@@ -1342,8 +1329,7 @@ last_non_getmore_cmd (session_test_t *test)
       }
    }
 
-   fprintf (stderr, "No commands besides getMore were recorded\n");
-   abort ();
+   test_error ("No commands besides getMore were recorded");
 }
 
 
@@ -1483,8 +1469,7 @@ check_cluster_time (session_test_t *test)
    capture_logs (true);
    if (_mongoc_cluster_time_greater (&test->received_cluster_time,
                                      session_time)) {
-      fprintf (stderr, "client session's cluster time is outdated\n");
-      abort ();
+      test_error ("client session's cluster time is outdated");
    }
 
    ASSERT_NO_CAPTURED_LOGS ("_mongoc_cluster_time_greater");
@@ -1597,16 +1582,15 @@ parse_reply_time (const bson_t *reply, op_time_t *op_time)
 }
 
 
-#define ASSERT_OP_TIMES_EQUAL(_a, _b)                             \
-   if ((_a).t != (_b).t || (_a).i != (_b).i) {                    \
-      fprintf (stderr,                                            \
-               #_a " (%d, %d) does not match " #_b " (%d, %d)\n", \
-               (_a).t,                                            \
-               (_a).i,                                            \
-               (_b).t,                                            \
-               (_b).i);                                           \
-      abort ();                                                   \
-   }
+#define ASSERT_OP_TIMES_EQUAL(_a, _b)                              \
+   if ((_a).t != (_b).t || (_a).i != (_b).i) {                     \
+      test_error (#_a " (%d, %d) does not match " #_b " (%d, %d)", \
+                  (_a).t,                                          \
+                  (_a).i,                                          \
+                  (_b).t,                                          \
+                  (_b).i);                                         \
+   } else                                                          \
+      ((void) 0)
 
 
 static void
@@ -1658,10 +1642,8 @@ _test_causal_consistency (session_test_fn_t test_fn, bool allow_read_concern)
       for (i = 0; i < test->cmds.len; i++) {
          cmd = _mongoc_array_index (&test->cmds, bson_t *, i);
          if (bson_has_field (cmd, "readConcern")) {
-            fprintf (stderr,
-                     "Command should not have included readConcern: %s\n",
-                     bson_as_json (cmd, NULL));
-            abort ();
+            test_error ("Command should not have included readConcern: %s",
+                        bson_as_json (cmd, NULL));
          }
       }
    }

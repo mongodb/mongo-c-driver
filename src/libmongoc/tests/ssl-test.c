@@ -199,11 +199,8 @@ static BSON_THREAD_FUN (ssl_test_client, ptr)
    r = mongoc_socket_connect (
       conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
    if (r != 0) {
-      fprintf (stderr,
-               "mongoc_socket_connect returned %zd: \"%s\"",
-               r,
-               strerror (errno));
-      abort ();
+      test_error (
+         "mongoc_socket_connect returned %zd: \"%s\"", r, strerror (errno));
    }
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
