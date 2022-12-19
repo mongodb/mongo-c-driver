@@ -291,7 +291,7 @@ mongoc_client_encryption_encrypt_range_opts_set_precision (
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_range_opts (
    mongoc_client_encryption_encrypt_opts_t *opts,
-   mongoc_client_encryption_encrypt_range_opts_t *range_opts);
+   const mongoc_client_encryption_encrypt_range_opts_t *range_opts);
 
 MONGOC_EXPORT (mongoc_client_encryption_datakey_opts_t *)
 mongoc_client_encryption_datakey_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;

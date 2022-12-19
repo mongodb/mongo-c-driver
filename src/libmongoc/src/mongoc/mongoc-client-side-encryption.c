@@ -599,7 +599,7 @@ mongoc_client_encryption_encrypt_range_opts_set_precision (
 }
 
 static mongoc_client_encryption_encrypt_range_opts_t *
-copy_range_opts (mongoc_client_encryption_encrypt_range_opts_t *opts)
+copy_range_opts (const mongoc_client_encryption_encrypt_range_opts_t *opts)
 {
    BSON_ASSERT_PARAM (opts);
    mongoc_client_encryption_encrypt_range_opts_t *opts_new =
@@ -620,7 +620,7 @@ copy_range_opts (mongoc_client_encryption_encrypt_range_opts_t *opts)
 void
 mongoc_client_encryption_encrypt_opts_set_range_opts (
    mongoc_client_encryption_encrypt_opts_t *opts,
-   mongoc_client_encryption_encrypt_range_opts_t *range_opts)
+   const mongoc_client_encryption_encrypt_range_opts_t *range_opts)
 {
    BSON_ASSERT_PARAM (opts);
 

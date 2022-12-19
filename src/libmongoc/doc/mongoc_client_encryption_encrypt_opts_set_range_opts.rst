@@ -11,7 +11,7 @@ Synopsis
     void
     mongoc_client_encryption_encrypt_opts_set_range_opts (
           mongoc_client_encryption_encrypt_opts_t *opts,
-          mongoc_client_encryption_encrypt_range_opts_t *range_opts);
+          const mongoc_client_encryption_encrypt_range_opts_t *range_opts);
 
 .. important:: The |qenc:range-is-experimental| |qenc:api-is-experimental|
 .. versionadded:: 1.24.0
