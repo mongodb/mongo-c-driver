@@ -230,7 +230,7 @@ mongoc_client_encryption_encrypt_expression (
    mongoc_client_encryption_t *client_encryption,
    const bson_t *expr,
    mongoc_client_encryption_encrypt_opts_t *opts,
-   bson_t *expr_encrypted,
+   bson_t *expr_out,
    bson_error_t *error);
 
 MONGOC_EXPORT (bool)

@@ -2804,7 +2804,7 @@ mongoc_client_encryption_encrypt_expression (
    mongoc_client_encryption_t *client_encryption,
    const bson_t *expr,
    mongoc_client_encryption_encrypt_opts_t *opts,
-   bson_t *expr_encrypted,
+   bson_t *expr_out,
    bson_error_t *error)
 {
    ENTRY;
@@ -2812,10 +2812,10 @@ mongoc_client_encryption_encrypt_expression (
    BSON_ASSERT_PARAM (client_encryption);
    BSON_ASSERT_PARAM (expr);
    BSON_ASSERT_PARAM (opts);
-   BSON_ASSERT_PARAM (expr_encrypted);
+   BSON_ASSERT_PARAM (expr_out);
    BSON_ASSERT (error || true);
 
-   bson_init (expr_encrypted);
+   bson_init (expr_out);
 
    bson_t range_opts = BSON_INITIALIZER;
    if (opts->range_opts) {
@@ -2832,7 +2832,7 @@ mongoc_client_encryption_encrypt_expression (
           opts->contention_factor.set ? &opts->contention_factor.value : NULL,
           &range_opts,
           expr,
-          expr_encrypted,
+          expr_out,
           error)) {
       bson_destroy (&range_opts);
       RETURN (false);
