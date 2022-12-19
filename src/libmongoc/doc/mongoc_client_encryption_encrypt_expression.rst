@@ -28,7 +28,7 @@ To query with a ``RangePreview`` encrypted payload, use a
 analysis with :symbol:`mongoc_auto_encryption_opts_set_bypass_query_analysis`.
 The :symbol:`mongoc_auto_encryption_opts_t` must not be configured to bypass
 automatic encryption with
-:symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption`. **Note** The |qenc:range-is-experimental| 
+:symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption`. 
 
 To query with a ``RangePreview`` payload, ``expr`` must be one of the following forms: 
 
