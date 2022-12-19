@@ -2794,6 +2794,7 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
           error)) {
       GOTO (fail);
    }
+
    ret = true;
 fail:
    bson_destroy (range_opts);
