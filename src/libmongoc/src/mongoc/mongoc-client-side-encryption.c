@@ -582,6 +582,10 @@ mongoc_client_encryption_encrypt_range_opts_set_min_max (
    BSON_ASSERT_PARAM (min);
    BSON_ASSERT_PARAM (max);
 
+   if (range_opts->minmax.set) {
+      bson_value_destroy (&range_opts->minmax.min);
+      bson_value_destroy (&range_opts->minmax.max);
+   }
    range_opts->minmax.set = true;
    bson_value_copy (min, &range_opts->minmax.min);
    bson_value_copy (max, &range_opts->minmax.max);
