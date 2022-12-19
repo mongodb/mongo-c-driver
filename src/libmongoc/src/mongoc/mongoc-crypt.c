@@ -1544,7 +1544,7 @@ _create_explicit_state_machine (_mongoc_crypt_t *crypt,
    BSON_ASSERT (keyaltname || true);
    BSON_ASSERT (query_type || true);
    BSON_ASSERT (range_opts || true);
-   BSON_ASSERT_PARAM (error);
+   BSON_ASSERT (error || true);
 
    _state_machine_t *state_machine = NULL;
    bool ok = false;
@@ -1662,7 +1662,7 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
    BSON_ASSERT (range_opts || true);
    BSON_ASSERT_PARAM (value_in);
    BSON_ASSERT_PARAM (value_out);
-   BSON_ASSERT_PARAM (error);
+   BSON_ASSERT (error || true);
 
    _state_machine_t *state_machine = NULL;
    bson_t *to_encrypt_doc = NULL;
@@ -1746,7 +1746,7 @@ _mongoc_crypt_explicit_encrypt_expression (_mongoc_crypt_t *crypt,
    BSON_ASSERT (range_opts || true);
    BSON_ASSERT_PARAM (expr_in);
    BSON_ASSERT_PARAM (expr_out);
-   BSON_ASSERT_PARAM (error);
+   BSON_ASSERT (error || true);
 
    _state_machine_t *state_machine = NULL;
    bson_t *to_encrypt_doc = NULL;
