@@ -2820,9 +2820,10 @@ mongoc_client_encryption_encrypt_expression (
 
    bson_init (expr_out);
 
-   bson_t range_opts = BSON_INITIALIZER;
+   bson_t *range_opts = NULL;
    if (opts->range_opts) {
-      append_bson_range_opts (&range_opts, opts);
+      range_opts = bson_new ();
+      append_bson_range_opts (range_opts, opts);
    }
 
    if (!_mongoc_crypt_explicit_encrypt_expression (
@@ -2833,14 +2834,14 @@ mongoc_client_encryption_encrypt_expression (
           opts->keyaltname,
           opts->query_type,
           opts->contention_factor.set ? &opts->contention_factor.value : NULL,
-          &range_opts,
+          range_opts,
           expr,
           expr_out,
           error)) {
-      bson_destroy (&range_opts);
+      bson_destroy (range_opts);
       RETURN (false);
    }
-   bson_destroy (&range_opts);
+   bson_destroy (range_opts);
    RETURN (true);
 }
 
