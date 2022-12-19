@@ -996,7 +996,7 @@ mongoc_client_encryption_create_encrypted_collection (
  */
 static void
 append_bson_range_opts (bson_t *bson_range_opts,
-                        mongoc_client_encryption_encrypt_opts_t *opts)
+                        const mongoc_client_encryption_encrypt_opts_t *opts)
 {
    BSON_ASSERT_PARAM (bson_range_opts);
    BSON_ASSERT_PARAM (opts);
