@@ -441,10 +441,11 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.7.0-alpha1)
+   # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.6.0)
       message ("--   libmongocrypt found at ${mongocrypt_DIR}")
       message ("--   libmongocrypt version ${mongocrypt_VERSION} found")
-      message ("--   libmongocrypt version 1.7.0-alpha1 is required to enable Client-Side Field Level Encryption Support.")
+      message ("--   libmongocrypt version 1.6.0 is required to enable Client-Side Field Level Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
