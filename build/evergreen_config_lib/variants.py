@@ -418,7 +418,11 @@ all_variants = [
              '.5.0 .winssl !.nosasl .server',
              '.4.4 .winssl !.nosasl .server',
              'test-aws-openssl-regular-4.4',
-             'test-aws-openssl-regular-latest'
+             'test-aws-openssl-regular-latest',
+             # Authentication tests with OpenSSL on Windows are only run on the vs2017 variant.
+             # Older vs variants fail to verify certificates against Atlas tests.
+             '.authentication-tests .openssl !.sasl',
+             '.authentication-tests .winssl'
              ],
             {'CC': 'Visual Studio 15 2017 Win64'}),
     Variant('windows-2015',
@@ -433,7 +437,6 @@ all_variants = [
              '.debug-compile !.sspi .openssl',
              '.debug-compile !.sspi .nossl',
              '.debug-compile .sspi !.openssl-static',
-             '.authentication-tests .openssl !.sasl',
              '.authentication-tests .winssl',
              '.4.2 .winssl !.nosasl .server',
              '.4.0 .winssl !.nosasl .server',
@@ -464,7 +467,6 @@ all_variants = [
              '.debug-compile !.sspi .openssl !.client-side-encryption',
              '.debug-compile !.sspi .nossl',
              '.debug-compile .sspi !.client-side-encryption !.openssl-static',
-             '.authentication-tests .openssl !.sasl',
              '.authentication-tests .winssl',
              '.4.2 .winssl !.nosasl .server !.client-side-encryption',
              '.4.0 .winssl !.nosasl .server'],

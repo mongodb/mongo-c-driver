@@ -24526,6 +24526,8 @@ buildvariants:
   - .4.4 .winssl !.nosasl .server
   - test-aws-openssl-regular-4.4
   - test-aws-openssl-regular-latest
+  - .authentication-tests .openssl !.sasl
+  - .authentication-tests .winssl
 - name: windows-2015
   display_name: Windows (VS 2015)
   expansions:
@@ -24541,7 +24543,6 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .debug-compile .sspi !.openssl-static
-  - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
   - .4.2 .winssl !.nosasl .server
   - .4.0 .winssl !.nosasl .server
@@ -24575,7 +24576,6 @@ buildvariants:
   - .debug-compile !.sspi .openssl !.client-side-encryption
   - .debug-compile !.sspi .nossl
   - .debug-compile .sspi !.client-side-encryption !.openssl-static
-  - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
   - .4.2 .winssl !.nosasl .server !.client-side-encryption
   - .4.0 .winssl !.nosasl .server
