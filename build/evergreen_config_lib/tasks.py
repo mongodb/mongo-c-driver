@@ -112,7 +112,6 @@ class CompileWithClientSideEncryption(CompileTask):
                                                               extra_script=extra_script,
                                                               EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF",
                                                               SKIP_MOCK_TESTS="ON",
-                                                              USE_CRYPT_SHARED="${USE_CRYPT_SHARED}",
                                                               **kwargs)
         self.add_tags('client-side-encryption', 'special')
 
@@ -140,7 +139,6 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
                                                                   EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
                                                                   PATH='/usr/lib/llvm-3.8/bin:$PATH',
                                                                   SKIP_MOCK_TESTS="ON",
-                                                                  USE_CRYPT_SHARED="${USE_CRYPT_SHARED}",
                                                                   **kwargs)
         self.add_tags('client-side-encryption')
 

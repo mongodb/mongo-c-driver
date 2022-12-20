@@ -597,7 +597,7 @@ all_variants = [
             'ubuntu1804-test',
             ['debug-compile-asan-openssl-cse',
              '.test-asan !.3.6 .client-side-encryption'],
-            {'CC': 'clang', 'USE_CRYPT_SHARED': 'OFF'},
+            {'CC': 'clang'},
             batchtime=days(1)),
     # There is no MongoDB < 4.0 with SSL available on Ubuntu post 16.04.
     # So have a variant for ASAN to test against MongoDB 3.6.
