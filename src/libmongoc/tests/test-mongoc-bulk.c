@@ -4955,9 +4955,6 @@ test_bulk_write_multiple_errors (void *unused)
    // the first error.
    bson_append_bool (&opts, "ordered", 7, false);
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
-   // Insert three documents. This is sent as one "insert" command to the
-   // server.
-   // configure fail point
    bool ret = mongoc_client_command_simple (
       client,
       "admin",
