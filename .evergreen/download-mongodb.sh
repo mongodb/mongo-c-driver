@@ -73,7 +73,7 @@ get_mongodb_download_url_for ()
    case "$_DISTRO" in
       darwin--arm64)
          MONGODB_LATEST="http://downloads.10gen.com/osx/mongodb-macos-arm64-enterprise-latest.tgz"
-             MONGODB_RAPID="http://downloads.10gen.com/osx/mongodb-macos-x86_64-enterprise-${VERSION_RAPID}.tgz"
+             MONGODB_RAPID="http://downloads.10gen.com/osx/mongodb-macos-arm64-enterprise-${VERSION_RAPID}.tgz"
              MONGODB_60_LATEST="http://downloads.10gen.com/osx/mongodb-macos-arm64-enterprise-${VERSION_60_LATEST}.tgz"
              MONGODB_60="http://downloads.10gen.com/osx/mongodb-macos-arm64-enterprise-${VERSION_60}.tgz"
              MONGODB_50="http://downloads.10gen.com/osx/mongodb-macos-x86_64-enterprise-${VERSION_50}.tgz"
@@ -162,6 +162,7 @@ get_mongodb_download_url_for ()
       ;;
       linux-rhel-7.1-ppc64le)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-rhel71-latest.tgz"
+             MONGODB_50="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-rhel71-${VERSION_50}.tgz"
              MONGODB_44="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-rhel71-${VERSION_44}.tgz"
              MONGODB_42="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-rhel71-${VERSION_42}.tgz"
              MONGODB_40="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-rhel71-${VERSION_40}.tgz"
@@ -486,46 +487,55 @@ get_mongodb_download_url_for ()
       ;;
    esac
 
-   # The crypt_shared package is available on server 6.0 and newer.
-   VERSION_INCLUDES_CRYPT_SHARED=YES
    case "$_VERSION" in
-      latest) MONGODB_DOWNLOAD_URL=$MONGODB_LATEST
-         # If latest is not at least 6.0 on this OS, the crypt_shared package will not be available.
-         if [ -z $MONGODB_60 ]; then
-           VERSION_INCLUDES_CRYPT_SHARED=NO
-         fi ;;
-      rapid) MONGODB_DOWNLOAD_URL=$MONGODB_RAPID
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
+      latest) MONGODB_DOWNLOAD_URL=$MONGODB_LATEST ;;
+      rapid) MONGODB_DOWNLOAD_URL=$MONGODB_RAPID ;;
       v6.0-latest) MONGODB_DOWNLOAD_URL=$MONGODB_60_LATEST ;;
       6.0) MONGODB_DOWNLOAD_URL=$MONGODB_60 ;;
-      5.0) MONGODB_DOWNLOAD_URL=$MONGODB_50
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
-      4.4) MONGODB_DOWNLOAD_URL=$MONGODB_44
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
-      4.2) MONGODB_DOWNLOAD_URL=$MONGODB_42
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
-      4.0) MONGODB_DOWNLOAD_URL=$MONGODB_40
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
-      3.6) MONGODB_DOWNLOAD_URL=$MONGODB_36
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
-      3.4) MONGODB_DOWNLOAD_URL=$MONGODB_34
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
-      3.2) MONGODB_DOWNLOAD_URL=$MONGODB_32
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
-      3.0) MONGODB_DOWNLOAD_URL=$MONGODB_30
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
-      2.6) MONGODB_DOWNLOAD_URL=$MONGODB_26
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
-      2.4) MONGODB_DOWNLOAD_URL=$MONGODB_24
-         VERSION_INCLUDES_CRYPT_SHARED=NO ;;
+      5.0) MONGODB_DOWNLOAD_URL=$MONGODB_50 ;;
+      4.4) MONGODB_DOWNLOAD_URL=$MONGODB_44 ;;
+      4.2) MONGODB_DOWNLOAD_URL=$MONGODB_42 ;;
+      4.0) MONGODB_DOWNLOAD_URL=$MONGODB_40 ;;
+      3.6) MONGODB_DOWNLOAD_URL=$MONGODB_36 ;;
+      3.4) MONGODB_DOWNLOAD_URL=$MONGODB_34 ;;
+      3.2) MONGODB_DOWNLOAD_URL=$MONGODB_32 ;;
+      3.0) MONGODB_DOWNLOAD_URL=$MONGODB_30 ;;
+      2.6) MONGODB_DOWNLOAD_URL=$MONGODB_26 ;;
+      2.4) MONGODB_DOWNLOAD_URL=$MONGODB_24 ;;
    esac
 
-   [ -z "$MONGODB_DOWNLOAD_URL" ] && MONGODB_DOWNLOAD_URL="Unknown version: $_VERSION for $_DISTRO"
+   if [ -z "$MONGODB_DOWNLOAD_URL" ]; then
+     echo "Unknown version: $_VERSION for $_DISTRO"
+     exit 1
+   fi
 
-   if [ "$VERSION_INCLUDES_CRYPT_SHARED" = "YES" ]; then
+   # Get the download URL for crypt_shared.
+   # The crypt_shared package is available on server 6.0 and newer.
+   # Try to download a version of crypt_shared matching the server version.
+   # If no matching version is available, try to download the latest Major release of crypt_shared.
+   case "$_VERSION" in
+      latest)
+         # If latest is not at least 6.0 on this OS, the crypt_shared package will not be available.
+         if [ -n "$MONGODB_60" ]; then
+           MONGO_CRYPT_SHARED_DOWNLOAD_URL=$MONGODB_LATEST
+         fi ;;
+      rapid) MONGO_CRYPT_SHARED_DOWNLOAD_URL=$MONGODB_RAPID ;;
+      v6.0-latest) MONGO_CRYPT_SHARED_DOWNLOAD_URL=$MONGODB_60_LATEST ;;
+      6.0) MONGO_CRYPT_SHARED_DOWNLOAD_URL=$MONGODB_60 ;;
+      5.0 | 4.4 | 4.2 | 4.0 | 3.6 | 3.4 | 3.2 | 3.0 | 2.6 | 2.4)
+         # Default to using the latest Major release. Major releases are expected yearly.
+         # MONGODB_60 may be empty if there is no 6.0 download available for this platform.
+         MONGO_CRYPT_SHARED_DOWNLOAD_URL="$MONGODB_60"
+         ;;
+      *) echo "Unknown version '$_VERSION'";
+         exit 1;
+         ;;
+   esac
+
+   if [ -n "$MONGO_CRYPT_SHARED_DOWNLOAD_URL" ]; then
       # The crypt_shared package is simply the same file URL with the "mongodb-"
       # prefix replaced with "mongo_crypt_shared_v1-"
-      MONGO_CRYPT_SHARED_DOWNLOAD_URL="$(printf '%s' "$MONGODB_DOWNLOAD_URL" | sed 's|/mongodb-|/mongo_crypt_shared_v1-|')"
+      MONGO_CRYPT_SHARED_DOWNLOAD_URL="$(printf '%s' "$MONGO_CRYPT_SHARED_DOWNLOAD_URL" | sed 's|/mongodb-|/mongo_crypt_shared_v1-|')"
    fi
    echo $MONGODB_DOWNLOAD_URL
 }
@@ -563,12 +573,16 @@ download_and_extract ()
       # Download 5.0 package to get the legacy mongo shell as a workaround until DRIVERS-2328 is addressed.
       echo "Legacy 'mongo' shell not detected."
       echo "Download legacy shell from 5.0 ... begin"
-      get_mongodb_download_url_for "$DISTRO" "5.0"
+      # Use a subshell to avoid overwriting MONGODB_DOWNLOAD_URL and MONGO_CRYPT_SHARED_DOWNLOAD_URL.
+      MONGODB50_DOWNLOAD_URL=$(
+         get_mongodb_download_url_for "$DISTRO" "5.0" > /dev/null
+         echo $MONGODB_DOWNLOAD_URL
+      )
 
       SAVED_DRIVERS_TOOLS=$DRIVERS_TOOLS
       mkdir $DRIVERS_TOOLS/legacy-shell-download
       DRIVERS_TOOLS=$DRIVERS_TOOLS/legacy-shell-download
-      download_and_extract_package "$MONGODB_DOWNLOAD_URL" "$EXTRACT"
+      download_and_extract_package "$MONGODB50_DOWNLOAD_URL" "$EXTRACT"
       if [ -e $DRIVERS_TOOLS/mongodb/bin/mongo ]; then
          cp $DRIVERS_TOOLS/mongodb/bin/mongo $SAVED_DRIVERS_TOOLS/mongodb/bin
       elif [ -e $DRIVERS_TOOLS/mongodb/bin/mongo.exe ]; then
