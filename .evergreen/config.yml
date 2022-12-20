@@ -471,6 +471,7 @@ functions:
           export MONGOC_TEST_CSFLE_TLS_CA_FILE=../drivers-evergreen-tools/.evergreen/x509gen/ca.pem
           export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE=../drivers-evergreen-tools/.evergreen/x509gen/client.pem
           echo "Setting KMS credentials from the environment... done."
+          export SKIP_CRYPT_SHARED_LIB="${SKIP_CRYPT_SHARED_LIB}"
         fi
         export LOADBALANCED=${LOADBALANCED}
         export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"
@@ -1932,7 +1933,6 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
-        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1965,7 +1965,6 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL_STATIC"
-        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -1998,7 +1997,6 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="DARWIN"
-        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -2031,7 +2029,6 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="WINDOWS"
-        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -2064,7 +2061,6 @@ tasks:
         export SANITIZE="address"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
-        export USE_CRYPT_SHARED="${USE_CRYPT_SHARED}"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
@@ -24879,11 +24875,11 @@ buildvariants:
   - .debug-compile .asan-clang
   - .test-asan !.3.6
   batchtime: 1440
-- name: asan-ubuntu-without-csfle
-  display_name: ASAN Tests without csfle (Ubuntu 18.04)
+- name: asan-ubuntu-with-mongocryptd
+  display_name: ASAN Tests with mongocryptd (Ubuntu 18.04)
   expansions:
     CC: clang
-    USE_CRYPT_SHARED: 'OFF'
+    SKIP_CRYPT_SHARED_LIB: 'on'
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-asan-openssl-cse
