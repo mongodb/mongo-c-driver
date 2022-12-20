@@ -110,10 +110,16 @@ if [ "$CLIENT_SIDE_ENCRYPTION" = "on" ]; then
    wait_for_kms_server 9002
    wait_for_kms_server 5698
    echo "Waiting for mock KMS servers to start... done."
-   if ! test -d /cygdrive/c; then
+
+   # Check if tests should use the crypt_shared library.
+   if [ "$SKIP_CRYPT_SHARED_LIB" = "on" ]; then
+      echo "crypt_shared library is skipped due to SKIP_CRYPT_SHARED_LIB=on"
+   elif test -d /cygdrive/c; then
       # We have trouble with this test on Windows. only set cryptSharedLibPath on other platforms
+      echo "crypt_shared library is skipped due to running on Windows"
+   else
       export MONGOC_TEST_CRYPT_SHARED_LIB_PATH="$CRYPT_SHARED_LIB_PATH"
-      echo "Setting env cryptSharedLibPath: [$MONGOC_TEST_CRYPT_SHARED_LIB_PATH]"
+      echo "crypt_shared library will be loaded with cryptSharedLibPath: [$MONGOC_TEST_CRYPT_SHARED_LIB_PATH]"
    fi
 fi
 

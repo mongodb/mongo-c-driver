@@ -346,6 +346,7 @@ all_functions = OD([
           export MONGOC_TEST_CSFLE_TLS_CA_FILE=../drivers-evergreen-tools/.evergreen/x509gen/ca.pem
           export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE=../drivers-evergreen-tools/.evergreen/x509gen/client.pem
           echo "Setting KMS credentials from the environment... done."
+          export SKIP_CRYPT_SHARED_LIB="${SKIP_CRYPT_SHARED_LIB}"
         fi
         export LOADBALANCED=${LOADBALANCED}
         export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"
