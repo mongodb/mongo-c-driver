@@ -24875,8 +24875,8 @@ buildvariants:
   - .debug-compile .asan-clang
   - .test-asan !.3.6
   batchtime: 1440
-- name: asan-ubuntu-without-csfle
-  display_name: ASAN Tests without csfle (Ubuntu 18.04)
+- name: asan-ubuntu-with-mongocryptd
+  display_name: ASAN Tests with mongocryptd (Ubuntu 18.04)
   expansions:
     CC: clang
     SKIP_CRYPT_SHARED_LIB: 'on'
