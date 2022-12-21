@@ -4211,6 +4211,22 @@ test_hint_pooled_command_primary (void)
    _test_bulk_hint (true, true);
 }
 
+// test_bulk_reply_w0_finished returns true when the last unacknowledged write
+// has applied in test_bulk_reply_w0.
+static bool
+test_bulk_reply_w0_finished (mongoc_collection_t *coll)
+{
+   bson_error_t error;
+   int64_t count =
+      mongoc_collection_count_documents (coll,
+                                         tmp_bson ("{'finished': true}"),
+                                         NULL /* opts */,
+                                         NULL /* read_prefs */,
+                                         NULL /* reply */,
+                                         &error);
+   ASSERT_OR_PRINT (-1 != count, error);
+   return count == 1;
+}
 
 static void
 test_bulk_reply_w0 (void)
@@ -4233,11 +4249,17 @@ test_bulk_reply_w0 (void)
    mongoc_bulk_operation_update (
       bulk, tmp_bson ("{}"), tmp_bson ("{'$set': {'x': 1}}"), false);
    mongoc_bulk_operation_remove (bulk, tmp_bson ("{}"));
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'finished': true}"));
 
    ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, &reply, &error),
                     error);
 
    ASSERT (bson_empty (&reply));
+
+   // Wait for the last insert to finish applying before proceeding to the next
+   // test. Otherwise, the commands may trigger failpoints of other tests (see
+   // CDRIVER-4539).
+   WAIT_UNTIL (test_bulk_reply_w0_finished (collection));
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
