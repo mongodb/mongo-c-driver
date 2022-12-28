@@ -44,7 +44,7 @@ html_use_index = False
 
 def add_canonical_link(app, pagename, templatename, context, doctree):
     link = ('<link rel="canonical"'
-            ' href="http://mongoc.org/libbson/current/%s.html"/>' % pagename)
+            ' href="https://www.mongoc.org/libbson/current/%s.html"/>' % pagename)
 
     context['metatags'] = context.get('metatags', '') + link
 

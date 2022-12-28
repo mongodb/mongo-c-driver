@@ -83,7 +83,7 @@ Requires:   cmake(mongocrypt)
 This package contains the header files and development libraries
 for %{name}.
 
-Documentation: http://mongoc.org/libmongoc/%{version}/
+Documentation: https://www.mongoc.org/libmongoc/%{version}/
 
 
 %package -n libbson
@@ -109,7 +109,7 @@ Requires:   cmake-filesystem
 This package contains libraries and header files needed for developing
 applications that use %{name}.
 
-Documentation: http://mongoc.org/libbson/%{version}/
+Documentation: https://www.mongoc.org/libbson/%{version}/
 
 
 %prep

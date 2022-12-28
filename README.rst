@@ -15,7 +15,7 @@ If libmongoc is not needed, it is possible to build and install only libbson.
 Documentation / Support / Feedback
 ==================================
 
-The documentation is available at http://mongoc.org/.
+The documentation is available at https://www.mongoc.org/.
 For issues with, questions about, or feedback for libmongoc, please look into
 our `support channels <http://www.mongodb.org/about/support>`_. Please
 do not email any of the libmongoc developers directly with issues or
@@ -86,4 +86,4 @@ Installation
 ============
 
 Detailed installation instructions are in the manual:
-http://mongoc.org/libmongoc/current/installing.html
+https://www.mongoc.org/libmongoc/current/installing.html

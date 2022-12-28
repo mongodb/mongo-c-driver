@@ -109,7 +109,7 @@ class VersionList(Directive):
 
         header = nodes.paragraph('','')
         p = nodes.paragraph('', '')
-        uri = 'http://mongoc.org/%s/%s/index.html' % (libname, versions[0])
+        uri = 'https://www.mongoc.org/%s/%s/index.html' % (libname, versions[0])
         p += nodes.reference('', 'Latest Release (%s)' % versions[0], internal=False, refuri=uri)
         header += p
         p = nodes.paragraph('', '')
@@ -121,7 +121,7 @@ class VersionList(Directive):
         for v in versions:
             item = nodes.list_item()
             p = nodes.paragraph('', '')
-            uri = 'http://mongoc.org/%s/%s/index.html' % (libname, v)
+            uri = 'https://www.mongoc.org/%s/%s/index.html' % (libname, v)
             p += nodes.reference('', v, internal=False, refuri=uri)
             item += p
             blist += item
