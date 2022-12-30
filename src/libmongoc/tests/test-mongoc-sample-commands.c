@@ -3806,7 +3806,7 @@ callback (mongoc_client_session_t *session,
           bson_error_t *error);
 
 /* See additional usage of mongoc_client_session_with_transaction at
- * http://mongoc.org/libmongoc/1.15.3/mongoc_client_session_with_transaction.html
+ * https://www.mongoc.org/libmongoc/1.15.3/mongoc_client_session_with_transaction.html
  */
 /* Start Transactions withTxn API Example 1 */
 static bool
