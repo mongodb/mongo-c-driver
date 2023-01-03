@@ -1,3 +1,16 @@
+libmongoc 1.23.2
+================
+
+Bug fixes:
+
+  * Fix compile on M1 macOS fails due to undeclared function (getpagesize)
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Kyle Kloberdanz
+
+
 libmongoc 1.22.2
 ================
 
