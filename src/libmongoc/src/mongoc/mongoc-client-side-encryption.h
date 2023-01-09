@@ -35,8 +35,10 @@ struct _mongoc_database_t;
    "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
 #define MONGOC_ENCRYPT_ALGORITHM_INDEXED "Indexed"
 #define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
+#define MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW "RangePreview"
 
 #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
+#define MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW "rangePreview"
 
 
 BSON_BEGIN_DECLS
@@ -100,6 +102,8 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback (
 
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
+typedef struct _mongoc_client_encryption_encrypt_range_opts_t
+   mongoc_client_encryption_encrypt_range_opts_t;
 typedef struct _mongoc_client_encryption_encrypt_opts_t
    mongoc_client_encryption_encrypt_opts_t;
 typedef struct _mongoc_client_encryption_datakey_opts_t
@@ -222,6 +226,14 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
                                   bson_error_t *error);
 
 MONGOC_EXPORT (bool)
+mongoc_client_encryption_encrypt_expression (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *expr,
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   bson_t *expr_out,
+   bson_error_t *error);
+
+MONGOC_EXPORT (bool)
 mongoc_client_encryption_decrypt (mongoc_client_encryption_t *client_encryption,
                                   const bson_value_t *ciphertext,
                                   bson_value_t *value,
@@ -253,6 +265,33 @@ mongoc_client_encryption_encrypt_opts_set_contention_factor (
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_query_type (
    mongoc_client_encryption_encrypt_opts_t *opts, const char *query_type);
+
+MONGOC_EXPORT (mongoc_client_encryption_encrypt_range_opts_t *)
+mongoc_client_encryption_encrypt_range_opts_new (void);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_range_opts_destroy (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_range_opts_set_sparsity (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts, int64_t sparsity);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_range_opts_set_min_max (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts,
+   const bson_value_t *min,
+   const bson_value_t *max);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_range_opts_set_precision (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts,
+   int32_t precision);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_opts_set_range_opts (
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   const mongoc_client_encryption_encrypt_range_opts_t *range_opts);
 
 MONGOC_EXPORT (mongoc_client_encryption_datakey_opts_t *)
 mongoc_client_encryption_datakey_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;

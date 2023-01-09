@@ -639,6 +639,27 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                      \
    } while (0)
 
+// bson_value_to_str returns a string representation of a BSON value.
+// Example: { "$numberInt": "123" }
+// The return string must be freed with bson_free.
+char *
+bson_value_to_str (const bson_value_t *val);
+
+// bson_value_eq returns true if both bson_value_t contain equal values.
+bool
+bson_value_eq (const bson_value_t *a, const bson_value_t *b);
+
+// ASSERT_BSONVALUE_EQ asserts that two const bson_value_t* contain equal
+// values.
+#define ASSERT_BSONVALUE_EQ(a, b)                                      \
+   if (1) {                                                            \
+      if (!bson_value_eq ((a), (b))) {                                 \
+         test_error (                                                  \
+            "%s != %s", bson_value_to_str (a), bson_value_to_str (b)); \
+      }                                                                \
+   } else                                                              \
+      (void) 0
+
 #define MAX_TEST_NAME_LENGTH 500
 #define MAX_TEST_CHECK_FUNCS 10
 

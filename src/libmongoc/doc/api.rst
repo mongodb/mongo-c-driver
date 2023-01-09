@@ -17,6 +17,7 @@ API Reference
    mongoc_client_encryption_datakey_opts_t
    mongoc_client_encryption_rewrap_many_datakey_result_t
    mongoc_client_encryption_encrypt_opts_t
+   mongoc_client_encryption_encrypt_range_opts_t
    mongoc_client_encryption_opts_t
    mongoc_client_pool_t
    mongoc_client_session_t

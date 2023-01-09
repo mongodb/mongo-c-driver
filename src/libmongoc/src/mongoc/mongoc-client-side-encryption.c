@@ -433,6 +433,19 @@ mongoc_client_encryption_datakey_opts_set_keymaterial (
  * Explicit Encryption options.
  *--------------------------------------------------------------------------
  */
+struct _mongoc_client_encryption_encrypt_range_opts_t {
+   struct {
+      bson_value_t min;
+      bson_value_t max;
+      bool set;
+   } minmax;
+   int64_t sparsity;
+   struct {
+      int32_t value;
+      bool set;
+   } precision;
+};
+
 struct _mongoc_client_encryption_encrypt_opts_t {
    bson_value_t keyid;
    char *algorithm;
@@ -442,6 +455,7 @@ struct _mongoc_client_encryption_encrypt_opts_t {
       bool set;
    } contention_factor;
    char *query_type;
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts;
 };
 
 mongoc_client_encryption_encrypt_opts_t *
@@ -451,12 +465,28 @@ mongoc_client_encryption_encrypt_opts_new (void)
 }
 
 void
+mongoc_client_encryption_encrypt_range_opts_destroy (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts)
+{
+   if (!range_opts) {
+      return;
+   }
+
+   if (range_opts->minmax.set) {
+      bson_value_destroy (&range_opts->minmax.max);
+      bson_value_destroy (&range_opts->minmax.min);
+   }
+   bson_free (range_opts);
+}
+
+void
 mongoc_client_encryption_encrypt_opts_destroy (
    mongoc_client_encryption_encrypt_opts_t *opts)
 {
    if (!opts) {
       return;
    }
+   mongoc_client_encryption_encrypt_range_opts_destroy (opts->range_opts);
    bson_value_destroy (&opts->keyid);
    bson_free (opts->algorithm);
    bson_free (opts->keyaltname);
@@ -522,6 +552,86 @@ mongoc_client_encryption_encrypt_opts_set_query_type (
    }
    bson_free (opts->query_type);
    opts->query_type = query_type ? bson_strdup (query_type) : NULL;
+}
+
+/*--------------------------------------------------------------------------
+ * Explicit Encryption Range Options
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_encryption_encrypt_range_opts_t *
+mongoc_client_encryption_encrypt_range_opts_new (void)
+{
+   return bson_malloc0 (sizeof (mongoc_client_encryption_encrypt_range_opts_t));
+}
+
+void
+mongoc_client_encryption_encrypt_range_opts_set_sparsity (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts, int64_t sparsity)
+{
+   BSON_ASSERT_PARAM (range_opts);
+   range_opts->sparsity = sparsity;
+}
+
+void
+mongoc_client_encryption_encrypt_range_opts_set_min_max (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts,
+   const bson_value_t *min,
+   const bson_value_t *max)
+{
+   BSON_ASSERT_PARAM (range_opts);
+   BSON_ASSERT_PARAM (min);
+   BSON_ASSERT_PARAM (max);
+
+   if (range_opts->minmax.set) {
+      bson_value_destroy (&range_opts->minmax.min);
+      bson_value_destroy (&range_opts->minmax.max);
+   }
+   range_opts->minmax.set = true;
+   bson_value_copy (min, &range_opts->minmax.min);
+   bson_value_copy (max, &range_opts->minmax.max);
+}
+
+void
+mongoc_client_encryption_encrypt_range_opts_set_precision (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts, int32_t precision)
+{
+   BSON_ASSERT_PARAM (range_opts);
+   range_opts->precision.set = true;
+   range_opts->precision.value = precision;
+}
+
+static mongoc_client_encryption_encrypt_range_opts_t *
+copy_range_opts (const mongoc_client_encryption_encrypt_range_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (opts);
+   mongoc_client_encryption_encrypt_range_opts_t *opts_new =
+      mongoc_client_encryption_encrypt_range_opts_new ();
+   if (opts->minmax.set) {
+      bson_value_copy (&opts->minmax.max, &opts_new->minmax.max);
+      bson_value_copy (&opts->minmax.min, &opts_new->minmax.min);
+      opts_new->minmax.set = true;
+   }
+   if (opts->precision.set) {
+      opts_new->precision.value = opts->precision.value;
+      opts_new->precision.set = true;
+   }
+   opts_new->sparsity = opts->sparsity;
+   return opts_new;
+}
+
+void
+mongoc_client_encryption_encrypt_opts_set_range_opts (
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   const mongoc_client_encryption_encrypt_range_opts_t *range_opts)
+{
+   BSON_ASSERT_PARAM (opts);
+
+   if (opts->range_opts) {
+      mongoc_client_encryption_encrypt_range_opts_destroy (opts->range_opts);
+      opts->range_opts = NULL;
+   }
+
+   opts->range_opts = copy_range_opts (range_opts);
 }
 
 /*--------------------------------------------------------------------------
@@ -814,6 +924,25 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
 }
 
 bool
+mongoc_client_encryption_encrypt_expression (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *expr,
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   bson_t *expr_encrypted,
+   bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (expr);
+   BSON_ASSERT_PARAM (opts);
+   BSON_ASSERT_PARAM (expr_encrypted);
+   BSON_ASSERT (error || true);
+
+   bson_init (expr_encrypted);
+
+   return _disabled_error (error);
+}
+
+bool
 mongoc_client_encryption_decrypt (mongoc_client_encryption_t *client_encryption,
                                   const bson_value_t *ciphertext,
                                   bson_value_t *value,
@@ -861,6 +990,32 @@ mongoc_client_encryption_create_encrypted_collection (
 }
 
 #else
+
+/* Appends the range opts set by the user into a bson_t that can be passed to
+ * libmongocrypt.
+ */
+static void
+append_bson_range_opts (bson_t *bson_range_opts,
+                        const mongoc_client_encryption_encrypt_opts_t *opts)
+{
+   BSON_ASSERT_PARAM (bson_range_opts);
+   BSON_ASSERT_PARAM (opts);
+
+   if (opts->range_opts->minmax.set) {
+      BSON_ASSERT (BSON_APPEND_VALUE (
+         bson_range_opts, "max", &opts->range_opts->minmax.max));
+      BSON_ASSERT (BSON_APPEND_VALUE (
+         bson_range_opts, "min", &opts->range_opts->minmax.min));
+   }
+   if (opts->range_opts->precision.set) {
+      BSON_ASSERT (BSON_APPEND_INT32 (
+         bson_range_opts, "precision", opts->range_opts->precision.value));
+   }
+   if (opts->range_opts->sparsity) {
+      BSON_ASSERT (BSON_APPEND_INT64 (
+         bson_range_opts, "sparsity", opts->range_opts->sparsity));
+   }
+}
 
 /*--------------------------------------------------------------------------
  *
@@ -2595,6 +2750,7 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
                                   bson_error_t *error)
 {
    bool ret = false;
+   bson_t *range_opts = NULL;
 
    ENTRY;
 
@@ -2619,6 +2775,11 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
       GOTO (fail);
    }
 
+   if (opts->range_opts) {
+      range_opts = bson_new ();
+      append_bson_range_opts (range_opts, opts);
+   }
+
    if (!_mongoc_crypt_explicit_encrypt (
           client_encryption->crypt,
           client_encryption->keyvault_coll,
@@ -2627,6 +2788,7 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
           opts->keyaltname,
           opts->query_type,
           opts->contention_factor.set ? &opts->contention_factor.value : NULL,
+          range_opts,
           value,
           ciphertext,
           error)) {
@@ -2635,7 +2797,52 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
 
    ret = true;
 fail:
+   bson_destroy (range_opts);
    RETURN (ret);
+}
+
+
+bool
+mongoc_client_encryption_encrypt_expression (
+   mongoc_client_encryption_t *client_encryption,
+   const bson_t *expr,
+   mongoc_client_encryption_encrypt_opts_t *opts,
+   bson_t *expr_out,
+   bson_error_t *error)
+{
+   ENTRY;
+
+   BSON_ASSERT_PARAM (client_encryption);
+   BSON_ASSERT_PARAM (expr);
+   BSON_ASSERT_PARAM (opts);
+   BSON_ASSERT_PARAM (expr_out);
+   BSON_ASSERT (error || true);
+
+   bson_init (expr_out);
+
+   bson_t *range_opts = NULL;
+   if (opts->range_opts) {
+      range_opts = bson_new ();
+      append_bson_range_opts (range_opts, opts);
+   }
+
+   if (!_mongoc_crypt_explicit_encrypt_expression (
+          client_encryption->crypt,
+          client_encryption->keyvault_coll,
+          opts->algorithm,
+          &opts->keyid,
+          opts->keyaltname,
+          opts->query_type,
+          opts->contention_factor.set ? &opts->contention_factor.value : NULL,
+          range_opts,
+          expr,
+          expr_out,
+          error)) {
+      bson_destroy (range_opts);
+      RETURN (false);
+   }
+   bson_destroy (range_opts);
+   RETURN (true);
 }
 
 bool
@@ -2788,19 +2995,20 @@ mongoc_client_encryption_create_encrypted_collection (
          // We only care about the "fields" array
          when (not(key ("fields")), appendTo (new_encryptedFields)),
          // Automaticall fill in the "keyId" no each field:
-         else(storeDocRef (fields_ref), do({
-                 bson_t new_fields = BSON_INITIALIZER;
-                 // Create the new fields, filling out the 'keyId'
-                 // automatically:
-                 if (!_mongoc_encryptedFields_fill_auto_datakeys (
-                        &new_fields, &fields_ref, _auto_datakey, &ctx, error)) {
-                    bsonParseError = "Error creating datakeys";
-                 } else {
-                    BSON_APPEND_ARRAY (
-                       &new_encryptedFields, "fields", &new_fields);
-                    bson_destroy (&new_fields);
-                 }
-              }))));
+         else (
+            storeDocRef (fields_ref), do ({
+               bson_t new_fields = BSON_INITIALIZER;
+               // Create the new fields, filling out the 'keyId'
+               // automatically:
+               if (!_mongoc_encryptedFields_fill_auto_datakeys (
+                      &new_fields, &fields_ref, _auto_datakey, &ctx, error)) {
+                  bsonParseError = "Error creating datakeys";
+               } else {
+                  BSON_APPEND_ARRAY (
+                     &new_encryptedFields, "fields", &new_fields);
+                  bson_destroy (&new_fields);
+               }
+            }))));
    if (bsonParseError) {
       // Error creating the new datakeys.
       // `error` was set by _mongoc_encryptedFields_fill_auto_datakeys
@@ -2855,7 +3063,7 @@ _init_1_encryptedField (bson_t *out_field,
       if (not(keyWithType ("keyId", null)),
           then (appendTo (*out_field), continue)),
       // Otherwise:
-      do({
+      do ({
          // Set up factory context
          bson_value_t new_key = {0};
          struct auto_datakey_context ctx = {
@@ -2901,7 +3109,7 @@ _init_encryptedFields (bson_t *out_fields,
          kv (
             bson_iter_key (&bsonVisitIter),
             // Construct the encryptedField document from the input:
-            doc (do(_init_1_encryptedField (
+            doc (do (_init_1_encryptedField (
                bsonBuildContext.doc, &cur_field, fac, fac_userdata, error))))));
    if (error && error->code == 0) {
       // The factory/internal code did not set error, so we may have to set it

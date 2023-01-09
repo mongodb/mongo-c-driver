@@ -3706,6 +3706,714 @@ explicit_encryption_destroy (ee_fixture *eef)
    bson_free (eef);
 }
 
+/* ree_fixture is a fixture for the Range Explicit Encryption prose test. */
+typedef struct {
+   bson_value_t key1ID;
+   mongoc_client_t *keyVaultClient;
+   mongoc_client_encryption_t *clientEncryption;
+   mongoc_client_t *encryptedClient;
+   mongoc_collection_t *encryptedColl;
+   // typeStr is DoublePrecision, DoubleNoPrecision, Date, Int, or Long
+   const char *typeStr;
+   char *fieldName;
+   bson_value_t zero;
+   bson_value_t six;
+   bson_value_t thirty;
+   bson_value_t twoHundred;
+   bson_value_t twoHundredOne;
+   mongoc_client_encryption_encrypt_range_opts_t *ro;
+} ree_fixture;
+
+static ree_fixture *
+range_explicit_encryption_setup (const char *typeStr)
+{
+   ree_fixture *reef = (ree_fixture *) bson_malloc0 (sizeof (ree_fixture));
+   reef->typeStr = typeStr;
+   reef->fieldName = bson_strdup_printf ("encrypted%s", typeStr);
+   char *filepath =
+      bson_strdup_printf ("./src/libmongoc/tests/client_side_encryption_prose/"
+                          "explicit_encryption/range-encryptedFields-%s.json",
+                          typeStr);
+   bson_t *encryptedFields = get_bson_from_json_file (filepath);
+   ASSERT (encryptedFields);
+   bson_free (filepath);
+   bson_t *key1Document = get_bson_from_json_file (
+      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+      "key1-document.json");
+   ASSERT (key1Document);
+   mongoc_client_t *setupClient = test_framework_new_default_client ();
+
+
+   /* Read the ``"_id"`` field of ``key1Document`` as ``key1ID``. */
+   {
+      bson_iter_t iter;
+      const bson_value_t *value;
+
+      ASSERT (bson_iter_init_find (&iter, key1Document, "_id"));
+      value = bson_iter_value (&iter);
+      bson_value_copy (value, &reef->key1ID);
+   }
+
+   /* Drop and create the collection ``db.explicit_encryption`` using
+    * ``encryptedFields`` as an option. */
+   {
+      mongoc_database_t *db = mongoc_client_get_database (setupClient, "db");
+      mongoc_collection_t *coll =
+         mongoc_database_get_collection (db, "explicit_encryption");
+      bson_error_t error;
+      bson_t *opts;
+
+      opts = BCON_NEW ("encryptedFields", BCON_DOCUMENT (encryptedFields));
+
+      if (!mongoc_collection_drop_with_opts (coll, opts, &error)) {
+         if (error.code != MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+            test_error ("unexpected error in drop: %s", error.message);
+         }
+      }
+      mongoc_collection_destroy (coll);
+
+      coll = mongoc_database_create_collection (
+         db, "explicit_encryption", opts, &error);
+      ASSERT_OR_PRINT (coll, error);
+
+      mongoc_collection_destroy (coll);
+      bson_destroy (opts);
+      mongoc_database_destroy (db);
+   }
+
+   /* Drop and create the collection ``keyvault.datakeys``. */
+   {
+      mongoc_database_t *db =
+         mongoc_client_get_database (setupClient, "keyvault");
+      mongoc_collection_t *coll =
+         mongoc_database_get_collection (db, "datakeys");
+      bson_error_t error;
+      bson_t iopts = BSON_INITIALIZER;
+      mongoc_write_concern_t *wc;
+
+      if (!mongoc_collection_drop (coll, &error)) {
+         if (error.code != MONGOC_SERVER_ERR_NS_NOT_FOUND) {
+            test_error ("unexpected error in drop: %s", error.message);
+         }
+      }
+      mongoc_collection_destroy (coll);
+
+      coll = mongoc_database_create_collection (
+         db, "datakeys", NULL /* opts */, &error);
+      ASSERT_OR_PRINT (coll, error);
+
+      /* Insert keyDocument1 with write concern majority */
+      wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      ASSERT (mongoc_write_concern_append (wc, &iopts));
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                          coll, key1Document, &iopts, NULL /* reply */, &error),
+                       error);
+
+      mongoc_write_concern_destroy (wc);
+      bson_destroy (&iopts);
+      mongoc_collection_destroy (coll);
+      mongoc_database_destroy (db);
+   }
+
+   reef->keyVaultClient = test_framework_new_default_client ();
+
+   /* Create a ClientEncryption object named ``clientEncryption`` */
+   {
+      mongoc_client_encryption_opts_t *ceOpts =
+         mongoc_client_encryption_opts_new ();
+      bson_t *kms_providers = _make_local_kms_provider (NULL);
+      bson_error_t error;
+
+      mongoc_client_encryption_opts_set_keyvault_client (ceOpts,
+                                                         reef->keyVaultClient);
+      mongoc_client_encryption_opts_set_keyvault_namespace (
+         ceOpts, "keyvault", "datakeys");
+      mongoc_client_encryption_opts_set_kms_providers (ceOpts, kms_providers);
+
+      reef->clientEncryption = mongoc_client_encryption_new (ceOpts, &error);
+      ASSERT_OR_PRINT (reef->clientEncryption, error);
+
+      bson_destroy (kms_providers);
+      mongoc_client_encryption_opts_destroy (ceOpts);
+   }
+
+   /* Create a MongoClient named ``encryptedClient``. */
+   {
+      mongoc_auto_encryption_opts_t *aeOpts =
+         mongoc_auto_encryption_opts_new ();
+      bson_t *kms_providers = _make_local_kms_provider (NULL);
+      bson_error_t error;
+
+      mongoc_auto_encryption_opts_set_keyvault_namespace (
+         aeOpts, "keyvault", "datakeys");
+      mongoc_auto_encryption_opts_set_kms_providers (aeOpts, kms_providers);
+      mongoc_auto_encryption_opts_set_bypass_query_analysis (aeOpts, true);
+      reef->encryptedClient = test_framework_new_default_client ();
+      ASSERT_OR_PRINT (mongoc_client_enable_auto_encryption (
+                          reef->encryptedClient, aeOpts, &error),
+                       error);
+
+      bson_destroy (kms_providers);
+      mongoc_auto_encryption_opts_destroy (aeOpts);
+      reef->encryptedColl = mongoc_client_get_collection (
+         reef->encryptedClient, "db", "explicit_encryption");
+   }
+
+   /* Create the values 0, 6, 30, 200, and 201 as BSON values. */
+   {
+      if (0 == strcmp ("DoubleNoPrecision", typeStr) ||
+          0 == strcmp ("DoublePrecision", typeStr)) {
+         reef->zero.value_type = BSON_TYPE_DOUBLE;
+         reef->zero.value.v_double = 0;
+         reef->six.value_type = BSON_TYPE_DOUBLE;
+         reef->six.value.v_double = 6;
+         reef->thirty.value_type = BSON_TYPE_DOUBLE;
+         reef->thirty.value.v_double = 30;
+         reef->twoHundred.value_type = BSON_TYPE_DOUBLE;
+         reef->twoHundred.value.v_double = 200;
+         reef->twoHundredOne.value_type = BSON_TYPE_DOUBLE;
+         reef->twoHundredOne.value.v_double = 201;
+      } else if (0 == strcmp ("Date", typeStr)) {
+         reef->zero.value_type = BSON_TYPE_DATE_TIME;
+         reef->zero.value.v_datetime = 0;
+         reef->six.value_type = BSON_TYPE_DATE_TIME;
+         reef->six.value.v_datetime = 6;
+         reef->thirty.value_type = BSON_TYPE_DATE_TIME;
+         reef->thirty.value.v_datetime = 30;
+         reef->twoHundred.value_type = BSON_TYPE_DATE_TIME;
+         reef->twoHundred.value.v_datetime = 200;
+         reef->twoHundredOne.value_type = BSON_TYPE_DATE_TIME;
+         reef->twoHundredOne.value.v_datetime = 201;
+      } else if (0 == strcmp ("Int", typeStr)) {
+         reef->zero.value_type = BSON_TYPE_INT32;
+         reef->zero.value.v_int32 = 0;
+         reef->six.value_type = BSON_TYPE_INT32;
+         reef->six.value.v_int32 = 6;
+         reef->thirty.value_type = BSON_TYPE_INT32;
+         reef->thirty.value.v_int32 = 30;
+         reef->twoHundred.value_type = BSON_TYPE_INT32;
+         reef->twoHundred.value.v_int32 = 200;
+         reef->twoHundredOne.value_type = BSON_TYPE_INT32;
+         reef->twoHundredOne.value.v_int32 = 201;
+      } else if (0 == strcmp ("Long", typeStr)) {
+         reef->zero.value_type = BSON_TYPE_INT64;
+         reef->zero.value.v_int64 = 0;
+         reef->six.value_type = BSON_TYPE_INT64;
+         reef->six.value.v_int64 = 6;
+         reef->thirty.value_type = BSON_TYPE_INT64;
+         reef->thirty.value.v_int64 = 30;
+         reef->twoHundred.value_type = BSON_TYPE_INT64;
+         reef->twoHundred.value.v_int64 = 200;
+         reef->twoHundredOne.value_type = BSON_TYPE_INT64;
+         reef->twoHundredOne.value.v_int64 = 201;
+      } else {
+         test_error ("Unexpected type string: %s\n", typeStr);
+      }
+   }
+
+   /* Create the RangeOpts depending on the type. */
+   {
+      reef->ro = mongoc_client_encryption_encrypt_range_opts_new ();
+      mongoc_client_encryption_encrypt_range_opts_set_sparsity (reef->ro, 1);
+      if (0 == strcmp ("DoubleNoPrecision", typeStr)) {
+         // DoubleNoPrecision does not need more range options.
+      } else if (0 == strcmp ("DoublePrecision", typeStr)) {
+         mongoc_client_encryption_encrypt_range_opts_set_min_max (
+            reef->ro, &reef->zero, &reef->twoHundred);
+         mongoc_client_encryption_encrypt_range_opts_set_precision (reef->ro,
+                                                                    2);
+      } else if (0 == strcmp ("Date", typeStr) ||
+                 0 == strcmp ("Int", typeStr) ||
+                 0 == strcmp ("Long", typeStr)) {
+         mongoc_client_encryption_encrypt_range_opts_set_min_max (
+            reef->ro, &reef->zero, &reef->twoHundred);
+      } else {
+         test_error ("Unexpected type string: %s\n", typeStr);
+      }
+   }
+
+   /* Encrypt and insert 0, 6, 30, and 200. */
+   {
+      mongoc_client_encryption_encrypt_opts_t *eo;
+      bool ok;
+      bson_error_t error;
+
+      eo = mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
+      mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
+
+      bson_value_t *values[4];
+      values[0] = &reef->zero;
+      values[1] = &reef->six;
+      values[2] = &reef->thirty;
+      values[3] = &reef->twoHundred;
+
+      for (size_t i = 0; i < sizeof values / sizeof values[0]; i++) {
+         bson_value_t *value = values[i];
+         bson_value_t ciphertext;
+         ok = mongoc_client_encryption_encrypt (
+            reef->clientEncryption, value, eo, &ciphertext, &error);
+         ASSERT_OR_PRINT (ok, error);
+         bson_t *doc = bson_new ();
+         BSON_APPEND_INT32 (doc, "_id", (int32_t) i);
+         BSON_APPEND_VALUE (doc, reef->fieldName, &ciphertext);
+         ok = mongoc_collection_insert_one (reef->encryptedColl,
+                                            doc,
+                                            NULL /* opts */,
+                                            NULL /* reply */,
+                                            &error);
+         ASSERT_OR_PRINT (ok, error);
+         bson_destroy (doc);
+         bson_value_destroy (&ciphertext);
+      }
+
+      mongoc_client_encryption_encrypt_opts_destroy (eo);
+   }
+
+   mongoc_client_destroy (setupClient);
+   bson_destroy (key1Document);
+   bson_destroy (encryptedFields);
+   return reef;
+}
+
+static void
+range_explicit_encryption_destroy (ree_fixture *reef)
+{
+   if (!reef) {
+      return;
+   }
+
+   bson_free (reef->fieldName);
+   mongoc_client_encryption_encrypt_range_opts_destroy (reef->ro);
+   mongoc_collection_destroy (reef->encryptedColl);
+   mongoc_client_destroy (reef->encryptedClient);
+   mongoc_client_encryption_destroy (reef->clientEncryption);
+   mongoc_client_destroy (reef->keyVaultClient);
+   bson_value_destroy (&reef->key1ID);
+   bson_free (reef);
+}
+
+// range_explicit_encryption_assert_cursor_results asserts that the encrypted
+// field in documents returned by the cursor have match a list of values. The
+// variadic args are a list of const bson_value_t *. The variadic args must be
+// NULL terminated.
+static void
+range_explicit_encryption_assert_cursor_results (ree_fixture *reef,
+                                                 mongoc_cursor_t *cursor,
+                                                 ...)
+{
+   const bson_t *got;
+   va_list args;
+   bson_error_t error;
+
+   va_start (args, cursor);
+   while (true) {
+      const bson_value_t *expect = va_arg (args, const bson_value_t *);
+      if (!expect) {
+         break;
+      }
+      if (!mongoc_cursor_next (cursor, &got)) {
+         if (mongoc_cursor_error (cursor, &error)) {
+            test_error ("Got unexpected error in mongoc_cursor_next: %s",
+                        error.message);
+         }
+         test_error ("Expected document with value: %s but got end of cursor",
+                     bson_value_to_str (expect));
+      }
+      bson_iter_t goti;
+      const bson_value_t *gotv;
+      if (!bson_iter_init_find (&goti, got, reef->fieldName)) {
+         test_error ("Expected to find field %s, but got %s",
+                     reef->fieldName,
+                     bson_as_canonical_extended_json (got, NULL));
+      }
+      gotv = bson_iter_value (&goti);
+      ASSERT_BSONVALUE_EQ (expect, gotv);
+   }
+   va_end (args);
+   if (mongoc_cursor_next (cursor, &got)) {
+      test_error ("Expected end of cursor, but got extra document: %s",
+                  bson_as_canonical_extended_json (got, NULL));
+   }
+}
+
+static void
+test_range_explicit_encryption_case1 (void *ctx)
+{
+   // Case 1: can decrypt a payload
+   const char *typeStr = (const char *) ctx;
+   mongoc_client_encryption_encrypt_opts_t *eo;
+   ree_fixture *reef = range_explicit_encryption_setup (typeStr);
+   bool ok;
+   bson_error_t error;
+   bson_value_t insertPayload;
+   bson_value_t decrypted;
+
+   eo = mongoc_client_encryption_encrypt_opts_new ();
+   mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
+   mongoc_client_encryption_encrypt_opts_set_algorithm (
+      eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+   mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
+   mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
+
+   /* Use clientEncryption.encrypt() to encrypt the value 6. */
+   ok = mongoc_client_encryption_encrypt (
+      reef->clientEncryption, &reef->six, eo, &insertPayload, &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   /* Use clientEncryption to decrypt insertPayload. Assert the returned
+      value equals 6. */
+   ok = mongoc_client_encryption_decrypt (
+      reef->clientEncryption, &insertPayload, &decrypted, &error);
+   ASSERT_OR_PRINT (ok, error);
+   ASSERT_BSONVALUE_EQ (&decrypted, &reef->six);
+
+   bson_value_destroy (&insertPayload);
+   mongoc_client_encryption_encrypt_opts_destroy (eo);
+   range_explicit_encryption_destroy (reef);
+}
+
+static void
+test_range_explicit_encryption_case2 (void *ctx)
+{
+   // Case 2: can find encrypted range and return the maximum
+   const char *typeStr = (const char *) ctx;
+   ree_fixture *reef = range_explicit_encryption_setup (typeStr);
+   bool ok;
+   bson_error_t error;
+
+   // Encrypt.
+   bson_t findPayload;
+   {
+      mongoc_client_encryption_encrypt_opts_t *eo =
+         mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type (
+         eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
+      mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
+
+      bsonBuildDecl (
+         expr,
+         kv ("$and",
+             array (                                             //
+                doc (kv (reef->fieldName,                        //
+                         doc (kv ("$gte", value (reef->six))))), //
+                doc (kv (reef->fieldName,
+                         doc (kv ("$lte", value (reef->twoHundred))))))));
+
+      ok = mongoc_client_encryption_encrypt_expression (
+         reef->clientEncryption, &expr, eo, &findPayload, &error);
+      ASSERT_OR_PRINT (ok, error);
+      bson_destroy (&expr);
+      mongoc_client_encryption_encrypt_opts_destroy (eo);
+   }
+
+   // Query and check results.
+   {
+      bson_t *opts = tmp_bson ("{'sort': { '_id': 1 }}");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         reef->encryptedColl, &findPayload, opts, NULL /* read_prefs */);
+      range_explicit_encryption_assert_cursor_results (
+         reef, cursor, &reef->six, &reef->thirty, &reef->twoHundred, NULL);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   bson_destroy (&findPayload);
+   range_explicit_encryption_destroy (reef);
+}
+
+static void
+test_range_explicit_encryption_case3 (void *ctx)
+{
+   // Case 3: can find encrypted range and return the minimum
+   const char *typeStr = (const char *) ctx;
+   ree_fixture *reef = range_explicit_encryption_setup (typeStr);
+   bool ok;
+   bson_error_t error;
+
+   // Encrypt.
+   bson_t findPayload;
+   {
+      mongoc_client_encryption_encrypt_opts_t *eo =
+         mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type (
+         eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
+      mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
+
+      bsonBuildDecl (expr,
+                     kv ("$and",
+                         array (                                              //
+                            doc (kv (reef->fieldName,                         //
+                                     doc (kv ("$gte", value (reef->zero))))), //
+                            doc (kv (reef->fieldName,
+                                     doc (kv ("$lte", value (reef->six))))))));
+
+      ok = mongoc_client_encryption_encrypt_expression (
+         reef->clientEncryption, &expr, eo, &findPayload, &error);
+      ASSERT_OR_PRINT (ok, error);
+      bson_destroy (&expr);
+      mongoc_client_encryption_encrypt_opts_destroy (eo);
+   }
+
+   // Query and check results.
+   {
+      bson_t *opts = tmp_bson ("{'sort': { '_id': 1 }}");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         reef->encryptedColl, &findPayload, opts, NULL /* read_prefs */);
+      range_explicit_encryption_assert_cursor_results (
+         reef, cursor, &reef->zero, &reef->six, NULL);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   bson_destroy (&findPayload);
+   range_explicit_encryption_destroy (reef);
+}
+
+static void
+test_range_explicit_encryption_case4 (void *ctx)
+{
+   // Case 4: can find encrypted range with an open range query
+   const char *typeStr = (const char *) ctx;
+   ree_fixture *reef = range_explicit_encryption_setup (typeStr);
+   bool ok;
+   bson_error_t error;
+
+   // Encrypt.
+   bson_t findPayload;
+   {
+      mongoc_client_encryption_encrypt_opts_t *eo =
+         mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type (
+         eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
+      mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
+
+      bsonBuildDecl (expr,
+                     kv ("$and",
+                         array (                                              //
+                            doc (kv (reef->fieldName,                         //
+                                     doc (kv ("$gt", value (reef->thirty))))) //
+                            )));
+
+      ok = mongoc_client_encryption_encrypt_expression (
+         reef->clientEncryption, &expr, eo, &findPayload, &error);
+      ASSERT_OR_PRINT (ok, error);
+      bson_destroy (&expr);
+      mongoc_client_encryption_encrypt_opts_destroy (eo);
+   }
+
+   // Query and check results.
+   {
+      bson_t *opts = tmp_bson ("{'sort': { '_id': 1 }}");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         reef->encryptedColl, &findPayload, opts, NULL /* read_prefs */);
+      range_explicit_encryption_assert_cursor_results (
+         reef, cursor, &reef->twoHundred, NULL);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   bson_destroy (&findPayload);
+   range_explicit_encryption_destroy (reef);
+}
+
+static void
+test_range_explicit_encryption_case5 (void *ctx)
+{
+   // Case 5: can run an aggregation expression inside $expr
+   const char *typeStr = (const char *) ctx;
+   ree_fixture *reef = range_explicit_encryption_setup (typeStr);
+   bool ok;
+   bson_error_t error;
+
+   // Encrypt.
+   bson_t findPayload;
+   {
+      mongoc_client_encryption_encrypt_opts_t *eo =
+         mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type (
+         eo, MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
+      mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
+      char *fieldPath = bson_strdup_printf ("$%s", reef->fieldName);
+
+      // Encrypt this:
+      // {'$and': [ { '$lt': [ '$encrypted<Type>', 30 ] } ] } }
+      bsonBuildDecl (
+         expr,
+         kv ("$and",
+             array (            //
+                doc (kv ("$lt", //
+                         array (cstr (fieldPath), value (reef->thirty)))))));
+
+      ok = mongoc_client_encryption_encrypt_expression (
+         reef->clientEncryption, &expr, eo, &findPayload, &error);
+      ASSERT_OR_PRINT (ok, error);
+      bson_free (fieldPath);
+      bson_destroy (&expr);
+      mongoc_client_encryption_encrypt_opts_destroy (eo);
+   }
+
+   // Query and check results.
+   {
+      bson_t *opts = tmp_bson ("{'sort': { '_id': 1 }}");
+      bsonBuildDecl (filter, kv ("$expr", bson (findPayload)));
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         reef->encryptedColl, &filter, opts, NULL /* read_prefs */);
+      range_explicit_encryption_assert_cursor_results (
+         reef, cursor, &reef->zero, &reef->six, NULL);
+      bson_destroy (&filter);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   bson_destroy (&findPayload);
+   range_explicit_encryption_destroy (reef);
+}
+
+static void
+test_range_explicit_encryption_case6 (void *ctx)
+{
+   // Case 6: encrypting a document greater than the maximum errors
+   const char *typeStr = (const char *) ctx;
+
+   // This test case should be skipped if the encrypted field is
+   // encryptedDoubleNoPrecision.
+   if (0 == strcmp (typeStr, "DoubleNoPrecision")) {
+      MONGOC_DEBUG ("skipping test");
+      return;
+   }
+
+   ree_fixture *reef = range_explicit_encryption_setup (typeStr);
+   bool ok;
+   bson_error_t error;
+
+   // Encrypt.
+   bson_value_t insertPayload;
+   {
+      mongoc_client_encryption_encrypt_opts_t *eo =
+         mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
+      mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
+
+      ok = mongoc_client_encryption_encrypt (reef->clientEncryption,
+                                             &reef->twoHundredOne,
+                                             eo,
+                                             &insertPayload,
+                                             &error);
+      ASSERT (!ok);
+      mongoc_client_encryption_encrypt_opts_destroy (eo);
+   }
+
+   bson_value_destroy (&insertPayload);
+   range_explicit_encryption_destroy (reef);
+}
+
+static void
+test_range_explicit_encryption_case7 (void *ctx)
+{
+   // Case 7: encrypting a document of a different type errors
+   const char *typeStr = (const char *) ctx;
+
+   // This test case should be skipped if the encrypted field is
+   // encryptedDoubleNoPrecision.
+   if (0 == strcmp (typeStr, "DoubleNoPrecision")) {
+      MONGOC_DEBUG ("skipping test");
+      return;
+   }
+
+   ree_fixture *reef = range_explicit_encryption_setup (typeStr);
+   bool ok;
+   bson_error_t error;
+
+   // Encrypt.
+   bson_value_t insertPayload;
+   {
+      mongoc_client_encryption_encrypt_opts_t *eo =
+         mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
+      mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
+
+      bson_value_t wrongType;
+      if (0 == strcmp ("encryptedInt", reef->fieldName)) {
+         wrongType.value_type = BSON_TYPE_DOUBLE;
+         wrongType.value.v_double = 6;
+      } else {
+         wrongType.value_type = BSON_TYPE_INT32;
+         wrongType.value.v_int32 = 6;
+      }
+
+      ok = mongoc_client_encryption_encrypt (
+         reef->clientEncryption, &wrongType, eo, &insertPayload, &error);
+      ASSERT (!ok);
+      mongoc_client_encryption_encrypt_opts_destroy (eo);
+   }
+
+   bson_value_destroy (&insertPayload);
+   range_explicit_encryption_destroy (reef);
+}
+
+static void
+test_range_explicit_encryption_case8 (void *ctx)
+{
+   // Case 8: setting precision errors if the type is not a double
+   const char *typeStr = (const char *) ctx;
+
+   // This test case should be skipped if the encrypted field is
+   // encryptedDoublePrecision or encryptedDoubleNoPrecision.
+   if (0 == strcmp (typeStr, "DoubleNoPrecision") ||
+       0 == strcmp (typeStr, "DoublePrecision")) {
+      MONGOC_DEBUG ("skipping test");
+      return;
+   }
+
+   ree_fixture *reef = range_explicit_encryption_setup (typeStr);
+   bool ok;
+   bson_error_t error;
+
+   // Encrypt.
+   bson_value_t insertPayload;
+   {
+      mongoc_client_encryption_encrypt_opts_t *eo =
+         mongoc_client_encryption_encrypt_opts_new ();
+      mongoc_client_encryption_encrypt_opts_set_keyid (eo, &reef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm (
+         eo, MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor (eo, 0);
+      mongoc_client_encryption_encrypt_range_opts_set_precision (reef->ro, 2);
+      mongoc_client_encryption_encrypt_opts_set_range_opts (eo, reef->ro);
+
+      ok = mongoc_client_encryption_encrypt (
+         reef->clientEncryption, &reef->six, eo, &insertPayload, &error);
+      ASSERT (!ok);
+      mongoc_client_encryption_encrypt_opts_destroy (eo);
+   }
+
+   bson_value_destroy (&insertPayload);
+   range_explicit_encryption_destroy (reef);
+}
+
 static void
 test_explicit_encryption_case1 (void *unused)
 {
@@ -5620,7 +6328,7 @@ test_create_encrypted_collection_no_encryptedFields (void *unused)
    ASSERT_OR_PRINT (ce, error);
 
    // Create the encrypted collection
-   bsonBuildDecl (ccOpts);
+   bsonBuildDecl (ccOpts, do ());
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    mongoc_client_encryption_datakey_opts_t *const dkOpts =
       mongoc_client_encryption_datakey_opts_new ();
@@ -6191,4 +6899,53 @@ test_client_side_encryption_install (TestSuite *suite)
       test_framework_skip_if_no_client_side_encryption,
       test_framework_skip_if_max_wire_version_less_than_17,
       _skip_if_no_crypt_shared);
+
+   // Add test cases for prose test: 22. Range Explicit Encryption.
+   {
+      const char *rangeTypes[] = {
+         "DoubleNoPrecision",
+         "DoublePrecision",
+         "Date",
+         "Int",
+         "Long",
+      };
+
+      typedef struct {
+         const char *name;
+         TestFuncWC fn;
+      } rangeCase;
+
+      rangeCase rangeCases[] = {
+         {"case1", test_range_explicit_encryption_case1},
+         {"case2", test_range_explicit_encryption_case2},
+         {"case3", test_range_explicit_encryption_case3},
+         {"case4", test_range_explicit_encryption_case4},
+         {"case5", test_range_explicit_encryption_case5},
+         {"case6", test_range_explicit_encryption_case6},
+         {"case7", test_range_explicit_encryption_case7},
+         {"case8", test_range_explicit_encryption_case8},
+      };
+
+      for (size_t i = 0; i < sizeof rangeTypes / sizeof rangeTypes[0]; i++) {
+         for (size_t j = 0; j < sizeof rangeCases / sizeof rangeCases[0]; j++) {
+            const char *rangeType = rangeTypes[i];
+            rangeCase rc = rangeCases[j];
+
+            char *test_name = bson_strdup_printf (
+               "/client_side_encryption/range_explicit_encryption/%s/%s",
+               rc.name,
+               rangeType);
+            TestSuite_AddFull (
+               suite,
+               test_name,
+               rc.fn,
+               NULL /* dtor */,
+               (void *) rangeTypes[i] /* ctx */,
+               test_framework_skip_if_no_client_side_encryption,
+               test_framework_skip_if_max_wire_version_less_than_19,
+               test_framework_skip_if_single);
+            bson_free (test_name);
+         }
+      }
+   }
 }

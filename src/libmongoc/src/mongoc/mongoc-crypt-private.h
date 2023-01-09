@@ -82,24 +82,39 @@ _mongoc_crypt_auto_decrypt (_mongoc_crypt_t *crypt,
 
 /*
 Perform explicit encryption.
-- exactly one of keyid or keyaltname must be set, the other NULL, or an error is
-returned.
-- value_out is always initialized.
-- query_type may be NULL.
-- contention_factor may be NULL.
-- may return false and set error.
+Return false on error and sets `error`.
 */
 bool
-_mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
-                                mongoc_collection_t *key_vault_coll,
-                                const char *algorithm,
-                                const bson_value_t *keyid,
-                                char *keyaltname,
-                                const char *query_type,
-                                const int64_t *contention_factor,
-                                const bson_value_t *value_in,
-                                bson_value_t *value_out,
-                                bson_error_t *error);
+_mongoc_crypt_explicit_encrypt (
+   _mongoc_crypt_t *crypt,
+   mongoc_collection_t *key_vault_coll,
+   const char *algorithm /* may be NULL */,
+   const bson_value_t *keyid /* may be NULL */,
+   const char *keyaltname /* may be NULL */,
+   const char *query_type /* may be NULL */,
+   const int64_t *contention_factor /* may be NULL */,
+   const bson_t *range_opts /* may be NULL */,
+   const bson_value_t *value_in,
+   bson_value_t *value_out,
+   bson_error_t *error);
+
+/*
+Perform explicit encryption on an expression.
+Return false on error and sets `error`.
+*/
+bool
+_mongoc_crypt_explicit_encrypt_expression (
+   _mongoc_crypt_t *crypt,
+   mongoc_collection_t *key_vault_coll,
+   const char *algorithm /* may be NULL */,
+   const bson_value_t *keyid /* may be NULL */,
+   const char *keyaltname /* may be NULL */,
+   const char *query_type /* may be NULL */,
+   const int64_t *contention_factor /* may be NULL */,
+   const bson_t *range_opts /* may be NULL */,
+   const bson_t *expr_in,
+   bson_t *expr_out,
+   bson_error_t *error);
 
 /*
 Perform explicit decryption.

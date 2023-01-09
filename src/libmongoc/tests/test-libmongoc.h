@@ -201,6 +201,8 @@ WIRE_VERSION_CHECK_DECLS (13)
 WIRE_VERSION_CHECK_DECLS (14)
 /* wire version 17 begins with the 6.0 release. */
 WIRE_VERSION_CHECK_DECLS (17)
+/* wire version 19 begins with the 6.2 release. */
+WIRE_VERSION_CHECK_DECLS (19)
 
 #undef WIRE_VERSION_CHECK_DECLS
 

@@ -1277,3 +1277,30 @@ TestSuite_NoFork (TestSuite *suite)
    }
    return false;
 }
+
+char *
+bson_value_to_str (const bson_value_t *val)
+{
+   bson_t *tmp = bson_new ();
+   BSON_APPEND_VALUE (tmp, "v", val);
+   char *str = bson_as_canonical_extended_json (tmp, NULL);
+   // str is the string: { "v": ... }
+   // remove the prefix and suffix.
+   char *ret = bson_strndup (str + 6, strlen (str) - (6 + 1));
+   bson_free (str);
+   bson_destroy (tmp);
+   return ret;
+}
+
+bool
+bson_value_eq (const bson_value_t *a, const bson_value_t *b)
+{
+   bson_t *tmp_a = bson_new ();
+   bson_t *tmp_b = bson_new ();
+   BSON_APPEND_VALUE (tmp_a, "v", a);
+   BSON_APPEND_VALUE (tmp_b, "v", b);
+   bool ret = bson_equal (tmp_a, tmp_b);
+   bson_destroy (tmp_b);
+   bson_destroy (tmp_a);
+   return ret;
+}

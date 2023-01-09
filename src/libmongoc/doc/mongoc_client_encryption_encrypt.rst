@@ -20,7 +20,7 @@ Performs explicit encryption.
 
 ``ciphertext`` is always initialized (even on failure). Caller must call :symbol:`bson_value_destroy()` to free.
 
-To insert or query with an "Indexed" encrypted payload, use a
+To insert or query with an "Indexed" or "RangePreview" encrypted payload, use a
 :symbol:`mongoc_client_t` configured with
 :symbol:`mongoc_auto_encryption_opts_t`. The
 :symbol:`mongoc_auto_encryption_opts_t` may be configured to bypass query
@@ -28,7 +28,14 @@ analysis with :symbol:`mongoc_auto_encryption_opts_set_bypass_query_analysis`.
 The :symbol:`mongoc_auto_encryption_opts_t` must not be configured to bypass
 automatic encryption with
 :symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption`. **Note** that
-the ``"Indexed"`` payload type |qenc:is-experimental|
+the ``"Indexed"`` and ``"RangePreview"`` payload type |qenc:is-experimental|. The |qenc:range-is-experimental| 
+
+To insert with a ``RangePreview`` payload 
+:symbol:`mongoc_client_encryption_encrypt_range_opts_t` must be set in ``opts``.
+
+To query with a ``RangePreview`` payload, use :symbol:`mongoc_client_encryption_encrypt_expression()`
+
+**NOTE** that the |qenc:range-is-experimental|
 
 Parameters
 ----------
@@ -52,3 +59,4 @@ Returns ``true`` if successful. Returns ``false`` and sets ``error`` otherwise.
 
   | :symbol:`mongoc_client_encryption_decrypt()`
 
+  | :symbol:`mongoc_client_encryption_encrypt_expression()`
