@@ -89,7 +89,9 @@ def _create_task_group():
     task_group.setup_group = [
         # Create and set up a GCE instance using driver tools script
         shell_exec(r'''
-            git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
+            if [ ! -d drivers-evergreen-tools ]; then
+                git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+            fi
             DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
             echo '${testgcpkms_key_file}' > /tmp/testgcpkms_key_file.json
             export GCPKMS_KEYFILE=/tmp/testgcpkms_key_file.json

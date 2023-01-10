@@ -693,7 +693,7 @@ functions:
       script: |-
         set -o errexit
         if [ ! -d "drivers-evergreen-tools" ]; then
-           git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
+           git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
         fi
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
@@ -761,7 +761,9 @@ functions:
         set -o errexit
         # Add AWS variables to a file.
         # Clone in one directory above so it does not get uploaded in working directory.
-        git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
+        if [ ! -d ../drivers-evergreen-tools ]; then
+            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
+        fi
         cat <<EOF > ../drivers-evergreen-tools/.evergreen/auth_aws/aws_e2e_setup.json
         {
             "iam_auth_ecs_account" : "${iam_auth_ecs_account}",
@@ -802,7 +804,7 @@ functions:
       script: |-
         set -o errexit
         if [ ! -d "drivers-evergreen-tools" ]; then
-            git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
+            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
         fi
   run kms servers:
   - command: shell.exec
@@ -24167,7 +24169,9 @@ task_groups:
       shell: bash
       script: |-
         set -o errexit
-        git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git --depth=1 drivers-evergreen-tools
+        if [ ! -d drivers-evergreen-tools ]; then
+            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+        fi
         DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
         echo '${testazurekms_publickey}' > /tmp/testazurekms_publickey
         echo '${testazurekms_privatekey}' > /tmp/testazurekms_privatekey
@@ -24207,7 +24211,9 @@ task_groups:
       shell: bash
       script: |-
         set -o errexit
-        git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
+        if [ ! -d drivers-evergreen-tools ]; then
+            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+        fi
         DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
         echo '${testgcpkms_key_file}' > /tmp/testgcpkms_key_file.json
         export GCPKMS_KEYFILE=/tmp/testgcpkms_key_file.json
