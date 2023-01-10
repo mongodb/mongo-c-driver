@@ -362,7 +362,6 @@ all_variants = [
             'macos-1014',
             ['.compression !.snappy !.zstd',
              # Remove !.zstd in CDRIVER-3483.
-             'debug-compile-coverage',
              'release-compile',
              'debug-compile-nosasl-nossl',
              'debug-compile-rdtscp',
