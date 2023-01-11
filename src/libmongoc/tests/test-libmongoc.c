@@ -2027,13 +2027,6 @@ test_framework_skip_if_slow_or_live (void)
 
 
 int
-test_framework_skip_if_valgrind (void)
-{
-   return test_suite_valgrind () ? 0 : 1;
-}
-
-
-int
 test_framework_skip_if_windows (void)
 {
 #ifdef _WIN32
@@ -2519,10 +2512,6 @@ test_framework_is_serverless (void)
 int
 test_framework_skip_if_time_sensitive (void)
 {
-   if (test_suite_valgrind ()) {
-      return 0;
-   }
-
 /* Skip time sensitive tests on macOS per CDRIVER-3549. */
 #ifdef __APPLE__
    return 0;

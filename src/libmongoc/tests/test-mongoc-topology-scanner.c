@@ -762,13 +762,11 @@ test_topology_scanner_install (TestSuite *suite)
                       test_topology_scanner_does_not_renegotiate_single,
                       NULL,
                       NULL,
-                      test_framework_skip_if_slow_or_live,
-                      test_framework_skip_if_valgrind);
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/TOPOLOGY/scanner/renegotiate/pooled",
                       test_topology_scanner_does_not_renegotiate_pooled,
                       NULL,
                       NULL,
-                      test_framework_skip_if_slow_or_live,
-                      test_framework_skip_if_valgrind);
+                      test_framework_skip_if_slow_or_live);
 }

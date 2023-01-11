@@ -182,8 +182,6 @@ int
 test_framework_skip_if_slow (void);
 int
 test_framework_skip_if_slow_or_live (void);
-int
-test_framework_skip_if_valgrind (void);
 
 #define WIRE_VERSION_CHECK_DECLS(wv)                                  \
    int test_framework_skip_if_max_wire_version_less_than_##wv (void); \

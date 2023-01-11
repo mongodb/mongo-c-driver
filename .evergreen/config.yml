@@ -426,7 +426,6 @@ functions:
         export SSL=${SSL}
         export URI=${URI}
         export IPV4_ONLY=${IPV4_ONLY}
-        export VALGRIND=${VALGRIND}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
         export ASAN=${ASAN}
@@ -515,7 +514,6 @@ functions:
         export ATLAS_TLS12_SRV='${atlas_tls12_srv}'
         export REQUIRE_TLS12='${require_tls12}'
         export OBSOLETE_TLS='${obsolete_tls}'
-        export VALGRIND='${valgrind}'
         export ATLAS_SERVERLESS_SRV='${atlas_serverless_srv}'
         export ATLAS_SERVERLESS='${atlas_serverless}'
         sh .evergreen/run-auth-tests.sh
@@ -527,7 +525,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        CC="${CC}" VALGRIND=${VALGRIND} sh .evergreen/run-mock-server-tests.sh
+        CC="${CC}" sh .evergreen/run-mock-server-tests.sh
   cleanup:
   - command: shell.exec
     params:
@@ -743,7 +741,6 @@ functions:
         export SSL=${SSL}
         export URI=${URI}
         export IPV4_ONLY=${IPV4_ONLY}
-        export VALGRIND=${VALGRIND}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
         export ASAN=${ASAN}
@@ -1097,26 +1094,6 @@ tasks:
         export C_STD_VERSION="11"
         export DEBUG="ON"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
-  - func: upload build
-- name: debug-compile-valgrind
-  tags:
-  - debug-compile
-  - special
-  - valgrind
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="OFF"
-        export SSL="OPENSSL"
-        export VALGRIND="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-coverage
@@ -2132,972 +2109,6 @@ tasks:
       script: |-
         set -o errexit
         sh ./.evergreen/build-and-test-with-toolchain.sh
-- name: test-valgrind-latest-server-auth-nosasl-openssl
-  tags:
-  - latest
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: server
-      VERSION: latest
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-latest-server-noauth-nosasl-nossl
-  tags:
-  - latest
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: server
-      VERSION: latest
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-latest-replica-set-auth-nosasl-openssl
-  tags:
-  - latest
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: replica_set
-      VERSION: latest
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-latest-replica-set-noauth-nosasl-nossl
-  tags:
-  - latest
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: replica_set
-      VERSION: latest
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-latest-sharded-auth-nosasl-openssl
-  tags:
-  - latest
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: latest
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-latest-sharded-noauth-nosasl-nossl
-  tags:
-  - latest
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-      VERSION: latest
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-6.0-server-auth-nosasl-openssl
-  tags:
-  - '6.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: server
-      VERSION: '6.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-6.0-server-noauth-nosasl-nossl
-  tags:
-  - '6.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: server
-      VERSION: '6.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-6.0-replica-set-auth-nosasl-openssl
-  tags:
-  - '6.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: replica_set
-      VERSION: '6.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-6.0-replica-set-noauth-nosasl-nossl
-  tags:
-  - '6.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: replica_set
-      VERSION: '6.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-6.0-sharded-auth-nosasl-openssl
-  tags:
-  - '6.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: '6.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-6.0-sharded-noauth-nosasl-nossl
-  tags:
-  - '6.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-      VERSION: '6.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-5.0-server-auth-nosasl-openssl
-  tags:
-  - '5.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: server
-      VERSION: '5.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-5.0-server-noauth-nosasl-nossl
-  tags:
-  - '5.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: server
-      VERSION: '5.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-5.0-replica-set-auth-nosasl-openssl
-  tags:
-  - '5.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: replica_set
-      VERSION: '5.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-5.0-replica-set-noauth-nosasl-nossl
-  tags:
-  - '5.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: replica_set
-      VERSION: '5.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-5.0-sharded-auth-nosasl-openssl
-  tags:
-  - '5.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: '5.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-5.0-sharded-noauth-nosasl-nossl
-  tags:
-  - '5.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-      VERSION: '5.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-4.4-server-auth-nosasl-openssl
-  tags:
-  - '4.4'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: server
-      VERSION: '4.4'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-4.4-server-noauth-nosasl-nossl
-  tags:
-  - '4.4'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: server
-      VERSION: '4.4'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-4.4-replica-set-auth-nosasl-openssl
-  tags:
-  - '4.4'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: replica_set
-      VERSION: '4.4'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-4.4-replica-set-noauth-nosasl-nossl
-  tags:
-  - '4.4'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: replica_set
-      VERSION: '4.4'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-4.4-sharded-auth-nosasl-openssl
-  tags:
-  - '4.4'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: '4.4'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-4.4-sharded-noauth-nosasl-nossl
-  tags:
-  - '4.4'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-      VERSION: '4.4'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-4.2-server-auth-nosasl-openssl
-  tags:
-  - '4.2'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: server
-      VERSION: '4.2'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-4.2-server-noauth-nosasl-nossl
-  tags:
-  - '4.2'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: server
-      VERSION: '4.2'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-4.2-replica-set-auth-nosasl-openssl
-  tags:
-  - '4.2'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: replica_set
-      VERSION: '4.2'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-4.2-replica-set-noauth-nosasl-nossl
-  tags:
-  - '4.2'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: replica_set
-      VERSION: '4.2'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-4.2-sharded-auth-nosasl-openssl
-  tags:
-  - '4.2'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: '4.2'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-4.2-sharded-noauth-nosasl-nossl
-  tags:
-  - '4.2'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-      VERSION: '4.2'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-4.0-server-auth-nosasl-openssl
-  tags:
-  - '4.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: server
-      VERSION: '4.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-4.0-server-noauth-nosasl-nossl
-  tags:
-  - '4.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: server
-      VERSION: '4.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-4.0-replica-set-auth-nosasl-openssl
-  tags:
-  - '4.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: replica_set
-      VERSION: '4.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-4.0-replica-set-noauth-nosasl-nossl
-  tags:
-  - '4.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: replica_set
-      VERSION: '4.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-4.0-sharded-auth-nosasl-openssl
-  tags:
-  - '4.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: '4.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-4.0-sharded-noauth-nosasl-nossl
-  tags:
-  - '4.0'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-      VERSION: '4.0'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-3.6-server-auth-nosasl-openssl
-  tags:
-  - '3.6'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: server
-      VERSION: '3.6'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-3.6-server-noauth-nosasl-nossl
-  tags:
-  - '3.6'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: server
-      VERSION: '3.6'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-3.6-replica-set-auth-nosasl-openssl
-  tags:
-  - '3.6'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: replica_set
-      VERSION: '3.6'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-3.6-replica-set-noauth-nosasl-nossl
-  tags:
-  - '3.6'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: replica_set
-      VERSION: '3.6'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
-- name: test-valgrind-3.6-sharded-auth-nosasl-openssl
-  tags:
-  - '3.6'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: '3.6'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl
-      VALGRIND: 'on'
-- name: test-valgrind-3.6-sharded-noauth-nosasl-nossl
-  tags:
-  - '3.6'
-  - test-valgrind
-  exec_timeout_secs: 14400
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-      VERSION: '3.6'
-  - func: run tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: nossl
-      VALGRIND: 'on'
 - name: test-asan-latest-server-auth-nosasl-openssl-cse
   tags:
   - client-side-encryption
@@ -3123,7 +2134,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-latest-server-auth-nosasl-openssl
   tags:
   - latest
@@ -3145,7 +2155,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-latest-server-noauth-nosasl-nossl
   tags:
   - latest
@@ -3167,7 +2176,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-latest-replica-set-auth-nosasl-openssl-cse
   tags:
   - client-side-encryption
@@ -3193,7 +2201,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-latest-replica-set-auth-nosasl-openssl
   tags:
   - latest
@@ -3215,7 +2222,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-latest-replica-set-noauth-nosasl-nossl
   tags:
   - latest
@@ -3237,7 +2243,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-latest-sharded-auth-nosasl-openssl
   tags:
   - latest
@@ -3259,7 +2264,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-latest-sharded-noauth-nosasl-nossl
   tags:
   - latest
@@ -3281,7 +2285,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-6.0-server-auth-nosasl-openssl-cse
   tags:
   - '6.0'
@@ -3307,7 +2310,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-6.0-server-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -3329,7 +2331,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-6.0-server-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -3351,7 +2352,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-6.0-replica-set-auth-nosasl-openssl-cse
   tags:
   - '6.0'
@@ -3377,7 +2377,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-6.0-replica-set-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -3399,7 +2398,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-6.0-replica-set-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -3421,7 +2419,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-6.0-sharded-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -3443,7 +2440,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-6.0-sharded-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -3465,7 +2461,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-5.0-server-auth-nosasl-openssl-cse
   tags:
   - '5.0'
@@ -3491,7 +2486,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-5.0-server-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -3513,7 +2507,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-5.0-server-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -3535,7 +2528,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-5.0-replica-set-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -3557,7 +2549,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-5.0-replica-set-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -3579,7 +2570,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-5.0-sharded-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -3601,7 +2591,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-5.0-sharded-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -3623,7 +2612,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-4.4-server-auth-nosasl-openssl-cse
   tags:
   - '4.4'
@@ -3649,7 +2637,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.4-server-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -3671,7 +2658,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.4-server-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -3693,7 +2679,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-4.4-replica-set-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -3715,7 +2700,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.4-replica-set-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -3737,7 +2721,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-4.4-sharded-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -3759,7 +2742,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.4-sharded-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -3781,7 +2763,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-4.2-server-auth-nosasl-openssl-cse
   tags:
   - '4.2'
@@ -3807,7 +2788,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.2-server-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -3829,7 +2809,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.2-server-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -3851,7 +2830,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-4.2-replica-set-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -3873,7 +2851,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.2-replica-set-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -3895,7 +2872,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-4.2-sharded-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -3917,7 +2893,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.2-sharded-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -3939,7 +2914,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-4.0-server-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -3961,7 +2935,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.0-server-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -3983,7 +2956,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-4.0-replica-set-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -4005,7 +2977,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.0-replica-set-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -4027,7 +2998,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-4.0-sharded-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -4049,7 +3019,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-4.0-sharded-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -4071,7 +3040,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-3.6-server-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -4093,7 +3061,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-3.6-server-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -4115,7 +3082,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-3.6-replica-set-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -4137,7 +3103,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-3.6-replica-set-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -4159,7 +3124,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-asan-3.6-sharded-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -4181,7 +3145,6 @@ tasks:
       ASAN: 'on'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-asan-3.6-sharded-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -4203,7 +3166,6 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-tsan-latest-server-auth-nosasl-openssl
   tags:
   - latest
@@ -4225,7 +3187,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-latest-server-noauth-nosasl-openssl
   tags:
   - latest
@@ -4247,7 +3208,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-latest-replica-set-auth-nosasl-openssl
   tags:
   - latest
@@ -4269,7 +3229,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-latest-replica-set-noauth-nosasl-openssl
   tags:
   - latest
@@ -4291,7 +3250,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-latest-sharded-auth-nosasl-openssl
   tags:
   - latest
@@ -4313,7 +3271,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-latest-sharded-noauth-nosasl-openssl
   tags:
   - latest
@@ -4335,7 +3292,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-6.0-server-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -4357,7 +3313,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-6.0-server-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -4379,7 +3334,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-6.0-replica-set-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -4401,7 +3355,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-6.0-replica-set-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -4423,7 +3376,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-6.0-sharded-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -4445,7 +3397,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-6.0-sharded-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -4467,7 +3418,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-5.0-server-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -4489,7 +3439,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-5.0-server-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -4511,7 +3460,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-5.0-replica-set-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -4533,7 +3481,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-5.0-replica-set-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -4555,7 +3502,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-5.0-sharded-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -4577,7 +3523,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-5.0-sharded-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -4599,7 +3544,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.4-server-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -4621,7 +3565,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.4-server-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -4643,7 +3586,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.4-replica-set-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -4665,7 +3607,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.4-replica-set-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -4687,7 +3628,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.4-sharded-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -4709,7 +3649,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.4-sharded-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -4731,7 +3670,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.2-server-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -4753,7 +3691,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.2-server-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -4775,7 +3712,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.2-replica-set-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -4797,7 +3733,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.2-replica-set-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -4819,7 +3754,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.2-sharded-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -4841,7 +3775,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.2-sharded-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -4863,7 +3796,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.0-server-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -4885,7 +3817,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.0-server-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -4907,7 +3838,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.0-replica-set-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -4929,7 +3859,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.0-replica-set-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -4951,7 +3880,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.0-sharded-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -4973,7 +3901,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-4.0-sharded-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -4995,7 +3922,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-3.6-server-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -5017,7 +3943,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-3.6-server-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -5039,7 +3964,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-3.6-replica-set-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -5061,7 +3985,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-3.6-replica-set-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -5083,7 +4006,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-3.6-sharded-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -5105,7 +4027,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-tsan-3.6-sharded-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -5127,7 +4048,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-coverage-latest-server-auth-nosasl-openssl
   tags:
   - latest
@@ -5145,7 +4065,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-latest-server-noauth-nosasl-nossl
   tags:
@@ -5164,7 +4083,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-latest-replica-set-auth-nosasl-openssl
   tags:
@@ -5183,7 +4101,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-latest-replica-set-noauth-nosasl-nossl
   tags:
@@ -5202,7 +4119,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-latest-sharded-auth-nosasl-openssl
   tags:
@@ -5221,7 +4137,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-latest-sharded-noauth-nosasl-nossl
   tags:
@@ -5240,7 +4155,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-6.0-server-auth-nosasl-openssl
   tags:
@@ -5259,7 +4173,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-6.0-server-noauth-nosasl-nossl
   tags:
@@ -5278,7 +4191,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-6.0-replica-set-auth-nosasl-openssl
   tags:
@@ -5297,7 +4209,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-6.0-replica-set-noauth-nosasl-nossl
   tags:
@@ -5316,7 +4227,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-6.0-sharded-auth-nosasl-openssl
   tags:
@@ -5335,7 +4245,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-6.0-sharded-noauth-nosasl-nossl
   tags:
@@ -5354,7 +4263,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-5.0-server-auth-nosasl-openssl
   tags:
@@ -5373,7 +4281,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-5.0-server-noauth-nosasl-nossl
   tags:
@@ -5392,7 +4299,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-5.0-replica-set-auth-nosasl-openssl
   tags:
@@ -5411,7 +4317,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-5.0-replica-set-noauth-nosasl-nossl
   tags:
@@ -5430,7 +4335,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-5.0-sharded-auth-nosasl-openssl
   tags:
@@ -5449,7 +4353,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-5.0-sharded-noauth-nosasl-nossl
   tags:
@@ -5468,7 +4371,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.4-server-auth-nosasl-openssl
   tags:
@@ -5487,7 +4389,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.4-server-noauth-nosasl-nossl
   tags:
@@ -5506,7 +4407,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.4-replica-set-auth-nosasl-openssl
   tags:
@@ -5525,7 +4425,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.4-replica-set-noauth-nosasl-nossl
   tags:
@@ -5544,7 +4443,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.4-sharded-auth-nosasl-openssl
   tags:
@@ -5563,7 +4461,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.4-sharded-noauth-nosasl-nossl
   tags:
@@ -5582,7 +4479,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.2-server-auth-nosasl-openssl
   tags:
@@ -5601,7 +4497,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.2-server-noauth-nosasl-nossl
   tags:
@@ -5620,7 +4515,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.2-replica-set-auth-nosasl-openssl
   tags:
@@ -5639,7 +4533,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.2-replica-set-noauth-nosasl-nossl
   tags:
@@ -5658,7 +4551,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.2-sharded-auth-nosasl-openssl
   tags:
@@ -5677,7 +4569,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.2-sharded-noauth-nosasl-nossl
   tags:
@@ -5696,7 +4587,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.0-server-auth-nosasl-openssl
   tags:
@@ -5715,7 +4605,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.0-server-noauth-nosasl-nossl
   tags:
@@ -5734,7 +4623,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.0-replica-set-auth-nosasl-openssl
   tags:
@@ -5753,7 +4641,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.0-replica-set-noauth-nosasl-nossl
   tags:
@@ -5772,7 +4659,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.0-sharded-auth-nosasl-openssl
   tags:
@@ -5791,7 +4677,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-4.0-sharded-noauth-nosasl-nossl
   tags:
@@ -5810,7 +4695,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-3.6-server-auth-nosasl-openssl
   tags:
@@ -5829,7 +4713,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-3.6-server-noauth-nosasl-nossl
   tags:
@@ -5848,7 +4731,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-3.6-replica-set-auth-nosasl-openssl
   tags:
@@ -5867,7 +4749,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-3.6-replica-set-noauth-nosasl-nossl
   tags:
@@ -5886,7 +4767,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-3.6-sharded-auth-nosasl-openssl
   tags:
@@ -5905,7 +4785,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-coverage-3.6-sharded-noauth-nosasl-nossl
   tags:
@@ -5924,7 +4803,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
   - func: update codecov.io
 - name: test-latest-server-auth-sasl-openssl-cse
   tags:
@@ -5954,7 +4832,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-openssl
   tags:
   - auth
@@ -5979,7 +4856,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-openssl-static-cse
   tags:
   - auth
@@ -6008,7 +4884,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-openssl-static
   tags:
   - auth
@@ -6033,7 +4908,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-darwinssl-cse
   tags:
   - auth
@@ -6062,7 +4936,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-darwinssl
   tags:
   - auth
@@ -6087,7 +4960,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-winssl-cse
   tags:
   - auth
@@ -6116,7 +4988,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-winssl
   tags:
   - auth
@@ -6141,7 +5012,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-server-auth-sspi-winssl
   tags:
   - auth
@@ -6166,7 +5036,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-server-auth-nosasl-openssl
   tags:
   - auth
@@ -6191,7 +5060,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-server-auth-nosasl-openssl-static
   tags:
   - auth
@@ -6216,7 +5084,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-server-auth-nosasl-darwinssl
   tags:
   - auth
@@ -6241,7 +5108,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-server-auth-nosasl-winssl
   tags:
   - auth
@@ -6266,7 +5132,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-openssl-cse
   tags:
   - client-side-encryption
@@ -6295,7 +5160,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-openssl
   tags:
   - latest
@@ -6320,7 +5184,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-openssl-static-cse
   tags:
   - client-side-encryption
@@ -6349,7 +5212,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-openssl-static
   tags:
   - latest
@@ -6374,7 +5236,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-darwinssl-cse
   tags:
   - client-side-encryption
@@ -6403,7 +5264,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-darwinssl
   tags:
   - darwinssl
@@ -6428,7 +5288,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-winssl-cse
   tags:
   - client-side-encryption
@@ -6457,7 +5316,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-winssl
   tags:
   - latest
@@ -6482,7 +5340,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-nosasl-openssl
   tags:
   - latest
@@ -6507,7 +5364,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-nosasl-openssl-static
   tags:
   - latest
@@ -6532,7 +5388,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-nosasl-darwinssl
   tags:
   - darwinssl
@@ -6557,7 +5412,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-nosasl-winssl
   tags:
   - latest
@@ -6582,7 +5436,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-server-noauth-nosasl-nossl
   tags:
   - latest
@@ -6607,7 +5460,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-openssl-cse
   tags:
   - auth
@@ -6636,7 +5488,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-openssl
   tags:
   - auth
@@ -6661,7 +5512,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-openssl-static-cse
   tags:
   - auth
@@ -6690,7 +5540,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-openssl-static
   tags:
   - auth
@@ -6715,7 +5564,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-darwinssl-cse
   tags:
   - auth
@@ -6744,7 +5592,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-darwinssl
   tags:
   - auth
@@ -6769,7 +5616,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-winssl-cse
   tags:
   - auth
@@ -6798,7 +5644,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-winssl
   tags:
   - auth
@@ -6823,7 +5668,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-nosasl-openssl
   tags:
   - auth
@@ -6848,7 +5692,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-nosasl-openssl-static
   tags:
   - auth
@@ -6873,7 +5716,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-nosasl-darwinssl
   tags:
   - auth
@@ -6898,7 +5740,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-nosasl-winssl
   tags:
   - auth
@@ -6923,7 +5764,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-openssl-cse
   tags:
   - client-side-encryption
@@ -6952,7 +5792,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-openssl
   tags:
   - latest
@@ -6977,7 +5816,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-openssl-static-cse
   tags:
   - client-side-encryption
@@ -7006,7 +5844,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-openssl-static
   tags:
   - latest
@@ -7031,7 +5868,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-darwinssl-cse
   tags:
   - client-side-encryption
@@ -7060,7 +5896,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-darwinssl
   tags:
   - darwinssl
@@ -7085,7 +5920,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-winssl-cse
   tags:
   - client-side-encryption
@@ -7114,7 +5948,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-winssl
   tags:
   - latest
@@ -7139,7 +5972,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-nosasl-openssl
   tags:
   - latest
@@ -7164,7 +5996,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-nosasl-openssl-static
   tags:
   - latest
@@ -7189,7 +6020,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-nosasl-darwinssl
   tags:
   - darwinssl
@@ -7214,7 +6044,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-nosasl-winssl
   tags:
   - latest
@@ -7239,7 +6068,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-nosasl-nossl
   tags:
   - latest
@@ -7264,7 +6092,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-latest-sharded-auth-sasl-openssl
   tags:
   - auth
@@ -7289,7 +6116,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-auth-sasl-openssl-static
   tags:
   - auth
@@ -7314,7 +6140,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-sharded-auth-sasl-darwinssl
   tags:
   - auth
@@ -7339,7 +6164,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-auth-sasl-winssl
   tags:
   - auth
@@ -7364,7 +6188,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-auth-nosasl-openssl
   tags:
   - auth
@@ -7389,7 +6212,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-auth-nosasl-openssl-static
   tags:
   - auth
@@ -7414,7 +6236,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-sharded-auth-nosasl-darwinssl
   tags:
   - auth
@@ -7439,7 +6260,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-auth-nosasl-winssl
   tags:
   - auth
@@ -7464,7 +6284,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-sasl-openssl
   tags:
   - latest
@@ -7489,7 +6308,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-sasl-openssl-static
   tags:
   - latest
@@ -7514,7 +6332,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-sasl-darwinssl
   tags:
   - darwinssl
@@ -7539,7 +6356,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-sasl-winssl
   tags:
   - latest
@@ -7564,7 +6380,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-nosasl-openssl
   tags:
   - latest
@@ -7589,7 +6404,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-nosasl-openssl-static
   tags:
   - latest
@@ -7614,7 +6428,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-nosasl-darwinssl
   tags:
   - darwinssl
@@ -7639,7 +6452,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-nosasl-winssl
   tags:
   - latest
@@ -7664,7 +6476,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-nosasl-nossl
   tags:
   - latest
@@ -7689,7 +6500,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -7718,7 +6528,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-sasl-openssl
   tags:
   - '6.0'
@@ -7743,7 +6552,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-sasl-openssl-static-cse
   tags:
   - '6.0'
@@ -7772,7 +6580,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-sasl-openssl-static
   tags:
   - '6.0'
@@ -7797,7 +6604,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-sasl-darwinssl-cse
   tags:
   - '6.0'
@@ -7826,7 +6632,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-sasl-darwinssl
   tags:
   - '6.0'
@@ -7851,7 +6656,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -7880,7 +6684,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-sasl-winssl
   tags:
   - '6.0'
@@ -7905,7 +6708,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -7930,7 +6732,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-nosasl-openssl-static
   tags:
   - '6.0'
@@ -7955,7 +6756,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-nosasl-darwinssl
   tags:
   - '6.0'
@@ -7980,7 +6780,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-server-auth-nosasl-winssl
   tags:
   - '6.0'
@@ -8005,7 +6804,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -8034,7 +6832,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-sasl-openssl
   tags:
   - '6.0'
@@ -8059,7 +6856,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-sasl-openssl-static-cse
   tags:
   - '6.0'
@@ -8088,7 +6884,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-sasl-openssl-static
   tags:
   - '6.0'
@@ -8113,7 +6908,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-sasl-darwinssl-cse
   tags:
   - '6.0'
@@ -8142,7 +6936,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-sasl-darwinssl
   tags:
   - '6.0'
@@ -8167,7 +6960,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -8196,7 +6988,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-sasl-winssl
   tags:
   - '6.0'
@@ -8221,7 +7012,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -8246,7 +7036,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-nosasl-openssl-static
   tags:
   - '6.0'
@@ -8271,7 +7060,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-nosasl-darwinssl
   tags:
   - '6.0'
@@ -8296,7 +7084,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-nosasl-winssl
   tags:
   - '6.0'
@@ -8321,7 +7108,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-server-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -8346,7 +7132,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -8375,7 +7160,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-sasl-openssl
   tags:
   - '6.0'
@@ -8400,7 +7184,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-sasl-openssl-static-cse
   tags:
   - '6.0'
@@ -8429,7 +7212,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-sasl-openssl-static
   tags:
   - '6.0'
@@ -8454,7 +7236,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-sasl-darwinssl-cse
   tags:
   - '6.0'
@@ -8483,7 +7264,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-sasl-darwinssl
   tags:
   - '6.0'
@@ -8508,7 +7288,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -8537,7 +7316,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-sasl-winssl
   tags:
   - '6.0'
@@ -8562,7 +7340,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -8587,7 +7364,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-nosasl-openssl-static
   tags:
   - '6.0'
@@ -8612,7 +7388,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-nosasl-darwinssl
   tags:
   - '6.0'
@@ -8637,7 +7412,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-auth-nosasl-winssl
   tags:
   - '6.0'
@@ -8662,7 +7436,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -8691,7 +7464,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-sasl-openssl
   tags:
   - '6.0'
@@ -8716,7 +7488,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-sasl-openssl-static-cse
   tags:
   - '6.0'
@@ -8745,7 +7516,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-sasl-openssl-static
   tags:
   - '6.0'
@@ -8770,7 +7540,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-sasl-darwinssl-cse
   tags:
   - '6.0'
@@ -8799,7 +7568,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-sasl-darwinssl
   tags:
   - '6.0'
@@ -8824,7 +7592,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -8853,7 +7620,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-sasl-winssl
   tags:
   - '6.0'
@@ -8878,7 +7644,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -8903,7 +7668,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-nosasl-openssl-static
   tags:
   - '6.0'
@@ -8928,7 +7692,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-nosasl-darwinssl
   tags:
   - '6.0'
@@ -8953,7 +7716,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-nosasl-winssl
   tags:
   - '6.0'
@@ -8978,7 +7740,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-replica-set-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -9003,7 +7764,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-auth-sasl-openssl
   tags:
   - '6.0'
@@ -9028,7 +7788,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-auth-sasl-openssl-static
   tags:
   - '6.0'
@@ -9053,7 +7812,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-sharded-auth-sasl-darwinssl
   tags:
   - '6.0'
@@ -9078,7 +7836,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-auth-sasl-winssl
   tags:
   - '6.0'
@@ -9103,7 +7860,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -9128,7 +7884,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-auth-nosasl-openssl-static
   tags:
   - '6.0'
@@ -9153,7 +7908,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-sharded-auth-nosasl-darwinssl
   tags:
   - '6.0'
@@ -9178,7 +7932,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-auth-nosasl-winssl
   tags:
   - '6.0'
@@ -9203,7 +7956,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-noauth-sasl-openssl
   tags:
   - '6.0'
@@ -9228,7 +7980,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-noauth-sasl-openssl-static
   tags:
   - '6.0'
@@ -9253,7 +8004,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-sharded-noauth-sasl-darwinssl
   tags:
   - '6.0'
@@ -9278,7 +8028,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-noauth-sasl-winssl
   tags:
   - '6.0'
@@ -9303,7 +8052,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -9328,7 +8076,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-noauth-nosasl-openssl-static
   tags:
   - '6.0'
@@ -9353,7 +8100,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-6.0-sharded-noauth-nosasl-darwinssl
   tags:
   - '6.0'
@@ -9378,7 +8124,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-noauth-nosasl-winssl
   tags:
   - '6.0'
@@ -9403,7 +8148,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-6.0-sharded-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -9428,7 +8172,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-sasl-openssl-cse
   tags:
   - '5.0'
@@ -9457,7 +8200,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-sasl-openssl
   tags:
   - '5.0'
@@ -9482,7 +8224,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-sasl-openssl-static-cse
   tags:
   - '5.0'
@@ -9511,7 +8252,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-sasl-openssl-static
   tags:
   - '5.0'
@@ -9536,7 +8276,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-sasl-darwinssl-cse
   tags:
   - '5.0'
@@ -9565,7 +8304,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-sasl-darwinssl
   tags:
   - '5.0'
@@ -9590,7 +8328,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-sasl-winssl-cse
   tags:
   - '5.0'
@@ -9619,7 +8356,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-sasl-winssl
   tags:
   - '5.0'
@@ -9644,7 +8380,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -9669,7 +8404,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-nosasl-openssl-static
   tags:
   - '5.0'
@@ -9694,7 +8428,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-nosasl-darwinssl
   tags:
   - '5.0'
@@ -9719,7 +8452,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-server-auth-nosasl-winssl
   tags:
   - '5.0'
@@ -9744,7 +8476,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-sasl-openssl-cse
   tags:
   - '5.0'
@@ -9773,7 +8504,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-sasl-openssl
   tags:
   - '5.0'
@@ -9798,7 +8528,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-sasl-openssl-static-cse
   tags:
   - '5.0'
@@ -9827,7 +8556,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-sasl-openssl-static
   tags:
   - '5.0'
@@ -9852,7 +8580,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-sasl-darwinssl-cse
   tags:
   - '5.0'
@@ -9881,7 +8608,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-sasl-darwinssl
   tags:
   - '5.0'
@@ -9906,7 +8632,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-sasl-winssl-cse
   tags:
   - '5.0'
@@ -9935,7 +8660,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-sasl-winssl
   tags:
   - '5.0'
@@ -9960,7 +8684,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -9985,7 +8708,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-nosasl-openssl-static
   tags:
   - '5.0'
@@ -10010,7 +8732,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-nosasl-darwinssl
   tags:
   - '5.0'
@@ -10035,7 +8756,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-nosasl-winssl
   tags:
   - '5.0'
@@ -10060,7 +8780,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-server-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -10085,7 +8804,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-auth-sasl-openssl
   tags:
   - '5.0'
@@ -10110,7 +8828,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-auth-sasl-openssl-static
   tags:
   - '5.0'
@@ -10135,7 +8852,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-auth-sasl-darwinssl
   tags:
   - '5.0'
@@ -10160,7 +8876,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-auth-sasl-winssl
   tags:
   - '5.0'
@@ -10185,7 +8900,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -10210,7 +8924,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-auth-nosasl-openssl-static
   tags:
   - '5.0'
@@ -10235,7 +8948,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-auth-nosasl-darwinssl
   tags:
   - '5.0'
@@ -10260,7 +8972,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-auth-nosasl-winssl
   tags:
   - '5.0'
@@ -10285,7 +8996,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-noauth-sasl-openssl
   tags:
   - '5.0'
@@ -10310,7 +9020,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-noauth-sasl-openssl-static
   tags:
   - '5.0'
@@ -10335,7 +9044,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-noauth-sasl-darwinssl
   tags:
   - '5.0'
@@ -10360,7 +9068,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-noauth-sasl-winssl
   tags:
   - '5.0'
@@ -10385,7 +9092,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -10410,7 +9116,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-noauth-nosasl-openssl-static
   tags:
   - '5.0'
@@ -10435,7 +9140,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-noauth-nosasl-darwinssl
   tags:
   - '5.0'
@@ -10460,7 +9164,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-noauth-nosasl-winssl
   tags:
   - '5.0'
@@ -10485,7 +9188,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-replica-set-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -10510,7 +9212,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-auth-sasl-openssl
   tags:
   - '5.0'
@@ -10535,7 +9236,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-auth-sasl-openssl-static
   tags:
   - '5.0'
@@ -10560,7 +9260,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-sharded-auth-sasl-darwinssl
   tags:
   - '5.0'
@@ -10585,7 +9284,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-auth-sasl-winssl
   tags:
   - '5.0'
@@ -10610,7 +9308,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -10635,7 +9332,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-auth-nosasl-openssl-static
   tags:
   - '5.0'
@@ -10660,7 +9356,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-sharded-auth-nosasl-darwinssl
   tags:
   - '5.0'
@@ -10685,7 +9380,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-auth-nosasl-winssl
   tags:
   - '5.0'
@@ -10710,7 +9404,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-noauth-sasl-openssl
   tags:
   - '5.0'
@@ -10735,7 +9428,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-noauth-sasl-openssl-static
   tags:
   - '5.0'
@@ -10760,7 +9452,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-sharded-noauth-sasl-darwinssl
   tags:
   - '5.0'
@@ -10785,7 +9476,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-noauth-sasl-winssl
   tags:
   - '5.0'
@@ -10810,7 +9500,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -10835,7 +9524,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-noauth-nosasl-openssl-static
   tags:
   - '5.0'
@@ -10860,7 +9548,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-5.0-sharded-noauth-nosasl-darwinssl
   tags:
   - '5.0'
@@ -10885,7 +9572,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-noauth-nosasl-winssl
   tags:
   - '5.0'
@@ -10910,7 +9596,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-5.0-sharded-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -10935,7 +9620,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-sasl-openssl-cse
   tags:
   - '4.4'
@@ -10964,7 +9648,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-sasl-openssl
   tags:
   - '4.4'
@@ -10989,7 +9672,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-sasl-openssl-static-cse
   tags:
   - '4.4'
@@ -11018,7 +9700,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-sasl-openssl-static
   tags:
   - '4.4'
@@ -11043,7 +9724,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-sasl-darwinssl-cse
   tags:
   - '4.4'
@@ -11072,7 +9752,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-sasl-darwinssl
   tags:
   - '4.4'
@@ -11097,7 +9776,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-sasl-winssl-cse
   tags:
   - '4.4'
@@ -11126,7 +9804,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-sasl-winssl
   tags:
   - '4.4'
@@ -11151,7 +9828,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -11176,7 +9852,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-nosasl-openssl-static
   tags:
   - '4.4'
@@ -11201,7 +9876,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-nosasl-darwinssl
   tags:
   - '4.4'
@@ -11226,7 +9900,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-server-auth-nosasl-winssl
   tags:
   - '4.4'
@@ -11251,7 +9924,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-sasl-openssl-cse
   tags:
   - '4.4'
@@ -11280,7 +9952,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-sasl-openssl
   tags:
   - '4.4'
@@ -11305,7 +9976,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-sasl-openssl-static-cse
   tags:
   - '4.4'
@@ -11334,7 +10004,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-sasl-openssl-static
   tags:
   - '4.4'
@@ -11359,7 +10028,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-sasl-darwinssl-cse
   tags:
   - '4.4'
@@ -11388,7 +10056,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-sasl-darwinssl
   tags:
   - '4.4'
@@ -11413,7 +10080,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-sasl-winssl-cse
   tags:
   - '4.4'
@@ -11442,7 +10108,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-sasl-winssl
   tags:
   - '4.4'
@@ -11467,7 +10132,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -11492,7 +10156,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-nosasl-openssl-static
   tags:
   - '4.4'
@@ -11517,7 +10180,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-nosasl-darwinssl
   tags:
   - '4.4'
@@ -11542,7 +10204,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-nosasl-winssl
   tags:
   - '4.4'
@@ -11567,7 +10228,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-server-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -11592,7 +10252,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-sasl-openssl
   tags:
   - '4.4'
@@ -11617,7 +10276,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-sasl-openssl-static
   tags:
   - '4.4'
@@ -11642,7 +10300,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-sasl-darwinssl
   tags:
   - '4.4'
@@ -11667,7 +10324,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-sasl-winssl
   tags:
   - '4.4'
@@ -11692,7 +10348,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -11717,7 +10372,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-nosasl-openssl-static
   tags:
   - '4.4'
@@ -11742,7 +10396,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-nosasl-darwinssl
   tags:
   - '4.4'
@@ -11767,7 +10420,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-nosasl-winssl
   tags:
   - '4.4'
@@ -11792,7 +10444,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-sasl-openssl
   tags:
   - '4.4'
@@ -11817,7 +10468,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-sasl-openssl-static
   tags:
   - '4.4'
@@ -11842,7 +10492,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-sasl-darwinssl
   tags:
   - '4.4'
@@ -11867,7 +10516,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-sasl-winssl
   tags:
   - '4.4'
@@ -11892,7 +10540,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -11917,7 +10564,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-nosasl-openssl-static
   tags:
   - '4.4'
@@ -11942,7 +10588,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-nosasl-darwinssl
   tags:
   - '4.4'
@@ -11967,7 +10612,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-nosasl-winssl
   tags:
   - '4.4'
@@ -11992,7 +10636,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -12017,7 +10660,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-auth-sasl-openssl
   tags:
   - '4.4'
@@ -12042,7 +10684,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-auth-sasl-openssl-static
   tags:
   - '4.4'
@@ -12067,7 +10708,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-sharded-auth-sasl-darwinssl
   tags:
   - '4.4'
@@ -12092,7 +10732,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-auth-sasl-winssl
   tags:
   - '4.4'
@@ -12117,7 +10756,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -12142,7 +10780,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-auth-nosasl-openssl-static
   tags:
   - '4.4'
@@ -12167,7 +10804,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-sharded-auth-nosasl-darwinssl
   tags:
   - '4.4'
@@ -12192,7 +10828,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-auth-nosasl-winssl
   tags:
   - '4.4'
@@ -12217,7 +10852,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-sasl-openssl
   tags:
   - '4.4'
@@ -12242,7 +10876,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-sasl-openssl-static
   tags:
   - '4.4'
@@ -12267,7 +10900,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-sasl-darwinssl
   tags:
   - '4.4'
@@ -12292,7 +10924,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-sasl-winssl
   tags:
   - '4.4'
@@ -12317,7 +10948,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -12342,7 +10972,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-nosasl-openssl-static
   tags:
   - '4.4'
@@ -12367,7 +10996,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-nosasl-darwinssl
   tags:
   - '4.4'
@@ -12392,7 +11020,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-nosasl-winssl
   tags:
   - '4.4'
@@ -12417,7 +11044,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -12442,7 +11068,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-openssl-cse
   tags:
   - '4.2'
@@ -12471,7 +11096,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-openssl
   tags:
   - '4.2'
@@ -12496,7 +11120,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-openssl-static-cse
   tags:
   - '4.2'
@@ -12525,7 +11148,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-openssl-static
   tags:
   - '4.2'
@@ -12550,7 +11172,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-darwinssl-cse
   tags:
   - '4.2'
@@ -12579,7 +11200,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-darwinssl
   tags:
   - '4.2'
@@ -12604,7 +11224,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-winssl-cse
   tags:
   - '4.2'
@@ -12633,7 +11252,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-winssl
   tags:
   - '4.2'
@@ -12658,7 +11276,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -12683,7 +11300,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-nosasl-openssl-static
   tags:
   - '4.2'
@@ -12708,7 +11324,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-nosasl-darwinssl
   tags:
   - '4.2'
@@ -12733,7 +11348,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-server-auth-nosasl-winssl
   tags:
   - '4.2'
@@ -12758,7 +11372,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-openssl-cse
   tags:
   - '4.2'
@@ -12787,7 +11400,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-openssl
   tags:
   - '4.2'
@@ -12812,7 +11424,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-openssl-static-cse
   tags:
   - '4.2'
@@ -12841,7 +11452,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-openssl-static
   tags:
   - '4.2'
@@ -12866,7 +11476,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-darwinssl-cse
   tags:
   - '4.2'
@@ -12895,7 +11504,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-darwinssl
   tags:
   - '4.2'
@@ -12920,7 +11528,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-winssl-cse
   tags:
   - '4.2'
@@ -12949,7 +11556,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-winssl
   tags:
   - '4.2'
@@ -12974,7 +11580,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -12999,7 +11604,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-nosasl-openssl-static
   tags:
   - '4.2'
@@ -13024,7 +11628,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-nosasl-darwinssl
   tags:
   - '4.2'
@@ -13049,7 +11652,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-nosasl-winssl
   tags:
   - '4.2'
@@ -13074,7 +11676,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-server-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -13099,7 +11700,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-sasl-openssl
   tags:
   - '4.2'
@@ -13124,7 +11724,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-sasl-openssl-static
   tags:
   - '4.2'
@@ -13149,7 +11748,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-sasl-darwinssl
   tags:
   - '4.2'
@@ -13174,7 +11772,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-sasl-winssl
   tags:
   - '4.2'
@@ -13199,7 +11796,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -13224,7 +11820,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-nosasl-openssl-static
   tags:
   - '4.2'
@@ -13249,7 +11844,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-nosasl-darwinssl
   tags:
   - '4.2'
@@ -13274,7 +11868,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-nosasl-winssl
   tags:
   - '4.2'
@@ -13299,7 +11892,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-sasl-openssl
   tags:
   - '4.2'
@@ -13324,7 +11916,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-sasl-openssl-static
   tags:
   - '4.2'
@@ -13349,7 +11940,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-sasl-darwinssl
   tags:
   - '4.2'
@@ -13374,7 +11964,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-sasl-winssl
   tags:
   - '4.2'
@@ -13399,7 +11988,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -13424,7 +12012,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-nosasl-openssl-static
   tags:
   - '4.2'
@@ -13449,7 +12036,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-nosasl-darwinssl
   tags:
   - '4.2'
@@ -13474,7 +12060,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-nosasl-winssl
   tags:
   - '4.2'
@@ -13499,7 +12084,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -13524,7 +12108,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-auth-sasl-openssl
   tags:
   - '4.2'
@@ -13549,7 +12132,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-auth-sasl-openssl-static
   tags:
   - '4.2'
@@ -13574,7 +12156,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-sharded-auth-sasl-darwinssl
   tags:
   - '4.2'
@@ -13599,7 +12180,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-auth-sasl-winssl
   tags:
   - '4.2'
@@ -13624,7 +12204,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -13649,7 +12228,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-auth-nosasl-openssl-static
   tags:
   - '4.2'
@@ -13674,7 +12252,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-sharded-auth-nosasl-darwinssl
   tags:
   - '4.2'
@@ -13699,7 +12276,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-auth-nosasl-winssl
   tags:
   - '4.2'
@@ -13724,7 +12300,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-sasl-openssl
   tags:
   - '4.2'
@@ -13749,7 +12324,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-sasl-openssl-static
   tags:
   - '4.2'
@@ -13774,7 +12348,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-sasl-darwinssl
   tags:
   - '4.2'
@@ -13799,7 +12372,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-sasl-winssl
   tags:
   - '4.2'
@@ -13824,7 +12396,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -13849,7 +12420,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-nosasl-openssl-static
   tags:
   - '4.2'
@@ -13874,7 +12444,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-nosasl-darwinssl
   tags:
   - '4.2'
@@ -13899,7 +12468,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-nosasl-winssl
   tags:
   - '4.2'
@@ -13924,7 +12492,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -13949,7 +12516,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-4.0-server-auth-sasl-openssl
   tags:
   - '4.0'
@@ -13974,7 +12540,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-server-auth-sasl-openssl-static
   tags:
   - '4.0'
@@ -13999,7 +12564,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-server-auth-sasl-darwinssl
   tags:
   - '4.0'
@@ -14024,7 +12588,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-server-auth-sasl-winssl
   tags:
   - '4.0'
@@ -14049,7 +12612,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-server-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -14074,7 +12636,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-server-auth-nosasl-openssl-static
   tags:
   - '4.0'
@@ -14099,7 +12660,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-server-auth-nosasl-darwinssl
   tags:
   - '4.0'
@@ -14124,7 +12684,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-server-auth-nosasl-winssl
   tags:
   - '4.0'
@@ -14149,7 +12708,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-server-noauth-sasl-openssl
   tags:
   - '4.0'
@@ -14174,7 +12732,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-server-noauth-sasl-openssl-static
   tags:
   - '4.0'
@@ -14199,7 +12756,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-server-noauth-sasl-darwinssl
   tags:
   - '4.0'
@@ -14224,7 +12780,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-server-noauth-sasl-winssl
   tags:
   - '4.0'
@@ -14249,7 +12804,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-server-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -14274,7 +12828,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-server-noauth-nosasl-openssl-static
   tags:
   - '4.0'
@@ -14299,7 +12852,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-server-noauth-nosasl-darwinssl
   tags:
   - '4.0'
@@ -14324,7 +12876,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-server-noauth-nosasl-winssl
   tags:
   - '4.0'
@@ -14349,7 +12900,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-server-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -14374,7 +12924,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-sasl-openssl
   tags:
   - '4.0'
@@ -14399,7 +12948,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-sasl-openssl-static
   tags:
   - '4.0'
@@ -14424,7 +12972,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-sasl-darwinssl
   tags:
   - '4.0'
@@ -14449,7 +12996,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-sasl-winssl
   tags:
   - '4.0'
@@ -14474,7 +13020,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -14499,7 +13044,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-nosasl-openssl-static
   tags:
   - '4.0'
@@ -14524,7 +13068,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-nosasl-darwinssl
   tags:
   - '4.0'
@@ -14549,7 +13092,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-nosasl-winssl
   tags:
   - '4.0'
@@ -14574,7 +13116,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-sasl-openssl
   tags:
   - '4.0'
@@ -14599,7 +13140,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-sasl-openssl-static
   tags:
   - '4.0'
@@ -14624,7 +13164,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-sasl-darwinssl
   tags:
   - '4.0'
@@ -14649,7 +13188,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-sasl-winssl
   tags:
   - '4.0'
@@ -14674,7 +13212,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -14699,7 +13236,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-nosasl-openssl-static
   tags:
   - '4.0'
@@ -14724,7 +13260,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-nosasl-darwinssl
   tags:
   - '4.0'
@@ -14749,7 +13284,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-nosasl-winssl
   tags:
   - '4.0'
@@ -14774,7 +13308,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -14799,7 +13332,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-auth-sasl-openssl
   tags:
   - '4.0'
@@ -14824,7 +13356,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-auth-sasl-openssl-static
   tags:
   - '4.0'
@@ -14849,7 +13380,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-sharded-auth-sasl-darwinssl
   tags:
   - '4.0'
@@ -14874,7 +13404,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-auth-sasl-winssl
   tags:
   - '4.0'
@@ -14899,7 +13428,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -14924,7 +13452,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-auth-nosasl-openssl-static
   tags:
   - '4.0'
@@ -14949,7 +13476,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-sharded-auth-nosasl-darwinssl
   tags:
   - '4.0'
@@ -14974,7 +13500,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-auth-nosasl-winssl
   tags:
   - '4.0'
@@ -14999,7 +13524,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-sasl-openssl
   tags:
   - '4.0'
@@ -15024,7 +13548,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-sasl-openssl-static
   tags:
   - '4.0'
@@ -15049,7 +13572,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-sasl-darwinssl
   tags:
   - '4.0'
@@ -15074,7 +13596,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-sasl-winssl
   tags:
   - '4.0'
@@ -15099,7 +13620,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -15124,7 +13644,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-nosasl-openssl-static
   tags:
   - '4.0'
@@ -15149,7 +13668,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-nosasl-darwinssl
   tags:
   - '4.0'
@@ -15174,7 +13692,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-nosasl-winssl
   tags:
   - '4.0'
@@ -15199,7 +13716,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -15224,7 +13740,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-3.6-server-auth-sasl-openssl
   tags:
   - '3.6'
@@ -15249,7 +13764,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-server-auth-sasl-openssl-static
   tags:
   - '3.6'
@@ -15274,7 +13788,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-server-auth-sasl-darwinssl
   tags:
   - '3.6'
@@ -15299,7 +13812,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-server-auth-sasl-winssl
   tags:
   - '3.6'
@@ -15324,7 +13836,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-server-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -15349,7 +13860,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-server-auth-nosasl-openssl-static
   tags:
   - '3.6'
@@ -15374,7 +13884,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-server-auth-nosasl-darwinssl
   tags:
   - '3.6'
@@ -15399,7 +13908,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-server-auth-nosasl-winssl
   tags:
   - '3.6'
@@ -15424,7 +13932,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-server-noauth-sasl-openssl
   tags:
   - '3.6'
@@ -15449,7 +13956,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-server-noauth-sasl-openssl-static
   tags:
   - '3.6'
@@ -15474,7 +13980,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-server-noauth-sasl-darwinssl
   tags:
   - '3.6'
@@ -15499,7 +14004,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-server-noauth-sasl-winssl
   tags:
   - '3.6'
@@ -15524,7 +14028,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-server-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -15549,7 +14052,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-server-noauth-nosasl-openssl-static
   tags:
   - '3.6'
@@ -15574,7 +14076,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-server-noauth-nosasl-darwinssl
   tags:
   - '3.6'
@@ -15599,7 +14100,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-server-noauth-nosasl-winssl
   tags:
   - '3.6'
@@ -15624,7 +14124,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-server-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -15649,7 +14148,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-sasl-openssl
   tags:
   - '3.6'
@@ -15674,7 +14172,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-sasl-openssl-static
   tags:
   - '3.6'
@@ -15699,7 +14196,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-sasl-darwinssl
   tags:
   - '3.6'
@@ -15724,7 +14220,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-sasl-winssl
   tags:
   - '3.6'
@@ -15749,7 +14244,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -15774,7 +14268,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-nosasl-openssl-static
   tags:
   - '3.6'
@@ -15799,7 +14292,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-nosasl-darwinssl
   tags:
   - '3.6'
@@ -15824,7 +14316,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-nosasl-winssl
   tags:
   - '3.6'
@@ -15849,7 +14340,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-sasl-openssl
   tags:
   - '3.6'
@@ -15874,7 +14364,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-sasl-openssl-static
   tags:
   - '3.6'
@@ -15899,7 +14388,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-sasl-darwinssl
   tags:
   - '3.6'
@@ -15924,7 +14412,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-sasl-winssl
   tags:
   - '3.6'
@@ -15949,7 +14436,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -15974,7 +14460,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-nosasl-openssl-static
   tags:
   - '3.6'
@@ -15999,7 +14484,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-nosasl-darwinssl
   tags:
   - '3.6'
@@ -16024,7 +14508,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-nosasl-winssl
   tags:
   - '3.6'
@@ -16049,7 +14532,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -16074,7 +14556,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-auth-sasl-openssl
   tags:
   - '3.6'
@@ -16099,7 +14580,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-auth-sasl-openssl-static
   tags:
   - '3.6'
@@ -16124,7 +14604,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-sharded-auth-sasl-darwinssl
   tags:
   - '3.6'
@@ -16149,7 +14628,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-auth-sasl-winssl
   tags:
   - '3.6'
@@ -16174,7 +14652,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -16199,7 +14676,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-auth-nosasl-openssl-static
   tags:
   - '3.6'
@@ -16224,7 +14700,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-sharded-auth-nosasl-darwinssl
   tags:
   - '3.6'
@@ -16249,7 +14724,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-auth-nosasl-winssl
   tags:
   - '3.6'
@@ -16274,7 +14748,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-sasl-openssl
   tags:
   - '3.6'
@@ -16299,7 +14772,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-sasl-openssl-static
   tags:
   - '3.6'
@@ -16324,7 +14796,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-sasl-darwinssl
   tags:
   - '3.6'
@@ -16349,7 +14820,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-sasl-winssl
   tags:
   - '3.6'
@@ -16374,7 +14844,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -16399,7 +14868,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-nosasl-openssl-static
   tags:
   - '3.6'
@@ -16424,7 +14892,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-nosasl-darwinssl
   tags:
   - '3.6'
@@ -16449,7 +14916,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-nosasl-winssl
   tags:
   - '3.6'
@@ -16474,7 +14940,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: winssl
-      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -16499,7 +14964,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: nossl
-      VALGRIND: 'off'
 - name: test-dns-openssl
   depends_on:
     name: debug-compile-sasl-openssl
@@ -16813,19 +15277,6 @@ tasks:
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: run auth tests
-- name: test-valgrind-memcheck-mock-server
-  tags:
-  - test-valgrind
-  depends_on:
-    name: debug-compile-valgrind
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-valgrind
-  - func: run mock server tests
-    vars:
-      SSL: ssl
-      VALGRIND: 'on'
 - name: test-asan-memcheck-mock-server
   tags:
   - test-asan
@@ -16877,8 +15328,8 @@ tasks:
   - func: update codecov.io
 - name: authentication-tests-memcheck
   tags:
+  - asan
   - authentication-tests
-  - valgrind
   commands:
   - command: shell.exec
     type: test
@@ -16887,10 +15338,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL sh .evergreen/compile.sh
+        SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL sh .evergreen/compile.sh
   - func: run auth tests
     vars:
-      valgrind: 'true'
+      ASAN: 'on'
 - name: test-versioned-api
   tags:
   - versioned-api
@@ -24256,7 +22707,6 @@ buildvariants:
     distros:
     - ubuntu1804-build
   - .debug-compile !.sspi .nossl
-  - debug-compile-valgrind
   - debug-compile-no-counters
   - compile-tracing
   - link-with-cmake
@@ -24436,7 +22886,7 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .authentication-tests .valgrind
+  - .authentication-tests .asan
   - .4.4 .openssl !.nosasl .server
   - .4.2 .openssl !.nosasl .server
   - .4.0 .openssl !.nosasl .server
@@ -24594,7 +23044,7 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .authentication-tests .valgrind
+  - .authentication-tests .asan
   - .latest .openssl !.nosasl .server
   - .latest .nossl
   - .latest .openssl .nosasl .replica_set
@@ -24848,28 +23298,6 @@ buildvariants:
   - .latest .nossl
   - .6.0 .openssl !.nosasl .server
   - .5.0 .openssl !.nosasl .server
-  batchtime: 1440
-- name: valgrind-ubuntu
-  display_name: Valgrind Tests (Ubuntu 18.04)
-  expansions:
-    CC: gcc
-  run_on: ubuntu1804-build
-  tasks:
-  - .debug-compile !.sspi .openssl !.sasl
-  - .debug-compile !.sspi .nossl !.sasl
-  - .debug-compile .special .valgrind
-  - .test-valgrind !.3.6
-  batchtime: 1440
-- name: valgrind-ubuntu-1404
-  display_name: Valgrind Tests - MongoDB (pre 4.0) (Ubuntu 14.04)
-  expansions:
-    CC: gcc
-  run_on: ubuntu1404-build
-  tasks:
-  - .debug-compile !.sspi .openssl !.sasl
-  - .debug-compile !.sspi .nossl !.sasl
-  - .debug-compile .special .valgrind
-  - .test-valgrind .3.6
   batchtime: 1440
 - name: asan-ubuntu
   display_name: ASAN Tests (Ubuntu 18.04)

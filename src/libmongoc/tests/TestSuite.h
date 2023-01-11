@@ -528,21 +528,15 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                    \
    } while (0)
 
-/* don't check durations when testing with valgrind */
-#define ASSERT_CMPTIME(actual, maxduration)      \
-   do {                                          \
-      if (!test_suite_valgrind ()) {             \
-         ASSERT_CMPINT (actual, <, maxduration); \
-      }                                          \
+#define ASSERT_CMPTIME(actual, maxduration)   \
+   do {                                       \
+      ASSERT_CMPINT (actual, <, maxduration); \
    } while (0)
 
-/* don't check durations when testing with valgrind */
 #define ASSERT_WITHIN_TIME_INTERVAL(actual, minduration, maxduration) \
    do {                                                               \
-      if (!test_suite_valgrind ()) {                                  \
-         ASSERT_CMPINT (actual, >=, minduration);                     \
-         ASSERT_CMPINT (actual, <, maxduration);                      \
-      }                                                               \
+      ASSERT_CMPINT (actual, >=, minduration);                        \
+      ASSERT_CMPINT (actual, <, maxduration);                         \
    } while (0)
 
 #if defined(_WIN32) && !defined(__MINGW32__)
@@ -777,8 +771,6 @@ TestSuite_Destroy (TestSuite *suite);
 
 int
 test_suite_debug_output (void);
-int
-test_suite_valgrind (void);
 void
 test_suite_mock_server_log (const char *msg, ...);
 void

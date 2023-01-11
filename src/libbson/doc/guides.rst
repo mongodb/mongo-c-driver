@@ -8,4 +8,3 @@ Guides
 
   streaming-bson
   json
-  valgrind

@@ -4,7 +4,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 DNS=${DNS:-nodns}
 
-echo "CC='${CC}' VALGRIND=${VALGRIND}"
+echo "CC='${CC}'"
 
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 TEST_ARGS="-d -F test-results.json --skip-tests .evergreen/skip-tests.txt"
@@ -30,13 +30,6 @@ case "$OS" in
    *)
       ulimit -c unlimited || true
 
-      if [ "$VALGRIND" = "on" ]; then
-         . $DIR/valgrind.sh
-         run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
-      else
-         ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
-      fi
-
+      ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
       ;;
 esac
-

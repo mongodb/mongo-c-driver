@@ -15,7 +15,7 @@ export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
 export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
 export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
 
-echo "COMPRESSORS='${COMPRESSORS}' CC='${CC}' AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${MONGOC_TEST_URI}"
+echo "COMPRESSORS='${COMPRESSORS}' CC='${CC}' AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} MONGOC_TEST_URI=${MONGOC_TEST_URI}"
 
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 TEST_ARGS="-d -F test-results.json --skip-tests .evergreen/skip-tests.txt"
@@ -69,7 +69,6 @@ fi
 
 DIR=$(dirname $0)
 . $DIR/add-build-dirs-to-paths.sh
-. $DIR/valgrind.sh
 
 check_mongocryptd() {
    if [ "$CLIENT_SIDE_ENCRYPTION" = "on" -a "$ASAN" = "on" ]; then
@@ -161,12 +160,7 @@ case "$OS" in
       export PATH=$PATH:$(pwd)/mongodb/bin
       check_mongocryptd
 
-      if [ "$VALGRIND" = "on" ]; then
-         . $DIR/valgrind.sh
-         run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
-      else
-         ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
-      fi
+      ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
 
       ;;
 esac

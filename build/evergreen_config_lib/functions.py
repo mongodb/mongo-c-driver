@@ -296,7 +296,6 @@ all_functions = OD([
         export SSL=${SSL}
         export URI=${URI}
         export IPV4_ONLY=${IPV4_ONLY}
-        export VALGRIND=${VALGRIND}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
         export ASAN=${ASAN}
@@ -380,7 +379,6 @@ all_functions = OD([
         export ATLAS_TLS12_SRV='${atlas_tls12_srv}'
         export REQUIRE_TLS12='${require_tls12}'
         export OBSOLETE_TLS='${obsolete_tls}'
-        export VALGRIND='${valgrind}'
         export ATLAS_SERVERLESS_SRV='${atlas_serverless_srv}'
         export ATLAS_SERVERLESS='${atlas_serverless}'
         sh .evergreen/run-auth-tests.sh
@@ -388,7 +386,7 @@ all_functions = OD([
     )),
     ('run mock server tests', Function(
         shell_mongoc(
-            r'CC="${CC}" VALGRIND=${VALGRIND} sh .evergreen/run-mock-server-tests.sh'),
+            r'CC="${CC}" sh .evergreen/run-mock-server-tests.sh'),
     )),
     ('cleanup', Function(
         shell_mongoc(r'''
@@ -544,7 +542,6 @@ all_functions = OD([
         export SSL=${SSL}
         export URI=${URI}
         export IPV4_ONLY=${IPV4_ONLY}
-        export VALGRIND=${VALGRIND}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
         export ASAN=${ASAN}

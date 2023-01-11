@@ -21,7 +21,6 @@ set +o xtrace   # Don't echo commands
 # ATLAS_TLS12_SRV=${atlas_tls12_srv} # Evergreen variable
 # REQUIRE_TLS12=${require_tls12} # libmongoc requires TLS 1.2+
 # OBSOLETE_TLS=${obsolete_tls} # libmongoc was built with old TLS lib, don't try connecting to Atlas
-# VALGRIND=${valgrind} # Whether to run with valgrind
 # ATLAS_SERVERLESS_SRV=${atlas_serverless_srv} # Evergreen variable
 # ATLAS_SERVERLESS=${atlas_serverless} # Evergreen variable
 
@@ -62,12 +61,6 @@ case "$OS" in
       TEST_GSSAPI="./src/libmongoc/test-mongoc-gssapi"
       IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
 esac
-
-if [ "${valgrind}" = "true" ]; then
-   . $DIR/valgrind.sh
-   PING="run_valgrind $PING"
-   TEST_GSSAPI="run_valgrind $TEST_GSSAPI"
-fi
 
 if test -f /tmp/drivers.keytab; then
    kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC || true

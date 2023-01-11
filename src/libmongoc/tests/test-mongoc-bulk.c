@@ -293,10 +293,6 @@ test_bulk_error_unordered (void)
    int i;
    mongoc_uri_t *uri;
 
-   if (test_suite_valgrind ()) {
-      bson_destroy (&opts);
-      return;
-   }
    mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
 

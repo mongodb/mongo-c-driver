@@ -9,7 +9,6 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       RELEASE                 Use the fully qualified release archive
 #       DEBUG                   Use debug configure flags
 #       TRACING                 Use function tracing
-#       VALGRIND                Run the test suite through valgrind
 #       CC                      Which compiler to use
 #       ANALYZE                 Run the build through clangs scan-build
 #       COVERAGE                Produce code coverage reports
@@ -33,7 +32,6 @@ C_STD_VERSION=${CSTD_VERSION:-99}
 RELEASE=${RELEASE:-OFF}
 DEBUG=${DEBUG:-OFF}
 TRACING=${TRACING:-OFF}
-VALGRIND=${VALGRIND:-OFF}
 ANALYZE=${ANALYZE:-OFF}
 COVERAGE=${COVERAGE:-OFF}
 RDTSCP=${RDTSCP:-OFF}
@@ -54,7 +52,6 @@ echo "MARCH: $MARCH"
 echo "RELEASE: $RELEASE"
 echo "DEBUG: $DEBUG"
 echo "TRACING: $TRACING"
-echo "VALGRIND: $VALGRIND"
 echo "CC: $CC"
 echo "ANALYZE: $ANALYZE"
 echo "COVERAGE: $COVERAGE"
@@ -289,17 +286,6 @@ if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
    exit 0
 fi
 
-if [ "$VALGRIND" = "ON" ]; then
-   # Defines "run_valgrind" shell function.
-   . $DIR/valgrind.sh
-else
-   # Define a no-op function.
-   run_valgrind ()
-   {
-      $@
-   }
-fi
-
 export MONGOC_TEST_SERVER_LOG=stdout
 
 # Write stderr to error.log and to console. Turn off tracing to avoid spurious
@@ -308,10 +294,10 @@ mkfifo pipe || true
 if [ -e pipe ]; then
    set +o xtrace
    tee error.log < pipe &
-   run_valgrind ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt 2>pipe
+   ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt 2>pipe
    rm pipe
 else
-   run_valgrind ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt
+   ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt
 fi
 
 # Check if the error.log exists, and is more than 0 byte

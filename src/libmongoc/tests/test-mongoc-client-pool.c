@@ -60,7 +60,7 @@ test_mongoc_client_pool_pop_timeout (void)
    duration_usec = bson_get_monotonic_time () - start;
    /* There is a possibility that the wait is a few milliseconds short.  The
     * assertion is structured like this since the timeout is a rough lower bound
-    * and some test environments (e.g., valgrind) might slow things down. */
+    * and some test environments might slow things down. */
    BSON_ASSERT (duration_usec / 1000 >= 1990);
    mongoc_client_pool_push (pool, client);
    mongoc_uri_destroy (uri);
