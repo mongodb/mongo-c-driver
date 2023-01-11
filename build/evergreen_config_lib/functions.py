@@ -296,6 +296,7 @@ all_functions = OD([
         export SSL=${SSL}
         export URI=${URI}
         export IPV4_ONLY=${IPV4_ONLY}
+        export ASAN=${ASAN}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
         export ASAN=${ASAN}
@@ -352,11 +353,11 @@ all_functions = OD([
         export MULTI_MONGOS_LB_URI="${MULTI_MONGOS_LB_URI}"
         export CRYPT_SHARED_LIB_PATH="${CRYPT_SHARED_LIB_PATH}"
         set -o errexit
-        sh .evergreen/run-tests.sh
+        bash .evergreen/run-tests.sh
         '''),
     )),
     ('run tests bson', Function(
-        shell_mongoc(r'CC="${CC}" sh .evergreen/run-tests-bson.sh'),
+        shell_mongoc(r'CC="${CC}" bash .evergreen/run-tests-bson.sh'),
     )),
     # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
@@ -379,14 +380,16 @@ all_functions = OD([
         export ATLAS_TLS12_SRV='${atlas_tls12_srv}'
         export REQUIRE_TLS12='${require_tls12}'
         export OBSOLETE_TLS='${obsolete_tls}'
+        export ASAN='${ASAN}'
+        export CC='${CC}'
         export ATLAS_SERVERLESS_SRV='${atlas_serverless_srv}'
         export ATLAS_SERVERLESS='${atlas_serverless}'
-        sh .evergreen/run-auth-tests.sh
+        bash .evergreen/run-auth-tests.sh
         ''', silent=True),
     )),
     ('run mock server tests', Function(
         shell_mongoc(
-            r'CC="${CC}" sh .evergreen/run-mock-server-tests.sh'),
+            r'CC="${CC}" ASAN=${ASAN} bash .evergreen/run-mock-server-tests.sh'),
     )),
     ('cleanup', Function(
         shell_mongoc(r'''
@@ -487,13 +490,13 @@ all_functions = OD([
     ('debug-compile-coverage-notest-nosasl-nossl', Function(
         shell_mongoc(r'''
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
         '''),
     )),
     ('debug-compile-coverage-notest-nosasl-openssl', Function(
         shell_mongoc(r'''
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
         '''),
     )),
     ('build mongohouse', Function(
@@ -542,11 +545,12 @@ all_functions = OD([
         export SSL=${SSL}
         export URI=${URI}
         export IPV4_ONLY=${IPV4_ONLY}
+        export ASAN=${ASAN}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
         export ASAN=${ASAN}
         export MONGODB_API_VERSION=1
-        sh .evergreen/run-tests.sh
+        bash .evergreen/run-tests.sh
         unset MONGODB_API_VERSION
 
         '''),

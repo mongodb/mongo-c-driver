@@ -426,6 +426,7 @@ functions:
         export SSL=${SSL}
         export URI=${URI}
         export IPV4_ONLY=${IPV4_ONLY}
+        export ASAN=${ASAN}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
         export ASAN=${ASAN}
@@ -477,7 +478,7 @@ functions:
         export MULTI_MONGOS_LB_URI="${MULTI_MONGOS_LB_URI}"
         export CRYPT_SHARED_LIB_PATH="${CRYPT_SHARED_LIB_PATH}"
         set -o errexit
-        sh .evergreen/run-tests.sh
+        bash .evergreen/run-tests.sh
   run tests bson:
   - command: shell.exec
     type: test
@@ -486,7 +487,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        CC="${CC}" sh .evergreen/run-tests-bson.sh
+        CC="${CC}" bash .evergreen/run-tests-bson.sh
   run auth tests:
   - command: shell.exec
     type: test
@@ -514,9 +515,11 @@ functions:
         export ATLAS_TLS12_SRV='${atlas_tls12_srv}'
         export REQUIRE_TLS12='${require_tls12}'
         export OBSOLETE_TLS='${obsolete_tls}'
+        export ASAN='${ASAN}'
+        export CC='${CC}'
         export ATLAS_SERVERLESS_SRV='${atlas_serverless_srv}'
         export ATLAS_SERVERLESS='${atlas_serverless}'
-        sh .evergreen/run-auth-tests.sh
+        bash .evergreen/run-auth-tests.sh
   run mock server tests:
   - command: shell.exec
     type: test
@@ -525,7 +528,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        CC="${CC}" sh .evergreen/run-mock-server-tests.sh
+        CC="${CC}" ASAN=${ASAN} bash .evergreen/run-mock-server-tests.sh
   cleanup:
   - command: shell.exec
     params:
@@ -671,7 +674,7 @@ functions:
       script: |-
         set -o errexit
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
   debug-compile-coverage-notest-nosasl-openssl:
   - command: shell.exec
     type: test
@@ -681,7 +684,7 @@ functions:
       script: |-
         set -o errexit
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
   build mongohouse:
   - command: shell.exec
     type: test
@@ -741,11 +744,12 @@ functions:
         export SSL=${SSL}
         export URI=${URI}
         export IPV4_ONLY=${IPV4_ONLY}
+        export ASAN=${ASAN}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
         export ASAN=${ASAN}
         export MONGODB_API_VERSION=1
-        sh .evergreen/run-tests.sh
+        bash .evergreen/run-tests.sh
         unset MONGODB_API_VERSION
   run aws tests:
   - command: shell.exec
@@ -929,7 +933,7 @@ tasks:
         export SNAPPY="OFF"
         export ZLIB="OFF"
         export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: abi-compliance-check
   commands:
@@ -951,7 +955,7 @@ tasks:
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-compression-snappy
   tags:
@@ -970,7 +974,7 @@ tasks:
         export SNAPPY="ON"
         export ZLIB="OFF"
         export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-compression-zstd
   tags:
@@ -989,7 +993,7 @@ tasks:
         export SNAPPY="OFF"
         export ZLIB="OFF"
         export ZSTD="ON"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-compression
   tags:
@@ -1010,7 +1014,7 @@ tasks:
         export SNAPPY="ON"
         export ZLIB="BUNDLED"
         export ZSTD="ON"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-no-align
   tags:
@@ -1029,7 +1033,7 @@ tasks:
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-nossl
   tags:
@@ -1047,7 +1051,7 @@ tasks:
         export DEBUG="ON"
         export SANITIZE=""
         export SSL="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-lto
   commands:
@@ -1061,7 +1065,7 @@ tasks:
         export CFLAGS="-flto"
         export DEBUG="ON"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-lto-thin
   commands:
@@ -1075,7 +1079,7 @@ tasks:
         export CFLAGS="-flto=thin"
         export DEBUG="ON"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-c11
   tags:
@@ -1094,7 +1098,7 @@ tasks:
         export C_STD_VERSION="11"
         export DEBUG="ON"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-coverage
   tags:
@@ -1112,7 +1116,7 @@ tasks:
         export COVERAGE="ON"
         export DEBUG="ON"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
   - func: upload coverage
 - name: debug-compile-no-counters
@@ -1130,7 +1134,7 @@ tasks:
         export DEBUG="ON"
         export ENABLE_SHM_COUNTERS="OFF"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-asan-clang
   tags:
@@ -1155,7 +1159,7 @@ tasks:
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-asan-gcc
   tags:
@@ -1176,7 +1180,7 @@ tasks:
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-asan-clang-openssl
   tags:
@@ -1202,7 +1206,7 @@ tasks:
         export SSL="OPENSSL"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-ubsan
   tags:
@@ -1225,7 +1229,7 @@ tasks:
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-ubsan-with-extra-alignment
   tags:
@@ -1248,7 +1252,7 @@ tasks:
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
         export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-scan-build
   tags:
@@ -1268,7 +1272,7 @@ tasks:
         export CC="clang"
         export DEBUG="ON"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
   - func: upload scan artifacts
   - command: shell.exec
@@ -1294,7 +1298,7 @@ tasks:
         export DEBUG="ON"
         export SANITIZE=""
         export TRACING="ON"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: release-compile
   depends_on:
@@ -1310,7 +1314,7 @@ tasks:
         set -o errexit
         export RELEASE="ON"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl
   tags:
@@ -1328,7 +1332,7 @@ tasks:
         export DEBUG="ON"
         export SANITIZE=""
         export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl-static
   tags:
@@ -1346,7 +1350,7 @@ tasks:
         export DEBUG="ON"
         export SANITIZE=""
         export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-darwinssl
   tags:
@@ -1364,7 +1368,7 @@ tasks:
         export DEBUG="ON"
         export SANITIZE=""
         export SSL="DARWIN"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-winssl
   tags:
@@ -1382,7 +1386,7 @@ tasks:
         export DEBUG="ON"
         export SANITIZE=""
         export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-nossl
   tags:
@@ -1401,7 +1405,7 @@ tasks:
         export SANITIZE=""
         export SASL="AUTO"
         export SSL="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl
   tags:
@@ -1420,7 +1424,7 @@ tasks:
         export SANITIZE=""
         export SASL="AUTO"
         export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-static
   tags:
@@ -1439,7 +1443,7 @@ tasks:
         export SANITIZE=""
         export SASL="AUTO"
         export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-darwinssl
   tags:
@@ -1458,7 +1462,7 @@ tasks:
         export SANITIZE=""
         export SASL="AUTO"
         export SSL="DARWIN"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-winssl
   tags:
@@ -1477,7 +1481,7 @@ tasks:
         export SANITIZE=""
         export SASL="CYRUS"
         export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sspi-nossl
   tags:
@@ -1496,7 +1500,7 @@ tasks:
         export SANITIZE=""
         export SASL="SSPI"
         export SSL="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sspi-openssl
   tags:
@@ -1515,7 +1519,7 @@ tasks:
         export SANITIZE=""
         export SASL="SSPI"
         export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sspi-openssl-static
   tags:
@@ -1534,7 +1538,7 @@ tasks:
         export SANITIZE=""
         export SASL="SSPI"
         export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-rdtscp
   commands:
@@ -1548,7 +1552,7 @@ tasks:
         export DEBUG="ON"
         export ENABLE_RDTSCP="ON"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sspi-winssl
   tags:
@@ -1567,7 +1571,7 @@ tasks:
         export SANITIZE=""
         export SASL="SSPI"
         export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosrv
   tags:
@@ -1583,7 +1587,7 @@ tasks:
         export DEBUG="ON"
         export SANITIZE=""
         export SRV="OFF"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: link-with-cmake
   depends_on:
@@ -1889,7 +1893,7 @@ tasks:
         export CFLAGS="-Werror -Wno-cast-align"
         export DEBUG="ON"
         export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-cse
   tags:
@@ -1912,7 +1916,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         export COMPILE_LIBMONGOCRYPT="ON"
@@ -1921,7 +1925,7 @@ tasks:
         export SANITIZE=""
         export SASL="AUTO"
         export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-static-cse
   tags:
@@ -1944,7 +1948,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         export COMPILE_LIBMONGOCRYPT="ON"
@@ -1953,7 +1957,7 @@ tasks:
         export SANITIZE=""
         export SASL="AUTO"
         export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-darwinssl-cse
   tags:
@@ -1976,7 +1980,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="DARWIN"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         export COMPILE_LIBMONGOCRYPT="ON"
@@ -1985,7 +1989,7 @@ tasks:
         export SANITIZE=""
         export SASL="AUTO"
         export SSL="DARWIN"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-winssl-cse
   tags:
@@ -2008,7 +2012,7 @@ tasks:
         export SASL="AUTO"
         export SKIP_MOCK_TESTS="ON"
         export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         export COMPILE_LIBMONGOCRYPT="ON"
@@ -2017,7 +2021,7 @@ tasks:
         export SANITIZE=""
         export SASL="AUTO"
         export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-asan-openssl-cse
   tags:
@@ -2040,7 +2044,7 @@ tasks:
         export SANITIZE="address"
         export SKIP_MOCK_TESTS="ON"
         export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         export CFLAGS="-fno-omit-frame-pointer"
@@ -2051,7 +2055,7 @@ tasks:
         export PATH="/usr/lib/llvm-3.8/bin:$PATH"
         export SANITIZE="address"
         export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl-1.0.1
   commands:
@@ -2070,7 +2074,7 @@ tasks:
         export SANITIZE=""
         export SASL="OFF"
         export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-tsan-openssl
   tags:
@@ -2090,7 +2094,7 @@ tasks:
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF"
         export SANITIZE="thread"
         export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
   - func: upload build
 - name: build-and-test-with-toolchain
   commands:
@@ -15338,7 +15342,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL sh .evergreen/compile.sh
+        SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       ASAN: 'on'
@@ -15394,7 +15398,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       obsolete_tls: true
@@ -15411,7 +15415,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       obsolete_tls: true
@@ -15429,7 +15433,7 @@ tasks:
       script: |-
         set -o errexit
         export CFLAGS=-Wno-redundant-decls
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.0.1-fips
@@ -15445,7 +15449,7 @@ tasks:
       script: |-
         set -o errexit
         export CFLAGS=-Wno-redundant-decls
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL OPENSSL_FIPS=1 sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL OPENSSL_FIPS=1 bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.0.2
@@ -15460,7 +15464,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.1.0
@@ -15475,7 +15479,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-libressl-2.5
@@ -15490,7 +15494,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -15508,7 +15512,7 @@ tasks:
       script: |-
         set -o errexit
         export CFLAGS=-Wno-redundant-decls
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=AUTO sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=AUTO bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -15525,7 +15529,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true

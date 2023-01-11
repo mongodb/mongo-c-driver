@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
@@ -122,6 +123,14 @@ else
 fi
 
 . $DIR/find-cmake.sh
+
+if [[ "${SANITIZE}" =~ "address" ]]; then
+   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
+   . "$DIR/bypass-dlclose.sh"
+else
+   # Disable bypass otherwise.
+   bypass_dlclose() { "$@"; }
+fi
 
 # --strip-components is an GNU tar extension. Check if the platform
 # has GNU tar installed as `gtar`, otherwise we assume to be on
@@ -294,10 +303,10 @@ mkfifo pipe || true
 if [ -e pipe ]; then
    set +o xtrace
    tee error.log < pipe &
-   ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt 2>pipe
+   bypass_dlclose ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt 2>pipe
    rm pipe
 else
-   ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt
+   bypass_dlclose ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt
 fi
 
 # Check if the error.log exists, and is more than 0 byte

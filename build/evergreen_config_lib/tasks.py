@@ -76,7 +76,7 @@ class CompileTask(NamedTask):
         for opt, value in sorted(self.compile_sh_opt.items()):
             script += 'export %s="%s"\n' % (opt, value)
 
-        script += "CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh" + \
+        script += "CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh" + \
                   self.extra_script
         task['commands'].append(shell_mongoc(script))
         task['commands'].append(func('upload build'))
@@ -836,7 +836,7 @@ all_tasks = chain(all_tasks, [
         commands=[
             shell_mongoc("""
                 SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO \
-                  SSL=OPENSSL sh .evergreen/compile.sh
+                  SSL=OPENSSL bash .evergreen/compile.sh
                 """),
             func('run auth tests', ASAN='on')]),
     PostCompileTask(
@@ -872,7 +872,7 @@ class SSLTask(Task):
         if fips:
             script += " OPENSSL_FIPS=1"
 
-        script += " sh .evergreen/compile.sh"
+        script += " bash .evergreen/compile.sh"
 
         super(SSLTask, self).__init__(commands=[
             func('install ssl', SSL=full_version),
