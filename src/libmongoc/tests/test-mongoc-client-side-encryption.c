@@ -6499,7 +6499,7 @@ test_create_encrypted_collection_insert (void *unused)
    bson_value_t plain;
    plain.value_type = BSON_TYPE_UTF8;
    plain.value.v_utf8.str = "123-45-6789";
-   plain.value.v_utf8.len = strlen (plain.value.v_utf8.str);
+   plain.value.v_utf8.len = (uint32_t) strlen (plain.value.v_utf8.str);
 
    // Encrypt the value using the new encryption key:
    mongoc_client_encryption_encrypt_opts_t *eo =
