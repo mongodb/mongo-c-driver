@@ -34,7 +34,7 @@
 #if !defined _Noreturn && \
    (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112)
 #if 2 < __GNUC__ + (8 <= __GNUC_MINOR__)
-#define _Noreturn __attribute__((__noreturn__))
+#define _Noreturn __attribute__ ((__noreturn__))
 #else
 #define _Noreturn
 #endif
@@ -181,7 +181,7 @@ struct ttinfo {            /* time type information */
 };
 
 struct lsinfo {          /* leap second information */
-   int64_t ls_trans;      /* transition time */
+   int64_t ls_trans;     /* transition time */
    int_fast64_t ls_corr; /* correction to apply */
 };
 
@@ -241,16 +241,22 @@ static int64_t
 normalize_overflow (int64_t *tensptr, int64_t *unitsptr, int64_t base);
 static int64_t
 time1 (struct bson_tm *tmp,
-       struct bson_tm *(*funcp) (const int64_t *, int_fast32_t, struct bson_tm *),
+       struct bson_tm *(*funcp) (const int64_t *,
+                                 int_fast32_t,
+                                 struct bson_tm *),
        int_fast32_t offset);
 static int64_t
 time2 (struct bson_tm *tmp,
-       struct bson_tm *(*funcp) (const int64_t *, int_fast32_t, struct bson_tm *),
+       struct bson_tm *(*funcp) (const int64_t *,
+                                 int_fast32_t,
+                                 struct bson_tm *),
        int_fast32_t offset,
        int64_t *okayp);
 static int64_t
 time2sub (struct bson_tm *tmp,
-          struct bson_tm *(*funcp) (const int64_t *, int_fast32_t, struct bson_tm *),
+          struct bson_tm *(*funcp) (const int64_t *,
+                                    int_fast32_t,
+                                    struct bson_tm *),
           int_fast32_t offset,
           int64_t *okayp,
           int64_t do_norm_secs);
@@ -490,7 +496,9 @@ increment_overflow32 (int_fast32_t *const lp, int64_t const m)
 }
 
 static int64_t
-normalize_overflow (int64_t *const tensptr, int64_t *const unitsptr, const int64_t base)
+normalize_overflow (int64_t *const tensptr,
+                    int64_t *const unitsptr,
+                    const int64_t base)
 {
    register int64_t tensdelta;
 
@@ -531,7 +539,9 @@ tmcomp (register const struct bson_tm *const atmp,
 
 static int64_t
 time2sub (struct bson_tm *const tmp,
-          struct bson_tm *(*const funcp) (const int64_t *, int_fast32_t, struct bson_tm *),
+          struct bson_tm *(*const funcp) (const int64_t *,
+                                          int_fast32_t,
+                                          struct bson_tm *),
           const int_fast32_t offset,
           int64_t *const okayp,
           const int64_t do_norm_secs)
@@ -700,7 +710,9 @@ label:
 
 static int64_t
 time2 (struct bson_tm *const tmp,
-       struct bson_tm *(*const funcp) (const int64_t *, int_fast32_t, struct bson_tm *),
+       struct bson_tm *(*const funcp) (const int64_t *,
+                                       int_fast32_t,
+                                       struct bson_tm *),
        const int_fast32_t offset,
        int64_t *const okayp)
 {
@@ -717,7 +729,9 @@ time2 (struct bson_tm *const tmp,
 
 static int64_t
 time1 (struct bson_tm *const tmp,
-       struct bson_tm *(*const funcp) (const int64_t *, int_fast32_t, struct bson_tm *),
+       struct bson_tm *(*const funcp) (const int64_t *,
+                                       int_fast32_t,
+                                       struct bson_tm *),
        const int_fast32_t offset)
 {
    register int64_t t;
@@ -792,4 +806,3 @@ _bson_timegm (struct bson_tm *const tmp)
       tmp->tm_isdst = 0;
    return time1 (tmp, gmtsub, 0L);
 }
-
