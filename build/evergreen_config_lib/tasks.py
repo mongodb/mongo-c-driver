@@ -835,7 +835,7 @@ all_tasks = chain(all_tasks, [
         tags=['authentication-tests', 'asan'],
         commands=[
             shell_mongoc("""
-                SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" bash .evergreen/compile.sh
+                SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
                 """),
             func('run auth tests', ASAN='on')]),
     PostCompileTask(

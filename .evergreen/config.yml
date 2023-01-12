@@ -15342,7 +15342,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" bash .evergreen/compile.sh
+        SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       ASAN: 'on'
@@ -22890,7 +22890,6 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .authentication-tests .asan
   - .4.4 .openssl !.nosasl .server
   - .4.2 .openssl !.nosasl .server
   - .4.0 .openssl !.nosasl .server
@@ -23341,6 +23340,7 @@ buildvariants:
   - debug-compile-nosasl-openssl-static
   - debug-compile-sasl-openssl-static
   - debug-compile-sspi-openssl-static
+  - .authentication-tests .asan
   - test-aws-openssl-regular-latest
   - test-aws-openssl-ec2-latest
   - test-aws-openssl-ecs-latest
