@@ -6417,7 +6417,7 @@ test_create_encrypted_collection_bad_keyId (void *unused)
    mongoc_client_destroy (client);
 }
 
-
+// Implements Prose Test 21. Case: 4.
 static void
 test_create_encrypted_collection_insert (void *unused)
 {
