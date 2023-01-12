@@ -440,7 +440,8 @@ timesub (const int64_t *const timep,
    */
    tmp->tm_sec = (int64_t) (rem % SECSPERMIN) + hit;
    ip = mon_lengths[isleap (y)];
-   for (tmp->tm_mon = 0; idays >= ip[tmp->tm_mon]; ++(tmp->tm_mon))
+   for (tmp->tm_mon = 0; tmp->tm_mon < MONSPERYEAR && idays >= ip[tmp->tm_mon];
+        ++(tmp->tm_mon))
       idays -= ip[tmp->tm_mon];
    tmp->tm_mday = (int64_t) (idays + 1);
    tmp->tm_isdst = 0;
