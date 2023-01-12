@@ -15342,7 +15342,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL bash .evergreen/compile.sh
+        SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       ASAN: 'on'
