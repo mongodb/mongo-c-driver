@@ -327,6 +327,7 @@ all_variants = [
              '.debug-compile !.sspi .openssl',
              '.debug-compile !.sspi .nossl',
              '.authentication-tests .openssl',
+             '.authentication-tests .asan',
              '.latest .openssl !.nosasl .server',
              '.latest .nossl',
              '.latest .openssl .nosasl .replica_set',
