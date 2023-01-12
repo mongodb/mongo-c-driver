@@ -6470,7 +6470,7 @@ test_create_encrypted_collection_insert (void *unused)
    bson_t new_opts;
    mongoc_collection_t *const coll =
       mongoc_client_encryption_create_encrypted_collection (
-         ce, db, "test-coll", &ccOpts, &new_opts, "local", dkOpts, &error);
+         ce, db, "testing1", &ccOpts, &new_opts, "local", dkOpts, &error);
    ASSERT_OR_PRINT (coll, error);
    bson_destroy (&ccOpts);
 
