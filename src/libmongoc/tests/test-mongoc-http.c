@@ -39,6 +39,16 @@ test_mongoc_http_get (void *unused)
    req.port = 80;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
    ASSERT_OR_PRINT (r, error);
+
+   if (res.status == 502) {
+      // This test occasionally fails due to 502 Bad Gateway.
+      // Automatically attempt a retry and hope the issue resolved itself.
+      // ¯\_(ツ)_/¯
+      _mongoc_http_response_cleanup (&res);
+      r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
+      ASSERT_OR_PRINT (r, error);
+   }
+
    ASSERT_WITH_MSG (res.status == 200,
                     "unexpected status code %d\n"
                     "RESPONSE BODY BEGIN\n"
@@ -70,6 +80,16 @@ test_mongoc_http_post (void *unused)
    req.port = 80;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
    ASSERT_OR_PRINT (r, error);
+
+   if (res.status == 502) {
+      // This test occasionally fails due to 502 Bad Gateway.
+      // Automatically attempt a retry and hope the issue resolved itself.
+      // ¯\_(ツ)_/¯
+      _mongoc_http_response_cleanup (&res);
+      r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
+      ASSERT_OR_PRINT (r, error);
+   }
+
    ASSERT_WITH_MSG (res.status == 200,
                     "unexpected status code %d\n"
                     "RESPONSE BODY BEGIN\n"
