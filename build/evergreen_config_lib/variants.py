@@ -336,6 +336,7 @@ all_variants = [
              '.4.4 .openssl !.nosasl .server',
              '.4.2 .openssl !.nosasl .server',
              '.4.0 .openssl !.nosasl .server',
+             '.4.0 .openssl !.nosasl .replica_set',
              'test-dns-openssl',
              'test-dns-auth-openssl',
              'test-dns-loadbalanced-openssl'
