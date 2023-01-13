@@ -11,7 +11,7 @@ The following is a short list of things to check when you have a problem.
 * Did you call ``mongoc_init()`` in ``main()``? If not, you will likely see a segfault.
 * Have you leaked any clients or cursors as can be found with ``mongoc-stat <PID>``?
 * Have packets been delivered to the server? See egress bytes from ``mongoc-stat <PID>``.
-* Does ``valgrind`` show any leaks? Ensure you call ``mongoc_cleanup()`` at the end of your process to cleanup lingering allocations from the MongoDB C driver.
+* Does ``ASAN`` show any leaks? Ensure you call ``mongoc_cleanup()`` at the end of your process to cleanup lingering allocations from the MongoDB C driver.
 * If compiling your own copy of MongoDB C Driver, consider using the cmake option ``-DENABLE_TRACING=ON`` to enable function tracing and hex dumps of network packets to ``STDERR`` and ``STDOUT``.
 
 Performance Counters
@@ -87,4 +87,3 @@ Think you've found a bug? Want to see a new feature in the MongoDB C driver? Ple
 * Click *Create Issue* - Please provide as much information as possible about the issue type and how to reproduce it.
 
 Bug reports in JIRA for all driver projects (i.e. CDRIVER, CSHARP, JAVA) and the Core Server (i.e. SERVER) project are *public*.
-

@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 set -o errexit  # Exit the script with error if any of the commands fail
 
 
@@ -15,7 +16,7 @@ export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
 export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
 export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
 
-echo "COMPRESSORS='${COMPRESSORS}' CC='${CC}' AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${MONGOC_TEST_URI}"
+echo "COMPRESSORS='${COMPRESSORS}' CC='${CC}' AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} ASAN=${ASAN} MONGOC_TEST_URI=${MONGOC_TEST_URI}"
 
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 TEST_ARGS="-d -F test-results.json --skip-tests .evergreen/skip-tests.txt"
@@ -69,7 +70,13 @@ fi
 
 DIR=$(dirname $0)
 . $DIR/add-build-dirs-to-paths.sh
-. $DIR/valgrind.sh
+
+if [[ "${ASAN}" =~ "on" ]]; then
+   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
+   . "$DIR/bypass-dlclose.sh"
+else
+   bypass_dlclose() { "$@"; } # Disable bypass otherwise.
+fi
 
 check_mongocryptd() {
    if [ "$CLIENT_SIDE_ENCRYPTION" = "on" -a "$ASAN" = "on" ]; then
@@ -77,13 +84,6 @@ check_mongocryptd() {
       # for client-side encryption tests.
       export "MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN=on"
       mongocryptd --logpath ./mongocryptd.logs --fork --pidfilepath="$(pwd)/mongocryptd.pid"
-      # ASAN reports an unhelpful leak of "unknown module" when linking against libmongocrypt
-      # (without even calling any functions)
-      # See https://github.com/google/sanitizers/issues/89 for an explanation behind this
-      # workaround.
-      echo "int dlclose(void *handle) { return 0; }" > bypass_dlclose.c
-      "$CC" -o bypass_dlclose.so -shared bypass_dlclose.c
-      export LD_PRELOAD="$(pwd)/bypass_dlclose.so:$LD_PRELOAD"
    fi
 }
 
@@ -152,7 +152,7 @@ case "$OS" in
       check_mongocryptd
 
       chmod +x src/libmongoc/Debug/test-libmongoc.exe
-      ./src/libmongoc/Debug/test-libmongoc.exe $TEST_ARGS -d
+      bypass_dlclose ./src/libmongoc/Debug/test-libmongoc.exe $TEST_ARGS -d
       ;;
 
    *)
@@ -161,12 +161,7 @@ case "$OS" in
       export PATH=$PATH:$(pwd)/mongodb/bin
       check_mongocryptd
 
-      if [ "$VALGRIND" = "on" ]; then
-         . $DIR/valgrind.sh
-         run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
-      else
-         ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
-      fi
+      bypass_dlclose ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
 
       ;;
 esac

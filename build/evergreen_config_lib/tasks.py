@@ -76,7 +76,7 @@ class CompileTask(NamedTask):
         for opt, value in sorted(self.compile_sh_opt.items()):
             script += 'export %s="%s"\n' % (opt, value)
 
-        script += "CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh" + \
+        script += "CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh" + \
                   self.extra_script
         task['commands'].append(shell_mongoc(script))
         task['commands'].append(func('upload build'))
@@ -197,11 +197,6 @@ all_tasks = [
     SpecialTask('debug-compile-c11',
                 tags=['debug-compile', 'c11', 'stdflags'],
                 C_STD_VERSION='11'),
-    SpecialTask('debug-compile-valgrind',
-                tags=['debug-compile', 'valgrind'],
-                SASL='OFF',
-                SSL='OPENSSL',
-                VALGRIND='ON'),
     SpecialTask('debug-compile-coverage',
                 tags=['debug-compile', 'coverage'],
                 COVERAGE='ON',
@@ -469,8 +464,7 @@ all_tasks = [
 
 
 class IntegrationTask(MatrixTask):
-    axes = OD([('valgrind', ['valgrind', False]),
-               ('sanitizer', ['asan', 'tsan', False]),
+    axes = OD([('sanitizer', ['asan', 'tsan', False]),
                ('coverage', ['coverage', False]),
                ('version', ['latest', '6.0', '5.0',
                             '4.4', '4.2', '4.0', '3.6']),
@@ -483,11 +477,7 @@ class IntegrationTask(MatrixTask):
 
     def __init__(self, *args, **kwargs):
         super(IntegrationTask, self).__init__(*args, **kwargs)
-        if self.valgrind:
-            self.add_tags('test-valgrind')
-            self.add_tags(self.version)
-            self.options['exec_timeout_secs'] = 14400
-        elif self.coverage:
+        if self.coverage:
             self.add_tags('test-coverage')
             self.add_tags(self.version)
         elif self.sanitizer == "asan":
@@ -506,9 +496,7 @@ class IntegrationTask(MatrixTask):
             self.add_tags("client-side-encryption")
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
         # Coverage tasks use a build function instead of depending on a task.
-        if self.valgrind:
-            self.add_dependency('debug-compile-valgrind')
-        elif self.sanitizer == "asan" and self.ssl and self.cse:
+        if self.sanitizer == "asan" and self.ssl and self.cse:
             self.add_dependency('debug-compile-asan-%s-cse' % (
                 self.display('ssl'),))
         elif self.sanitizer == "asan" and self.ssl:
@@ -558,8 +546,7 @@ class IntegrationTask(MatrixTask):
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
             commands.append(func('clone drivers-evergreen-tools'))
             commands.append(func('run kms servers'))
-        commands.append(run_tests(VALGRIND=self.on_off('valgrind'),
-                                  ASAN='on' if self.sanitizer == 'asan' else 'off',
+        commands.append(run_tests(ASAN='on' if self.sanitizer == 'asan' else 'off',
                                   AUTH=self.display('auth'),
                                   SSL=self.display('ssl'),
                                   **extra))
@@ -572,22 +559,9 @@ class IntegrationTask(MatrixTask):
         if self.sanitizer == 'tsan':
             require(self.ssl == 'openssl')
             prohibit(self.sasl)
-            prohibit(self.valgrind)
             prohibit(self.coverage)
             prohibit(self.cse)
             prohibit(self.version == "3.0")
-
-        if self.valgrind:
-            prohibit(self.cse)
-            prohibit(self.sanitizer)
-            prohibit(self.sasl)
-            require(self.ssl in ('openssl', False))
-            prohibit(self.coverage)
-            # Valgrind only with auth+SSL or no auth + no SSL.
-            if self.auth:
-                require(self.ssl == 'openssl')
-            else:
-                prohibit(self.ssl)
 
         if self.auth:
             require(self.ssl)
@@ -830,11 +804,6 @@ class PostCompileTask(NamedTask):
 
 all_tasks = chain(all_tasks, [
     PostCompileTask(
-        'test-valgrind-memcheck-mock-server',
-        tags=['test-valgrind'],
-        depends_on='debug-compile-valgrind',
-        commands=[func('run mock server tests', VALGRIND='on', SSL='ssl')]),
-    PostCompileTask(
         'test-asan-memcheck-mock-server',
         tags=['test-asan'],
         depends_on='debug-compile-asan-clang',
@@ -862,14 +831,13 @@ all_tasks = chain(all_tasks, [
                   run_tests(AUTH='auth', SSL='ssl', DNS='on'),
                   func('update codecov.io')]),
     NamedTask(
-        'authentication-tests-memcheck',
-        tags=['authentication-tests', 'valgrind'],
+        'authentication-tests-asan-memcheck',
+        tags=['authentication-tests', 'asan'],
         commands=[
             shell_mongoc("""
-                VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO \
-                  SSL=OPENSSL sh .evergreen/compile.sh
+                SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
                 """),
-            func('run auth tests', valgrind='true')]),
+            func('run auth tests', ASAN='on')]),
     PostCompileTask(
         'test-versioned-api',
         tags=['versioned-api'],
@@ -903,7 +871,7 @@ class SSLTask(Task):
         if fips:
             script += " OPENSSL_FIPS=1"
 
-        script += " sh .evergreen/compile.sh"
+        script += " bash .evergreen/compile.sh"
 
         super(SSLTask, self).__init__(commands=[
             func('install ssl', SSL=full_version),

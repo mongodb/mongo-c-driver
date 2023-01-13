@@ -54,8 +54,7 @@ static TestSuite *gTestSuite;
 #define TEST_HELPTEXT (1 << 2)
 #define TEST_DEBUGOUTPUT (1 << 3)
 #define TEST_TRACE (1 << 4)
-#define TEST_VALGRIND (1 << 5)
-#define TEST_LISTTESTS (1 << 6)
+#define TEST_LISTTESTS (1 << 5)
 
 MONGOC_PRINTF_FORMAT (1, 2)
 static void
@@ -206,10 +205,6 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
 
    if (suite->match_patterns.len != 0 && suite->ctest_run != NULL) {
       test_error ("'--ctest-run' cannot be specified with '-l' or '--match'");
-   }
-
-   if (test_framework_getenv_bool ("MONGOC_TEST_VALGRIND")) {
-      suite->flags |= TEST_VALGRIND;
    }
 
    mock_server_log = test_framework_getenv ("MONGOC_TEST_SERVER_LOG");
@@ -1222,19 +1217,6 @@ test_suite_debug_output (void)
 
    bson_mutex_lock (&gTestMutex);
    ret = gTestSuite->flags & TEST_DEBUGOUTPUT;
-   bson_mutex_unlock (&gTestMutex);
-
-   return ret;
-}
-
-
-int
-test_suite_valgrind (void)
-{
-   int ret;
-
-   bson_mutex_lock (&gTestMutex);
-   ret = gTestSuite->flags & TEST_VALGRIND;
    bson_mutex_unlock (&gTestMutex);
 
    return ret;

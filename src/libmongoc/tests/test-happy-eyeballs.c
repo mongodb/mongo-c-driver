@@ -332,7 +332,7 @@ _testcase_run (he_testcase_t *testcase)
 
    duration_ms = (bson_get_monotonic_time () - testcase->state.start) / (1000);
 
-   if (!test_suite_valgrind ()) {
+   {
       bool within_expected_duration =
          duration_ms >= expected->duration_min_ms &&
          duration_ms < expected->duration_max_ms;

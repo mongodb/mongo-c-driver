@@ -1,10 +1,11 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 set -o errexit  # Exit the script with error if any of the commands fail
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 DNS=${DNS:-nodns}
 
-echo "CC='${CC}' VALGRIND=${VALGRIND}"
+echo "CC='${CC}' ASAN=${ASAN}"
 
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 TEST_ARGS="-d -F test-results.json --skip-tests .evergreen/skip-tests.txt"
@@ -22,21 +23,21 @@ export MONGOC_TEST_SKIP_SLOW="on"
 DIR=$(dirname $0)
 . $DIR/add-build-dirs-to-paths.sh
 
+if [[ "${ASAN}" =~ "on" ]]; then
+   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
+   . "$DIR/bypass-dlclose.sh"
+else
+   bypass_dlclose() { "$@"; } # Disable bypass otherwise.
+fi
+
 case "$OS" in
    cygwin*)
-      ./src/libmongoc/test-libmongoc.exe $TEST_ARGS
+      bypass_dlclose ./src/libmongoc/test-libmongoc.exe $TEST_ARGS
       ;;
 
    *)
       ulimit -c unlimited || true
 
-      if [ "$VALGRIND" = "on" ]; then
-         . $DIR/valgrind.sh
-         run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
-      else
-         ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
-      fi
-
+      bypass_dlclose ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
       ;;
 esac
-

@@ -1040,9 +1040,7 @@ _test_select_succeed (bool try_once)
 
    duration_usec = bson_get_monotonic_time () - start;
 
-   if (!test_suite_valgrind ()) {
-      ASSERT_ALMOST_EQUAL (duration_usec / 1000, connect_timeout_ms);
-   }
+   ASSERT_ALMOST_EQUAL (duration_usec / 1000, connect_timeout_ms);
 
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
@@ -2607,15 +2605,13 @@ test_topology_install (TestSuite *suite)
                       test_topology_invalidate_server_single,
                       NULL,
                       NULL,
-                      test_framework_skip_if_slow_or_live,
-                      test_framework_skip_if_valgrind);
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/Topology/invalidate_server/pooled",
                       test_topology_invalidate_server_pooled,
                       NULL,
                       NULL,
-                      test_framework_skip_if_slow_or_live,
-                      test_framework_skip_if_valgrind);
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/Topology/invalid_cluster_node",
                       test_invalid_cluster_node,

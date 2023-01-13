@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 set -o errexit  # Exit the script with error if any of the commands fail
 set +o xtrace   # Don't echo commands
 
@@ -21,13 +22,12 @@ set +o xtrace   # Don't echo commands
 # ATLAS_TLS12_SRV=${atlas_tls12_srv} # Evergreen variable
 # REQUIRE_TLS12=${require_tls12} # libmongoc requires TLS 1.2+
 # OBSOLETE_TLS=${obsolete_tls} # libmongoc was built with old TLS lib, don't try connecting to Atlas
-# VALGRIND=${valgrind} # Whether to run with valgrind
+# ASAN=${ASAN} # Whether to bypass calls to dlclose when running.
 # ATLAS_SERVERLESS_SRV=${atlas_serverless_srv} # Evergreen variable
 # ATLAS_SERVERLESS=${atlas_serverless} # Evergreen variable
 
 
 C_TIMEOUT="connectTimeoutMS=30000&serverSelectionTryOnce=false"
-
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 if grep -q "#define MONGOC_ENABLE_SASL 1" src/libmongoc/src/mongoc/mongoc-config.h; then
@@ -43,6 +43,13 @@ fi
 
 DIR=$(dirname $0)
 . $DIR/add-build-dirs-to-paths.sh
+
+if [[ "${ASAN}" =~ "on" ]]; then
+   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
+   . "$DIR/bypass-dlclose.sh"
+else
+   bypass_dlclose() { "$@"; } # Disable bypass otherwise.
+fi
 
 case "$OS" in
    cygwin*)
@@ -62,12 +69,6 @@ case "$OS" in
       TEST_GSSAPI="./src/libmongoc/test-mongoc-gssapi"
       IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
 esac
-
-if [ "${valgrind}" = "true" ]; then
-   . $DIR/valgrind.sh
-   PING="run_valgrind $PING"
-   TEST_GSSAPI="run_valgrind $TEST_GSSAPI"
-fi
 
 if test -f /tmp/drivers.keytab; then
    kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC || true
@@ -135,7 +136,7 @@ if [ $SASL -eq 1 ]; then
    $PING "mongodb://${AUTH_GSSAPI}@${IP_ADDR}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${C_TIMEOUT}"
 
    echo "Test threaded GSSAPI auth"
-   MONGOC_TEST_GSSAPI_HOST="${AUTH_HOST}" MONGOC_TEST_GSSAPI_USER="${AUTH_GSSAPI}" $TEST_GSSAPI
+   MONGOC_TEST_GSSAPI_HOST="${AUTH_HOST}" MONGOC_TEST_GSSAPI_USER="${AUTH_GSSAPI}" bypass_dlclose $TEST_GSSAPI
    echo "Threaded GSSAPI auth OK"
 
    if [ "${OS%_*}" = "cygwin" ]; then
