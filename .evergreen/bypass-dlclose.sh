@@ -10,6 +10,9 @@
 #   "$CC": compiler to use to compile and link the bypass_dlclose library.
 #
 # Evaluates the provided command and arguments with LD_PRELOAD defined to
+# preload a `bypass_dlclose.so` library defining a no-op `dlclose()`.
+# If necessary, also preloads the `libasan.so` library to satisfy linker
+# requirements.
 bypass_dlclose() {
   : "${1:?'bypass_dlclose expects at least one argument to run as command!'}"
   : "${CC:?'bypass_dlclose expects environment variable CC to be defined!'}"
