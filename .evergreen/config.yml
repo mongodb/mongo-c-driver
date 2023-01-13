@@ -15330,7 +15330,7 @@ tasks:
       DNS: 'on'
       SSL: ssl
   - func: update codecov.io
-- name: authentication-tests-memcheck
+- name: authentication-tests-asan-memcheck
   tags:
   - asan
   - authentication-tests

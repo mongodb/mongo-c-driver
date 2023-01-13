@@ -831,7 +831,7 @@ all_tasks = chain(all_tasks, [
                   run_tests(AUTH='auth', SSL='ssl', DNS='on'),
                   func('update codecov.io')]),
     NamedTask(
-        'authentication-tests-memcheck',
+        'authentication-tests-asan-memcheck',
         tags=['authentication-tests', 'asan'],
         commands=[
             shell_mongoc("""
