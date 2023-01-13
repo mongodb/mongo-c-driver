@@ -23351,18 +23351,6 @@ buildvariants:
   - test-aws-openssl-ecs-4.4
   - test-aws-openssl-assume_role-4.4
   - test-aws-openssl-lambda-4.4
-- name: rhel62
-  display_name: RHEL 6.2
-  expansions:
-    CC: gcc
-  run_on: rhel62-test
-  tasks:
-  - debug-compile-sasl-openssl
-  - test-4.0-server-auth-sasl-openssl
-  - test-4.0-replica-set-auth-sasl-openssl
-  - test-latest-server-auth-sasl-openssl
-  - test-latest-replica-set-auth-sasl-openssl
-  batchtime: 1440
 - name: mongohouse
   display_name: Mongohouse Test
   run_on: ubuntu1804-test

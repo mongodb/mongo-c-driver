@@ -604,17 +604,6 @@ all_variants = [
         'test-aws-openssl-assume_role-4.4',
         'test-aws-openssl-lambda-4.4'
     ], {'CC': 'clang'}),
-    Variant('rhel62',
-            'RHEL 6.2',
-            'rhel62-test',
-            ['debug-compile-sasl-openssl',
-             'test-4.0-server-auth-sasl-openssl',
-             'test-4.0-replica-set-auth-sasl-openssl',
-             'test-latest-server-auth-sasl-openssl',
-             'test-latest-replica-set-auth-sasl-openssl'
-             ],
-            {'CC': 'gcc'},
-            batchtime=days(1)),
     Variant('mongohouse',
             'Mongohouse Test',
             'ubuntu1804-test',
