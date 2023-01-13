@@ -223,6 +223,8 @@ all_variants = [
     Variant('gcc48rhel',
             'GCC 4.8 (RHEL 7.0)',
             'rhel70',
+            # Skip client-side-encryption tests on RHEL 7.0 due to OCSP errors
+            # with Azure. See CDRIVER-3620 and CDRIVER-3814.
             ['.hardened',
              '.compression !.snappy',
              'release-compile',
