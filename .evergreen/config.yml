@@ -22933,16 +22933,16 @@ buildvariants:
   - .compression !.snappy
   - release-compile
   - debug-compile-nosasl-nossl
-  - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .openssl !.client-side-encryption
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .latest .openssl !.nosasl .server
+  - .latest .openssl !.nosasl .server !.client-side-encryption
   - .latest .nossl
-  - .5.0 .openssl !.nosasl .server
-  - .4.4 .openssl !.nosasl .server
-  - .4.2 .openssl !.nosasl .server
-  - .4.0 .openssl !.nosasl .server
-  - .3.6 .openssl !.nosasl .server
+  - .5.0 .openssl !.nosasl .server !.client-side-encryption
+  - .4.4 .openssl !.nosasl .server !.client-side-encryption
+  - .4.2 .openssl !.nosasl .server !.client-side-encryption
+  - .4.0 .openssl !.nosasl .server !.client-side-encryption
+  - .3.6 .openssl !.nosasl .server !.client-side-encryption
 - name: gcc49
   display_name: GCC 4.9 (Debian 8.1)
   expansions:
@@ -23057,6 +23057,7 @@ buildvariants:
   - .4.4 .openssl !.nosasl .server
   - .4.2 .openssl !.nosasl .server
   - .4.0 .openssl !.nosasl .server
+  - .4.0 .openssl !.nosasl .replica_set
   - test-dns-openssl
   - test-dns-auth-openssl
   - test-dns-loadbalanced-openssl
@@ -23351,18 +23352,6 @@ buildvariants:
   - test-aws-openssl-ecs-4.4
   - test-aws-openssl-assume_role-4.4
   - test-aws-openssl-lambda-4.4
-- name: rhel62
-  display_name: RHEL 6.2
-  expansions:
-    CC: gcc
-  run_on: rhel62-test
-  tasks:
-  - debug-compile-sasl-openssl
-  - test-4.0-server-auth-sasl-openssl
-  - test-4.0-replica-set-auth-sasl-openssl
-  - test-latest-server-auth-sasl-openssl
-  - test-latest-replica-set-auth-sasl-openssl
-  batchtime: 1440
 - name: mongohouse
   display_name: Mongohouse Test
   run_on: ubuntu1804-test
