@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -o errexit  # Exit the script with error if any of the commands fail
+set -o errexit # Exit the script with error if any of the commands fail
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 DNS=${DNS:-nodns}
@@ -26,17 +26,17 @@ DIR=$(dirname $0)
 
 declare ld_preload="${LD_PRELOAD:-}"
 if [[ "${ASAN}" == "on" ]]; then
-   ld_preload="$(bypass_dlclose):${ld_preload}"
+  ld_preload="$(bypass_dlclose):${ld_preload}"
 fi
 
 case "$OS" in
-   cygwin*)
-      LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc.exe $TEST_ARGS
-      ;;
+cygwin*)
+  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc.exe $TEST_ARGS
+  ;;
 
-   *)
-      ulimit -c unlimited || true
+*)
+  ulimit -c unlimited || true
 
-      LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
-      ;;
+  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
+  ;;
 esac

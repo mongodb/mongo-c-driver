@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-set -o errexit  # Exit the script with error if any of the commands fail
-set +o xtrace   # Don't echo commands
+set -o errexit # Exit the script with error if any of the commands fail
+set +o xtrace  # Don't echo commands
 
 # The following expansions are set in the evergreen project:
 # AUTH_HOST=${auth_host} # Evergreen variable
@@ -26,19 +26,18 @@ set +o xtrace   # Don't echo commands
 # ATLAS_SERVERLESS_SRV=${atlas_serverless_srv} # Evergreen variable
 # ATLAS_SERVERLESS=${atlas_serverless} # Evergreen variable
 
-
 C_TIMEOUT="connectTimeoutMS=30000&serverSelectionTryOnce=false"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 if grep -q "#define MONGOC_ENABLE_SASL 1" src/libmongoc/src/mongoc/mongoc-config.h; then
-   SASL=1
+  SASL=1
 else
-   SASL=0
+  SASL=0
 fi
 if grep -q "#define MONGOC_ENABLE_SSL 1" src/libmongoc/src/mongoc/mongoc-config.h; then
-   SSL=1
+  SSL=1
 else
-   SSL=0
+  SSL=0
 fi
 
 DIR=$(dirname $0)
@@ -46,26 +45,27 @@ DIR=$(dirname $0)
 . "$DIR/bypass-dlclose.sh"
 
 case "$OS" in
-   cygwin*)
-      PING="./src/libmongoc/Debug/mongoc-ping.exe"
-      TEST_GSSAPI="./src/libmongoc/Debug/test-mongoc-gssapi.exe"
-      IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
-      ;;
+cygwin*)
+  PING="./src/libmongoc/Debug/mongoc-ping.exe"
+  TEST_GSSAPI="./src/libmongoc/Debug/test-mongoc-gssapi.exe"
+  IP_ADDR=$(getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}')
+  ;;
 
-   darwin)
-      PING="./src/libmongoc/mongoc-ping"
-      TEST_GSSAPI="./src/libmongoc/test-mongoc-gssapi"
-      IP_ADDR=`dig $AUTH_HOST +short | tail -1`
-      ;;
+darwin)
+  PING="./src/libmongoc/mongoc-ping"
+  TEST_GSSAPI="./src/libmongoc/test-mongoc-gssapi"
+  IP_ADDR=$(dig $AUTH_HOST +short | tail -1)
+  ;;
 
-   *)
-      PING="./src/libmongoc/mongoc-ping"
-      TEST_GSSAPI="./src/libmongoc/test-mongoc-gssapi"
-      IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
+*)
+  PING="./src/libmongoc/mongoc-ping"
+  TEST_GSSAPI="./src/libmongoc/test-mongoc-gssapi"
+  IP_ADDR=$(getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}')
+  ;;
 esac
 
 if test -f /tmp/drivers.keytab; then
-   kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC || true
+  kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC || true
 fi
 
 # Archlinux (which we use for testing various self-installed OpenSSL versions)
@@ -81,39 +81,39 @@ openssl version || true
 ulimit -c unlimited || true
 
 if [ $SSL -eq 1 ]; then
-   # FIXME: CDRIVER-2008
-   if [ "${OS%_*}" != "cygwin" ]; then
-      echo "Authenticating using X.509"
-      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${C_TIMEOUT}"
-   fi
-   if [ "${OBSOLETE_TLS}" != "true" ]; then
-      echo "Connecting to Atlas Free Tier"
-      $PING "$ATLAS_FREE&${C_TIMEOUT}"
-      echo "Connecting to Atlas Free Tier with SRV"
-      $PING "$ATLAS_FREE_SRV&${C_TIMEOUT}"
-      echo "Connecting to Atlas Replica Set"
-      $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
-      echo "Connecting to Atlas Replica Set with SRV"
-      $PING "$ATLAS_REPLSET_SRV${C_TIMEOUT}"
-      echo "Connecting to Atlas Sharded Cluster"
-      $PING "$ATLAS_SHARD&${C_TIMEOUT}"
-      echo "Connecting to Atlas Sharded Cluster with SRV"
-      $PING "$ATLAS_SHARD_SRV${C_TIMEOUT}"
-      if [ -z "$REQUIRE_TLS12" ]; then
-         echo "Connecting to Atlas with only TLS 1.1 enabled"
-         $PING "$ATLAS_TLS11&${C_TIMEOUT}"
-         echo "Connecting to Atlas with only TLS 1.1 enabled with SRV"
-         $PING "$ATLAS_TLS11_SRV${C_TIMEOUT}"
-      fi
-      echo "Connecting to Atlas with only TLS 1.2 enabled"
-      $PING "$ATLAS_TLS12&${C_TIMEOUT}"
-      echo "Connecting to Atlas with only TLS 1.2 enabled with SRV"
-      $PING "$ATLAS_TLS12_SRV${C_TIMEOUT}"
-      echo "Connecting to Atlas Serverless with SRV"
-      $PING "$ATLAS_SERVERLESS_SRV/?${C_TIMEOUT}"
-      echo "Connecting to Atlas Serverless"
-      $PING "$ATLAS_SERVERLESS&${C_TIMEOUT}"
-   fi
+  # FIXME: CDRIVER-2008
+  if [ "${OS%_*}" != "cygwin" ]; then
+    echo "Authenticating using X.509"
+    $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${C_TIMEOUT}"
+  fi
+  if [ "${OBSOLETE_TLS}" != "true" ]; then
+    echo "Connecting to Atlas Free Tier"
+    $PING "$ATLAS_FREE&${C_TIMEOUT}"
+    echo "Connecting to Atlas Free Tier with SRV"
+    $PING "$ATLAS_FREE_SRV&${C_TIMEOUT}"
+    echo "Connecting to Atlas Replica Set"
+    $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
+    echo "Connecting to Atlas Replica Set with SRV"
+    $PING "$ATLAS_REPLSET_SRV${C_TIMEOUT}"
+    echo "Connecting to Atlas Sharded Cluster"
+    $PING "$ATLAS_SHARD&${C_TIMEOUT}"
+    echo "Connecting to Atlas Sharded Cluster with SRV"
+    $PING "$ATLAS_SHARD_SRV${C_TIMEOUT}"
+    if [ -z "$REQUIRE_TLS12" ]; then
+      echo "Connecting to Atlas with only TLS 1.1 enabled"
+      $PING "$ATLAS_TLS11&${C_TIMEOUT}"
+      echo "Connecting to Atlas with only TLS 1.1 enabled with SRV"
+      $PING "$ATLAS_TLS11_SRV${C_TIMEOUT}"
+    fi
+    echo "Connecting to Atlas with only TLS 1.2 enabled"
+    $PING "$ATLAS_TLS12&${C_TIMEOUT}"
+    echo "Connecting to Atlas with only TLS 1.2 enabled with SRV"
+    $PING "$ATLAS_TLS12_SRV${C_TIMEOUT}"
+    echo "Connecting to Atlas Serverless with SRV"
+    $PING "$ATLAS_SERVERLESS_SRV/?${C_TIMEOUT}"
+    echo "Connecting to Atlas Serverless"
+    $PING "$ATLAS_SERVERLESS&${C_TIMEOUT}"
+  fi
 fi
 
 echo "Authenticating using PLAIN"
@@ -123,25 +123,25 @@ echo "Authenticating using default auth mechanism"
 $PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?${C_TIMEOUT}"
 
 if [ $SASL -eq 1 ]; then
-   echo "Authenticating using GSSAPI"
-   $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
+  echo "Authenticating using GSSAPI"
+  $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
 
-   echo "Authenticating with CANONICALIZE_HOST_NAME"
-   $PING "mongodb://${AUTH_GSSAPI}@${IP_ADDR}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${C_TIMEOUT}"
+  echo "Authenticating with CANONICALIZE_HOST_NAME"
+  $PING "mongodb://${AUTH_GSSAPI}@${IP_ADDR}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${C_TIMEOUT}"
 
-   declare ld_preload="${LD_PRELOAD:-}"
-   if [[ "${ASAN}" == "on" ]]; then
-      ld_preload="$(bypass_dlclose):${ld_preload}"
-   fi
+  declare ld_preload="${LD_PRELOAD:-}"
+  if [[ "${ASAN}" == "on" ]]; then
+    ld_preload="$(bypass_dlclose):${ld_preload}"
+  fi
 
-   echo "Test threaded GSSAPI auth"
-   MONGOC_TEST_GSSAPI_HOST="${AUTH_HOST}" MONGOC_TEST_GSSAPI_USER="${AUTH_GSSAPI}" LD_PRELOAD="${ld_preload:-}" $TEST_GSSAPI
-   echo "Threaded GSSAPI auth OK"
+  echo "Test threaded GSSAPI auth"
+  MONGOC_TEST_GSSAPI_HOST="${AUTH_HOST}" MONGOC_TEST_GSSAPI_USER="${AUTH_GSSAPI}" LD_PRELOAD="${ld_preload:-}" $TEST_GSSAPI
+  echo "Threaded GSSAPI auth OK"
 
-   if [ "${OS%_*}" = "cygwin" ]; then
-      echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
-      $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${C_TIMEOUT}"
-      echo "Authenticating using GSSAPI (UTF-8 credentials)"
-      $PING "mongodb://${AUTH_GSSAPI_UTF8}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
-   fi
+  if [ "${OS%_*}" = "cygwin" ]; then
+    echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
+    $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${C_TIMEOUT}"
+    echo "Authenticating using GSSAPI (UTF-8 credentials)"
+    $PING "mongodb://${AUTH_GSSAPI_UTF8}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
+  fi
 fi

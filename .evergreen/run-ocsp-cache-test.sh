@@ -39,24 +39,24 @@
 # CERT_TYPE
 #   Required. Set to either RSA or ECDSA.
 
-set -o errexit  # Exit the script with error if any of the commands fail
+set -o errexit # Exit the script with error if any of the commands fail
 
 CDRIVER_ROOT=${CDRIVER_ROOT:-$(pwd)}
 CDRIVER_BUILD=${CDRIVER_BUILD:-$(pwd)}
 
 if [ -z "$CERT_TYPE" ]; then
-    echo "Required environment variable 'CERT_TYPE' unset. See file comments for help."
-    exit 1;
+  echo "Required environment variable 'CERT_TYPE' unset. See file comments for help."
+  exit 1
 fi
 
-if [ ! `pgrep -nf mongod` ]; then
-    echo "Cannot find mongod. See file comments for help."
-    exit 1;
+if [ ! $(pgrep -nf mongod) ]; then
+  echo "Cannot find mongod. See file comments for help."
+  exit 1
 fi
 
-if [ ! `pgrep -nf ocsp_mock` ]; then
-    echo "Cannot find mock OCSP responder. See file comments for help."
-    exit 1;
+if [ ! $(pgrep -nf ocsp_mock) ]; then
+  echo "Cannot find mock OCSP responder. See file comments for help."
+  exit 1
 fi
 
 # This test will hang after the first ping.
@@ -66,4 +66,4 @@ sleep 5 # Give the program time to contact the OCSP responder
 pkill -nf "ocsp_mock" # We assume that the mock OCSP responder is named "ocsp_mock"
 
 # Resume the test binary. This will cause it to send the second ping command.
-kill -s SIGCONT `pgrep -nf test-mongoc-cache`
+kill -s SIGCONT $(pgrep -nf test-mongoc-cache)

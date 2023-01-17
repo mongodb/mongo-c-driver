@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -o errexit  # Exit the script with error if any of the commands fail
+set -o errexit # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
 # Options for this script:
@@ -70,7 +70,7 @@ MONGOC_DIR="$PWD"
 # Since zstd inconsitently installed on macos-1014.
 # Remove this check in CDRIVER-3483.
 if [ "darwin" = "$OS" ]; then
-   ZSTD="OFF"
+  ZSTD="OFF"
 fi
 
 # Automatically retrieve the machine architecture, lowercase, unless provided
@@ -79,7 +79,7 @@ fi
 
 CMAKE_PREFIX_PATH="$INSTALL_DIR"
 if [ ! -z "$EXTRA_CMAKE_PREFIX_PATH" ]; then
-   CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH;$EXTRA_CMAKE_PREFIX_PATH"
+  CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH;$EXTRA_CMAKE_PREFIX_PATH"
 fi
 
 # Default CMake flags for debug builds and release builds.
@@ -99,15 +99,15 @@ DEBUG_AND_RELEASE_FLAGS="\
 "
 
 if [ ! -z "$ZLIB" ]; then
-   DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_ZLIB=${ZLIB}"
+  DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_ZLIB=${ZLIB}"
 fi
 
 if [ ! -z "$SNAPPY" ]; then
-   DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_SNAPPY=${SNAPPY}"
+  DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_SNAPPY=${SNAPPY}"
 fi
 
 if [ ! -z "$ZSTD" ]; then
-   DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_ZSTD=${ZSTD}"
+  DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_ZSTD=${ZSTD}"
 fi
 
 DEBUG_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=Debug"
@@ -115,20 +115,23 @@ RELEASE_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=RelWithDebInfo"
 
 # Where are we, without relying on realpath or readlink?
 if [ "$(dirname $0)" = "." ]; then
-   DIR="$(pwd)"
+  DIR="$(pwd)"
 elif [ "$(dirname $0)" = ".." ]; then
-   DIR="$(dirname "$(pwd)")"
+  DIR="$(dirname "$(pwd)")"
 else
-   DIR="$(cd "$(dirname "$0")"; pwd)"
+  DIR="$(
+    cd "$(dirname "$0")"
+    pwd
+  )"
 fi
 
 . $DIR/find-cmake.sh
 
 if [[ "${SANITIZE}" =~ "address" ]]; then
-   . "$DIR/bypass-dlclose.sh"
+  . "$DIR/bypass-dlclose.sh"
 else
-   # Disable bypass otherwise.
-   bypass_dlclose() { "$@"; }
+  # Disable bypass otherwise.
+  bypass_dlclose() { "$@"; }
 fi
 
 # --strip-components is an GNU tar extension. Check if the platform
@@ -136,32 +139,32 @@ fi
 # platform that supports it
 # command -v returns success error code if found and prints the path to it
 if command -v gtar 2>/dev/null; then
-   TAR=gtar
+  TAR=gtar
 else
-   TAR=tar
+  TAR=tar
 fi
 
 [ "$DEBUG" = "ON" ] && CONFIGURE_FLAGS=$DEBUG_FLAGS || CONFIGURE_FLAGS=$RELEASE_FLAGS
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=${SASL}"
 if [ "${SSL}" = "OPENSSL_STATIC" ]; then
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=OPENSSL -DOPENSSL_USE_STATIC_LIBS=ON"
+  CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=OPENSSL -DOPENSSL_USE_STATIC_LIBS=ON"
 else
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=${SSL}"
+  CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=${SSL}"
 fi
 [ "$COVERAGE" = "ON" ] && CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
 
 if [ "$RELEASE" = "ON" ]; then
-   # Build from the release tarball.
-   mkdir build-dir
-   $TAR xf ../mongoc.tar.gz -C build-dir --strip-components=1
-   cd build-dir
+  # Build from the release tarball.
+  mkdir build-dir
+  $TAR xf ../mongoc.tar.gz -C build-dir --strip-components=1
+  cd build-dir
 else
   CONFIGURE_FLAGS="${CONFIGURE_FLAGS} -DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
 if [ "$SRV" = "OFF" ]; then
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SRV=OFF"
+  CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SRV=OFF"
 fi
 
 # UndefinedBehaviorSanitizer configuration
@@ -174,44 +177,44 @@ export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_C_STANDARD=$C_STD_VERSION"
 
 case "$MARCH" in
-   i386)
-      CFLAGS="$CFLAGS -m32 -march=i386"
-      CXXFLAGS="$CXXFLAGS -m32 -march=i386"
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=AUTO -DENABLE_ZLIB=BUNDLED -DENABLE_ZSTD=OFF"
-   ;;
-   s390x)
-      CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
-      CXXFLAGS="$CXXFLAGS -march=z196 -mtune=zEC12"
-   ;;
-   x86_64)
-      CFLAGS="$CFLAGS -m64 -march=x86-64"
-      CXXFLAGS="$CXXFLAGS -m64 -march=x86-64"
-   ;;
-   ppc64le)
-      CFLAGS="$CFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
-      CXXFLAGS="$CXXFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
-   ;;
+i386)
+  CFLAGS="$CFLAGS -m32 -march=i386"
+  CXXFLAGS="$CXXFLAGS -m32 -march=i386"
+  CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=AUTO -DENABLE_ZLIB=BUNDLED -DENABLE_ZSTD=OFF"
+  ;;
+s390x)
+  CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
+  CXXFLAGS="$CXXFLAGS -march=z196 -mtune=zEC12"
+  ;;
+x86_64)
+  CFLAGS="$CFLAGS -m64 -march=x86-64"
+  CXXFLAGS="$CXXFLAGS -m64 -march=x86-64"
+  ;;
+ppc64le)
+  CFLAGS="$CFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
+  CXXFLAGS="$CXXFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
+  ;;
 esac
 
 case "$OS" in
-   darwin)
-      CFLAGS="$CFLAGS -Wno-unknown-pragmas"
-      # llvm-cov is installed from brew
-      export PATH=$PATH:/usr/local/opt/llvm/bin
-   ;;
+darwin)
+  CFLAGS="$CFLAGS -Wno-unknown-pragmas"
+  # llvm-cov is installed from brew
+  export PATH=$PATH:/usr/local/opt/llvm/bin
+  ;;
 esac
 
 case "$CC" in
-   clang)
-      CXX=clang++
-   ;;
-   gcc)
-      CXX=g++
-   ;;
+clang)
+  CXX=clang++
+  ;;
+gcc)
+  CXX=g++
+  ;;
 esac
 
 if [ "darwin" = "$OS" -a "arm64" = "$MARCH" ]; then
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64"
+  CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DMONGO_SANITIZE=$SANITIZE"
@@ -233,45 +236,45 @@ echo "OpenSSL Version:"
 pkg-config --modversion libssl || true
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
-   # Build libmongocrypt, using the previously fetched installed source.
-   # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
-   git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1
+  # Build libmongocrypt, using the previously fetched installed source.
+  # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
+  git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1
 
-   mkdir libmongocrypt/cmake-build
-   cd libmongocrypt/cmake-build
-   $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" \
-      -DMONGOCRYPT_MONGOC_DIR="$MONGOC_DIR" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
-      -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" -DBUILD_TESTING=OFF ../
-   make install
-   cd ../../
-   else
-   # Hosts may have libmongocrypt installed from apt/yum. We do not want to pick those up
-   # since those libmongocrypt packages statically link libbson.
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
+  mkdir libmongocrypt/cmake-build
+  cd libmongocrypt/cmake-build
+  $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" \
+    -DMONGOCRYPT_MONGOC_DIR="$MONGOC_DIR" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
+    -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" -DBUILD_TESTING=OFF ../
+  make install
+  cd ../../
+else
+  # Hosts may have libmongocrypt installed from apt/yum. We do not want to pick those up
+  # since those libmongocrypt packages statically link libbson.
+  CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
 if [ "$ANALYZE" = "ON" ]; then
-   # Clang static analyzer, available on Ubuntu 16.04 images.
-   # https://clang-analyzer.llvm.org/scan-build.html
-   #
-   # On images other than Ubuntu 16.04, use scan-build-3.9 if
-   # scan-build is not found.
-   if command -v scan-build 2>/dev/null; then
-      SCAN_BUILD_COMMAND="scan-build"
-   else
-      SCAN_BUILD_COMMAND="scan-build-3.9"
-   fi
+  # Clang static analyzer, available on Ubuntu 16.04 images.
+  # https://clang-analyzer.llvm.org/scan-build.html
+  #
+  # On images other than Ubuntu 16.04, use scan-build-3.9 if
+  # scan-build is not found.
+  if command -v scan-build 2>/dev/null; then
+    SCAN_BUILD_COMMAND="scan-build"
+  else
+    SCAN_BUILD_COMMAND="scan-build-3.9"
+  fi
 
-   # Do not include bundled zlib in scan-build analysis.
-   # scan-build `--exclude`` flag is not available on all Evergreen variants.
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=OFF"
+  # Do not include bundled zlib in scan-build analysis.
+  # scan-build `--exclude`` flag is not available on all Evergreen variants.
+  CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=OFF"
 
-   $SCAN_BUILD_COMMAND $CMAKE $CONFIGURE_FLAGS .
+  $SCAN_BUILD_COMMAND $CMAKE $CONFIGURE_FLAGS .
 
-   # Put clang static analyzer results in scan/ and fail build if warnings found.
-   SCAN_BUILD="$SCAN_BUILD_COMMAND -o scan --status-bugs"
+  # Put clang static analyzer results in scan/ and fail build if warnings found.
+  SCAN_BUILD="$SCAN_BUILD_COMMAND -o scan --status-bugs"
 else
-   $CMAKE $CONFIGURE_FLAGS .
+  $CMAKE $CONFIGURE_FLAGS .
 fi
 
 $SCAN_BUILD make -j8 all
@@ -281,11 +284,11 @@ $SCAN_BUILD make -j8 all
 
 declare ld_preload="${LD_PRELOAD:-}"
 if [[ "${SANITIZE}" =~ address ]]; then
-   ld_preload="$(bypass_dlclose):${ld_preload:-}"
+  ld_preload="$(bypass_dlclose):${ld_preload:-}"
 fi
 
 if [ -n "$SSL_VERSION" ]; then
-   openssl version | grep -q $SSL_VERSION
+  openssl version | grep -q $SSL_VERSION
 fi
 # This should fail when using fips capable OpenSSL when fips mode is enabled
 openssl md5 README.rst || true
@@ -293,12 +296,12 @@ openssl md5 README.rst || true
 ulimit -c unlimited || true
 
 if [ "$ANALYZE" != "ON" ]; then
-   make -j8 install
+  make -j8 install
 fi
 
 # We are done here if we don't want to run the tests.
 if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
-   exit 0
+  exit 0
 fi
 
 export MONGOC_TEST_SERVER_LOG=stdout
@@ -307,39 +310,38 @@ export MONGOC_TEST_SERVER_LOG=stdout
 # log messages that CHECK_LOG considers failures.
 mkfifo pipe || true
 if [ -e pipe ]; then
-   set +o xtrace
-   tee error.log < pipe &
-   LD_PRELOAD="${ld_preload:-}"  ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt 2>pipe
-   rm pipe
+  set +o xtrace
+  tee error.log <pipe &
+  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt 2>pipe
+  rm pipe
 else
-   LD_PRELOAD="${ld_preload:-}"  ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt
+  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt
 fi
 
 # Check if the error.log exists, and is more than 0 byte
 if [ -s error.log ]; then
-   cat error.log
+  cat error.log
 
-   if [ "$CHECK_LOG" = "ON" ]; then
-      # Ignore ar(1) warnings, and check the log again
-      grep -v "^ar: " error.log > log.log
-      if [ -s log.log ]; then
-         cat error.log
-         echo "Found unexpected error logs"
-         # Mark build as failed if there is unknown things in the log
-         exit 2
-      fi
-   fi
+  if [ "$CHECK_LOG" = "ON" ]; then
+    # Ignore ar(1) warnings, and check the log again
+    grep -v "^ar: " error.log >log.log
+    if [ -s log.log ]; then
+      cat error.log
+      echo "Found unexpected error logs"
+      # Mark build as failed if there is unknown things in the log
+      exit 2
+    fi
+  fi
 fi
 
-
 if [ "$COVERAGE" = "ON" ]; then
-   case "$CC" in
-      clang)
-         lcov --gcov-tool `pwd`/.evergreen/llvm-gcov.sh --capture --derive-func-data --directory . --output-file .coverage.lcov --no-external
-         ;;
-      *)
-         lcov --gcov-tool gcov --capture --derive-func-data --directory . --output-file .coverage.lcov --no-external
-         ;;
-   esac
-   genhtml .coverage.lcov --legend --title "mongoc code coverage" --output-directory coverage
+  case "$CC" in
+  clang)
+    lcov --gcov-tool $(pwd)/.evergreen/llvm-gcov.sh --capture --derive-func-data --directory . --output-file .coverage.lcov --no-external
+    ;;
+  *)
+    lcov --gcov-tool gcov --capture --derive-func-data --directory . --output-file .coverage.lcov --no-external
+    ;;
+  esac
+  genhtml .coverage.lcov --legend --title "mongoc code coverage" --output-directory coverage
 fi
