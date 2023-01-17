@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 set -o errexit
 
 # create all needed directories
@@ -7,48 +8,51 @@ mkdir abi-compliance/changes-install
 mkdir abi-compliance/latest-release-install
 mkdir abi-compliance/dumps
 
+python ./build/calc_release_version.py --next-minor >VERSION_CURRENT
+python ./build/calc_release_version.py --next-minor -p >VERSION_RELEASED
+
+declare newest current
+newest="$(cat VERSION_RELEASED)"
+current="$(cat VERSION_CURRENT)"
+
 # build the current changes
-export SKIP_MOCK_TESTS=ON
-export EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/changes-install -DCMAKE_C_FLAGS=-g -Og"
-echo $(python ./build/calc_release_version.py --next-minor) >VERSION_CURRENT
-echo $(python ./build/calc_release_version.py --next-minor -p) >VERSION_RELEASED
-sh .evergreen/compile.sh
-make install
+env \
+  CFLAGS="-g -Og" \
+  EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/changes-install" \
+  SKIP_MOCK_TESTS="ON" \
+  bash .evergreen/compile.sh
 
 # checkout the newest release
-newest=$(cat VERSION_RELEASED)
-current=$(cat VERSION_CURRENT)
-
-git checkout tags/$newest -f
+git checkout "tags/${newest}" -f
 
 # build the newest release
-export SKIP_MOCK_TESTS=ON
-export EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/latest-release-install -DCMAKE_C_FLAGS=-g -Og"
-sh .evergreen/compile.sh
-make install
+env \
+  CFLAGS="-g -Og" \
+  EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/latest-release-install" \
+  SKIP_MOCK_TESTS="ON" \
+  bash .evergreen/compile.sh
 
+# check for abi compliance. Generates HTML Reports.
 cd abi-compliance
 
-old_xml="<version>$newest</version>\n"
-old_xml="${old_xml}<headers>\n"
-old_xml="${old_xml}$(pwd)/latest-release-install/include/libmongoc-1.0/mongoc/mongoc.h\n"
-old_xml="${old_xml}$(pwd)/latest-release-install/include/libbson-1.0/bson/bson.h\n"
-old_xml="${old_xml}</headers>\n"
-old_xml="${old_xml}<libs>$(pwd)/latest-release-install/lib</libs>"
+cat >|old.xml <<DOC
+<version>${newest}</version>
+<headers>
+$(pwd)/latest-release-install/include/libmongoc-1.0/mongoc/mongoc.h
+$(pwd)/latest-release-install/include/libbson-1.0/bson/bson.h
+</headers>
+<libs>$(pwd)/latest-release-install/lib</libs>
+DOC
 
-printf $old_xml >old.xml
+cat >|new.xml <<DOC
+<version>${current}</version>
+<headers>
+$(pwd)/changes-install/include/libmongoc-1.0/mongoc/mongoc.h
+$(pwd)/changes-install/include/libbson-1.0/bson/bson.h
+</headers>
+<libs>$(pwd)/changes-install/lib</libs>
+DOC
 
-new_xml="<version>$current</version>\n"
-new_xml="${new_xml}<headers>\n"
-new_xml="${new_xml}$(pwd)/changes-install/include/libmongoc-1.0/mongoc/mongoc.h\n"
-new_xml="${new_xml}$(pwd)/changes-install/include/libbson-1.0/bson/bson.h\n"
-new_xml="${new_xml}</headers>\n"
-new_xml="${new_xml}<libs>$(pwd)/changes-install/lib</libs>"
-
-printf $new_xml >new.xml
-
-# check for abi compliance. Generates HTML Reports
-abi-compliance-checker -lib mongo-c-driver -old old.xml -new new.xml || result=$?
-if [ -n "$result" ]; then
+if ! abi-compliance-checker -lib mongo-c-driver -old old.xml -new new.xml; then
   touch ./abi-error.txt
 fi

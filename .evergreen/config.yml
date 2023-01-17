@@ -235,7 +235,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        sh .evergreen/abi-compliance-check.sh
+        bash .evergreen/abi-compliance-check.sh
   - command: shell.exec
     params:
       silent: true

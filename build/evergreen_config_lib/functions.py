@@ -169,7 +169,7 @@ all_functions = OD([
     )),
     ('abi report', Function(
         shell_mongoc(r'''
-        sh .evergreen/abi-compliance-check.sh
+        bash .evergreen/abi-compliance-check.sh
         ''', test=False),
         shell_mongoc(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
