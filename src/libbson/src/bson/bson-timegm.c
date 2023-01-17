@@ -40,8 +40,7 @@
 #endif
 #endif
 
-#if (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901) && \
-   !defined restrict
+#if !defined(__STDC_VERSION__) && !defined restrict
 #define restrict /* empty */
 #endif
 

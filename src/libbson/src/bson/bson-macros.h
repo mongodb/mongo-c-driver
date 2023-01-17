@@ -189,8 +189,6 @@
 
 #if defined(_MSC_VER)
 #define BSON_FUNC __FUNCTION__
-#elif defined(__STDC_VERSION__) && __STDC_VERSION__ < 199901L
-#define BSON_FUNC __FUNCTION__
 #else
 #define BSON_FUNC __func__
 #endif
