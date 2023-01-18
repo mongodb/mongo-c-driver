@@ -70,13 +70,7 @@ fi
 
 DIR=$(dirname $0)
 . $DIR/add-build-dirs-to-paths.sh
-
-if [[ "${ASAN}" =~ "on" ]]; then
-   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
-   . "$DIR/bypass-dlclose.sh"
-else
-   bypass_dlclose() { "$@"; } # Disable bypass otherwise.
-fi
+. $DIR/bypass-dlclose.sh
 
 check_mongocryptd() {
    if [ "$CLIENT_SIDE_ENCRYPTION" = "on" -a "$ASAN" = "on" ]; then
@@ -146,13 +140,18 @@ if [ "$LOADBALANCED" != "noloadbalanced" ]; then
    TEST_ARGS="$TEST_ARGS -l /command_monitoring/unified/*"
 fi
 
+declare ld_preload="${LD_PRELOAD:-}"
+if [[ "${ASAN}" == "on" ]]; then
+   ld_preload="$(bypass_dlclose):${ld_preload}"
+fi
+
 case "$OS" in
    cygwin*)
       export PATH=$PATH:/cygdrive/c/mongodb/bin:/cygdrive/c/libmongocrypt/bin
       check_mongocryptd
 
       chmod +x src/libmongoc/Debug/test-libmongoc.exe
-      bypass_dlclose ./src/libmongoc/Debug/test-libmongoc.exe $TEST_ARGS -d
+      LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/Debug/test-libmongoc.exe $TEST_ARGS -d
       ;;
 
    *)
@@ -161,7 +160,7 @@ case "$OS" in
       export PATH=$PATH:$(pwd)/mongodb/bin
       check_mongocryptd
 
-      bypass_dlclose ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
+      LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
 
       ;;
 esac

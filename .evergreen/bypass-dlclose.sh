@@ -6,39 +6,44 @@
 #   bypass_dlclose command args...
 #
 # Parameters:
-#   "$@": command and arguments to evaluate.
 #   "$CC": compiler to use to compile and link the bypass_dlclose library.
 #
-# Evaluates the provided command and arguments with LD_PRELOAD defined to
-# preload a `bypass_dlclose.so` library defining a no-op `dlclose()`.
-# If necessary, also preloads the `libasan.so` library to satisfy linker
-# requirements.
-bypass_dlclose() {
-  : "${1:?'bypass_dlclose expects at least one argument to run as command!'}"
+# Return 0 (true) if able to create a shared library to bypass calls to dlclose.
+# Return a non-zero (false) value otherwise.
+#
+# If successful, print paths to add to LD_PRELOAD to stdout (pipe 1).
+# Otherwise, no output is printed to stdout (pipe 1).
+#
+# Diagnostic messages may be printed to stderr (pipe 2). Redirect to /dev/null
+# with `2>/dev/null` to silence these messages.
+bypass_dlclose() (
   : "${CC:?'bypass_dlclose expects environment variable CC to be defined!'}"
-
-  declare tmp
-
-  if ! tmp="$(mktemp -d)"; then
-    echo "Could not create temporary directory for bypass_dlclose library!" 1>&2
-    return 1
-  fi
-  trap 'rm -rf "$tmp"' EXIT
 
   declare ld_preload
 
-  echo "int dlclose (void *handle) {(void) handle; return 0; }" >|"$tmp/bypass_dlclose.c"
+  {
+    declare tmp
 
-  "$CC" -o "$tmp/bypass_dlclose.so" -shared "$tmp/bypass_dlclose.c" || return
+    if ! tmp="$(mktemp -d)"; then
+      echo "Could not create temporary directory for bypass_dlclose library!" 1>&2
+      return 1
+    fi
 
-  ld_preload="$tmp/bypass_dlclose.so"
+    echo "int dlclose (void *handle) {(void) handle; return 0; }" \
+      >|"${tmp}/bypass_dlclose.c" || return
 
-  # Clang uses its own libasan.so; do not preload it!
-  if [ "$CC" != "clang" ]; then
-    declare asan_path
-    asan_path="$($CC -print-file-name=libasan.so)" || return
-    ld_preload="$asan_path:$ld_preload"
-  fi
+    "${CC}" -o "${tmp}/bypass_dlclose.so" \
+      -shared "${tmp}/bypass_dlclose.c" || return
 
-  LD_PRELOAD="$ld_preload:${LD_PRELOAD:-}" "$@"
-}
+    ld_preload="${tmp}/bypass_dlclose.so"
+
+    # Clang uses its own libasan.so; do not preload it!
+    if [ "${CC}" != "clang" ]; then
+      declare asan_path
+      asan_path="$(${CC} -print-file-name=libasan.so)" || return
+      ld_preload="${asan_path}:${ld_preload}"
+    fi
+  } 1>&2
+
+  printf "%s" "${ld_preload}"
+)

@@ -43,13 +43,7 @@ fi
 
 DIR=$(dirname $0)
 . $DIR/add-build-dirs-to-paths.sh
-
-if [[ "${ASAN}" =~ "on" ]]; then
-   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
-   . "$DIR/bypass-dlclose.sh"
-else
-   bypass_dlclose() { "$@"; } # Disable bypass otherwise.
-fi
+. "$DIR/bypass-dlclose.sh"
 
 case "$OS" in
    cygwin*)
@@ -135,8 +129,13 @@ if [ $SASL -eq 1 ]; then
    echo "Authenticating with CANONICALIZE_HOST_NAME"
    $PING "mongodb://${AUTH_GSSAPI}@${IP_ADDR}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${C_TIMEOUT}"
 
+   declare ld_preload="${LD_PRELOAD:-}"
+   if [[ "${ASAN}" == "on" ]]; then
+      ld_preload="$(bypass_dlclose):${ld_preload}"
+   fi
+
    echo "Test threaded GSSAPI auth"
-   MONGOC_TEST_GSSAPI_HOST="${AUTH_HOST}" MONGOC_TEST_GSSAPI_USER="${AUTH_GSSAPI}" bypass_dlclose $TEST_GSSAPI
+   MONGOC_TEST_GSSAPI_HOST="${AUTH_HOST}" MONGOC_TEST_GSSAPI_USER="${AUTH_GSSAPI}" LD_PRELOAD="${ld_preload:-}" $TEST_GSSAPI
    echo "Threaded GSSAPI auth OK"
 
    if [ "${OS%_*}" = "cygwin" ]; then

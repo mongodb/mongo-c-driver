@@ -18,11 +18,11 @@ fi
 
 DIR=$(dirname $0)
 
-if [[ "${ASAN}" =~ "on" ]]; then
-   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
-   . "$DIR/bypass-dlclose.sh"
-else
-   bypass_dlclose() { "$@"; } # Disable bypass otherwise.
+. "$DIR/bypass-dlclose.sh"
+
+declare ld_preload="${LD_PRELOAD:-}"
+if [[ "${ASAN}" == "on" ]]; then
+   ld_preload="$(bypass_dlclose):${ld_preload}"
 fi
 
 case "$OS" in
@@ -36,12 +36,12 @@ cd src/libbson
 
 case "$OS" in
    cygwin*)
-      bypass_dlclose ./Debug/test-libbson.exe $TEST_ARGS
+      LD_PRELOAD="${ld_preload:-}" ./Debug/test-libbson.exe $TEST_ARGS
       ;;
 
    *)
       ulimit -c unlimited || true
 
-      bypass_dlclose ./.libs/test-libbson "--no-fork $TEST_ARGS"
+      LD_PRELOAD="${ld_preload:-}" ./.libs/test-libbson "--no-fork $TEST_ARGS"
       ;;
 esac

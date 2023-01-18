@@ -125,7 +125,6 @@ fi
 . $DIR/find-cmake.sh
 
 if [[ "${SANITIZE}" =~ "address" ]]; then
-   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
    . "$DIR/bypass-dlclose.sh"
 else
    # Disable bypass otherwise.
@@ -278,6 +277,13 @@ fi
 $SCAN_BUILD make -j8 all
 
 . $DIR/add-build-dirs-to-paths.sh
+. $DIR/bypass-dlclose.sh
+
+declare ld_preload="${LD_PRELOAD:-}"
+if [[ "${SANITIZE}" =~ address ]]; then
+   ld_preload="$(bypass_dlclose):${ld_preload:-}"
+fi
+
 if [ -n "$SSL_VERSION" ]; then
    openssl version | grep -q $SSL_VERSION
 fi
@@ -303,10 +309,10 @@ mkfifo pipe || true
 if [ -e pipe ]; then
    set +o xtrace
    tee error.log < pipe &
-   bypass_dlclose ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt 2>pipe
+   LD_PRELOAD="${ld_preload:-}"  ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt 2>pipe
    rm pipe
 else
-   bypass_dlclose ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt
+   LD_PRELOAD="${ld_preload:-}"  ./src/libmongoc/test-libmongoc --no-fork -d -F test-results.json --skip-tests $DIR/skip-tests.txt
 fi
 
 # Check if the error.log exists, and is more than 0 byte

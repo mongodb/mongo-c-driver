@@ -22,22 +22,21 @@ export MONGOC_TEST_SKIP_SLOW="on"
 
 DIR=$(dirname $0)
 . $DIR/add-build-dirs-to-paths.sh
+. "$DIR/bypass-dlclose.sh"
 
-if [[ "${ASAN}" =~ "on" ]]; then
-   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
-   . "$DIR/bypass-dlclose.sh"
-else
-   bypass_dlclose() { "$@"; } # Disable bypass otherwise.
+declare ld_preload="${LD_PRELOAD:-}"
+if [[ "${ASAN}" == "on" ]]; then
+   ld_preload="$(bypass_dlclose):${ld_preload}"
 fi
 
 case "$OS" in
    cygwin*)
-      bypass_dlclose ./src/libmongoc/test-libmongoc.exe $TEST_ARGS
+      LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc.exe $TEST_ARGS
       ;;
 
    *)
       ulimit -c unlimited || true
 
-      bypass_dlclose ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
+      LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
       ;;
 esac
