@@ -22779,7 +22779,6 @@ buildvariants:
   - debug-compile-rdtscp
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
-  - .authentication-tests .openssl
   - .4.0 .openssl !.nosasl .server
   - .3.6 .openssl !.nosasl .server
 - name: clang35
@@ -22905,7 +22904,6 @@ buildvariants:
   - debug-compile-nosasl-nossl
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
-  - .authentication-tests .openssl
   - .4.0 .openssl !.nosasl .server
   - .3.6 .openssl !.nosasl .server
 - name: gcc82rhel
