@@ -6578,7 +6578,7 @@ static BSON_THREAD_FUN (listen_socket, arg)
    r = mongoc_socket_listen (socket, 100);
    BSON_ASSERT (r == 0);
    _mongoc_usleep (1000); // wait to see if received connection
-   mongoc_socket_t *ret = mongoc_socket_accept (socket, 100);
+   mongoc_socket_t *ret = mongoc_socket_accept (socket, bson_get_monotonic_time() + 100);
    if (ret) {
       // not null received a connection and test should fail
       args->failed = true;
