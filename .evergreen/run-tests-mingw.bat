@@ -15,4 +15,3 @@ copy /Y libmongoc-1.0.dll C:\mongo-c-driver\bin
 copy /Y src\libbson\libbson-1.0.dll C:\mongo-c-driver\bin
 
 .\src\libmongoc\test-libmongoc.exe --no-fork -d -F test-results.json --skip-tests .evergreen\skip-tests.txt
-rmdir /Q /S C:\mongo-c-driver

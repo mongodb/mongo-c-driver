@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/usr/bin/env bash
+
 # Run an OCSP mock responder server if necessary.
 #
 # See the tests described in the specification for more info:
@@ -13,93 +14,91 @@
 # CERT_TYPE
 #   Required. Set to either rsa or ecdsa.
 # USE_DELEGATE
-#   Optional. May be ON or OFF. If a test requires use of a responder, this decides whether
+#   Required. May be ON or OFF. If a test requires use of a responder, this decides whether
 #   the responder uses a delegate certificate. Defaults to "OFF"
-# CDRIVER_BUILD
-#   Optional. The path to the build of mongo-c-driver (e.g. mongo-c-driver/cmake-build).
-#   Defaults to $(pwd)
-# CDRIVER_ROOT
-#   Optional. The path to mongo-c-driver source (may be same as CDRIVER_BUILD).
-#   Defaults to $(pwd)
 #
 # Example:
-# TEST_COLUMN=TEST_1 CERT_TYPE=rsa ./run-ocsp-test.sh
+# TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF ./run-ocsp-test.sh
 #
 
-# Fail on any command returning a non-zero exit status.
 set -o errexit
+set -o pipefail
 
-CDRIVER_ROOT=${CDRIVER_ROOT:-$(pwd)}
-CDRIVER_BUILD=${CDRIVER_BUILD:-$(pwd)}
-USE_DELEGATE=${USE_DELEGATE:-OFF}
-
-if [ -z "$TEST_COLUMN" -o -z "$CERT_TYPE" ]; then
-  echo "Required environment variable unset. See file comments for help."
-  exit 1
-fi
-echo "TEST_COLUMN=$TEST_COLUMN"
-echo "CERT_TYPE=$CERT_TYPE"
-echo "USE_DELEGATE=$USE_DELEGATE"
-echo "CDRIVER_ROOT=$CDRIVER_ROOT"
-echo "CDRIVER_BUILD=$CDRIVER_BUILD"
-
-# Make paths absolute
-CDRIVER_ROOT=$(
-  cd "$CDRIVER_ROOT"
-  pwd
-)
-CDRIVER_BUILD=$(
-  cd "$CDRIVER_BUILD"
-  pwd
+to_absolute() (
+  cd "${1:?}" && pwd
 )
 
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-case "$OS" in
-cygwin*) OS="WINDOWS" ;;
-darwin) OS="MACOS" ;;
-*) OS="LINUX" ;;
+to_windows_path() {
+  cygpath -aw "${1:?}"
+}
+
+print_var() {
+  printf "%s: %s\n" "${1:?}" "${!1:-}"
+}
+
+check_var_opt() {
+  printf -v "${1:?}" "%s" "${!1:-"${2:-}"}"
+  print_var "${1}"
+}
+
+check_var_req() {
+  : "${1:?}"
+  : "${!1:?"required variable ${1} is unset or null!"}"
+  print_var "${1}"
+}
+
+declare script_dir
+script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
+
+declare mongoc_dir
+mongoc_dir="$(to_absolute "${script_dir}/..")"
+
+check_var_req "TEST_COLUMN"
+check_var_req "CERT_TYPE"
+check_var_req "USE_DELEGATE"
+
+declare responder_required
+case "${TEST_COLUMN}" in
+TEST_1) responder_required="valid" ;;
+TEST_2) responder_required="invalid" ;;
+TEST_3) responder_required="valid" ;;
+TEST_4) responder_required="invalid" ;;
+MALICIOUS_SERVER_TEST_1) responder_required="invalid" ;;
 esac
-
-if [ "TEST_1" = "$TEST_COLUMN" ]; then
-  RESPONDER_REQUIRED="valid"
-elif [ "TEST_2" = "$TEST_COLUMN" ]; then
-  RESPONDER_REQUIRED="invalid"
-elif [ "TEST_3" = "$TEST_COLUMN" ]; then
-  RESPONDER_REQUIRED="valid"
-elif [ "TEST_4" = "$TEST_COLUMN" ]; then
-  RESPONDER_REQUIRED="invalid"
-elif [ "MALICIOUS_SERVER_TEST_1" = "$TEST_COLUMN" ]; then
-  RESPONDER_REQUIRED="invalid"
-else
-  RESPONDER_REQUIRED=""
-fi
 
 # Same responder is used for both server and client. So even stapling tests require a responder.
 
-if [ -n "$RESPONDER_REQUIRED" ]; then
+if [[ -n "${responder_required:-}" ]]; then
   echo "Starting mock responder"
-  if [ ! -d "../drivers-evergreen-tools" ]; then
+  if [[ ! -d "../drivers-evergreen-tools" ]]; then
     git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
   fi
 
   pushd ../drivers-evergreen-tools/.evergreen/ocsp
+  # shellcheck source=/dev/null
   . ./activate-ocspvenv.sh
   popd # ../drivers-evergreen-tools/.evergreen/ocsp
 
-  cd "$CDRIVER_ROOT/.evergreen/ocsp/$CERT_TYPE"
-  if [ "$RESPONDER_REQUIRED" = "invalid" ]; then
-    FAULT="--fault revoked"
+  pushd "${mongoc_dir}/.evergreen/ocsp/${CERT_TYPE}"
+
+  declare -a fault_args
+  if [ "${responder_required}" == "invalid" ]; then
+    fault_args=("--fault" "revoked")
   fi
-  if [ "ON" = "$USE_DELEGATE" ]; then
-    RESPONDER_SIGNER="ocsp-responder"
+
+  declare responder_signer
+  if [[ "${USE_DELEGATE}" == "ON" ]]; then
+    responder_signer="ocsp-responder"
   else
-    RESPONDER_SIGNER="ca"
+    responder_signer="ca"
   fi
-  $PYTHON ../ocsp_mock.py \
+
+  python ../ocsp_mock.py \
     --ca_file ca.pem \
-    --ocsp_responder_cert $RESPONDER_SIGNER.crt \
-    --ocsp_responder_key $RESPONDER_SIGNER.key \
-    -p 8100 -v $FAULT \
-    >$CDRIVER_BUILD/responder.log 2>&1 &
-  cd -
+    --ocsp_responder_cert "${responder_signer}.crt" \
+    --ocsp_responder_key "${responder_signer}.key" \
+    -p 8100 -v "${fault_args[@]}" \
+    >"${mongoc_dir}/responder.log" 2>&1 &
+
+  popd # "${mongoc_dir}/.evergreen/ocsp/${CERT_TYPE}"
 fi

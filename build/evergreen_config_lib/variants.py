@@ -625,7 +625,7 @@ all_variants = [
         OD([('name', 'debug-compile-nosasl-openssl-1.0.1'),
             ('distros', ['ubuntu2004-small'])]),
         OD([('name', '.ocsp-openssl-1.0.1'), ('distros', ['ubuntu2004-small'])])
-    ], {}, batchtime=days(7)),
+    ], {'SKIP_MOCK_TESTS': 'ON'}, batchtime=days(7)),
     Variant('packaging', 'Linux Distro Packaging', 'ubuntu1804-test', [
         'debian-package-build',
         OD([('name', 'rpm-package-build'), ('distros', ['rhel82-arm64-small'])]),

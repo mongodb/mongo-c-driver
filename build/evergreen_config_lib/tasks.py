@@ -148,7 +148,8 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
 class LinkTask(NamedTask):
     def __init__(self, task_name, suffix_commands, orchestration=True, **kwargs):
         if orchestration == 'ssl':
-            bootstrap_commands = [bootstrap(SSL=1)]
+            # Actual value of SSL does not matter here so long as it is not 'nossl'.
+            bootstrap_commands = [bootstrap(SSL="openssl")]
         elif orchestration:
             bootstrap_commands = [bootstrap()]
         else:
@@ -855,15 +856,16 @@ class SSLTask(Task):
         if cflags:
             script += f' CFLAGS={cflags}'
 
-        script += ' DEBUG=ON SASL=OFF'
-        if enable_ssl:
-            script += f' SSL={enable_ssl}'
-        elif 'libressl' in version:
-            script += ' SSL=LIBRESSL'
-        else:
-            script += ' SSL=OPENSSL'
+        script += ' DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON'
 
-        script += ' bash .evergreen/compile.sh'
+        if enable_ssl:
+            script += " SSL=" + enable_ssl
+        elif 'libressl' in version:
+            script += " SSL=LIBRESSL"
+        else:
+            script += " SSL=OPENSSL"
+
+        script += " bash .evergreen/compile.sh"
 
         super(SSLTask, self).__init__(commands=[
             func('install ssl', SSL=full_version),
@@ -889,13 +891,12 @@ class SSLTask(Task):
 all_tasks = chain(all_tasks, [
     SSLTask('openssl-0.9.8', 'zh', obsolete_tls=True),
     SSLTask('openssl-1.0.0', 't', obsolete_tls=True),
-    SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls'),
+    SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls', ),
     SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls', fips=True),
-    SSLTask('openssl-1.0.2', 'l'),
-    SSLTask('openssl-1.1.0', 'f'),
+    SSLTask('openssl-1.0.2', 'l', cflags='-Wno-redundant-decls', ),
+    SSLTask('openssl-1.1.0', 'l'),
     SSLTask('libressl-2.5', '.2', require_tls12=True),
-    SSLTask('libressl-3.0', '.2', require_tls12=True,
-            enable_ssl="AUTO", cflags="-Wno-redundant-decls"),
+    SSLTask('libressl-3.0', '.2', require_tls12=True, enable_ssl="AUTO"),
     SSLTask('libressl-3.0', '.2', require_tls12=True),
 ])
 
@@ -1011,26 +1012,33 @@ class OCSPTask(MatrixTask):
 
         # The cache test expects a revoked response from an OCSP responder, exactly like TEST_4.
         test_column = 'TEST_4' if self.test == 'cache' else self.test.upper()
+        use_delegate = 'ON' if self.delegate == 'delegate' else 'OFF'
 
-        commands.append(shell_mongoc(
-            'TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s bash .evergreen/run-ocsp-responder.sh' % (
-                test_column, self.cert, 'on' if self.delegate == 'delegate' else 'off')))
+        commands.append(shell_mongoc(f'''
+        TEST_COLUMN={test_column} CERT_TYPE={self.cert} USE_DELEGATE={use_delegate} bash .evergreen/run-ocsp-responder.sh
+        '''))
+
         commands.append(orchestration)
+
         if self.depends_on['name'] == 'debug-compile-nosasl-openssl-1.0.1':
             # LD_LIBRARY_PATH is needed so the in-tree OpenSSL 1.0.1 is found at runtime
             if self.test == 'cache':
-                commands.append(shell_mongoc('export LD_LIBRARY_PATH=$(pwd)/install-dir/lib\n'
-                                             'CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+                commands.append(shell_mongoc(f'''
+                LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE={self.cert} bash .evergreen/run-ocsp-cache-test.sh
+                '''))
             else:
-                commands.append(shell_mongoc('export LD_LIBRARY_PATH=$(pwd)/install-dir/lib\n'
-                                             'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
+                commands.append(shell_mongoc(f'''
+                LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN={self.test.upper()} CERT_TYPE={self.cert} bash .evergreen/run-ocsp-test.sh
+                '''))
         else:
             if self.test == 'cache':
-                commands.append(shell_mongoc(
-                    'CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+                commands.append(shell_mongoc(f'''
+                CERT_TYPE={self.cert} bash .evergreen/run-ocsp-cache-test.sh
+                '''))
             else:
-                commands.append(shell_mongoc(
-                    'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
+                commands.append(shell_mongoc(f'''
+                TEST_COLUMN={self.test.upper()} CERT_TYPE={self.cert} bash .evergreen/run-ocsp-test.sh
+                '''))
 
         return task
 
