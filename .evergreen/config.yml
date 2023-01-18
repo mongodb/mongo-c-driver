@@ -2112,7 +2112,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        sh ./.evergreen/build-and-test-with-toolchain.sh
+        bash ./.evergreen/build-and-test-with-toolchain.sh
 - name: test-asan-latest-server-auth-nosasl-openssl-cse
   tags:
   - client-side-encryption

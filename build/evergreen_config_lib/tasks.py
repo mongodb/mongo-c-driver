@@ -458,7 +458,7 @@ all_tasks = [
                           ('local_file', 'mongo-c-toolchain.tar.gz'),
                       ]))]),
                   shell_mongoc(
-                      'sh ./.evergreen/build-and-test-with-toolchain.sh')
+                      'bash ./.evergreen/build-and-test-with-toolchain.sh')
               ])
 ]
 
