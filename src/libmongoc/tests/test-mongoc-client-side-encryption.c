@@ -6628,9 +6628,9 @@ test_bypass_mongocryptd_shared_library (void *unused)
    // wait for port and ip to be set on the other thread
    bson_mutex_lock (&args->mutex);
    while (!args->port || 0 == strlen (args->ip)) {
-      int ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
+      int cond_ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
       /* ret non-zero indicates an error (a timeout) */
-      BSON_ASSERT (!ret);
+      BSON_ASSERT (!cond_ret);
    }
    bson_mutex_unlock (&args->mutex);
 
@@ -6661,9 +6661,9 @@ test_bypass_mongocryptd_shared_library (void *unused)
    // Wait for listener thread to complete.
    bson_mutex_lock (&args->mutex);
    while (!args->complete) {
-      ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
+      int cond_ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
       /* ret non-zero indicates an error (a timeout) */
-      BSON_ASSERT (!ret);
+      BSON_ASSERT (!cond_ret);
    }
    bson_mutex_unlock (&args->mutex);
    // failed should be false if the signal did not receive a connection
