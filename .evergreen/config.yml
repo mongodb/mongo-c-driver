@@ -923,17 +923,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O"
-        export DEBUG="ON"
-        export LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
-        export SANITIZE=""
-        export SNAPPY="OFF"
-        export ZLIB="OFF"
-        export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O" DEBUG="ON" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: abi-compliance-check
   commands:
@@ -947,15 +941,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SNAPPY="OFF"
-        export ZLIB="BUNDLED"
-        export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-compression-snappy
   tags:
@@ -966,15 +956,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SNAPPY="ON"
-        export ZLIB="OFF"
-        export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SNAPPY="ON" ZLIB="OFF" ZSTD="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-compression-zstd
   tags:
@@ -985,15 +971,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SNAPPY="OFF"
-        export ZLIB="OFF"
-        export ZSTD="ON"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SNAPPY="OFF" ZLIB="OFF" ZSTD="ON" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-compression
   tags:
@@ -1006,15 +988,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SNAPPY="ON"
-        export ZLIB="BUNDLED"
-        export ZSTD="ON"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SNAPPY="ON" ZLIB="BUNDLED" ZSTD="ON" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-no-align
   tags:
@@ -1024,16 +1002,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-        export SANITIZE=""
-        export SNAPPY="OFF"
-        export ZLIB="BUNDLED"
-        export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-nossl
   tags:
@@ -1045,13 +1018,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SSL="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-lto
   commands:
@@ -1059,13 +1030,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-flto"
-        export DEBUG="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-flto" DEBUG="ON" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-lto-thin
   commands:
@@ -1073,13 +1042,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-flto=thin"
-        export DEBUG="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-flto=thin" DEBUG="ON" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-c11
   tags:
@@ -1092,13 +1059,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export C_STD_VERSION="11"
-        export DEBUG="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env C_STD_VERSION="11" DEBUG="ON" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-coverage
   tags:
@@ -1110,13 +1075,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export COVERAGE="ON"
-        export DEBUG="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env COVERAGE="ON" DEBUG="ON" bash .evergreen/compile.sh
   - func: upload build
   - func: upload coverage
 - name: debug-compile-no-counters
@@ -1128,13 +1091,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export ENABLE_SHM_COUNTERS="OFF"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" ENABLE_SHM_COUNTERS="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-asan-clang
   tags:
@@ -1146,20 +1107,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CC="clang-3.8"
-        export CFLAGS="-fno-omit-frame-pointer"
-        export CHECK_LOG="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
-        export SANITIZE="address"
-        export SNAPPY="OFF"
-        export ZLIB="BUNDLED"
-        export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-asan-gcc
   tags:
@@ -1169,18 +1121,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-pthread"
-        export CHECK_LOG="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-        export SANITIZE="address"
-        export SNAPPY="OFF"
-        export ZLIB="BUNDLED"
-        export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-pthread" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-asan-clang-openssl
   tags:
@@ -1192,21 +1137,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CC="clang-3.8"
-        export CFLAGS="-fno-omit-frame-pointer"
-        export CHECK_LOG="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
-        export SANITIZE="address"
-        export SNAPPY="OFF"
-        export SSL="OPENSSL"
-        export ZLIB="BUNDLED"
-        export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-ubsan
   tags:
@@ -1216,20 +1151,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CC="clang-3.8"
-        export CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment"
-        export CHECK_LOG="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
-        export SANITIZE="undefined"
-        export SNAPPY="OFF"
-        export ZLIB="BUNDLED"
-        export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-ubsan-with-extra-alignment
   tags:
@@ -1239,20 +1165,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CC="clang-3.8"
-        export CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment"
-        export CHECK_LOG="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON"
-        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
-        export SANITIZE="undefined"
-        export SNAPPY="OFF"
-        export ZLIB="BUNDLED"
-        export ZSTD="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-scan-build
   tags:
@@ -1265,14 +1182,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export ANALYZE="ON"
-        export CC="clang"
-        export DEBUG="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env ANALYZE="ON" CC="clang" DEBUG="ON" bash .evergreen/compile.sh
   - func: upload build
   - func: upload scan artifacts
   - command: shell.exec
@@ -1291,14 +1205,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-Werror -Wno-cast-align"
-        export DEBUG="ON"
-        export SANITIZE=""
-        export TRACING="ON"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" TRACING="ON" bash .evergreen/compile.sh
   - func: upload build
 - name: release-compile
   depends_on:
@@ -1309,12 +1220,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export RELEASE="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env RELEASE="ON" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl
   tags:
@@ -1326,13 +1236,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="OPENSSL" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl-static
   tags:
@@ -1344,13 +1252,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-darwinssl
   tags:
@@ -1362,13 +1268,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SSL="DARWIN"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="DARWIN" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-winssl
   tags:
@@ -1380,13 +1284,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="WINDOWS" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-nossl
   tags:
@@ -1398,14 +1300,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SSL="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="AUTO" SSL="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl
   tags:
@@ -1417,14 +1316,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-static
   tags:
@@ -1436,14 +1332,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-darwinssl
   tags:
@@ -1455,14 +1348,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SSL="DARWIN"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-winssl
   tags:
@@ -1474,14 +1364,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="CYRUS"
-        export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="CYRUS" SSL="WINDOWS" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sspi-nossl
   tags:
@@ -1493,14 +1380,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="SSPI"
-        export SSL="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="SSPI" SSL="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sspi-openssl
   tags:
@@ -1512,14 +1396,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="SSPI"
-        export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="SSPI" SSL="OPENSSL" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sspi-openssl-static
   tags:
@@ -1531,14 +1412,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="SSPI"
-        export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="SSPI" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-rdtscp
   commands:
@@ -1546,13 +1424,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export ENABLE_RDTSCP="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" ENABLE_RDTSCP="ON" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sspi-winssl
   tags:
@@ -1564,14 +1440,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="SSPI"
-        export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="SSPI" SSL="WINDOWS" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosrv
   tags:
@@ -1581,13 +1454,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SRV="OFF"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" SRV="OFF" bash .evergreen/compile.sh
   - func: upload build
 - name: link-with-cmake
   depends_on:
@@ -1611,7 +1482,7 @@ tasks:
   - func: link sample program
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
-      ENABLE_SSL: 1
+      ENABLE_SSL: AUTO
 - name: link-with-cmake-snappy
   depends_on:
     name: make-release-archive
@@ -1623,7 +1494,7 @@ tasks:
   - func: link sample program
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
-      ENABLE_SNAPPY: 1
+      ENABLE_SNAPPY: 'ON'
 - name: link-with-cmake-mac
   depends_on:
     name: make-release-archive
@@ -1659,7 +1530,7 @@ tasks:
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
-      ENABLE_SSL: 1
+      ENABLE_SSL: AUTO
 - name: link-with-cmake-snappy-deprecated
   depends_on:
     name: make-release-archive
@@ -1672,7 +1543,7 @@ tasks:
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
-      ENABLE_SNAPPY: 1
+      ENABLE_SNAPPY: 'ON'
 - name: link-with-cmake-mac-deprecated
   depends_on:
     name: make-release-archive
@@ -1705,7 +1576,7 @@ tasks:
       VERSION: latest
   - func: link sample program MSVC
     vars:
-      ENABLE_SSL: 1
+      ENABLE_SSL: AUTO
 - name: link-with-cmake-windows-snappy
   depends_on:
     name: make-release-archive
@@ -1716,7 +1587,7 @@ tasks:
       VERSION: latest
   - func: link sample program MSVC
     vars:
-      ENABLE_SNAPPY: 1
+      ENABLE_SNAPPY: 'ON'
 - name: link-with-cmake-mingw
   depends_on:
     name: make-release-archive
@@ -1754,7 +1625,7 @@ tasks:
       VERSION: latest
   - func: link sample program
     vars:
-      ENABLE_SSL: 1
+      ENABLE_SSL: AUTO
 - name: link-with-bson
   depends_on:
     name: make-release-archive
@@ -1887,13 +1758,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-Werror -Wno-cast-align"
-        export DEBUG="ON"
-        export SANITIZE=""
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-cse
   tags:
@@ -1907,25 +1776,14 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SKIP_MOCK_TESTS="ON"
-        export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SKIP_MOCK_TESTS="ON" SSL="OPENSSL" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export COMPILE_LIBMONGOCRYPT="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-static-cse
   tags:
@@ -1939,25 +1797,14 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SKIP_MOCK_TESTS="ON"
-        export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SKIP_MOCK_TESTS="ON" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export COMPILE_LIBMONGOCRYPT="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SSL="OPENSSL_STATIC"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-darwinssl-cse
   tags:
@@ -1971,25 +1818,14 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SKIP_MOCK_TESTS="ON"
-        export SSL="DARWIN"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SKIP_MOCK_TESTS="ON" SSL="DARWIN" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export COMPILE_LIBMONGOCRYPT="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SSL="DARWIN"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-winssl-cse
   tags:
@@ -2003,25 +1839,14 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SKIP_MOCK_TESTS="ON"
-        export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SKIP_MOCK_TESTS="ON" SSL="WINDOWS" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export COMPILE_LIBMONGOCRYPT="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
-        export SANITIZE=""
-        export SASL="AUTO"
-        export SSL="WINDOWS"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-asan-openssl-cse
   tags:
@@ -2033,29 +1858,14 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fno-omit-frame-pointer"
-        export CHECK_LOG="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF"
-        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
-        export SANITIZE="address"
-        export SKIP_MOCK_TESTS="ON"
-        export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SKIP_MOCK_TESTS="ON" SSL="OPENSSL" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        export CFLAGS="-fno-omit-frame-pointer"
-        export CHECK_LOG="ON"
-        export COMPILE_LIBMONGOCRYPT="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF"
-        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
-        export SANITIZE="address"
-        export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl-1.0.1
   commands:
@@ -2066,15 +1876,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-Wno-redundant-decls"
-        export DEBUG="ON"
-        export SANITIZE=""
-        export SASL="OFF"
-        export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-Wno-redundant-decls" DEBUG="ON" SASL="OFF" SSL="OPENSSL" bash .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-tsan-openssl
   tags:
@@ -2085,16 +1891,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-fno-omit-frame-pointer"
-        export CHECK_LOG="ON"
-        export DEBUG="ON"
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF"
-        export SANITIZE="thread"
-        export SSL="OPENSSL"
-        CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF" SANITIZE="thread" SSL="OPENSSL" bash .evergreen/compile.sh
   - func: upload build
 - name: build-and-test-with-toolchain
   commands:
@@ -15339,10 +15140,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
+        env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       ASAN: 'on'
@@ -15395,10 +15197,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       obsolete_tls: true
@@ -15412,10 +15215,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       obsolete_tls: true
@@ -15429,11 +15233,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS=-Wno-redundant-decls
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
+        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.0.1-fips
@@ -15445,11 +15249,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS=-Wno-redundant-decls
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL OPENSSL_FIPS=1 bash .evergreen/compile.sh
+        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.0.2
@@ -15461,10 +15265,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.1.0
@@ -15476,10 +15281,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-libressl-2.5
@@ -15491,10 +15297,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -15508,11 +15315,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS=-Wno-redundant-decls
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=AUTO bash .evergreen/compile.sh
+        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=AUTO bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -15526,10 +15333,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true

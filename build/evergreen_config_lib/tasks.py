@@ -63,7 +63,8 @@ class CompileTask(NamedTask):
             self.compile_sh_opt['ZSTD'] = (
                 'ON' if compression in ('all', 'zstd') else 'OFF')
 
-        self.compile_sh_opt['SANITIZE'] = ','.join(sanitize)
+        if sanitize:
+            self.compile_sh_opt['SANITIZE'] = ','.join(sanitize)
 
         self.continue_on_err = continue_on_err
 
@@ -72,13 +73,14 @@ class CompileTask(NamedTask):
 
         task['commands'].extend(self.prefix_commands)
 
-        script = ''
+        script = 'env'
         for opt, value in sorted(self.compile_sh_opt.items()):
-            script += 'export %s="%s"\n' % (opt, value)
+            script += ' %s="%s"' % (opt, value)
 
-        script += "CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh" + \
-                  self.extra_script
-        task['commands'].append(shell_mongoc(script))
+        script += ' bash .evergreen/compile.sh'
+        script += self.extra_script
+        task['commands'].append(shell_mongoc(
+            script, add_expansions_to_env=True))
         task['commands'].append(func('upload build'))
         task['commands'].extend(self.suffix_commands)
         return task
@@ -207,12 +209,10 @@ all_tasks = [
     SpecialTask('debug-compile-asan-clang',
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
-                CC='clang-3.8',
                 CFLAGS='-fno-omit-frame-pointer',
                 CHECK_LOG='ON',
                 sanitize=['address'],
-                EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF',
-                PATH='/usr/lib/llvm-3.8/bin:$PATH'),
+                EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF'),
     # include -pthread in CFLAGS on gcc to address the issue explained here:
     # https://groups.google.com/forum/#!topic/address-sanitizer/JxnwgrWOLuc
     SpecialTask('debug-compile-asan-gcc',
@@ -224,29 +224,23 @@ all_tasks = [
     SpecialTask('debug-compile-asan-clang-openssl',
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
-                CC='clang-3.8',
                 CFLAGS='-fno-omit-frame-pointer',
                 CHECK_LOG='ON',
                 sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-                PATH='/usr/lib/llvm-3.8/bin:$PATH',
                 SSL='OPENSSL'),
     SpecialTask('debug-compile-ubsan',
                 compression='zlib',
-                CC='clang-3.8',
                 CFLAGS='-fno-omit-frame-pointer -fno-sanitize-recover=alignment',
                 CHECK_LOG='ON',
                 sanitize=['undefined'],
-                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-                PATH='/usr/lib/llvm-3.8/bin:$PATH'),
+                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"),
     SpecialTask('debug-compile-ubsan-with-extra-alignment',
                 compression='zlib',
-                CC='clang-3.8',
                 CFLAGS='-fno-omit-frame-pointer -fno-sanitize-recover=alignment',
                 CHECK_LOG='ON',
                 sanitize=['undefined'],
-                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON",
-                PATH='/usr/lib/llvm-3.8/bin:$PATH'),
+                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON"),
     SpecialTask('debug-compile-scan-build',
                 tags=['clang', 'debug-compile', 'scan-build'],
                 continue_on_err=True,
@@ -325,12 +319,12 @@ all_tasks = [
              suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
-                      ENABLE_SSL=1)]),
+                      ENABLE_SSL="AUTO")]),
     LinkTask('link-with-cmake-snappy',
              suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
-                      ENABLE_SNAPPY=1)]),
+                      ENABLE_SNAPPY="ON")]),
     LinkTask('link-with-cmake-mac',
              suffix_commands=[
                  func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1)]),
@@ -344,13 +338,13 @@ all_tasks = [
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
-                      ENABLE_SSL=1)]),
+                      ENABLE_SSL="AUTO")]),
     LinkTask('link-with-cmake-snappy-deprecated',
              suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
-                      ENABLE_SNAPPY=1)]),
+                      ENABLE_SNAPPY="ON")]),
     LinkTask('link-with-cmake-mac-deprecated',
              suffix_commands=[
                  func('link sample program',
@@ -359,11 +353,12 @@ all_tasks = [
     LinkTask('link-with-cmake-windows',
              suffix_commands=[func('link sample program MSVC')]),
     LinkTask('link-with-cmake-windows-ssl',
-             suffix_commands=[func('link sample program MSVC', ENABLE_SSL=1)],
+             suffix_commands=[
+                 func('link sample program MSVC', ENABLE_SSL="AUTO")],
              orchestration='ssl'),
     LinkTask('link-with-cmake-windows-snappy',
              suffix_commands=[
-                 func('link sample program MSVC', ENABLE_SNAPPY=1)]),
+                 func('link sample program MSVC', ENABLE_SNAPPY="ON")]),
     LinkTask('link-with-cmake-mingw',
              suffix_commands=[func('link sample program mingw')]),
     LinkTask('link-with-pkg-config',
@@ -371,7 +366,7 @@ all_tasks = [
     LinkTask('link-with-pkg-config-mac',
              suffix_commands=[func('link sample program')]),
     LinkTask('link-with-pkg-config-ssl',
-             suffix_commands=[func('link sample program', ENABLE_SSL=1)]),
+             suffix_commands=[func('link sample program', ENABLE_SSL="AUTO")]),
     LinkTask('link-with-bson',
              suffix_commands=[func('link sample program bson')],
              orchestration=False),
@@ -835,8 +830,8 @@ all_tasks = chain(all_tasks, [
         tags=['authentication-tests', 'asan'],
         commands=[
             shell_mongoc("""
-                SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
-                """),
+            env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
+            """, add_expansions_to_env=True),
             func('run auth tests', ASAN='on')]),
     PostCompileTask(
         'test-versioned-api',
@@ -856,26 +851,23 @@ all_tasks = chain(all_tasks, [
 class SSLTask(Task):
     def __init__(self, version, patch, cflags=None, fips=False, enable_ssl=False, **kwargs):
         full_version = version + patch + ('-fips' if fips else '')
-        script = ''
+        script = 'env'
         if cflags:
-            script += 'export CFLAGS=%s\n' % (cflags,)
+            script += f' CFLAGS={cflags}'
 
-        script += "DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF"
+        script += ' DEBUG=ON SASL=OFF'
         if enable_ssl:
-            script += " SSL=" + enable_ssl
+            script += f' SSL={enable_ssl}'
         elif 'libressl' in version:
-            script += " SSL=LIBRESSL"
+            script += ' SSL=LIBRESSL'
         else:
-            script += " SSL=OPENSSL"
+            script += ' SSL=OPENSSL'
 
-        if fips:
-            script += " OPENSSL_FIPS=1"
-
-        script += " bash .evergreen/compile.sh"
+        script += ' bash .evergreen/compile.sh'
 
         super(SSLTask, self).__init__(commands=[
             func('install ssl', SSL=full_version),
-            shell_mongoc(script),
+            shell_mongoc(script, add_expansions_to_env=True),
             func('run auth tests', **kwargs),
             func('upload build')])
 
