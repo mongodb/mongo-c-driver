@@ -6540,6 +6540,7 @@ typedef struct listen_socket {
    bool failed;
    char ip[16];
    unsigned short port;
+   bool complete;
 } listen_socket_args_t;
 
 static BSON_THREAD_FUN (listen_socket, arg)
@@ -6584,6 +6585,7 @@ static BSON_THREAD_FUN (listen_socket, arg)
    }
    // signal that test is complete.
    bson_mutex_lock (&args->mutex);
+   args->complete = true;
    mongoc_cond_signal (&args->cond);
    bson_mutex_unlock (&args->mutex);
 
@@ -6624,11 +6626,13 @@ test_bypass_mongocryptd_shared_library (void *unused)
       auto_encryption_opts, "keyvault", "datakeys");
 
    // wait for port and ip to be set on the other thread
-   while (!args->port) {
+   bson_mutex_lock (&args->mutex);
+   while (!args->port || 0 == strlen (args->ip)) {
       int ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
       /* ret non-zero indicates an error (a timeout) */
       BSON_ASSERT (!ret);
    }
+   bson_mutex_unlock (&args->mutex);
 
    // configure extra options
    bson_t *extra = tmp_bson ("{'mongocryptdURI': 'mongodb://%s:%d', "
@@ -6653,9 +6657,15 @@ test_bypass_mongocryptd_shared_library (void *unused)
                                        NULL /* reply */,
                                        &error);
    ASSERT_OR_PRINT (ret, error);
-   ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
-   /* ret non-zero indicates an error (a timeout) */
-   BSON_ASSERT (!ret);
+
+   // Wait for listener thread to complete.
+   bson_mutex_lock (&args->mutex);
+   while (!args->complete) {
+      ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
+      /* ret non-zero indicates an error (a timeout) */
+      BSON_ASSERT (!ret);
+   }
+   bson_mutex_unlock (&args->mutex);
    // failed should be false if the signal did not receive a connection
    BSON_ASSERT (!args->failed);
    mcommon_thread_join (socket_thread);
