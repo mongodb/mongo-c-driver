@@ -40,8 +40,6 @@ declare toolchain_lib_dir="${toolchain_base_dir}/lib"
 declare -a ssl_vers=(
   "libressl-2.5"
   "libressl-3.0"
-  "openssl-0.9.8"
-  "openssl-1.0.0"
   "openssl-1.0.1"
   "openssl-1.0.1-fips"
   "openssl-1.0.2"

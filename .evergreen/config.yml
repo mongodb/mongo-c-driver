@@ -15088,42 +15088,6 @@ tasks:
     vars:
       AUTH: noauth
       SSL: nossl
-- name: build-and-run-authentication-tests-openssl-0.9.8
-  commands:
-  - func: install ssl
-    vars:
-      SSL: openssl-0.9.8zh
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON SSL=OPENSSL bash .evergreen/compile.sh
-  - func: run auth tests
-    vars:
-      obsolete_tls: true
-  - func: upload build
-- name: build-and-run-authentication-tests-openssl-1.0.0
-  commands:
-  - func: install ssl
-    vars:
-      SSL: openssl-1.0.0t
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON SSL=OPENSSL bash .evergreen/compile.sh
-  - func: run auth tests
-    vars:
-      obsolete_tls: true
-  - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.0.1
   commands:
   - func: install ssl
@@ -22446,8 +22410,6 @@ buildvariants:
   display_name: OpenSSL / LibreSSL
   run_on: archlinux-build
   tasks:
-  - build-and-run-authentication-tests-openssl-0.9.8
-  - build-and-run-authentication-tests-openssl-1.0.0
   - build-and-run-authentication-tests-openssl-1.0.1
   - build-and-run-authentication-tests-openssl-1.0.2
   - build-and-run-authentication-tests-openssl-1.1.0

@@ -889,8 +889,6 @@ class SSLTask(Task):
 
 
 all_tasks = chain(all_tasks, [
-    SSLTask('openssl-0.9.8', 'zh', obsolete_tls=True),
-    SSLTask('openssl-1.0.0', 't', obsolete_tls=True),
     SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls', ),
     SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls', fips=True),
     SSLTask('openssl-1.0.2', 'l', cflags='-Wno-redundant-decls', ),
