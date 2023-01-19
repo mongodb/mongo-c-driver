@@ -6627,12 +6627,13 @@ test_bypass_mongocryptd_shared_library (void *unused)
 
    // wait for port and ip to be set on the other thread
    bson_mutex_lock (&args->mutex);
-   while (!args->port || 0 == strlen (args->ip)) {
+   while (!args->port) {
       int cond_ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
       /* ret non-zero indicates an error (a timeout) */
       BSON_ASSERT (!cond_ret);
    }
    bson_mutex_unlock (&args->mutex);
+   BSON_ASSERT (strlen (args->ip) > 0);
 
    // configure extra options
    bson_t *extra = tmp_bson ("{'mongocryptdURI': 'mongodb://%s:%d', "
