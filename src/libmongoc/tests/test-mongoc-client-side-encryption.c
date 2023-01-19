@@ -6540,6 +6540,7 @@ typedef struct listen_socket {
    bool failed;
    char ip[16];
    unsigned short port;
+   bool complete;
 } listen_socket_args_t;
 
 static BSON_THREAD_FUN (listen_socket, arg)
@@ -6577,13 +6578,14 @@ static BSON_THREAD_FUN (listen_socket, arg)
    r = mongoc_socket_listen (socket, 100);
    BSON_ASSERT (r == 0);
    _mongoc_usleep (1000); // wait to see if received connection
-   mongoc_socket_t *ret = mongoc_socket_accept (socket, 100);
+   mongoc_socket_t *ret = mongoc_socket_accept (socket, bson_get_monotonic_time() + 100);
    if (ret) {
       // not null received a connection and test should fail
       args->failed = true;
    }
    // signal that test is complete.
    bson_mutex_lock (&args->mutex);
+   args->complete = true;
    mongoc_cond_signal (&args->cond);
    bson_mutex_unlock (&args->mutex);
 
@@ -6624,11 +6626,14 @@ test_bypass_mongocryptd_shared_library (void *unused)
       auto_encryption_opts, "keyvault", "datakeys");
 
    // wait for port and ip to be set on the other thread
+   bson_mutex_lock (&args->mutex);
    while (!args->port) {
-      int ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
+      int cond_ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
       /* ret non-zero indicates an error (a timeout) */
-      BSON_ASSERT (!ret);
+      BSON_ASSERT (!cond_ret);
    }
+   bson_mutex_unlock (&args->mutex);
+   BSON_ASSERT (strlen (args->ip) > 0);
 
    // configure extra options
    bson_t *extra = tmp_bson ("{'mongocryptdURI': 'mongodb://%s:%d', "
@@ -6653,9 +6658,15 @@ test_bypass_mongocryptd_shared_library (void *unused)
                                        NULL /* reply */,
                                        &error);
    ASSERT_OR_PRINT (ret, error);
-   ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
-   /* ret non-zero indicates an error (a timeout) */
-   BSON_ASSERT (!ret);
+
+   // Wait for listener thread to complete.
+   bson_mutex_lock (&args->mutex);
+   while (!args->complete) {
+      int cond_ret = mongoc_cond_timedwait (&args->cond, &args->mutex, 5000);
+      /* ret non-zero indicates an error (a timeout) */
+      BSON_ASSERT (!cond_ret);
+   }
+   bson_mutex_unlock (&args->mutex);
    // failed should be false if the signal did not receive a connection
    BSON_ASSERT (!args->failed);
    mcommon_thread_join (socket_thread);
