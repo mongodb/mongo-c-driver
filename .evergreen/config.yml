@@ -588,7 +588,7 @@ functions:
       script: |-
         set -o errexit
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF bash .evergreen/compile.sh
   debug-compile-coverage-notest-nosasl-openssl:
   - command: shell.exec
     type: test
@@ -598,7 +598,7 @@ functions:
       script: |-
         set -o errexit
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   build mongohouse:
   - command: shell.exec
     type: test
@@ -1680,7 +1680,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SKIP_MOCK_TESTS="ON" SSL="OPENSSL" bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="OPENSSL" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/compile.sh
@@ -1701,7 +1701,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SKIP_MOCK_TESTS="ON" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
@@ -1722,7 +1722,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SKIP_MOCK_TESTS="ON" SSL="DARWIN" bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="DARWIN" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/compile.sh
@@ -1743,7 +1743,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SKIP_MOCK_TESTS="ON" SSL="WINDOWS" bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="WINDOWS" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/compile.sh
@@ -1762,7 +1762,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SKIP_MOCK_TESTS="ON" SSL="OPENSSL" bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/compile.sh
@@ -22291,8 +22291,6 @@ task_groups:
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'
-  expansions:
-    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-test
   tasks:
   - make-release-archive
@@ -22410,8 +22408,6 @@ buildvariants:
   - .4.2 .openssl !.nosasl .server
 - name: openssl
   display_name: OpenSSL / LibreSSL
-  expansions:
-    SKIP_MOCK_TESTS: 'ON'
   run_on: archlinux-build
   tasks:
   - build-and-run-authentication-tests-openssl-1.0.1
@@ -22901,7 +22897,6 @@ buildvariants:
   display_name: ASAN Tests (Ubuntu 18.04)
   expansions:
     CC: clang
-    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-test
   tasks:
   - .debug-compile .asan-clang
@@ -22912,7 +22907,6 @@ buildvariants:
   expansions:
     CC: clang
     SKIP_CRYPT_SHARED_LIB: 'on'
-    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-asan-openssl-cse
@@ -22922,7 +22916,6 @@ buildvariants:
   display_name: ASAN Tests (Ubuntu 16.04)
   expansions:
     CC: clang
-    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1604-test
   tasks:
   - .debug-compile .asan-clang
@@ -22957,8 +22950,6 @@ buildvariants:
   - test-mongohouse
 - name: ocsp
   display_name: OCSP tests
-  expansions:
-    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu2004-small
   tasks:
   - name: debug-compile-nosasl-openssl
@@ -23002,15 +22993,12 @@ buildvariants:
   display_name: Thread Sanitizer (TSAN) Tests (Ubuntu 18.04)
   expansions:
     CC: /opt/mongodbtoolchain/v3/bin/clang
-    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-small
   tasks:
   - .tsan !.3.6
   batchtime: 1440
 - name: versioned-api
   display_name: Versioned API Tests
-  expansions:
-    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-nosasl-openssl

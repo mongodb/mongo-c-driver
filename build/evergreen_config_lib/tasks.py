@@ -113,7 +113,6 @@ class CompileWithClientSideEncryption(CompileTask):
         super(CompileWithClientSideEncryption, self).__init__(*args,
                                                               extra_script=extra_script,
                                                               EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF",
-                                                              SKIP_MOCK_TESTS="ON",
                                                               **kwargs)
         self.add_tags('client-side-encryption', 'special')
 
@@ -140,7 +139,6 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
                                                                       'address'],
                                                                   EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
                                                                   PATH='/usr/lib/llvm-3.8/bin:$PATH',
-                                                                  SKIP_MOCK_TESTS="ON",
                                                                   **kwargs)
         self.add_tags('client-side-encryption')
 

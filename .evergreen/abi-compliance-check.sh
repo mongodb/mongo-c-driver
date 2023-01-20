@@ -19,7 +19,6 @@ current="$(cat VERSION_CURRENT)"
 env \
   CFLAGS="-g -Og" \
   EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/changes-install" \
-  SKIP_MOCK_TESTS="ON" \
   bash .evergreen/compile.sh
 
 # checkout the newest release
@@ -29,7 +28,6 @@ git checkout "tags/${newest}" -f
 env \
   CFLAGS="-g -Og" \
   EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/latest-release-install" \
-  SKIP_MOCK_TESTS="ON" \
   bash .evergreen/compile.sh
 
 # check for abi compliance. Generates HTML Reports.

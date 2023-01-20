@@ -405,13 +405,13 @@ all_functions = OD([
     ('debug-compile-coverage-notest-nosasl-nossl', Function(
         shell_mongoc(r'''
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF bash .evergreen/compile.sh
         '''),
     )),
     ('debug-compile-coverage-notest-nosasl-openssl', Function(
         shell_mongoc(r'''
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
         '''),
     )),
     ('build mongohouse', Function(

@@ -27,8 +27,7 @@ check_var_opt "CC" "Visual Studio 15 2017 Win64"
 check_var_opt "COMPILE_LIBMONGOCRYPT" "OFF"
 check_var_opt "DEBUG" "OFF"
 check_var_opt "RELEASE" "OFF"
-check_var_opt "SASL" "SSPI" # CMake default: AUTO.
-check_var_opt "SKIP_MOCK_TESTS" "OFF"
+check_var_opt "SASL" "SSPI"   # CMake default: AUTO.
 check_var_opt "SNAPPY"        # CMake default: AUTO.
 check_var_opt "SRV"           # CMake default: AUTO.
 check_var_opt "SSL" "WINDOWS" # CMake default: OFF.
@@ -106,16 +105,6 @@ else
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
-export PATH
-PATH+=":$(pwd)/src/libbson/${build_config}"
-PATH+=":$(pwd)/src/libmongoc/${build_config}"
-PATH+=":$(pwd)/install-dir/bin"
-
-declare test_path
-test_path="$(pwd)/src/libmongoc/${build_config}/test-libmongoc.exe"
-
-declare -a skip_test_flags=("--skip-tests" "$(to_windows_path "${script_dir}/skip-tests.txt")")
-
 declare cmake_binary="/cygdrive/c/cmake/bin/cmake"
 declare compile_flags=(
   "/m" # Number of concurrent processes. No value=# of cpus
@@ -135,15 +124,3 @@ fi
 "${cmake_binary}" -G "$CC" "-DCMAKE_PREFIX_PATH=${install_dir}/lib/cmake" "${configure_flags[@]}"
 "${cmake_binary}" --build . --target ALL_BUILD --config "${build_config}" -- "${compile_flags[@]}"
 "${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"
-
-# We are done here if we don't want to run the tests.
-if [[ "${SKIP_MOCK_TESTS}" == "ON" ]]; then
-  exit 0
-fi
-
-export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
-export MONGOC_TEST_SKIP_LIVE=on
-export MONGOC_TEST_SKIP_SLOW=on
-export MONGOC_TEST_SERVER_LOG=stdout
-
-"${test_path}" --no-fork -d -F test-results.json "${skip_test_flags[@]}"

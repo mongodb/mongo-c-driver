@@ -32,7 +32,6 @@ check_var_opt "ENABLE_RDTSCP" "OFF"
 check_var_opt "RELEASE" "OFF"
 check_var_opt "SANITIZE"
 check_var_opt "SASL" "OFF" # CMake default: AUTO.
-check_var_opt "SKIP_MOCK_TESTS" "OFF"
 check_var_opt "SNAPPY"         # CMake default: AUTO.
 check_var_opt "SRV"            # CMake default: AUTO.
 check_var_opt "SSL" "OFF"      # CMake default: AUTO.
@@ -184,7 +183,7 @@ fi
 
 export PKG_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH}"
 
-echo "SSL Version: $(pkg-config --modversion libssl || echo "N/A")"
+echo "SSL Version: $(pkg-config --modversion libssl 2>/dev/null || echo "N/A")"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
   # llvm-cov is installed from brew.
@@ -243,99 +242,5 @@ else
   # shellcheck disable=SC2086
   "${CMAKE}" "${configure_flags[@]}" ${EXTRA_CONFIGURE_FLAGS} .
   make -j all
-fi
-
-# shellcheck source=.evergreen/bypass-dlclose.sh
-. "${script_dir}/bypass-dlclose.sh"
-
-# This should fail when using fips capable OpenSSL when fips mode is enabled
-openssl md5 README.rst || true
-
-ulimit -c unlimited || true
-
-if [[ "${ANALYZE}" != "ON" ]]; then
   make install
-fi
-
-# We are done here if we don't want to run the tests.
-if [[ "${SKIP_MOCK_TESTS}" == "ON" ]]; then
-  exit 0
-fi
-
-# Sanitizer environment variables.
-export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
-export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
-export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
-export UBSAN_OPTIONS="print_stacktrace=1 abort_on_error=1"
-
-# C Driver test environment variables.
-export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
-export MONGOC_TEST_IPV4_AND_IPV6_HOST="ipv4_and_ipv6.test.build.10gen.cc"
-export MONGOC_TEST_SERVER_LOG=stdout
-export MONGOC_TEST_SKIP_LIVE=on
-export MONGOC_TEST_SKIP_SLOW=on
-
-declare -a test_args=(
-  "--no-fork"
-  "-d"
-  "-F"
-  "test-results.json"
-  "--skip-tests"
-  "${script_dir}/skip-tests.txt"
-)
-
-declare ld_preload="${LD_PRELOAD:-}"
-if [[ "${SANITIZE}" =~ address ]]; then
-  ld_preload="$(bypass_dlclose):${ld_preload:-}"
-fi
-
-# Write stderr to error.log and to console. Turn off tracing to avoid spurious
-# log messages that CHECK_LOG considers failures.
-mkfifo pipe || true
-if [[ -e pipe ]]; then
-  set +o xtrace
-  tee error.log <pipe &
-  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc "${test_args[@]}" 2>pipe
-  rm pipe
-else
-  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc "${test_args[@]}"
-fi
-
-# Check if the error.log exists, and is more than 0 byte
-if [[ -s error.log ]]; then
-  cat error.log
-
-  if [[ "${CHECK_LOG}" == "ON" ]]; then
-    # Ignore ar(1) warnings, and check the log again
-    grep -v "^ar: " error.log >log.log
-    if [[ -s log.log ]]; then
-      cat error.log
-      echo "Found unexpected error logs" 1>&2
-      # Mark build as failed if there is unknown things in the log
-      exit 2
-    fi
-  fi
-fi
-
-if [[ "${COVERAGE}" == "ON" ]]; then
-  declare -a coverage_args=(
-    "--capture"
-    "--derive-func-data"
-    "--directory"
-    "."
-    "--output-file"
-    ".coverage.lcov"
-    "--no-external"
-  )
-
-  case "${CC}" in
-  clang)
-    lcov --gcov-tool "$(pwd)/.evergreen/llvm-gcov.sh" "${coverage_args[@]}"
-    ;;
-  *)
-    lcov --gcov-tool gcov "${coverage_args[@]}"
-    ;;
-  esac
-
-  genhtml .coverage.lcov --legend --title "mongoc code coverage" --output-directory coverage
 fi
