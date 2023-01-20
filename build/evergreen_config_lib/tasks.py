@@ -198,10 +198,6 @@ all_tasks = [
     SpecialTask('debug-compile-c11',
                 tags=['debug-compile', 'c11', 'stdflags'],
                 C_STD_VERSION='11'),
-    SpecialTask('debug-compile-coverage',
-                tags=['debug-compile', 'coverage'],
-                COVERAGE='ON',
-                suffix_commands=[func('upload coverage')]),
     CompileTask('debug-compile-no-counters',
                 tags=['debug-compile', 'no-counters'],
                 ENABLE_SHM_COUNTERS='OFF'),
@@ -490,22 +486,24 @@ class IntegrationTask(MatrixTask):
             self.add_tags("client-side-encryption")
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
         # Coverage tasks use a build function instead of depending on a task.
-        if self.sanitizer == "asan" and self.ssl and self.cse:
-            self.add_dependency('debug-compile-asan-%s-cse' % (
-                self.display('ssl'),))
-        elif self.sanitizer == "asan" and self.ssl:
-            self.add_dependency('debug-compile-asan-clang-%s' % (
-                self.display('ssl'),))
-        elif self.sanitizer == "asan":
-            self.add_dependency('debug-compile-asan-clang')
-        elif self.sanitizer == 'tsan' and self.ssl:
-            self.add_dependency('debug-compile-tsan-%s' % self.display('ssl'))
-        elif self.cse:
-            self.add_dependency('debug-compile-%s-%s-cse' %
-                                (self.display('sasl'), self.display('ssl')))
-        elif not self.coverage:
-            self.add_dependency('debug-compile-%s-%s' % (
-                self.display('sasl'), self.display('ssl')))
+        if not self.coverage:
+            if self.sanitizer == "asan" and self.ssl and self.cse:
+                self.add_dependency('debug-compile-asan-%s-cse' % (
+                    self.display('ssl'),))
+            elif self.sanitizer == "asan" and self.ssl:
+                self.add_dependency('debug-compile-asan-clang-%s' % (
+                    self.display('ssl'),))
+            elif self.sanitizer == "asan":
+                self.add_dependency('debug-compile-asan-clang')
+            elif self.sanitizer == 'tsan' and self.ssl:
+                self.add_dependency('debug-compile-tsan-%s' %
+                                    self.display('ssl'))
+            elif self.cse:
+                self.add_dependency('debug-compile-%s-%s-cse' %
+                                    (self.display('sasl'), self.display('ssl')))
+            else:
+                self.add_dependency('debug-compile-%s-%s' % (
+                    self.display('sasl'), self.display('ssl')))
 
     @property
     def name(self):
@@ -528,9 +526,9 @@ class IntegrationTask(MatrixTask):
             commands.append(
                 func('fetch build', BUILD_NAME=self.depends_on['name']))
         if self.coverage:
-            commands.append(func('debug-compile-coverage-notest-%s-%s' % (
-                self.display('sasl'), self.display('ssl')
-            )))
+            # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
+            commands.append(
+                func('compile coverage', SASL='AUTO', SSL='OPENSSL'))
         commands.append(bootstrap(VERSION=self.version,
                                   TOPOLOGY=self.topology,
                                   AUTH='auth' if self.auth else 'noauth',
@@ -540,11 +538,14 @@ class IntegrationTask(MatrixTask):
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
             commands.append(func('clone drivers-evergreen-tools'))
             commands.append(func('run kms servers'))
+        if self.coverage:
+            extra["COVERAGE"] = 'ON'
         commands.append(run_tests(ASAN='on' if self.sanitizer == 'asan' else 'off',
                                   AUTH=self.display('auth'),
                                   SSL=self.display('ssl'),
                                   **extra))
         if self.coverage:
+            commands.append(func('upload coverage'))
             commands.append(func('update codecov.io'))
 
         return task
@@ -570,13 +571,14 @@ class IntegrationTask(MatrixTask):
         if not self.ssl:
             prohibit(self.sasl)
 
+        # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
         if self.coverage:
-            prohibit(self.sasl)
-
-            if self.auth:
-                require(self.ssl == 'openssl')
-            else:
-                prohibit(self.ssl)
+            require(self.topology == 'replica_set')
+            require(self.auth)
+            require(self.sasl == 'sasl')
+            require(self.ssl == 'openssl')
+            require(self.cse)
+            require(self.version == 'latest')
 
         if self.sanitizer == "asan":
             prohibit(self.sasl)
@@ -600,7 +602,6 @@ class IntegrationTask(MatrixTask):
                 # limit to SASL=AUTO to reduce redundant tasks.
                 require(self.sasl)
                 require(self.sasl != 'sspi')
-            prohibit(self.coverage)
             require(self.ssl)
 
 
@@ -809,21 +810,6 @@ all_tasks = chain(all_tasks, [
         commands=[func('build mongohouse'),
                   func('run mongohouse'),
                   func('test mongohouse')]),
-    # Compile with a function, not a task: gcov files depend on the absolute
-    # path of the executable, so we can't compile as a separate task.
-    NamedTask(
-        'test-coverage-mock-server',
-        tags=['test-coverage'],
-        commands=[func('debug-compile-coverage-notest-nosasl-openssl'),
-                  func('run mock server tests', SSL='ssl'),
-                  func('update codecov.io')]),
-    NamedTask(
-        'test-coverage-latest-server-dns',
-        tags=['test-coverage'],
-        commands=[func('debug-compile-coverage-notest-nosasl-openssl'),
-                  bootstrap(TOPOLOGY='replica_set', AUTH='auth', SSL='ssl'),
-                  run_tests(AUTH='auth', SSL='ssl', DNS='on'),
-                  func('update codecov.io')]),
     NamedTask(
         'authentication-tests-asan-memcheck',
         tags=['authentication-tests', 'asan'],

@@ -25,6 +25,7 @@ check_var_opt "AUTH" "noauth"
 check_var_opt "CC"
 check_var_opt "CLIENT_SIDE_ENCRYPTION"
 check_var_opt "COMPRESSORS" "nocompressors"
+check_var_opt "COVERAGE" # CMake default: OFF.
 check_var_opt "DNS" "nodns"
 check_var_opt "IPV4_ONLY"
 check_var_opt "LOADBALANCED" "noloadbalanced"
@@ -259,3 +260,26 @@ cygwin)
   LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
   ;;
 esac
+
+if [[ "${COVERAGE}" == "ON" ]]; then
+  declare -a coverage_args=(
+    "--capture"
+    "--derive-func-data"
+    "--directory"
+    "."
+    "--output-file"
+    ".coverage.lcov"
+    "--no-external"
+  )
+
+  case "${CC}" in
+  clang)
+    lcov --gcov-tool "$(pwd)/.evergreen/llvm-gcov.sh" "${coverage_args[@]}"
+    ;;
+  *)
+    lcov --gcov-tool gcov "${coverage_args[@]}"
+    ;;
+  esac
+
+  genhtml .coverage.lcov --legend --title "mongoc code coverage" --output-directory coverage
+fi

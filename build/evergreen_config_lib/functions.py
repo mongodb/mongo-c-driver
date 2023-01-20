@@ -402,17 +402,10 @@ all_functions = OD([
         curl -s https://codecov.io/bash | bash
         ''', test=False),
     )),
-    ('debug-compile-coverage-notest-nosasl-nossl', Function(
+    ('compile coverage', Function(
         shell_mongoc(r'''
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF bash .evergreen/compile.sh
-        '''),
-    )),
-    ('debug-compile-coverage-notest-nosasl-openssl', Function(
-        shell_mongoc(r'''
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
-        '''),
+        COVERAGE=ON DEBUG=ON bash .evergreen/compile.sh
+        ''', add_expansions_to_env=True),
     )),
     ('build mongohouse', Function(
         shell_mongoc(r'''
