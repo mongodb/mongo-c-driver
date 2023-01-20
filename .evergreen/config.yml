@@ -15101,7 +15101,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON SSL=OPENSSL bash .evergreen/compile.sh
+        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.0.1-fips
@@ -15117,7 +15117,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON SSL=OPENSSL bash .evergreen/compile.sh
+        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.0.2
@@ -15133,7 +15133,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON SSL=OPENSSL bash .evergreen/compile.sh
+        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.1.0
@@ -15149,7 +15149,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON SSL=OPENSSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-libressl-2.5
@@ -15165,7 +15165,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON SSL=LIBRESSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -15183,7 +15183,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON SSL=AUTO bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=AUTO bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -15201,7 +15201,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON SSL=LIBRESSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -22291,6 +22291,8 @@ task_groups:
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'
+  expansions:
+    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-test
   tasks:
   - make-release-archive
@@ -22408,6 +22410,8 @@ buildvariants:
   - .4.2 .openssl !.nosasl .server
 - name: openssl
   display_name: OpenSSL / LibreSSL
+  expansions:
+    SKIP_MOCK_TESTS: 'ON'
   run_on: archlinux-build
   tasks:
   - build-and-run-authentication-tests-openssl-1.0.1
@@ -22897,6 +22901,7 @@ buildvariants:
   display_name: ASAN Tests (Ubuntu 18.04)
   expansions:
     CC: clang
+    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-test
   tasks:
   - .debug-compile .asan-clang
@@ -22907,6 +22912,7 @@ buildvariants:
   expansions:
     CC: clang
     SKIP_CRYPT_SHARED_LIB: 'on'
+    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-asan-openssl-cse
@@ -22916,6 +22922,7 @@ buildvariants:
   display_name: ASAN Tests (Ubuntu 16.04)
   expansions:
     CC: clang
+    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1604-test
   tasks:
   - .debug-compile .asan-clang
@@ -22995,12 +23002,15 @@ buildvariants:
   display_name: Thread Sanitizer (TSAN) Tests (Ubuntu 18.04)
   expansions:
     CC: /opt/mongodbtoolchain/v3/bin/clang
+    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-small
   tasks:
   - .tsan !.3.6
   batchtime: 1440
 - name: versioned-api
   display_name: Versioned API Tests
+  expansions:
+    SKIP_MOCK_TESTS: 'ON'
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-nosasl-openssl

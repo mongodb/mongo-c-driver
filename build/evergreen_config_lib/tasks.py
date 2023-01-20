@@ -856,7 +856,7 @@ class SSLTask(Task):
         if cflags:
             script += f' CFLAGS={cflags}'
 
-        script += ' DEBUG=ON SASL=OFF SKIP_MOCK_TESTS=ON'
+        script += ' DEBUG=ON SASL=OFF'
 
         if enable_ssl:
             script += " SSL=" + enable_ssl
