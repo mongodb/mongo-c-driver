@@ -31,7 +31,7 @@ check_var_opt "EXTRA_CONFIGURE_FLAGS"
 check_var_opt "ENABLE_RDTSCP" "OFF"
 check_var_opt "RELEASE" "OFF"
 check_var_opt "SANITIZE"
-check_var_opt "SASL" "OFF" # CMake default: AUTO.
+check_var_opt "SASL" "OFF"     # CMake default: AUTO.
 check_var_opt "SNAPPY"         # CMake default: AUTO.
 check_var_opt "SRV"            # CMake default: AUTO.
 check_var_opt "SSL" "OFF"      # CMake default: AUTO.
