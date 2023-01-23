@@ -3,18 +3,8 @@
 set -o errexit
 set -o pipefail
 
-to_absolute() (
-  cd "${1:?}" && pwd
-)
-
-print_var() {
-  printf "%s: %s\n" "${1:?}" "${!1:-}"
-}
-
-check_var_opt() {
-  printf -v "${1:?}" "%s" "${!1:-"${2:-}"}"
-  print_var "${1}"
-}
+# shellcheck source=.evergreen/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
 check_var_opt "ANALYZE" "OFF"
 check_var_opt "C_STD_VERSION" # CMake default: 99.

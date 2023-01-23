@@ -26,39 +26,19 @@
 set -o errexit
 set -o pipefail
 
-to_absolute() (
-  cd "${1:?}" && pwd
-)
+# shellcheck source=.evergreen/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-to_windows_path() {
-  cygpath -aw "${1:?}"
-}
+check_var_req "TEST_COLUMN"
+check_var_req "CERT_TYPE"
 
-print_var() {
-  printf "%s: %s\n" "${1:?}" "${!1:-}"
-}
-
-check_var_opt() {
-  printf -v "${1:?}" "%s" "${!1:-"${2:-}"}"
-  print_var "${1}"
-}
-
-check_var_req() {
-  : "${1:?}"
-  : "${!1:?"required variable ${1} is unset or null!"}"
-  print_var "${1}"
-}
+check_var_opt "MONGODB_PORT" "27017"
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/..")"
-
-check_var_req "TEST_COLUMN"
-check_var_req "CERT_TYPE"
-
-check_var_opt "MONGODB_PORT" "27017"
 
 declare responder_required
 case "${TEST_COLUMN}" in

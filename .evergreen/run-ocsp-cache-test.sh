@@ -36,23 +36,8 @@
 set -o errexit
 set -o pipefail
 
-to_absolute() (
-  cd "${1:?}" && pwd
-)
-
-to_windows_path() {
-  cygpath -aw "${1:?}"
-}
-
-print_var() {
-  printf "%s: %s\n" "${1:?}" "${!1:-}"
-}
-
-check_var_req() {
-  : "${1:?}"
-  : "${!1:?"required variable ${1} is unset or null!"}"
-  print_var "${1}"
-}
+# shellcheck source=.evergreen/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
 check_var_req "CERT_TYPE"
 
