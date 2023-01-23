@@ -6,22 +6,22 @@ set -o pipefail
 # shellcheck source=.evergreen/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-check_var_opt "ASAN" "OFF"
-check_var_opt "AUTH" "noauth"
-check_var_opt "CC"
-check_var_opt "CLIENT_SIDE_ENCRYPTION"
-check_var_opt "COMPRESSORS" "nocompressors"
-check_var_opt "COVERAGE" # CMake default: OFF.
-check_var_opt "DNS" "nodns"
-check_var_opt "IPV4_ONLY"
-check_var_opt "LOADBALANCED" "noloadbalanced"
-check_var_opt "MARCH"
-check_var_opt "MONGODB_API_VERSION"
-check_var_opt "MULTI_MONGOS_LB_URI"
-check_var_opt "SINGLE_MONGOS_LB_URI"
-check_var_opt "SKIP_CRYPT_SHARED_LIB"
-check_var_opt "SSL" "nossl"
-check_var_opt "URI"
+check_var_opt ASAN "OFF"
+check_var_opt AUTH "noauth"
+check_var_opt CC
+check_var_opt CLIENT_SIDE_ENCRYPTION
+check_var_opt COMPRESSORS "nocompressors"
+check_var_opt COVERAGE # CMake default: OFF.
+check_var_opt DNS "nodns"
+check_var_opt IPV4_ONLY
+check_var_opt LOADBALANCED "noloadbalanced"
+check_var_opt MARCH
+check_var_opt MONGODB_API_VERSION
+check_var_opt MULTI_MONGOS_LB_URI
+check_var_opt SINGLE_MONGOS_LB_URI
+check_var_opt SKIP_CRYPT_SHARED_LIB
+check_var_opt SSL "nossl"
+check_var_opt URI
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"

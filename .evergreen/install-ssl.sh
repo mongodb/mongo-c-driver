@@ -6,7 +6,7 @@ set -o pipefail
 # shellcheck source=.evergreen/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-check_var_opt "SSL" "no"
+check_var_opt SSL "no"
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"

@@ -8,16 +8,16 @@ set -o igncr # Ignore CR in this script for Windows compatibility.
 # shellcheck source=.evergreen/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-check_var_opt "C_STD_VERSION" # CMake default: 99.
-check_var_opt "CC" "Visual Studio 15 2017 Win64"
-check_var_opt "COMPILE_LIBMONGOCRYPT" "OFF"
-check_var_opt "DEBUG" "OFF"
-check_var_opt "RELEASE" "OFF"
-check_var_opt "SASL" "SSPI"   # CMake default: AUTO.
-check_var_opt "SNAPPY"        # CMake default: AUTO.
-check_var_opt "SRV"           # CMake default: AUTO.
-check_var_opt "SSL" "WINDOWS" # CMake default: OFF.
-check_var_opt "ZSTD"          # CMake default: AUTO.
+check_var_opt C_STD_VERSION # CMake default: 99.
+check_var_opt CC "Visual Studio 15 2017 Win64"
+check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
+check_var_opt DEBUG "OFF"
+check_var_opt RELEASE "OFF"
+check_var_opt SASL "SSPI"   # CMake default: AUTO.
+check_var_opt SNAPPY        # CMake default: AUTO.
+check_var_opt SRV           # CMake default: AUTO.
+check_var_opt SSL "WINDOWS" # CMake default: OFF.
+check_var_opt ZSTD          # CMake default: AUTO.
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
@@ -54,11 +54,11 @@ if [[ "${RELEASE}" == "ON" ]]; then
   cd build-dir
 fi
 
-configure_flags_append_if_not_null "C_STD_VERSION" "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
-configure_flags_append_if_not_null "SASL" "-DENABLE_SASL=${SASL}"
-configure_flags_append_if_not_null "SNAPPY" "-DENABLE_SNAPPY=${SNAPPY}"
-configure_flags_append_if_not_null "SRV" "-DENABLE_SRV=${SRV}"
-configure_flags_append_if_not_null "ZLIB" "-DENABLE_ZLIB=${ZLIB}"
+configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
+configure_flags_append_if_not_null SASL "-DENABLE_SASL=${SASL}"
+configure_flags_append_if_not_null SNAPPY "-DENABLE_SNAPPY=${SNAPPY}"
+configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV}"
+configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB}"
 
 if [[ "${DEBUG}" == "ON" ]]; then
   configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"

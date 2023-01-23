@@ -6,28 +6,28 @@ set -o pipefail
 # shellcheck source=.evergreen/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-check_var_opt "ANALYZE" "OFF"
-check_var_opt "C_STD_VERSION" # CMake default: 99.
-check_var_opt "CC"
-check_var_opt "CFLAGS"
-check_var_opt "CHECK_LOG" "OFF"
-check_var_opt "COMPILE_LIBMONGOCRYPT" "OFF"
-check_var_opt "COVERAGE" # CMake default: OFF.
-check_var_opt "CXXFLAGS"
-check_var_opt "DEBUG" "OFF"
-check_var_opt "ENABLE_SHM_COUNTERS" # CMake default: AUTO.
-check_var_opt "EXTRA_CMAKE_PREFIX_PATH"
-check_var_opt "EXTRA_CONFIGURE_FLAGS"
-check_var_opt "ENABLE_RDTSCP" "OFF"
-check_var_opt "RELEASE" "OFF"
-check_var_opt "SANITIZE"
-check_var_opt "SASL" "OFF"     # CMake default: AUTO.
-check_var_opt "SNAPPY"         # CMake default: AUTO.
-check_var_opt "SRV"            # CMake default: AUTO.
-check_var_opt "SSL" "OFF"      # CMake default: AUTO.
-check_var_opt "TRACING"        # CMake default: OFF.
-check_var_opt "ZLIB" "BUNDLED" # CMake default: AUTO.
-check_var_opt "ZSTD"           # CMake default: AUTO.
+check_var_opt ANALYZE "OFF"
+check_var_opt C_STD_VERSION # CMake default: 99.
+check_var_opt CC
+check_var_opt CFLAGS
+check_var_opt CHECK_LOG "OFF"
+check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
+check_var_opt COVERAGE # CMake default: OFF.
+check_var_opt CXXFLAGS
+check_var_opt DEBUG "OFF"
+check_var_opt ENABLE_SHM_COUNTERS # CMake default: AUTO.
+check_var_opt EXTRA_CMAKE_PREFIX_PATH
+check_var_opt EXTRA_CONFIGURE_FLAGS
+check_var_opt ENABLE_RDTSCP "OFF"
+check_var_opt RELEASE "OFF"
+check_var_opt SANITIZE
+check_var_opt SASL "OFF"     # CMake default: AUTO.
+check_var_opt SNAPPY         # CMake default: AUTO.
+check_var_opt SRV            # CMake default: AUTO.
+check_var_opt SSL "OFF"      # CMake default: AUTO.
+check_var_opt TRACING        # CMake default: OFF.
+check_var_opt ZLIB "BUNDLED" # CMake default: AUTO.
+check_var_opt ZSTD           # CMake default: AUTO.
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
@@ -65,15 +65,15 @@ configure_flags_append "-DENABLE_HTML_DOCS=OFF"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 configure_flags_append "-DENABLE_MAN_PAGES=OFF"
 
-configure_flags_append_if_not_null "C_STD_VERSION" "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
-configure_flags_append_if_not_null "ENABLE_RDTSCP" "-DENABLE_RDTSCP=${ENABLE_RDTSCP}"
-configure_flags_append_if_not_null "ENABLE_SHM_COUNTERS" "-DENABLE_SHM_COUNTERS=${ENABLE_SHM_COUNTERS}"
-configure_flags_append_if_not_null "SANITIZE" "-DMONGO_SANITIZE=${SANITIZE}"
-configure_flags_append_if_not_null "SASL" "-DENABLE_SASL=${SASL}"
-configure_flags_append_if_not_null "SNAPPY" "-DENABLE_SNAPPY=${SNAPPY}"
-configure_flags_append_if_not_null "SRV" "-DENABLE_SRV=${SRV}"
-configure_flags_append_if_not_null "TRACING" "-DENABLE_TRACING=${TRACING}"
-configure_flags_append_if_not_null "ZLIB" "-DENABLE_ZLIB=${ZLIB}"
+configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
+configure_flags_append_if_not_null ENABLE_RDTSCP "-DENABLE_RDTSCP=${ENABLE_RDTSCP}"
+configure_flags_append_if_not_null ENABLE_SHM_COUNTERS "-DENABLE_SHM_COUNTERS=${ENABLE_SHM_COUNTERS}"
+configure_flags_append_if_not_null SANITIZE "-DMONGO_SANITIZE=${SANITIZE}"
+configure_flags_append_if_not_null SASL "-DENABLE_SASL=${SASL}"
+configure_flags_append_if_not_null SNAPPY "-DENABLE_SNAPPY=${SNAPPY}"
+configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV}"
+configure_flags_append_if_not_null TRACING "-DENABLE_TRACING=${TRACING}"
+configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB}"
 
 if [[ "${DEBUG}" == "ON" ]]; then
   configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
@@ -84,7 +84,7 @@ fi
 if [[ "${SSL}" == "OPENSSL_STATIC" ]]; then
   configure_flags_append "-DENABLE_SSL=OPENSSL" "-DOPENSSL_USE_STATIC_LIBS=ON"
 else
-  configure_flags_append_if_not_null "${SSL}" "-DENABLE_SSL=${SSL}"
+  configure_flags_append_if_not_null SSL "-DENABLE_SSL=${SSL}"
 fi
 
 if [[ "${COVERAGE}" == "ON" ]]; then
