@@ -47,6 +47,8 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/..")"
 
+declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
+
 if ! pgrep -nf mongod >/dev/null; then
   echo "Cannot find mongod. See file comments for help." 1>&2
   exit 1
@@ -57,8 +59,15 @@ if ! pgrep -nf ocsp_mock >/dev/null; then
   exit 1
 fi
 
+# Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH when
+# necessary to avoid conflicting with system binary requirements.
+declare openssl_lib_prefix="${LD_LIBRARY_PATH:-}"
+if [[ -d "${openssl_install_dir}" ]]; then
+  openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
+fi
+
 # This test will hang after the first ping.
-"${mongoc_dir}/src/libmongoc/test-mongoc-cache" "${mongoc_dir}/.evergreen/ocsp/${CERT_TYPE}/ca.pem" &
+LD_LIBRARY_PATH="${openssl_lib_prefix}" "${mongoc_dir}/src/libmongoc/test-mongoc-cache" "${mongoc_dir}/.evergreen/ocsp/${CERT_TYPE}/ca.pem" &
 sleep 5 # Give the program time to contact the OCSP responder
 
 pkill -nf "ocsp_mock" # We assume that the mock OCSP responder is named "ocsp_mock"

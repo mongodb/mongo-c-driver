@@ -40,6 +40,8 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/..")"
 
+declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
+
 declare responder_required
 case "${TEST_COLUMN}" in
 TEST_1) responder_required="valid" ;;
@@ -80,9 +82,16 @@ else
   LD_LIBRARY_PATH+=":${mongoc_dir}/src/libbson"
 fi
 
+# Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH when
+# necessary to avoid conflicting with system binary requirements.
+declare openssl_lib_prefix="${LD_LIBRARY_PATH:-}"
+if [[ -d "${openssl_install_dir}" ]]; then
+  openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
+fi
+
 expect_success() {
   echo "Should succeed:"
-  if ! "${mongoc_ping}" "${MONGODB_URI}"; then
+  if ! LD_LIBRARY_PATH="${openssl_lib_prefix}" "${mongoc_ping}" "${MONGODB_URI}"; then
     echo "Unexpected failure" 1>&2
     exit 1
   fi
@@ -90,7 +99,7 @@ expect_success() {
 
 expect_failure() {
   echo "Should fail:"
-  if "${mongoc_ping}" "${MONGODB_URI}" >output.txt 2>&1; then
+  if LD_LIBRARY_PATH="${openssl_lib_prefix}" "${mongoc_ping}" "${MONGODB_URI}" >output.txt 2>&1; then
     echo "Unexpected - succeeded but it should not have" 1>&2
     cat output.txt
     exit 1

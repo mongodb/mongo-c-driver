@@ -29,6 +29,8 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/..")"
 
+declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
+
 if [[ "${COMPRESSORS}" != "nocompressors" ]]; then
   export MONGOC_TEST_COMPRESSORS="${COMPRESSORS}"
 fi
@@ -243,7 +245,14 @@ cygwin)
   PATH+=":$(pwd)/mongodb/bin"
   check_mongocryptd
 
-  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
+  # Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH
+  # when necessary to avoid conflicting with system binary requirements.
+  declare openssl_lib_prefix="${LD_LIBRARY_PATH:-}"
+  if [[ -d "${openssl_install_dir}" ]]; then
+    openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
+  fi
+
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
   ;;
 esac
 

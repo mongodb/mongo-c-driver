@@ -16,6 +16,11 @@ mongoc_dir="$(to_absolute "${script_dir}/..")"
 
 declare install_dir="${mongoc_dir}/install-dir"
 
+# Install OpenSSL library to separate install directory from normal
+# "install-ssl" directory to avoid interfering with OpenSSL requirements by
+# system binaries when install-dir/bin is prepended to $PATH.
+declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
+
 declare -a ssl_extra_flags
 
 if [[ "${OSTYPE}" == darwin* ]]; then
@@ -46,7 +51,7 @@ install_openssl() {
   pushd "openssl-OpenSSL_${tmp}"
   (
     set -o xtrace
-    ./config --prefix="${install_dir}" "${ssl_extra_flags[@]}" shared -fPIC
+    ./config --prefix="${openssl_install_dir}" "${ssl_extra_flags[@]}" shared -fPIC
     make -j depend
     build_target_if_exists "build_crypto"       # <1.1.0; parallel is broken.
     build_target_if_exists "build_engines" "-j" # <1.1.0
@@ -64,13 +69,13 @@ install_openssl_fips() {
   pushd openssl-fips-2.0.16
   (
     set -x xtrace
-    ./config --prefix="${install_dir}" -fPIC
+    ./config --prefix="${openssl_install_dir}" -fPIC
     make -j build_crypto
     make build_fips # Parallel is broken.
     make install_sw
   ) >/dev/null
   popd # openssl-fips-2.0.16
-  ssl_extra_flags=("--openssldir=${install_dir}" --with-fipsdir="${install_dir}" "fips")
+  ssl_extra_flags=("--openssldir=${openssl_install_dir}" "--with-fipsdir=${openssl_install_dir}" "fips")
   SSL="${SSL%-fips}"
   install_openssl
 }

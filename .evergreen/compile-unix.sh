@@ -36,6 +36,7 @@ declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/..")"
 
 declare install_dir="${mongoc_dir}/install-dir"
+declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 
 declare cmake_prefix_path="${install_dir}"
 if [[ -n "${EXTRA_CMAKE_PREFIX_PATH}" ]]; then
@@ -171,11 +172,12 @@ fi
 . "${script_dir}/add-build-dirs-to-paths.sh"
 
 export PKG_CONFIG_PATH
-PGK_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+PKG_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 
-if [[ -d "${install_dir}/ssl" ]]; then
-  configure_flags_append "-DOPENSSL_ROOT_DIR=${install_dir}/ssl"
-  PGK_CONFIG_PATH="${install_dir}/ssl/lib/pkgconfig:${PKG_CONFIG_PATH}"
+if [[ -d "${openssl_install_dir}" ]]; then
+  # Use custom SSL library if present.
+  configure_flags_append "-DOPENSSL_ROOT_DIR=${openssl_install_dir}"
+  PKG_CONFIG_PATH="${openssl_install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 fi
 
 echo "SSL Version: $(pkg-config --modversion libssl 2>/dev/null || echo "N/A")"
