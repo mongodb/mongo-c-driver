@@ -104,18 +104,16 @@ fi
 if [[ "${RELEASE}" == "ON" ]]; then
   # Build from the release tarball.
   mkdir build-dir
-  declare tar_args="xf ../mongoc.tar.gz -C build-dir --strip-components=1"
+  declare -a tar_args=("xf" "../mongoc.tar.gz" "-C" "build-dir" "--strip-components=1")
 
   # --strip-components is an GNU tar extension. Check if the platform
   # has GNU tar installed as `gtar`, otherwise we assume to be on
   # platform that supports it
   # command -v returns success error code if found and prints the path to it
   if command -v gtar 2>/dev/null; then
-    # shellcheck disable=SC2086
-    gtar ${tar_args}
+    gtar "${tar_args[@]}"
   else
-    # shellcheck disable=SC2086
-    tar ${tar_args}
+    tar "${tar_args[@]}"
   fi
 
   cd build-dir
