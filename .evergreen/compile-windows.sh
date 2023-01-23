@@ -46,7 +46,8 @@ configure_flags_append() {
 }
 
 configure_flags_append_if_not_null() {
-  if [[ -n "${1?}" ]]; then
+  declare var="${1:?}"
+  if [[ -n "${!1:-}" ]]; then
     shift
     configure_flags+=("${@:?}")
   fi
@@ -67,11 +68,11 @@ if [[ "${RELEASE}" == "ON" ]]; then
   cd build-dir
 fi
 
-configure_flags_append_if_not_null "${C_STD_VERSION}" "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
-configure_flags_append_if_not_null "${SASL}" "-DENABLE_SASL=${SASL}"
-configure_flags_append_if_not_null "${SNAPPY}" "-DENABLE_SNAPPY=${SNAPPY}"
-configure_flags_append_if_not_null "${SRV}" "-DENABLE_SRV=${SRV}"
-configure_flags_append_if_not_null "${ZLIB}" "-DENABLE_ZLIB=${ZLIB}"
+configure_flags_append_if_not_null "C_STD_VERSION" "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
+configure_flags_append_if_not_null "SASL" "-DENABLE_SASL=${SASL}"
+configure_flags_append_if_not_null "SNAPPY" "-DENABLE_SNAPPY=${SNAPPY}"
+configure_flags_append_if_not_null "SRV" "-DENABLE_SRV=${SRV}"
+configure_flags_append_if_not_null "ZLIB" "-DENABLE_ZLIB=${ZLIB}"
 
 if [[ "${DEBUG}" == "ON" ]]; then
   configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
