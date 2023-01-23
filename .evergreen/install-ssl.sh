@@ -18,6 +18,19 @@ declare install_dir="${mongoc_dir}/install-dir"
 
 declare -a ssl_extra_flags
 
+if [[ "${OSTYPE}" == darwin* ]]; then
+  # MacOS does not have nproc.
+  nproc() {
+    sysctl -n hw.logicalcpu
+  }
+fi
+
+# OpenSSL prior to 1.1.0 complains about "jobserver unavailable" if explicit N
+# is given to `-j` then defaults to N=1. Prefer unbounded parallelism over
+# none instead.
+declare njobs
+njobs="$(nproc)"
+
 build_target_if_exists() {
   if make -n "${1:?}" 2>/dev/null; then
     make -s "${@}"
@@ -35,7 +48,7 @@ install_openssl() {
     set -o xtrace
     ./config --prefix="${install_dir}" "${ssl_extra_flags[@]}" shared -fPIC
     make -j depend
-    build_target_if_exists "build_crypto"       # <1.1.0
+    build_target_if_exists "build_crypto"       # <1.1.0; parallel is broken.
     build_target_if_exists "build_engines" "-j" # <1.1.0
     build_target_if_exists "build_ssl" "-j"     # <1.1.0
     build_target_if_exists "build_libs" "-j"    # <1.1.0
@@ -53,7 +66,7 @@ install_openssl_fips() {
     set -x xtrace
     ./config --prefix="${install_dir}" -fPIC
     make -j build_crypto
-    make build_fips
+    make build_fips # Parallel is broken.
     make install_sw
   ) >/dev/null
   popd # openssl-fips-2.0.16
@@ -69,7 +82,7 @@ install_libressl() {
   (
     set -o xtrace
     ./configure --prefix="${install_dir}"
-    make -s -j install
+    make -s -j "${njobs}" install
   ) >/dev/null
   popd # "${SSL}"
 }

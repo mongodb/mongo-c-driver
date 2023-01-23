@@ -185,6 +185,11 @@ if [[ "${OSTYPE}" == darwin* ]]; then
   # Add path to scan-build and lcov, but with low priority to avoid overwriting
   # paths to other system-installed LLVM binaries such as clang.
   PATH="${PATH}:/usr/local/opt/llvm/bin"
+
+  # MacOS does not have nproc.
+  nproc() {
+    sysctl -n hw.logicalcpu
+  }
 fi
 
 if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
@@ -202,7 +207,7 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
     -DCMAKE_PREFIX_PATH="${cmake_prefix_path}" \
     -DBUILD_TESTING=OFF \
     ..
-  make -j install
+  make -j "$(nproc)" install
   popd # libmongocrypt/cmake-build
 else
   # Hosts may have libmongocrypt installed from apt/yum. We do not want to pick those up
@@ -232,10 +237,10 @@ if [[ "${ANALYZE}" == "ON" ]]; then
   "${scan_build_binary}" "${CMAKE}" "${configure_flags[@]}" ${EXTRA_CONFIGURE_FLAGS} .
 
   # Put clang static analyzer results in scan/ and fail build if warnings found.
-  "${scan_build_binary}" -o scan --status-bugs make -j all
+  "${scan_build_binary}" -o scan --status-bugs make -j "$(nproc)" all
 else
   # shellcheck disable=SC2086
   "${CMAKE}" "${configure_flags[@]}" ${EXTRA_CONFIGURE_FLAGS} .
-  make -j all
+  make -j "$(nproc)" all
   make install
 fi

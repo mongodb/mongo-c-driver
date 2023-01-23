@@ -79,6 +79,7 @@ if [[ "${CC}" =~ mingw ]]; then
   env \
     CONFIGURE_FLAGS="${configure_flags[*]}" \
     INSTALL_DIR="${install_dir}" \
+    NJOBS="$(nproc)" \
     cmd.exe /c "$(to_windows_path "${script_dir}/compile-windows-mingw.bat")"
   exit
 fi
