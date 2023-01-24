@@ -113,7 +113,7 @@ else
 fi
 
 if [[ -n "${ZSTD}" ]]; then
-  # Since zstd inconsitently installed on macos-1014.
+  # Since zstd is inconsistently installed on macos-1014.
   # Remove this check in CDRIVER-3483.
   if [[ "${OSTYPE}" != darwin* ]]; then
     configure_flags_append "-DENABLE_ZSTD=${ZSTD}"
