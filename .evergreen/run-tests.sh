@@ -54,6 +54,7 @@ if [ "$DNS" != "nodns" ]; then
       export MONGOC_TEST_DNS_LOADBALANCED=on
    else
       export MONGOC_TEST_DNS=on
+      export MONGOC_TEST_DNS_SRV_POLLING=on
    fi
 fi
 
