@@ -5,9 +5,8 @@ set -o pipefail
 
 set +o xtrace # Don't echo commands
 
-to_absolute() (
-  cd "${1:?}" && pwd
-)
+# shellcheck source=.evergreen/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
