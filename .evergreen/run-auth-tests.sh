@@ -89,9 +89,8 @@ PATH="${openssl_bin_prefix}" LD_LIBRARY_PATH="${openssl_lib_prefix}" openssl ver
 ulimit -c unlimited || true
 
 if command -v ldd >/dev/null; then
-  # MacOS does not have ldd.
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" ldd "${ping}" | grep "libssl"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" ldd "${test_gssapi}" | grep "libssl"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" ldd "${ping}" | grep "libssl" || true
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" ldd "${test_gssapi}" | grep "libssl" || true
 fi
 
 if [[ "${ssl}" != "OFF" ]]; then
