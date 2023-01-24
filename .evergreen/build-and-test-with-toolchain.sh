@@ -19,10 +19,8 @@ sudo tar -xvf "${toolchain_tar_gz}" -C /opt/mongo-c-toolchain
 echo "--- TOOLCHAIN MANIFEST ---"
 cat /opt/mongo-c-toolchain/MANIFEST.txt
 
-declare old_path="${PATH}"
-
 declare addl_path
-addl_path="$(readlink -f /opt/mongo-c-toolchain/bin):${old_path}"
+addl_path="$(readlink -f /opt/mongo-c-toolchain/bin):${PATH:-}"
 
 declare cmake_binary
 cmake_binary="$(readlink -f /opt/mongo-c-toolchain/bin/cmake)"
@@ -53,7 +51,6 @@ for ssl_ver in "${ssl_vers[@]}"; do
   declare new_path
   new_path="$(readlink -f "/opt/mongo-c-toolchain/${ssl_ver}/bin")"
   new_path+=":${addl_path}"
-  new_path+=":${old_path}"
 
   declare ssl_base_dir
   ssl_base_dir="$(readlink -f "/opt/mongo-c-toolchain/${ssl_ver}")"
