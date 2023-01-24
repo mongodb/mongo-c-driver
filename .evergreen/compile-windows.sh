@@ -33,7 +33,7 @@ configure_flags_append() {
 
 configure_flags_append_if_not_null() {
   declare var="${1:?}"
-  if [[ -n "${!1:-}" ]]; then
+  if [[ -n "${!var:-}" ]]; then
     shift
     configure_flags+=("${@:?}")
   fi
