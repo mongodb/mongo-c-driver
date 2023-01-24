@@ -76,16 +76,13 @@ if [[ -f "${pem_file}" ]]; then
   [[ ! -d "${openssl_install_dir}/ssl" ]] || cp "${pem_file}" "${openssl_install_dir}/ssl/cert.pem"
 fi
 
-# Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH and
-# PATH when necessary to avoid conflicting with system binary requirements.
+# Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH when
+# necessary to avoid conflicting with system binary requirements.
 declare openssl_lib_prefix="${LD_LIBRARY_PATH:-}"
-declare openssl_bin_prefix="${PATH:-}"
 if [[ -d "${openssl_install_dir}" ]]; then
   openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
-  openssl_bin_prefix="${openssl_install_dir}/bin:${openssl_bin_prefix:-}"
 fi
 
-PATH="${openssl_bin_prefix}" LD_LIBRARY_PATH="${openssl_lib_prefix}" openssl version || true
 ulimit -c unlimited || true
 
 if command -v ldd >/dev/null; then
