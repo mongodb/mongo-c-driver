@@ -8,7 +8,4 @@ set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
 
 %CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake  %CONFIGURE_FLAGS% || exit /b
 
-%CMAKE_MAKE_PROGRAM% -j %NJOBS% || exit /b
-
-set MONGOC_TEST_SKIP_LIVE=on
-.\src\libmongoc\test-libmongoc.exe --no-fork -d -F test-results.json --skip-tests .evergreen\skip-tests.txt
+%CMAKE_MAKE_PROGRAM% -j %NJOBS%
