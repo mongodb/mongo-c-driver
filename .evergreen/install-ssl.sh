@@ -68,7 +68,7 @@ install_openssl_fips() {
   tar zxf fips.tar.gz
   pushd openssl-fips-2.0.16
   (
-    set -x xtrace
+    set -o xtrace
     ./config --prefix="${openssl_install_dir}" -fPIC
     make -j build_crypto
     make build_fips # Parallel is broken.
