@@ -70,10 +70,10 @@ fi
 # We need to copy it to our custom installed OpenSSL/LibreSSL trust store.
 declare pem_file="/etc/ca-certificates/extracted/tls-ca-bundle.pem"
 if [[ -f "${pem_file}" ]]; then
-  [[ ! -d "${install_dir}" ]] || cp "${pem_file}" "${install_dir}/cert.pem"
-  [[ ! -d "${install_dir}/ssl" ]] || cp "${pem_file}" "${install_dir}/ssl/cert.pem"
-  [[ ! -d "${openssl_install_dir}" ]] || cp "${pem_file}" "${openssl_install_dir}/cert.pem"
-  [[ ! -d "${openssl_install_dir}/ssl" ]] || cp "${pem_file}" "${openssl_install_dir}/ssl/cert.pem"
+  [[ ! -d "${install_dir}" ]] || cp -v "${pem_file}" "${install_dir}/cert.pem"
+  [[ ! -d "${install_dir}/ssl" ]] || cp -v "${pem_file}" "${install_dir}/ssl/cert.pem"
+  [[ ! -d "${openssl_install_dir}" ]] || cp -v "${pem_file}" "${openssl_install_dir}/cert.pem"
+  [[ ! -d "${openssl_install_dir}/ssl" ]] || cp -v "${pem_file}" "${openssl_install_dir}/ssl/cert.pem"
 fi
 
 # Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH when
