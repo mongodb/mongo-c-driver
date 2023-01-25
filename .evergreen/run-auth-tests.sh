@@ -92,6 +92,10 @@ ulimit -c unlimited || true
 if command -v ldd >/dev/null; then
   LD_LIBRARY_PATH="${openssl_lib_prefix}" ldd "${ping}" | grep "libssl" || true
   LD_LIBRARY_PATH="${openssl_lib_prefix}" ldd "${test_gssapi}" | grep "libssl" || true
+elif command -v otool >/dev/null; then
+  # Try using otool on MacOS if ldd is not available.
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" otool -L "${ping}" | grep "libssl" || true
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" otool -L "${test_gssapi}" | grep "libssl" || true
 fi
 
 if [[ "${ssl}" != "OFF" ]]; then
