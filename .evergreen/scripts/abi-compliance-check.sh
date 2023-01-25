@@ -24,11 +24,17 @@ env \
 # checkout the newest release
 git checkout "tags/${newest}" -f
 
+declare compile_script=".evergreen/scripts/compile.sh"
+if [[ ! -f "${compile_script}" ]]; then
+  # Compatibility: remove once latest release contains relocated script.
+  compile_script=".evergreen/compile.sh"
+fi
+
 # build the newest release
 env \
   CFLAGS="-g -Og" \
   EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/latest-release-install" \
-  bash .evergreen/scripts/compile.sh
+  bash "${compile_script}"
 
 # check for abi compliance. Generates HTML Reports.
 cd abi-compliance
