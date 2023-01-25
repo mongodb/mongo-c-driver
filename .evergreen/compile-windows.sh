@@ -1,148 +1,114 @@
 #!/usr/bin/env bash
 
-set -o igncr    # Ignore CR in this script
-set -o errexit  # Exit the script with error if any of the commands fail
+set -o errexit
+set -o pipefail
 
-# Supported/used environment variables:
-#  CC              Which compiler to use
-#  C_STD_VERSION   C standard version to compile with (default: c99)
-#  SSL             OPENSSL, OPENSSL_STATIC, WINDOWS, or OFF
-#  SASL            AUTO, SSPI, CYRUS, or OFF
-#  SRV             Whether to enable SRV: ON or OFF
-#  RELEASE         Enable release-build MSVC flags (default: debug flags)
-#  SKIP_MOCK_TESTS Skips running the libmongoc mock server tests after compiling
+set -o igncr # Ignore CR in this script for Windows compatibility.
 
+# shellcheck source=.evergreen/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-INSTALL_DIR="$(cygpath -a ./install-dir -w)"
-CONFIGURE_FLAGS="\
-   -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
-   -DCMAKE_PREFIX_PATH=${INSTALL_DIR} \
-   -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
-   -DENABLE_MAINTAINER_FLAGS=ON \
-   -DENABLE_BSON=ON"
-BUILD_FLAGS="/m"  # Number of concurrent processes. No value=# of cpus
-CMAKE="/cygdrive/c/cmake/bin/cmake"
-CC=${CC:-"Visual Studio 15 2017 Win64"}
-C_STD_VERSION=${CSTD_VERSION:-99}
-SSL=${SSL:-WINDOWS}
-SASL=${SASL:-SSPI}
+check_var_opt C_STD_VERSION # CMake default: 99.
+check_var_opt CC "Visual Studio 15 2017 Win64"
+check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
+check_var_opt DEBUG "OFF"
+check_var_opt RELEASE "OFF"
+check_var_opt SASL "SSPI"   # CMake default: AUTO.
+check_var_opt SNAPPY        # CMake default: AUTO.
+check_var_opt SRV           # CMake default: AUTO.
+check_var_opt SSL "WINDOWS" # CMake default: OFF.
+check_var_opt ZSTD          # CMake default: AUTO.
 
-echo "CC: $CC"
-echo "C_STD_VERSION: $C_STD_VERSION"
-echo "RELEASE: $RELEASE"
-echo "SASL: $SASL"
+declare script_dir
+script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 
-if [ "$RELEASE" ]; then
-   # Build from the release tarball.
-   mkdir build-dir
-   tar xf ../mongoc.tar.gz -C build-dir --strip-components=1
-   cd build-dir
+declare mongoc_dir
+mongoc_dir="$(to_absolute "${script_dir}/..")"
+
+declare -a configure_flags
+
+configure_flags_append() {
+  configure_flags+=("${@:?}")
+}
+
+configure_flags_append_if_not_null() {
+  declare var="${1:?}"
+  if [[ -n "${!var:-}" ]]; then
+    shift
+    configure_flags+=("${@:?}")
+  fi
+}
+
+declare install_dir="${mongoc_dir}/install-dir"
+
+configure_flags_append "-DCMAKE_INSTALL_PREFIX=$(to_windows_path "${install_dir}")"
+configure_flags_append "-DCMAKE_PREFIX_PATH=$(to_windows_path "${install_dir}")"
+configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
+configure_flags_append "-DENABLE_BSON=ON"
+configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
+
+if [[ "${RELEASE}" == "ON" ]]; then
+  # Build from the release tarball.
+  mkdir build-dir
+  tar xf ../mongoc.tar.gz -C build-dir --strip-components=1
+  cd build-dir
 fi
 
-CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_C_STANDARD=$C_STD_VERSION"
+configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
+configure_flags_append_if_not_null SASL "-DENABLE_SASL=${SASL}"
+configure_flags_append_if_not_null SNAPPY "-DENABLE_SNAPPY=${SNAPPY}"
+configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV}"
+configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB}"
 
-CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=$SASL"
-
-case "$SSL" in
-   OPENSSL)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=OPENSSL"
-      ;;
-   OPENSSL_STATIC)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=OPENSSL -DOPENSSL_USE_STATIC_LIBS=ON"
-      ;;
-   WINDOWS)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=WINDOWS"
-      ;;
-   OFF)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL:BOOL=OFF"
-      ;;
-   *)
-   case "$CC" in
-      *Win64)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS"
-      ;;
-      *)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL:BOOL=OFF"
-      ;;
-   esac
-esac
-
-case "$SNAPPY" in
-   system)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=ON"
-      ;;
-   no)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=OFF"
-      ;;
-esac
-
-case "$ZLIB" in
-   system)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=SYSTEM"
-      ;;
-   bundled)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=BUNDLED"
-      ;;
-   no)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=OFF"
-      ;;
-esac
-
-if [ "$SRV" = "OFF" ]; then
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SRV=OFF"
-fi
-
-export CONFIGURE_FLAGS
-export INSTALL_DIR
-
-case "$CC" in
-   mingw*)
-      if [ "$RELEASE" ]; then
-         cmd.exe /c ..\\.evergreen\\compile-windows-mingw.bat
-      else
-         cmd.exe /c .evergreen\\compile-windows-mingw.bat
-      fi
-      exit 0
-   ;;
-esac
-
-if [ "$RELEASE" ]; then
-   BUILD_CONFIG="RelWithDebInfo"
-   TEST_PATH="./src/libmongoc/RelWithDebInfo/test-libmongoc.exe"
-   FAILING_FLAKY_TEST_OPTS="--skip-tests ../.evergreen/skip-tests.txt"
-   export PATH=$PATH:`pwd`/src/libbson/RelWithDebInfo:`pwd`/src/libmongoc/RelWithDebInfo:`pwd`/install-dir/bin
+if [[ "${DEBUG}" == "ON" ]]; then
+  configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
 else
-   CONFIGURE_FLAGS="${CONFIGURE_FLAGS} -DENABLE_DEBUG_ASSERTIONS=ON"
-   BUILD_CONFIG="Debug"
-   TEST_PATH="./src/libmongoc/Debug/test-libmongoc.exe"
-   FAILING_FLAKY_TEST_OPTS="--skip-tests .evergreen/skip-tests.txt"
-   export PATH=$PATH:`pwd`/src/libbson/Debug:`pwd`/src/libmongoc/Debug:`pwd`/install-dir/bin
+  configure_flags_append "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
 fi
 
-if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
-   # Build libmongocrypt, using the previously fetched installed source.
-   # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
-   git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1
-   mkdir libmongocrypt/cmake-build
-   cd libmongocrypt/cmake-build
-   "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" ../
-   "$CMAKE" --build . --target INSTALL --config $BUILD_CONFIG -- $BUILD_FLAGS
-   cd ../../
+if [ "${SSL}" == "OPENSSL_STATIC" ]; then
+  configure_flags_append "-DENABLE_SSL=OPENSSL" "-DOPENSSL_USE_STATIC_LIBS=ON"
+else
+  configure_flags_append "-DENABLE_SSL=${SSL}"
 fi
 
-"$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" $CONFIGURE_FLAGS
-"$CMAKE" --build . --target ALL_BUILD --config $BUILD_CONFIG -- $BUILD_FLAGS
-"$CMAKE" --build . --target INSTALL --config $BUILD_CONFIG -- $BUILD_FLAGS
+if [[ "${CC}" =~ mingw ]]; then
+  # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
+  configure_flags_append "-DCMAKE_CXX_STANDARD=11"
 
-export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
-export MONGOC_TEST_SKIP_LIVE=on
-export MONGOC_TEST_SKIP_SLOW=on
-
-# We are done here if we don't want to run the tests.
-if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
-   exit 0
+  env \
+    CONFIGURE_FLAGS="${configure_flags[*]}" \
+    INSTALL_DIR="${install_dir}" \
+    NJOBS="$(nproc)" \
+    cmd.exe /c "$(to_windows_path "${script_dir}/compile-windows-mingw.bat")"
+  exit
 fi
 
-export MONGOC_TEST_SERVER_LOG=stdout
+declare build_config
 
-"$TEST_PATH" --no-fork -d -F test-results.json $FAILING_FLAKY_TEST_OPTS
+if [[ "${RELEASE}" == "ON" ]]; then
+  build_config="RelWithDebInfo"
+else
+  build_config="Debug"
+  configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
+fi
+
+declare cmake_binary="/cygdrive/c/cmake/bin/cmake"
+declare compile_flags=(
+  "/m" # Number of concurrent processes. No value=# of cpus
+)
+
+if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
+  # Build libmongocrypt, using the previously fetched installed source.
+  # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
+  git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1
+  mkdir libmongocrypt/cmake-build
+  pushd libmongocrypt/cmake-build
+  "${cmake_binary}" -G "${CC}" "-DCMAKE_PREFIX_PATH=${install_dir}/lib/cmake" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="${install_dir}" ../
+  "${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"
+  popd # libmongocrypt/cmake-build
+fi
+
+"${cmake_binary}" -G "$CC" "-DCMAKE_PREFIX_PATH=${install_dir}/lib/cmake" "${configure_flags[@]}"
+"${cmake_binary}" --build . --target ALL_BUILD --config "${build_config}" -- "${compile_flags[@]}"
+"${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"

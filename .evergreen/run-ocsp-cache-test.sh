@@ -1,5 +1,5 @@
-#!/bin/bash
-#
+#!/usr/bin/env bash
+
 # End-to-end test runner for OCSP cache.
 #
 # Assumptions:
@@ -30,40 +30,47 @@
 #
 # Environment variables:
 #
-# CDRIVER_ROOT
-#   Optional. The path to mongo-c-driver source (may be same as CDRIVER_BUILD).
-#   Defaults to $(pwd)
-# CDRIVER_BUILD
-#   Optional. The path to the build of mongo-c-driver (e.g. mongo-c-driver/cmake-build).
-#   Defaults to $(pwd)
 # CERT_TYPE
 #   Required. Set to either RSA or ECDSA.
 
-set -o errexit  # Exit the script with error if any of the commands fail
+set -o errexit
+set -o pipefail
 
-CDRIVER_ROOT=${CDRIVER_ROOT:-$(pwd)}
-CDRIVER_BUILD=${CDRIVER_BUILD:-$(pwd)}
+# shellcheck source=.evergreen/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-if [ -z "$CERT_TYPE" ]; then
-    echo "Required environment variable 'CERT_TYPE' unset. See file comments for help."
-    exit 1;
+check_var_req CERT_TYPE
+
+declare script_dir
+script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
+
+declare mongoc_dir
+mongoc_dir="$(to_absolute "${script_dir}/..")"
+
+declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
+
+if ! pgrep -nf mongod >/dev/null; then
+  echo "Cannot find mongod. See file comments for help." 1>&2
+  exit 1
 fi
 
-if [ ! `pgrep -nf mongod` ]; then
-    echo "Cannot find mongod. See file comments for help."
-    exit 1;
+if ! pgrep -nf ocsp_mock >/dev/null; then
+  echo "Cannot find mock OCSP responder. See file comments for help." 1>&2
+  exit 1
 fi
 
-if [ ! `pgrep -nf ocsp_mock` ]; then
-    echo "Cannot find mock OCSP responder. See file comments for help."
-    exit 1;
+# Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH when
+# necessary to avoid conflicting with system binary requirements.
+declare openssl_lib_prefix="${LD_LIBRARY_PATH:-}"
+if [[ -d "${openssl_install_dir}" ]]; then
+  openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
 fi
 
 # This test will hang after the first ping.
-${CDRIVER_BUILD}/src/libmongoc/test-mongoc-cache ${CDRIVER_ROOT}/.evergreen/ocsp/${CERT_TYPE}/ca.pem &
+LD_LIBRARY_PATH="${openssl_lib_prefix}" "${mongoc_dir}/src/libmongoc/test-mongoc-cache" "${mongoc_dir}/.evergreen/ocsp/${CERT_TYPE}/ca.pem" &
 sleep 5 # Give the program time to contact the OCSP responder
 
 pkill -nf "ocsp_mock" # We assume that the mock OCSP responder is named "ocsp_mock"
 
 # Resume the test binary. This will cause it to send the second ping command.
-kill -s SIGCONT `pgrep -nf test-mongoc-cache`
+kill -s SIGCONT "$(pgrep -nf test-mongoc-cache)"

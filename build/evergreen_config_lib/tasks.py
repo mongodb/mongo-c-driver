@@ -63,7 +63,8 @@ class CompileTask(NamedTask):
             self.compile_sh_opt['ZSTD'] = (
                 'ON' if compression in ('all', 'zstd') else 'OFF')
 
-        self.compile_sh_opt['SANITIZE'] = ','.join(sanitize)
+        if sanitize:
+            self.compile_sh_opt['SANITIZE'] = ','.join(sanitize)
 
         self.continue_on_err = continue_on_err
 
@@ -72,13 +73,14 @@ class CompileTask(NamedTask):
 
         task['commands'].extend(self.prefix_commands)
 
-        script = ''
+        script = 'env'
         for opt, value in sorted(self.compile_sh_opt.items()):
-            script += 'export %s="%s"\n' % (opt, value)
+            script += ' %s="%s"' % (opt, value)
 
-        script += "CC='${CC}' MARCH='${MARCH}' bash .evergreen/compile.sh" + \
-                  self.extra_script
-        task['commands'].append(shell_mongoc(script))
+        script += ' bash .evergreen/compile.sh'
+        script += self.extra_script
+        task['commands'].append(shell_mongoc(
+            script, add_expansions_to_env=True))
         task['commands'].append(func('upload build'))
         task['commands'].extend(self.suffix_commands)
         return task
@@ -111,7 +113,6 @@ class CompileWithClientSideEncryption(CompileTask):
         super(CompileWithClientSideEncryption, self).__init__(*args,
                                                               extra_script=extra_script,
                                                               EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF",
-                                                              SKIP_MOCK_TESTS="ON",
                                                               **kwargs)
         self.add_tags('client-side-encryption', 'special')
 
@@ -138,7 +139,6 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
                                                                       'address'],
                                                                   EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
                                                                   PATH='/usr/lib/llvm-3.8/bin:$PATH',
-                                                                  SKIP_MOCK_TESTS="ON",
                                                                   **kwargs)
         self.add_tags('client-side-encryption')
 
@@ -146,7 +146,8 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
 class LinkTask(NamedTask):
     def __init__(self, task_name, suffix_commands, orchestration=True, **kwargs):
         if orchestration == 'ssl':
-            bootstrap_commands = [bootstrap(SSL=1)]
+            # Actual value of SSL does not matter here so long as it is not 'nossl'.
+            bootstrap_commands = [bootstrap(SSL="openssl")]
         elif orchestration:
             bootstrap_commands = [bootstrap()]
         else:
@@ -197,22 +198,16 @@ all_tasks = [
     SpecialTask('debug-compile-c11',
                 tags=['debug-compile', 'c11', 'stdflags'],
                 C_STD_VERSION='11'),
-    SpecialTask('debug-compile-coverage',
-                tags=['debug-compile', 'coverage'],
-                COVERAGE='ON',
-                suffix_commands=[func('upload coverage')]),
     CompileTask('debug-compile-no-counters',
                 tags=['debug-compile', 'no-counters'],
                 ENABLE_SHM_COUNTERS='OFF'),
     SpecialTask('debug-compile-asan-clang',
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
-                CC='clang-3.8',
                 CFLAGS='-fno-omit-frame-pointer',
                 CHECK_LOG='ON',
                 sanitize=['address'],
-                EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF',
-                PATH='/usr/lib/llvm-3.8/bin:$PATH'),
+                EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF'),
     # include -pthread in CFLAGS on gcc to address the issue explained here:
     # https://groups.google.com/forum/#!topic/address-sanitizer/JxnwgrWOLuc
     SpecialTask('debug-compile-asan-gcc',
@@ -224,29 +219,23 @@ all_tasks = [
     SpecialTask('debug-compile-asan-clang-openssl',
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
-                CC='clang-3.8',
                 CFLAGS='-fno-omit-frame-pointer',
                 CHECK_LOG='ON',
                 sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-                PATH='/usr/lib/llvm-3.8/bin:$PATH',
                 SSL='OPENSSL'),
     SpecialTask('debug-compile-ubsan',
                 compression='zlib',
-                CC='clang-3.8',
                 CFLAGS='-fno-omit-frame-pointer -fno-sanitize-recover=alignment',
                 CHECK_LOG='ON',
                 sanitize=['undefined'],
-                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
-                PATH='/usr/lib/llvm-3.8/bin:$PATH'),
+                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"),
     SpecialTask('debug-compile-ubsan-with-extra-alignment',
                 compression='zlib',
-                CC='clang-3.8',
                 CFLAGS='-fno-omit-frame-pointer -fno-sanitize-recover=alignment',
                 CHECK_LOG='ON',
                 sanitize=['undefined'],
-                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON",
-                PATH='/usr/lib/llvm-3.8/bin:$PATH'),
+                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON"),
     SpecialTask('debug-compile-scan-build',
                 tags=['clang', 'debug-compile', 'scan-build'],
                 continue_on_err=True,
@@ -325,12 +314,12 @@ all_tasks = [
              suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
-                      ENABLE_SSL=1)]),
+                      ENABLE_SSL="AUTO")]),
     LinkTask('link-with-cmake-snappy',
              suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
-                      ENABLE_SNAPPY=1)]),
+                      ENABLE_SNAPPY="ON")]),
     LinkTask('link-with-cmake-mac',
              suffix_commands=[
                  func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1)]),
@@ -344,13 +333,13 @@ all_tasks = [
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
-                      ENABLE_SSL=1)]),
+                      ENABLE_SSL="AUTO")]),
     LinkTask('link-with-cmake-snappy-deprecated',
              suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
-                      ENABLE_SNAPPY=1)]),
+                      ENABLE_SNAPPY="ON")]),
     LinkTask('link-with-cmake-mac-deprecated',
              suffix_commands=[
                  func('link sample program',
@@ -359,11 +348,12 @@ all_tasks = [
     LinkTask('link-with-cmake-windows',
              suffix_commands=[func('link sample program MSVC')]),
     LinkTask('link-with-cmake-windows-ssl',
-             suffix_commands=[func('link sample program MSVC', ENABLE_SSL=1)],
+             suffix_commands=[
+                 func('link sample program MSVC', ENABLE_SSL="AUTO")],
              orchestration='ssl'),
     LinkTask('link-with-cmake-windows-snappy',
              suffix_commands=[
-                 func('link sample program MSVC', ENABLE_SNAPPY=1)]),
+                 func('link sample program MSVC', ENABLE_SNAPPY="ON")]),
     LinkTask('link-with-cmake-mingw',
              suffix_commands=[func('link sample program mingw')]),
     LinkTask('link-with-pkg-config',
@@ -371,7 +361,7 @@ all_tasks = [
     LinkTask('link-with-pkg-config-mac',
              suffix_commands=[func('link sample program')]),
     LinkTask('link-with-pkg-config-ssl',
-             suffix_commands=[func('link sample program', ENABLE_SSL=1)]),
+             suffix_commands=[func('link sample program', ENABLE_SSL="AUTO")]),
     LinkTask('link-with-bson',
              suffix_commands=[func('link sample program bson')],
              orchestration=False),
@@ -458,7 +448,7 @@ all_tasks = [
                           ('local_file', 'mongo-c-toolchain.tar.gz'),
                       ]))]),
                   shell_mongoc(
-                      'sh ./.evergreen/build-and-test-with-toolchain.sh')
+                      'bash ./.evergreen/build-and-test-with-toolchain.sh')
               ])
 ]
 
@@ -496,22 +486,24 @@ class IntegrationTask(MatrixTask):
             self.add_tags("client-side-encryption")
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
         # Coverage tasks use a build function instead of depending on a task.
-        if self.sanitizer == "asan" and self.ssl and self.cse:
-            self.add_dependency('debug-compile-asan-%s-cse' % (
-                self.display('ssl'),))
-        elif self.sanitizer == "asan" and self.ssl:
-            self.add_dependency('debug-compile-asan-clang-%s' % (
-                self.display('ssl'),))
-        elif self.sanitizer == "asan":
-            self.add_dependency('debug-compile-asan-clang')
-        elif self.sanitizer == 'tsan' and self.ssl:
-            self.add_dependency('debug-compile-tsan-%s' % self.display('ssl'))
-        elif self.cse:
-            self.add_dependency('debug-compile-%s-%s-cse' %
-                                (self.display('sasl'), self.display('ssl')))
-        elif not self.coverage:
-            self.add_dependency('debug-compile-%s-%s' % (
-                self.display('sasl'), self.display('ssl')))
+        if not self.coverage:
+            if self.sanitizer == "asan" and self.ssl and self.cse:
+                self.add_dependency('debug-compile-asan-%s-cse' % (
+                    self.display('ssl'),))
+            elif self.sanitizer == "asan" and self.ssl:
+                self.add_dependency('debug-compile-asan-clang-%s' % (
+                    self.display('ssl'),))
+            elif self.sanitizer == "asan":
+                self.add_dependency('debug-compile-asan-clang')
+            elif self.sanitizer == 'tsan' and self.ssl:
+                self.add_dependency('debug-compile-tsan-%s' %
+                                    self.display('ssl'))
+            elif self.cse:
+                self.add_dependency('debug-compile-%s-%s-cse' %
+                                    (self.display('sasl'), self.display('ssl')))
+            else:
+                self.add_dependency('debug-compile-%s-%s' % (
+                    self.display('sasl'), self.display('ssl')))
 
     @property
     def name(self):
@@ -534,9 +526,9 @@ class IntegrationTask(MatrixTask):
             commands.append(
                 func('fetch build', BUILD_NAME=self.depends_on['name']))
         if self.coverage:
-            commands.append(func('debug-compile-coverage-notest-%s-%s' % (
-                self.display('sasl'), self.display('ssl')
-            )))
+            # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
+            commands.append(
+                func('compile coverage', SASL='AUTO', SSL='OPENSSL'))
         commands.append(bootstrap(VERSION=self.version,
                                   TOPOLOGY=self.topology,
                                   AUTH='auth' if self.auth else 'noauth',
@@ -546,11 +538,14 @@ class IntegrationTask(MatrixTask):
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
             commands.append(func('clone drivers-evergreen-tools'))
             commands.append(func('run kms servers'))
+        if self.coverage:
+            extra["COVERAGE"] = 'ON'
         commands.append(run_tests(ASAN='on' if self.sanitizer == 'asan' else 'off',
                                   AUTH=self.display('auth'),
                                   SSL=self.display('ssl'),
                                   **extra))
         if self.coverage:
+            commands.append(func('upload coverage'))
             commands.append(func('update codecov.io'))
 
         return task
@@ -576,13 +571,14 @@ class IntegrationTask(MatrixTask):
         if not self.ssl:
             prohibit(self.sasl)
 
+        # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
         if self.coverage:
-            prohibit(self.sasl)
-
-            if self.auth:
-                require(self.ssl == 'openssl')
-            else:
-                prohibit(self.ssl)
+            require(self.topology == 'replica_set')
+            require(self.auth)
+            require(self.sasl == 'sasl')
+            require(self.ssl == 'openssl')
+            require(self.cse)
+            require(self.version == 'latest')
 
         if self.sanitizer == "asan":
             prohibit(self.sasl)
@@ -606,7 +602,6 @@ class IntegrationTask(MatrixTask):
                 # limit to SASL=AUTO to reduce redundant tasks.
                 require(self.sasl)
                 require(self.sasl != 'sspi')
-            prohibit(self.coverage)
             require(self.ssl)
 
 
@@ -815,28 +810,13 @@ all_tasks = chain(all_tasks, [
         commands=[func('build mongohouse'),
                   func('run mongohouse'),
                   func('test mongohouse')]),
-    # Compile with a function, not a task: gcov files depend on the absolute
-    # path of the executable, so we can't compile as a separate task.
-    NamedTask(
-        'test-coverage-mock-server',
-        tags=['test-coverage'],
-        commands=[func('debug-compile-coverage-notest-nosasl-openssl'),
-                  func('run mock server tests', SSL='ssl'),
-                  func('update codecov.io')]),
-    NamedTask(
-        'test-coverage-latest-server-dns',
-        tags=['test-coverage'],
-        commands=[func('debug-compile-coverage-notest-nosasl-openssl'),
-                  bootstrap(TOPOLOGY='replica_set', AUTH='auth', SSL='ssl'),
-                  run_tests(AUTH='auth', SSL='ssl', DNS='on'),
-                  func('update codecov.io')]),
     NamedTask(
         'authentication-tests-asan-memcheck',
         tags=['authentication-tests', 'asan'],
         commands=[
             shell_mongoc("""
-                SANITIZE=address DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
-                """),
+            env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
+            """, add_expansions_to_env=True),
             func('run auth tests', ASAN='on')]),
     PostCompileTask(
         'test-versioned-api',
@@ -856,11 +836,12 @@ all_tasks = chain(all_tasks, [
 class SSLTask(Task):
     def __init__(self, version, patch, cflags=None, fips=False, enable_ssl=False, **kwargs):
         full_version = version + patch + ('-fips' if fips else '')
-        script = ''
+        script = 'env'
         if cflags:
-            script += 'export CFLAGS=%s\n' % (cflags,)
+            script += f' CFLAGS={cflags}'
 
-        script += "DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF"
+        script += ' DEBUG=ON SASL=OFF'
+
         if enable_ssl:
             script += " SSL=" + enable_ssl
         elif 'libressl' in version:
@@ -868,14 +849,11 @@ class SSLTask(Task):
         else:
             script += " SSL=OPENSSL"
 
-        if fips:
-            script += " OPENSSL_FIPS=1"
-
         script += " bash .evergreen/compile.sh"
 
         super(SSLTask, self).__init__(commands=[
             func('install ssl', SSL=full_version),
-            shell_mongoc(script),
+            shell_mongoc(script, add_expansions_to_env=True),
             func('run auth tests', **kwargs),
             func('upload build')])
 
@@ -895,15 +873,12 @@ class SSLTask(Task):
 
 
 all_tasks = chain(all_tasks, [
-    SSLTask('openssl-0.9.8', 'zh', obsolete_tls=True),
-    SSLTask('openssl-1.0.0', 't', obsolete_tls=True),
-    SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls'),
+    SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls', ),
     SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls', fips=True),
-    SSLTask('openssl-1.0.2', 'l'),
-    SSLTask('openssl-1.1.0', 'f'),
+    SSLTask('openssl-1.0.2', 'l', cflags='-Wno-redundant-decls', ),
+    SSLTask('openssl-1.1.0', 'l'),
     SSLTask('libressl-2.5', '.2', require_tls12=True),
-    SSLTask('libressl-3.0', '.2', require_tls12=True,
-            enable_ssl="AUTO", cflags="-Wno-redundant-decls"),
+    SSLTask('libressl-3.0', '.2', require_tls12=True, enable_ssl="AUTO"),
     SSLTask('libressl-3.0', '.2', require_tls12=True),
 ])
 
@@ -1019,26 +994,33 @@ class OCSPTask(MatrixTask):
 
         # The cache test expects a revoked response from an OCSP responder, exactly like TEST_4.
         test_column = 'TEST_4' if self.test == 'cache' else self.test.upper()
+        use_delegate = 'ON' if self.delegate == 'delegate' else 'OFF'
 
-        commands.append(shell_mongoc(
-            'TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s bash .evergreen/run-ocsp-responder.sh' % (
-                test_column, self.cert, 'on' if self.delegate == 'delegate' else 'off')))
+        commands.append(shell_mongoc(f'''
+        TEST_COLUMN={test_column} CERT_TYPE={self.cert} USE_DELEGATE={use_delegate} bash .evergreen/run-ocsp-responder.sh
+        '''))
+
         commands.append(orchestration)
+
         if self.depends_on['name'] == 'debug-compile-nosasl-openssl-1.0.1':
             # LD_LIBRARY_PATH is needed so the in-tree OpenSSL 1.0.1 is found at runtime
             if self.test == 'cache':
-                commands.append(shell_mongoc('export LD_LIBRARY_PATH=$(pwd)/install-dir/lib\n'
-                                             'CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+                commands.append(shell_mongoc(f'''
+                LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE={self.cert} bash .evergreen/run-ocsp-cache-test.sh
+                '''))
             else:
-                commands.append(shell_mongoc('export LD_LIBRARY_PATH=$(pwd)/install-dir/lib\n'
-                                             'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
+                commands.append(shell_mongoc(f'''
+                LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN={self.test.upper()} CERT_TYPE={self.cert} bash .evergreen/run-ocsp-test.sh
+                '''))
         else:
             if self.test == 'cache':
-                commands.append(shell_mongoc(
-                    'CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+                commands.append(shell_mongoc(f'''
+                CERT_TYPE={self.cert} bash .evergreen/run-ocsp-cache-test.sh
+                '''))
             else:
-                commands.append(shell_mongoc(
-                    'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
+                commands.append(shell_mongoc(f'''
+                TEST_COLUMN={self.test.upper()} CERT_TYPE={self.cert} bash .evergreen/run-ocsp-test.sh
+                '''))
 
         return task
 

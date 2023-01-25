@@ -85,7 +85,9 @@ all_functions = OD([
         '''),
     )),
     ('install ssl', Function(
-        shell_mongoc(r'SSL=${SSL} sh .evergreen/install-ssl.sh', test=False),
+        shell_mongoc(r'''
+        bash .evergreen/install-ssl.sh
+        ''', test=False, add_expansions_to_env=True),
     )),
     ('fetch build', Function(
         shell_exec(r'rm -rf mongoc', test=False, continue_on_err=True),
@@ -169,7 +171,7 @@ all_functions = OD([
     )),
     ('abi report', Function(
         shell_mongoc(r'''
-        sh .evergreen/abi-compliance-check.sh
+        bash .evergreen/abi-compliance-check.sh
         ''', test=False),
         shell_mongoc(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
@@ -290,106 +292,19 @@ all_functions = OD([
     )),
     ('run tests', Function(
         shell_mongoc(r'''
-        export COMPRESSORS='${COMPRESSORS}'
-        export CC='${CC}'
-        export AUTH=${AUTH}
-        export SSL=${SSL}
-        export URI=${URI}
-        export IPV4_ONLY=${IPV4_ONLY}
-        export ASAN=${ASAN}
-        export MONGOC_TEST_URI=${URI}
-        export DNS=${DNS}
-        export ASAN=${ASAN}
-        export CLIENT_SIDE_ENCRYPTION=${CLIENT_SIDE_ENCRYPTION}
-
-        # Only set creds if testing with Client Side Encryption.
-        # libmongoc may build with CSE enabled (if the host has libmongocrypt installed)
-        # and will try to run those tests (which fail on ASAN unless spawning is bypassed).
-        if [ -n "$CLIENT_SIDE_ENCRYPTION" ]; then
-          # Avoid printing credentials in logs.
-          set +o xtrace
-
-          echo "Testing with Client Side Encryption enabled."
-
-          echo "Setting temporary credentials..."
-          pushd ../drivers-evergreen-tools/.evergreen/csfle
-          export AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
-          export AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
-          export AWS_DEFAULT_REGION="us-east-1"
-          echo "Running activate-kmstlsvenv.sh..."
-          . ./activate-kmstlsvenv.sh
-          echo "Running activate-kmstlsvenv.sh... done."
-          echo "Running set-temp-creds.sh..."
-          . ./set-temp-creds.sh
-          echo "Running set-temp-creds.sh... done."
-          deactivate
-          popd
-          echo "Setting temporary credentials... done."
-
-          # Ensure temporary credentials were properly set.
-          if [ -z "$CSFLE_AWS_TEMP_ACCESS_KEY_ID" ]; then
-            echo "Failed to set temporary credentials!"
-            exit 1
-          fi
-
-          echo "Setting KMS credentials from the environment..."
-          export MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID="$CSFLE_AWS_TEMP_ACCESS_KEY_ID"
-          export MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY="$CSFLE_AWS_TEMP_SECRET_ACCESS_KEY"
-          export MONGOC_TEST_AWS_TEMP_SESSION_TOKEN="$CSFLE_AWS_TEMP_SESSION_TOKEN"
-          export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
-          export MONGOC_TEST_AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
-          export MONGOC_TEST_AZURE_TENANT_ID="${client_side_encryption_azure_tenant_id}"
-          export MONGOC_TEST_AZURE_CLIENT_ID="${client_side_encryption_azure_client_id}"
-          export MONGOC_TEST_AZURE_CLIENT_SECRET="${client_side_encryption_azure_client_secret}"
-          export MONGOC_TEST_GCP_EMAIL="${client_side_encryption_gcp_email}"
-          export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
-          export MONGOC_TEST_CSFLE_TLS_CA_FILE=../drivers-evergreen-tools/.evergreen/x509gen/ca.pem
-          export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE=../drivers-evergreen-tools/.evergreen/x509gen/client.pem
-          echo "Setting KMS credentials from the environment... done."
-          export SKIP_CRYPT_SHARED_LIB="${SKIP_CRYPT_SHARED_LIB}"
-        fi
-        export LOADBALANCED=${LOADBALANCED}
-        export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"
-        export MULTI_MONGOS_LB_URI="${MULTI_MONGOS_LB_URI}"
-        export CRYPT_SHARED_LIB_PATH="${CRYPT_SHARED_LIB_PATH}"
-        set -o errexit
         bash .evergreen/run-tests.sh
-        '''),
-    )),
-    ('run tests bson', Function(
-        shell_mongoc(r'CC="${CC}" bash .evergreen/run-tests-bson.sh'),
+        ''', add_expansions_to_env=True),
     )),
     # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
         shell_mongoc(r'''
-        export AUTH_HOST='${auth_host}'
-        export AUTH_PLAIN='${auth_plain}'
-        export AUTH_MONGODBCR='${auth_mongodbcr}'
-        export AUTH_GSSAPI='${auth_gssapi}'
-        export AUTH_CROSSREALM='${auth_crossrealm}'
-        export AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}'
-        export ATLAS_FREE='${atlas_free}'
-        export ATLAS_FREE_SRV='${atlas_free_srv}'
-        export ATLAS_REPLSET='${atlas_replset}'
-        export ATLAS_REPLSET_SRV='${atlas_replset_srv}'
-        export ATLAS_SHARD='${atlas_shard}'
-        export ATLAS_SHARD_SRV='${atlas_shard_srv}'
-        export ATLAS_TLS11='${atlas_tls11}'
-        export ATLAS_TLS11_SRV='${atlas_tls11_srv}'
-        export ATLAS_TLS12='${atlas_tls12}'
-        export ATLAS_TLS12_SRV='${atlas_tls12_srv}'
-        export REQUIRE_TLS12='${require_tls12}'
-        export OBSOLETE_TLS='${obsolete_tls}'
-        export ASAN='${ASAN}'
-        export CC='${CC}'
-        export ATLAS_SERVERLESS_SRV='${atlas_serverless_srv}'
-        export ATLAS_SERVERLESS='${atlas_serverless}'
         bash .evergreen/run-auth-tests.sh
-        ''', silent=True),
+        ''', add_expansions_to_env=True),
     )),
     ('run mock server tests', Function(
-        shell_mongoc(
-            r'CC="${CC}" ASAN=${ASAN} bash .evergreen/run-mock-server-tests.sh'),
+        shell_mongoc(r'''
+        bash .evergreen/run-mock-server-tests.sh
+        ''', add_expansions_to_env=True),
     )),
     ('cleanup', Function(
         shell_mongoc(r'''
@@ -487,17 +402,10 @@ all_functions = OD([
         curl -s https://codecov.io/bash | bash
         ''', test=False),
     )),
-    ('debug-compile-coverage-notest-nosasl-nossl', Function(
+    ('compile coverage', Function(
         shell_mongoc(r'''
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
-        '''),
-    )),
-    ('debug-compile-coverage-notest-nosasl-openssl', Function(
-        shell_mongoc(r'''
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON bash .evergreen/compile.sh
-        '''),
+        COVERAGE=ON DEBUG=ON bash .evergreen/compile.sh
+        ''', add_expansions_to_env=True),
     )),
     ('build mongohouse', Function(
         shell_mongoc(r'''
@@ -539,21 +447,8 @@ all_functions = OD([
     )),
     ('test versioned api', Function(
         shell_mongoc(r'''
-        export COMPRESSORS='${COMPRESSORS}'
-        export CC='${CC}'
-        export AUTH=${AUTH}
-        export SSL=${SSL}
-        export URI=${URI}
-        export IPV4_ONLY=${IPV4_ONLY}
-        export ASAN=${ASAN}
-        export MONGOC_TEST_URI=${URI}
-        export DNS=${DNS}
-        export ASAN=${ASAN}
-        export MONGODB_API_VERSION=1
-        bash .evergreen/run-tests.sh
-        unset MONGODB_API_VERSION
-
-        '''),
+        MONGODB_API_VERSION=1 bash .evergreen/run-tests.sh
+        ''', add_expansions_to_env=True),
     )),
     ('run aws tests', Function(
         shell_mongoc(r'''
@@ -582,15 +477,11 @@ all_functions = OD([
         EOF
         ''', silent=True),
         shell_mongoc(r'''
-        # Export the variables we need to construct URIs
-        set +o xtrace
-        export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
-        export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
         pushd ../drivers-evergreen-tools/.evergreen/auth_aws
         . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
-        sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
-        ''')
+        bash .evergreen/run-aws-tests.sh
+        ''', add_expansions_to_env=True)
     )),
     ('clone drivers-evergreen-tools', Function(
         shell_exec(r'''

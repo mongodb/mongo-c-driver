@@ -1,5 +1,7 @@
+#!/usr/bin/env bash
+
 # Test runner for AWS authentication.
-# 
+#
 # This script is meant to be run in parts (so to isolate the AWS tests).
 # Pass the desired test first argument (REGULAR, EC2, ECS, ASSUME_ROLE, LAMBDA)
 #
@@ -8,191 +10,195 @@
 #
 # Optional environment variables:
 #
-# DRIVERS_TOOLS
+# drivers_tools_dir
 #   The path to clone of https://github.com/mongodb-labs/drivers-evergreen-tools.
 #   Defaults to $(pwd)../drivers-evergreen-tools
-# CDRIVER_BUILD
+# mongoc_dir
 #   The path to the build of mongo-c-driver (e.g. mongo-c-driver/cmake-build).
 #   Defaults to $(pwd)
-# CDRIVER_ROOT
-#   The path to mongo-c-driver source (may be same as CDRIVER_BUILD).
+# mongoc_dir
+#   The path to mongo-c-driver source (may be same as mongoc_dir).
 #   Defaults to $(pwd)
-# MONGODB_BINARIES
+# mongodb_bin_dir
 #   The path to mongodb binaries.
 #   Defaults to $(pwd)/mongodb/bin
-# IAM_AUTH_ECS_ACCOUNT and IAM_AUTH_ECS_SECRET_ACCESS_KEY
+# iam_auth_ecs_account and iam_auth_ecs_secret_access_key
 #   Set to access key id/secret access key. Required for some tests.
+
+set -o errexit
+set -o pipefail
 
 # Do not trace
 set +o xtrace
 
-case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
-    cygwin*)
-        OS="WINDOWS"
-        ;;
-    darwin)
-        OS="MACOS"
-        ;;
-    *)
-        OS="LINUX"
-        ;;
-esac
+# shellcheck source=.evergreen/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-# Fail on any command returning a non-zero exit status.
-set -o errexit
+check_var_req TESTCASE
 
-DRIVERS_TOOLS=${DRIVERS_TOOLS:-$(pwd)/../drivers-evergreen-tools}
-CDRIVER_BUILD=${CDRIVER_BUILD:-$(pwd)}
-CDRIVER_ROOT=${CDRIVER_ROOT:-$(pwd)}
-MONGODB_BINARIES=${MONGODB_BINARIES:-$(pwd)/mongodb/bin}
-TESTCASE=$1
+declare script_dir
+script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 
-echo "DRIVERS_TOOLS=$DRIVERS_TOOLS"
-echo "CDRIVER_BUILD=$CDRIVER_BUILD"
-echo "MONGODB_BINARIES=$MONGODB_BINARIES"
-echo "CDRIVER_ROOT=$CDRIVER_ROOT"
-echo "TESTCASE=$TESTCASE"
+declare mongoc_dir
+mongoc_dir="$(to_absolute "${script_dir}/..")"
 
-MONGOC_PING=$CDRIVER_BUILD/src/libmongoc/mongoc-ping
+declare drivers_tools_dir
+drivers_tools_dir="$(to_absolute "${mongoc_dir}/../drivers-evergreen-tools")"
+
+declare mongodb_bin_dir="${mongoc_dir}/mongodb/bin"
+declare mongoc_ping="${mongoc_dir}/src/libmongoc/mongoc-ping"
+
 # Add libmongoc-1.0 and libbson-1.0 to library path, so mongoc-ping can find them at runtime.
-if [ "$OS" = "WINDOWS" ]; then
-    export PATH=$PATH:$CDRIVER_BUILD/src/libmongoc/Debug:$CDRIVER_BUILD/src/libbson/Debug
-    chmod +x src/libmongoc/Debug/* src/libbson/Debug/* || true
-    MONGOC_PING=$CDRIVER_BUILD/src/libmongoc/Debug/mongoc-ping.exe
-elif [ "$OS" = "MACOS" ]; then
-    export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$CDRIVER_BUILD/src/libmongoc:$CDRIVER_BUILD/src/libbson
-elif [ "$OS" = "LINUX" ]; then
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CDRIVER_BUILD/src/libmongoc:$CDRIVER_BUILD/src/libbson
+if [[ "${OSTYPE}" == "cygwin" ]]; then
+  export PATH
+  PATH+=":${mongoc_dir}/src/libmongoc/Debug"
+  PATH+=":${mongoc_dir}/src/libbson/Debug"
+
+  chmod -f +x src/libmongoc/Debug/* src/libbson/Debug/* || true
+
+  mongoc_ping="${mongoc_dir}/src/libmongoc/Debug/mongoc-ping.exe"
+elif [[ "${OSTYPE}" == darwin* ]]; then
+  export DYLD_LIBRARY_PATH
+  DYLD_LIBRARY_PATH+=":${mongoc_dir}/src/libmongoc"
+  DYLD_LIBRARY_PATH+=":${mongoc_dir}/src/libbson"
+else
+  export LD_LIBRARY_PATH
+  LD_LIBRARY_PATH+=":${mongoc_dir}/src/libmongoc"
+  LD_LIBRARY_PATH+=":$mongoc_dir/src/libbson"
 fi
 
-expect_success () {
-    echo "Should succeed:"
-    MONGODB_URI=$1
-    if ! $MONGOC_PING $MONGODB_URI; then
-        echo "Unexpected auth failure"
-        exit 1
-    fi
+expect_success() {
+  echo "Should succeed:"
+  if ! "${mongoc_ping}" "${1:?}"; then
+    echo "Unexpected auth failure" 1>&2
+    exit 1
+  fi
 }
 
-expect_failure () {
-    echo "Should fail:"
-    MONGODB_URI=$1
-    if $MONGOC_PING $MONGODB_URI >output.txt 2>&1; then
-        echo "Unexpected - authed but it should not have"
-        exit 1
-    else
-        echo "auth failed as expected"
-    fi
+expect_failure() {
+  echo "Should fail:"
+  if "${mongoc_ping}" "${1:?}" >output.txt 2>&1; then
+    echo "Unexpected - authed but it should not have" 1>&2
+    exit 1
+  else
+    echo "auth failed as expected"
+  fi
 
-    if ! grep "Authentication failed" output.txt >/dev/null; then
-        echo "Unexpected, error was not an authentication failure:"
-        cat output.txt
-        exit 1
-    fi
+  if ! grep "Authentication failed" output.txt >/dev/null; then
+    echo "Unexpected, error was not an authentication failure:" 1>&2
+    cat output.txt 1>&2
+    exit 1
+  fi
 }
 
 url_encode() {
-    encoded=""
-    for c in $(echo $1 | grep -o . ); do
-        case $c in
-            [a-zA-Z0-9.~_-]) encoded=$encoded$c ;;
-            *) encoded=$encoded$(printf '%%%02X' "'$c") ;;
-        esac
-    done
-    echo $encoded
+  declare encoded=""
+  for c in $(echo ${1:?} | grep -o .); do
+    case "${c}" in
+    [a-zA-Z0-9.~_-])
+      encoded="${encoded}${c}"
+      ;;
+    *)
+      encoded="${encoded}$(printf '%%%02X' "'${c}")"
+      ;;
+    esac
+  done
+  echo "${encoded}"
 }
 
 # Some of the setup scripts expect mongo to be on path.
-export PATH=$PATH:$MONGODB_BINARIES
+export PATH
+PATH+=":${mongodb_bin_dir}"
 
-if [ "REGULAR" = "$TESTCASE" ]; then
-    echo "===== Testing regular auth via URI ====="
+if [[ "${TESTCASE}" == "REGULAR" ]]; then
+  echo "===== Testing regular auth via URI ====="
 
-    # Create user on $external db.
-    cd $DRIVERS_TOOLS/.evergreen/auth_aws
-    mongo --verbose aws_e2e_regular_aws.js
-    cd -
+  # Create user on $external db.
+  pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+  mongo --verbose aws_e2e_regular_aws.js
+  popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
-    USER_ENCODED=$(url_encode $IAM_AUTH_ECS_ACCOUNT)
-    PASS_ENCODED=$(url_encode $IAM_AUTH_ECS_SECRET_ACCESS_KEY)
+  declare user_encoded pass_encoded
+  user_encoded="$(url_encode "${iam_auth_ecs_account:?}")"
+  pass_encoded="$(url_encode "${iam_auth_ecs_secret_access_key:?}")"
 
-    expect_success "mongodb://$USER_ENCODED:$PASS_ENCODED@localhost/?authMechanism=MONGODB-AWS"
-    expect_failure "mongodb://$USER_ENCODED:bad_password@localhost/?authMechanism=MONGODB-AWS"
+  expect_success "mongodb://${user_encoded:?}:${pass_encoded:?}@localhost/?authMechanism=MONGODB-AWS"
+  expect_failure "mongodb://${user_encoded:?}:bad_password@localhost/?authMechanism=MONGODB-AWS"
 
-    exit 0
+  exit
 fi
 
-if [ "ASSUME_ROLE" = "$TESTCASE" ]; then
-    echo "===== Testing auth with session token via URI with AssumeRole ====="
-    cd $DRIVERS_TOOLS/.evergreen/auth_aws
-    mongo --verbose aws_e2e_assume_role.js
-    cd -
+if [[ "${TESTCASE}" == "ASSUME_ROLE" ]]; then
+  echo "===== Testing auth with session token via URI with AssumeRole ====="
+  pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+  mongo --verbose aws_e2e_assume_role.js
+  popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
-    USER=$(jq -r '.AccessKeyId' $DRIVERS_TOOLS/.evergreen/auth_aws/creds.json)
-    PASS=$(jq -r '.SecretAccessKey' $DRIVERS_TOOLS/.evergreen/auth_aws/creds.json)
-    TOKEN=$(jq -r '.SessionToken' $DRIVERS_TOOLS/.evergreen/auth_aws/creds.json)
+  declare user pass token
+  user="$(jq -r '.AccessKeyId' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
+  pass="$(jq -r '.SecretAccessKey' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
+  token="$(jq -r '.SessionToken' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
 
-    USER_ENCODED=$(url_encode $USER)
-    PASS_ENCODED=$(url_encode $PASS)
-    TOKEN_ENCODED=$(url_encode $TOKEN)
+  declare user_encoded pass_encoded token_encoded
+  user_encoded="$(url_encode "${user:?}")"
+  pass_encoded="$(url_encode "${pass:?}")"
+  token_encoded="$(url_encode "${token:?}")"
 
-    expect_success "mongodb://$USER_ENCODED:$PASS_ENCODED@localhost/aws?authMechanism=MONGODB-AWS&authSource=\$external&authMechanismProperties=AWS_SESSION_TOKEN:$TOKEN_ENCODED"
-    expect_failure "mongodb://$USER_ENCODED:$PASS_ENCODED@localhost/aws?authMechanism=MONGODB-AWS&authSource=\$external&authMechanismProperties=AWS_SESSION_TOKEN:bad_token"
-    exit 0
+  expect_success "mongodb://${user_encoded}:${pass_encoded}@localhost/aws?authMechanism=MONGODB-AWS&authSource=\$external&authMechanismProperties=AWS_SESSION_TOKEN:${token_encoded}"
+  expect_failure "mongodb://${user_encoded}:${pass_encoded}@localhost/aws?authMechanism=MONGODB-AWS&authSource=\$external&authMechanismProperties=AWS_SESSION_TOKEN:bad_token"
+  exit
 fi
 
-if [ "LAMBDA" = "$TESTCASE" ]; then
-    echo "===== Testing auth via environment variables ====="
+if [[ "LAMBDA" = "$TESTCASE" ]]; then
+  echo "===== Testing auth via environment variables ====="
 
-    cd $DRIVERS_TOOLS/.evergreen/auth_aws
-    mongo --verbose aws_e2e_assume_role.js
-    cd -
+  pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+  mongo --verbose aws_e2e_assume_role.js
+  popd # "${drivers_tools_dir}/.evergreen/auth_aws"
 
-    USER=$(jq -r '.AccessKeyId' $DRIVERS_TOOLS/.evergreen/auth_aws/creds.json)
-    PASS=$(jq -r '.SecretAccessKey' $DRIVERS_TOOLS/.evergreen/auth_aws/creds.json)
-    TOKEN=$(jq -r '.SessionToken' $DRIVERS_TOOLS/.evergreen/auth_aws/creds.json)
+  declare user pass token
+  user="$(jq -r '.AccessKeyId' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
+  pass="$(jq -r '.SecretAccessKey' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
+  token="$(jq -r '.SessionToken' "${drivers_tools_dir}/.evergreen/auth_aws/creds.json")"
 
-    echo "Valid credentials - should succeed:"
-    export AWS_ACCESS_KEY_ID=$USER
-    export AWS_SECRET_ACCESS_KEY=$PASS
-    export AWS_SESSION_TOKEN=$TOKEN
-    expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
-    exit 0
+  echo "Valid credentials - should succeed:"
+  export AWS_ACCESS_KEY_ID="${user:?}"
+  export AWS_SECRET_ACCESS_KEY="${pass:?}"
+  export AWS_SESSION_TOKEN="${token:?}"
+  expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
+  exit
 fi
 
-if [ "EC2" = "$TESTCASE" ]; then
-    echo "===== Testing auth via EC2 task metadata ====="
-    # Do necessary setup for EC2
-    # Create user on $external db.
-    cd $DRIVERS_TOOLS/.evergreen/auth_aws
-    mongo --verbose aws_e2e_ec2.js
-    cd -
-    echo "Valid credentials via EC2 - should succeed"
-    expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
-    exit 0
+if [[ "${TESTCASE}" == "EC2" ]]; then
+  echo "===== Testing auth via EC2 task metadata ====="
+  # Do necessary setup for EC2
+  # Create user on $external db.
+  pushd "${drivers_tools_dir}/.evergreen/auth_aws"
+  mongo --verbose aws_e2e_ec2.js
+  popd # "${drivers_tools_dir}/.evergreen/auth_aws"
+
+  echo "Valid credentials via EC2 - should succeed"
+  expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
+  exit
 fi
 
-if [ "ECS" = "$TESTCASE" ]; then
-    echo "===== Testing auth via ECS task metadata ====="
-    ls $DRIVERS_TOOLS
-    # Overwrite the test that gets run by remote ECS task.
-    cp $CDRIVER_ROOT/.evergreen/ecs_hosted_test.js $DRIVERS_TOOLS/.evergreen/auth_aws/lib
-    chmod 777 $CDRIVER_ROOT/.evergreen/run-mongodb-aws-ecs-test.sh
+if [[ "${TESTCASE}" == "ECS" ]]; then
+  echo "===== Testing auth via ECS task metadata ====="
+  [[ -d "${drivers_tools_dir}" ]]
+  # Overwrite the test that gets run by remote ECS task.
+  cp "${mongoc_dir}/.evergreen/ecs_hosted_test.js" "${drivers_tools_dir}/.evergreen/auth_aws/lib"
+  chmod 777 "${mongoc_dir}/.evergreen/run-mongodb-aws-ecs-test.sh"
 
-    cd $DRIVERS_TOOLS/.evergreen/auth_aws
+  pushd "${drivers_tools_dir}/.evergreen/auth_aws"
 
-    PROJECT_DIRECTORY=$CDRIVER_ROOT
-
-    cat <<EOF > setup.js
-    const mongo_binaries = "$MONGODB_BINARIES";
-    const project_dir = "$PROJECT_DIRECTORY";
+  cat <<EOF >setup.js
+    const mongo_binaries = "${mongodb_bin_dir}";
+    const project_dir = "${mongoc_dir}";
 EOF
 
-    $MONGODB_BINARIES/mongo --nodb setup.js aws_e2e_ecs.js
-
-    cd -
-    exit 0
+  "${mongodb_bin_dir}/mongo" --nodb setup.js aws_e2e_ecs.js
+  exit
 fi
 
-echo "Unexpected testcase '$TESTCASE'"
+echo "Unexpected testcase '${TESTCASE}'" 1>&2
 exit 1

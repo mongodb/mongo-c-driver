@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/usr/bin/env bash
+
 # Test runner for OCSP revocation checking.
 #
 # Closely models the tests described in the specification:
@@ -15,12 +16,6 @@
 #   TEST_1, TEST_2, TEST_3, TEST_4, SOFT_FAIL_TEST, MALICIOUS_SERVER_TEST_1, MALICIOUS_SERVER_TEST_2
 # CERT_TYPE
 #   Required. Set to either rsa or ecdsa.
-# CDRIVER_BUILD
-#   Optional. The path to the build of mongo-c-driver (e.g. mongo-c-driver/cmake-build).
-#   Defaults to $(pwd)
-# CDRIVER_ROOT
-#   Optional. The path to mongo-c-driver source (may be same as CDRIVER_BUILD).
-#   Defaults to $(pwd)
 # MONGODB_PORT
 #   Optional. A custom port to connect to. Defaults to 27017.
 #
@@ -28,119 +23,132 @@
 # TEST_COLUMN=TEST_1 CERT_TYPE=rsa ./run-ocsp-test.sh
 #
 
-# Fail on any command returning a non-zero exit status.
 set -o errexit
+set -o pipefail
 
-CDRIVER_ROOT=${CDRIVER_ROOT:-$(pwd)}
-CDRIVER_BUILD=${CDRIVER_BUILD:-$(pwd)}
-MONGODB_PORT=${MONGODB_PORT:-"27017"}
+# shellcheck source=.evergreen/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-if [ -z "$TEST_COLUMN" -o -z "$CERT_TYPE" ]; then
-    echo "Required environment variable unset. See file comments for help."
-    exit 1;
-fi
-echo "TEST_COLUMN=$TEST_COLUMN"
-echo "CERT_TYPE=$CERT_TYPE"
-echo "CDRIVER_ROOT=$CDRIVER_ROOT"
-echo "CDRIVER_BUILD=$CDRIVER_BUILD"
-echo "MONGODB_PORT=$MONGODB_PORT"
+check_var_req TEST_COLUMN
+check_var_req CERT_TYPE
 
-# Make paths absolute
-CDRIVER_ROOT=$(cd "$CDRIVER_ROOT"; pwd)
-CDRIVER_BUILD=$(cd "$CDRIVER_BUILD"; pwd)
+check_var_opt MONGODB_PORT "27017"
 
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-case "$OS" in
-    cygwin*) OS="WINDOWS" ;;
-    darwin) OS="MACOS" ;;
-    *) OS="LINUX" ;;
+declare script_dir
+script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
+
+declare mongoc_dir
+mongoc_dir="$(to_absolute "${script_dir}/..")"
+
+declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
+
+declare responder_required
+case "${TEST_COLUMN}" in
+TEST_1) responder_required="valid" ;;
+TEST_2) responder_required="invalid" ;;
+TEST_3) responder_required="valid" ;;
+TEST_4) responder_required="invalid" ;;
+MALICIOUS_SERVER_TEST_1) responder_required="invalid" ;;
 esac
 
-on_exit () {
-    echo "Cleaning up"
-    if [ -n "$RESPONDER_REQUIRED" ]; then
-        echo "Responder logs:"
-        cat $CDRIVER_BUILD/responder.log
-        pkill -f "ocsp_mock" || true
-    fi
+on_exit() {
+  echo "Cleaning up"
+  if [[ -n "${responder_required}" ]]; then
+    echo "Responder logs:"
+    cat "${mongoc_dir}/responder.log"
+    pkill -f "ocsp_mock" || true
+  fi
 }
 trap on_exit EXIT
 
-MONGOC_PING=$CDRIVER_BUILD/src/libmongoc/mongoc-ping
+declare mongoc_ping="${mongoc_dir}/src/libmongoc/mongoc-ping"
+
 # Add libmongoc-1.0 and libbson-1.0 to library path, so mongoc-ping can find them at runtime.
-if [ "$OS" = "WINDOWS" ]; then
-    export PATH=$PATH:$CDRIVER_BUILD/src/libmongoc/Debug:$CDRIVER_BUILD/src/libbson/Debug
-    chmod +x src/libmongoc/Debug/* src/libbson/Debug/* || true
-    MONGOC_PING=$CDRIVER_BUILD/src/libmongoc/Debug/mongoc-ping.exe
-elif [ "$OS" = "MACOS" ]; then
-    export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$CDRIVER_BUILD/src/libmongoc:$CDRIVER_BUILD/src/libbson
-elif [ "$OS" = "LINUX" ]; then
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CDRIVER_BUILD/src/libmongoc:$CDRIVER_BUILD/src/libbson
+if [[ "${OSTYPE}" == "cygwin" ]]; then
+  export PATH
+  PATH+=":${mongoc_dir}/src/libmongoc/Debug"
+  PATH+=":${mongoc_dir}/src/libbson/Debug"
+
+  chmod -f +x src/libmongoc/Debug/* src/libbson/Debug/* || true
+
+  mongoc_ping="${mongoc_dir}/src/libmongoc/Debug/mongoc-ping.exe"
+elif [[ "${OSTYPE}" == darwin* ]]; then
+  export DYLD_LIBRARY_PATH
+  DYLD_LIBRARY_PATH+=":${mongoc_dir}/src/libmongoc"
+  DYLD_LIBRARY_PATH+=":${mongoc_dir}/src/libbson"
+else
+  export LD_LIBRARY_PATH
+  LD_LIBRARY_PATH+=":${mongoc_dir}/src/libmongoc"
+  LD_LIBRARY_PATH+=":${mongoc_dir}/src/libbson"
 fi
 
-expect_success () {
-    echo "Should succeed:"
-    if ! $MONGOC_PING $MONGODB_URI; then
-        echo "Unexpected failure"
-        exit 1
-    fi
+# Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH when
+# necessary to avoid conflicting with system binary requirements.
+declare openssl_lib_prefix="${LD_LIBRARY_PATH:-}"
+if [[ -d "${openssl_install_dir}" ]]; then
+  openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
+fi
+
+expect_success() {
+  echo "Should succeed:"
+  if ! LD_LIBRARY_PATH="${openssl_lib_prefix}" "${mongoc_ping}" "${MONGODB_URI}"; then
+    echo "Unexpected failure" 1>&2
+    exit 1
+  fi
 }
 
-expect_failure () {
-    echo "Should fail:"
-    if $MONGOC_PING $MONGODB_URI >output.txt 2>&1; then
-        echo "Unexpected - succeeded but it should not have"
-        cat output.txt
-        exit 1
-    else
-        echo "failed as expected"
-    fi
+expect_failure() {
+  echo "Should fail:"
+  if LD_LIBRARY_PATH="${openssl_lib_prefix}" "${mongoc_ping}" "${MONGODB_URI}" >output.txt 2>&1; then
+    echo "Unexpected - succeeded but it should not have" 1>&2
+    cat output.txt
+    exit 1
+  else
+    echo "failed as expected"
+  fi
 
-    # libmongoc really should give a better error message for a revocation failure...
-    # It is not at all obvious what went wrong. 
-    if ! grep "No suitable servers found" output.txt >/dev/null; then
-        echo "Unexpected error, expecting TLS handshake failure"
-        cat output.txt
-        exit 1
-    fi
+  # libmongoc really should give a better error message for a revocation failure...
+  # It is not at all obvious what went wrong.
+  if ! grep "No suitable servers found" output.txt >/dev/null; then
+    echo "Unexpected error, expecting TLS handshake failure" 1>&2
+    cat output.txt
+    exit 1
+  fi
 }
 
 echo "Clearing OCSP cache for macOS/Windows"
-if [ "$OS" = "MACOS" ]; then
-    find ~/profile/Library/Keychains -name 'ocspcache.sqlite3' -exec sqlite3 "{}" 'DELETE FROM responses' \; || true
-elif [ "$OS" = "WINDOWS" ]; then
-    certutil -urlcache "*" delete || true
-fi
+case "${OSTYPE}" in
+darwin*)
+  find ~/Library/Keychains -name 'ocspcache.sqlite3' -exec sqlite3 "{}" 'DELETE FROM responses' \; || true
+  ;;
+cygwin)
+  certutil -urlcache "*" delete || true
+  ;;
+esac
 
 # Always add the tlsCAFile
-CA_PATH=$CDRIVER_ROOT/.evergreen/ocsp/$CERT_TYPE/ca.pem
-if [ "$OS" = "WINDOWS" ]; then
-    CA_PATH=$(cygpath -m -a $CA_PATH)
-fi
-BASE_URI="mongodb://localhost:$MONGODB_PORT/?tls=true&tlsCAFile=$CA_PATH"
-MONGODB_URI="$BASE_URI"
+declare ca_path="${mongoc_dir}/.evergreen/ocsp/${CERT_TYPE}/ca.pem"
+declare base_uri="mongodb://localhost:${MONGODB_PORT}/?tls=true&tlsCAFile=${ca_path}"
 
 # Only a handful of cases are expected to fail.
-if [ "TEST_1" = "$TEST_COLUMN" ]; then
-    expect_success
-elif [ "TEST_2" = "$TEST_COLUMN" ]; then
-    expect_failure
-elif [ "TEST_3" = "$TEST_COLUMN" ]; then
-    expect_success
-elif [ "TEST_4" = "$TEST_COLUMN" ]; then
-    expect_failure
-elif [ "SOFT_FAIL_TEST" = "$TEST_COLUMN" ]; then
-    expect_success
-elif [ "MALICIOUS_SERVER_TEST_1" = "$TEST_COLUMN" ]; then
-    expect_failure
-elif [ "MALICIOUS_SERVER_TEST_2" = "$TEST_COLUMN" ]; then
-    expect_failure
+if [[ "${TEST_COLUMN}" == "TEST_1" ]]; then
+  MONGODB_URI="${base_uri}" expect_success
+elif [[ "${TEST_COLUMN}" == "TEST_2" ]]; then
+  MONGODB_URI="${base_uri}" expect_failure
+elif [[ "${TEST_COLUMN}" == "TEST_3" ]]; then
+  MONGODB_URI="${base_uri}" expect_success
+elif [[ "${TEST_COLUMN}" == "TEST_4" ]]; then
+  MONGODB_URI="${base_uri}" expect_failure
+elif [[ "${TEST_COLUMN}" == "SOFT_FAIL_TEST" ]]; then
+  MONGODB_URI="${base_uri}" expect_success
+elif [[ "${TEST_COLUMN}" == "MALICIOUS_SERVER_TEST_1" ]]; then
+  MONGODB_URI="${base_uri}" expect_failure
+elif [[ "${TEST_COLUMN}" == "MALICIOUS_SERVER_TEST_2" ]]; then
+  MONGODB_URI="${base_uri}" expect_failure
 fi
 
 # With insecure options, connection should always succeed
-MONGODB_URI="$BASE_URI&tlsInsecure=true"
-expect_success
+MONGODB_URI="${base_uri}&tlsInsecure=true" expect_success
 
 # With insecure options, connection should always succeed
-MONGODB_URI="$BASE_URI&tlsAllowInvalidCertificates=true"
-expect_success
+MONGODB_URI="${base_uri}&tlsAllowInvalidCertificates=true" expect_success

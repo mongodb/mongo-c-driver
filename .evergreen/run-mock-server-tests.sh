@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
 
-set -o errexit  # Exit the script with error if any of the commands fail
+set -o errexit
+set -o pipefail
 
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-DNS=${DNS:-nodns}
+# shellcheck source=.evergreen/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-echo "CC='${CC}' ASAN=${ASAN}"
+check_var_opt ASAN "OFF"
+check_var_opt CC
+check_var_opt MARCH
+check_var_opt DNS "nodns"
 
-[ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-TEST_ARGS="-d -F test-results.json --skip-tests .evergreen/skip-tests.txt"
+declare script_dir
+script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
+
+declare -a test_args=(
+  "-d"
+  "-F"
+  "test-results.json"
+  "--skip-tests"
+  ".evergreen/skip-tests.txt"
+)
 
 # AddressSanitizer configuration
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
@@ -20,24 +32,24 @@ export MONGOC_TEST_SKIP_MOCK="off"
 export MONGOC_TEST_SKIP_LIVE="on"
 export MONGOC_TEST_SKIP_SLOW="on"
 
-DIR=$(dirname $0)
-. $DIR/add-build-dirs-to-paths.sh
+# shellcheck source=.evergreen/add-build-dirs-to-paths.sh
+. "${script_dir}/add-build-dirs-to-paths.sh"
+# shellcheck source=.evergreen/bypass-dlclose.sh
+. "${script_dir}/bypass-dlclose.sh"
 
-if [[ "${ASAN}" =~ "on" ]]; then
-   echo "Bypassing dlclose to workaround <unknown module> ASAN warnings"
-   . "$DIR/bypass-dlclose.sh"
-else
-   bypass_dlclose() { "$@"; } # Disable bypass otherwise.
+declare ld_preload="${LD_PRELOAD:-}"
+if [[ "${ASAN}" == "on" ]]; then
+  ld_preload="$(bypass_dlclose):${ld_preload}"
 fi
 
-case "$OS" in
-   cygwin*)
-      bypass_dlclose ./src/libmongoc/test-libmongoc.exe $TEST_ARGS
-      ;;
+case "${OSTYPE}" in
+cygwin)
+  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc.exe "${test_args[@]}"
+  ;;
 
-   *)
-      ulimit -c unlimited || true
+*)
+  ulimit -c unlimited || true
 
-      bypass_dlclose ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
-      ;;
+  LD_PRELOAD="${ld_preload:-}" ./src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
+  ;;
 esac

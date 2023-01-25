@@ -66,8 +66,16 @@ def strip_lines(s):
     return '\n'.join(line for line in s.split('\n') if line.strip())
 
 
-def shell_exec(script, test=True, errexit=True, xtrace=False, silent=False,
-               continue_on_err=False, working_dir=None, background=False):
+def shell_exec(script,
+               test=True,
+               errexit=True,
+               xtrace=False,
+               silent=False,
+               continue_on_err=False,
+               working_dir=None,
+               background=False,
+               add_expansions_to_env=False,
+               ):
     dedented = ''
     if errexit:
         dedented += 'set -o errexit\n'
@@ -92,6 +100,9 @@ def shell_exec(script, test=True, errexit=True, xtrace=False, silent=False,
 
     if background:
         command['params']['background'] = True
+
+    if add_expansions_to_env:
+        command['params']['add_expansions_to_env'] = True
 
     command['params']['shell'] = 'bash'
     command['params']['script'] = dedented
