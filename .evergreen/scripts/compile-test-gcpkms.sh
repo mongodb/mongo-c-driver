@@ -6,7 +6,7 @@ set -o nounset
 # Working directory is expected to be mongo-c-driver repo.
 ROOT=$(pwd)
 INSTALL_DIR=$ROOT/install
-. .evergreen/find-cmake.sh
+. .evergreen/scripts/find-cmake.sh
 echo "Installing libmongocrypt ... begin"
 # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
 git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1

@@ -53,7 +53,7 @@ if "%ENABLE_SSL%"=="1" (
 %CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
 %CMAKE% --build . --target INSTALL --config "Debug" -- /m
 
-call ..\.evergreen\check-installed-files.bat
+call ..\.evergreen\scripts\check-installed-files.bat
 if errorlevel 1 (
    exit /B %errorlevel%
 )

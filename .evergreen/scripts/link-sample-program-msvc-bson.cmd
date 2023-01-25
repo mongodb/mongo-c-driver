@@ -35,7 +35,7 @@ if "%LINK_STATIC%"=="1" (
 %CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
 %CMAKE% --build . --target INSTALL --config "Debug" -- /m
 
-call ..\.evergreen\check-installed-files-bson.bat
+call ..\.evergreen\scripts\check-installed-files-bson.bat
 if errorlevel 1 (
    exit /B %errorlevel%
 )

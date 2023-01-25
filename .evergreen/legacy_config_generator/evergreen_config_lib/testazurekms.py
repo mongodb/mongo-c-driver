@@ -30,7 +30,7 @@ def _create_tasks():
         shell_exec (r'''
           echo "Building test-azurekms ... begin"
           pushd mongoc
-          ./.evergreen/compile-test-azurekms.sh
+          ./.evergreen/scripts/compile-test-azurekms.sh
           popd
           echo "Building test-azurekms ... end"
 
@@ -67,7 +67,7 @@ def _create_tasks():
         func("fetch source"),
         shell_exec (r'''
           pushd mongoc
-          ./.evergreen/compile-test-azurekms.sh
+          ./.evergreen/scripts/compile-test-azurekms.sh
           popd
         ''', test=False),
         shell_exec (r'''

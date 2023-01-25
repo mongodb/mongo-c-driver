@@ -29,7 +29,7 @@ def _create_tasks():
         shell_exec (r'''
             echo "Building test-gcpkms ... begin"
             pushd mongoc
-            ./.evergreen/compile-test-gcpkms.sh
+            ./.evergreen/scripts/compile-test-gcpkms.sh
             popd
             echo "Building test-gcpkms ... end"
             echo "Copying files ... begin"
@@ -61,7 +61,7 @@ def _create_tasks():
         func("fetch source"),
         shell_exec (r'''
             pushd mongoc
-            ./.evergreen/compile-test-gcpkms.sh
+            ./.evergreen/scripts/compile-test-gcpkms.sh
             popd''', test=False),
          shell_exec (r'''
             export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}

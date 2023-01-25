@@ -3,7 +3,7 @@
 set -o errexit
 set -o pipefail
 
-# shellcheck source=.evergreen/env-var-utils.sh
+# shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
 check_var_opt ANALYZE "OFF"
@@ -33,7 +33,7 @@ declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 
 declare mongoc_dir
-mongoc_dir="$(to_absolute "${script_dir}/..")"
+mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
 declare install_dir="${mongoc_dir}/install-dir"
 declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
@@ -165,10 +165,10 @@ fi
 
 # Ensure find-cmake.sh is sourced *before* add-build-dirs-to-paths.sh
 # to avoid interfering with potential CMake build configuration.
-# shellcheck source=.evergreen/find-cmake.sh
+# shellcheck source=.evergreen/scripts/find-cmake.sh
 . "${script_dir}/find-cmake.sh" # ${CMAKE}
 
-# shellcheck source=.evergreen/add-build-dirs-to-paths.sh
+# shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
 
 export PKG_CONFIG_PATH

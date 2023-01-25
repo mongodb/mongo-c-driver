@@ -47,7 +47,7 @@ class CompileTask(NamedTask):
         else:
             self.extra_script = ""
 
-        # Environment variables for .evergreen/compile.sh.
+        # Environment variables for .evergreen/scripts/compile.sh.
         self.compile_sh_opt = kwargs
         if config == 'debug':
             self.compile_sh_opt['DEBUG'] = 'ON'
@@ -77,7 +77,7 @@ class CompileTask(NamedTask):
         for opt, value in sorted(self.compile_sh_opt.items()):
             script += ' %s="%s"' % (opt, value)
 
-        script += ' bash .evergreen/compile.sh'
+        script += ' bash .evergreen/scripts/compile.sh'
         script += self.extra_script
         task['commands'].append(shell_mongoc(
             script, add_expansions_to_env=True))
@@ -163,8 +163,8 @@ class LinkTask(NamedTask):
 
 all_tasks = [
     NamedTask('check-headers',
-              commands=[shell_mongoc('sh ./.evergreen/check-public-decls.sh'),
-                        shell_mongoc('python ./.evergreen/check-preludes.py .')]),
+              commands=[shell_mongoc('sh ./.evergreen/scripts/check-public-decls.sh'),
+                        shell_mongoc('python ./.evergreen/scripts/check-preludes.py .')]),
     FuncTask('make-release-archive',
              'release archive', 'upload docs', 'upload man pages',
              'upload release', 'upload build'),
@@ -377,7 +377,7 @@ all_tasks = [
     NamedTask('debian-package-build',
               commands=[
                   shell_mongoc('export IS_PATCH="${is_patch}"\n'
-                               'sh .evergreen/debian_package_build.sh'),
+                               'sh .evergreen/scripts/debian_package_build.sh'),
                   s3_put(local_file='deb.tar.gz',
                          remote_file='${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
                          content_type='${content_type|application/x-gzip}'),
@@ -386,7 +386,7 @@ all_tasks = [
                          content_type='${content_type|application/x-gzip}')]),
     NamedTask('rpm-package-build',
               commands=[
-                  shell_mongoc('sh .evergreen/build_snapshot_rpm.sh'),
+                  shell_mongoc('sh .evergreen/scripts/build_snapshot_rpm.sh'),
                   s3_put(local_file='rpm.tar.gz',
                          remote_file='${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz',
                          content_type='${content_type|application/x-gzip}'),
@@ -398,22 +398,22 @@ all_tasks = [
                              ('variant', 'releng')]),
               commands=[shell_mongoc(r'''
                   export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
-                  BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-                  cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd''')]),
+                  BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
+                  cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd''')]),
     NamedTask('install-uninstall-check-msvc',
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
               commands=[shell_mongoc(r'''
                   export CC="Visual Studio 14 2015 Win64"
-                  BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-                  cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd''')]),
+                  BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
+                  cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd''')]),
     NamedTask('install-uninstall-check',
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
               commands=[shell_mongoc(r'''
-                  DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
-                  BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
-                  sh ./.evergreen/install-uninstall-check.sh''')]),
+                  DESTDIR="$(pwd)/dest" sh ./.evergreen/scripts/install-uninstall-check.sh
+                  BSON_ONLY=1 sh ./.evergreen/scripts/install-uninstall-check.sh
+                  sh ./.evergreen/scripts/install-uninstall-check.sh''')]),
     CompileTask('debug-compile-with-warnings',
                 CFLAGS='-Werror -Wno-cast-align'),
     CompileWithClientSideEncryption('debug-compile-sasl-openssl-cse', tags=[
@@ -448,7 +448,7 @@ all_tasks = [
                           ('local_file', 'mongo-c-toolchain.tar.gz'),
                       ]))]),
                   shell_mongoc(
-                      'bash ./.evergreen/build-and-test-with-toolchain.sh')
+                      'bash ./.evergreen/scripts/build-and-test-with-toolchain.sh')
               ])
 ]
 
@@ -815,7 +815,7 @@ all_tasks = chain(all_tasks, [
         tags=['authentication-tests', 'asan'],
         commands=[
             shell_mongoc("""
-            env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
+            env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/scripts/compile.sh
             """, add_expansions_to_env=True),
             func('run auth tests', ASAN='on')]),
     PostCompileTask(
@@ -849,7 +849,7 @@ class SSLTask(Task):
         else:
             script += " SSL=OPENSSL"
 
-        script += " bash .evergreen/compile.sh"
+        script += " bash .evergreen/scripts/compile.sh"
 
         super(SSLTask, self).__init__(commands=[
             func('install ssl', SSL=full_version),
@@ -924,7 +924,7 @@ all_tasks = chain(all_tasks, IPTask.matrix())
 
 aws_compile_task = NamedTask('debug-compile-aws', commands=[shell_mongoc('''
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
-        . .evergreen/find-cmake.sh
+        . .evergreen/scripts/find-cmake.sh
         export CC='${CC}'
         $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
@@ -997,7 +997,7 @@ class OCSPTask(MatrixTask):
         use_delegate = 'ON' if self.delegate == 'delegate' else 'OFF'
 
         commands.append(shell_mongoc(f'''
-        TEST_COLUMN={test_column} CERT_TYPE={self.cert} USE_DELEGATE={use_delegate} bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN={test_column} CERT_TYPE={self.cert} USE_DELEGATE={use_delegate} bash .evergreen/scripts/run-ocsp-responder.sh
         '''))
 
         commands.append(orchestration)
@@ -1006,20 +1006,20 @@ class OCSPTask(MatrixTask):
             # LD_LIBRARY_PATH is needed so the in-tree OpenSSL 1.0.1 is found at runtime
             if self.test == 'cache':
                 commands.append(shell_mongoc(f'''
-                LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE={self.cert} bash .evergreen/run-ocsp-cache-test.sh
+                LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE={self.cert} bash .evergreen/scripts/run-ocsp-cache-test.sh
                 '''))
             else:
                 commands.append(shell_mongoc(f'''
-                LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN={self.test.upper()} CERT_TYPE={self.cert} bash .evergreen/run-ocsp-test.sh
+                LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN={self.test.upper()} CERT_TYPE={self.cert} bash .evergreen/scripts/run-ocsp-test.sh
                 '''))
         else:
             if self.test == 'cache':
                 commands.append(shell_mongoc(f'''
-                CERT_TYPE={self.cert} bash .evergreen/run-ocsp-cache-test.sh
+                CERT_TYPE={self.cert} bash .evergreen/scripts/run-ocsp-cache-test.sh
                 '''))
             else:
                 commands.append(shell_mongoc(f'''
-                TEST_COLUMN={self.test.upper()} CERT_TYPE={self.cert} bash .evergreen/run-ocsp-test.sh
+                TEST_COLUMN={self.test.upper()} CERT_TYPE={self.cert} bash .evergreen/scripts/run-ocsp-test.sh
                 '''))
 
         return task

@@ -58,4 +58,4 @@ fi
 # Back to the repo source directory.
 cd ..
 
-python .evergreen/check-files.py ./src/ cmake_build/mongo-c-driver-*/src
+python .evergreen/scripts/check-files.py ./src/ cmake_build/mongo-c-driver-*/src

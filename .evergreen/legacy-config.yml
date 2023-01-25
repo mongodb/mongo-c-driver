@@ -93,7 +93,7 @@ functions:
         export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
         export MONGOC_TEST_SKIP_LIVE=on
         export MONGOC_TEST_SKIP_SLOW=on
-        sh .evergreen/check-release-archive.sh
+        sh .evergreen/scripts/check-release-archive.sh
   install ssl:
   - command: shell.exec
     params:
@@ -102,7 +102,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        bash .evergreen/install-ssl.sh
+        bash .evergreen/scripts/install-ssl.sh
   fetch build:
   - command: shell.exec
     params:
@@ -186,8 +186,8 @@ functions:
         make
         cd ..
         mv aha-repo/aha .
-        sh .evergreen/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
-        sh .evergreen/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
+        sh .evergreen/scripts/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
+        sh .evergreen/scripts/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
   - command: s3.put
     params:
       aws_key: ${aws_key}
@@ -236,7 +236,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        bash .evergreen/abi-compliance-check.sh
+        bash .evergreen/scripts/abi-compliance-check.sh
   - command: shell.exec
     params:
       silent: true
@@ -370,7 +370,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        ./.evergreen/debug-core-evergreen.sh
+        ./.evergreen/scripts/debug-core-evergreen.sh
   upload working dir:
   - command: archive.targz_pack
     params:
@@ -409,7 +409,7 @@ functions:
         export OCSP=${OCSP}
         export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
         export LOAD_BALANCER=${LOAD_BALANCER}
-        bash .evergreen/integration-tests.sh
+        bash .evergreen/scripts/integration-tests.sh
   - command: expansions.update
     params:
       file: mongoc/mo-expansion.yml
@@ -422,7 +422,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        bash .evergreen/run-tests.sh
+        bash .evergreen/scripts/run-tests.sh
   run auth tests:
   - command: shell.exec
     type: test
@@ -432,7 +432,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        bash .evergreen/run-auth-tests.sh
+        bash .evergreen/scripts/run-auth-tests.sh
   run mock server tests:
   - command: shell.exec
     type: test
@@ -442,7 +442,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        bash .evergreen/run-mock-server-tests.sh
+        bash .evergreen/scripts/run-mock-server-tests.sh
   cleanup:
   - command: shell.exec
     params:
@@ -459,7 +459,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        for i in $(find .evergreen -name \*.sh); do
+        for i in $(find .evergreen/scripts -type f); do
           cat $i | tr -d '\r' > $i.new
           mv $i.new $i
         done
@@ -470,7 +470,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        for i in $(find .evergreen -name \*.sh); do
+        for i in $(find .evergreen/scripts -type f); do
           chmod +x $i
         done
   prepare kerberos:
@@ -500,8 +500,8 @@ functions:
         export BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=${BUILD_SAMPLE_WITH_CMAKE_DEPRECATED}
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        LINK_STATIC=  sh .evergreen/link-sample-program.sh
-        LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+        LINK_STATIC=  sh .evergreen/scripts/link-sample-program.sh
+        LINK_STATIC=1 sh .evergreen/scripts/link-sample-program.sh
   link sample program bson:
   - command: shell.exec
     type: test
@@ -512,12 +512,12 @@ functions:
         set -o errexit
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
   link sample program MSVC:
   - command: shell.exec
     type: test
@@ -531,8 +531,8 @@ functions:
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+        LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
+        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
   link sample program mingw:
   - command: shell.exec
     type: test
@@ -543,7 +543,7 @@ functions:
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
+        cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
   link sample program MSVC bson:
   - command: shell.exec
     type: test
@@ -557,8 +557,8 @@ functions:
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
-        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
+        LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
+        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
   link sample program mingw bson:
   - command: shell.exec
     type: test
@@ -569,7 +569,7 @@ functions:
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
+        cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
   update codecov.io:
   - command: shell.exec
     params:
@@ -588,7 +588,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        COVERAGE=ON DEBUG=ON bash .evergreen/compile.sh
+        COVERAGE=ON DEBUG=ON bash .evergreen/scripts/compile.sh
   build mongohouse:
   - command: shell.exec
     type: test
@@ -643,7 +643,7 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        MONGODB_API_VERSION=1 bash .evergreen/run-tests.sh
+        MONGODB_API_VERSION=1 bash .evergreen/scripts/run-tests.sh
   run aws tests:
   - command: shell.exec
     type: test
@@ -687,7 +687,7 @@ functions:
         pushd ../drivers-evergreen-tools/.evergreen/auth_aws
         . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
-        bash .evergreen/run-aws-tests.sh
+        bash .evergreen/scripts/run-aws-tests.sh
   clone drivers-evergreen-tools:
   - command: shell.exec
     params:
@@ -789,7 +789,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        sh ./.evergreen/check-public-decls.sh
+        sh ./.evergreen/scripts/check-public-decls.sh
   - command: shell.exec
     type: test
     params:
@@ -797,7 +797,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        python ./.evergreen/check-preludes.py .
+        python ./.evergreen/scripts/check-preludes.py .
 - name: make-release-archive
   commands:
   - func: release archive
@@ -817,7 +817,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O" DEBUG="ON" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/compile.sh
+        env CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O" DEBUG="ON" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: abi-compliance-check
   commands:
@@ -835,7 +835,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
+        env DEBUG="ON" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-compression-snappy
   tags:
@@ -850,7 +850,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="ON" ZLIB="OFF" ZSTD="OFF" bash .evergreen/compile.sh
+        env DEBUG="ON" SNAPPY="ON" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-compression-zstd
   tags:
@@ -865,7 +865,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" ZLIB="OFF" ZSTD="ON" bash .evergreen/compile.sh
+        env DEBUG="ON" SNAPPY="OFF" ZLIB="OFF" ZSTD="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-compression
   tags:
@@ -882,7 +882,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="ON" ZLIB="BUNDLED" ZSTD="ON" bash .evergreen/compile.sh
+        env DEBUG="ON" SNAPPY="ON" ZLIB="BUNDLED" ZSTD="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-no-align
   tags:
@@ -896,7 +896,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-nossl
   tags:
@@ -912,7 +912,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SSL="OFF" bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-lto
   commands:
@@ -924,7 +924,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-flto" DEBUG="ON" bash .evergreen/compile.sh
+        env CFLAGS="-flto" DEBUG="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-lto-thin
   commands:
@@ -936,7 +936,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-flto=thin" DEBUG="ON" bash .evergreen/compile.sh
+        env CFLAGS="-flto=thin" DEBUG="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-c11
   tags:
@@ -953,7 +953,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env C_STD_VERSION="11" DEBUG="ON" bash .evergreen/compile.sh
+        env C_STD_VERSION="11" DEBUG="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-no-counters
   tags:
@@ -968,7 +968,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" ENABLE_SHM_COUNTERS="OFF" bash .evergreen/compile.sh
+        env DEBUG="ON" ENABLE_SHM_COUNTERS="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-asan-clang
   tags:
@@ -984,7 +984,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-asan-gcc
   tags:
@@ -998,7 +998,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-pthread" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
+        env CFLAGS="-pthread" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-asan-clang-openssl
   tags:
@@ -1014,7 +1014,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-ubsan
   tags:
@@ -1028,7 +1028,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-ubsan-with-extra-alignment
   tags:
@@ -1042,7 +1042,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-scan-build
   tags:
@@ -1059,7 +1059,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env ANALYZE="ON" CC="clang" DEBUG="ON" bash .evergreen/compile.sh
+        env ANALYZE="ON" CC="clang" DEBUG="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
   - func: upload scan artifacts
   - command: shell.exec
@@ -1082,7 +1082,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" TRACING="ON" bash .evergreen/compile.sh
+        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" TRACING="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: release-compile
   depends_on:
@@ -1097,7 +1097,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env RELEASE="ON" bash .evergreen/compile.sh
+        env RELEASE="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl
   tags:
@@ -1113,7 +1113,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SSL="OPENSSL" bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl-static
   tags:
@@ -1129,7 +1129,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-darwinssl
   tags:
@@ -1145,7 +1145,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SSL="DARWIN" bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="DARWIN" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-winssl
   tags:
@@ -1161,7 +1161,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SSL="WINDOWS" bash .evergreen/compile.sh
+        env DEBUG="ON" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sasl-nossl
   tags:
@@ -1177,7 +1177,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="AUTO" SSL="OFF" bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="AUTO" SSL="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl
   tags:
@@ -1193,7 +1193,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-static
   tags:
@@ -1209,7 +1209,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sasl-darwinssl
   tags:
@@ -1225,7 +1225,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sasl-winssl
   tags:
@@ -1241,7 +1241,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="CYRUS" SSL="WINDOWS" bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="CYRUS" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sspi-nossl
   tags:
@@ -1257,7 +1257,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="SSPI" SSL="OFF" bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="SSPI" SSL="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sspi-openssl
   tags:
@@ -1273,7 +1273,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="SSPI" SSL="OPENSSL" bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="SSPI" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sspi-openssl-static
   tags:
@@ -1289,7 +1289,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="SSPI" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="SSPI" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-rdtscp
   commands:
@@ -1301,7 +1301,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" ENABLE_RDTSCP="ON" bash .evergreen/compile.sh
+        env DEBUG="ON" ENABLE_RDTSCP="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sspi-winssl
   tags:
@@ -1317,7 +1317,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="SSPI" SSL="WINDOWS" bash .evergreen/compile.sh
+        env DEBUG="ON" SASL="SSPI" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-nosrv
   tags:
@@ -1331,7 +1331,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SRV="OFF" bash .evergreen/compile.sh
+        env DEBUG="ON" SRV="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: link-with-cmake
   depends_on:
@@ -1533,7 +1533,7 @@ tasks:
       script: |-
         set -o errexit
         export IS_PATCH="${is_patch}"
-        sh .evergreen/debian_package_build.sh
+        sh .evergreen/scripts/debian_package_build.sh
   - command: s3.put
     params:
       aws_key: ${aws_key}
@@ -1561,7 +1561,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        sh .evergreen/build_snapshot_rpm.sh
+        sh .evergreen/scripts/build_snapshot_rpm.sh
   - command: s3.put
     params:
       aws_key: ${aws_key}
@@ -1593,8 +1593,8 @@ tasks:
       script: |-
         set -o errexit
         export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
-        BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-        cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+        BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
+        cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
 - name: install-uninstall-check-msvc
   depends_on:
     name: make-release-archive
@@ -1608,8 +1608,8 @@ tasks:
       script: |-
         set -o errexit
         export CC="Visual Studio 14 2015 Win64"
-        BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-        cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+        BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
+        cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
 - name: install-uninstall-check
   depends_on:
     name: make-release-archive
@@ -1622,9 +1622,9 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
-        BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
-        sh ./.evergreen/install-uninstall-check.sh
+        DESTDIR="$(pwd)/dest" sh ./.evergreen/scripts/install-uninstall-check.sh
+        BSON_ONLY=1 sh ./.evergreen/scripts/install-uninstall-check.sh
+        sh ./.evergreen/scripts/install-uninstall-check.sh
 - name: debug-compile-with-warnings
   commands:
   - command: shell.exec
@@ -1635,7 +1635,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" bash .evergreen/compile.sh
+        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-cse
   tags:
@@ -1653,10 +1653,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="OPENSSL" bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sasl-openssl-static-cse
   tags:
@@ -1674,10 +1674,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sasl-darwinssl-cse
   tags:
@@ -1695,10 +1695,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="DARWIN" bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-sasl-winssl-cse
   tags:
@@ -1716,10 +1716,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="WINDOWS" bash .evergreen/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-asan-openssl-cse
   tags:
@@ -1735,10 +1735,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-nosasl-openssl-1.0.1
   commands:
@@ -1753,7 +1753,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-Wno-redundant-decls" DEBUG="ON" SASL="OFF" SSL="OPENSSL" bash .evergreen/compile.sh
+        env CFLAGS="-Wno-redundant-decls" DEBUG="ON" SASL="OFF" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: debug-compile-tsan-openssl
   tags:
@@ -1768,7 +1768,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF" SANITIZE="thread" SSL="OPENSSL" bash .evergreen/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF" SANITIZE="thread" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload build
 - name: build-and-test-with-toolchain
   commands:
@@ -1786,7 +1786,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        bash ./.evergreen/build-and-test-with-toolchain.sh
+        bash ./.evergreen/scripts/build-and-test-with-toolchain.sh
 - name: test-asan-latest-server-auth-nosasl-openssl-cse
   tags:
   - client-side-encryption
@@ -14262,7 +14262,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/compile.sh
+        env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/scripts/compile.sh
   - func: run auth tests
     vars:
       ASAN: 'on'
@@ -14319,7 +14319,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
+        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.0.1-fips
@@ -14335,7 +14335,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
+        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.0.2
@@ -14351,7 +14351,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
+        env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-openssl-1.1.0
@@ -14367,7 +14367,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
   - func: upload build
 - name: build-and-run-authentication-tests-libressl-2.5
@@ -14383,7 +14383,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=LIBRESSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -14401,7 +14401,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SSL=AUTO bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=AUTO bash .evergreen/scripts/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -14419,7 +14419,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG=ON SASL=OFF SSL=LIBRESSL bash .evergreen/compile.sh
+        env DEBUG=ON SASL=OFF SSL=LIBRESSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
     vars:
       require_tls12: true
@@ -14518,7 +14518,7 @@ tasks:
       script: |-
         set -o errexit
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
-        . .evergreen/find-cmake.sh
+        . .evergreen/scripts/find-cmake.sh
         export CC='${CC}'
         $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
@@ -14779,7 +14779,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -14794,7 +14794,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-rsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -14811,7 +14811,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -14826,7 +14826,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-rsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -14843,7 +14843,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -14858,7 +14858,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -14875,7 +14875,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -14890,7 +14890,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -14907,7 +14907,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -14922,7 +14922,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -14939,7 +14939,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -14954,7 +14954,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -14971,7 +14971,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -14986,7 +14986,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -15003,7 +15003,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15018,7 +15018,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -15035,7 +15035,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15050,7 +15050,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -15067,7 +15067,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15082,7 +15082,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -15099,7 +15099,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15114,7 +15114,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -15131,7 +15131,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15146,7 +15146,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-rsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -15163,7 +15163,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15178,7 +15178,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -15195,7 +15195,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15210,7 +15210,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -15227,7 +15227,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15242,7 +15242,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -15259,7 +15259,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15274,7 +15274,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -15291,7 +15291,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15306,7 +15306,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -15323,7 +15323,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15338,7 +15338,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -15355,7 +15355,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15370,7 +15370,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -15387,7 +15387,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15402,7 +15402,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -15419,7 +15419,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15434,7 +15434,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -15451,7 +15451,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15466,7 +15466,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -15483,7 +15483,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15498,7 +15498,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -15515,7 +15515,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15530,7 +15530,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -15547,7 +15547,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15562,7 +15562,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -15579,7 +15579,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15594,7 +15594,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -15611,7 +15611,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15626,7 +15626,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -15643,7 +15643,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15658,7 +15658,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -15675,7 +15675,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15690,7 +15690,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -15707,7 +15707,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15722,7 +15722,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -15739,7 +15739,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15754,7 +15754,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -15771,7 +15771,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15786,7 +15786,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -15803,7 +15803,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15818,7 +15818,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -15835,7 +15835,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15850,7 +15850,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -15867,7 +15867,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15882,7 +15882,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -15899,7 +15899,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15914,7 +15914,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -15931,7 +15931,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15946,7 +15946,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -15963,7 +15963,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -15978,7 +15978,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -15995,7 +15995,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16010,7 +16010,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -16027,7 +16027,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16042,7 +16042,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -16059,7 +16059,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16074,7 +16074,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -16091,7 +16091,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16106,7 +16106,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -16123,7 +16123,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16138,7 +16138,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -16155,7 +16155,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16170,7 +16170,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -16187,7 +16187,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16202,7 +16202,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -16219,7 +16219,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16234,7 +16234,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -16251,7 +16251,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16266,7 +16266,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -16283,7 +16283,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16298,7 +16298,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -16315,7 +16315,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16330,7 +16330,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -16347,7 +16347,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16362,7 +16362,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -16379,7 +16379,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16394,7 +16394,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -16411,7 +16411,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16426,7 +16426,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -16443,7 +16443,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16458,7 +16458,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -16475,7 +16475,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16490,7 +16490,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-delegate-latest
   tags:
   - ocsp-darwinssl
@@ -16507,7 +16507,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16522,7 +16522,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-delegate-5.0
   tags:
   - ocsp-darwinssl
@@ -16539,7 +16539,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16554,7 +16554,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-delegate-4.4
   tags:
   - ocsp-darwinssl
@@ -16571,7 +16571,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16586,7 +16586,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-delegate-latest
   tags:
   - ocsp-winssl
@@ -16603,7 +16603,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16618,7 +16618,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-delegate-5.0
   tags:
   - ocsp-winssl
@@ -16635,7 +16635,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16650,7 +16650,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-delegate-4.4
   tags:
   - ocsp-winssl
@@ -16667,7 +16667,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16682,7 +16682,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -16699,7 +16699,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16714,7 +16714,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -16731,7 +16731,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16746,7 +16746,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -16763,7 +16763,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16778,7 +16778,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -16795,7 +16795,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16810,7 +16810,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -16827,7 +16827,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16842,7 +16842,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -16859,7 +16859,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16874,7 +16874,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -16891,7 +16891,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16906,7 +16906,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -16923,7 +16923,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16938,7 +16938,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -16955,7 +16955,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -16970,7 +16970,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -16987,7 +16987,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17002,7 +17002,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -17019,7 +17019,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17034,7 +17034,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -17051,7 +17051,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17066,7 +17066,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-nodelegate-latest
   tags:
   - ocsp-darwinssl
@@ -17083,7 +17083,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17098,7 +17098,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-nodelegate-5.0
   tags:
   - ocsp-darwinssl
@@ -17115,7 +17115,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17130,7 +17130,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-nodelegate-4.4
   tags:
   - ocsp-darwinssl
@@ -17147,7 +17147,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17162,7 +17162,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-nodelegate-latest
   tags:
   - ocsp-winssl
@@ -17179,7 +17179,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17194,7 +17194,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-nodelegate-5.0
   tags:
   - ocsp-winssl
@@ -17211,7 +17211,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17226,7 +17226,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-nodelegate-4.4
   tags:
   - ocsp-winssl
@@ -17243,7 +17243,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17258,7 +17258,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -17275,7 +17275,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17290,7 +17290,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -17307,7 +17307,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17322,7 +17322,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -17339,7 +17339,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17354,7 +17354,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -17371,7 +17371,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17386,7 +17386,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -17403,7 +17403,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17418,7 +17418,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -17435,7 +17435,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17450,7 +17450,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -17467,7 +17467,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17482,7 +17482,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -17499,7 +17499,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17514,7 +17514,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -17531,7 +17531,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17546,7 +17546,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -17563,7 +17563,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17578,7 +17578,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -17595,7 +17595,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17610,7 +17610,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -17627,7 +17627,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17642,7 +17642,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-delegate-latest
   tags:
   - ocsp-darwinssl
@@ -17659,7 +17659,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17674,7 +17674,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-delegate-5.0
   tags:
   - ocsp-darwinssl
@@ -17691,7 +17691,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17706,7 +17706,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-delegate-4.4
   tags:
   - ocsp-darwinssl
@@ -17723,7 +17723,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17738,7 +17738,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-delegate-latest
   tags:
   - ocsp-winssl
@@ -17755,7 +17755,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17770,7 +17770,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-delegate-5.0
   tags:
   - ocsp-winssl
@@ -17787,7 +17787,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17802,7 +17802,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-delegate-4.4
   tags:
   - ocsp-winssl
@@ -17819,7 +17819,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17834,7 +17834,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -17851,7 +17851,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17866,7 +17866,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -17883,7 +17883,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17898,7 +17898,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -17915,7 +17915,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17930,7 +17930,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -17947,7 +17947,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17962,7 +17962,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -17979,7 +17979,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -17994,7 +17994,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -18011,7 +18011,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18026,7 +18026,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -18043,7 +18043,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18058,7 +18058,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -18075,7 +18075,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18090,7 +18090,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -18107,7 +18107,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18122,7 +18122,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -18139,7 +18139,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18154,7 +18154,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -18171,7 +18171,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18186,7 +18186,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -18203,7 +18203,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18218,7 +18218,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-nodelegate-latest
   tags:
   - ocsp-darwinssl
@@ -18235,7 +18235,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18250,7 +18250,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-nodelegate-5.0
   tags:
   - ocsp-darwinssl
@@ -18267,7 +18267,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18282,7 +18282,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-nodelegate-4.4
   tags:
   - ocsp-darwinssl
@@ -18299,7 +18299,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18314,7 +18314,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-nodelegate-latest
   tags:
   - ocsp-winssl
@@ -18331,7 +18331,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18346,7 +18346,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-nodelegate-5.0
   tags:
   - ocsp-winssl
@@ -18363,7 +18363,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18378,7 +18378,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-nodelegate-4.4
   tags:
   - ocsp-winssl
@@ -18395,7 +18395,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18410,7 +18410,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -18427,7 +18427,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18442,7 +18442,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -18459,7 +18459,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18474,7 +18474,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -18491,7 +18491,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18506,7 +18506,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -18523,7 +18523,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18538,7 +18538,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -18555,7 +18555,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18570,7 +18570,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -18587,7 +18587,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18602,7 +18602,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-rsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -18619,7 +18619,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18634,7 +18634,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -18651,7 +18651,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18666,7 +18666,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -18683,7 +18683,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18698,7 +18698,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -18715,7 +18715,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18730,7 +18730,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -18747,7 +18747,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18762,7 +18762,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -18779,7 +18779,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18794,7 +18794,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-latest
   tags:
   - ocsp-darwinssl
@@ -18811,7 +18811,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18826,7 +18826,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-5.0
   tags:
   - ocsp-darwinssl
@@ -18843,7 +18843,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18858,7 +18858,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-4.4
   tags:
   - ocsp-darwinssl
@@ -18875,7 +18875,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18890,7 +18890,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-soft_fail_test-rsa-nodelegate-latest
   tags:
   - ocsp-winssl
@@ -18907,7 +18907,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18922,7 +18922,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-soft_fail_test-rsa-nodelegate-5.0
   tags:
   - ocsp-winssl
@@ -18939,7 +18939,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18954,7 +18954,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-soft_fail_test-rsa-nodelegate-4.4
   tags:
   - ocsp-winssl
@@ -18971,7 +18971,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -18986,7 +18986,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -19003,7 +19003,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19018,7 +19018,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -19035,7 +19035,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19050,7 +19050,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -19067,7 +19067,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19082,7 +19082,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -19099,7 +19099,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19114,7 +19114,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -19131,7 +19131,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19146,7 +19146,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -19163,7 +19163,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19178,7 +19178,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -19195,7 +19195,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19210,7 +19210,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -19227,7 +19227,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19242,7 +19242,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -19259,7 +19259,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19274,7 +19274,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -19291,7 +19291,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19306,7 +19306,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -19323,7 +19323,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19338,7 +19338,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -19355,7 +19355,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19370,7 +19370,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-delegate-latest
   tags:
   - ocsp-darwinssl
@@ -19387,7 +19387,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19402,7 +19402,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-delegate-5.0
   tags:
   - ocsp-darwinssl
@@ -19419,7 +19419,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19434,7 +19434,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-delegate-4.4
   tags:
   - ocsp-darwinssl
@@ -19451,7 +19451,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19466,7 +19466,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-delegate-latest
   tags:
   - ocsp-winssl
@@ -19483,7 +19483,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19498,7 +19498,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-delegate-5.0
   tags:
   - ocsp-winssl
@@ -19515,7 +19515,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19530,7 +19530,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-delegate-4.4
   tags:
   - ocsp-winssl
@@ -19547,7 +19547,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19562,7 +19562,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -19579,7 +19579,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19594,7 +19594,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl
@@ -19611,7 +19611,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19626,7 +19626,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl
@@ -19643,7 +19643,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19658,7 +19658,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -19675,7 +19675,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19690,7 +19690,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -19707,7 +19707,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19722,7 +19722,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -19739,7 +19739,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19754,7 +19754,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -19771,7 +19771,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19786,7 +19786,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -19803,7 +19803,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19818,7 +19818,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -19835,7 +19835,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19850,7 +19850,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -19867,7 +19867,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19882,7 +19882,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -19899,7 +19899,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19914,7 +19914,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -19931,7 +19931,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19946,7 +19946,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-nodelegate-latest
   tags:
   - ocsp-darwinssl
@@ -19963,7 +19963,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -19978,7 +19978,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-nodelegate-5.0
   tags:
   - ocsp-darwinssl
@@ -19995,7 +19995,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20010,7 +20010,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-nodelegate-4.4
   tags:
   - ocsp-darwinssl
@@ -20027,7 +20027,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20042,7 +20042,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-nodelegate-latest
   tags:
   - ocsp-winssl
@@ -20059,7 +20059,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20074,7 +20074,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-nodelegate-5.0
   tags:
   - ocsp-winssl
@@ -20091,7 +20091,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20106,7 +20106,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-nodelegate-4.4
   tags:
   - ocsp-winssl
@@ -20123,7 +20123,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20138,7 +20138,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -20155,7 +20155,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20170,7 +20170,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -20187,7 +20187,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20202,7 +20202,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -20219,7 +20219,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20234,7 +20234,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -20251,7 +20251,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20266,7 +20266,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -20283,7 +20283,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20298,7 +20298,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -20315,7 +20315,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20330,7 +20330,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-rsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -20347,7 +20347,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20362,7 +20362,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -20379,7 +20379,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20394,7 +20394,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -20411,7 +20411,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20426,7 +20426,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -20443,7 +20443,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20458,7 +20458,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -20475,7 +20475,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20490,7 +20490,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -20507,7 +20507,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20522,7 +20522,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_2-rsa-nodelegate-latest
   tags:
   - ocsp-winssl
@@ -20539,7 +20539,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20554,7 +20554,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_2-rsa-nodelegate-5.0
   tags:
   - ocsp-winssl
@@ -20571,7 +20571,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20586,7 +20586,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_2-rsa-nodelegate-4.4
   tags:
   - ocsp-winssl
@@ -20603,7 +20603,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20618,7 +20618,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -20635,7 +20635,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20650,7 +20650,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -20667,7 +20667,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20682,7 +20682,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -20699,7 +20699,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20714,7 +20714,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -20731,7 +20731,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20746,7 +20746,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -20763,7 +20763,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20778,7 +20778,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -20795,7 +20795,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20810,7 +20810,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/run-ocsp-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-test.sh
 - name: ocsp-openssl-cache-rsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -20827,7 +20827,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20842,7 +20842,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        CERT_TYPE=rsa bash .evergreen/run-ocsp-cache-test.sh
+        CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-cache-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -20859,7 +20859,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20874,7 +20874,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        CERT_TYPE=rsa bash .evergreen/run-ocsp-cache-test.sh
+        CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-cache-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -20891,7 +20891,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20906,7 +20906,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        CERT_TYPE=rsa bash .evergreen/run-ocsp-cache-test.sh
+        CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -20923,7 +20923,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20938,7 +20938,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa bash .evergreen/run-ocsp-cache-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -20955,7 +20955,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -20970,7 +20970,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa bash .evergreen/run-ocsp-cache-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -20987,7 +20987,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21002,7 +21002,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa bash .evergreen/run-ocsp-cache-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-cache-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl
@@ -21019,7 +21019,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21034,7 +21034,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        CERT_TYPE=ecdsa bash .evergreen/run-ocsp-cache-test.sh
+        CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-cache-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl
@@ -21051,7 +21051,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21066,7 +21066,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        CERT_TYPE=ecdsa bash .evergreen/run-ocsp-cache-test.sh
+        CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-cache-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl
@@ -21083,7 +21083,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21098,7 +21098,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        CERT_TYPE=ecdsa bash .evergreen/run-ocsp-cache-test.sh
+        CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-latest
   tags:
   - ocsp-openssl-1.0.1
@@ -21115,7 +21115,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21130,7 +21130,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa bash .evergreen/run-ocsp-cache-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-5.0
   tags:
   - ocsp-openssl-1.0.1
@@ -21147,7 +21147,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21162,7 +21162,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa bash .evergreen/run-ocsp-cache-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-4.4
   tags:
   - ocsp-openssl-1.0.1
@@ -21179,7 +21179,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF bash .evergreen/scripts/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
       OCSP: 'on'
@@ -21194,7 +21194,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa bash .evergreen/run-ocsp-cache-test.sh
+        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-cache-test.sh
 - name: test-loadbalanced-asan-auth-openssl-5.0
   tags:
   - '5.0'
@@ -21313,7 +21313,7 @@ tasks:
         set -o errexit
         echo "Building test-azurekms ... begin"
         pushd mongoc
-        ./.evergreen/compile-test-azurekms.sh
+        ./.evergreen/scripts/compile-test-azurekms.sh
         popd
         echo "Building test-azurekms ... end"
         echo "Copying files ... begin"
@@ -21353,7 +21353,7 @@ tasks:
       script: |-
         set -o errexit
         pushd mongoc
-        ./.evergreen/compile-test-azurekms.sh
+        ./.evergreen/scripts/compile-test-azurekms.sh
         popd
   - command: shell.exec
     type: test
@@ -21377,7 +21377,7 @@ tasks:
         set -o errexit
         echo "Building test-gcpkms ... begin"
         pushd mongoc
-        ./.evergreen/compile-test-gcpkms.sh
+        ./.evergreen/scripts/compile-test-gcpkms.sh
         popd
         echo "Building test-gcpkms ... end"
         echo "Copying files ... begin"
@@ -21415,7 +21415,7 @@ tasks:
       script: |-
         set -o errexit
         pushd mongoc
-        ./.evergreen/compile-test-gcpkms.sh
+        ./.evergreen/scripts/compile-test-gcpkms.sh
         popd
   - command: shell.exec
     type: test

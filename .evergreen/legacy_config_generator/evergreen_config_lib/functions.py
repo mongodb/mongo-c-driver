@@ -81,12 +81,12 @@ all_functions = OD([
         export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
         export MONGOC_TEST_SKIP_LIVE=on
         export MONGOC_TEST_SKIP_SLOW=on
-        sh .evergreen/check-release-archive.sh
+        sh .evergreen/scripts/check-release-archive.sh
         '''),
     )),
     ('install ssl', Function(
         shell_mongoc(r'''
-        bash .evergreen/install-ssl.sh
+        bash .evergreen/scripts/install-ssl.sh
         ''', test=False, add_expansions_to_env=True),
     )),
     ('fetch build', Function(
@@ -143,8 +143,8 @@ all_functions = OD([
         cd ..
         mv aha-repo/aha .
 
-        sh .evergreen/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
-        sh .evergreen/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
+        sh .evergreen/scripts/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
+        sh .evergreen/scripts/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
         ''', test=False, silent=True),
         s3_put('man-pages/libbson/${CURRENT_VERSION}/index.html',
                aws_key='${aws_key}', aws_secret='${aws_secret}',
@@ -171,7 +171,7 @@ all_functions = OD([
     )),
     ('abi report', Function(
         shell_mongoc(r'''
-        bash .evergreen/abi-compliance-check.sh
+        bash .evergreen/scripts/abi-compliance-check.sh
         ''', test=False),
         shell_mongoc(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
@@ -252,7 +252,7 @@ all_functions = OD([
                optional='True'),
     )),
     ('backtrace', Function(
-        shell_mongoc(r'./.evergreen/debug-core-evergreen.sh', test=False),
+        shell_mongoc(r'./.evergreen/scripts/debug-core-evergreen.sh', test=False),
     )),
     ('upload working dir', Function(
         targz_pack('working-dir.tar.gz', 'mongoc', './**'),
@@ -283,7 +283,7 @@ all_functions = OD([
         export OCSP=${OCSP}
         export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
         export LOAD_BALANCER=${LOAD_BALANCER}
-        bash .evergreen/integration-tests.sh
+        bash .evergreen/scripts/integration-tests.sh
         ''', test=False),
         OD([
             ("command", "expansions.update"),
@@ -292,18 +292,18 @@ all_functions = OD([
     )),
     ('run tests', Function(
         shell_mongoc(r'''
-        bash .evergreen/run-tests.sh
+        bash .evergreen/scripts/run-tests.sh
         ''', add_expansions_to_env=True),
     )),
     # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
         shell_mongoc(r'''
-        bash .evergreen/run-auth-tests.sh
+        bash .evergreen/scripts/run-auth-tests.sh
         ''', add_expansions_to_env=True),
     )),
     ('run mock server tests', Function(
         shell_mongoc(r'''
-        bash .evergreen/run-mock-server-tests.sh
+        bash .evergreen/scripts/run-mock-server-tests.sh
         ''', add_expansions_to_env=True),
     )),
     ('cleanup', Function(
@@ -314,7 +314,7 @@ all_functions = OD([
     )),
     ('windows fix', Function(
         shell_mongoc(r'''
-        for i in $(find .evergreen -name \*.sh); do
+        for i in $(find .evergreen/scripts -type f); do
           cat $i | tr -d '\r' > $i.new
           mv $i.new $i
         done
@@ -322,7 +322,7 @@ all_functions = OD([
     )),
     ('make files executable', Function(
         shell_mongoc(r'''
-        for i in $(find .evergreen -name \*.sh); do
+        for i in $(find .evergreen/scripts -type f); do
           chmod +x $i
         done
         ''', test=False),
@@ -344,20 +344,20 @@ all_functions = OD([
         export BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=${BUILD_SAMPLE_WITH_CMAKE_DEPRECATED}
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        LINK_STATIC=  sh .evergreen/link-sample-program.sh
-        LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+        LINK_STATIC=  sh .evergreen/scripts/link-sample-program.sh
+        LINK_STATIC=1 sh .evergreen/scripts/link-sample-program.sh
         '''),
     )),
     ('link sample program bson', Function(
         shell_mongoc(r'''
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
         '''),
     )),
     ('link sample program MSVC', Function(
@@ -367,15 +367,15 @@ all_functions = OD([
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+        LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
+        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
         '''),
     )),
     ('link sample program mingw', Function(
         shell_mongoc(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
+        cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
         '''),
     )),
     ('link sample program MSVC bson', Function(
@@ -385,15 +385,15 @@ all_functions = OD([
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
-        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
+        LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
+        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
         '''),
     )),
     ('link sample program mingw bson', Function(
         shell_mongoc(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
+        cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
         '''),
     )),
     ('update codecov.io', Function(
@@ -404,7 +404,7 @@ all_functions = OD([
     )),
     ('compile coverage', Function(
         shell_mongoc(r'''
-        COVERAGE=ON DEBUG=ON bash .evergreen/compile.sh
+        COVERAGE=ON DEBUG=ON bash .evergreen/scripts/compile.sh
         ''', add_expansions_to_env=True),
     )),
     ('build mongohouse', Function(
@@ -447,7 +447,7 @@ all_functions = OD([
     )),
     ('test versioned api', Function(
         shell_mongoc(r'''
-        MONGODB_API_VERSION=1 bash .evergreen/run-tests.sh
+        MONGODB_API_VERSION=1 bash .evergreen/scripts/run-tests.sh
         ''', add_expansions_to_env=True),
     )),
     ('run aws tests', Function(
@@ -480,7 +480,7 @@ all_functions = OD([
         pushd ../drivers-evergreen-tools/.evergreen/auth_aws
         . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
-        bash .evergreen/run-aws-tests.sh
+        bash .evergreen/scripts/run-aws-tests.sh
         ''', add_expansions_to_env=True)
     )),
     ('clone drivers-evergreen-tools', Function(

@@ -39,7 +39,7 @@ if errorlevel 1 (
 )
 
 set MINGW=1
-call ..\.evergreen\check-installed-files-bson.bat
+call ..\.evergreen\scripts\check-installed-files-bson.bat
 if errorlevel 1 (
    exit /B 1
 )

@@ -31,7 +31,7 @@ set -o pipefail
 # Do not trace
 set +o xtrace
 
-# shellcheck source=.evergreen/env-var-utils.sh
+# shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
 check_var_req TESTCASE
@@ -40,7 +40,7 @@ declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 
 declare mongoc_dir
-mongoc_dir="$(to_absolute "${script_dir}/..")"
+mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
 declare drivers_tools_dir
 drivers_tools_dir="$(to_absolute "${mongoc_dir}/../drivers-evergreen-tools")"
@@ -187,7 +187,7 @@ if [[ "${TESTCASE}" == "ECS" ]]; then
   [[ -d "${drivers_tools_dir}" ]]
   # Overwrite the test that gets run by remote ECS task.
   cp "${mongoc_dir}/.evergreen/ecs_hosted_test.js" "${drivers_tools_dir}/.evergreen/auth_aws/lib"
-  chmod 777 "${mongoc_dir}/.evergreen/run-mongodb-aws-ecs-test.sh"
+  chmod 777 "${script_dir}/run-mongodb-aws-ecs-test.sh"
 
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"
 

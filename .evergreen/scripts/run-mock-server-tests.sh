@@ -3,7 +3,7 @@
 set -o errexit
 set -o pipefail
 
-# shellcheck source=.evergreen/env-var-utils.sh
+# shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
 check_var_opt ASAN "OFF"
@@ -32,9 +32,9 @@ export MONGOC_TEST_SKIP_MOCK="off"
 export MONGOC_TEST_SKIP_LIVE="on"
 export MONGOC_TEST_SKIP_SLOW="on"
 
-# shellcheck source=.evergreen/add-build-dirs-to-paths.sh
+# shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
-# shellcheck source=.evergreen/bypass-dlclose.sh
+# shellcheck source=.evergreen/scripts/bypass-dlclose.sh
 . "${script_dir}/bypass-dlclose.sh"
 
 declare ld_preload="${LD_PRELOAD:-}"

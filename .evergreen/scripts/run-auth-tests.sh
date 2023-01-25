@@ -5,14 +5,14 @@ set -o pipefail
 
 set +o xtrace # Don't echo commands
 
-# shellcheck source=.evergreen/env-var-utils.sh
+# shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 
 declare mongoc_dir
-mongoc_dir="$(to_absolute "${script_dir}/..")"
+mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
 declare install_dir="${mongoc_dir}/install-dir"
 declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
@@ -29,10 +29,10 @@ if grep -q "#define MONGOC_ENABLE_SSL 1" src/libmongoc/src/mongoc/mongoc-config.
   ssl="ON"
 fi
 
-# shellcheck source=.evergreen/add-build-dirs-to-paths.sh
+# shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
 
-# shellcheck source=.evergreen/bypass-dlclose.sh
+# shellcheck source=.evergreen/scripts/bypass-dlclose.sh
 . "${script_dir}/bypass-dlclose.sh"
 
 declare ping

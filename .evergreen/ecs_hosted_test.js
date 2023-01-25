@@ -27,7 +27,7 @@ TestData = {};
     assert.commandWorked(external.runCommand({createUser: AWS_ACCOUNT_ARN, roles:[{role: 'read', db: "aws"}]}));
 
     const uri = "mongodb://127.0.0.1:20000/aws?authMechanism=MONGODB-AWS";
-    const program = "/root/mongoc/.evergreen/run-mongodb-aws-ecs-test.sh";
+    const program = "/root/mongoc/.evergreen/scripts/run-mongodb-aws-ecs-test.sh";
 
     // Try the command line
     const smoke = runMongoProgram(program, uri);

@@ -36,7 +36,7 @@ variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          . "./.evergreen/find-cmake.sh"
+          . "./.evergreen/scripts/find-cmake.sh"
 
           # Disable zstd. centos6-perf does not have libzstd installed.
           $CMAKE -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DENABLE_ZSTD=OFF -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
