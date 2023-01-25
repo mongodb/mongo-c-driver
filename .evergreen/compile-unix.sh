@@ -213,7 +213,7 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
   popd # libmongocrypt/cmake-build
 else
   # Avoid symbol collisions with libmongocrypt installed via apt/yum.
-	# Note: may be overwritten by ${EXTRA_CONFIGURE_FLAGS}.
+  # Note: may be overwritten by ${EXTRA_CONFIGURE_FLAGS}.
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
