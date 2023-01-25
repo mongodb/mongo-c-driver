@@ -76,5 +76,5 @@ config = OD([
 ])
 
 this_dir = dirname(__file__)
-evergreen_dir = normpath(joinpath(this_dir, '../.evergreen'))
-generate(config, joinpath(evergreen_dir, 'config.yml'))
+evergreen_dir = normpath(joinpath(this_dir, '..'))
+generate(config, joinpath(evergreen_dir, 'legacy-config.yml'))
