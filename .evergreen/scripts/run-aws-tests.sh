@@ -186,7 +186,7 @@ if [[ "${TESTCASE}" == "ECS" ]]; then
   echo "===== Testing auth via ECS task metadata ====="
   [[ -d "${drivers_tools_dir}" ]]
   # Overwrite the test that gets run by remote ECS task.
-  cp "${mongoc_dir}/.evergreen/ecs_hosted_test.js" "${drivers_tools_dir}/.evergreen/auth_aws/lib"
+  cp "${mongoc_dir}/.evergreen/etc/ecs_hosted_test.js" "${drivers_tools_dir}/.evergreen/auth_aws/lib"
   chmod 777 "${script_dir}/run-mongodb-aws-ecs-test.sh"
 
   pushd "${drivers_tools_dir}/.evergreen/auth_aws"

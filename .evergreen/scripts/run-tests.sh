@@ -120,7 +120,7 @@ declare -a test_args=(
   "-F"
   "test-results.json"
   "--skip-tests"
-  ".evergreen/skip-tests.txt"
+  ".evergreen/etc/skip-tests.txt"
 )
 
 # TODO (CDRIVER-4045): consolidate DNS tests into regular test tasks.

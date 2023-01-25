@@ -19,7 +19,7 @@ declare -a test_args=(
   "-F"
   "test-results.json"
   "--skip-tests"
-  ".evergreen/skip-tests.txt"
+  ".evergreen/etc/skip-tests.txt"
 )
 
 # AddressSanitizer configuration

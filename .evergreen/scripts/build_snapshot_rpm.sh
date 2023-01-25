@@ -60,9 +60,9 @@ if [ -f "${spec_file}" ]; then
   echo "Found old spec file (${spec_file})...removing"
   rm -f  ${spec_file}
 fi
-cp "$(pwd)/.evergreen/${package}.spec" ..
-if [ -f .evergreen/spec.patch ]; then
-  patch -d .. -p0 -i $(pwd)/.evergreen/spec.patch
+cp "$(pwd)/.evergreen/etc/${package}.spec" ..
+if [ -f .evergreen/etc/spec.patch ]; then
+  patch -d .. -p0 -i $(pwd)/.evergreen/etc/spec.patch
 fi
 
 changelog_package=$(rpmspec --srpm -q --qf "%{name}" ${spec_file})

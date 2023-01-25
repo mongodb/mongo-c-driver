@@ -181,7 +181,7 @@ fi
 if [ ! -z "$REQUIRE_API_VERSION" ]; then
   MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --apiVersion=1"
   # Set the requireApiVersion parameter.
-  `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS $DIR/require-api-version.js
+  `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS $DIR/../etc/require-api-version.js
 fi
 
 echo $MONGO_SHELL_CONNECTION_FLAGS
