@@ -212,9 +212,8 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
   make -j "$(nproc)" install
   popd # libmongocrypt/cmake-build
 else
-  # Hosts may have libmongocrypt installed from apt/yum. We do not want to pick those up
-  # since those libmongocrypt packages statically link libbson.
-  # Note: may be overwritten by ${EXTRA_CONFIGURE_FLAGS}.
+  # Avoid symbol collisions with libmongocrypt installed via apt/yum.
+	# Note: may be overwritten by ${EXTRA_CONFIGURE_FLAGS}.
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
