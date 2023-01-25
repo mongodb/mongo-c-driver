@@ -83,6 +83,10 @@ if [[ -d "${openssl_install_dir}" ]]; then
   openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
 fi
 
+# There may be additional certs required by auth tests. Direct OpenSSL to use
+# the system cert directory if available.
+[[ ! -d /etc/ssl/certs ]] || export SSL_CERT_DIR=/etc/ssl/certs
+
 ulimit -c unlimited || true
 
 if command -v ldd >/dev/null; then
