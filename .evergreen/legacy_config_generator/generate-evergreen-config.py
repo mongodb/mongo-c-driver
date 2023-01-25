@@ -19,7 +19,7 @@
 We find that generating configuration from Python data structures is more
 legible than Evergreen's matrix syntax or a handwritten file.
 
-Written for Python 2.6+. Requires the evergreen_config_generator package.
+Requires the evergreen_config_generator package.
 """
 
 from collections import OrderedDict as OD
