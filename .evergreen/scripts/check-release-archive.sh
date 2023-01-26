@@ -1,11 +1,12 @@
-#!/bin/sh
-set -o errexit  # Exit the script with error if any of the commands fail
+#!/usr/bin/env bash
+
+set -o errexit # Exit the script with error if any of the commands fail
 
 # Check that a CLion user didn't accidentally convert NEWS from UTF-8 to ASCII
-news_type=`file NEWS`
+news_type=$(file NEWS)
 echo "NEWS file type is $news_type"
 case "$news_type" in
-  *ASCII*) exit 1 ;;
+*ASCII*) exit 1 ;;
 esac
 
 # Use modern sphinx-build from venv.
@@ -16,8 +17,8 @@ sphinx-build --version
 DIR=$(dirname $0)
 . $DIR/find-cmake.sh
 
-python build/calc_release_version.py > VERSION_CURRENT
-python build/calc_release_version.py -p > VERSION_RELEASED
+python build/calc_release_version.py >VERSION_CURRENT
+python build/calc_release_version.py -p >VERSION_RELEASED
 
 # Make the dist tarball outside of source directory to avoid interfering with
 # file checks.
@@ -36,23 +37,23 @@ tmpfiles='mongo-c-driver-*/doc/html/.doctrees \
 
 echo "Checking for built docs"
 for doc in $docs; do
-   # Check this doc is in the archive.
-   tar --wildcards -tzf $tarfile $doc
+  # Check this doc is in the archive.
+  tar --wildcards -tzf $tarfile $doc
 done
 
 echo "Checking that temp files are not included in tarball"
 for tmpfile in $tmpfiles; do
-   # Check this temp file doesn't exist.
-   if tar --wildcards -tzf $tarfile $tmpfile > /dev/null 2>&1; then
-      echo "Found temp file in archive: $tmpfile"
-      exit 1
-   fi
+  # Check this temp file doesn't exist.
+  if tar --wildcards -tzf $tarfile $tmpfile >/dev/null 2>&1; then
+    echo "Found temp file in archive: $tmpfile"
+    exit 1
+  fi
 done
 
 echo "Checking that index.3 wasn't built"
-if tar --wildcards -tzf $tarfile 'mongo-c-driver-*/doc/man/index.3' > /dev/null 2>&1; then
-   echo "Found index.3 in archive"
-   exit 1
+if tar --wildcards -tzf $tarfile 'mongo-c-driver-*/doc/man/index.3' >/dev/null 2>&1; then
+  echo "Found index.3 in archive"
+  exit 1
 fi
 
 # Back to the repo source directory.

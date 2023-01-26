@@ -8,39 +8,6 @@
 #
 ####################################
 functions:
-  upload release:
-  - command: shell.exec
-    params:
-      shell: bash
-      script: '[ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz
-        mongoc.tar.gz'
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
-      bucket: mciuploads
-      permissions: public-read
-      local_file: mongoc.tar.gz
-      content_type: ${content_type|application/x-gzip}
-  release archive:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        # Need modern Sphinx for :caption: in literal includes.
-        python -m virtualenv venv
-        cd venv
-        . bin/activate
-        ./bin/pip install sphinx docutils==0.17.1
-        cd ..
-        export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
-        export MONGOC_TEST_SKIP_LIVE=on
-        export MONGOC_TEST_SKIP_SLOW=on
-        sh .evergreen/scripts/check-release-archive.sh
   install ssl:
   - command: shell.exec
     params:
@@ -78,83 +45,6 @@ functions:
            TAR=tar
         fi
         $TAR xf build.tar.gz -C mongoc/
-  upload docs:
-  - command: shell.exec
-    params:
-      silent: true
-      working_dir: mongoc/cmake_build/src/libbson
-      shell: bash
-      script: |-
-        set -o errexit
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/docs/libbson/${CURRENT_VERSION}/index.html
-      bucket: mciuploads
-      permissions: public-read
-      local_file: mongoc/cmake_build/src/libbson/doc/html/index.html
-      content_type: text/html
-      display_name: libbson docs
-  - command: shell.exec
-    params:
-      silent: true
-      working_dir: mongoc/cmake_build/src/libmongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/docs/libmongoc/${CURRENT_VERSION}/index.html
-      bucket: mciuploads
-      permissions: public-read
-      local_file: mongoc/cmake_build/src/libmongoc/doc/html/index.html
-      content_type: text/html
-      display_name: libmongoc docs
-  upload man pages:
-  - command: shell.exec
-    params:
-      silent: true
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        # Get "aha", the ANSI HTML Adapter.
-        git clone --depth 1 https://github.com/theZiz/aha.git aha-repo
-        cd aha-repo
-        make
-        cd ..
-        mv aha-repo/aha .
-        sh .evergreen/scripts/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
-        sh .evergreen/scripts/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/man-pages/libbson/${CURRENT_VERSION}/index.html
-      bucket: mciuploads
-      permissions: public-read
-      local_file: mongoc/bson-man-pages.html
-      content_type: text/html
-      display_name: libbson man pages
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html
-      bucket: mciuploads
-      permissions: public-read
-      local_file: mongoc/mongoc-man-pages.html
-      content_type: text/html
-      display_name: libmongoc man pages
   upload coverage:
   - command: shell.exec
     params:
@@ -691,13 +581,6 @@ tasks:
       script: |-
         set -o errexit
         python ./.evergreen/scripts/check-preludes.py .
-- name: make-release-archive
-  commands:
-  - func: release archive
-  - func: upload docs
-  - func: upload man pages
-  - func: upload release
-  - func: upload-build
 - name: hardened-compile
   tags:
   - hardened

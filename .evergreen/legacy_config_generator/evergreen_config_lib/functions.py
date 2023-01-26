@@ -21,32 +21,6 @@ from evergreen_config_lib import shell_mongoc
 build_path = '${build_variant}/${revision}/${version_id}/${build_id}'
 
 all_functions = OD([
-    ('upload release', Function(
-        shell_exec(
-            r'[ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz',
-            errexit=False, test=False),
-        s3_put(
-            '${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
-            project_path=False, aws_key='${aws_key}',
-            aws_secret='${aws_secret}', local_file='mongoc.tar.gz',
-            bucket='mciuploads', permissions='public-read',
-            content_type='${content_type|application/x-gzip}'),
-    )),
-    ('release archive', Function(
-        shell_mongoc(r'''
-        # Need modern Sphinx for :caption: in literal includes.
-        python -m virtualenv venv
-        cd venv
-        . bin/activate
-        ./bin/pip install sphinx docutils==0.17.1
-        cd ..
-
-        export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
-        export MONGOC_TEST_SKIP_LIVE=on
-        export MONGOC_TEST_SKIP_SLOW=on
-        sh .evergreen/scripts/check-release-archive.sh
-        '''),
-    )),
     ('install ssl', Function(
         shell_mongoc(r'''
         bash .evergreen/scripts/install-ssl.sh
@@ -74,51 +48,6 @@ all_functions = OD([
 
         $TAR xf build.tar.gz -C mongoc/
         ''', test=False, continue_on_err=True),
-    )),
-    ('upload docs', Function(
-        shell_exec(r'''
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libbson'),
-        s3_put('docs/libbson/${CURRENT_VERSION}/index.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/cmake_build/src/libbson/doc/html/index.html',
-               bucket='mciuploads', permissions='public-read',
-               content_type='text/html', display_name='libbson docs'),
-        shell_exec(r'''
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libmongoc'),
-        s3_put('docs/libmongoc/${CURRENT_VERSION}/index.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/cmake_build/src/libmongoc/doc/html/index.html',
-               bucket='mciuploads', permissions='public-read',
-               content_type='text/html', display_name='libmongoc docs'),
-    )),
-    ('upload man pages', Function(
-        shell_mongoc(r'''
-        # Get "aha", the ANSI HTML Adapter.
-        git clone --depth 1 https://github.com/theZiz/aha.git aha-repo
-        cd aha-repo
-        make
-        cd ..
-        mv aha-repo/aha .
-
-        sh .evergreen/scripts/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
-        sh .evergreen/scripts/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
-        ''', test=False, silent=True),
-        s3_put('man-pages/libbson/${CURRENT_VERSION}/index.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/bson-man-pages.html', bucket='mciuploads',
-               permissions='public-read', content_type='text/html',
-               display_name='libbson man pages'),
-        s3_put('man-pages/libmongoc/${CURRENT_VERSION}/index.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/mongoc-man-pages.html', bucket='mciuploads',
-               permissions='public-read', content_type='text/html',
-               display_name='libmongoc man pages'),
     )),
     ('upload coverage', Function(
         shell_mongoc(r'''

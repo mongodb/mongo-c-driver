@@ -90,6 +90,25 @@ functions:
             for file in $(find .evergreen/scripts -type f); do
                 chmod +rx "$file" || exit
             done
+  release-archive:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        env:
+          MONGOC_TEST_FUTURE_TIMEOUT_MS: "30000"
+          MONGOC_TEST_SKIP_LIVE: "on"
+          MONGOC_TEST_SKIP_SLOW: "on"
+        args:
+          - -c
+          - |
+            set -o errexit
+            # Need modern Sphinx for :caption: in literal includes.
+            python -m virtualenv venv
+            . venv/bin/activate
+            python -m pip install sphinx docutils==0.17.1
+            .evergreen/scripts/check-release-archive.sh
   upload-build:
     - command: archive.targz_pack
       params:
@@ -106,3 +125,103 @@ functions:
         local_file: ${build_id}.tar.gz
         permissions: public-read
         remote_file: ${project}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz
+  upload-docs:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        working_dir: mongoc/cmake_build/src/libbson
+        env:
+          AWS_ACCESS_KEY_ID: ${aws_key}
+          AWS_SECRET_ACCESS_KEY: ${aws_secret}
+        args:
+          - -c
+          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION}
+            --quiet --recursive --acl public-read --region us-east-1
+    - command: s3.put
+      params:
+        display_name: libbson docs
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: text/html
+        local_file: mongoc/cmake_build/src/libbson/doc/html/index.html
+        permissions: public-read
+        remote_file: ${project}/docs/libbson/${CURRENT_VERSION}/index.html
+    - command: subprocess.exec
+      params:
+        binary: bash
+        working_dir: mongoc/cmake_build/src/libmongoc
+        env:
+          AWS_ACCESS_KEY_ID: ${aws_key}
+          AWS_SECRET_ACCESS_KEY: ${aws_secret}
+        args:
+          - -c
+          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION}
+            --quiet --recursive --acl public-read --region us-east-1
+    - command: s3.put
+      params:
+        display_name: libmongoc docs
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: text/html
+        local_file: mongoc/cmake_build/src/libmongoc/doc/html/index.html
+        permissions: public-read
+        remote_file: ${project}/docs/libmongoc/${CURRENT_VERSION}/index.html
+  upload-man-pages:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        working_dir: mongoc
+        silent: true
+        args:
+          - -c
+          - |
+            set -o errexit
+            # Get "aha", the ANSI HTML Adapter.
+            git clone --depth 1 https://github.com/theZiz/aha.git aha-repo
+            pushd aha-repo
+            make
+            popd # aha-repo
+            mv aha-repo/aha .
+            .evergreen/scripts/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
+            .evergreen/scripts/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
+    - command: s3.put
+      params:
+        display_name: libbson man pages
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: text/html
+        local_file: mongoc/bson-man-pages.html
+        permissions: public-read
+        remote_file: ${project}/man-pages/libbson/${CURRENT_VERSION}/index.html
+    - command: s3.put
+      params:
+        display_name: libmongoc man pages
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: text/html
+        local_file: mongoc/mongoc-man-pages.html
+        permissions: public-read
+        remote_file: ${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html
+  upload-release:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            if compgen -G "mongoc/cmake_build/mongo*gz" > /dev/null; then
+                mv mongoc/cmake_build/mongo*gz mongoc.tar.gz
+            fi
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: ${content_type|application/x-gzip}
+        local_file: mongoc.tar.gz
+        permissions: public-read
+        remote_file: ${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz

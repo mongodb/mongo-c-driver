@@ -24,7 +24,7 @@ except ImportError:
 from evergreen_config_generator.functions import (
     bootstrap, func, run_tests, s3_put)
 from evergreen_config_generator.tasks import (
-    both_or_neither, FuncTask, MatrixTask, NamedTask, prohibit, require, Task)
+    both_or_neither, MatrixTask, NamedTask, prohibit, require, Task)
 from evergreen_config_lib import shell_mongoc
 from pkg_resources import parse_version
 
@@ -165,9 +165,6 @@ all_tasks = [
     NamedTask('check-headers',
               commands=[shell_mongoc('sh ./.evergreen/scripts/check-public-decls.sh'),
                         shell_mongoc('python ./.evergreen/scripts/check-preludes.py .')]),
-    FuncTask('make-release-archive',
-             'release archive', 'upload docs', 'upload man pages',
-             'upload release', 'upload-build'),
     CompileTask('hardened-compile',
                 tags=['hardened'],
                 compression=None,
