@@ -163,9 +163,6 @@ class LinkTask(NamedTask):
 
 
 all_tasks = [
-    NamedTask('check-headers',
-              commands=[shell_mongoc('sh ./.evergreen/scripts/check-public-decls.sh'),
-                        shell_mongoc('python ./.evergreen/scripts/check-preludes.py .')]),
     CompileTask('hardened-compile',
                 tags=['hardened'],
                 compression=None,

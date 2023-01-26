@@ -2,6 +2,9 @@ tasks:
   - name: abi-compliance-check
     commands:
       - func: abi-compliance-check
+  - name: check-headers
+    commands:
+      - func: check-headers
   - name: make-release-archive
     commands:
       - func: release-archive

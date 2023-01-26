@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2019-present MongoDB, Inc.
 #
@@ -16,59 +16,55 @@
 
 """Check that public libbson/libmongoc headers all include the prelude line.
 """
-import os
-import re
 import sys
 import glob
 
 if len(sys.argv) != 2:
     print("Usage: python check-preludes.py <mongo-c-driver directory>")
-    exit(1)
+    sys.exit(1)
 
-mongoc_prefix = "src/libmongoc/src/mongoc/"
-bson_prefix = "src/libbson/src/bson/"
-common_prefix = "src/common/"
+MONGOC_PREFIX = "src/libmongoc/src/mongoc/"
+BSON_PREFIX = "src/libbson/src/bson/"
+COMMON_PREFIX = "src/common/"
 
 checks = [
     {
         "name": "libmongoc",
-        "headers": glob.glob(mongoc_prefix + "*.h"),
+        "headers": glob.glob(MONGOC_PREFIX + "*.h"),
         "exclusions": [
-            mongoc_prefix + "mongoc-prelude.h",
-            mongoc_prefix + "mongoc.h"
+            MONGOC_PREFIX + "mongoc-prelude.h",
+            MONGOC_PREFIX + "mongoc.h"
         ],
         "include": "#include \"mongoc-prelude.h\""
     },
     {
         "name": "libbson",
-        "headers": glob.glob( bson_prefix + "*.h"),
+        "headers": glob.glob(BSON_PREFIX + "*.h"),
         "exclusions": [
-            bson_prefix + "bson-prelude.h",
-            bson_prefix + "bson-dsl.h",
-            bson_prefix + "bson.h"
+            BSON_PREFIX + "bson-prelude.h",
+            BSON_PREFIX + "bson-dsl.h",
+            BSON_PREFIX + "bson.h"
         ],
         "include": "#include \"bson-prelude.h\""
     },
     {
         "name": "common",
-        "headers": glob.glob( common_prefix + "*.h"),
-        "exclusions": [ common_prefix + "common-prelude.h" ],
+        "headers": glob.glob(COMMON_PREFIX + "*.h"),
+        "exclusions": [COMMON_PREFIX + "common-prelude.h"],
         "include": "#include \"common-prelude.h\""
     },
 ]
 
-failed = False
 for check in checks:
-    print("Checking headers for %s" % check["name"])
-    assert (len(check["headers"]) > 0)
+    NAME = check["name"]
+    print(f"Checking headers for {NAME}")
+    assert len(check["headers"]) > 0
     for header in check["headers"]:
         if header in check["exclusions"]:
             continue
-        with open(header, "r") as file:
+        with open(header, mode="r", encoding="utf-8") as file:
             if not check["include"] in file.read().splitlines():
-                print("%s did not include prelude" % header)
-                failed = True
-if failed:
-    sys.exit(1)
- 
+                print(f"{header} did not include prelude")
+                sys.exit(1)
+
 print("All checks passed")

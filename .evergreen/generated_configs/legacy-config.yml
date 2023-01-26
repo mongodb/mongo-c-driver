@@ -514,24 +514,6 @@ post:
 - func: cleanup
 - func: stop load balancer
 tasks:
-- name: check-headers
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        sh ./.evergreen/scripts/check-public-decls.sh
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        python ./.evergreen/scripts/check-preludes.py .
 - name: hardened-compile
   tags:
   - hardened
