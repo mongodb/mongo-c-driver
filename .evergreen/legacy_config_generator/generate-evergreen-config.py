@@ -49,9 +49,6 @@ testazurekms_generate (all_tasks, all_variants, all_task_groups)
 testgcpkms_generate(all_tasks, all_variants, all_task_groups)
 
 config = OD([
-    ('stepback', True),
-    ('command_type', 'system'),
-    ('exec_timeout_secs', 3600),
     ('functions', all_functions),
     ('pre', [
         OD([('func', 'fetch source')]),
