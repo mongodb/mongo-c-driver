@@ -192,39 +192,6 @@ functions:
       local_file: mongoc/coverage/index.html
       content_type: text/html
       display_name: Coverage Report
-  abi report:
-  - command: shell.exec
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        bash .evergreen/scripts/abi-compliance-check.sh
-  - command: shell.exec
-    params:
-      silent: true
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
-        if [ -e ./abi-compliance/abi-error.txt ]; then
-          exit 1
-        else
-          exit 0
-        fi
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html
-      bucket: mciuploads
-      permissions: public-read
-      local_files_include_filter: mongoc/abi-compliance/compat_reports/**/*.html
-      content_type: text/html
-      display_name: 'ABI Report:'
   upload scan artifacts:
   - command: shell.exec
     type: test
@@ -761,9 +728,6 @@ tasks:
         set -o errexit
         env CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O" DEBUG="ON" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload build
-- name: abi-compliance-check
-  commands:
-  - func: abi report
 - name: debug-compile-compression-zlib
   tags:
   - compression

@@ -1,1 +1,4 @@
-tasks: []
+tasks:
+  - name: abi-compliance-check
+    commands:
+      - func: abi-compliance-check

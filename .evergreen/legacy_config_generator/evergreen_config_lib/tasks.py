@@ -173,7 +173,6 @@ all_tasks = [
                 compression=None,
                 CFLAGS='-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O',
                 LDFLAGS='-pie -Wl,-z,relro -Wl,-z,now'),
-    FuncTask('abi-compliance-check', 'abi report'),
     CompileTask('debug-compile-compression-zlib',
                 tags=['zlib', 'compression'],
                 compression='zlib'),

@@ -140,27 +140,6 @@ all_functions = OD([
                permissions='public-read', content_type='text/html',
                display_name='Coverage Report'),
     )),
-    ('abi report', Function(
-        shell_mongoc(r'''
-        bash .evergreen/scripts/abi-compliance-check.sh
-        ''', test=False),
-        shell_mongoc(r'''
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/%s/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
-
-        if [ -e ./abi-compliance/abi-error.txt ]; then
-          exit 1
-        else
-          exit 0
-        fi
-        ''' % (build_path,), silent=True, test=False),
-        s3_put(build_path + '/abi-compliance/compat_report.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_files_include_filter='mongoc/abi-compliance/compat_reports/**/*.html',
-               bucket='mciuploads', permissions='public-read',
-               content_type='text/html', display_name='ABI Report:'),
-    )),
     ('upload scan artifacts', Function(
         shell_mongoc(r'''
         if find scan -name \*.html | grep -q html; then
