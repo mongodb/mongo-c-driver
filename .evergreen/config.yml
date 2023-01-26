@@ -1,2 +1,2 @@
 include:
-  - filename: .evergreen/legacy-config.yml
+  - filename: .evergreen/generated_configs/legacy-config.yml
