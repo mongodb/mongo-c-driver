@@ -25,7 +25,7 @@ def _create_tasks():
     passtask = NamedTask (task_name="testgcpkms-task")
 
     passtask.commands = [
-        func("fetch source"),
+        func("fetch-source"),
         shell_exec (r'''
             echo "Building test-gcpkms ... begin"
             pushd mongoc
@@ -58,7 +58,6 @@ def _create_tasks():
 
     failtask = NamedTask(task_name="testgcpkms-fail-task")
     failtask.commands = [
-        func("fetch source"),
         shell_exec (r'''
             pushd mongoc
             ./.evergreen/scripts/compile-test-gcpkms.sh

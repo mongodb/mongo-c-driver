@@ -21,35 +21,6 @@ from evergreen_config_lib import shell_mongoc
 build_path = '${build_variant}/${revision}/${version_id}/${build_id}'
 
 all_functions = OD([
-    ('fetch source', Function(
-        OD([('command', 'git.get_project'),
-            ('params', OD([
-                ('directory', 'mongoc'),
-            ]))]),
-        shell_mongoc(r'''
-        if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
-           # This is a GitHub PR or patch build, probably branched from master
-           if command -v python3 2>/dev/null; then
-              # Prefer python3 if it is available
-              echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-           else
-              echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-           fi
-           VERSION=$VERSION_CURRENT-${version_id}
-        else
-           VERSION=latest
-        fi
-        echo "CURRENT_VERSION: $VERSION" > expansion.yml
-        ''', test=False),
-        OD([('command', 'expansions.update'),
-            ('params', OD([
-                ('file', 'mongoc/expansion.yml'),
-            ]))]),
-        shell_exec(r'''
-        rm -f *.tar.gz
-        curl --retry 5 https://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz -sS --max-time 120
-        ''', test=False, continue_on_err=True),
-    )),
     ('upload release', Function(
         shell_exec(
             r'[ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz',
@@ -312,29 +283,20 @@ all_functions = OD([
         mongo-orchestration stop
         ''', test=False),
     )),
-    ('windows fix', Function(
-        shell_mongoc(r'''
-        for i in $(find .evergreen/scripts -type f); do
-          cat $i | tr -d '\r' > $i.new
-          mv $i.new $i
-        done
-        ''', test=False),
-    )),
-    ('make files executable', Function(
-        shell_mongoc(r'''
-        for i in $(find .evergreen/scripts -type f); do
-          chmod +x $i
-        done
-        ''', test=False),
-    )),
     ('prepare kerberos', Function(
         shell_mongoc(r'''
-        if test "${keytab|}"; then
-           echo "${keytab}" > /tmp/drivers.keytab.base64
-           base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
-           cat .evergreen/etc/kerberos.realm | $SUDO tee -a /etc/krb5.conf
+        if test "${keytab|}" && [[ -f /etc/krb5.conf ]]; then
+          echo "${keytab}" > /tmp/drivers.keytab.base64
+          base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
+          if touch /etc/krb5.conf 2>/dev/null; then
+            cat .evergreen/etc/kerberos.realm | tee -a /etc/krb5.conf
+          elif command sudo true 2>/dev/null; then
+            cat .evergreen/etc/kerberos.realm | sudo tee -a /etc/krb5.conf
+          else
+            echo "Cannot append kerberos.realm to /etc/krb5.conf; skipping." 1>&2
+          fi
         fi
-        ''', test=False, silent=True),
+        ''', test=False),
     )),
     ('link sample program', Function(
         shell_mongoc(r'''

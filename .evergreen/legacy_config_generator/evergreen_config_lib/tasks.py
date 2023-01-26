@@ -771,6 +771,7 @@ class AuthTask(MatrixTask):
 
         self.commands.extend([
             func('fetch build', BUILD_NAME=self.depends_on['name']),
+            func('prepare kerberos'),
             func('run auth tests')])
 
     @property
@@ -817,6 +818,7 @@ all_tasks = chain(all_tasks, [
             shell_mongoc("""
             env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/scripts/compile.sh
             """, add_expansions_to_env=True),
+            func('prepare kerberos'),
             func('run auth tests', ASAN='on')]),
     PostCompileTask(
         'test-versioned-api',

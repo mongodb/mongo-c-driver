@@ -50,12 +50,6 @@ testgcpkms_generate(all_tasks, all_variants, all_task_groups)
 
 config = OD([
     ('functions', all_functions),
-    ('pre', [
-        OD([('func', 'fetch source')]),
-        OD([('func', 'windows fix')]),
-        OD([('func', 'make files executable')]),
-        OD([('func', 'prepare kerberos')]),
-    ]),
     ('post', [
         OD([('func', 'backtrace')]),
         OD([('func', 'upload working dir')]),

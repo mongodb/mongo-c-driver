@@ -26,7 +26,7 @@ def _create_tasks():
     # passtask is expected to run on a remote Azure VM and succeed at obtaining credentials.
     passtask = NamedTask (task_name="testazurekms-task")
     passtask.commands = [
-        func("fetch source"),
+        func("fetch-source"),
         shell_exec (r'''
           echo "Building test-azurekms ... begin"
           pushd mongoc
@@ -64,7 +64,7 @@ def _create_tasks():
 
     failtask = NamedTask (task_name="testazurekms-fail-task")
     failtask.commands = [
-        func("fetch source"),
+        func("fetch-source"),
         shell_exec (r'''
           pushd mongoc
           ./.evergreen/scripts/compile-test-azurekms.sh

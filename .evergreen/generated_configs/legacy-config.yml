@@ -8,40 +8,6 @@
 #
 ####################################
 functions:
-  fetch source:
-  - command: git.get_project
-    params:
-      directory: mongoc
-  - command: shell.exec
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
-           # This is a GitHub PR or patch build, probably branched from master
-           if command -v python3 2>/dev/null; then
-              # Prefer python3 if it is available
-              echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-           else
-              echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-           fi
-           VERSION=$VERSION_CURRENT-${version_id}
-        else
-           VERSION=latest
-        fi
-        echo "CURRENT_VERSION: $VERSION" > expansion.yml
-  - command: expansions.update
-    params:
-      file: mongoc/expansion.yml
-  - command: shell.exec
-    params:
-      continue_on_err: true
-      shell: bash
-      script: |-
-        set -o errexit
-        rm -f *.tar.gz
-        curl --retry 5 https://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz -sS --max-time 120
   upload release:
   - command: shell.exec
     params:
@@ -449,39 +415,23 @@ functions:
         set -o errexit
         cd MO
         mongo-orchestration stop
-  windows fix:
-  - command: shell.exec
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        for i in $(find .evergreen/scripts -type f); do
-          cat $i | tr -d '\r' > $i.new
-          mv $i.new $i
-        done
-  make files executable:
-  - command: shell.exec
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        for i in $(find .evergreen/scripts -type f); do
-          chmod +x $i
-        done
   prepare kerberos:
   - command: shell.exec
     params:
-      silent: true
       working_dir: mongoc
       shell: bash
       script: |-
         set -o errexit
-        if test "${keytab|}"; then
-           echo "${keytab}" > /tmp/drivers.keytab.base64
-           base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
-           cat .evergreen/etc/kerberos.realm | $SUDO tee -a /etc/krb5.conf
+        if test "${keytab|}" && [[ -f /etc/krb5.conf ]]; then
+          echo "${keytab}" > /tmp/drivers.keytab.base64
+          base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
+          if touch /etc/krb5.conf 2>/dev/null; then
+            cat .evergreen/etc/kerberos.realm | tee -a /etc/krb5.conf
+          elif command sudo true 2>/dev/null; then
+            cat .evergreen/etc/kerberos.realm | sudo tee -a /etc/krb5.conf
+          else
+            echo "Cannot append kerberos.realm to /etc/krb5.conf; skipping." 1>&2
+          fi
         fi
   link sample program:
   - command: shell.exec
@@ -762,11 +712,6 @@ functions:
         export DRIVERS_TOOLS=./drivers-evergreen-tools
         export MONGODB_URI="foo" # TODO: DRIVERS-1833 remove this.
         $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh stop
-pre:
-- func: fetch source
-- func: windows fix
-- func: make files executable
-- func: prepare kerberos
 post:
 - func: backtrace
 - func: upload working dir
@@ -14174,6 +14119,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: prepare kerberos
   - func: run auth tests
 - name: authentication-tests-openssl-static
   tags:
@@ -14186,6 +14132,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: prepare kerberos
   - func: run auth tests
 - name: authentication-tests-darwinssl
   tags:
@@ -14198,6 +14145,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: prepare kerberos
   - func: run auth tests
 - name: authentication-tests-winssl
   tags:
@@ -14210,6 +14158,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
+  - func: prepare kerberos
   - func: run auth tests
 - name: authentication-tests-openssl-nosasl
   tags:
@@ -14222,6 +14171,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: prepare kerberos
   - func: run auth tests
 - name: test-asan-memcheck-mock-server
   tags:
@@ -14260,6 +14210,7 @@ tasks:
       script: |-
         set -o errexit
         env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/scripts/compile.sh
+  - func: prepare kerberos
   - func: run auth tests
     vars:
       ASAN: 'on'
@@ -21302,7 +21253,7 @@ tasks:
       SSL: nossl
 - name: testazurekms-task
   commands:
-  - func: fetch source
+  - func: fetch-source
   - command: shell.exec
     params:
       shell: bash
@@ -21343,7 +21294,7 @@ tasks:
           $DRIVERS_TOOLS/.evergreen/csfle/azurekms/run-command.sh
 - name: testazurekms-fail-task
   commands:
-  - func: fetch source
+  - func: fetch-source
   - command: shell.exec
     params:
       shell: bash
@@ -21366,7 +21317,7 @@ tasks:
           ./mongoc/src/libmongoc/test-azurekms
 - name: testgcpkms-task
   commands:
-  - func: fetch source
+  - func: fetch-source
   - command: shell.exec
     params:
       shell: bash
@@ -21405,7 +21356,6 @@ tasks:
         GCPKMS_CMD="LD_LIBRARY_PATH=./testgcpkms MONGODB_URI='mongodb://localhost:27017' ./testgcpkms/test-gcpkms" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
 - name: testgcpkms-fail-task
   commands:
-  - func: fetch source
   - command: shell.exec
     params:
       shell: bash

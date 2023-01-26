@@ -1,1 +1,2 @@
-pre: []
+pre:
+  - func: fetch-source

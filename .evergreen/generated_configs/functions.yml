@@ -8,3 +8,54 @@ functions:
           - |
             echo 'EVERGREEN HOST WAS UNEXPECTEDLY TERMINATED!!!' 1>&2
             echo 'Restart this Evergreen task and try again!' 1>&2
+  fetch-source:
+    - command: git.get_project
+      type: setup
+      params:
+        directory: mongoc
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        args:
+          - -c
+          - |
+            set -o errexit
+            if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
+                # This is a GitHub PR or patch build, probably branched from master
+                if command -v python3 2>/dev/null; then
+                    # Prefer python3 if it is available
+                    echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+                else
+                    echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
+                fi
+                VERSION=$VERSION_CURRENT-${version_id}
+            else
+                VERSION=latest
+            fi
+            echo "CURRENT_VERSION: $VERSION" > expansion.yml
+    - command: expansions.update
+      type: setup
+      params:
+        file: mongoc/expansion.yml
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            rm -f *.tar.gz
+            curl --retry 5 --output mongoc.tar.gz -sS --max-time 120 https://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        args:
+          - -c
+          - |
+            for file in $(find .evergreen/scripts -type f); do
+                chmod +rx "$file" || exit
+            done
