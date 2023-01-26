@@ -24,6 +24,10 @@ post_error_fails_task: false
 early_termination:
   - func: early-termination
 
+# TODO: move timeout commands into timeout of appropriate task groups.
+timeout:
+  - func: backtrace
+
 include:
   - filename: .evergreen/generated_configs/legacy-config.yml
   - filename: .evergreen/generated_configs/functions.yml

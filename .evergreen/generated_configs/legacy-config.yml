@@ -552,8 +552,6 @@ post:
 - func: upload test results
 - func: cleanup
 - func: stop load balancer
-timeout:
-- func: backtrace
 tasks:
 - name: check-headers
   commands:

@@ -58,9 +58,6 @@ config = OD([
         OD([('func', 'cleanup')]),
         OD([('func', 'stop load balancer')]),
     ]),
-    ('timeout', [
-        OD([('func', 'backtrace')])
-    ]),
     ('tasks', all_tasks),
     ('task_groups', all_task_groups),
     ('buildvariants', all_variants),
