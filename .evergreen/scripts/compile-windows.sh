@@ -99,14 +99,11 @@ declare compile_flags=(
 )
 
 if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
-  # Build libmongocrypt, using the previously fetched installed source.
-  # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
-  git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1
-  mkdir libmongocrypt/cmake-build
-  pushd libmongocrypt/cmake-build
-  "${cmake_binary}" -G "${CC}" "-DCMAKE_PREFIX_PATH=${install_dir}/lib/cmake" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="${install_dir}" ../
-  "${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"
-  popd # libmongocrypt/cmake-build
+  git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
+  MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
+    DEFAULT_BUILD_ONLY=true \
+    LIBMONGOCRYPT_BUILD_TYPE=${build_config} \
+    ./libmongocrypt/.evergreen/compile.sh
 fi
 
 "${cmake_binary}" -G "$CC" "-DCMAKE_PREFIX_PATH=${install_dir}/lib/cmake" "${configure_flags[@]}"
