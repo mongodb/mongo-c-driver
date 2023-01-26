@@ -167,14 +167,6 @@ functions:
       content_type: ${content_type|application/x-gzip}
       display_name: Core Dumps - Execution ${execution}
       optional: 'True'
-  backtrace:
-  - command: shell.exec
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        ./.evergreen/scripts/debug-core-evergreen.sh
   upload working dir:
   - command: archive.targz_pack
     params:

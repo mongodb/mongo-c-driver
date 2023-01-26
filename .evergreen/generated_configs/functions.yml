@@ -30,6 +30,14 @@ functions:
         local_files_include_filter: mongoc/abi-compliance/compat_reports/**/*.html
         permissions: public-read
         remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html
+  backtrace:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        working_dir: mongoc
+        args:
+          - -c
+          - .evergreen/scripts/debug-core-evergreen.sh
   early-termination:
     - command: subprocess.exec
       params:

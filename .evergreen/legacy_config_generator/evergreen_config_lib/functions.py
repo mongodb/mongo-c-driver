@@ -122,9 +122,6 @@ all_functions = OD([
                display_name='Core Dumps - Execution ${execution}',
                optional='True'),
     )),
-    ('backtrace', Function(
-        shell_mongoc(r'./.evergreen/scripts/debug-core-evergreen.sh', test=False),
-    )),
     ('upload working dir', Function(
         targz_pack('working-dir.tar.gz', 'mongoc', './**'),
         s3_put(
