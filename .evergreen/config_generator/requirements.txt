@@ -1,0 +1,4 @@
+pydantic~=1.10
+PyYAML~=5.4
+shrub.py~=3.0
+yamlordereddictloader~=0.4
