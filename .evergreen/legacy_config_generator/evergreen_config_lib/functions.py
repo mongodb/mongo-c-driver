@@ -26,29 +26,6 @@ all_functions = OD([
         bash .evergreen/scripts/install-ssl.sh
         ''', test=False, add_expansions_to_env=True),
     )),
-    ('fetch build', Function(
-        shell_exec(r'rm -rf mongoc', test=False, continue_on_err=True),
-        OD([('command', 's3.get'),
-            ('params', OD([
-                ('aws_key', '${aws_key}'),
-                ('aws_secret', '${aws_secret}'),
-                ('remote_file',
-                 '${project}/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz'),
-                ('bucket', 'mciuploads'),
-                ('local_file', 'build.tar.gz'),
-            ]))]),
-        shell_exec(r'''
-        mkdir mongoc
-
-        if command -v gtar 2>/dev/null; then
-           TAR=gtar
-        else
-           TAR=tar
-        fi
-
-        $TAR xf build.tar.gz -C mongoc/
-        ''', test=False, continue_on_err=True),
-    )),
     ('upload coverage', Function(
         shell_mongoc(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}

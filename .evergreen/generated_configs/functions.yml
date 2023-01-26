@@ -78,6 +78,37 @@ functions:
           - |
             echo 'EVERGREEN HOST WAS UNEXPECTEDLY TERMINATED!!!' 1>&2
             echo 'Restart this Evergreen task and try again!' 1>&2
+  fetch-build:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        args:
+          - -c
+          - rm -rf mongoc
+    - command: s3.get
+      type: setup
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        local_file: build.tar.gz
+        remote_file: ${project}/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz
+    - command: archive.targz_extract
+      params:
+        destination: mongoc
+        path: build.tar.gz
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        args:
+          - -c
+          - |
+            for file in $(find .evergreen/scripts -type f); do
+                chmod +rx "$file" || exit
+            done
   fetch-source:
     - command: git.get_project
       type: setup

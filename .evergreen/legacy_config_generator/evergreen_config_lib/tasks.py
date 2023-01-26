@@ -518,7 +518,7 @@ class IntegrationTask(MatrixTask):
         commands = task['commands']
         if self.depends_on:
             commands.append(
-                func('fetch build', BUILD_NAME=self.depends_on['name']))
+                func('fetch-build', BUILD_NAME=self.depends_on['name']))
         if self.coverage:
             # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
             commands.append(
@@ -627,7 +627,7 @@ class DNSTask(MatrixTask):
         task = super(MatrixTask, self).to_dict()
         commands = task['commands']
         commands.append(
-            func('fetch build', BUILD_NAME=self.depends_on['name']))
+            func('fetch-build', BUILD_NAME=self.depends_on['name']))
 
         if self.loadbalanced:
             orchestration = func('bootstrap-mongo-orchestration',
@@ -687,7 +687,7 @@ class CompressionTask(MatrixTask):
         task = super(CompressionTask, self).to_dict()
         commands = task['commands']
         commands.append(
-            func('fetch build', BUILD_NAME=self.depends_on['name']))
+            func('fetch-build', BUILD_NAME=self.depends_on['name']))
         if self.compression == 'compression':
             orchestration_file = 'snappy-zlib-zstd'
         else:
@@ -732,7 +732,7 @@ class SpecialIntegrationTask(NamedTask):
     def __init__(self, task_name, depends_on='debug-compile-sasl-openssl',
                  suffix_commands=None, uri=None,
                  tags=None, version='latest', topology='server'):
-        commands = [func('fetch build', BUILD_NAME=depends_on),
+        commands = [func('fetch-build', BUILD_NAME=depends_on),
                     func('bootstrap-mongo-orchestration',
                          MONGODB_VERSION=version,
                          TOPOLOGY=topology),
@@ -769,7 +769,7 @@ class AuthTask(MatrixTask):
             self.display('sasl'), self.display('ssl')))
 
         self.commands.extend([
-            func('fetch build', BUILD_NAME=self.depends_on['name']),
+            func('fetch-build', BUILD_NAME=self.depends_on['name']),
             func('prepare-kerberos'),
             func('run auth tests')])
 
@@ -794,7 +794,7 @@ class PostCompileTask(NamedTask):
     def __init__(self, *args, **kwargs):
         super(PostCompileTask, self).__init__(*args, **kwargs)
         self.commands.insert(
-            0, func('fetch build', BUILD_NAME=self.depends_on['name']))
+            0, func('fetch-build', BUILD_NAME=self.depends_on['name']))
 
 
 all_tasks = chain(all_tasks, [
@@ -895,7 +895,7 @@ class IPTask(MatrixTask):
         self.add_tags('nossl', 'nosasl', 'server', 'ipv4-ipv6', 'latest')
         self.add_dependency('debug-compile-nosasl-nossl')
         self.commands.extend([
-            func('fetch build', BUILD_NAME=self.depends_on['name']),
+            func('fetch-build', BUILD_NAME=self.depends_on['name']),
             func('bootstrap-mongo-orchestration',
                  IPV4_ONLY=self.on_off(server='ipv4')),
             run_tests(IPV4_ONLY=self.on_off(server='ipv4'),
@@ -945,7 +945,7 @@ class AWSTestTask(MatrixTask):
         super(AWSTestTask, self).__init__(*args, **kwargs)
         self.add_dependency('debug-compile-aws')
         self.commands.extend([
-            func('fetch build', BUILD_NAME=self.depends_on['name']),
+            func('fetch-build', BUILD_NAME=self.depends_on['name']),
             func('bootstrap-mongo-orchestration',
                  AUTH="auth",
                  ORCHESTRATION_FILE="auth-aws",
@@ -985,7 +985,7 @@ class OCSPTask(MatrixTask):
         task = super(MatrixTask, self).to_dict()
         commands = task['commands']
         commands.append(
-            func('fetch build', BUILD_NAME=self.depends_on['name']))
+            func('fetch-build', BUILD_NAME=self.depends_on['name']))
 
         stapling = 'mustStaple'
         if self.test in ['test_3', 'test_4', 'soft_fail_test', 'cache']:
@@ -1103,7 +1103,7 @@ class LoadBalancedTask(MatrixTask):
         task = super(MatrixTask, self).to_dict()
         commands = task['commands']
         commands.append(
-            func('fetch build', BUILD_NAME=self.depends_on['name']))
+            func('fetch-build', BUILD_NAME=self.depends_on['name']))
 
         orchestration = func('bootstrap-mongo-orchestration',
                              TOPOLOGY='sharded_cluster',

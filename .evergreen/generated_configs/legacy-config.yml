@@ -17,34 +17,6 @@ functions:
       script: |-
         set -o errexit
         bash .evergreen/scripts/install-ssl.sh
-  fetch build:
-  - command: shell.exec
-    params:
-      continue_on_err: true
-      shell: bash
-      script: |-
-        set -o errexit
-        rm -rf mongoc
-  - command: s3.get
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz
-      bucket: mciuploads
-      local_file: build.tar.gz
-  - command: shell.exec
-    params:
-      continue_on_err: true
-      shell: bash
-      script: |-
-        set -o errexit
-        mkdir mongoc
-        if command -v gtar 2>/dev/null; then
-           TAR=gtar
-        else
-           TAR=tar
-        fi
-        $TAR xf build.tar.gz -C mongoc/
   upload coverage:
   - command: shell.exec
     params:
@@ -1472,7 +1444,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -1496,7 +1468,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -1517,7 +1489,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -1539,7 +1511,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -1563,7 +1535,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -1584,7 +1556,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -1605,7 +1577,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -1626,7 +1598,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -1648,7 +1620,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -1672,7 +1644,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -1693,7 +1665,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -1715,7 +1687,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -1739,7 +1711,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -1760,7 +1732,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -1781,7 +1753,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -1802,7 +1774,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -1824,7 +1796,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -1848,7 +1820,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -1869,7 +1841,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -1890,7 +1862,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -1911,7 +1883,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -1932,7 +1904,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -1953,7 +1925,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -1975,7 +1947,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -1999,7 +1971,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2020,7 +1992,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2041,7 +2013,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2062,7 +2034,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2083,7 +2055,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2104,7 +2076,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2126,7 +2098,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -2150,7 +2122,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2171,7 +2143,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2192,7 +2164,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2213,7 +2185,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2234,7 +2206,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2255,7 +2227,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2276,7 +2248,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2297,7 +2269,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2318,7 +2290,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2339,7 +2311,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2360,7 +2332,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2381,7 +2353,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2402,7 +2374,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2423,7 +2395,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2444,7 +2416,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2465,7 +2437,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2486,7 +2458,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -2507,7 +2479,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: bootstrap-mongo-orchestration
@@ -2528,7 +2500,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2549,7 +2521,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2570,7 +2542,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2591,7 +2563,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2612,7 +2584,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2633,7 +2605,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2654,7 +2626,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2675,7 +2647,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2696,7 +2668,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2717,7 +2689,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2738,7 +2710,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2759,7 +2731,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2780,7 +2752,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2801,7 +2773,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2822,7 +2794,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2843,7 +2815,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2864,7 +2836,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2885,7 +2857,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2906,7 +2878,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2927,7 +2899,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2948,7 +2920,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2969,7 +2941,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -2990,7 +2962,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3011,7 +2983,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3032,7 +3004,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3053,7 +3025,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3074,7 +3046,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3095,7 +3067,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3116,7 +3088,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3137,7 +3109,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3158,7 +3130,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3179,7 +3151,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3200,7 +3172,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3221,7 +3193,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3242,7 +3214,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3263,7 +3235,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3284,7 +3256,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3305,7 +3277,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3326,7 +3298,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3347,7 +3319,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3368,7 +3340,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3389,7 +3361,7 @@ tasks:
   depends_on:
     name: debug-compile-tsan-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
   - func: bootstrap-mongo-orchestration
@@ -3441,7 +3413,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -3468,7 +3440,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -3493,7 +3465,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -3520,7 +3492,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -3545,7 +3517,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -3572,7 +3544,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -3597,7 +3569,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -3624,7 +3596,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -3648,7 +3620,7 @@ tasks:
   depends_on:
     name: debug-compile-sspi-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
   - func: bootstrap-mongo-orchestration
@@ -3672,7 +3644,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -3696,7 +3668,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -3720,7 +3692,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -3744,7 +3716,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -3769,7 +3741,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -3796,7 +3768,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -3821,7 +3793,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -3848,7 +3820,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -3873,7 +3845,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -3900,7 +3872,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -3925,7 +3897,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -3952,7 +3924,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -3976,7 +3948,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -4000,7 +3972,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -4024,7 +3996,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -4048,7 +4020,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -4072,7 +4044,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -4097,7 +4069,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -4124,7 +4096,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -4149,7 +4121,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -4176,7 +4148,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -4201,7 +4173,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -4228,7 +4200,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -4253,7 +4225,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -4280,7 +4252,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -4304,7 +4276,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -4328,7 +4300,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -4352,7 +4324,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -4376,7 +4348,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -4401,7 +4373,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -4428,7 +4400,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -4453,7 +4425,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -4480,7 +4452,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -4505,7 +4477,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -4532,7 +4504,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -4557,7 +4529,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -4584,7 +4556,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -4608,7 +4580,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -4632,7 +4604,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -4656,7 +4628,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -4680,7 +4652,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -4704,7 +4676,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -4728,7 +4700,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -4752,7 +4724,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -4776,7 +4748,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -4800,7 +4772,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -4824,7 +4796,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -4848,7 +4820,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -4872,7 +4844,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -4896,7 +4868,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -4920,7 +4892,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -4944,7 +4916,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -4968,7 +4940,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -4992,7 +4964,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -5016,7 +4988,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -5040,7 +5012,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -5064,7 +5036,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -5088,7 +5060,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -5112,7 +5084,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -5137,7 +5109,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -5164,7 +5136,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -5189,7 +5161,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -5216,7 +5188,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -5241,7 +5213,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -5268,7 +5240,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -5293,7 +5265,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -5320,7 +5292,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -5344,7 +5316,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -5368,7 +5340,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -5392,7 +5364,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -5416,7 +5388,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -5441,7 +5413,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -5468,7 +5440,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -5493,7 +5465,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -5520,7 +5492,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -5545,7 +5517,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -5572,7 +5544,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -5597,7 +5569,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -5624,7 +5596,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -5648,7 +5620,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -5672,7 +5644,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -5696,7 +5668,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -5720,7 +5692,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -5744,7 +5716,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -5769,7 +5741,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -5796,7 +5768,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -5821,7 +5793,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -5848,7 +5820,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -5873,7 +5845,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -5900,7 +5872,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -5925,7 +5897,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -5952,7 +5924,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -5976,7 +5948,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -6000,7 +5972,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -6024,7 +5996,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -6048,7 +6020,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -6073,7 +6045,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -6100,7 +6072,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -6125,7 +6097,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -6152,7 +6124,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -6177,7 +6149,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -6204,7 +6176,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -6229,7 +6201,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -6256,7 +6228,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -6280,7 +6252,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -6304,7 +6276,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -6328,7 +6300,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -6352,7 +6324,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -6376,7 +6348,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -6400,7 +6372,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -6424,7 +6396,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -6448,7 +6420,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -6472,7 +6444,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -6496,7 +6468,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -6520,7 +6492,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -6544,7 +6516,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -6568,7 +6540,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -6592,7 +6564,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -6616,7 +6588,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -6640,7 +6612,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -6664,7 +6636,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -6688,7 +6660,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -6712,7 +6684,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -6736,7 +6708,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -6760,7 +6732,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -6784,7 +6756,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -6809,7 +6781,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -6836,7 +6808,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -6861,7 +6833,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -6888,7 +6860,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -6913,7 +6885,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -6940,7 +6912,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -6965,7 +6937,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -6992,7 +6964,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -7016,7 +6988,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -7040,7 +7012,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -7064,7 +7036,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -7088,7 +7060,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -7113,7 +7085,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -7140,7 +7112,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -7165,7 +7137,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -7192,7 +7164,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -7217,7 +7189,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -7244,7 +7216,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -7269,7 +7241,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -7296,7 +7268,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -7320,7 +7292,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -7344,7 +7316,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -7368,7 +7340,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -7392,7 +7364,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -7416,7 +7388,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -7440,7 +7412,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -7464,7 +7436,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -7488,7 +7460,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -7512,7 +7484,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -7536,7 +7508,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -7560,7 +7532,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -7584,7 +7556,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -7608,7 +7580,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -7632,7 +7604,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -7656,7 +7628,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -7680,7 +7652,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -7704,7 +7676,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -7728,7 +7700,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -7752,7 +7724,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -7776,7 +7748,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -7800,7 +7772,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -7824,7 +7796,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -7848,7 +7820,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -7872,7 +7844,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -7896,7 +7868,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -7920,7 +7892,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -7944,7 +7916,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -7968,7 +7940,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -7992,7 +7964,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -8016,7 +7988,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -8040,7 +8012,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -8064,7 +8036,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -8088,7 +8060,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -8112,7 +8084,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -8136,7 +8108,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -8160,7 +8132,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -8184,7 +8156,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -8208,7 +8180,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -8232,7 +8204,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -8257,7 +8229,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -8284,7 +8256,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -8309,7 +8281,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -8336,7 +8308,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -8361,7 +8333,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -8388,7 +8360,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -8413,7 +8385,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -8440,7 +8412,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -8464,7 +8436,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -8488,7 +8460,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -8512,7 +8484,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -8536,7 +8508,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -8561,7 +8533,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -8588,7 +8560,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -8613,7 +8585,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -8640,7 +8612,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -8665,7 +8637,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -8692,7 +8664,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -8717,7 +8689,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -8744,7 +8716,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -8768,7 +8740,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -8792,7 +8764,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -8816,7 +8788,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -8840,7 +8812,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -8864,7 +8836,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -8888,7 +8860,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -8912,7 +8884,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -8936,7 +8908,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -8960,7 +8932,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -8984,7 +8956,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -9008,7 +8980,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -9032,7 +9004,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -9056,7 +9028,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -9080,7 +9052,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -9104,7 +9076,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -9128,7 +9100,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -9152,7 +9124,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -9176,7 +9148,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -9200,7 +9172,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -9224,7 +9196,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -9248,7 +9220,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -9272,7 +9244,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -9296,7 +9268,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -9320,7 +9292,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -9344,7 +9316,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -9368,7 +9340,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -9392,7 +9364,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -9416,7 +9388,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -9440,7 +9412,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -9464,7 +9436,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -9488,7 +9460,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -9512,7 +9484,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -9536,7 +9508,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -9560,7 +9532,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -9584,7 +9556,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -9608,7 +9580,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -9632,7 +9604,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -9656,7 +9628,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -9680,7 +9652,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -9705,7 +9677,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -9732,7 +9704,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -9757,7 +9729,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -9784,7 +9756,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -9809,7 +9781,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -9836,7 +9808,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -9861,7 +9833,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -9888,7 +9860,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -9912,7 +9884,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -9936,7 +9908,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -9960,7 +9932,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -9984,7 +9956,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -10009,7 +9981,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
   - func: bootstrap-mongo-orchestration
@@ -10036,7 +10008,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -10061,7 +10033,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
   - func: bootstrap-mongo-orchestration
@@ -10088,7 +10060,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -10113,7 +10085,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
   - func: bootstrap-mongo-orchestration
@@ -10140,7 +10112,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -10165,7 +10137,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl-cse
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
   - func: bootstrap-mongo-orchestration
@@ -10192,7 +10164,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -10216,7 +10188,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -10240,7 +10212,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -10264,7 +10236,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -10288,7 +10260,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -10312,7 +10284,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -10336,7 +10308,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -10360,7 +10332,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -10384,7 +10356,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -10408,7 +10380,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -10432,7 +10404,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -10456,7 +10428,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -10480,7 +10452,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -10504,7 +10476,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -10528,7 +10500,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -10552,7 +10524,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -10576,7 +10548,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -10600,7 +10572,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -10624,7 +10596,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -10648,7 +10620,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -10672,7 +10644,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -10696,7 +10668,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -10720,7 +10692,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -10744,7 +10716,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -10768,7 +10740,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -10792,7 +10764,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -10816,7 +10788,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -10840,7 +10812,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -10864,7 +10836,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -10888,7 +10860,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -10912,7 +10884,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -10936,7 +10908,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -10960,7 +10932,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -10984,7 +10956,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11008,7 +10980,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11032,7 +11004,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11056,7 +11028,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -11080,7 +11052,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11104,7 +11076,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11128,7 +11100,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -11152,7 +11124,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11176,7 +11148,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -11200,7 +11172,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11224,7 +11196,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11248,7 +11220,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11272,7 +11244,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -11296,7 +11268,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11320,7 +11292,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11344,7 +11316,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11368,7 +11340,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -11392,7 +11364,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11416,7 +11388,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11440,7 +11412,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11464,7 +11436,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -11488,7 +11460,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11512,7 +11484,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11536,7 +11508,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -11560,7 +11532,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11584,7 +11556,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -11608,7 +11580,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11632,7 +11604,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11656,7 +11628,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11680,7 +11652,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -11704,7 +11676,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11728,7 +11700,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11752,7 +11724,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11776,7 +11748,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -11800,7 +11772,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11824,7 +11796,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11848,7 +11820,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11872,7 +11844,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -11896,7 +11868,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -11920,7 +11892,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -11944,7 +11916,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -11968,7 +11940,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -11992,7 +11964,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12016,7 +11988,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12040,7 +12012,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12064,7 +12036,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -12088,7 +12060,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12112,7 +12084,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12136,7 +12108,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12160,7 +12132,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -12184,7 +12156,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12208,7 +12180,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12232,7 +12204,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12256,7 +12228,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -12280,7 +12252,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12304,7 +12276,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12328,7 +12300,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12352,7 +12324,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -12376,7 +12348,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -12400,7 +12372,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12424,7 +12396,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12448,7 +12420,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12472,7 +12444,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -12496,7 +12468,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12520,7 +12492,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12544,7 +12516,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12568,7 +12540,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -12592,7 +12564,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12616,7 +12588,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12640,7 +12612,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12664,7 +12636,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -12688,7 +12660,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12712,7 +12684,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12736,7 +12708,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12760,7 +12732,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -12784,7 +12756,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -12808,7 +12780,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12832,7 +12804,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12856,7 +12828,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12880,7 +12852,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -12904,7 +12876,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -12928,7 +12900,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -12952,7 +12924,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -12976,7 +12948,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13000,7 +12972,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -13024,7 +12996,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -13048,7 +13020,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -13072,7 +13044,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13096,7 +13068,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -13120,7 +13092,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -13144,7 +13116,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -13168,7 +13140,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -13192,7 +13164,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13216,7 +13188,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -13240,7 +13212,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -13264,7 +13236,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -13288,7 +13260,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13312,7 +13284,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -13336,7 +13308,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -13360,7 +13332,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -13384,7 +13356,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13408,7 +13380,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -13432,7 +13404,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -13456,7 +13428,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -13480,7 +13452,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13504,7 +13476,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
   - func: bootstrap-mongo-orchestration
@@ -13528,7 +13500,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -13552,7 +13524,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - func: bootstrap-mongo-orchestration
@@ -13576,7 +13548,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -13594,7 +13566,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13611,7 +13583,7 @@ tasks:
   depends_on:
     name: debug-compile-sspi-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
   - func: bootstrap-mongo-orchestration
@@ -13628,7 +13600,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -13645,7 +13617,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13667,7 +13639,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13685,7 +13657,7 @@ tasks:
   depends_on:
     name: debug-compile-sspi-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
   - func: bootstrap-mongo-orchestration
@@ -13703,7 +13675,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap-mongo-orchestration
@@ -13725,7 +13697,7 @@ tasks:
   depends_on:
     name: debug-compile-compression-zlib
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-compression-zlib
   - func: bootstrap-mongo-orchestration
@@ -13746,7 +13718,7 @@ tasks:
   depends_on:
     name: debug-compile-compression-snappy
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-compression-snappy
   - func: bootstrap-mongo-orchestration
@@ -13767,7 +13739,7 @@ tasks:
   depends_on:
     name: debug-compile-compression-zstd
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-compression-zstd
   - func: bootstrap-mongo-orchestration
@@ -13790,7 +13762,7 @@ tasks:
   depends_on:
     name: debug-compile-compression
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-compression
   - func: bootstrap-mongo-orchestration
@@ -13807,7 +13779,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13824,7 +13796,7 @@ tasks:
   depends_on:
     name: hardened-compile
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: hardened-compile
   - func: bootstrap-mongo-orchestration
@@ -13840,7 +13812,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: prepare-kerberos
@@ -13853,7 +13825,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl-static
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
   - func: prepare-kerberos
@@ -13866,7 +13838,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
   - func: prepare-kerberos
@@ -13879,7 +13851,7 @@ tasks:
   depends_on:
     name: debug-compile-sspi-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
   - func: prepare-kerberos
@@ -13892,7 +13864,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: prepare-kerberos
@@ -13903,7 +13875,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
   - func: run mock server tests
@@ -13914,7 +13886,7 @@ tasks:
   depends_on:
     name: debug-compile-sasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: build mongohouse
@@ -13944,7 +13916,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap-mongo-orchestration
@@ -13964,7 +13936,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -14106,7 +14078,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -14126,7 +14098,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -14146,7 +14118,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -14166,7 +14138,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-nossl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap-mongo-orchestration
@@ -14195,7 +14167,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14211,7 +14183,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14227,7 +14199,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14243,7 +14215,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14259,7 +14231,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14275,7 +14247,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14291,7 +14263,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14307,7 +14279,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14323,7 +14295,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14339,7 +14311,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14355,7 +14327,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14371,7 +14343,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14387,7 +14359,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14403,7 +14375,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14419,7 +14391,7 @@ tasks:
   depends_on:
     name: debug-compile-aws
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
   - func: bootstrap-mongo-orchestration
@@ -14437,7 +14409,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -14469,7 +14441,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -14501,7 +14473,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -14533,7 +14505,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -14565,7 +14537,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -14597,7 +14569,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -14629,7 +14601,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -14661,7 +14633,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -14693,7 +14665,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -14725,7 +14697,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -14757,7 +14729,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -14789,7 +14761,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -14821,7 +14793,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -14853,7 +14825,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -14885,7 +14857,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -14917,7 +14889,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -14949,7 +14921,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -14981,7 +14953,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15013,7 +14985,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15045,7 +15017,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15077,7 +15049,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15109,7 +15081,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15141,7 +15113,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15173,7 +15145,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15205,7 +15177,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15237,7 +15209,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15269,7 +15241,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15301,7 +15273,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15333,7 +15305,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15365,7 +15337,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15397,7 +15369,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15429,7 +15401,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15461,7 +15433,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15493,7 +15465,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15525,7 +15497,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15557,7 +15529,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15589,7 +15561,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15621,7 +15593,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15653,7 +15625,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15685,7 +15657,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15717,7 +15689,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15749,7 +15721,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15781,7 +15753,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15813,7 +15785,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15845,7 +15817,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -15877,7 +15849,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15909,7 +15881,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15941,7 +15913,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -15973,7 +15945,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16005,7 +15977,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16037,7 +16009,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16069,7 +16041,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -16101,7 +16073,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -16133,7 +16105,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -16165,7 +16137,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -16197,7 +16169,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -16229,7 +16201,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -16261,7 +16233,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -16293,7 +16265,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -16325,7 +16297,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -16357,7 +16329,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16389,7 +16361,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16421,7 +16393,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16453,7 +16425,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -16485,7 +16457,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -16517,7 +16489,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -16549,7 +16521,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16581,7 +16553,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16613,7 +16585,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16645,7 +16617,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -16677,7 +16649,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -16709,7 +16681,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -16741,7 +16713,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -16773,7 +16745,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -16805,7 +16777,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -16837,7 +16809,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -16869,7 +16841,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -16901,7 +16873,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -16933,7 +16905,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16965,7 +16937,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -16997,7 +16969,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17029,7 +17001,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17061,7 +17033,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17093,7 +17065,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17125,7 +17097,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17157,7 +17129,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17189,7 +17161,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17221,7 +17193,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17253,7 +17225,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17285,7 +17257,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17317,7 +17289,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -17349,7 +17321,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -17381,7 +17353,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -17413,7 +17385,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -17445,7 +17417,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -17477,7 +17449,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -17509,7 +17481,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17541,7 +17513,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17573,7 +17545,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17605,7 +17577,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17637,7 +17609,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17669,7 +17641,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17701,7 +17673,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17733,7 +17705,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17765,7 +17737,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -17797,7 +17769,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17829,7 +17801,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17861,7 +17833,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -17893,7 +17865,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -17925,7 +17897,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -17957,7 +17929,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -17989,7 +17961,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -18021,7 +17993,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -18053,7 +18025,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -18085,7 +18057,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18117,7 +18089,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18149,7 +18121,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18181,7 +18153,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18213,7 +18185,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18245,7 +18217,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18277,7 +18249,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18309,7 +18281,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18341,7 +18313,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18373,7 +18345,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18405,7 +18377,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18437,7 +18409,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18469,7 +18441,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -18501,7 +18473,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -18533,7 +18505,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -18565,7 +18537,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -18597,7 +18569,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -18629,7 +18601,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -18661,7 +18633,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18693,7 +18665,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18725,7 +18697,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18757,7 +18729,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18789,7 +18761,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18821,7 +18793,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18853,7 +18825,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18885,7 +18857,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18917,7 +18889,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -18949,7 +18921,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -18981,7 +18953,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19013,7 +18985,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19045,7 +19017,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -19077,7 +19049,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -19109,7 +19081,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -19141,7 +19113,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -19173,7 +19145,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -19205,7 +19177,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -19237,7 +19209,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -19269,7 +19241,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -19301,7 +19273,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -19333,7 +19305,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19365,7 +19337,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19397,7 +19369,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19429,7 +19401,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -19461,7 +19433,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -19493,7 +19465,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -19525,7 +19497,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19557,7 +19529,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19589,7 +19561,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19621,7 +19593,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -19653,7 +19625,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -19685,7 +19657,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-darwinssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
   - command: shell.exec
@@ -19717,7 +19689,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -19749,7 +19721,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -19781,7 +19753,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -19813,7 +19785,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -19845,7 +19817,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -19877,7 +19849,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -19909,7 +19881,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19941,7 +19913,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -19973,7 +19945,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20005,7 +19977,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20037,7 +20009,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20069,7 +20041,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20101,7 +20073,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20133,7 +20105,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20165,7 +20137,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20197,7 +20169,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -20229,7 +20201,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -20261,7 +20233,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-winssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
   - command: shell.exec
@@ -20293,7 +20265,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20325,7 +20297,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20357,7 +20329,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20389,7 +20361,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20421,7 +20393,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20453,7 +20425,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20485,7 +20457,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20517,7 +20489,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20549,7 +20521,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20581,7 +20553,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20613,7 +20585,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20645,7 +20617,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20677,7 +20649,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20709,7 +20681,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20741,7 +20713,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - command: shell.exec
@@ -20773,7 +20745,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20805,7 +20777,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20837,7 +20809,7 @@ tasks:
   depends_on:
     name: debug-compile-nosasl-openssl-1.0.1
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
   - command: shell.exec
@@ -20870,7 +20842,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -20897,7 +20869,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -20924,7 +20896,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
@@ -20951,7 +20923,7 @@ tasks:
   depends_on:
     name: debug-compile-asan-clang-openssl
   commands:
-  - func: fetch build
+  - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap-mongo-orchestration
