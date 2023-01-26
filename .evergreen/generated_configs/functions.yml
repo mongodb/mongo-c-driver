@@ -1,1 +1,10 @@
-functions: {}
+functions:
+  early-termination:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            echo 'EVERGREEN HOST WAS UNEXPECTEDLY TERMINATED!!!' 1>&2
+            echo 'Restart this Evergreen task and try again!' 1>&2

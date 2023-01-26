@@ -20,6 +20,10 @@ pre_error_fails_task: true
 # teardown_task of appropriate task groups.
 post_error_fails_task: false
 
+# Unlikely, but document loudly when task failure is due to early termination.
+early_termination:
+  - func: early-termination
+
 include:
   - filename: .evergreen/generated_configs/legacy-config.yml
   - filename: .evergreen/generated_configs/functions.yml
