@@ -180,21 +180,6 @@ all_functions = OD([
         mongo-orchestration stop
         ''', test=False),
     )),
-    ('prepare kerberos', Function(
-        shell_mongoc(r'''
-        if test "${keytab|}" && [[ -f /etc/krb5.conf ]]; then
-          echo "${keytab}" > /tmp/drivers.keytab.base64
-          base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
-          if touch /etc/krb5.conf 2>/dev/null; then
-            cat .evergreen/etc/kerberos.realm | tee -a /etc/krb5.conf
-          elif command sudo true 2>/dev/null; then
-            cat .evergreen/etc/kerberos.realm | sudo tee -a /etc/krb5.conf
-          else
-            echo "Cannot append kerberos.realm to /etc/krb5.conf; skipping." 1>&2
-          fi
-        fi
-        ''', test=False),
-    )),
     ('link sample program', Function(
         shell_mongoc(r'''
         # Compile a program that links dynamically or statically to libmongoc,

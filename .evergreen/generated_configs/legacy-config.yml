@@ -248,24 +248,6 @@ functions:
         set -o errexit
         cd MO
         mongo-orchestration stop
-  prepare kerberos:
-  - command: shell.exec
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        if test "${keytab|}" && [[ -f /etc/krb5.conf ]]; then
-          echo "${keytab}" > /tmp/drivers.keytab.base64
-          base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
-          if touch /etc/krb5.conf 2>/dev/null; then
-            cat .evergreen/etc/kerberos.realm | tee -a /etc/krb5.conf
-          elif command sudo true 2>/dev/null; then
-            cat .evergreen/etc/kerberos.realm | sudo tee -a /etc/krb5.conf
-          else
-            echo "Cannot append kerberos.realm to /etc/krb5.conf; skipping." 1>&2
-          fi
-        fi
   link sample program:
   - command: shell.exec
     type: test
@@ -13940,7 +13922,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
-  - func: prepare kerberos
+  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-openssl-static
   tags:
@@ -13953,7 +13935,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: prepare kerberos
+  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-darwinssl
   tags:
@@ -13966,7 +13948,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: prepare kerberos
+  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-winssl
   tags:
@@ -13979,7 +13961,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
-  - func: prepare kerberos
+  - func: prepare-kerberos
   - func: run auth tests
 - name: authentication-tests-openssl-nosasl
   tags:
@@ -13992,7 +13974,7 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
-  - func: prepare kerberos
+  - func: prepare-kerberos
   - func: run auth tests
 - name: test-asan-memcheck-mock-server
   tags:
@@ -14031,7 +14013,7 @@ tasks:
       script: |-
         set -o errexit
         env SANITIZE=address DEBUG=ON SASL=AUTO SSL=OPENSSL EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF' bash .evergreen/scripts/compile.sh
-  - func: prepare kerberos
+  - func: prepare-kerberos
   - func: run auth tests
     vars:
       ASAN: 'on'
