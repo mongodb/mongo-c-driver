@@ -32,14 +32,6 @@ all_functions = OD([
             bucket='mciuploads', permissions='public-read',
             content_type='${content_type|application/x-gzip}'),
     )),
-    ('upload build', Function(
-        targz_pack('${build_id}.tar.gz', 'mongoc', './**'),
-        s3_put('${build_variant}/${revision}/${task_name}/${build_id}.tar.gz',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='${build_id}.tar.gz', bucket='mciuploads',
-               permissions='public-read',
-               content_type='${content_type|application/x-gzip}'),
-    )),
     ('release archive', Function(
         shell_mongoc(r'''
         # Need modern Sphinx for :caption: in literal includes.

@@ -23,22 +23,6 @@ functions:
       permissions: public-read
       local_file: mongoc.tar.gz
       content_type: ${content_type|application/x-gzip}
-  upload build:
-  - command: archive.targz_pack
-    params:
-      target: ${build_id}.tar.gz
-      source_dir: mongoc
-      include:
-      - ./**
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz
-      bucket: mciuploads
-      permissions: public-read
-      local_file: ${build_id}.tar.gz
-      content_type: ${content_type|application/x-gzip}
   release archive:
   - command: shell.exec
     type: test
@@ -713,7 +697,7 @@ tasks:
   - func: upload docs
   - func: upload man pages
   - func: upload release
-  - func: upload build
+  - func: upload-build
 - name: hardened-compile
   tags:
   - hardened
@@ -727,7 +711,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O" DEBUG="ON" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-compression-zlib
   tags:
   - compression
@@ -742,7 +726,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-compression-snappy
   tags:
   - compression
@@ -757,7 +741,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SNAPPY="ON" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-compression-zstd
   tags:
   - compression
@@ -772,7 +756,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SNAPPY="OFF" ZLIB="OFF" ZSTD="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-compression
   tags:
   - compression
@@ -789,7 +773,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SNAPPY="ON" ZLIB="BUNDLED" ZSTD="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-no-align
   tags:
   - debug-compile
@@ -803,7 +787,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-nosasl-nossl
   tags:
   - debug-compile
@@ -819,7 +803,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SSL="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-lto
   commands:
   - command: shell.exec
@@ -831,7 +815,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-flto" DEBUG="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-lto-thin
   commands:
   - command: shell.exec
@@ -843,7 +827,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-flto=thin" DEBUG="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-c11
   tags:
   - c11
@@ -860,7 +844,7 @@ tasks:
       script: |-
         set -o errexit
         env C_STD_VERSION="11" DEBUG="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-no-counters
   tags:
   - debug-compile
@@ -875,7 +859,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" ENABLE_SHM_COUNTERS="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-asan-clang
   tags:
   - asan-clang
@@ -891,7 +875,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-asan-gcc
   tags:
   - special
@@ -905,7 +889,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-pthread" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-asan-clang-openssl
   tags:
   - asan-clang
@@ -921,7 +905,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-ubsan
   tags:
   - special
@@ -935,7 +919,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-ubsan-with-extra-alignment
   tags:
   - special
@@ -949,7 +933,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-scan-build
   tags:
   - clang
@@ -966,7 +950,7 @@ tasks:
       script: |-
         set -o errexit
         env ANALYZE="ON" CC="clang" DEBUG="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
   - func: upload scan artifacts
   - command: shell.exec
     type: test
@@ -989,7 +973,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" TRACING="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: release-compile
   depends_on:
     name: make-release-archive
@@ -1004,7 +988,7 @@ tasks:
       script: |-
         set -o errexit
         env RELEASE="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-nosasl-openssl
   tags:
   - debug-compile
@@ -1020,7 +1004,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-nosasl-openssl-static
   tags:
   - debug-compile
@@ -1036,7 +1020,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-nosasl-darwinssl
   tags:
   - darwinssl
@@ -1052,7 +1036,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SSL="DARWIN" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-nosasl-winssl
   tags:
   - debug-compile
@@ -1068,7 +1052,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sasl-nossl
   tags:
   - debug-compile
@@ -1084,7 +1068,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SASL="AUTO" SSL="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sasl-openssl
   tags:
   - debug-compile
@@ -1100,7 +1084,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sasl-openssl-static
   tags:
   - debug-compile
@@ -1116,7 +1100,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sasl-darwinssl
   tags:
   - darwinssl
@@ -1132,7 +1116,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sasl-winssl
   tags:
   - debug-compile
@@ -1148,7 +1132,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SASL="CYRUS" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sspi-nossl
   tags:
   - debug-compile
@@ -1164,7 +1148,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SASL="SSPI" SSL="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sspi-openssl
   tags:
   - debug-compile
@@ -1180,7 +1164,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SASL="SSPI" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sspi-openssl-static
   tags:
   - debug-compile
@@ -1196,7 +1180,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SASL="SSPI" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-rdtscp
   commands:
   - command: shell.exec
@@ -1208,7 +1192,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" ENABLE_RDTSCP="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sspi-winssl
   tags:
   - debug-compile
@@ -1224,7 +1208,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SASL="SSPI" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-nosrv
   tags:
   - debug-compile
@@ -1238,7 +1222,7 @@ tasks:
       script: |-
         set -o errexit
         env DEBUG="ON" SRV="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: link-with-cmake
   depends_on:
     name: make-release-archive
@@ -1542,7 +1526,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sasl-openssl-cse
   tags:
   - client-side-encryption
@@ -1563,7 +1547,7 @@ tasks:
         rm CMakeCache.txt
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sasl-openssl-static-cse
   tags:
   - client-side-encryption
@@ -1584,7 +1568,7 @@ tasks:
         rm CMakeCache.txt
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sasl-darwinssl-cse
   tags:
   - client-side-encryption
@@ -1605,7 +1589,7 @@ tasks:
         rm CMakeCache.txt
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-sasl-winssl-cse
   tags:
   - client-side-encryption
@@ -1626,7 +1610,7 @@ tasks:
         rm CMakeCache.txt
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-asan-openssl-cse
   tags:
   - asan-clang
@@ -1645,7 +1629,7 @@ tasks:
         rm CMakeCache.txt
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-nosasl-openssl-1.0.1
   commands:
   - func: install ssl
@@ -1660,7 +1644,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-Wno-redundant-decls" DEBUG="ON" SASL="OFF" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: debug-compile-tsan-openssl
   tags:
   - special
@@ -1675,7 +1659,7 @@ tasks:
       script: |-
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF" SANITIZE="thread" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload build
+  - func: upload-build
 - name: build-and-test-with-toolchain
   commands:
   - command: s3.get
@@ -14233,7 +14217,7 @@ tasks:
         set -o errexit
         env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
-  - func: upload build
+  - func: upload-build
 - name: build-and-run-authentication-tests-openssl-1.0.1-fips
   commands:
   - func: install ssl
@@ -14249,7 +14233,7 @@ tasks:
         set -o errexit
         env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
-  - func: upload build
+  - func: upload-build
 - name: build-and-run-authentication-tests-openssl-1.0.2
   commands:
   - func: install ssl
@@ -14265,7 +14249,7 @@ tasks:
         set -o errexit
         env CFLAGS=-Wno-redundant-decls DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
-  - func: upload build
+  - func: upload-build
 - name: build-and-run-authentication-tests-openssl-1.1.0
   commands:
   - func: install ssl
@@ -14281,7 +14265,7 @@ tasks:
         set -o errexit
         env DEBUG=ON SASL=OFF SSL=OPENSSL bash .evergreen/scripts/compile.sh
   - func: run auth tests
-  - func: upload build
+  - func: upload-build
 - name: build-and-run-authentication-tests-libressl-2.5
   commands:
   - func: install ssl
@@ -14299,7 +14283,7 @@ tasks:
   - func: run auth tests
     vars:
       require_tls12: true
-  - func: upload build
+  - func: upload-build
 - name: build-and-run-authentication-tests-libressl-3.0-auto
   commands:
   - func: install ssl
@@ -14317,7 +14301,7 @@ tasks:
   - func: run auth tests
     vars:
       require_tls12: true
-  - func: upload build
+  - func: upload-build
 - name: build-and-run-authentication-tests-libressl-3.0
   commands:
   - func: install ssl
@@ -14335,7 +14319,7 @@ tasks:
   - func: run auth tests
     vars:
       require_tls12: true
-  - func: upload build
+  - func: upload-build
 - name: test-latest-server-ipv6-client-ipv6-noauth-nosasl-nossl
   tags:
   - ipv4-ipv6
@@ -14434,7 +14418,7 @@ tasks:
         export CC='${CC}'
         $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
-  - func: upload build
+  - func: upload-build
 - name: test-aws-openssl-regular-latest
   depends_on:
     name: debug-compile-aws

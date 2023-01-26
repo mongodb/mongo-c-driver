@@ -90,3 +90,19 @@ functions:
             for file in $(find .evergreen/scripts -type f); do
                 chmod +rx "$file" || exit
             done
+  upload-build:
+    - command: archive.targz_pack
+      params:
+        include:
+          - ./**
+        source_dir: mongoc
+        target: ${build_id}.tar.gz
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: ${content_type|application/x-gzip}
+        local_file: ${build_id}.tar.gz
+        permissions: public-read
+        remote_file: ${project}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz

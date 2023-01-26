@@ -81,7 +81,7 @@ class CompileTask(NamedTask):
         script += self.extra_script
         task['commands'].append(shell_mongoc(
             script, add_expansions_to_env=True))
-        task['commands'].append(func('upload build'))
+        task['commands'].append(func('upload-build'))
         task['commands'].extend(self.suffix_commands)
         return task
 
@@ -167,7 +167,7 @@ all_tasks = [
                         shell_mongoc('python ./.evergreen/scripts/check-preludes.py .')]),
     FuncTask('make-release-archive',
              'release archive', 'upload docs', 'upload man pages',
-             'upload release', 'upload build'),
+             'upload release', 'upload-build'),
     CompileTask('hardened-compile',
                 tags=['hardened'],
                 compression=None,
@@ -856,7 +856,7 @@ class SSLTask(Task):
             func('install ssl', SSL=full_version),
             shell_mongoc(script, add_expansions_to_env=True),
             func('run auth tests', **kwargs),
-            func('upload build')])
+            func('upload-build')])
 
         self.version = version
         self.fips = fips
@@ -929,7 +929,7 @@ aws_compile_task = NamedTask('debug-compile-aws', commands=[shell_mongoc('''
         export CC='${CC}'
         $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
-'''), func('upload build')])
+'''), func('upload-build')])
 
 all_tasks = chain(all_tasks, [aws_compile_task])
 
