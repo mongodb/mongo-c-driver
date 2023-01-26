@@ -38,6 +38,20 @@ functions:
         args:
           - -c
           - .evergreen/scripts/debug-core-evergreen.sh
+  bootstrap-mongo-orchestration:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        args:
+          - -c
+          - .evergreen/scripts/integration-tests.sh
+    - command: expansions.update
+      type: setup
+      params:
+        file: mongoc/mo-expansion.yml
   early-termination:
     - command: subprocess.exec
       params:

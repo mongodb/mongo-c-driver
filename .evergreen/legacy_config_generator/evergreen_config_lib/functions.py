@@ -139,25 +139,6 @@ all_functions = OD([
                 ('file_location', 'mongoc/test-results.json'),
             ]))]),
     )),
-    ('bootstrap mongo-orchestration', Function(
-        shell_mongoc(r'''
-        export MONGODB_VERSION=${VERSION}
-        export TOPOLOGY=${TOPOLOGY}
-        export IPV4_ONLY=${IPV4_ONLY}
-        export AUTH=${AUTH}
-        export AUTHSOURCE=${AUTHSOURCE}
-        export SSL=${SSL}
-        export ORCHESTRATION_FILE=${ORCHESTRATION_FILE}
-        export OCSP=${OCSP}
-        export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
-        export LOAD_BALANCER=${LOAD_BALANCER}
-        bash .evergreen/scripts/integration-tests.sh
-        ''', test=False),
-        OD([
-            ("command", "expansions.update"),
-            ("params", OD([("file", "mongoc/mo-expansion.yml")]))
-        ])
-    )),
     ('run tests', Function(
         shell_mongoc(r'''
         bash .evergreen/scripts/run-tests.sh

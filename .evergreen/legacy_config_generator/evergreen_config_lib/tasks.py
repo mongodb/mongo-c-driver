@@ -21,8 +21,7 @@ try:
 except ImportError:
     import collections as abc
 
-from evergreen_config_generator.functions import (
-    bootstrap, func, run_tests, s3_put)
+from evergreen_config_generator.functions import (func, run_tests, s3_put)
 from evergreen_config_generator.tasks import (
     both_or_neither, MatrixTask, NamedTask, prohibit, require, Task)
 from evergreen_config_lib import shell_mongoc
@@ -147,9 +146,11 @@ class LinkTask(NamedTask):
     def __init__(self, task_name, suffix_commands, orchestration=True, **kwargs):
         if orchestration == 'ssl':
             # Actual value of SSL does not matter here so long as it is not 'nossl'.
-            bootstrap_commands = [bootstrap(SSL="openssl")]
+            bootstrap_commands = [
+                func('bootstrap-mongo-orchestration', SSL="openssl")
+            ]
         elif orchestration:
-            bootstrap_commands = [bootstrap()]
+            bootstrap_commands = [func('bootstrap-mongo-orchestration',)]
         else:
             bootstrap_commands = []
 
@@ -525,10 +526,11 @@ class IntegrationTask(MatrixTask):
             # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
             commands.append(
                 func('compile coverage', SASL='AUTO', SSL='OPENSSL'))
-        commands.append(bootstrap(VERSION=self.version,
-                                  TOPOLOGY=self.topology,
-                                  AUTH='auth' if self.auth else 'noauth',
-                                  SSL=self.display('ssl')))
+        commands.append(func('bootstrap-mongo-orchestration',
+                             MONGODB_VERSION=self.version,
+                             TOPOLOGY=self.topology,
+                             AUTH='auth' if self.auth else 'noauth',
+                             SSL=self.display('ssl')))
         extra = {}
         if self.cse:
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
@@ -631,14 +633,16 @@ class DNSTask(MatrixTask):
             func('fetch build', BUILD_NAME=self.depends_on['name']))
 
         if self.loadbalanced:
-            orchestration = bootstrap(TOPOLOGY='sharded_cluster',
-                                      AUTH='auth' if self.auth else 'noauth',
-                                      SSL='ssl',
-                                      LOAD_BALANCER='on')
+            orchestration = func('bootstrap-mongo-orchestration',
+                                 TOPOLOGY='sharded_cluster',
+                                 AUTH='auth' if self.auth else 'noauth',
+                                 SSL='ssl',
+                                 LOAD_BALANCER='on')
         else:
-            orchestration = bootstrap(TOPOLOGY='replica_set',
-                                      AUTH='auth' if self.auth else 'noauth',
-                                      SSL='ssl')
+            orchestration = func('bootstrap-mongo-orchestration',
+                                 TOPOLOGY='replica_set',
+                                 AUTH='auth' if self.auth else 'noauth',
+                                 SSL='ssl')
 
         if self.auth:
             orchestration['vars']['AUTHSOURCE'] = 'thisDB'
@@ -692,10 +696,10 @@ class CompressionTask(MatrixTask):
         else:
             orchestration_file = self.compression
 
-        commands.append(bootstrap(
-            AUTH='noauth',
-            SSL='nossl',
-            ORCHESTRATION_FILE=orchestration_file))
+        commands.append(func('bootstrap-mongo-orchestration',
+                             AUTH='noauth',
+                             SSL='nossl',
+                             ORCHESTRATION_FILE=orchestration_file))
         commands.append(run_tests(
             AUTH='noauth',
             SSL='nossl',
@@ -732,7 +736,9 @@ class SpecialIntegrationTask(NamedTask):
                  suffix_commands=None, uri=None,
                  tags=None, version='latest', topology='server'):
         commands = [func('fetch build', BUILD_NAME=depends_on),
-                    bootstrap(VERSION=version, TOPOLOGY=topology),
+                    func('bootstrap-mongo-orchestration',
+                         MONGODB_VERSION=version,
+                         TOPOLOGY=topology),
                     run_tests(uri)] + (suffix_commands or [])
         super(SpecialIntegrationTask, self).__init__(task_name,
                                                      commands=commands,
@@ -820,13 +826,13 @@ all_tasks = chain(all_tasks, [
         'test-versioned-api',
         tags=['versioned-api'],
         depends_on='debug-compile-nosasl-openssl',
-        commands=[func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', VERSION='5.0', REQUIRE_API_VERSION='true'),
+        commands=[func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', MONGODB_VERSION='5.0', REQUIRE_API_VERSION='true'),
                   func('test versioned api', AUTH='auth', SSL='ssl')]),
     PostCompileTask(
         'test-versioned-api-accept-version-two',
         tags=['versioned-api'],
         depends_on='debug-compile-nosasl-nossl',
-        commands=[func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='noauth', SSL='nossl', VERSION='5.0', ORCHESTRATION_FILE='versioned-api-testing'),
+        commands=[func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='noauth', SSL='nossl', MONGODB_VERSION='5.0', ORCHESTRATION_FILE='versioned-api-testing'),
                   func('test versioned api', AUTH='noauth', SSL='nossl')]),
 ])
 
@@ -893,7 +899,8 @@ class IPTask(MatrixTask):
         self.add_dependency('debug-compile-nosasl-nossl')
         self.commands.extend([
             func('fetch build', BUILD_NAME=self.depends_on['name']),
-            bootstrap(IPV4_ONLY=self.on_off(server='ipv4')),
+            func('bootstrap-mongo-orchestration',
+                 IPV4_ONLY=self.on_off(server='ipv4')),
             run_tests(IPV4_ONLY=self.on_off(server='ipv4'),
                       URI={'ipv6': 'mongodb://[::1]/',
                            'ipv4': 'mongodb://127.0.0.1/',
@@ -942,8 +949,11 @@ class AWSTestTask(MatrixTask):
         self.add_dependency('debug-compile-aws')
         self.commands.extend([
             func('fetch build', BUILD_NAME=self.depends_on['name']),
-            bootstrap(AUTH="auth", ORCHESTRATION_FILE="auth-aws",
-                      VERSION=self.version, TOPOLOGY="server"),
+            func('bootstrap-mongo-orchestration',
+                 AUTH="auth",
+                 ORCHESTRATION_FILE="auth-aws",
+                 MONGODB_VERSION=self.version,
+                 TOPOLOGY="server"),
             func('run aws tests', TESTCASE=self.testcase.upper())])
 
     @property
@@ -987,8 +997,12 @@ class OCSPTask(MatrixTask):
             stapling = 'mustStaple-disableStapling'
 
         orchestration_file = '%s-basic-tls-ocsp-%s' % (self.cert, stapling)
-        orchestration = bootstrap(VERSION=self.version, TOPOLOGY='server',
-                                  SSL='ssl', OCSP='on', ORCHESTRATION_FILE=orchestration_file)
+        orchestration = func('bootstrap-mongo-orchestration',
+                             MONGODB_VERSION=self.version,
+                             TOPOLOGY='server',
+                             SSL='ssl',
+                             OCSP='on',
+                             ORCHESTRATION_FILE=orchestration_file)
 
         # The cache test expects a revoked response from an OCSP responder, exactly like TEST_4.
         test_column = 'TEST_4' if self.test == 'cache' else self.test.upper()
@@ -1094,11 +1108,12 @@ class LoadBalancedTask(MatrixTask):
         commands.append(
             func('fetch build', BUILD_NAME=self.depends_on['name']))
 
-        orchestration = bootstrap(TOPOLOGY='sharded_cluster',
-                                  AUTH='auth' if self.test_auth else 'noauth',
-                                  SSL='ssl' if self.test_ssl else 'nossl',
-                                  VERSION=self.version,
-                                  LOAD_BALANCER='on')
+        orchestration = func('bootstrap-mongo-orchestration',
+                             TOPOLOGY='sharded_cluster',
+                             AUTH='auth' if self.test_auth else 'noauth',
+                             SSL='ssl' if self.test_ssl else 'nossl',
+                             MONGODB_VERSION=self.version,
+                             LOAD_BALANCER='on')
         commands.append(orchestration)
         commands.append(func("clone drivers-evergreen-tools"))
         commands.append(func("start load balancer",

@@ -21,7 +21,8 @@
 
 set -o errexit  # Exit the script with error if any of the commands fail
 
-: "${LOAD_BALANCER:=off}"
+: "${MONGODB_VERSION:="latest"}"
+: "${LOAD_BALANCER:="off"}"
 
 DIR=$(dirname $0)
 # Functions to fetch MongoDB binaries
