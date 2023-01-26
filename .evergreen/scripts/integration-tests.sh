@@ -95,9 +95,6 @@ export ORCHESTRATION_URL="http://localhost:8889/v1/${TOPOLOGY}s"
 export TMPDIR=$MONGO_ORCHESTRATION_HOME/db
 echo From shell `date` > $MONGO_ORCHESTRATION_HOME/server.log
 
-if [ ! -d ../drivers-evergreen-tools ]; then
-   git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
-fi
 . ../drivers-evergreen-tools/.evergreen/find-python3.sh
 . ../drivers-evergreen-tools/.evergreen/venv-utils.sh
 

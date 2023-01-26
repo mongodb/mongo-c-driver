@@ -306,22 +306,16 @@ functions:
   - command: shell.exec
     type: test
     params:
-      working_dir: mongoc
       shell: bash
       script: |-
         set -o errexit
-        if [ ! -d "drivers-evergreen-tools" ]; then
-           git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
-        fi
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
         sh .evergreen/atlas_data_lake/build-mongohouse-local.sh
-        cd ../
   run mongohouse:
   - command: shell.exec
     type: test
     params:
-      working_dir: mongoc
       background: true
       shell: bash
       script: |-
@@ -337,13 +331,22 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        echo "testing that mongohouse is running..."
-        ps aux | grep mongohouse
-        echo $(pwd)
-        echo $(ls)
-        ls > dir.txt
-        cat dir.txt
-        echo $(cat dir.txt)
+        echo "Waiting for mongohouse to start..."
+        wait_for_mongohouse() {
+            for _ in $(seq 300); do
+                # Exit code 7: "Failed to connect to host".
+                if curl -s localhost:$1; (("$?" != 7)); then
+                    return 0
+                else
+                    sleep 1
+                fi
+            done
+            echo "Could not detect mongohouse on port $1" 1>&2
+            return 1
+        }
+        wait_for_mongohouse 27017 || exit
+        echo "Waiting for mongohouse to start... done."
+        pgrep -a "mongohouse"
         export RUN_MONGOHOUSE_TESTS=true
         ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
         unset RUN_MONGOHOUSE_TESTS
@@ -367,10 +370,6 @@ functions:
       script: |-
         set -o errexit
         # Add AWS variables to a file.
-        # Clone in one directory above so it does not get uploaded in working directory.
-        if [ ! -d ../drivers-evergreen-tools ]; then
-            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
-        fi
         cat <<EOF > ../drivers-evergreen-tools/.evergreen/auth_aws/aws_e2e_setup.json
         {
             "iam_auth_ecs_account" : "${iam_auth_ecs_account}",
@@ -401,15 +400,6 @@ functions:
         . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
         bash .evergreen/scripts/run-aws-tests.sh
-  clone drivers-evergreen-tools:
-  - command: shell.exec
-    params:
-      shell: bash
-      script: |-
-        set -o errexit
-        if [ ! -d "drivers-evergreen-tools" ]; then
-            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
-        fi
   run kms servers:
   - command: shell.exec
     params:
@@ -1016,6 +1006,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
@@ -1025,6 +1016,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
@@ -1035,6 +1027,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
@@ -1045,6 +1038,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
@@ -1054,6 +1048,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
@@ -1064,6 +1059,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
@@ -1075,6 +1071,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
@@ -1086,6 +1083,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
@@ -1096,6 +1094,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program MSVC
 - name: link-with-cmake-windows-ssl
@@ -1103,6 +1102,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       SSL: openssl
@@ -1114,6 +1114,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program MSVC
     vars:
@@ -1123,6 +1124,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program mingw
 - name: link-with-pkg-config
@@ -1130,6 +1132,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
 - name: link-with-pkg-config-mac
@@ -1137,6 +1140,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
 - name: link-with-pkg-config-ssl
@@ -1144,6 +1148,7 @@ tasks:
     name: make-release-archive
     variant: releng
   commands:
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
@@ -1447,13 +1452,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -1471,6 +1477,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1492,6 +1499,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -1514,13 +1522,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: openssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -1538,6 +1547,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1559,6 +1569,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -1580,6 +1591,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1601,6 +1613,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -1623,13 +1636,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -1647,6 +1661,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1668,6 +1683,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -1690,13 +1706,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: openssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -1714,6 +1731,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1735,6 +1753,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -1756,6 +1775,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1777,6 +1797,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -1799,13 +1820,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -1823,6 +1845,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1844,6 +1867,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -1865,6 +1889,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1886,6 +1911,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -1907,6 +1933,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1928,6 +1955,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -1950,13 +1978,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -1974,6 +2003,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -1995,6 +2025,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2016,6 +2047,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2037,6 +2069,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2058,6 +2091,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2079,6 +2113,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2101,13 +2136,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.2'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -2125,6 +2161,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2146,6 +2183,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2167,6 +2205,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2188,6 +2227,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2209,6 +2249,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2230,6 +2271,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2251,6 +2293,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2272,6 +2315,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2293,6 +2337,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2314,6 +2359,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2335,6 +2381,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2356,6 +2403,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2377,6 +2425,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2398,6 +2447,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2419,6 +2469,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2440,6 +2491,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2461,6 +2513,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2482,6 +2535,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2503,6 +2557,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2524,6 +2579,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2545,6 +2601,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2566,6 +2623,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2587,6 +2645,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2608,6 +2667,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2629,6 +2689,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2650,6 +2711,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2671,6 +2733,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2692,6 +2755,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2713,6 +2777,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2734,6 +2799,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2755,6 +2821,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2776,6 +2843,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2797,6 +2865,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2818,6 +2887,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2839,6 +2909,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2860,6 +2931,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2881,6 +2953,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2902,6 +2975,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2923,6 +2997,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2944,6 +3019,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -2965,6 +3041,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -2986,6 +3063,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3007,6 +3085,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3028,6 +3107,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3049,6 +3129,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3070,6 +3151,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3091,6 +3173,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3112,6 +3195,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3133,6 +3217,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3154,6 +3239,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3175,6 +3261,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3196,6 +3283,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3217,6 +3305,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3238,6 +3327,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3259,6 +3349,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3280,6 +3371,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3301,6 +3393,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3322,6 +3415,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3343,6 +3437,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3364,6 +3459,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-tsan-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3385,13 +3481,14 @@ tasks:
     vars:
       SASL: AUTO
       SSL: OPENSSL
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: openssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -3416,13 +3513,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -3443,6 +3541,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3468,13 +3567,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -3495,6 +3595,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3520,13 +3621,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -3547,6 +3649,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3572,13 +3675,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -3599,6 +3703,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3623,6 +3728,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3647,6 +3753,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3671,6 +3778,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3695,6 +3803,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3719,6 +3828,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -3744,13 +3854,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: latest
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -3771,6 +3882,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3796,13 +3908,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: latest
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -3823,6 +3936,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3848,13 +3962,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: latest
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -3875,6 +3990,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3900,13 +4016,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: latest
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -3927,6 +4044,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3951,6 +4069,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3975,6 +4094,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -3999,6 +4119,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4023,6 +4144,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4047,6 +4169,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4072,13 +4195,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: openssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -4099,6 +4223,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4124,13 +4249,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: openssl-static
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -4151,6 +4277,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4176,13 +4303,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: darwinssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -4203,6 +4331,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4228,13 +4357,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: latest
       SSL: winssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -4255,6 +4385,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4279,6 +4410,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4303,6 +4435,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4327,6 +4460,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4351,6 +4485,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4376,13 +4511,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: latest
       SSL: openssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -4403,6 +4539,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4428,13 +4565,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: latest
       SSL: openssl-static
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -4455,6 +4593,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4480,13 +4619,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: latest
       SSL: darwinssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -4507,6 +4647,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4532,13 +4673,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: latest
       SSL: winssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -4559,6 +4701,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4583,6 +4726,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4607,6 +4751,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4631,6 +4776,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4655,6 +4801,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4679,6 +4826,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4703,6 +4851,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4727,6 +4876,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4751,6 +4901,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4775,6 +4926,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4799,6 +4951,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4823,6 +4976,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4847,6 +5001,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4871,6 +5026,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -4895,6 +5051,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4919,6 +5076,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4943,6 +5101,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4967,6 +5126,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -4991,6 +5151,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5015,6 +5176,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5039,6 +5201,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5063,6 +5226,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5087,6 +5251,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5112,13 +5277,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5139,6 +5305,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5164,13 +5331,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5191,6 +5359,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5216,13 +5385,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5243,6 +5413,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5268,13 +5439,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5295,6 +5467,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5319,6 +5492,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5343,6 +5517,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5367,6 +5542,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5391,6 +5567,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5416,13 +5593,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '6.0'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5443,6 +5621,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5468,13 +5647,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '6.0'
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5495,6 +5675,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5520,13 +5701,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '6.0'
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5547,6 +5729,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5572,13 +5755,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '6.0'
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5599,6 +5783,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5623,6 +5808,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5647,6 +5833,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5671,6 +5858,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5695,6 +5883,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5719,6 +5908,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -5744,13 +5934,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: openssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5771,6 +5962,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5796,13 +5988,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: openssl-static
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5823,6 +6016,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5848,13 +6042,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: darwinssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5875,6 +6070,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5900,13 +6096,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '6.0'
       SSL: winssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -5927,6 +6124,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5951,6 +6149,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5975,6 +6174,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -5999,6 +6199,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6023,6 +6224,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6048,13 +6250,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '6.0'
       SSL: openssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -6075,6 +6278,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6100,13 +6304,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '6.0'
       SSL: openssl-static
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -6127,6 +6332,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6152,13 +6358,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '6.0'
       SSL: darwinssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -6179,6 +6386,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6204,13 +6412,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '6.0'
       SSL: winssl
       TOPOLOGY: replica_set
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -6231,6 +6440,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6255,6 +6465,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6279,6 +6490,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6303,6 +6515,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6327,6 +6540,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6351,6 +6565,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6375,6 +6590,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6399,6 +6615,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6423,6 +6640,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6447,6 +6665,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6471,6 +6690,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6495,6 +6715,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6519,6 +6740,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6543,6 +6765,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6567,6 +6790,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6591,6 +6815,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6615,6 +6840,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6639,6 +6865,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6663,6 +6890,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6687,6 +6915,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6711,6 +6940,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6735,6 +6965,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6759,6 +6990,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -6784,13 +7016,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -6811,6 +7044,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6836,13 +7070,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -6863,6 +7098,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6888,13 +7124,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -6915,6 +7152,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6940,13 +7178,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '5.0'
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -6967,6 +7206,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -6991,6 +7231,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7015,6 +7256,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7039,6 +7281,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7063,6 +7306,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7088,13 +7332,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '5.0'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -7115,6 +7360,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7140,13 +7386,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '5.0'
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -7167,6 +7414,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7192,13 +7440,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '5.0'
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -7219,6 +7468,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7244,13 +7494,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '5.0'
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -7271,6 +7522,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7295,6 +7547,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7319,6 +7572,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7343,6 +7597,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7367,6 +7622,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7391,6 +7647,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7415,6 +7672,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7439,6 +7697,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7463,6 +7722,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7487,6 +7747,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7511,6 +7772,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7535,6 +7797,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7559,6 +7822,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7583,6 +7847,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7607,6 +7872,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7631,6 +7897,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7655,6 +7922,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7679,6 +7947,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7703,6 +7972,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7727,6 +7997,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7751,6 +8022,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7775,6 +8047,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7799,6 +8072,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -7823,6 +8097,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7847,6 +8122,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7871,6 +8147,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7895,6 +8172,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7919,6 +8197,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7943,6 +8222,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7967,6 +8247,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -7991,6 +8272,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8015,6 +8297,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8039,6 +8322,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8063,6 +8347,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8087,6 +8372,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8111,6 +8397,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8135,6 +8422,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8159,6 +8447,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8183,6 +8472,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8207,6 +8497,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8232,13 +8523,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -8259,6 +8551,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8284,13 +8577,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -8311,6 +8605,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8336,13 +8631,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -8363,6 +8659,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8388,13 +8685,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.4'
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -8415,6 +8713,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8439,6 +8738,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8463,6 +8763,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8487,6 +8788,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8511,6 +8813,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8536,13 +8839,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '4.4'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -8563,6 +8867,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8588,13 +8893,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '4.4'
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -8615,6 +8921,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8640,13 +8947,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '4.4'
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -8667,6 +8975,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8692,13 +9001,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '4.4'
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -8719,6 +9029,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8743,6 +9054,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8767,6 +9079,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8791,6 +9104,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8815,6 +9129,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8839,6 +9154,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -8863,6 +9179,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8887,6 +9204,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8911,6 +9229,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8935,6 +9254,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8959,6 +9279,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -8983,6 +9304,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9007,6 +9329,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9031,6 +9354,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9055,6 +9379,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9079,6 +9404,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9103,6 +9429,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9127,6 +9454,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9151,6 +9479,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9175,6 +9504,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9199,6 +9529,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9223,6 +9554,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9247,6 +9579,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9271,6 +9604,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9295,6 +9629,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9319,6 +9654,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9343,6 +9679,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9367,6 +9704,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9391,6 +9729,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9415,6 +9754,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9439,6 +9779,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9463,6 +9804,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9487,6 +9829,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9511,6 +9854,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9535,6 +9879,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9559,6 +9904,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9583,6 +9929,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9607,6 +9954,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9631,6 +9979,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9655,6 +10004,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -9680,13 +10030,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.2'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -9707,6 +10058,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9732,13 +10084,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.2'
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -9759,6 +10112,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9784,13 +10138,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.2'
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -9811,6 +10166,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9836,13 +10192,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
       MONGODB_VERSION: '4.2'
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -9863,6 +10220,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9887,6 +10245,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9911,6 +10270,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9935,6 +10295,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9959,6 +10320,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -9984,13 +10346,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '4.2'
       SSL: openssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -10011,6 +10374,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10036,13 +10400,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '4.2'
       SSL: openssl-static
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -10063,6 +10428,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10088,13 +10454,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '4.2'
       SSL: darwinssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -10115,6 +10482,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10140,13 +10508,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       MONGODB_VERSION: '4.2'
       SSL: winssl
       TOPOLOGY: server
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: run kms servers
   - func: run tests
     vars:
@@ -10167,6 +10536,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10191,6 +10561,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10215,6 +10586,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10239,6 +10611,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10263,6 +10636,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10287,6 +10661,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10311,6 +10686,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10335,6 +10711,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10359,6 +10736,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10383,6 +10761,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10407,6 +10786,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10431,6 +10811,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10455,6 +10836,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10479,6 +10861,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10503,6 +10886,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10527,6 +10911,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10551,6 +10936,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10575,6 +10961,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10599,6 +10986,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10623,6 +11011,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10647,6 +11036,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10671,6 +11061,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10695,6 +11086,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10719,6 +11111,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10743,6 +11136,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10767,6 +11161,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10791,6 +11186,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10815,6 +11211,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10839,6 +11236,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10863,6 +11261,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10887,6 +11286,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -10911,6 +11311,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10935,6 +11336,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10959,6 +11361,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -10983,6 +11386,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11007,6 +11411,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11031,6 +11436,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11055,6 +11461,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11079,6 +11486,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11103,6 +11511,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11127,6 +11536,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11151,6 +11561,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11175,6 +11586,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11199,6 +11611,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11223,6 +11636,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11247,6 +11661,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11271,6 +11686,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11295,6 +11711,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11319,6 +11736,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11343,6 +11761,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11367,6 +11786,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11391,6 +11811,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11415,6 +11836,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11439,6 +11861,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11463,6 +11886,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11487,6 +11911,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11511,6 +11936,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11535,6 +11961,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11559,6 +11986,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11583,6 +12011,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11607,6 +12036,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11631,6 +12061,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11655,6 +12086,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11679,6 +12111,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11703,6 +12136,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11727,6 +12161,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11751,6 +12186,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11775,6 +12211,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11799,6 +12236,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11823,6 +12261,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11847,6 +12286,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11871,6 +12311,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11895,6 +12336,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11919,6 +12361,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -11943,6 +12386,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11967,6 +12411,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -11991,6 +12436,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12015,6 +12461,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12039,6 +12486,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12063,6 +12511,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12087,6 +12536,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12111,6 +12561,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12135,6 +12586,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12159,6 +12611,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12183,6 +12636,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12207,6 +12661,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12231,6 +12686,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12255,6 +12711,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12279,6 +12736,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12303,6 +12761,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12327,6 +12786,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12351,6 +12811,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12375,6 +12836,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12399,6 +12861,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12423,6 +12886,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12447,6 +12911,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12471,6 +12936,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12495,6 +12961,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12519,6 +12986,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12543,6 +13011,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12567,6 +13036,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12591,6 +13061,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12615,6 +13086,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12639,6 +13111,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12663,6 +13136,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12687,6 +13161,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12711,6 +13186,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12735,6 +13211,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12759,6 +13236,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12783,6 +13261,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12807,6 +13286,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12831,6 +13311,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12855,6 +13336,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12879,6 +13361,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12903,6 +13386,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12927,6 +13411,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -12951,6 +13436,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12975,6 +13461,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -12999,6 +13486,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13023,6 +13511,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13047,6 +13536,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13071,6 +13561,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13095,6 +13586,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13119,6 +13611,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13143,6 +13636,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13167,6 +13661,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13191,6 +13686,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13215,6 +13711,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13239,6 +13736,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13263,6 +13761,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13287,6 +13786,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13311,6 +13811,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13335,6 +13836,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13359,6 +13861,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13383,6 +13886,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13407,6 +13911,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13431,6 +13936,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13455,6 +13961,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13479,6 +13986,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13503,6 +14011,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13527,6 +14036,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13551,6 +14061,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13569,6 +14080,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13586,6 +14098,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13603,6 +14116,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13620,13 +14134,14 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
       LOAD_BALANCER: 'on'
       SSL: ssl
       TOPOLOGY: sharded_cluster
-  - func: clone drivers-evergreen-tools
+  - func: fetch-det
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -13642,6 +14157,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13660,6 +14176,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13678,6 +14195,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13700,6 +14218,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-compression-zlib
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13721,6 +14240,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-compression-snappy
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13742,6 +14262,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-compression-zstd
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13765,6 +14286,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-compression
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -13782,6 +14304,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -13799,6 +14322,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: hardened-compile
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -13889,6 +14413,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
   - func: build mongohouse
   - func: run mongohouse
   - func: test mongohouse
@@ -13919,6 +14444,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -13939,6 +14465,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -14081,6 +14608,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       IPV4_ONLY: 'off'
@@ -14101,6 +14629,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       IPV4_ONLY: 'off'
@@ -14121,6 +14650,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       IPV4_ONLY: 'on'
@@ -14141,6 +14671,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       IPV4_ONLY: 'on'
@@ -14170,6 +14701,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14186,6 +14718,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14202,6 +14735,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14218,6 +14752,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14234,6 +14769,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14250,6 +14786,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14266,6 +14803,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14282,6 +14820,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14298,6 +14837,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14314,6 +14854,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14330,6 +14871,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14346,6 +14888,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14362,6 +14905,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14378,6 +14922,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14394,6 +14939,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-aws
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -14412,6 +14958,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14444,6 +14991,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14476,6 +15024,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14508,6 +15057,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14540,6 +15090,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14572,6 +15123,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14604,6 +15156,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14636,6 +15189,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14668,6 +15222,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14700,6 +15255,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14732,6 +15288,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14764,6 +15321,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14796,6 +15354,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14828,6 +15387,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14860,6 +15420,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14892,6 +15453,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14924,6 +15486,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14956,6 +15519,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -14988,6 +15552,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15020,6 +15585,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15052,6 +15618,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15084,6 +15651,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15116,6 +15684,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15148,6 +15717,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15180,6 +15750,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15212,6 +15783,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15244,6 +15816,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15276,6 +15849,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15308,6 +15882,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15340,6 +15915,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15372,6 +15948,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15404,6 +15981,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15436,6 +16014,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15468,6 +16047,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15500,6 +16080,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15532,6 +16113,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15564,6 +16146,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15596,6 +16179,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15628,6 +16212,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15660,6 +16245,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15692,6 +16278,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15724,6 +16311,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15756,6 +16344,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15788,6 +16377,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15820,6 +16410,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15852,6 +16443,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15884,6 +16476,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15916,6 +16509,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15948,6 +16542,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -15980,6 +16575,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16012,6 +16608,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16044,6 +16641,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16076,6 +16674,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16108,6 +16707,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16140,6 +16740,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16172,6 +16773,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16204,6 +16806,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16236,6 +16839,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16268,6 +16872,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16300,6 +16905,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16332,6 +16938,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16364,6 +16971,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16396,6 +17004,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16428,6 +17037,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16460,6 +17070,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16492,6 +17103,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16524,6 +17136,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16556,6 +17169,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16588,6 +17202,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16620,6 +17235,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16652,6 +17268,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16684,6 +17301,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16716,6 +17334,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16748,6 +17367,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16780,6 +17400,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16812,6 +17433,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16844,6 +17466,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16876,6 +17499,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16908,6 +17532,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16940,6 +17565,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -16972,6 +17598,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17004,6 +17631,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17036,6 +17664,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17068,6 +17697,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17100,6 +17730,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17132,6 +17763,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17164,6 +17796,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17196,6 +17829,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17228,6 +17862,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17260,6 +17895,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17292,6 +17928,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17324,6 +17961,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17356,6 +17994,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17388,6 +18027,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17420,6 +18060,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17452,6 +18093,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17484,6 +18126,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17516,6 +18159,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17548,6 +18192,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17580,6 +18225,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17612,6 +18258,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17644,6 +18291,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17676,6 +18324,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17708,6 +18357,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17740,6 +18390,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17772,6 +18423,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17804,6 +18456,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17836,6 +18489,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17868,6 +18522,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17900,6 +18555,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17932,6 +18588,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17964,6 +18621,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -17996,6 +18654,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18028,6 +18687,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18060,6 +18720,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18092,6 +18753,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18124,6 +18786,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18156,6 +18819,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18188,6 +18852,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18220,6 +18885,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18252,6 +18918,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18284,6 +18951,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18316,6 +18984,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18348,6 +19017,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18380,6 +19050,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18412,6 +19083,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18444,6 +19116,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18476,6 +19149,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18508,6 +19182,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18540,6 +19215,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18572,6 +19248,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18604,6 +19281,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18636,6 +19314,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18668,6 +19347,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18700,6 +19380,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18732,6 +19413,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18764,6 +19446,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18796,6 +19479,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18828,6 +19512,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18860,6 +19545,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18892,6 +19578,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18924,6 +19611,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18956,6 +19644,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -18988,6 +19677,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19020,6 +19710,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19052,6 +19743,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19084,6 +19776,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19116,6 +19809,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19148,6 +19842,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19180,6 +19875,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19212,6 +19908,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19244,6 +19941,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19276,6 +19974,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19308,6 +20007,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19340,6 +20040,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19372,6 +20073,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19404,6 +20106,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19436,6 +20139,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19468,6 +20172,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19500,6 +20205,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19532,6 +20238,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19564,6 +20271,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19596,6 +20304,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19628,6 +20337,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19660,6 +20370,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19692,6 +20403,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19724,6 +20436,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19756,6 +20469,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19788,6 +20502,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19820,6 +20535,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19852,6 +20568,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19884,6 +20601,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19916,6 +20634,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19948,6 +20667,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -19980,6 +20700,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20012,6 +20733,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20044,6 +20766,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20076,6 +20799,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20108,6 +20832,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20140,6 +20865,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20172,6 +20898,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20204,6 +20931,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20236,6 +20964,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-winssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20268,6 +20997,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20300,6 +21030,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20332,6 +21063,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20364,6 +21096,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20396,6 +21129,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20428,6 +21162,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20460,6 +21195,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20492,6 +21228,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20524,6 +21261,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20556,6 +21294,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20588,6 +21327,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20620,6 +21360,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20652,6 +21393,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20684,6 +21426,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20716,6 +21459,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20748,6 +21492,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20780,6 +21525,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20812,6 +21558,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl-1.0.1
+  - func: fetch-det
   - command: shell.exec
     type: test
     params:
@@ -20845,6 +21592,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -20852,7 +21600,6 @@ tasks:
       MONGODB_VERSION: '5.0'
       SSL: ssl
       TOPOLOGY: sharded_cluster
-  - func: clone drivers-evergreen-tools
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -20872,6 +21619,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: auth
@@ -20879,7 +21627,6 @@ tasks:
       MONGODB_VERSION: latest
       SSL: ssl
       TOPOLOGY: sharded_cluster
-  - func: clone drivers-evergreen-tools
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -20899,6 +21646,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -20906,7 +21654,6 @@ tasks:
       MONGODB_VERSION: '5.0'
       SSL: nossl
       TOPOLOGY: sharded_cluster
-  - func: clone drivers-evergreen-tools
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -20926,6 +21673,7 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: fetch-det
   - func: bootstrap-mongo-orchestration
     vars:
       AUTH: noauth
@@ -20933,7 +21681,6 @@ tasks:
       MONGODB_VERSION: latest
       SSL: nossl
       TOPOLOGY: sharded_cluster
-  - func: clone drivers-evergreen-tools
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -21070,14 +21817,12 @@ tasks:
 task_groups:
 - name: testazurekms_task_group
   setup_group:
+  - func: fetch-det
   - command: shell.exec
     params:
       shell: bash
       script: |-
         set -o errexit
-        if [ ! -d drivers-evergreen-tools ]; then
-            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
-        fi
         DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
         echo '${testazurekms_publickey}' > /tmp/testazurekms_publickey
         echo '${testazurekms_privatekey}' > /tmp/testazurekms_privatekey
@@ -21112,14 +21857,12 @@ task_groups:
   - testazurekms-task
 - name: testgcpkms_task_group
   setup_group:
+  - func: fetch-det
   - command: shell.exec
     params:
       shell: bash
       script: |-
         set -o errexit
-        if [ ! -d drivers-evergreen-tools ]; then
-            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
-        fi
         DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
         echo '${testgcpkms_key_file}' > /tmp/testgcpkms_key_file.json
         export GCPKMS_KEYFILE=/tmp/testgcpkms_key_file.json

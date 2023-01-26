@@ -98,10 +98,8 @@ def _create_task_group():
     task_group.setup_group_can_fail_task = True
     task_group.setup_group_timeout_secs = 1800  # 30 minutes
     task_group.setup_group = [
+        func('fetch-det'),
         shell_exec(r'''
-            if [ ! -d drivers-evergreen-tools ]; then
-                git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
-            fi
             DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
             echo '${testazurekms_publickey}' > /tmp/testazurekms_publickey
             echo '${testazurekms_privatekey}' > /tmp/testazurekms_privatekey

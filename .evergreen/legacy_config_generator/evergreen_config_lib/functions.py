@@ -210,41 +210,40 @@ all_functions = OD([
         ''', add_expansions_to_env=True),
     )),
     ('build mongohouse', Function(
-        shell_mongoc(r'''
-        if [ ! -d "drivers-evergreen-tools" ]; then
-           git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
-        fi
+        shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-
         sh .evergreen/atlas_data_lake/build-mongohouse-local.sh
-        cd ../
         '''),
     )),
     ('run mongohouse', Function(
-        shell_mongoc(r'''
+        shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-
         sh .evergreen/atlas_data_lake/run-mongohouse-local.sh
         ''', background=True),
     )),
     ('test mongohouse', Function(
         shell_mongoc(r'''
-        echo "testing that mongohouse is running..."
-        ps aux | grep mongohouse
-
-        echo $(pwd)
-        echo $(ls)
-
-        ls > dir.txt
-        cat dir.txt
-        echo $(cat dir.txt)
-
+        echo "Waiting for mongohouse to start..."
+        wait_for_mongohouse() {
+            for _ in $(seq 300); do
+                # Exit code 7: "Failed to connect to host".
+                if curl -s localhost:$1; (("$?" != 7)); then
+                    return 0
+                else
+                    sleep 1
+                fi
+            done
+            echo "Could not detect mongohouse on port $1" 1>&2
+            return 1
+        }
+        wait_for_mongohouse 27017 || exit
+        echo "Waiting for mongohouse to start... done."
+        pgrep -a "mongohouse"
         export RUN_MONGOHOUSE_TESTS=true
         ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
         unset RUN_MONGOHOUSE_TESTS
-
         '''),
     )),
     ('test versioned api', Function(
@@ -255,10 +254,6 @@ all_functions = OD([
     ('run aws tests', Function(
         shell_mongoc(r'''
         # Add AWS variables to a file.
-        # Clone in one directory above so it does not get uploaded in working directory.
-        if [ ! -d ../drivers-evergreen-tools ]; then
-            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
-        fi
         cat <<EOF > ../drivers-evergreen-tools/.evergreen/auth_aws/aws_e2e_setup.json
         {
             "iam_auth_ecs_account" : "${iam_auth_ecs_account}",
@@ -284,13 +279,6 @@ all_functions = OD([
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
         bash .evergreen/scripts/run-aws-tests.sh
         ''', add_expansions_to_env=True)
-    )),
-    ('clone drivers-evergreen-tools', Function(
-        shell_exec(r'''
-        if [ ! -d "drivers-evergreen-tools" ]; then
-            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
-        fi
-        ''', test=False)
     )),
     ('run kms servers', Function(
         shell_exec(r'''

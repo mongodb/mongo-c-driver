@@ -147,10 +147,14 @@ class LinkTask(NamedTask):
         if orchestration == 'ssl':
             # Actual value of SSL does not matter here so long as it is not 'nossl'.
             bootstrap_commands = [
+                func('fetch-det'),
                 func('bootstrap-mongo-orchestration', SSL="openssl")
             ]
         elif orchestration:
-            bootstrap_commands = [func('bootstrap-mongo-orchestration',)]
+            bootstrap_commands = [
+                func('fetch-det'),
+                func('bootstrap-mongo-orchestration')
+            ]
         else:
             bootstrap_commands = []
 
@@ -523,6 +527,8 @@ class IntegrationTask(MatrixTask):
             # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
             commands.append(
                 func('compile coverage', SASL='AUTO', SSL='OPENSSL'))
+
+        commands.append(func('fetch-det'))
         commands.append(func('bootstrap-mongo-orchestration',
                              MONGODB_VERSION=self.version,
                              TOPOLOGY=self.topology,
@@ -531,7 +537,7 @@ class IntegrationTask(MatrixTask):
         extra = {}
         if self.cse:
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
-            commands.append(func('clone drivers-evergreen-tools'))
+            commands.append(func('fetch-det'))
             commands.append(func('run kms servers'))
         if self.coverage:
             extra["COVERAGE"] = 'ON'
@@ -628,6 +634,7 @@ class DNSTask(MatrixTask):
         commands = task['commands']
         commands.append(
             func('fetch-build', BUILD_NAME=self.depends_on['name']))
+        commands.append(func('fetch-det'))
 
         if self.loadbalanced:
             orchestration = func('bootstrap-mongo-orchestration',
@@ -649,7 +656,7 @@ class DNSTask(MatrixTask):
         dns = 'on'
         if self.loadbalanced:
             dns = 'loadbalanced'
-            commands.append(func("clone drivers-evergreen-tools"))
+            commands.append(func("fetch-det"))
             commands.append(func(
                 "start load balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
         elif self.auth:
@@ -688,6 +695,8 @@ class CompressionTask(MatrixTask):
         commands = task['commands']
         commands.append(
             func('fetch-build', BUILD_NAME=self.depends_on['name']))
+        commands.append(func('fetch-det'))
+
         if self.compression == 'compression':
             orchestration_file = 'snappy-zlib-zstd'
         else:
@@ -733,6 +742,7 @@ class SpecialIntegrationTask(NamedTask):
                  suffix_commands=None, uri=None,
                  tags=None, version='latest', topology='server'):
         commands = [func('fetch-build', BUILD_NAME=depends_on),
+                    func('fetch-det'),
                     func('bootstrap-mongo-orchestration',
                          MONGODB_VERSION=version,
                          TOPOLOGY=topology),
@@ -807,7 +817,8 @@ all_tasks = chain(all_tasks, [
         'test-mongohouse',
         tags=[],
         depends_on='debug-compile-sasl-openssl',
-        commands=[func('build mongohouse'),
+        commands=[func('fetch-det'),
+                  func('build mongohouse'),
                   func('run mongohouse'),
                   func('test mongohouse')]),
     NamedTask(
@@ -823,13 +834,17 @@ all_tasks = chain(all_tasks, [
         'test-versioned-api',
         tags=['versioned-api'],
         depends_on='debug-compile-nosasl-openssl',
-        commands=[func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', MONGODB_VERSION='5.0', REQUIRE_API_VERSION='true'),
+        commands=[func('fetch-det'),
+                  func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='auth',
+                       SSL='ssl', MONGODB_VERSION='5.0', REQUIRE_API_VERSION='true'),
                   func('test versioned api', AUTH='auth', SSL='ssl')]),
     PostCompileTask(
         'test-versioned-api-accept-version-two',
         tags=['versioned-api'],
         depends_on='debug-compile-nosasl-nossl',
-        commands=[func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='noauth', SSL='nossl', MONGODB_VERSION='5.0', ORCHESTRATION_FILE='versioned-api-testing'),
+        commands=[func('fetch-det'),
+                  func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='noauth',
+                       SSL='nossl', MONGODB_VERSION='5.0', ORCHESTRATION_FILE='versioned-api-testing'),
                   func('test versioned api', AUTH='noauth', SSL='nossl')]),
 ])
 
@@ -896,6 +911,7 @@ class IPTask(MatrixTask):
         self.add_dependency('debug-compile-nosasl-nossl')
         self.commands.extend([
             func('fetch-build', BUILD_NAME=self.depends_on['name']),
+            func("fetch-det"),
             func('bootstrap-mongo-orchestration',
                  IPV4_ONLY=self.on_off(server='ipv4')),
             run_tests(IPV4_ONLY=self.on_off(server='ipv4'),
@@ -946,6 +962,7 @@ class AWSTestTask(MatrixTask):
         self.add_dependency('debug-compile-aws')
         self.commands.extend([
             func('fetch-build', BUILD_NAME=self.depends_on['name']),
+            func('fetch-det'),
             func('bootstrap-mongo-orchestration',
                  AUTH="auth",
                  ORCHESTRATION_FILE="auth-aws",
@@ -986,6 +1003,7 @@ class OCSPTask(MatrixTask):
         commands = task['commands']
         commands.append(
             func('fetch-build', BUILD_NAME=self.depends_on['name']))
+        commands.append(func('fetch-det'))
 
         stapling = 'mustStaple'
         if self.test in ['test_3', 'test_4', 'soft_fail_test', 'cache']:
@@ -1104,6 +1122,7 @@ class LoadBalancedTask(MatrixTask):
         commands = task['commands']
         commands.append(
             func('fetch-build', BUILD_NAME=self.depends_on['name']))
+        commands.append(func("fetch-det"))
 
         orchestration = func('bootstrap-mongo-orchestration',
                              TOPOLOGY='sharded_cluster',
@@ -1112,7 +1131,6 @@ class LoadBalancedTask(MatrixTask):
                              MONGODB_VERSION=self.version,
                              LOAD_BALANCER='on')
         commands.append(orchestration)
-        commands.append(func("clone drivers-evergreen-tools"))
         commands.append(func("start load balancer",
                              MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
         commands.append(run_tests(ASAN='on' if self.asan else 'off',

@@ -109,6 +109,17 @@ functions:
             for file in $(find .evergreen/scripts -type f); do
                 chmod +rx "$file" || exit
             done
+  fetch-det:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            if [[ ! -d drivers-evergreen-tools ]]; then
+                git clone --depth=1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+            fi
   fetch-source:
     - command: git.get_project
       type: setup
