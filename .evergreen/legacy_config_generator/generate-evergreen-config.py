@@ -50,13 +50,6 @@ testgcpkms_generate(all_tasks, all_variants, all_task_groups)
 
 config = OD([
     ('functions', all_functions),
-    ('post', [
-        OD([('func', 'backtrace')]),
-        OD([('func', 'upload-mo-artifacts')]),
-        OD([('func', 'upload-test-results')]),
-        OD([('func', 'stop-mongo-orchestration')]),
-        OD([('func', 'stop-load-balancer')]),
-    ]),
     ('tasks', all_tasks),
     ('task_groups', all_task_groups),
     ('buildvariants', all_variants),

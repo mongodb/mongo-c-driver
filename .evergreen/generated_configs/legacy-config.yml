@@ -294,12 +294,6 @@ functions:
   - command: expansions.update
     params:
       file: lb-expansion.yml
-post:
-- func: backtrace
-- func: upload-mo-artifacts
-- func: upload-test-results
-- func: stop-mongo-orchestration
-- func: stop-load-balancer
 tasks:
 - name: hardened-compile
   tags:

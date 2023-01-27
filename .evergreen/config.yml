@@ -17,22 +17,35 @@ pre_error_fails_task: true
 
 # Too many post commands are not designed to handle errors.
 # TODO: set to true once failing post commands have been moved into
-# teardown_task of appropriate task groups.
+# teardown_group commands of appropriate task groups.
 post_error_fails_task: false
 
 # Unlikely, but document loudly when task failure is due to early termination.
 early_termination:
   - func: early-termination
 
-# TODO: move timeout commands into timeout of appropriate task groups.
+# TODO: move into timeout commands of appropriate task groups.
 timeout:
   - func: backtrace
+
+# Commands run before all tasks (excluding those in task groups).
+# Use sparingly and ensure they are error-proof.
+pre:
+  - func: fetch-source
+
+# Commands run after all tasks (excluding those in task groups).
+# Use sparingly and ensure they are error-proof.
+# TODO: move into teardown_group commands of appropriate task groups.
+post:
+  - func: backtrace
+  - func: upload-mo-artifacts
+  - func: upload-test-results
+  - func: stop-mongo-orchestration
+  - func: stop-load-balancer
 
 include:
   - filename: .evergreen/generated_configs/legacy-config.yml
   - filename: .evergreen/generated_configs/functions.yml
-  # - filename: .evergreen/generated_configs/post.yml
-  - filename: .evergreen/generated_configs/pre.yml
   - filename: .evergreen/generated_configs/task_groups.yml
   - filename: .evergreen/generated_configs/tasks.yml
   - filename: .evergreen/generated_configs/variants.yml
