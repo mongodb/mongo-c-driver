@@ -28,6 +28,7 @@ class RunMockKMSServers:
                 script='''\
                     set -o errexit
                     echo "Preparing KMS TLS venv environment..."
+                    # TODO: remove this function along with the "run kms servers" function.
                     if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
                         # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
                         # See CDRIVER-4530.

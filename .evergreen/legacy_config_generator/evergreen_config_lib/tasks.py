@@ -21,7 +21,7 @@ try:
 except ImportError:
     import collections as abc
 
-from evergreen_config_generator.functions import (func, run_tests, s3_put)
+from evergreen_config_generator.functions import (func, s3_put)
 from evergreen_config_generator.tasks import (
     both_or_neither, MatrixTask, NamedTask, prohibit, require, Task)
 from evergreen_config_lib import shell_mongoc
@@ -541,10 +541,11 @@ class IntegrationTask(MatrixTask):
             commands.append(func('run-mock-kms-servers'))
         if self.coverage:
             extra["COVERAGE"] = 'ON'
-        commands.append(run_tests(ASAN='on' if self.sanitizer == 'asan' else 'off',
-                                  AUTH=self.display('auth'),
-                                  SSL=self.display('ssl'),
-                                  **extra))
+        commands.append(func('run-tests',
+                             ASAN='on' if self.sanitizer == 'asan' else 'off',
+                             AUTH=self.display('auth'),
+                             SSL=self.display('ssl'),
+                             **extra))
         if self.coverage:
             commands.append(func('upload coverage'))
             commands.append(func('update codecov.io'))
@@ -661,9 +662,10 @@ class DNSTask(MatrixTask):
                 "start load balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
         elif self.auth:
             dns = 'dns-auth'
-        commands.append(run_tests(SSL='ssl',
-                                  AUTH=self.display('auth'),
-                                  DNS=dns))
+        commands.append(func('run-tests',
+                             SSL='ssl',
+                             AUTH=self.display('auth'),
+                             DNS=dns))
 
         return task
 
@@ -706,10 +708,10 @@ class CompressionTask(MatrixTask):
                              AUTH='noauth',
                              SSL='nossl',
                              ORCHESTRATION_FILE=orchestration_file))
-        commands.append(run_tests(
-            AUTH='noauth',
-            SSL='nossl',
-            COMPRESSORS=','.join(self._compressor_list())))
+        commands.append(func('run-tests',
+                             AUTH='noauth',
+                             SSL='nossl',
+                             COMPRESSORS=','.join(self._compressor_list())))
 
         return task
 
@@ -746,7 +748,7 @@ class SpecialIntegrationTask(NamedTask):
                     func('bootstrap-mongo-orchestration',
                          MONGODB_VERSION=version,
                          TOPOLOGY=topology),
-                    run_tests(uri)] + (suffix_commands or [])
+                    func('run-tests', URI=uri)] + (suffix_commands or [])
         super(SpecialIntegrationTask, self).__init__(task_name,
                                                      commands=commands,
                                                      depends_on=depends_on,
@@ -837,7 +839,7 @@ all_tasks = chain(all_tasks, [
         commands=[func('fetch-det'),
                   func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='auth',
                        SSL='ssl', MONGODB_VERSION='5.0', REQUIRE_API_VERSION='true'),
-                  func('test versioned api', AUTH='auth', SSL='ssl')]),
+                  func('run-tests', MONGODB_API_VERSION=1, AUTH='auth', SSL='ssl')]),
     PostCompileTask(
         'test-versioned-api-accept-version-two',
         tags=['versioned-api'],
@@ -845,7 +847,7 @@ all_tasks = chain(all_tasks, [
         commands=[func('fetch-det'),
                   func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='noauth',
                        SSL='nossl', MONGODB_VERSION='5.0', ORCHESTRATION_FILE='versioned-api-testing'),
-                  func('test versioned api', AUTH='noauth', SSL='nossl')]),
+                  func('run-tests', MONGODB_API_VERSION=1, AUTH='noauth', SSL='nossl')]),
 ])
 
 
@@ -914,10 +916,11 @@ class IPTask(MatrixTask):
             func("fetch-det"),
             func('bootstrap-mongo-orchestration',
                  IPV4_ONLY=self.on_off(server='ipv4')),
-            run_tests(IPV4_ONLY=self.on_off(server='ipv4'),
-                      URI={'ipv6': 'mongodb://[::1]/',
-                           'ipv4': 'mongodb://127.0.0.1/',
-                           'localhost': 'mongodb://localhost/'}[self.client])])
+            func('run-tests',
+                 IPV4_ONLY=self.on_off(server='ipv4'),
+                 URI={'ipv6': 'mongodb://[::1]/',
+                      'ipv4': 'mongodb://127.0.0.1/',
+                      'localhost': 'mongodb://localhost/'}[self.client])])
 
     def display(self, axis_name):
         return axis_name + '-' + getattr(self, axis_name)
@@ -1133,10 +1136,11 @@ class LoadBalancedTask(MatrixTask):
         commands.append(orchestration)
         commands.append(func("start load balancer",
                              MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
-        commands.append(run_tests(ASAN='on' if self.asan else 'off',
-                                  SSL='ssl' if self.test_ssl else 'nossl',
-                                  AUTH='auth' if self.test_auth else 'noauth',
-                                  LOADBALANCED='loadbalanced'))
+        commands.append(func('run-tests',
+                             ASAN='on' if self.asan else 'off',
+                             SSL='ssl' if self.test_ssl else 'nossl',
+                             AUTH='auth' if self.test_auth else 'noauth',
+                             LOADBALANCED='loadbalanced'))
 
         return task
 

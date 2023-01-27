@@ -223,6 +223,7 @@ functions:
           - |
             set -o errexit
             echo "Preparing KMS TLS venv environment..."
+            # TODO: remove this function along with the "run kms servers" function.
             if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
                 # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
                 # See CDRIVER-4530.
@@ -255,6 +256,16 @@ functions:
             python -u kms_kmip_server.py &
             deactivate
             echo "Starting mock KMS TLS servers... done."
+  run-tests:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        args:
+          - -c
+          - .evergreen/scripts/run-tests.sh
   upload-build:
     - command: archive.targz_pack
       params:

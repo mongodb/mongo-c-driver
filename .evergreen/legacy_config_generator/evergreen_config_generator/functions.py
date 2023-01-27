@@ -26,13 +26,6 @@ def func(func_name, **kwargs):
     return od
 
 
-def run_tests(URI=None, **kwargs):
-    if URI:
-        return func('run tests', URI=URI, **kwargs)
-
-    return func('run tests', **kwargs)
-
-
 def s3_put(remote_file, project_path=True, **kwargs):
     if project_path:
         remote_file = '${project}/' + remote_file

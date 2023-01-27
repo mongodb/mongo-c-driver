@@ -15,7 +15,7 @@
 from collections import OrderedDict as OD
 
 from evergreen_config_generator.functions import (
-    Function, s3_put, shell_exec, targz_pack)
+    Function, func, s3_put, shell_exec, targz_pack)
 from evergreen_config_lib import shell_mongoc
 
 build_path = '${build_variant}/${revision}/${version_id}/${build_id}'
@@ -115,11 +115,6 @@ all_functions = OD([
             ('params', OD([
                 ('file_location', 'mongoc/test-results.json'),
             ]))]),
-    )),
-    ('run tests', Function(
-        shell_mongoc(r'''
-        bash .evergreen/scripts/run-tests.sh
-        ''', add_expansions_to_env=True),
     )),
     # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
@@ -245,11 +240,6 @@ all_functions = OD([
         ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
         unset RUN_MONGOHOUSE_TESTS
         '''),
-    )),
-    ('test versioned api', Function(
-        shell_mongoc(r'''
-        MONGODB_API_VERSION=1 bash .evergreen/scripts/run-tests.sh
-        ''', add_expansions_to_env=True),
     )),
     ('run aws tests', Function(
         shell_mongoc(r'''
