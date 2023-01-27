@@ -280,42 +280,6 @@ all_functions = OD([
         bash .evergreen/scripts/run-aws-tests.sh
         ''', add_expansions_to_env=True)
     )),
-    ('run kms servers', Function(
-        shell_exec(r'''
-        echo "Preparing CSFLE venv environment..."
-        cd ./drivers-evergreen-tools/.evergreen/csfle
-        # This function ensures future invocations of activate-kmstlsvenv.sh conducted in
-        # parallel do not race to setup a venv environment; it has already been prepared.
-        # This primarily addresses the situation where the "run tests" and "run kms servers"
-        # functions invoke 'activate-kmstlsvenv.sh' simultaneously.
-        # TODO: remove this function along with the "run kms servers" function.
-        if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
-            # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
-            # See CDRIVER-4530.
-            . ../venv-utils.sh
-            venvcreate "C:/python/Python39/python.exe" kmstlsvenv || # windows-2017
-            venvcreate "C:/python/Python38/python.exe" kmstlsvenv    # windows-2015
-            python -m pip install --upgrade boto3~=1.19 pykmip~=0.10.0
-            deactivate
-        else
-            . ./activate-kmstlsvenv.sh
-            deactivate
-        fi
-        echo "Preparing CSFLE venv environment... done."
-        ''', test=False),
-        shell_exec(r'''
-        echo "Starting mock KMS servers..."
-        cd ./drivers-evergreen-tools/.evergreen/csfle
-        . ./activate-kmstlsvenv.sh
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --require_client_cert --port 9002 &
-        python -u kms_kmip_server.py &
-        deactivate
-        echo "Starting mock KMS servers... done."
-        ''', test=False, background=True),
-    )),
     ('start load balancer', Function(
         shell_exec(r'''
         export DRIVERS_TOOLS=./drivers-evergreen-tools

@@ -400,48 +400,6 @@ functions:
         . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
         bash .evergreen/scripts/run-aws-tests.sh
-  run kms servers:
-  - command: shell.exec
-    params:
-      shell: bash
-      script: |-
-        set -o errexit
-        echo "Preparing CSFLE venv environment..."
-        cd ./drivers-evergreen-tools/.evergreen/csfle
-        # This function ensures future invocations of activate-kmstlsvenv.sh conducted in
-        # parallel do not race to setup a venv environment; it has already been prepared.
-        # This primarily addresses the situation where the "run tests" and "run kms servers"
-        # functions invoke 'activate-kmstlsvenv.sh' simultaneously.
-        # TODO: remove this function along with the "run kms servers" function.
-        if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
-            # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
-            # See CDRIVER-4530.
-            . ../venv-utils.sh
-            venvcreate "C:/python/Python39/python.exe" kmstlsvenv || # windows-2017
-            venvcreate "C:/python/Python38/python.exe" kmstlsvenv    # windows-2015
-            python -m pip install --upgrade boto3~=1.19 pykmip~=0.10.0
-            deactivate
-        else
-            . ./activate-kmstlsvenv.sh
-            deactivate
-        fi
-        echo "Preparing CSFLE venv environment... done."
-  - command: shell.exec
-    params:
-      background: true
-      shell: bash
-      script: |-
-        set -o errexit
-        echo "Starting mock KMS servers..."
-        cd ./drivers-evergreen-tools/.evergreen/csfle
-        . ./activate-kmstlsvenv.sh
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --require_client_cert --port 9002 &
-        python -u kms_kmip_server.py &
-        deactivate
-        echo "Starting mock KMS servers... done."
   start load balancer:
   - command: shell.exec
     params:
@@ -1460,7 +1418,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -1530,7 +1488,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -1644,7 +1602,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -1714,7 +1672,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -1828,7 +1786,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -1986,7 +1944,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -2144,7 +2102,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -3489,7 +3447,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -3521,7 +3479,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -3575,7 +3533,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -3629,7 +3587,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -3683,7 +3641,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -3862,7 +3820,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -3916,7 +3874,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -3970,7 +3928,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -4024,7 +3982,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -4203,7 +4161,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -4257,7 +4215,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -4311,7 +4269,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -4365,7 +4323,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -4519,7 +4477,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -4573,7 +4531,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -4627,7 +4585,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -4681,7 +4639,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5285,7 +5243,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5339,7 +5297,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5393,7 +5351,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5447,7 +5405,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5601,7 +5559,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5655,7 +5613,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5709,7 +5667,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5763,7 +5721,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5942,7 +5900,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5996,7 +5954,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6050,7 +6008,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6104,7 +6062,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6258,7 +6216,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6312,7 +6270,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6366,7 +6324,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6420,7 +6378,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: replica_set
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7024,7 +6982,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7078,7 +7036,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7132,7 +7090,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7186,7 +7144,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7340,7 +7298,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7394,7 +7352,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7448,7 +7406,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7502,7 +7460,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8531,7 +8489,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8585,7 +8543,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8639,7 +8597,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8693,7 +8651,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8847,7 +8805,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8901,7 +8859,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8955,7 +8913,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -9009,7 +8967,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10038,7 +9996,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10092,7 +10050,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10146,7 +10104,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10200,7 +10158,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10354,7 +10312,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10408,7 +10366,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10462,7 +10420,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10516,7 +10474,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
   - func: fetch-det
-  - func: run kms servers
+  - func: run-mock-kms-servers
   - func: run tests
     vars:
       ASAN: 'off'

@@ -538,7 +538,7 @@ class IntegrationTask(MatrixTask):
         if self.cse:
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
             commands.append(func('fetch-det'))
-            commands.append(func('run kms servers'))
+            commands.append(func('run-mock-kms-servers'))
         if self.coverage:
             extra["COVERAGE"] = 'ON'
         commands.append(run_tests(ASAN='on' if self.sanitizer == 'asan' else 'off',
