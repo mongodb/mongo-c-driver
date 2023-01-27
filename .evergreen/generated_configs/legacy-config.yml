@@ -392,27 +392,13 @@ functions:
   - command: expansions.update
     params:
       file: lb-expansion.yml
-  stop load balancer:
-  - command: shell.exec
-    params:
-      shell: bash
-      script: |-
-        set -o errexit
-        # Only run if a load balancer was started.
-        if [ -z "${SINGLE_MONGOS_LB_URI}" ]; then
-            echo "OK - no load balancer running"
-            exit 0
-        fi
-        export DRIVERS_TOOLS=./drivers-evergreen-tools
-        export MONGODB_URI="foo" # TODO: DRIVERS-1833 remove this.
-        $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh stop
 post:
 - func: backtrace
 - func: upload working dir
 - func: upload mo artifacts
 - func: upload test results
 - func: cleanup
-- func: stop load balancer
+- func: stop-load-balancer
 tasks:
 - name: hardened-compile
   tags:

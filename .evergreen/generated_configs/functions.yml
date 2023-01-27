@@ -266,6 +266,21 @@ functions:
         args:
           - -c
           - .evergreen/scripts/run-tests.sh
+  stop-load-balancer:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            # Only run if a load balancer was started.
+            if [[ -z "${SINGLE_MONGOS_LB_URI}" ]]; then
+                echo "OK - no load balancer running"
+                exit
+            fi
+            if [[ -d drivers-evergreen-tools ]]; then
+                cd drivers-evergreen-tools && .evergreen/run-load-balancer.sh stop
+            fi
   upload-build:
     - command: archive.targz_pack
       params:

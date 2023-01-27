@@ -56,7 +56,7 @@ config = OD([
         OD([('func', 'upload mo artifacts')]),
         OD([('func', 'upload test results')]),
         OD([('func', 'cleanup')]),
-        OD([('func', 'stop load balancer')]),
+        OD([('func', 'stop-load-balancer')]),
     ]),
     ('tasks', all_tasks),
     ('task_groups', all_task_groups),
