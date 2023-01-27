@@ -23,6 +23,7 @@
 
 #include "mongoc.h"
 
+#include <openssl/opensslv.h>
 #include <openssl/rand.h>
 
 int
