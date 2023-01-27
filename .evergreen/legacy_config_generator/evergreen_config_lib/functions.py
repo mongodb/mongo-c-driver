@@ -56,49 +56,6 @@ all_functions = OD([
                bucket='mciuploads', permissions='public-read',
                content_type='text/html', display_name='Scan Build Report'),
     )),
-    ('upload mo artifacts', Function(
-        shell_mongoc(r'''
-        DIR=MO
-        [ -d "/cygdrive/c/data/mo" ] && DIR="/cygdrive/c/data/mo"
-        [ -d $DIR ] && find $DIR -name \*.log | xargs tar czf mongodb-logs.tar.gz
-        ''', test=False),
-        s3_put(build_path + '/logs/${task_id}-${execution}-mongodb-logs.tar.gz',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/mongodb-logs.tar.gz', bucket='mciuploads',
-               permissions='public-read',
-               content_type='${content_type|application/x-gzip}',
-               display_name='mongodb-logs.tar.gz'),
-        s3_put(build_path + '/logs/${task_id}-${execution}-orchestration.log',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/MO/server.log', bucket='mciuploads',
-               permissions='public-read',
-               content_type='${content_type|text/plain}',
-               display_name='orchestration.log'),
-        shell_mongoc(r'''
-        # Find all core files from mongodb in orchestration and move to mongoc
-        DIR=MO
-        MDMP_DIR=$DIR
-        [ -d "/cygdrive/c/data/mo" ] && DIR="/cygdrive/c/data/mo"
-        [ -d "/cygdrive/c/mongodb" ] && MDMP_DIR="/cygdrive/c/mongodb"
-        core_files=$(/usr/bin/find -H $MO $MDMP_DIR \( -name "*.core" -o -name "*.mdmp" \) 2> /dev/null)
-        for core_file in $core_files
-        do
-          base_name=$(echo $core_file | sed "s/.*\///")
-          # Move file if it does not already exist
-          if [ ! -f $base_name ]; then
-            mv $core_file .
-          fi
-        done
-        ''', test=False),
-        targz_pack('mongo-coredumps.tgz', 'mongoc', './**.core', './**.mdmp'),
-        s3_put(build_path + '/coredumps/${task_id}-${execution}-coredumps.log',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongo-coredumps.tgz', bucket='mciuploads',
-               permissions='public-read',
-               content_type='${content_type|application/x-gzip}',
-               display_name='Core Dumps - Execution ${execution}',
-               optional='True'),
-    )),
     ('upload working dir', Function(
         targz_pack('working-dir.tar.gz', 'mongoc', './**'),
         s3_put(
