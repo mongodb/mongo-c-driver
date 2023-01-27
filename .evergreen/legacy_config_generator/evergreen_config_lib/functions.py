@@ -127,12 +127,6 @@ all_functions = OD([
         bash .evergreen/scripts/run-mock-server-tests.sh
         ''', add_expansions_to_env=True),
     )),
-    ('cleanup', Function(
-        shell_mongoc(r'''
-        cd MO
-        mongo-orchestration stop
-        ''', test=False),
-    )),
     ('link sample program', Function(
         shell_mongoc(r'''
         # Compile a program that links dynamically or statically to libmongoc,

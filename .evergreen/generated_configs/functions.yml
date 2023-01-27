@@ -281,6 +281,16 @@ functions:
             if [[ -d drivers-evergreen-tools ]]; then
                 cd drivers-evergreen-tools && .evergreen/run-load-balancer.sh stop
             fi
+  stop-mongo-orchestration:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            if [[ -d MO ]]; then
+                cd MO && mongo-orchestration stop
+            fi
   upload-build:
     - command: archive.targz_pack
       params:

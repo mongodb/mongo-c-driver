@@ -180,15 +180,6 @@ functions:
       script: |-
         set -o errexit
         bash .evergreen/scripts/run-mock-server-tests.sh
-  cleanup:
-  - command: shell.exec
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        cd MO
-        mongo-orchestration stop
   link sample program:
   - command: shell.exec
     type: test
@@ -397,7 +388,7 @@ post:
 - func: upload working dir
 - func: upload mo artifacts
 - func: upload test results
-- func: cleanup
+- func: stop-mongo-orchestration
 - func: stop-load-balancer
 tasks:
 - name: hardened-compile
