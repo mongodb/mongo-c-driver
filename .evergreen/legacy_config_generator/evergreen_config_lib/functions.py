@@ -56,17 +56,6 @@ all_functions = OD([
                bucket='mciuploads', permissions='public-read',
                content_type='text/html', display_name='Scan Build Report'),
     )),
-    ('upload working dir', Function(
-        targz_pack('working-dir.tar.gz', 'mongoc', './**'),
-        s3_put(
-            build_path +
-            '/artifacts/${task_id}-${execution}-working-dir.tar.gz',
-            aws_key='${aws_key}', aws_secret='${aws_secret}',
-            local_file='working-dir.tar.gz', bucket='mciuploads',
-            permissions='public-read',
-            content_type='${content_type|application/x-gzip}',
-            display_name='working-dir.tar.gz'),
-    )),
     # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
         shell_mongoc(r'''
