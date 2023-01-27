@@ -110,12 +110,6 @@ all_functions = OD([
             content_type='${content_type|application/x-gzip}',
             display_name='working-dir.tar.gz'),
     )),
-    ('upload test results', Function(
-        OD([('command', 'attach.results'),
-            ('params', OD([
-                ('file_location', 'mongoc/test-results.json'),
-            ]))]),
-    )),
     # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
         shell_mongoc(r'''

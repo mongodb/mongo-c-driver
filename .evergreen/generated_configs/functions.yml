@@ -407,3 +407,15 @@ functions:
         local_file: mongoc.tar.gz
         permissions: public-read
         remote_file: ${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
+  upload-test-results:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            mkdir mongoc
+            touch mongoc/test-results.json
+    - command: attach.results
+      params:
+        file_location: mongoc/test-results.json

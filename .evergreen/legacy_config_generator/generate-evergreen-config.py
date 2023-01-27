@@ -54,7 +54,7 @@ config = OD([
         OD([('func', 'backtrace')]),
         OD([('func', 'upload working dir')]),
         OD([('func', 'upload mo artifacts')]),
-        OD([('func', 'upload test results')]),
+        OD([('func', 'upload-test-results')]),
         OD([('func', 'stop-mongo-orchestration')]),
         OD([('func', 'stop-load-balancer')]),
     ]),

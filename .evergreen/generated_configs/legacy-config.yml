@@ -156,10 +156,6 @@ functions:
       local_file: working-dir.tar.gz
       content_type: ${content_type|application/x-gzip}
       display_name: working-dir.tar.gz
-  upload test results:
-  - command: attach.results
-    params:
-      file_location: mongoc/test-results.json
   run auth tests:
   - command: shell.exec
     type: test
@@ -387,7 +383,7 @@ post:
 - func: backtrace
 - func: upload working dir
 - func: upload mo artifacts
-- func: upload test results
+- func: upload-test-results
 - func: stop-mongo-orchestration
 - func: stop-load-balancer
 tasks:
