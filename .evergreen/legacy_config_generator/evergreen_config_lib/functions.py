@@ -505,7 +505,7 @@ all_functions = OD([
             . ../venv-utils.sh
             venvcreate "C:/python/Python39/python.exe" kmstlsvenv || # windows-2017
             venvcreate "C:/python/Python38/python.exe" kmstlsvenv    # windows-2015
-            python -m pip install --upgrade boto3~=1.19 pykmip~=0.10.0
+            python -m pip install --upgrade boto3~=1.19 pykmip~=0.10.0 "sqlalchemy<2.0.0"
             deactivate
         else
             . ./activate-kmstlsvenv.sh
