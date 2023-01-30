@@ -168,7 +168,7 @@ if [[ "${CLIENT_SIDE_ENCRYPTION}" == "on" ]]; then
     for _ in $(seq 300); do
       # Exit code 7: "Failed to connect to host".
       if
-        curl -s "localhost:${1:?}"
+        curl -s --max-time 1 "localhost:${1:?}"
         test ${?} -ne 7
       then
         return 0
