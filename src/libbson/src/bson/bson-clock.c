@@ -126,18 +126,8 @@ bson_get_monotonic_time (void)
    clock_gettime (CLOCK_MONOTONIC, &ts);
    return (((int64_t) ts.tv_sec * 1000000) + (ts.tv_nsec / 1000));
 #elif defined(__APPLE__)
-   static mach_timebase_info_data_t info = {0};
-   static double ratio = 0.0;
-
-   if (!info.denom) {
-      /* the value from mach_absolute_time () * info.numer / info.denom
-       * is in nano seconds. So we have to divid by 1000.0 to get micro
-       * seconds*/
-      mach_timebase_info (&info);
-      ratio = (double) info.numer / (double) info.denom / 1000.0;
-   }
-
-   return mach_absolute_time () * ratio;
+   const uint64_t nsec = clock_gettime_nsec_np (CLOCK_UPTIME_RAW);
+   return (int64_t) (nsec / 1000u);
 #elif defined(_WIN32)
    /* Despite it's name, this is in milliseconds! */
    int64_t ticks = GetTickCount64 ();
