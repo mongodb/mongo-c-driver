@@ -207,8 +207,8 @@ WINDOWS_DISTROS = [
     Distro(name='windows-vsCurrent-2022-large', os='windows', os_type='windows', os_ver='2022', vs_ver='vsCurrent', size='large'),
     Distro(name='windows-vsCurrent-2022-small', os='windows', os_type='windows', os_ver='2022', vs_ver='vsCurrent', size='small'),
 
-    Distro(name='windows-vsCurrent-large', os='windows', os_type='windows', vs_ver='vsCurrent2', size='large'),
-    Distro(name='windows-vsCurrent-small', os='windows', os_type='windows', vs_ver='vsCurrent2', size='small'),
+    Distro(name='windows-vsCurrent-large', os='windows', os_type='windows', vs_ver='vsCurrent', size='large'),
+    Distro(name='windows-vsCurrent-small', os='windows', os_type='windows', vs_ver='vsCurrent', size='small'),
 
     Distro(name='windows-vsCurrent2-large', os='windows', os_type='windows', vs_ver='vsCurrent2', size='large'),
     Distro(name='windows-vsCurrent2-small', os='windows', os_type='windows', vs_ver='vsCurrent2', size='small'),
