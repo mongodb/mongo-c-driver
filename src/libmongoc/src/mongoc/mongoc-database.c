@@ -1253,6 +1253,7 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
                                         const char *dbName,
                                         const char *collName,
                                         const bson_t *opts,
+                                        bool checkEncryptedFieldsMap,
                                         bson_t *encryptedFields,
                                         bson_error_t *error)
 {
@@ -1275,7 +1276,7 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
                    then (error ("'encryptedFields' should be a document"))),
                // Update encryptedFields to be a reference to the subdocument:
                storeDocRef (*encryptedFields),
-               do(found = true)));
+               do (found = true)));
       if (bsonParseError) {
          // Error while parsing
          bson_set_error (error,
@@ -1293,7 +1294,8 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
    }
 
    // Look in the encryptedFieldsMap based on this collection name
-   if (!_mongoc_get_encryptedFields_from_map (
+   if (checkEncryptedFieldsMap &&
+       !_mongoc_get_encryptedFields_from_map (
           client, dbName, collName, encryptedFields, error)) {
       // Error during lookup.
       return false;
@@ -1321,6 +1323,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
           mongoc_database_get_name (database),
           name,
           opts,
+          true /* checkEncryptedFieldsMap */,
           &encryptedFields,
           error)) {
       // Error during fields lookup
