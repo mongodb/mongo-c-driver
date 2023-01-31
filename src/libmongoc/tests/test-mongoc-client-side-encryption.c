@@ -6289,14 +6289,11 @@ test_create_encrypted_collection_simple (void *unused)
 }
 
 static void
-test_create_encrypted_collection_no_encryptedFields (void *unused)
+test_create_encrypted_collection_no_encryptedFields_helper (
+   mongoc_client_t *client, const char *dbName, const char *collName)
 {
-   BSON_UNUSED (unused);
    bson_error_t error = {0};
-   mongoc_client_t *const client = test_framework_new_default_client ();
    bson_t *const kmsProviders = _make_kms_providers (false, true);
-
-   const char *const dbName = "cec-test-db";
 
    // Drop prior data
    {
@@ -6334,7 +6331,7 @@ test_create_encrypted_collection_no_encryptedFields (void *unused)
       mongoc_client_encryption_datakey_opts_new ();
    mongoc_collection_t *const coll =
       mongoc_client_encryption_create_encrypted_collection (
-         ce, db, "test-coll", &ccOpts, NULL, "local", dkOpts, &error);
+         ce, db, collName, &ccOpts, NULL, "local", dkOpts, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -6347,7 +6344,60 @@ test_create_encrypted_collection_no_encryptedFields (void *unused)
    mongoc_database_drop (db, &error);
    mongoc_database_destroy (db);
    mongoc_client_encryption_destroy (ce);
-   mongoc_client_destroy (client);
+}
+
+
+static void
+test_create_encrypted_collection_no_encryptedFields (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   const char *dbName = "cec-test-db";
+   const char *collName = "test-coll";
+
+   // Test with a default client.
+   {
+      mongoc_client_t *const client = test_framework_new_default_client ();
+      test_create_encrypted_collection_no_encryptedFields_helper (
+         client, dbName, collName);
+      mongoc_client_destroy (client);
+   }
+
+   // Test with a client configured with an encryptedFieldsMap.
+   // This is not a required test. But a prior implementation checked if the
+   // target collection was configured in encryptedFieldsMap.
+   {
+      mongoc_client_t *const client = test_framework_new_default_client ();
+      mongoc_auto_encryption_opts_t *aeOpts =
+         mongoc_auto_encryption_opts_new ();
+      bson_t *const kmsProviders =
+         _make_kms_providers (false /* with aws */, true /* with local */);
+      char *namespace = bson_strdup_printf ("%s.%s", dbName, collName);
+      bson_t *encryptedFieldsMap =
+         tmp_bson ("{'%s': {'fields': []}}", namespace);
+      bson_error_t error;
+
+      mongoc_auto_encryption_opts_set_kms_providers (aeOpts, kmsProviders);
+      mongoc_auto_encryption_opts_set_keyvault_namespace (
+         aeOpts, "keyvault", "datakeys");
+      mongoc_auto_encryption_opts_set_encrypted_fields_map (aeOpts,
+                                                            encryptedFieldsMap);
+      ASSERT_OR_PRINT (
+         mongoc_client_enable_auto_encryption (client, aeOpts, &error), error);
+
+      test_create_encrypted_collection_no_encryptedFields_helper (
+         client, dbName, collName);
+
+      bson_free (namespace);
+      bson_destroy (kmsProviders);
+      mongoc_auto_encryption_opts_destroy (aeOpts);
+      mongoc_client_destroy (client);
+   }
+
+
+   // This is not a required specification test. But also check that
+   // encryptedFieldsMap is not checked. Create a client with
+   // encryptedFieldsMap.
 }
 
 static void
