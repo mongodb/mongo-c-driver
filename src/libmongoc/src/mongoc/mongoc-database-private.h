@@ -80,6 +80,8 @@ _mongoc_get_encryptedFields_from_server (mongoc_client_t *client,
  * @param collName The name of the collection
  * @param opts (Optional) The collection options, which may contain the
  * fields
+ * @param checkEncryptedFieldsMap If false, the encryptedFieldsMap will not be
+ * checked.
  * @param[out] encryptedFields An output where a view of the encryptedFields
  * will be written
  * @param[out] error An error output
@@ -94,6 +96,7 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
                                         const char *dbName,
                                         const char *collName,
                                         const bson_t *opts,
+                                        bool checkEncryptedFieldsMap,
                                         bson_t *encryptedFields,
                                         bson_error_t *error);
 
