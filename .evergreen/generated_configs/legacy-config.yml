@@ -3386,31 +3386,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-server-auth-sasl-openssl-static
-  tags:
-  - auth
-  - latest
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-latest-server-auth-sasl-darwinssl-cse
   tags:
   - auth
@@ -3494,31 +3469,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-latest-server-auth-nosasl-openssl-static
-  tags:
-  - auth
-  - latest
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-latest-server-noauth-sasl-openssl-cse
   tags:
   - client-side-encryption
@@ -3601,31 +3551,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl-static
-- name: test-latest-server-noauth-sasl-openssl-static
-  tags:
-  - latest
-  - noauth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
       SSL: openssl-static
 - name: test-latest-server-noauth-sasl-darwinssl-cse
   tags:
@@ -3710,31 +3635,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-latest-server-noauth-nosasl-openssl-static
-  tags:
-  - latest
-  - noauth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-latest-server-noauth-nosasl-nossl
   tags:
   - latest
@@ -3843,31 +3743,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-replica-set-auth-sasl-openssl-static
-  tags:
-  - auth
-  - latest
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-latest-replica-set-auth-sasl-darwinssl-cse
   tags:
   - auth
@@ -3951,31 +3826,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-latest-replica-set-auth-nosasl-openssl-static
-  tags:
-  - auth
-  - latest
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-latest-replica-set-noauth-sasl-openssl-cse
   tags:
   - client-side-encryption
@@ -4058,31 +3908,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl-static
-- name: test-latest-replica-set-noauth-sasl-openssl-static
-  tags:
-  - latest
-  - noauth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
       SSL: openssl-static
 - name: test-latest-replica-set-noauth-sasl-darwinssl-cse
   tags:
@@ -4167,31 +3992,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-latest-replica-set-noauth-nosasl-openssl-static
-  tags:
-  - latest
-  - noauth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-latest-replica-set-noauth-nosasl-nossl
   tags:
   - latest
@@ -4242,31 +4042,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-latest-sharded-auth-sasl-openssl-static
-  tags:
-  - auth
-  - latest
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-latest-sharded-auth-nosasl-openssl
   tags:
   - auth
@@ -4292,31 +4067,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-latest-sharded-auth-nosasl-openssl-static
-  tags:
-  - auth
-  - latest
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-latest-sharded-noauth-sasl-openssl
   tags:
   - latest
@@ -4342,31 +4092,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-latest-sharded-noauth-sasl-openssl-static
-  tags:
-  - latest
-  - noauth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-latest-sharded-noauth-nosasl-openssl
   tags:
   - latest
@@ -4392,31 +4117,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-latest-sharded-noauth-nosasl-openssl-static
-  tags:
-  - latest
-  - noauth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-latest-sharded-noauth-nosasl-nossl
   tags:
   - latest
@@ -4525,31 +4225,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-server-auth-sasl-openssl-static
-  tags:
-  - '6.0'
-  - auth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-6.0-server-auth-sasl-darwinssl-cse
   tags:
   - '6.0'
@@ -4633,31 +4308,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-6.0-server-auth-nosasl-openssl-static
-  tags:
-  - '6.0'
-  - auth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-6.0-server-noauth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -4740,31 +4390,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl-static
-- name: test-6.0-server-noauth-sasl-openssl-static
-  tags:
-  - '6.0'
-  - noauth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
       SSL: openssl-static
 - name: test-6.0-server-noauth-sasl-darwinssl-cse
   tags:
@@ -4849,31 +4474,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-6.0-server-noauth-nosasl-openssl-static
-  tags:
-  - '6.0'
-  - noauth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-6.0-server-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -4982,31 +4582,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-replica-set-auth-sasl-openssl-static
-  tags:
-  - '6.0'
-  - auth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-6.0-replica-set-auth-sasl-darwinssl-cse
   tags:
   - '6.0'
@@ -5090,31 +4665,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-6.0-replica-set-auth-nosasl-openssl-static
-  tags:
-  - '6.0'
-  - auth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-6.0-replica-set-noauth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -5197,31 +4747,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl-static
-- name: test-6.0-replica-set-noauth-sasl-openssl-static
-  tags:
-  - '6.0'
-  - noauth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
       SSL: openssl-static
 - name: test-6.0-replica-set-noauth-sasl-darwinssl-cse
   tags:
@@ -5306,31 +4831,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-6.0-replica-set-noauth-nosasl-openssl-static
-  tags:
-  - '6.0'
-  - noauth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-6.0-replica-set-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -5381,31 +4881,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-6.0-sharded-auth-sasl-openssl-static
-  tags:
-  - '6.0'
-  - auth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-6.0-sharded-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -5431,31 +4906,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-6.0-sharded-auth-nosasl-openssl-static
-  tags:
-  - '6.0'
-  - auth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-6.0-sharded-noauth-sasl-openssl
   tags:
   - '6.0'
@@ -5481,31 +4931,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-6.0-sharded-noauth-sasl-openssl-static
-  tags:
-  - '6.0'
-  - noauth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-6.0-sharded-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -5531,31 +4956,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-6.0-sharded-noauth-nosasl-openssl-static
-  tags:
-  - '6.0'
-  - noauth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-6.0-sharded-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -5664,31 +5064,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-5.0-server-auth-sasl-openssl-static
-  tags:
-  - '5.0'
-  - auth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-5.0-server-auth-sasl-darwinssl-cse
   tags:
   - '5.0'
@@ -5772,31 +5147,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-5.0-server-auth-nosasl-openssl-static
-  tags:
-  - '5.0'
-  - auth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-5.0-server-noauth-sasl-openssl-cse
   tags:
   - '5.0'
@@ -5879,31 +5229,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl-static
-- name: test-5.0-server-noauth-sasl-openssl-static
-  tags:
-  - '5.0'
-  - noauth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
       SSL: openssl-static
 - name: test-5.0-server-noauth-sasl-darwinssl-cse
   tags:
@@ -5988,31 +5313,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-5.0-server-noauth-nosasl-openssl-static
-  tags:
-  - '5.0'
-  - noauth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-5.0-server-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -6063,31 +5363,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-5.0-replica-set-auth-sasl-openssl-static
-  tags:
-  - '5.0'
-  - auth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-5.0-replica-set-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -6113,31 +5388,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-5.0-replica-set-auth-nosasl-openssl-static
-  tags:
-  - '5.0'
-  - auth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-5.0-replica-set-noauth-sasl-openssl
   tags:
   - '5.0'
@@ -6163,31 +5413,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-5.0-replica-set-noauth-sasl-openssl-static
-  tags:
-  - '5.0'
-  - noauth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-5.0-replica-set-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -6213,31 +5438,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-5.0-replica-set-noauth-nosasl-openssl-static
-  tags:
-  - '5.0'
-  - noauth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-5.0-replica-set-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -6288,31 +5488,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-5.0-sharded-auth-sasl-openssl-static
-  tags:
-  - '5.0'
-  - auth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-5.0-sharded-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -6338,31 +5513,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-5.0-sharded-auth-nosasl-openssl-static
-  tags:
-  - '5.0'
-  - auth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-5.0-sharded-noauth-sasl-openssl
   tags:
   - '5.0'
@@ -6388,31 +5538,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-5.0-sharded-noauth-sasl-openssl-static
-  tags:
-  - '5.0'
-  - noauth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-5.0-sharded-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -6438,31 +5563,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-5.0-sharded-noauth-nosasl-openssl-static
-  tags:
-  - '5.0'
-  - noauth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-5.0-sharded-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -6571,31 +5671,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.4-server-auth-sasl-openssl-static
-  tags:
-  - '4.4'
-  - auth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.4-server-auth-sasl-darwinssl-cse
   tags:
   - '4.4'
@@ -6679,31 +5754,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.4-server-auth-nosasl-openssl-static
-  tags:
-  - '4.4'
-  - auth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.4-server-noauth-sasl-openssl-cse
   tags:
   - '4.4'
@@ -6786,31 +5836,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl-static
-- name: test-4.4-server-noauth-sasl-openssl-static
-  tags:
-  - '4.4'
-  - noauth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
       SSL: openssl-static
 - name: test-4.4-server-noauth-sasl-darwinssl-cse
   tags:
@@ -6895,31 +5920,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.4-server-noauth-nosasl-openssl-static
-  tags:
-  - '4.4'
-  - noauth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.4-server-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -6970,31 +5970,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.4-replica-set-auth-sasl-openssl-static
-  tags:
-  - '4.4'
-  - auth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.4-replica-set-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -7020,31 +5995,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.4-replica-set-auth-nosasl-openssl-static
-  tags:
-  - '4.4'
-  - auth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.4-replica-set-noauth-sasl-openssl
   tags:
   - '4.4'
@@ -7070,31 +6020,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.4-replica-set-noauth-sasl-openssl-static
-  tags:
-  - '4.4'
-  - noauth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.4-replica-set-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -7120,31 +6045,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.4-replica-set-noauth-nosasl-openssl-static
-  tags:
-  - '4.4'
-  - noauth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.4-replica-set-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -7195,31 +6095,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.4-sharded-auth-sasl-openssl-static
-  tags:
-  - '4.4'
-  - auth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.4-sharded-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -7245,31 +6120,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.4-sharded-auth-nosasl-openssl-static
-  tags:
-  - '4.4'
-  - auth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.4-sharded-noauth-sasl-openssl
   tags:
   - '4.4'
@@ -7295,31 +6145,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.4-sharded-noauth-sasl-openssl-static
-  tags:
-  - '4.4'
-  - noauth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.4-sharded-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -7345,31 +6170,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.4-sharded-noauth-nosasl-openssl-static
-  tags:
-  - '4.4'
-  - noauth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.4-sharded-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -7478,31 +6278,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.2-server-auth-sasl-openssl-static
-  tags:
-  - '4.2'
-  - auth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.2-server-auth-sasl-darwinssl-cse
   tags:
   - '4.2'
@@ -7586,31 +6361,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.2-server-auth-nosasl-openssl-static
-  tags:
-  - '4.2'
-  - auth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.2-server-noauth-sasl-openssl-cse
   tags:
   - '4.2'
@@ -7693,31 +6443,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl-static
-- name: test-4.2-server-noauth-sasl-openssl-static
-  tags:
-  - '4.2'
-  - noauth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
       SSL: openssl-static
 - name: test-4.2-server-noauth-sasl-darwinssl-cse
   tags:
@@ -7802,31 +6527,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.2-server-noauth-nosasl-openssl-static
-  tags:
-  - '4.2'
-  - noauth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.2-server-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -7877,31 +6577,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.2-replica-set-auth-sasl-openssl-static
-  tags:
-  - '4.2'
-  - auth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.2-replica-set-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -7927,31 +6602,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.2-replica-set-auth-nosasl-openssl-static
-  tags:
-  - '4.2'
-  - auth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.2-replica-set-noauth-sasl-openssl
   tags:
   - '4.2'
@@ -7977,31 +6627,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.2-replica-set-noauth-sasl-openssl-static
-  tags:
-  - '4.2'
-  - noauth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.2-replica-set-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -8027,31 +6652,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.2-replica-set-noauth-nosasl-openssl-static
-  tags:
-  - '4.2'
-  - noauth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.2-replica-set-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -8102,31 +6702,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.2-sharded-auth-sasl-openssl-static
-  tags:
-  - '4.2'
-  - auth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.2-sharded-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -8152,31 +6727,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.2-sharded-auth-nosasl-openssl-static
-  tags:
-  - '4.2'
-  - auth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.2-sharded-noauth-sasl-openssl
   tags:
   - '4.2'
@@ -8202,31 +6752,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.2-sharded-noauth-sasl-openssl-static
-  tags:
-  - '4.2'
-  - noauth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.2-sharded-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -8252,31 +6777,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.2-sharded-noauth-nosasl-openssl-static
-  tags:
-  - '4.2'
-  - noauth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.2-sharded-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -8327,31 +6827,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.0-server-auth-sasl-openssl-static
-  tags:
-  - '4.0'
-  - auth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.0-server-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -8377,31 +6852,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.0-server-auth-nosasl-openssl-static
-  tags:
-  - '4.0'
-  - auth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.0-server-noauth-sasl-openssl
   tags:
   - '4.0'
@@ -8427,31 +6877,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.0-server-noauth-sasl-openssl-static
-  tags:
-  - '4.0'
-  - noauth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.0-server-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -8477,31 +6902,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.0-server-noauth-nosasl-openssl-static
-  tags:
-  - '4.0'
-  - noauth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.0-server-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -8552,31 +6952,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.0-replica-set-auth-sasl-openssl-static
-  tags:
-  - '4.0'
-  - auth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.0-replica-set-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -8602,31 +6977,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.0-replica-set-auth-nosasl-openssl-static
-  tags:
-  - '4.0'
-  - auth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.0-replica-set-noauth-sasl-openssl
   tags:
   - '4.0'
@@ -8652,31 +7002,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.0-replica-set-noauth-sasl-openssl-static
-  tags:
-  - '4.0'
-  - noauth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.0-replica-set-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -8702,31 +7027,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.0-replica-set-noauth-nosasl-openssl-static
-  tags:
-  - '4.0'
-  - noauth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.0-replica-set-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -8777,31 +7077,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.0-sharded-auth-sasl-openssl-static
-  tags:
-  - '4.0'
-  - auth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.0-sharded-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -8827,31 +7102,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-4.0-sharded-auth-nosasl-openssl-static
-  tags:
-  - '4.0'
-  - auth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-4.0-sharded-noauth-sasl-openssl
   tags:
   - '4.0'
@@ -8877,31 +7127,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.0-sharded-noauth-sasl-openssl-static
-  tags:
-  - '4.0'
-  - noauth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.0-sharded-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -8927,31 +7152,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-4.0-sharded-noauth-nosasl-openssl-static
-  tags:
-  - '4.0'
-  - noauth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-4.0-sharded-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -9002,31 +7202,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-3.6-server-auth-sasl-openssl-static
-  tags:
-  - '3.6'
-  - auth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-3.6-server-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -9052,31 +7227,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-3.6-server-auth-nosasl-openssl-static
-  tags:
-  - '3.6'
-  - auth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-3.6-server-noauth-sasl-openssl
   tags:
   - '3.6'
@@ -9102,31 +7252,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-3.6-server-noauth-sasl-openssl-static
-  tags:
-  - '3.6'
-  - noauth
-  - openssl-static
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-3.6-server-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -9152,31 +7277,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-3.6-server-noauth-nosasl-openssl-static
-  tags:
-  - '3.6'
-  - noauth
-  - nosasl
-  - openssl-static
-  - server
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-3.6-server-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -9227,31 +7327,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-3.6-replica-set-auth-sasl-openssl-static
-  tags:
-  - '3.6'
-  - auth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-3.6-replica-set-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -9277,31 +7352,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-3.6-replica-set-auth-nosasl-openssl-static
-  tags:
-  - '3.6'
-  - auth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-3.6-replica-set-noauth-sasl-openssl
   tags:
   - '3.6'
@@ -9327,31 +7377,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-3.6-replica-set-noauth-sasl-openssl-static
-  tags:
-  - '3.6'
-  - noauth
-  - openssl-static
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-3.6-replica-set-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -9377,31 +7402,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-3.6-replica-set-noauth-nosasl-openssl-static
-  tags:
-  - '3.6'
-  - noauth
-  - nosasl
-  - openssl-static
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-3.6-replica-set-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -9452,31 +7452,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-3.6-sharded-auth-sasl-openssl-static
-  tags:
-  - '3.6'
-  - auth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-3.6-sharded-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -9502,31 +7477,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
-- name: test-3.6-sharded-auth-nosasl-openssl-static
-  tags:
-  - '3.6'
-  - auth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: openssl-static
 - name: test-3.6-sharded-noauth-sasl-openssl
   tags:
   - '3.6'
@@ -9552,31 +7502,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-3.6-sharded-noauth-sasl-openssl-static
-  tags:
-  - '3.6'
-  - noauth
-  - openssl-static
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-3.6-sharded-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -9602,31 +7527,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
-- name: test-3.6-sharded-noauth-nosasl-openssl-static
-  tags:
-  - '3.6'
-  - noauth
-  - nosasl
-  - openssl-static
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl-static
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl-static
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: openssl-static
 - name: test-3.6-sharded-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -17584,7 +15484,7 @@ buildvariants:
   - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
   - .latest .openssl !.nosasl .server
-  - .latest .openssl-static !.nosasl .server
+  - .latest .openssl-static !.nosasl .server .client-side-encryption
   - .latest .nossl
   - .5.0 .openssl !.nosasl .server
   - .4.4 .openssl !.nosasl .server
@@ -17739,7 +15639,7 @@ buildvariants:
   - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
   - .latest .openssl !.nosasl .server
-  - .latest .openssl-static !.nosasl .server
+  - .latest .openssl-static !.nosasl .server .client-side-encryption
   - .latest .nossl
   - .5.0 .openssl !.nosasl .server
   - .4.4 .openssl !.nosasl .server
@@ -17756,7 +15656,7 @@ buildvariants:
   - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
   - .latest .openssl !.nosasl .server
-  - .latest .openssl-static !.nosasl .server
+  - .latest .openssl-static !.nosasl .server .client-side-encryption
   - .latest .nossl
 - name: gcc102
   display_name: GCC 10.2 (Debian 11.0)
@@ -17770,7 +15670,7 @@ buildvariants:
   - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
   - .latest .openssl !.nosasl .server
-  - .latest .openssl-static !.nosasl .server
+  - .latest .openssl-static !.nosasl .server .client-side-encryption
   - .latest .nossl
 - name: gcc94
   display_name: GCC 9.4 (Ubuntu 20.04)
@@ -17784,7 +15684,7 @@ buildvariants:
   - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
   - .latest .openssl !.nosasl .server
-  - .latest .openssl-static !.nosasl .server
+  - .latest .openssl-static !.nosasl .server .client-side-encryption
   - .latest .nossl
 - name: gcc75-i686
   display_name: GCC 7.5 (i686) (Ubuntu 18.04)
