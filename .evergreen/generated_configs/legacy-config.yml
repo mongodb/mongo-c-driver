@@ -3469,56 +3469,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-latest-server-auth-sasl-winssl
-  tags:
-  - auth
-  - latest
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
-- name: test-latest-server-auth-sspi-winssl
-  tags:
-  - auth
-  - latest
-  - server
-  - sspi
-  - winssl
-  depends_on:
-    name: debug-compile-sspi-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sspi-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-latest-server-auth-nosasl-openssl
   tags:
   - auth
@@ -3569,31 +3519,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-latest-server-auth-nosasl-winssl
-  tags:
-  - auth
-  - latest
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-latest-server-noauth-sasl-openssl-cse
   tags:
   - client-side-encryption
@@ -3760,31 +3685,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-latest-server-noauth-sasl-winssl
-  tags:
-  - latest
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-latest-server-noauth-nosasl-openssl
   tags:
   - latest
@@ -3835,31 +3735,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-latest-server-noauth-nosasl-winssl
-  tags:
-  - latest
-  - noauth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-latest-server-noauth-nosasl-nossl
   tags:
   - latest
@@ -4051,31 +3926,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-latest-replica-set-auth-sasl-winssl
-  tags:
-  - auth
-  - latest
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-latest-replica-set-auth-nosasl-openssl
   tags:
   - auth
@@ -4126,31 +3976,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-latest-replica-set-auth-nosasl-winssl
-  tags:
-  - auth
-  - latest
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-latest-replica-set-noauth-sasl-openssl-cse
   tags:
   - client-side-encryption
@@ -4317,31 +4142,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-latest-replica-set-noauth-sasl-winssl
-  tags:
-  - latest
-  - noauth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-latest-replica-set-noauth-nosasl-openssl
   tags:
   - latest
@@ -4392,31 +4192,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-latest-replica-set-noauth-nosasl-winssl
-  tags:
-  - latest
-  - noauth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-latest-replica-set-noauth-nosasl-nossl
   tags:
   - latest
@@ -4492,31 +4267,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-latest-sharded-auth-sasl-winssl
-  tags:
-  - auth
-  - latest
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-latest-sharded-auth-nosasl-openssl
   tags:
   - auth
@@ -4567,31 +4317,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-latest-sharded-auth-nosasl-winssl
-  tags:
-  - auth
-  - latest
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-latest-sharded-noauth-sasl-openssl
   tags:
   - latest
@@ -4642,31 +4367,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-latest-sharded-noauth-sasl-winssl
-  tags:
-  - latest
-  - noauth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-latest-sharded-noauth-nosasl-openssl
   tags:
   - latest
@@ -4717,31 +4417,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-latest-sharded-noauth-nosasl-winssl
-  tags:
-  - latest
-  - noauth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-latest-sharded-noauth-nosasl-nossl
   tags:
   - latest
@@ -4933,31 +4608,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-6.0-server-auth-sasl-winssl
-  tags:
-  - '6.0'
-  - auth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-6.0-server-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -5008,31 +4658,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-6.0-server-auth-nosasl-winssl
-  tags:
-  - '6.0'
-  - auth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-6.0-server-noauth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -5199,31 +4824,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-6.0-server-noauth-sasl-winssl
-  tags:
-  - '6.0'
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-6.0-server-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -5274,31 +4874,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-6.0-server-noauth-nosasl-winssl
-  tags:
-  - '6.0'
-  - noauth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-6.0-server-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -5490,31 +5065,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-6.0-replica-set-auth-sasl-winssl
-  tags:
-  - '6.0'
-  - auth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-6.0-replica-set-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -5565,31 +5115,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-6.0-replica-set-auth-nosasl-winssl
-  tags:
-  - '6.0'
-  - auth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-6.0-replica-set-noauth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -5756,31 +5281,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-6.0-replica-set-noauth-sasl-winssl
-  tags:
-  - '6.0'
-  - noauth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-6.0-replica-set-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -5831,31 +5331,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-6.0-replica-set-noauth-nosasl-winssl
-  tags:
-  - '6.0'
-  - noauth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-6.0-replica-set-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -5931,31 +5406,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-6.0-sharded-auth-sasl-winssl
-  tags:
-  - '6.0'
-  - auth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-6.0-sharded-auth-nosasl-openssl
   tags:
   - '6.0'
@@ -6006,31 +5456,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-6.0-sharded-auth-nosasl-winssl
-  tags:
-  - '6.0'
-  - auth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-6.0-sharded-noauth-sasl-openssl
   tags:
   - '6.0'
@@ -6081,31 +5506,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-6.0-sharded-noauth-sasl-winssl
-  tags:
-  - '6.0'
-  - noauth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-6.0-sharded-noauth-nosasl-openssl
   tags:
   - '6.0'
@@ -6156,31 +5556,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-6.0-sharded-noauth-nosasl-winssl
-  tags:
-  - '6.0'
-  - noauth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-6.0-sharded-noauth-nosasl-nossl
   tags:
   - '6.0'
@@ -6372,31 +5747,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-5.0-server-auth-sasl-winssl
-  tags:
-  - '5.0'
-  - auth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-5.0-server-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -6447,31 +5797,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-server-auth-nosasl-winssl
-  tags:
-  - '5.0'
-  - auth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-5.0-server-noauth-sasl-openssl-cse
   tags:
   - '5.0'
@@ -6638,31 +5963,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-5.0-server-noauth-sasl-winssl
-  tags:
-  - '5.0'
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-5.0-server-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -6713,31 +6013,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-server-noauth-nosasl-winssl
-  tags:
-  - '5.0'
-  - noauth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-5.0-server-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -6813,31 +6088,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-replica-set-auth-sasl-winssl
-  tags:
-  - '5.0'
-  - auth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-5.0-replica-set-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -6888,31 +6138,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-replica-set-auth-nosasl-winssl
-  tags:
-  - '5.0'
-  - auth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-5.0-replica-set-noauth-sasl-openssl
   tags:
   - '5.0'
@@ -6963,31 +6188,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-replica-set-noauth-sasl-winssl
-  tags:
-  - '5.0'
-  - noauth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-5.0-replica-set-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -7038,31 +6238,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-replica-set-noauth-nosasl-winssl
-  tags:
-  - '5.0'
-  - noauth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-5.0-replica-set-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -7138,31 +6313,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-sharded-auth-sasl-winssl
-  tags:
-  - '5.0'
-  - auth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-5.0-sharded-auth-nosasl-openssl
   tags:
   - '5.0'
@@ -7213,31 +6363,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-sharded-auth-nosasl-winssl
-  tags:
-  - '5.0'
-  - auth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-5.0-sharded-noauth-sasl-openssl
   tags:
   - '5.0'
@@ -7288,31 +6413,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-sharded-noauth-sasl-winssl
-  tags:
-  - '5.0'
-  - noauth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-5.0-sharded-noauth-nosasl-openssl
   tags:
   - '5.0'
@@ -7363,31 +6463,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-sharded-noauth-nosasl-winssl
-  tags:
-  - '5.0'
-  - noauth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-5.0-sharded-noauth-nosasl-nossl
   tags:
   - '5.0'
@@ -7579,31 +6654,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-4.4-server-auth-sasl-winssl
-  tags:
-  - '4.4'
-  - auth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.4-server-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -7654,31 +6704,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-server-auth-nosasl-winssl
-  tags:
-  - '4.4'
-  - auth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.4-server-noauth-sasl-openssl-cse
   tags:
   - '4.4'
@@ -7845,31 +6870,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-4.4-server-noauth-sasl-winssl
-  tags:
-  - '4.4'
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.4-server-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -7920,31 +6920,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-server-noauth-nosasl-winssl
-  tags:
-  - '4.4'
-  - noauth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.4-server-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -8020,31 +6995,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-replica-set-auth-sasl-winssl
-  tags:
-  - '4.4'
-  - auth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.4-replica-set-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -8095,31 +7045,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-replica-set-auth-nosasl-winssl
-  tags:
-  - '4.4'
-  - auth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.4-replica-set-noauth-sasl-openssl
   tags:
   - '4.4'
@@ -8170,31 +7095,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-replica-set-noauth-sasl-winssl
-  tags:
-  - '4.4'
-  - noauth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.4-replica-set-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -8245,31 +7145,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-replica-set-noauth-nosasl-winssl
-  tags:
-  - '4.4'
-  - noauth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.4-replica-set-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -8345,31 +7220,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-sharded-auth-sasl-winssl
-  tags:
-  - '4.4'
-  - auth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.4-sharded-auth-nosasl-openssl
   tags:
   - '4.4'
@@ -8420,31 +7270,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-sharded-auth-nosasl-winssl
-  tags:
-  - '4.4'
-  - auth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.4-sharded-noauth-sasl-openssl
   tags:
   - '4.4'
@@ -8495,31 +7320,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-sharded-noauth-sasl-winssl
-  tags:
-  - '4.4'
-  - noauth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.4-sharded-noauth-nosasl-openssl
   tags:
   - '4.4'
@@ -8570,31 +7370,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-sharded-noauth-nosasl-winssl
-  tags:
-  - '4.4'
-  - noauth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.4-sharded-noauth-nosasl-nossl
   tags:
   - '4.4'
@@ -8786,31 +7561,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-4.2-server-auth-sasl-winssl
-  tags:
-  - '4.2'
-  - auth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.2-server-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -8861,31 +7611,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-server-auth-nosasl-winssl
-  tags:
-  - '4.2'
-  - auth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.2-server-noauth-sasl-openssl-cse
   tags:
   - '4.2'
@@ -9052,31 +7777,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: winssl
-- name: test-4.2-server-noauth-sasl-winssl
-  tags:
-  - '4.2'
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.2-server-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -9127,31 +7827,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-server-noauth-nosasl-winssl
-  tags:
-  - '4.2'
-  - noauth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.2-server-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -9227,31 +7902,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-replica-set-auth-sasl-winssl
-  tags:
-  - '4.2'
-  - auth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.2-replica-set-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -9302,31 +7952,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-replica-set-auth-nosasl-winssl
-  tags:
-  - '4.2'
-  - auth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.2-replica-set-noauth-sasl-openssl
   tags:
   - '4.2'
@@ -9377,31 +8002,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-replica-set-noauth-sasl-winssl
-  tags:
-  - '4.2'
-  - noauth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.2-replica-set-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -9452,31 +8052,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-replica-set-noauth-nosasl-winssl
-  tags:
-  - '4.2'
-  - noauth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.2-replica-set-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -9552,31 +8127,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-sharded-auth-sasl-winssl
-  tags:
-  - '4.2'
-  - auth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.2-sharded-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -9627,31 +8177,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-sharded-auth-nosasl-winssl
-  tags:
-  - '4.2'
-  - auth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.2-sharded-noauth-sasl-openssl
   tags:
   - '4.2'
@@ -9702,31 +8227,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-sharded-noauth-sasl-winssl
-  tags:
-  - '4.2'
-  - noauth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.2-sharded-noauth-nosasl-openssl
   tags:
   - '4.2'
@@ -9777,31 +8277,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-sharded-noauth-nosasl-winssl
-  tags:
-  - '4.2'
-  - noauth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.2-sharded-noauth-nosasl-nossl
   tags:
   - '4.2'
@@ -9877,31 +8352,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-server-auth-sasl-winssl
-  tags:
-  - '4.0'
-  - auth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.0-server-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -9952,31 +8402,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-server-auth-nosasl-winssl
-  tags:
-  - '4.0'
-  - auth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.0-server-noauth-sasl-openssl
   tags:
   - '4.0'
@@ -10027,31 +8452,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-server-noauth-sasl-winssl
-  tags:
-  - '4.0'
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.0-server-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -10102,31 +8502,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-server-noauth-nosasl-winssl
-  tags:
-  - '4.0'
-  - noauth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.0-server-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -10202,31 +8577,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-replica-set-auth-sasl-winssl
-  tags:
-  - '4.0'
-  - auth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.0-replica-set-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -10277,31 +8627,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-replica-set-auth-nosasl-winssl
-  tags:
-  - '4.0'
-  - auth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.0-replica-set-noauth-sasl-openssl
   tags:
   - '4.0'
@@ -10352,31 +8677,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-replica-set-noauth-sasl-winssl
-  tags:
-  - '4.0'
-  - noauth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.0-replica-set-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -10427,31 +8727,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-replica-set-noauth-nosasl-winssl
-  tags:
-  - '4.0'
-  - noauth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.0-replica-set-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -10527,31 +8802,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-sharded-auth-sasl-winssl
-  tags:
-  - '4.0'
-  - auth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.0-sharded-auth-nosasl-openssl
   tags:
   - '4.0'
@@ -10602,31 +8852,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-sharded-auth-nosasl-winssl
-  tags:
-  - '4.0'
-  - auth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-4.0-sharded-noauth-sasl-openssl
   tags:
   - '4.0'
@@ -10677,31 +8902,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-sharded-noauth-sasl-winssl
-  tags:
-  - '4.0'
-  - noauth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.0-sharded-noauth-nosasl-openssl
   tags:
   - '4.0'
@@ -10752,31 +8952,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-sharded-noauth-nosasl-winssl
-  tags:
-  - '4.0'
-  - noauth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-4.0-sharded-noauth-nosasl-nossl
   tags:
   - '4.0'
@@ -10852,31 +9027,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-server-auth-sasl-winssl
-  tags:
-  - '3.6'
-  - auth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-3.6-server-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -10927,31 +9077,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-server-auth-nosasl-winssl
-  tags:
-  - '3.6'
-  - auth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-3.6-server-noauth-sasl-openssl
   tags:
   - '3.6'
@@ -11002,31 +9127,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-server-noauth-sasl-winssl
-  tags:
-  - '3.6'
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-3.6-server-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -11077,31 +9177,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-server-noauth-nosasl-winssl
-  tags:
-  - '3.6'
-  - noauth
-  - nosasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-3.6-server-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -11177,31 +9252,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-replica-set-auth-sasl-winssl
-  tags:
-  - '3.6'
-  - auth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-3.6-replica-set-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -11252,31 +9302,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-replica-set-auth-nosasl-winssl
-  tags:
-  - '3.6'
-  - auth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-3.6-replica-set-noauth-sasl-openssl
   tags:
   - '3.6'
@@ -11327,31 +9352,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-replica-set-noauth-sasl-winssl
-  tags:
-  - '3.6'
-  - noauth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-3.6-replica-set-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -11402,31 +9402,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-replica-set-noauth-nosasl-winssl
-  tags:
-  - '3.6'
-  - noauth
-  - nosasl
-  - replica_set
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-3.6-replica-set-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -11502,31 +9477,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-sharded-auth-sasl-winssl
-  tags:
-  - '3.6'
-  - auth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-3.6-sharded-auth-nosasl-openssl
   tags:
   - '3.6'
@@ -11577,31 +9527,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-sharded-auth-nosasl-winssl
-  tags:
-  - '3.6'
-  - auth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: winssl
 - name: test-3.6-sharded-noauth-sasl-openssl
   tags:
   - '3.6'
@@ -11652,31 +9577,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-sharded-noauth-sasl-winssl
-  tags:
-  - '3.6'
-  - noauth
-  - sasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-3.6-sharded-noauth-nosasl-openssl
   tags:
   - '3.6'
@@ -11727,31 +9627,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-sharded-noauth-nosasl-winssl
-  tags:
-  - '3.6'
-  - noauth
-  - nosasl
-  - sharded_cluster
-  - winssl
-  depends_on:
-    name: debug-compile-nosasl-winssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-winssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: winssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: winssl
 - name: test-3.6-sharded-noauth-nosasl-nossl
   tags:
   - '3.6'
@@ -20008,10 +17883,8 @@ buildvariants:
   - .debug-compile .winssl .nosasl
   - .debug-compile !.sspi .nossl .nosasl
   - .debug-compile .sspi !.openssl !.openssl-static
-  - .server .winssl .latest .nosasl
   - .latest .nossl .nosasl
   - .nosasl .latest .nossl
-  - .sspi .latest
 - name: windows-2017
   display_name: Windows (VS 2017)
   expansions:
@@ -20026,7 +17899,6 @@ buildvariants:
   - .server .openssl .latest !.nosasl
   - .latest .nossl
   - .nosasl .latest .nossl
-  - .sspi .latest
   - test-dns-winssl
   - test-dns-auth-winssl
   - debug-compile-aws
@@ -20052,9 +17924,7 @@ buildvariants:
   - .debug-compile !.sspi .nossl
   - .debug-compile .sspi !.openssl-static
   - .authentication-tests .winssl
-  - .4.2 .winssl !.nosasl .server
-  - .4.0 .winssl !.nosasl .server
-  - .3.6 .winssl !.nosasl .server
+  - .4.2 .winssl !.nosasl .server .client-side-encryption
 - name: windows-2015-32
   display_name: Windows (i686) (VS 2015)
   expansions:
@@ -20069,8 +17939,6 @@ buildvariants:
   - .debug-compile .winssl .nosasl
   - .debug-compile !.sspi .nossl .nosasl
   - .authentication-tests .winssl
-  - .4.2 .winssl .nosasl .server
-  - .4.0 .winssl .nosasl .server
 - name: windows-2013
   display_name: Windows (VS 2013)
   expansions:
@@ -20085,8 +17953,6 @@ buildvariants:
   - .debug-compile !.sspi .nossl
   - .debug-compile .sspi !.client-side-encryption !.openssl-static
   - .authentication-tests .winssl
-  - .4.2 .winssl !.nosasl .server !.client-side-encryption
-  - .4.0 .winssl !.nosasl .server
 - name: windows-2013-32
   display_name: Windows (i686) (VS 2013)
   expansions:
@@ -20100,8 +17966,6 @@ buildvariants:
   - .debug-compile .winssl .nosasl !.client-side-encryption
   - .debug-compile !.sspi .nossl .nosasl
   - .authentication-tests .winssl
-  - .4.2 .winssl .nosasl .server !.client-side-encryption
-  - .4.0 .winssl .nosasl .server
 - name: mingw-windows2016
   display_name: MinGW-W64 (Windows Server 2016)
   expansions:
@@ -20111,7 +17975,6 @@ buildvariants:
   - debug-compile-nosasl-nossl
   - .debug-compile .winssl .sspi
   - .latest .nossl .nosasl .server
-  - .latest .winssl .sspi .server
 - name: mingw
   display_name: MinGW-W64
   expansions:

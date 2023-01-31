@@ -529,6 +529,7 @@ class IntegrationTask(MatrixTask):
         if not self.cse and not self.sanitizer:
             # Relocated to config_generator.
             prohibit(self.ssl == 'darwinssl')
+            prohibit(self.ssl == 'winssl')
 
         if self.sanitizer == 'tsan':
             require(self.ssl == 'openssl')
