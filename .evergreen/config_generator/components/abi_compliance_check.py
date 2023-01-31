@@ -17,7 +17,7 @@ class CheckABICompliance:
 
         commands.append(
             bash_exec(
-                command_type=EvgCommandType.TEST,
+                command_type=EvgCommandType.SETUP,
                 working_dir='mongoc',
                 script='.evergreen/scripts/abi-compliance-check.sh'
             )
@@ -25,6 +25,7 @@ class CheckABICompliance:
 
         commands.append(
             bash_exec(
+                command_type=EvgCommandType.TEST,
                 working_dir='mongoc',
                 env={
                     'AWS_ACCESS_KEY_ID': '${aws_key}',
