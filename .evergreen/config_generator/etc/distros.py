@@ -187,14 +187,14 @@ UBUNTU_ZSERIES_DISTROS = [
 ]
 
 WINDOWS_DISTROS = [
-    Distro(name='windows-64-vs2013-large', os='windows', os_type='windows', os_ver='64', vs_ver='2013', size='large'),
-    Distro(name='windows-64-vs2013-small', os='windows', os_type='windows', os_ver='64', vs_ver='2013', size='small'),
-    Distro(name='windows-64-vs2015-large', os='windows', os_type='windows', os_ver='64', vs_ver='2015', size='large'),
-    Distro(name='windows-64-vs2015-small', os='windows', os_type='windows', os_ver='64', vs_ver='2015', size='small'),
-    Distro(name='windows-64-vs2017-large', os='windows', os_type='windows', os_ver='64', vs_ver='2017', size='large'),
-    Distro(name='windows-64-vs2017-small', os='windows', os_type='windows', os_ver='64', vs_ver='2017', size='small'),
-    Distro(name='windows-64-vs2019-large', os='windows', os_type='windows', os_ver='64', vs_ver='2019', size='large'),
-    Distro(name='windows-64-vs2019-small', os='windows', os_type='windows', os_ver='64', vs_ver='2019', size='small'),
+    Distro(name='windows-64-vs2013-large', os='windows', os_type='windows', vs_ver='2013', size='large'),
+    Distro(name='windows-64-vs2013-small', os='windows', os_type='windows', vs_ver='2013', size='small'),
+    Distro(name='windows-64-vs2015-large', os='windows', os_type='windows', vs_ver='2015', size='large'),
+    Distro(name='windows-64-vs2015-small', os='windows', os_type='windows', vs_ver='2015', size='small'),
+    Distro(name='windows-64-vs2017-large', os='windows', os_type='windows', vs_ver='2017', size='large'),
+    Distro(name='windows-64-vs2017-small', os='windows', os_type='windows', vs_ver='2017', size='small'),
+    Distro(name='windows-64-vs2019-large', os='windows', os_type='windows', vs_ver='2019', size='large'),
+    Distro(name='windows-64-vs2019-small', os='windows', os_type='windows', vs_ver='2019', size='small'),
 
     Distro(name='windows-2022-large', os='windows', os_type='windows', os_ver='2022'),
     Distro(name='windows-2022-small', os='windows', os_type='windows', os_ver='2022'),
