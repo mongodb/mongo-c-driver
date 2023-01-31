@@ -317,8 +317,7 @@ functions:
           AWS_SECRET_ACCESS_KEY: ${aws_secret}
         args:
           - -c
-          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION}
-            --quiet --recursive --acl public-read --region us-east-1
+          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         display_name: libbson docs
@@ -338,8 +337,7 @@ functions:
           AWS_SECRET_ACCESS_KEY: ${aws_secret}
         args:
           - -c
-          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION}
-            --quiet --recursive --acl public-read --region us-east-1
+          - aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         display_name: libmongoc docs

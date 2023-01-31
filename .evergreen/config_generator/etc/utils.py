@@ -201,4 +201,5 @@ def to_yaml(project: EvgProject) -> str:
         project.dict(exclude_none=True, exclude_unset=True, by_alias=True),
         Dumper=ConfigDumper,
         default_flow_style=False,
+        width=float('inf'),
     )
