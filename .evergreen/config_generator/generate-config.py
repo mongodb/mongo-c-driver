@@ -27,9 +27,6 @@ def all_generators():
         if path == '__init__.py':
             continue
 
-        if path.suffix != '.py':
-            continue
-
         component_path = Path(path_str).relative_to(components_dir)
         component_path = str(component_path)[:-3]  # Drop '.py'.
         component_path = component_path.replace('/', '.')  # 'a/b' -> 'a.b'
