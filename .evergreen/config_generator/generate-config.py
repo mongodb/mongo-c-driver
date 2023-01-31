@@ -27,10 +27,10 @@ def all_generators():
         if path == '__init__.py':
             continue
 
-        component_path = Path(path_str).relative_to(components_dir)
-        component_path = str(component_path)[:-3]  # Drop '.py'.
-        component_path = component_path.replace('/', '.')  # 'a/b' -> 'a.b'
-        module_name = f'config_generator.generators.{component_path}'
+        generator_path = Path(path_str).relative_to(components_dir)
+        generator_path = str(generator_path)[:-3]  # Drop '.py'.
+        generator_path = generator_path.replace('/', '.')  # 'a/b' -> 'a.b'
+        module_name = f'config_generator.generators.{generator_path}'
         res.append(import_module(module_name))
 
     return res
