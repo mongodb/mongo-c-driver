@@ -526,6 +526,10 @@ class IntegrationTask(MatrixTask):
         return task
 
     def _check_allowed(self):
+        if not self.cse and not self.sanitizer:
+            # Relocated to config_generator.
+            prohibit(self.ssl == 'darwinssl')
+
         if self.sanitizer == 'tsan':
             require(self.ssl == 'openssl')
             prohibit(self.sasl)

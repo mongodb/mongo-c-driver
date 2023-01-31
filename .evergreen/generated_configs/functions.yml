@@ -267,6 +267,31 @@ functions:
         args:
           - -c
           - .evergreen/scripts/run-tests.sh
+  sasl-auto-darwinssl-compile:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        env:
+          SASL: AUTO
+          SSL: DARWIN
+        args:
+          - -c
+          - .evergreen/scripts/compile.sh
+  sasl-off-darwinssl-compile:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        env:
+          SSL: DARWIN
+        args:
+          - -c
+          - .evergreen/scripts/compile.sh
   stop-load-balancer:
     - command: subprocess.exec
       params:

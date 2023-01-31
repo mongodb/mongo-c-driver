@@ -1,1 +1,7 @@
-buildvariants: []
+buildvariants:
+  - name: sasl-matrix-darwinssl
+    display_name: sasl-matrix-darwinssl
+    expansions:
+      DEBUG: "ON"
+    tasks:
+      - name: .sasl-matrix-darwinssl

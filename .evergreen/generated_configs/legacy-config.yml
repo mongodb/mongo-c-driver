@@ -3440,31 +3440,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-latest-server-auth-sasl-darwinssl
-  tags:
-  - auth
-  - darwinssl
-  - latest
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-latest-server-auth-sasl-winssl-cse
   tags:
   - auth
@@ -3594,31 +3569,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-latest-server-auth-nosasl-darwinssl
-  tags:
-  - auth
-  - darwinssl
-  - latest
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-latest-server-auth-nosasl-winssl
   tags:
   - auth
@@ -3781,31 +3731,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-latest-server-noauth-sasl-darwinssl
-  tags:
-  - darwinssl
-  - latest
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-latest-server-noauth-sasl-winssl-cse
   tags:
   - client-side-encryption
@@ -3910,31 +3835,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-latest-server-noauth-nosasl-darwinssl
-  tags:
-  - darwinssl
-  - latest
-  - noauth
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-latest-server-noauth-nosasl-winssl
   tags:
   - latest
@@ -4122,31 +4022,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-latest-replica-set-auth-sasl-darwinssl
-  tags:
-  - auth
-  - darwinssl
-  - latest
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-latest-replica-set-auth-sasl-winssl-cse
   tags:
   - auth
@@ -4251,31 +4126,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-latest-replica-set-auth-nosasl-darwinssl
-  tags:
-  - auth
-  - darwinssl
-  - latest
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-latest-replica-set-auth-nosasl-winssl
   tags:
   - auth
@@ -4438,31 +4288,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-latest-replica-set-noauth-sasl-darwinssl
-  tags:
-  - darwinssl
-  - latest
-  - noauth
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-latest-replica-set-noauth-sasl-winssl-cse
   tags:
   - client-side-encryption
@@ -4567,31 +4392,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-latest-replica-set-noauth-nosasl-darwinssl
-  tags:
-  - darwinssl
-  - latest
-  - noauth
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-latest-replica-set-noauth-nosasl-winssl
   tags:
   - latest
@@ -4692,31 +4492,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-latest-sharded-auth-sasl-darwinssl
-  tags:
-  - auth
-  - darwinssl
-  - latest
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-latest-sharded-auth-sasl-winssl
   tags:
   - auth
@@ -4792,31 +4567,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-latest-sharded-auth-nosasl-darwinssl
-  tags:
-  - auth
-  - darwinssl
-  - latest
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-latest-sharded-auth-nosasl-winssl
   tags:
   - auth
@@ -4892,31 +4642,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-latest-sharded-noauth-sasl-darwinssl
-  tags:
-  - darwinssl
-  - latest
-  - noauth
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-latest-sharded-noauth-sasl-winssl
   tags:
   - latest
@@ -4992,31 +4717,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-latest-sharded-noauth-nosasl-darwinssl
-  tags:
-  - darwinssl
-  - latest
-  - noauth
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-latest-sharded-noauth-nosasl-winssl
   tags:
   - latest
@@ -5204,31 +4904,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-6.0-server-auth-sasl-darwinssl
-  tags:
-  - '6.0'
-  - auth
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-6.0-server-auth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -5333,31 +5008,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-6.0-server-auth-nosasl-darwinssl
-  tags:
-  - '6.0'
-  - auth
-  - darwinssl
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-6.0-server-auth-nosasl-winssl
   tags:
   - '6.0'
@@ -5520,31 +5170,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-6.0-server-noauth-sasl-darwinssl
-  tags:
-  - '6.0'
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-6.0-server-noauth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -5649,31 +5274,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-6.0-server-noauth-nosasl-darwinssl
-  tags:
-  - '6.0'
-  - darwinssl
-  - noauth
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-6.0-server-noauth-nosasl-winssl
   tags:
   - '6.0'
@@ -5861,31 +5461,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-6.0-replica-set-auth-sasl-darwinssl
-  tags:
-  - '6.0'
-  - auth
-  - darwinssl
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-6.0-replica-set-auth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -5990,31 +5565,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-6.0-replica-set-auth-nosasl-darwinssl
-  tags:
-  - '6.0'
-  - auth
-  - darwinssl
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-6.0-replica-set-auth-nosasl-winssl
   tags:
   - '6.0'
@@ -6177,31 +5727,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-6.0-replica-set-noauth-sasl-darwinssl
-  tags:
-  - '6.0'
-  - darwinssl
-  - noauth
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-6.0-replica-set-noauth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -6306,31 +5831,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-6.0-replica-set-noauth-nosasl-darwinssl
-  tags:
-  - '6.0'
-  - darwinssl
-  - noauth
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-6.0-replica-set-noauth-nosasl-winssl
   tags:
   - '6.0'
@@ -6431,31 +5931,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-6.0-sharded-auth-sasl-darwinssl
-  tags:
-  - '6.0'
-  - auth
-  - darwinssl
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-6.0-sharded-auth-sasl-winssl
   tags:
   - '6.0'
@@ -6531,31 +6006,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-6.0-sharded-auth-nosasl-darwinssl
-  tags:
-  - '6.0'
-  - auth
-  - darwinssl
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-6.0-sharded-auth-nosasl-winssl
   tags:
   - '6.0'
@@ -6631,31 +6081,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-6.0-sharded-noauth-sasl-darwinssl
-  tags:
-  - '6.0'
-  - darwinssl
-  - noauth
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-6.0-sharded-noauth-sasl-winssl
   tags:
   - '6.0'
@@ -6731,31 +6156,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-6.0-sharded-noauth-nosasl-darwinssl
-  tags:
-  - '6.0'
-  - darwinssl
-  - noauth
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-6.0-sharded-noauth-nosasl-winssl
   tags:
   - '6.0'
@@ -6943,31 +6343,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-5.0-server-auth-sasl-darwinssl
-  tags:
-  - '5.0'
-  - auth
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-5.0-server-auth-sasl-winssl-cse
   tags:
   - '5.0'
@@ -7072,31 +6447,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-server-auth-nosasl-darwinssl
-  tags:
-  - '5.0'
-  - auth
-  - darwinssl
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-5.0-server-auth-nosasl-winssl
   tags:
   - '5.0'
@@ -7259,31 +6609,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-5.0-server-noauth-sasl-darwinssl
-  tags:
-  - '5.0'
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-5.0-server-noauth-sasl-winssl-cse
   tags:
   - '5.0'
@@ -7388,31 +6713,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-server-noauth-nosasl-darwinssl
-  tags:
-  - '5.0'
-  - darwinssl
-  - noauth
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-5.0-server-noauth-nosasl-winssl
   tags:
   - '5.0'
@@ -7513,31 +6813,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-replica-set-auth-sasl-darwinssl
-  tags:
-  - '5.0'
-  - auth
-  - darwinssl
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-5.0-replica-set-auth-sasl-winssl
   tags:
   - '5.0'
@@ -7613,31 +6888,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-replica-set-auth-nosasl-darwinssl
-  tags:
-  - '5.0'
-  - auth
-  - darwinssl
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-5.0-replica-set-auth-nosasl-winssl
   tags:
   - '5.0'
@@ -7713,31 +6963,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-replica-set-noauth-sasl-darwinssl
-  tags:
-  - '5.0'
-  - darwinssl
-  - noauth
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-5.0-replica-set-noauth-sasl-winssl
   tags:
   - '5.0'
@@ -7813,31 +7038,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-replica-set-noauth-nosasl-darwinssl
-  tags:
-  - '5.0'
-  - darwinssl
-  - noauth
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-5.0-replica-set-noauth-nosasl-winssl
   tags:
   - '5.0'
@@ -7938,31 +7138,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-sharded-auth-sasl-darwinssl
-  tags:
-  - '5.0'
-  - auth
-  - darwinssl
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-5.0-sharded-auth-sasl-winssl
   tags:
   - '5.0'
@@ -8038,31 +7213,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-5.0-sharded-auth-nosasl-darwinssl
-  tags:
-  - '5.0'
-  - auth
-  - darwinssl
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-5.0-sharded-auth-nosasl-winssl
   tags:
   - '5.0'
@@ -8138,31 +7288,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-sharded-noauth-sasl-darwinssl
-  tags:
-  - '5.0'
-  - darwinssl
-  - noauth
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-5.0-sharded-noauth-sasl-winssl
   tags:
   - '5.0'
@@ -8238,31 +7363,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-5.0-sharded-noauth-nosasl-darwinssl
-  tags:
-  - '5.0'
-  - darwinssl
-  - noauth
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-5.0-sharded-noauth-nosasl-winssl
   tags:
   - '5.0'
@@ -8450,31 +7550,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-4.4-server-auth-sasl-darwinssl
-  tags:
-  - '4.4'
-  - auth
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.4-server-auth-sasl-winssl-cse
   tags:
   - '4.4'
@@ -8579,31 +7654,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-server-auth-nosasl-darwinssl
-  tags:
-  - '4.4'
-  - auth
-  - darwinssl
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.4-server-auth-nosasl-winssl
   tags:
   - '4.4'
@@ -8766,31 +7816,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-4.4-server-noauth-sasl-darwinssl
-  tags:
-  - '4.4'
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.4-server-noauth-sasl-winssl-cse
   tags:
   - '4.4'
@@ -8895,31 +7920,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-server-noauth-nosasl-darwinssl
-  tags:
-  - '4.4'
-  - darwinssl
-  - noauth
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.4-server-noauth-nosasl-winssl
   tags:
   - '4.4'
@@ -9020,31 +8020,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-replica-set-auth-sasl-darwinssl
-  tags:
-  - '4.4'
-  - auth
-  - darwinssl
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.4-replica-set-auth-sasl-winssl
   tags:
   - '4.4'
@@ -9120,31 +8095,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-replica-set-auth-nosasl-darwinssl
-  tags:
-  - '4.4'
-  - auth
-  - darwinssl
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.4-replica-set-auth-nosasl-winssl
   tags:
   - '4.4'
@@ -9220,31 +8170,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-replica-set-noauth-sasl-darwinssl
-  tags:
-  - '4.4'
-  - darwinssl
-  - noauth
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.4-replica-set-noauth-sasl-winssl
   tags:
   - '4.4'
@@ -9320,31 +8245,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-replica-set-noauth-nosasl-darwinssl
-  tags:
-  - '4.4'
-  - darwinssl
-  - noauth
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.4-replica-set-noauth-nosasl-winssl
   tags:
   - '4.4'
@@ -9445,31 +8345,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-sharded-auth-sasl-darwinssl
-  tags:
-  - '4.4'
-  - auth
-  - darwinssl
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.4-sharded-auth-sasl-winssl
   tags:
   - '4.4'
@@ -9545,31 +8420,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.4-sharded-auth-nosasl-darwinssl
-  tags:
-  - '4.4'
-  - auth
-  - darwinssl
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.4-sharded-auth-nosasl-winssl
   tags:
   - '4.4'
@@ -9645,31 +8495,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-sharded-noauth-sasl-darwinssl
-  tags:
-  - '4.4'
-  - darwinssl
-  - noauth
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.4-sharded-noauth-sasl-winssl
   tags:
   - '4.4'
@@ -9745,31 +8570,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.4-sharded-noauth-nosasl-darwinssl
-  tags:
-  - '4.4'
-  - darwinssl
-  - noauth
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.4-sharded-noauth-nosasl-winssl
   tags:
   - '4.4'
@@ -9957,31 +8757,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-4.2-server-auth-sasl-darwinssl
-  tags:
-  - '4.2'
-  - auth
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.2-server-auth-sasl-winssl-cse
   tags:
   - '4.2'
@@ -10086,31 +8861,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-server-auth-nosasl-darwinssl
-  tags:
-  - '4.2'
-  - auth
-  - darwinssl
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.2-server-auth-nosasl-winssl
   tags:
   - '4.2'
@@ -10273,31 +9023,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: darwinssl
-- name: test-4.2-server-noauth-sasl-darwinssl
-  tags:
-  - '4.2'
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.2-server-noauth-sasl-winssl-cse
   tags:
   - '4.2'
@@ -10402,31 +9127,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-server-noauth-nosasl-darwinssl
-  tags:
-  - '4.2'
-  - darwinssl
-  - noauth
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.2-server-noauth-nosasl-winssl
   tags:
   - '4.2'
@@ -10527,31 +9227,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-replica-set-auth-sasl-darwinssl
-  tags:
-  - '4.2'
-  - auth
-  - darwinssl
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.2-replica-set-auth-sasl-winssl
   tags:
   - '4.2'
@@ -10627,31 +9302,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-replica-set-auth-nosasl-darwinssl
-  tags:
-  - '4.2'
-  - auth
-  - darwinssl
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.2-replica-set-auth-nosasl-winssl
   tags:
   - '4.2'
@@ -10727,31 +9377,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-replica-set-noauth-sasl-darwinssl
-  tags:
-  - '4.2'
-  - darwinssl
-  - noauth
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.2-replica-set-noauth-sasl-winssl
   tags:
   - '4.2'
@@ -10827,31 +9452,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-replica-set-noauth-nosasl-darwinssl
-  tags:
-  - '4.2'
-  - darwinssl
-  - noauth
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.2-replica-set-noauth-nosasl-winssl
   tags:
   - '4.2'
@@ -10952,31 +9552,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-sharded-auth-sasl-darwinssl
-  tags:
-  - '4.2'
-  - auth
-  - darwinssl
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.2-sharded-auth-sasl-winssl
   tags:
   - '4.2'
@@ -11052,31 +9627,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.2-sharded-auth-nosasl-darwinssl
-  tags:
-  - '4.2'
-  - auth
-  - darwinssl
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.2-sharded-auth-nosasl-winssl
   tags:
   - '4.2'
@@ -11152,31 +9702,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-sharded-noauth-sasl-darwinssl
-  tags:
-  - '4.2'
-  - darwinssl
-  - noauth
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.2-sharded-noauth-sasl-winssl
   tags:
   - '4.2'
@@ -11252,31 +9777,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.2-sharded-noauth-nosasl-darwinssl
-  tags:
-  - '4.2'
-  - darwinssl
-  - noauth
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.2-sharded-noauth-nosasl-winssl
   tags:
   - '4.2'
@@ -11377,31 +9877,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-server-auth-sasl-darwinssl
-  tags:
-  - '4.0'
-  - auth
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.0-server-auth-sasl-winssl
   tags:
   - '4.0'
@@ -11477,31 +9952,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-server-auth-nosasl-darwinssl
-  tags:
-  - '4.0'
-  - auth
-  - darwinssl
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.0-server-auth-nosasl-winssl
   tags:
   - '4.0'
@@ -11577,31 +10027,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-server-noauth-sasl-darwinssl
-  tags:
-  - '4.0'
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.0-server-noauth-sasl-winssl
   tags:
   - '4.0'
@@ -11677,31 +10102,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-server-noauth-nosasl-darwinssl
-  tags:
-  - '4.0'
-  - darwinssl
-  - noauth
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.0-server-noauth-nosasl-winssl
   tags:
   - '4.0'
@@ -11802,31 +10202,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-replica-set-auth-sasl-darwinssl
-  tags:
-  - '4.0'
-  - auth
-  - darwinssl
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.0-replica-set-auth-sasl-winssl
   tags:
   - '4.0'
@@ -11902,31 +10277,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-replica-set-auth-nosasl-darwinssl
-  tags:
-  - '4.0'
-  - auth
-  - darwinssl
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.0-replica-set-auth-nosasl-winssl
   tags:
   - '4.0'
@@ -12002,31 +10352,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-replica-set-noauth-sasl-darwinssl
-  tags:
-  - '4.0'
-  - darwinssl
-  - noauth
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.0-replica-set-noauth-sasl-winssl
   tags:
   - '4.0'
@@ -12102,31 +10427,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-replica-set-noauth-nosasl-darwinssl
-  tags:
-  - '4.0'
-  - darwinssl
-  - noauth
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.0-replica-set-noauth-nosasl-winssl
   tags:
   - '4.0'
@@ -12227,31 +10527,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-sharded-auth-sasl-darwinssl
-  tags:
-  - '4.0'
-  - auth
-  - darwinssl
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.0-sharded-auth-sasl-winssl
   tags:
   - '4.0'
@@ -12327,31 +10602,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-4.0-sharded-auth-nosasl-darwinssl
-  tags:
-  - '4.0'
-  - auth
-  - darwinssl
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-4.0-sharded-auth-nosasl-winssl
   tags:
   - '4.0'
@@ -12427,31 +10677,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-sharded-noauth-sasl-darwinssl
-  tags:
-  - '4.0'
-  - darwinssl
-  - noauth
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.0-sharded-noauth-sasl-winssl
   tags:
   - '4.0'
@@ -12527,31 +10752,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-4.0-sharded-noauth-nosasl-darwinssl
-  tags:
-  - '4.0'
-  - darwinssl
-  - noauth
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-4.0-sharded-noauth-nosasl-winssl
   tags:
   - '4.0'
@@ -12652,31 +10852,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-server-auth-sasl-darwinssl
-  tags:
-  - '3.6'
-  - auth
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-3.6-server-auth-sasl-winssl
   tags:
   - '3.6'
@@ -12752,31 +10927,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-server-auth-nosasl-darwinssl
-  tags:
-  - '3.6'
-  - auth
-  - darwinssl
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-3.6-server-auth-nosasl-winssl
   tags:
   - '3.6'
@@ -12852,31 +11002,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-server-noauth-sasl-darwinssl
-  tags:
-  - '3.6'
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-3.6-server-noauth-sasl-winssl
   tags:
   - '3.6'
@@ -12952,31 +11077,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-server-noauth-nosasl-darwinssl
-  tags:
-  - '3.6'
-  - darwinssl
-  - noauth
-  - nosasl
-  - server
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-3.6-server-noauth-nosasl-winssl
   tags:
   - '3.6'
@@ -13077,31 +11177,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-replica-set-auth-sasl-darwinssl
-  tags:
-  - '3.6'
-  - auth
-  - darwinssl
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-3.6-replica-set-auth-sasl-winssl
   tags:
   - '3.6'
@@ -13177,31 +11252,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-replica-set-auth-nosasl-darwinssl
-  tags:
-  - '3.6'
-  - auth
-  - darwinssl
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-3.6-replica-set-auth-nosasl-winssl
   tags:
   - '3.6'
@@ -13277,31 +11327,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-replica-set-noauth-sasl-darwinssl
-  tags:
-  - '3.6'
-  - darwinssl
-  - noauth
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-3.6-replica-set-noauth-sasl-winssl
   tags:
   - '3.6'
@@ -13377,31 +11402,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-replica-set-noauth-nosasl-darwinssl
-  tags:
-  - '3.6'
-  - darwinssl
-  - noauth
-  - nosasl
-  - replica_set
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-3.6-replica-set-noauth-nosasl-winssl
   tags:
   - '3.6'
@@ -13502,31 +11502,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-sharded-auth-sasl-darwinssl
-  tags:
-  - '3.6'
-  - auth
-  - darwinssl
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-3.6-sharded-auth-sasl-winssl
   tags:
   - '3.6'
@@ -13602,31 +11577,6 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl-static
-- name: test-3.6-sharded-auth-nosasl-darwinssl
-  tags:
-  - '3.6'
-  - auth
-  - darwinssl
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      SSL: darwinssl
 - name: test-3.6-sharded-auth-nosasl-winssl
   tags:
   - '3.6'
@@ -13702,31 +11652,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-sharded-noauth-sasl-darwinssl
-  tags:
-  - '3.6'
-  - darwinssl
-  - noauth
-  - sasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-3.6-sharded-noauth-sasl-winssl
   tags:
   - '3.6'
@@ -13802,31 +11727,6 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl-static
-- name: test-3.6-sharded-noauth-nosasl-darwinssl
-  tags:
-  - '3.6'
-  - darwinssl
-  - noauth
-  - nosasl
-  - sharded_cluster
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: darwinssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      SSL: darwinssl
 - name: test-3.6-sharded-noauth-nosasl-winssl
   tags:
   - '3.6'
@@ -22087,13 +19987,11 @@ buildvariants:
   - .debug-compile !.sspi .nossl
   - .debug-compile .clang
   - .authentication-tests .darwinssl
-  - .latest .darwinssl !.nosasl .server
+  - .latest .darwinssl !.nosasl .server .client-side-encryption
   - .latest .nossl
-  - .5.0 .darwinssl !.nosasl .server
-  - .4.4 .darwinssl !.nosasl .server
-  - .4.2 .darwinssl !.nosasl .server
-  - .4.0 .darwinssl !.nosasl .server
-  - .3.6 .darwinssl !.nosasl .server
+  - .5.0 .darwinssl !.nosasl .server .client-side-encryption
+  - .4.4 .darwinssl !.nosasl .server .client-side-encryption
+  - .4.2 .darwinssl !.nosasl .server .client-side-encryption
   - test-dns-darwinssl
   - test-dns-auth-darwinssl
   - debug-compile-lto
