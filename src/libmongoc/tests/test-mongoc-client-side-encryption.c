@@ -6393,11 +6393,6 @@ test_create_encrypted_collection_no_encryptedFields (void *unused)
       mongoc_auto_encryption_opts_destroy (aeOpts);
       mongoc_client_destroy (client);
    }
-
-
-   // This is not a required specification test. But also check that
-   // encryptedFieldsMap is not checked. Create a client with
-   // encryptedFieldsMap.
 }
 
 static void
@@ -6536,7 +6531,7 @@ test_create_encrypted_collection_insert (void *unused)
             visitEach (require (type (doc)),
                        parse (require (key ("keyId"),
                                        require (type (binary)),
-                                       do({
+                                       do ({
                                           bson_value_copy (
                                              bson_iter_value (
                                                 (bson_iter_t *) &bsonVisitIter),
@@ -6628,7 +6623,8 @@ static BSON_THREAD_FUN (listen_socket, arg)
    r = mongoc_socket_listen (socket, 100);
    BSON_ASSERT (r == 0);
    _mongoc_usleep (1000); // wait to see if received connection
-   mongoc_socket_t *ret = mongoc_socket_accept (socket, bson_get_monotonic_time() + 100);
+   mongoc_socket_t *ret =
+      mongoc_socket_accept (socket, bson_get_monotonic_time () + 100);
    if (ret) {
       // not null received a connection and test should fail
       args->failed = true;
