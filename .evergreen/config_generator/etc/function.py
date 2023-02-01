@@ -15,8 +15,8 @@ class Function:
         return {cls.name: cls.commands}
 
     @classmethod
-    def default_call(cls, *args, **kwargs) -> FunctionCall:
-        return FunctionCall(func=cls.name, *args, **kwargs)
+    def default_call(cls, **kwargs) -> FunctionCall:
+        return FunctionCall(func=cls.name, **kwargs)
 
 
 def merge_defns(*args):
