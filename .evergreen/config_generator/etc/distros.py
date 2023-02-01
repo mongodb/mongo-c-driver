@@ -37,8 +37,8 @@ class Distro(BaseModel):
     def __hash__(self):
         return self.name.__hash__()
 
-    @classmethod
     @validator('os_ver')
+    @classmethod
     def validate_os_ver(cls, value):
         return Version(value)
 
