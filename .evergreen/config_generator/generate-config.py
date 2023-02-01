@@ -9,7 +9,6 @@
 #     PYTHONPATH=".evergreen" python3 .evergreen/config_generator/generate-config.py
 
 
-from glob import iglob
 from importlib import import_module
 from pathlib import Path
 
@@ -20,17 +19,13 @@ def all_generators():
     # .evergreen/config_generator/generate_config.py -> .evergreen/config_generator/generators
     components_dir = Path(__file__).parent / 'generators'
 
-    all_paths = iglob(str(components_dir) + '/**/*.py', recursive=True)
+    all_paths = components_dir.glob('**/*.py')
 
-    for path_str in sorted(all_paths):
-        path = Path(path_str)
-        if path == '__init__.py':
-            continue
-
-        generator_path = Path(path_str).relative_to(components_dir)
-        generator_path = str(generator_path)[:-3]  # Drop '.py'.
-        generator_path = generator_path.replace('/', '.')  # 'a/b' -> 'a.b'
-        module_name = f'config_generator.generators.{generator_path}'
+    for path in sorted(all_paths):
+        generator_path = path.relative_to(components_dir)
+        generator_str = str(generator_path.with_suffix(''))  # Drop '.py'.
+        generator_str = generator_str.replace('/', '.')  # 'a/b' -> 'a.b'
+        module_name = f'config_generator.generators.{generator_str}'
         res.append(import_module(module_name))
 
     return res

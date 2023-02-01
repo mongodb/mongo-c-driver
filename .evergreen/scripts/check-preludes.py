@@ -17,40 +17,40 @@
 """Check that public libbson/libmongoc headers all include the prelude line.
 """
 import sys
-import glob
+from pathlib import Path
 
 if len(sys.argv) != 2:
     print("Usage: python check-preludes.py <mongo-c-driver directory>")
     sys.exit(1)
 
-MONGOC_PREFIX = "src/libmongoc/src/mongoc/"
-BSON_PREFIX = "src/libbson/src/bson/"
-COMMON_PREFIX = "src/common/"
+MONGOC_PREFIX = Path("src/libmongoc/src/mongoc")
+BSON_PREFIX = Path("src/libbson/src/bson")
+COMMON_PREFIX = Path("src/common")
 
 checks = [
     {
         "name": "libmongoc",
-        "headers": glob.glob(MONGOC_PREFIX + "*.h"),
+        "headers": list(MONGOC_PREFIX.glob("*.h")),
         "exclusions": [
-            MONGOC_PREFIX + "mongoc-prelude.h",
-            MONGOC_PREFIX + "mongoc.h"
+            MONGOC_PREFIX / "mongoc-prelude.h",
+            MONGOC_PREFIX / "mongoc.h"
         ],
         "include": "#include \"mongoc-prelude.h\""
     },
     {
         "name": "libbson",
-        "headers": glob.glob(BSON_PREFIX + "*.h"),
+        "headers": list(BSON_PREFIX.glob("*.h")),
         "exclusions": [
-            BSON_PREFIX + "bson-prelude.h",
-            BSON_PREFIX + "bson-dsl.h",
-            BSON_PREFIX + "bson.h"
+            BSON_PREFIX / "bson-prelude.h",
+            BSON_PREFIX / "bson-dsl.h",
+            BSON_PREFIX / "bson.h"
         ],
         "include": "#include \"bson-prelude.h\""
     },
     {
         "name": "common",
-        "headers": glob.glob(COMMON_PREFIX + "*.h"),
-        "exclusions": [COMMON_PREFIX + "common-prelude.h"],
+        "headers": list(COMMON_PREFIX.glob("*.h")),
+        "exclusions": [COMMON_PREFIX / "common-prelude.h"],
         "include": "#include \"common-prelude.h\""
     },
 ]
@@ -62,9 +62,9 @@ for check in checks:
     for header in check["headers"]:
         if header in check["exclusions"]:
             continue
-        with open(header, mode="r", encoding="utf-8") as file:
-            if not check["include"] in file.read().splitlines():
-                print(f"{header} did not include prelude")
-                sys.exit(1)
+        lines = Path(header).read_text(encoding="utf-8").splitlines()
+        if check['include'] not in lines:
+            print(f"{header} did not include prelude")
+            sys.exit(1)
 
 print("All checks passed")

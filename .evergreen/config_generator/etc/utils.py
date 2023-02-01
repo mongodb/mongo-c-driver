@@ -1,4 +1,3 @@
-from glob import iglob
 from importlib import import_module
 from pathlib import Path
 from textwrap import dedent
@@ -30,17 +29,13 @@ def all_components():
     # .evergreen/config_generator/etc/utils.py -> .evergreen/config_generator/components
     components_dir = Path(__file__).parent.parent / 'components'
 
-    all_paths = iglob(str(components_dir) + '/**/*.py', recursive=True)
+    all_paths = components_dir.glob('**/*.py')
 
-    for path_str in sorted(all_paths):
-        path = Path(path_str)
-        if path == '__init__.py':
-            continue
-
-        component_path = Path(path_str).relative_to(components_dir)
-        component_path = str(component_path)[:-3]  # Drop '.py'.
-        component_path = component_path.replace('/', '.')  # 'a/b' -> 'a.b'
-        module_name = f'config_generator.components.{component_path}'
+    for path in sorted(all_paths):
+        component_path = path.relative_to(components_dir)
+        component_str = str(component_path.with_suffix(''))  # Drop '.py'.
+        component_str = component_str.replace('/', '.')  # 'a/b' -> 'a.b'
+        module_name = f'config_generator.components.{component_str}'
         res.append(import_module(module_name))
 
     return res
