@@ -15,147 +15,16 @@
 from collections import OrderedDict as OD
 
 from evergreen_config_generator.functions import (
-    Function, s3_put, shell_exec, targz_pack)
+    Function, func, s3_put, shell_exec, targz_pack)
 from evergreen_config_lib import shell_mongoc
 
 build_path = '${build_variant}/${revision}/${version_id}/${build_id}'
 
 all_functions = OD([
-    ('fetch source', Function(
-        OD([('command', 'git.get_project'),
-            ('params', OD([
-                ('directory', 'mongoc'),
-            ]))]),
-        shell_mongoc(r'''
-        if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
-           # This is a GitHub PR or patch build, probably branched from master
-           if command -v python3 2>/dev/null; then
-              # Prefer python3 if it is available
-              echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-           else
-              echo $(python ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
-           fi
-           VERSION=$VERSION_CURRENT-${version_id}
-        else
-           VERSION=latest
-        fi
-        echo "CURRENT_VERSION: $VERSION" > expansion.yml
-        ''', test=False),
-        OD([('command', 'expansions.update'),
-            ('params', OD([
-                ('file', 'mongoc/expansion.yml'),
-            ]))]),
-        shell_exec(r'''
-        rm -f *.tar.gz
-        curl --retry 5 https://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz -sS --max-time 120
-        ''', test=False, continue_on_err=True),
-    )),
-    ('upload release', Function(
-        shell_exec(
-            r'[ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz',
-            errexit=False, test=False),
-        s3_put(
-            '${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
-            project_path=False, aws_key='${aws_key}',
-            aws_secret='${aws_secret}', local_file='mongoc.tar.gz',
-            bucket='mciuploads', permissions='public-read',
-            content_type='${content_type|application/x-gzip}'),
-    )),
-    ('upload build', Function(
-        targz_pack('${build_id}.tar.gz', 'mongoc', './**'),
-        s3_put('${build_variant}/${revision}/${task_name}/${build_id}.tar.gz',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='${build_id}.tar.gz', bucket='mciuploads',
-               permissions='public-read',
-               content_type='${content_type|application/x-gzip}'),
-    )),
-    ('release archive', Function(
-        shell_mongoc(r'''
-        # Need modern Sphinx for :caption: in literal includes.
-        python -m virtualenv venv
-        cd venv
-        . bin/activate
-        ./bin/pip install sphinx docutils==0.17.1
-        cd ..
-
-        export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
-        export MONGOC_TEST_SKIP_LIVE=on
-        export MONGOC_TEST_SKIP_SLOW=on
-        sh .evergreen/scripts/check-release-archive.sh
-        '''),
-    )),
     ('install ssl', Function(
         shell_mongoc(r'''
         bash .evergreen/scripts/install-ssl.sh
         ''', test=False, add_expansions_to_env=True),
-    )),
-    ('fetch build', Function(
-        shell_exec(r'rm -rf mongoc', test=False, continue_on_err=True),
-        OD([('command', 's3.get'),
-            ('params', OD([
-                ('aws_key', '${aws_key}'),
-                ('aws_secret', '${aws_secret}'),
-                ('remote_file',
-                 '${project}/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz'),
-                ('bucket', 'mciuploads'),
-                ('local_file', 'build.tar.gz'),
-            ]))]),
-        shell_exec(r'''
-        mkdir mongoc
-
-        if command -v gtar 2>/dev/null; then
-           TAR=gtar
-        else
-           TAR=tar
-        fi
-
-        $TAR xf build.tar.gz -C mongoc/
-        ''', test=False, continue_on_err=True),
-    )),
-    ('upload docs', Function(
-        shell_exec(r'''
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libbson'),
-        s3_put('docs/libbson/${CURRENT_VERSION}/index.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/cmake_build/src/libbson/doc/html/index.html',
-               bucket='mciuploads', permissions='public-read',
-               content_type='text/html', display_name='libbson docs'),
-        shell_exec(r'''
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libmongoc'),
-        s3_put('docs/libmongoc/${CURRENT_VERSION}/index.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/cmake_build/src/libmongoc/doc/html/index.html',
-               bucket='mciuploads', permissions='public-read',
-               content_type='text/html', display_name='libmongoc docs'),
-    )),
-    ('upload man pages', Function(
-        shell_mongoc(r'''
-        # Get "aha", the ANSI HTML Adapter.
-        git clone --depth 1 https://github.com/theZiz/aha.git aha-repo
-        cd aha-repo
-        make
-        cd ..
-        mv aha-repo/aha .
-
-        sh .evergreen/scripts/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
-        sh .evergreen/scripts/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
-        ''', test=False, silent=True),
-        s3_put('man-pages/libbson/${CURRENT_VERSION}/index.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/bson-man-pages.html', bucket='mciuploads',
-               permissions='public-read', content_type='text/html',
-               display_name='libbson man pages'),
-        s3_put('man-pages/libmongoc/${CURRENT_VERSION}/index.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/mongoc-man-pages.html', bucket='mciuploads',
-               permissions='public-read', content_type='text/html',
-               display_name='libmongoc man pages'),
     )),
     ('upload coverage', Function(
         shell_mongoc(r'''
@@ -168,27 +37,6 @@ all_functions = OD([
                local_file='mongoc/coverage/index.html', bucket='mciuploads',
                permissions='public-read', content_type='text/html',
                display_name='Coverage Report'),
-    )),
-    ('abi report', Function(
-        shell_mongoc(r'''
-        bash .evergreen/scripts/abi-compliance-check.sh
-        ''', test=False),
-        shell_mongoc(r'''
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/%s/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
-
-        if [ -e ./abi-compliance/abi-error.txt ]; then
-          exit 1
-        else
-          exit 0
-        fi
-        ''' % (build_path,), silent=True, test=False),
-        s3_put(build_path + '/abi-compliance/compat_report.html',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_files_include_filter='mongoc/abi-compliance/compat_reports/**/*.html',
-               bucket='mciuploads', permissions='public-read',
-               content_type='text/html', display_name='ABI Report:'),
     )),
     ('upload scan artifacts', Function(
         shell_mongoc(r'''
@@ -208,93 +56,6 @@ all_functions = OD([
                bucket='mciuploads', permissions='public-read',
                content_type='text/html', display_name='Scan Build Report'),
     )),
-    ('upload mo artifacts', Function(
-        shell_mongoc(r'''
-        DIR=MO
-        [ -d "/cygdrive/c/data/mo" ] && DIR="/cygdrive/c/data/mo"
-        [ -d $DIR ] && find $DIR -name \*.log | xargs tar czf mongodb-logs.tar.gz
-        ''', test=False),
-        s3_put(build_path + '/logs/${task_id}-${execution}-mongodb-logs.tar.gz',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/mongodb-logs.tar.gz', bucket='mciuploads',
-               permissions='public-read',
-               content_type='${content_type|application/x-gzip}',
-               display_name='mongodb-logs.tar.gz'),
-        s3_put(build_path + '/logs/${task_id}-${execution}-orchestration.log',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/MO/server.log', bucket='mciuploads',
-               permissions='public-read',
-               content_type='${content_type|text/plain}',
-               display_name='orchestration.log'),
-        shell_mongoc(r'''
-        # Find all core files from mongodb in orchestration and move to mongoc
-        DIR=MO
-        MDMP_DIR=$DIR
-        [ -d "/cygdrive/c/data/mo" ] && DIR="/cygdrive/c/data/mo"
-        [ -d "/cygdrive/c/mongodb" ] && MDMP_DIR="/cygdrive/c/mongodb"
-        core_files=$(/usr/bin/find -H $MO $MDMP_DIR \( -name "*.core" -o -name "*.mdmp" \) 2> /dev/null)
-        for core_file in $core_files
-        do
-          base_name=$(echo $core_file | sed "s/.*\///")
-          # Move file if it does not already exist
-          if [ ! -f $base_name ]; then
-            mv $core_file .
-          fi
-        done
-        ''', test=False),
-        targz_pack('mongo-coredumps.tgz', 'mongoc', './**.core', './**.mdmp'),
-        s3_put(build_path + '/coredumps/${task_id}-${execution}-coredumps.log',
-               aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongo-coredumps.tgz', bucket='mciuploads',
-               permissions='public-read',
-               content_type='${content_type|application/x-gzip}',
-               display_name='Core Dumps - Execution ${execution}',
-               optional='True'),
-    )),
-    ('backtrace', Function(
-        shell_mongoc(r'./.evergreen/scripts/debug-core-evergreen.sh', test=False),
-    )),
-    ('upload working dir', Function(
-        targz_pack('working-dir.tar.gz', 'mongoc', './**'),
-        s3_put(
-            build_path +
-            '/artifacts/${task_id}-${execution}-working-dir.tar.gz',
-            aws_key='${aws_key}', aws_secret='${aws_secret}',
-            local_file='working-dir.tar.gz', bucket='mciuploads',
-            permissions='public-read',
-            content_type='${content_type|application/x-gzip}',
-            display_name='working-dir.tar.gz'),
-    )),
-    ('upload test results', Function(
-        OD([('command', 'attach.results'),
-            ('params', OD([
-                ('file_location', 'mongoc/test-results.json'),
-            ]))]),
-    )),
-    ('bootstrap mongo-orchestration', Function(
-        shell_mongoc(r'''
-        export MONGODB_VERSION=${VERSION}
-        export TOPOLOGY=${TOPOLOGY}
-        export IPV4_ONLY=${IPV4_ONLY}
-        export AUTH=${AUTH}
-        export AUTHSOURCE=${AUTHSOURCE}
-        export SSL=${SSL}
-        export ORCHESTRATION_FILE=${ORCHESTRATION_FILE}
-        export OCSP=${OCSP}
-        export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
-        export LOAD_BALANCER=${LOAD_BALANCER}
-        bash .evergreen/scripts/integration-tests.sh
-        ''', test=False),
-        OD([
-            ("command", "expansions.update"),
-            ("params", OD([("file", "mongoc/mo-expansion.yml")]))
-        ])
-    )),
-    ('run tests', Function(
-        shell_mongoc(r'''
-        bash .evergreen/scripts/run-tests.sh
-        ''', add_expansions_to_env=True),
-    )),
     # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
         shell_mongoc(r'''
@@ -305,36 +66,6 @@ all_functions = OD([
         shell_mongoc(r'''
         bash .evergreen/scripts/run-mock-server-tests.sh
         ''', add_expansions_to_env=True),
-    )),
-    ('cleanup', Function(
-        shell_mongoc(r'''
-        cd MO
-        mongo-orchestration stop
-        ''', test=False),
-    )),
-    ('windows fix', Function(
-        shell_mongoc(r'''
-        for i in $(find .evergreen/scripts -type f); do
-          cat $i | tr -d '\r' > $i.new
-          mv $i.new $i
-        done
-        ''', test=False),
-    )),
-    ('make files executable', Function(
-        shell_mongoc(r'''
-        for i in $(find .evergreen/scripts -type f); do
-          chmod +x $i
-        done
-        ''', test=False),
-    )),
-    ('prepare kerberos', Function(
-        shell_mongoc(r'''
-        if test "${keytab|}"; then
-           echo "${keytab}" > /tmp/drivers.keytab.base64
-           base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
-           cat .evergreen/etc/kerberos.realm | $SUDO tee -a /etc/krb5.conf
-        fi
-        ''', test=False, silent=True),
     )),
     ('link sample program', Function(
         shell_mongoc(r'''
@@ -408,55 +139,45 @@ all_functions = OD([
         ''', add_expansions_to_env=True),
     )),
     ('build mongohouse', Function(
-        shell_mongoc(r'''
-        if [ ! -d "drivers-evergreen-tools" ]; then
-           git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
-        fi
+        shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-
         sh .evergreen/atlas_data_lake/build-mongohouse-local.sh
-        cd ../
         '''),
     )),
     ('run mongohouse', Function(
-        shell_mongoc(r'''
+        shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-
         sh .evergreen/atlas_data_lake/run-mongohouse-local.sh
         ''', background=True),
     )),
     ('test mongohouse', Function(
         shell_mongoc(r'''
-        echo "testing that mongohouse is running..."
-        ps aux | grep mongohouse
-
-        echo $(pwd)
-        echo $(ls)
-
-        ls > dir.txt
-        cat dir.txt
-        echo $(cat dir.txt)
-
+        echo "Waiting for mongohouse to start..."
+        wait_for_mongohouse() {
+            for _ in $(seq 300); do
+                # Exit code 7: "Failed to connect to host".
+                if curl -s localhost:$1; (("$?" != 7)); then
+                    return 0
+                else
+                    sleep 1
+                fi
+            done
+            echo "Could not detect mongohouse on port $1" 1>&2
+            return 1
+        }
+        wait_for_mongohouse 27017 || exit
+        echo "Waiting for mongohouse to start... done."
+        pgrep -a "mongohouse"
         export RUN_MONGOHOUSE_TESTS=true
         ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
         unset RUN_MONGOHOUSE_TESTS
-
         '''),
-    )),
-    ('test versioned api', Function(
-        shell_mongoc(r'''
-        MONGODB_API_VERSION=1 bash .evergreen/scripts/run-tests.sh
-        ''', add_expansions_to_env=True),
     )),
     ('run aws tests', Function(
         shell_mongoc(r'''
         # Add AWS variables to a file.
-        # Clone in one directory above so it does not get uploaded in working directory.
-        if [ ! -d ../drivers-evergreen-tools ]; then
-            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
-        fi
         cat <<EOF > ../drivers-evergreen-tools/.evergreen/auth_aws/aws_e2e_setup.json
         {
             "iam_auth_ecs_account" : "${iam_auth_ecs_account}",
@@ -483,49 +204,6 @@ all_functions = OD([
         bash .evergreen/scripts/run-aws-tests.sh
         ''', add_expansions_to_env=True)
     )),
-    ('clone drivers-evergreen-tools', Function(
-        shell_exec(r'''
-        if [ ! -d "drivers-evergreen-tools" ]; then
-            git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
-        fi
-        ''', test=False)
-    )),
-    ('run kms servers', Function(
-        shell_exec(r'''
-        echo "Preparing CSFLE venv environment..."
-        cd ./drivers-evergreen-tools/.evergreen/csfle
-        # This function ensures future invocations of activate-kmstlsvenv.sh conducted in
-        # parallel do not race to setup a venv environment; it has already been prepared.
-        # This primarily addresses the situation where the "run tests" and "run kms servers"
-        # functions invoke 'activate-kmstlsvenv.sh' simultaneously.
-        # TODO: remove this function along with the "run kms servers" function.
-        if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
-            # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
-            # See CDRIVER-4530.
-            . ../venv-utils.sh
-            venvcreate "C:/python/Python39/python.exe" kmstlsvenv || # windows-2017
-            venvcreate "C:/python/Python38/python.exe" kmstlsvenv    # windows-2015
-            python -m pip install --upgrade boto3~=1.19 pykmip~=0.10.0 "sqlalchemy<2.0.0"
-            deactivate
-        else
-            . ./activate-kmstlsvenv.sh
-            deactivate
-        fi
-        echo "Preparing CSFLE venv environment... done."
-        ''', test=False),
-        shell_exec(r'''
-        echo "Starting mock KMS servers..."
-        cd ./drivers-evergreen-tools/.evergreen/csfle
-        . ./activate-kmstlsvenv.sh
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001 &
-        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --require_client_cert --port 9002 &
-        python -u kms_kmip_server.py &
-        deactivate
-        echo "Starting mock KMS servers... done."
-        ''', test=False, background=True),
-    )),
     ('start load balancer', Function(
         shell_exec(r'''
         export DRIVERS_TOOLS=./drivers-evergreen-tools
@@ -536,17 +214,5 @@ all_functions = OD([
             ("command", "expansions.update"),
             ("params", OD([("file", "lb-expansion.yml")]))
         ]),
-    )),
-    ('stop load balancer', Function(
-        shell_exec(r'''
-        # Only run if a load balancer was started.
-        if [ -z "${SINGLE_MONGOS_LB_URI}" ]; then
-            echo "OK - no load balancer running"
-            exit 0
-        fi
-        export DRIVERS_TOOLS=./drivers-evergreen-tools
-        export MONGODB_URI="foo" # TODO: DRIVERS-1833 remove this.
-        $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh stop
-        ''', test=False),
     )),
 ])

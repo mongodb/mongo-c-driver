@@ -50,10 +50,6 @@ esac
 
 if [[ -n "${responder_required:-}" ]]; then
   echo "Starting mock responder"
-  if [[ ! -d "../drivers-evergreen-tools" ]]; then
-    git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
-  fi
-
   pushd ../drivers-evergreen-tools/.evergreen/ocsp
   # shellcheck source=/dev/null
   . ./activate-ocspvenv.sh

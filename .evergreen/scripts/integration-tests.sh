@@ -21,7 +21,8 @@
 
 set -o errexit  # Exit the script with error if any of the commands fail
 
-: "${LOAD_BALANCER:=off}"
+: "${MONGODB_VERSION:="latest"}"
+: "${LOAD_BALANCER:="off"}"
 
 DIR=$(dirname $0)
 # Functions to fetch MongoDB binaries
@@ -94,9 +95,6 @@ export ORCHESTRATION_URL="http://localhost:8889/v1/${TOPOLOGY}s"
 export TMPDIR=$MONGO_ORCHESTRATION_HOME/db
 echo From shell `date` > $MONGO_ORCHESTRATION_HOME/server.log
 
-if [ ! -d ../drivers-evergreen-tools ]; then
-   git clone --depth 1 git@github.com:mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
-fi
 . ../drivers-evergreen-tools/.evergreen/find-python3.sh
 . ../drivers-evergreen-tools/.evergreen/venv-utils.sh
 
