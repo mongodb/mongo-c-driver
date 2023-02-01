@@ -11,25 +11,15 @@
 
 from sys import version_info
 from importlib import import_module
-from pathlib import Path
 
 
-def all_generators():
-    res = []
-
-    # .evergreen/config_generator/generate_config.py -> .evergreen/config_generator/generators
-    components_dir = Path(__file__).parent / 'generators'
-
-    all_paths = components_dir.glob('**/*.py')
-
-    for path in sorted(all_paths):
-        generator_path = path.relative_to(components_dir)
-        generator_str = str(generator_path.with_suffix(''))  # Drop '.py'.
-        generator_str = generator_str.replace('/', '.')  # 'a/b' -> 'a.b'
-        module_name = f'config_generator.generators.{generator_str}'
-        res.append(import_module(module_name))
-
-    return res
+GENERATOR_NAMES = [
+    'functions',
+    'tasks',
+    'task_groups',
+    'variants',
+    'legacy_config',
+]
 
 
 def main():
@@ -37,11 +27,11 @@ def main():
     assert version_info.major >= 3
     assert version_info.minor >= 10
 
-    for m in all_generators():
-        MODULE_NAME = m.__name__.replace("config_generator.", "")
-        print(f"Running {MODULE_NAME}.generate()...")
+    for name in GENERATOR_NAMES:
+        m = import_module(f'config_generator.generators.{name}')
+        print(f"Running {name}.generate()...")
         m.generate()
-        print(f"Running {MODULE_NAME}.generate()... done.")
+        print(f"Running {name}.generate()... done.")
 
 
 if __name__ == '__main__':
