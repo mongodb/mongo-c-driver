@@ -104,8 +104,8 @@ if [[ -n "${CLIENT_SIDE_ENCRYPTION}" ]]; then
   } &>/dev/null
   echo "Setting KMS credentials from the environment... done."
 
-  export MONGOC_TEST_CSFLE_TLS_CA_FILE="${mongoc_dir}/src/libmongoc/tests/x509gen/ca.pem"
-  export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE="${mongoc_dir}/src/libmongoc/tests/x509gen/client.pem"
+  export MONGOC_TEST_CSFLE_TLS_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
+  export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE="src/libmongoc/tests/x509gen/client.pem"
   export SKIP_CRYPT_SHARED_LIB="${SKIP_CRYPT_SHARED_LIB}"
 fi
 
