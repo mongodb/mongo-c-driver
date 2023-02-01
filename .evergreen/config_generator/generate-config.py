@@ -6,11 +6,13 @@
 #     python -m pip install -r .evergreen/config_generator/requirements.txt
 #
 # Invoke this using the command:
-#     PYTHONPATH=".evergreen" python3 .evergreen/config_generator/generate-config.py
+#     python3 .evergreen/config_generator/generate-config.py
 
 
-from sys import version_info
+import sys
+
 from importlib import import_module
+from pathlib import Path
 
 
 GENERATOR_NAMES = [
@@ -24,8 +26,12 @@ GENERATOR_NAMES = [
 
 def main():
     # Requires Python 3.10 or newer.
-    assert version_info.major >= 3
-    assert version_info.minor >= 10
+    assert sys.version_info.major >= 3
+    assert sys.version_info.minor >= 10
+
+    # Append .evergreen to PYTHONPATH to allow import of config_generator.
+    # .evergreen/config_generator/generate-config.py -> .evergreen
+    sys.path.append(str(Path(__file__).parent.parent))
 
     for name in GENERATOR_NAMES:
         m = import_module(f'config_generator.generators.{name}')
