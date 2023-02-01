@@ -155,18 +155,13 @@ class ConfigDumper(yaml.SafeDumper):
             'args',
         ]
 
-        ordered = {}  # Note: insertion-order preservation requires Python 3.7.
-        suffix = {}
+        ordered = {
+            field: mapping.pop(field) for field in before if field in mapping
+        }
 
-        for field_name in before:
-            field = mapping.pop(field_name, None)
-            if field:
-                ordered[field_name] = field
-
-        for field_name in after:
-            field = mapping.pop(field_name, None)
-            if field:
-                suffix[field_name] = field
+        suffix = {
+            field: mapping.pop(field) for field in after if field in mapping
+        }
 
         ordered.update(sorted(mapping.items()))
         ordered.update(suffix)
