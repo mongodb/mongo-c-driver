@@ -17,7 +17,7 @@ class Distro(BaseModel):
     * arch: Target architecture.
     """
 
-    name: str = None
+    name: str
     os: str | None = None
     os_type: Literal['linux', 'macos', 'windows'] | None = None
     os_ver: str | None = None
