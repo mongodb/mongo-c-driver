@@ -4,5 +4,5 @@ pbr==5.11.1
 pydantic==1.10.4
 PyYAML==5.4.1
 shrub.py==3.0.4
-typing-extensions==4.4.0
+typing_extensions==4.4.0
 yamlordereddictloader==0.4.0
