@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal
 
 from pydantic import BaseModel, validator
 from packaging.version import Version
@@ -18,65 +18,29 @@ class Distro(BaseModel):
     """
 
     name: str
-    os: Optional[str]
-    os_type: Optional[str]
-    os_ver: Optional[str]
-    vs_ver: Optional[str]
-    size: Optional[str]
-    arch: Optional[str]
+    os: str | None
+    os_type: Literal['linux', 'macos', 'windows'] | None
+    os_ver: str | None
+    vs_ver: Literal[
+        '2013',
+        '2015',
+        '2017',
+        '2019',
+        '2022',
+        'vsCurrent',
+        'vsCurrent2',
+        'vsMulti',
+    ] | None
+    size: Literal['small', 'large'] | None
+    arch: Literal['arm64', 'power8', 'zseries'] | None
 
     def __hash__(self):
         return self.name.__hash__()
 
     @classmethod
-    @validator('os_type')
-    def validate_os_type(cls, value):
-        allowed = {'linux', 'macos', 'windows'}
-        if value not in allowed:
-            raise ValueError(
-                f'expected one of {allowed}, but got: \'{value}\'')
-        return value
-
-    @classmethod
     @validator('os_ver')
     def validate_os_ver(cls, value):
         return Version(value)
-
-    @classmethod
-    @validator('vs_ver')
-    def validate_vs_ver(cls, value):
-        allowed = {
-            '2013',
-            '2015',
-            '2017',
-            '2019',
-            '2022',
-            'vsCurrent',
-            'vsCurrent2'
-            'vsMulti',
-        }
-        if value not in allowed:
-            raise ValueError(
-                f'expected one of {allowed}, but got: \'{value}\'')
-        return value
-
-    @classmethod
-    @validator('size')
-    def validate_size(cls, value):
-        allowed = {'small', 'large'}
-        if value not in allowed:
-            raise ValueError(
-                f'expected one of {allowed}, but got: \'{value}\'')
-        return value
-
-    @classmethod
-    @validator('arch')
-    def validate_arch(cls, value):
-        allowed = {'arm64', 'power8', 'zseries'}
-        if value not in allowed:
-            raise ValueError(
-                f'expected one of {allowed}, but got: \'{value}\'')
-        return value
 
 # See: https://evergreen.mongodb.com/distros
 # pylint: disable=line-too-long
