@@ -109,6 +109,6 @@ if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
   popd # libmongocrypt/cmake-build
 fi
 
-"${cmake_binary}" -G "$CC" "-DCMAKE_PREFIX_PATH=${install_dir}/lib/cmake" "${configure_flags[@]}"
+"${cmake_binary}" -G "$CC" "${configure_flags[@]}"
 "${cmake_binary}" --build . --target ALL_BUILD --config "${build_config}" -- "${compile_flags[@]}"
 "${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"
