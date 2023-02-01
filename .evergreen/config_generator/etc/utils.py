@@ -11,7 +11,7 @@ from shrub.v3.evg_command import subprocess_exec
 
 # Equivalent to EvgTask but with the run_on field.
 class EvgTaskWithRunOn(EvgTask):
-    run_on: str
+    run_on: str = None
 
 
 # Automatically formats the provided script and invokes it in Bash.

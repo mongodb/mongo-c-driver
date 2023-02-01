@@ -17,10 +17,10 @@ class Distro(BaseModel):
     * arch: Target architecture.
     """
 
-    name: str
-    os: str | None
-    os_type: Literal['linux', 'macos', 'windows'] | None
-    os_ver: str | None
+    name: str = None
+    os: str | None = None
+    os_type: Literal['linux', 'macos', 'windows'] | None = None
+    os_ver: str | None = None
     vs_ver: Literal[
         '2013',
         '2015',
@@ -30,9 +30,9 @@ class Distro(BaseModel):
         'vsCurrent',
         'vsCurrent2',
         'vsMulti',
-    ] | None
-    size: Literal['small', 'large'] | None
-    arch: Literal['arm64', 'power8', 'zseries'] | None
+    ] | None = None
+    size: Literal['small', 'large'] | None = None
+    arch: Literal['arm64', 'power8', 'zseries'] | None = None
 
     def __hash__(self):
         return self.name.__hash__()
