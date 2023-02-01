@@ -43,8 +43,6 @@ if [[ "${SSL}" != "nossl" ]]; then
   export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION="off"
   export MONGOC_TEST_SSL_PEM_FILE="src/libmongoc/tests/x509gen/client.pem"
   export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
-  export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE="src/libmongoc/tests/x509gen/client.pem"
-  export MONGOC_TEST_CSFLE_TLS_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
 fi
 
 export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
