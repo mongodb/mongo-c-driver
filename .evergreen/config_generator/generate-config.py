@@ -9,6 +9,7 @@
 #     PYTHONPATH=".evergreen" python3 .evergreen/config_generator/generate-config.py
 
 
+from sys import version_info
 from importlib import import_module
 from pathlib import Path
 
@@ -32,6 +33,10 @@ def all_generators():
 
 
 def main():
+    # Requires Python 3.10 or newer.
+    assert version_info.major >= 3
+    assert version_info.minor >= 10
+
     for m in all_generators():
         MODULE_NAME = m.__name__.replace("config_generator.", "")
         print(f"Running {MODULE_NAME}.generate()...")
