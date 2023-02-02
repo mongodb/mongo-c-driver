@@ -107,6 +107,43 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile.sh
+  cse-sasl-auto-openssl-static-compile:
+    - command: expansions.update
+      params:
+        updates:
+          - { key: SSL, value: OPENSSL_STATIC }
+          - { key: SASL, value: AUTO }
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        env:
+          EXTRA_CONFIGURE_FLAGS: -DENABLE_PIC=ON -DENABLE_MONGOC=OFF
+        args:
+          - -c
+          - .evergreen/scripts/compile.sh
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        args:
+          - -c
+          - rm CMakeCache.txt
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        env:
+          COMPILE_LIBMONGOCRYPT: "ON"
+          EXTRA_CONFIGURE_FLAGS: -DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON
+        args:
+          - -c
+          - .evergreen/scripts/compile.sh
   cse-sasl-auto-winssl-compile:
     - command: expansions.update
       params:

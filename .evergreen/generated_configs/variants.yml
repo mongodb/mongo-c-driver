@@ -6,6 +6,13 @@ buildvariants:
       DEBUG: "ON"
     tasks:
       - name: .cse-matrix-darwinssl
+  - name: cse-matrix-openssl-static
+    display_name: cse-matrix-openssl-static
+    expansions:
+      CLIENT_SIDE_ENCRYPTION: "on"
+      DEBUG: "ON"
+    tasks:
+      - name: .cse-matrix-openssl-static
   - name: cse-matrix-winssl
     display_name: cse-matrix-winssl
     expansions:

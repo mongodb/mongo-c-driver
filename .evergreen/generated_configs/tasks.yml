@@ -173,6 +173,246 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-auto-openssl-static-debian10-gcc-compile
+    run_on: debian10-large
+    tags: [cse-matrix-openssl-static, compile, debian10, gcc, cse, sasl-auto]
+    commands:
+      - func: cse-sasl-auto-openssl-static-compile
+        vars:
+          CC: gcc
+      - func: upload-build
+  - name: cse-sasl-auto-openssl-static-debian10-gcc-test-latest-server-auth
+    run_on: debian10-small
+    tags: [cse-matrix-openssl-static, test, debian10, gcc, sasl-auto, cse, auth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-debian10-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-debian10-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-openssl-static-debian10-gcc-test-latest-server-noauth
+    run_on: debian10-small
+    tags: [cse-matrix-openssl-static, test, debian10, gcc, sasl-auto, cse, noauth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-debian10-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-debian10-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-openssl-static-debian11-gcc-compile
+    run_on: debian11-large
+    tags: [cse-matrix-openssl-static, compile, debian11, gcc, cse, sasl-auto]
+    commands:
+      - func: cse-sasl-auto-openssl-static-compile
+        vars:
+          CC: gcc
+      - func: upload-build
+  - name: cse-sasl-auto-openssl-static-debian11-gcc-test-latest-server-auth
+    run_on: debian11-small
+    tags: [cse-matrix-openssl-static, test, debian11, gcc, sasl-auto, cse, auth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-debian11-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-debian11-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-openssl-static-debian11-gcc-test-latest-server-noauth
+    run_on: debian11-small
+    tags: [cse-matrix-openssl-static, test, debian11, gcc, sasl-auto, cse, noauth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-debian11-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-debian11-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-openssl-static-debian92-clang-compile
+    run_on: debian92-large
+    tags: [cse-matrix-openssl-static, compile, debian92, clang, cse, sasl-auto]
+    commands:
+      - func: cse-sasl-auto-openssl-static-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: cse-sasl-auto-openssl-static-debian92-clang-test-latest-server-auth
+    run_on: debian92-small
+    tags: [cse-matrix-openssl-static, test, debian92, clang, sasl-auto, cse, auth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-debian92-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-debian92-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-openssl-static-debian92-clang-test-latest-server-noauth
+    run_on: debian92-small
+    tags: [cse-matrix-openssl-static, test, debian92, clang, sasl-auto, cse, noauth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-debian92-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-debian92-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-openssl-static-debian92-gcc-compile
+    run_on: debian92-large
+    tags: [cse-matrix-openssl-static, compile, debian92, gcc, cse, sasl-auto]
+    commands:
+      - func: cse-sasl-auto-openssl-static-compile
+        vars:
+          CC: gcc
+      - func: upload-build
+  - name: cse-sasl-auto-openssl-static-debian92-gcc-test-latest-server-auth
+    run_on: debian92-small
+    tags: [cse-matrix-openssl-static, test, debian92, gcc, sasl-auto, cse, auth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-debian92-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-debian92-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-openssl-static-debian92-gcc-test-latest-server-noauth
+    run_on: debian92-small
+    tags: [cse-matrix-openssl-static, test, debian92, gcc, sasl-auto, cse, noauth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-debian92-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-debian92-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-openssl-static-ubuntu2004-gcc-compile
+    run_on: ubuntu2004-large
+    tags: [cse-matrix-openssl-static, compile, ubuntu2004, gcc, cse, sasl-auto]
+    commands:
+      - func: cse-sasl-auto-openssl-static-compile
+        vars:
+          CC: gcc
+      - func: upload-build
+  - name: cse-sasl-auto-openssl-static-ubuntu2004-gcc-test-latest-server-auth
+    run_on: ubuntu2004-small
+    tags: [cse-matrix-openssl-static, test, ubuntu2004, gcc, sasl-auto, cse, auth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-openssl-static-ubuntu2004-gcc-test-latest-server-noauth
+    run_on: ubuntu2004-small
+    tags: [cse-matrix-openssl-static, test, ubuntu2004, gcc, sasl-auto, cse, noauth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-openssl-static-ubuntu2004-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-openssl-static-ubuntu2004-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl-static }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-auto-winssl-vs2015-x64-compile
     run_on: windows-64-vs2015-large
     tags: [cse-matrix-winssl, compile, windows-64-vs2015, vs2015x64, cse, sasl-auto]
