@@ -1,15 +1,9 @@
 #!/usr/bin/env bash
 
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-
-case "$OS" in
-   cygwin*)
-      echo "debug-core-evergreen.sh is not supported on Windows"
-      exit 0
-   ;;
-esac
-
-echo "Debugging core files"
+if [[ "${OSTYPE}" == "cygwin" ]]; then
+   echo "Skipping debug-core-evergreen.sh"
+   exit
+fi
 
 shopt -s nullglob
 for i in *.core; do

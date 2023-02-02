@@ -1,0 +1,14 @@
+tasks:
+  - name: abi-compliance-check
+    commands:
+      - func: abi-compliance-check
+  - name: check-headers
+    commands:
+      - func: check-headers
+  - name: make-release-archive
+    commands:
+      - func: release-archive
+      - func: upload-docs
+      - func: upload-man-pages
+      - func: upload-build
+      - func: upload-release

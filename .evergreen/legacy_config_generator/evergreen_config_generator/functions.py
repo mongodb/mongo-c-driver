@@ -26,25 +26,6 @@ def func(func_name, **kwargs):
     return od
 
 
-def bootstrap(VERSION='latest', TOPOLOGY=None, **kwargs):
-    if TOPOLOGY:
-        return func('bootstrap mongo-orchestration',
-                    VERSION=VERSION,
-                    TOPOLOGY=TOPOLOGY,
-                    **kwargs)
-
-    return func('bootstrap mongo-orchestration',
-                VERSION=VERSION,
-                **kwargs)
-
-
-def run_tests(URI=None, **kwargs):
-    if URI:
-        return func('run tests', URI=URI, **kwargs)
-
-    return func('run tests', **kwargs)
-
-
 def s3_put(remote_file, project_path=True, **kwargs):
     if project_path:
         remote_file = '${project}/' + remote_file

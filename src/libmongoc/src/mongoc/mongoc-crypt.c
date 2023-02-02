@@ -453,6 +453,15 @@ _get_stream (const char *endpoint,
    tls_stream = mongoc_stream_tls_new_with_hostname (
       base_stream, host.host, &ssl_opt_copy, 1 /* client */);
 
+   if (!tls_stream) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failed to create TLS stream to: %s",
+                      endpoint);
+      goto fail;
+   }
+
    if (!mongoc_stream_tls_handshake_block (
           tls_stream, host.host, connecttimeoutms, error)) {
       goto fail;

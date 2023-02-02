@@ -1158,6 +1158,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
           collection->db,
           mongoc_collection_get_name (collection),
           opts,
+          true /* checkEncryptedFieldsMap */,
           &encryptedFields,
           error)) {
       goto done;

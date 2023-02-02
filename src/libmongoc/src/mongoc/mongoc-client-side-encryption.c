@@ -2965,6 +2965,7 @@ mongoc_client_encryption_create_encrypted_collection (
           mongoc_database_get_name (database),
           name,
           in_options,
+          false /* checkEncryptedFieldsMap */,
           &in_encryptedFields,
           error)) {
       // Error finding the encryptedFields

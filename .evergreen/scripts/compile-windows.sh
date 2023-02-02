@@ -104,8 +104,10 @@ if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
     DEFAULT_BUILD_ONLY=true \
     LIBMONGOCRYPT_BUILD_TYPE=${build_config} \
     ./libmongocrypt/.evergreen/compile.sh
+  # Fail if the C driver is unable to find the installed libmongocrypt.
+  configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 fi
 
-"${cmake_binary}" -G "$CC" "-DCMAKE_PREFIX_PATH=${install_dir}/lib/cmake" "${configure_flags[@]}"
+"${cmake_binary}" -G "$CC" "${configure_flags[@]}"
 "${cmake_binary}" --build . --target ALL_BUILD --config "${build_config}" -- "${compile_flags[@]}"
 "${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"

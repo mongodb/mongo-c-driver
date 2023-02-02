@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-#
+#!/usr/bin/env python3
+
 # Copyright 2018-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,11 +21,13 @@ import re
 import sys
 
 if len(sys.argv) != 3:
-    print("Usage: python check-files.py <src directory from repo> <src directory produced by tarball>")
-    exit(1)
+    print("Usage: python check_files.py"
+          " <src directory from repo>"
+          " <src directory produced by tarball>")
+    sys.exit(1)
 
-repo_src_dir = sys.argv[1]
-tar_src_dir = sys.argv[2]
+REPO_SRC_DIR = sys.argv[1]
+TAR_SRC_DIR = sys.argv[2]
 
 pattern = re.compile(r".*\.(c|h)$")
 
@@ -39,16 +41,16 @@ cmake_produced = [
     "zlib-1.2.12/zconf.h",
 ]
 
-for root, dirs, files in os.walk(repo_src_dir):
+for root, dirs, files in os.walk(REPO_SRC_DIR):
     for file in files:
-        relpath = os.path.relpath(os.path.join(root, file), repo_src_dir)
+        relpath = os.path.relpath(os.path.join(root, file), REPO_SRC_DIR)
 
         if pattern.match(relpath):
             repo_src_files.add(relpath)
 
-for root, dirs, files in os.walk(tar_src_dir):
+for root, dirs, files in os.walk(TAR_SRC_DIR):
     for file in files:
-        relpath = os.path.relpath(os.path.join(root, file), tar_src_dir)
+        relpath = os.path.relpath(os.path.join(root, file), TAR_SRC_DIR)
         if relpath in cmake_produced:
             continue
         if pattern.match(relpath):
@@ -62,4 +64,4 @@ if tar_src_files != repo_src_files:
     print("Repository has the following files NOT in tarball")
     for file in sorted(repo_src_files.difference(tar_src_files)):
         print(" " + file)
-    exit(1)
+    sys.exit(1)
