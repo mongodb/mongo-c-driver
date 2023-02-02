@@ -173,6 +173,182 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-auto-winssl-vs2015-x64-compile
+    run_on: windows-64-vs2015-large
+    tags: [cse-matrix-winssl, compile, windows-64-vs2015, vs2015x64, cse, sasl-auto]
+    commands:
+      - func: cse-sasl-auto-winssl-compile
+        vars:
+          CC: Visual Studio 14 2015 Win64
+      - func: upload-build
+  - name: cse-sasl-auto-winssl-vs2015-x64-test-4.2-server-auth
+    run_on: windows-64-vs2015-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2015, vs2015x64, sasl-auto, cse, auth, server, "4.2"]
+    depends_on: [{ name: cse-sasl-auto-winssl-vs2015-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-winssl-vs2015-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 14 2015 Win64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-winssl-vs2015-x64-test-4.2-server-noauth
+    run_on: windows-64-vs2015-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2015, vs2015x64, sasl-auto, cse, noauth, server, "4.2"]
+    depends_on: [{ name: cse-sasl-auto-winssl-vs2015-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-winssl-vs2015-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 14 2015 Win64 }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-winssl-vs2017-x64-compile
+    run_on: windows-64-vs2017-large
+    tags: [cse-matrix-winssl, compile, windows-64-vs2017, vs2017x64, cse, sasl-auto]
+    commands:
+      - func: cse-sasl-auto-winssl-compile
+        vars:
+          CC: Visual Studio 15 2017 Win64
+      - func: upload-build
+  - name: cse-sasl-auto-winssl-vs2017-x64-test-4.4-server-auth
+    run_on: windows-64-vs2017-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-auto, cse, auth, server, "4.4"]
+    depends_on: [{ name: cse-sasl-auto-winssl-vs2017-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-winssl-vs2017-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-winssl-vs2017-x64-test-4.4-server-noauth
+    run_on: windows-64-vs2017-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-auto, cse, noauth, server, "4.4"]
+    depends_on: [{ name: cse-sasl-auto-winssl-vs2017-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-winssl-vs2017-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-winssl-vs2017-x64-test-5.0-server-auth
+    run_on: windows-64-vs2017-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-auto, cse, auth, server, "5.0"]
+    depends_on: [{ name: cse-sasl-auto-winssl-vs2017-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-winssl-vs2017-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-winssl-vs2017-x64-test-5.0-server-noauth
+    run_on: windows-64-vs2017-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-auto, cse, noauth, server, "5.0"]
+    depends_on: [{ name: cse-sasl-auto-winssl-vs2017-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-winssl-vs2017-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-winssl-vs2017-x64-test-latest-server-auth
+    run_on: windows-64-vs2017-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-auto, cse, auth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-winssl-vs2017-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-winssl-vs2017-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-auto-winssl-vs2017-x64-test-latest-server-noauth
+    run_on: windows-64-vs2017-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-auto, cse, noauth, server, latest]
+    depends_on: [{ name: cse-sasl-auto-winssl-vs2017-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-auto-winssl-vs2017-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: make-release-archive
     commands:
       - func: release-archive

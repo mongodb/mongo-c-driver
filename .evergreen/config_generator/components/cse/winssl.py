@@ -1,0 +1,67 @@
+from shrub.v3.evg_build_variant import BuildVariant
+from shrub.v3.evg_task import EvgTaskRef
+
+from config_generator.etc.cse.compile import CompileCommon
+from config_generator.etc.cse.compile import generate_compile_tasks
+from config_generator.etc.cse.test import generate_test_tasks
+
+
+SSL = 'winssl'
+TAG = f'cse-matrix-{SSL}'
+
+
+# pylint: disable=line-too-long
+# fmt: off
+COMPILE_MATRIX = [
+    ('windows-64-vs2015', 'vs2015x64', None, ['auto']),
+    ('windows-64-vs2017', 'vs2017x64', None, ['auto']),
+]
+
+TEST_MATRIX = [
+    ('windows-64-vs2015', 'vs2015x64', None, 'auto', ['auth', 'noauth'], ['server'], ['4.2',                       ]),
+    ('windows-64-vs2017', 'vs2017x64', None, 'auto', ['auth', 'noauth'], ['server'], [       '4.4', '5.0', 'latest']),
+]
+# fmt: on
+# pylint: enable=line-too-long
+
+
+class WinSSLCompileCommon(CompileCommon):
+    ssl = 'WINDOWS'
+
+
+class SaslAutoWinSSLCompile(WinSSLCompileCommon):
+    name = 'cse-sasl-auto-winssl-compile'
+    commands = WinSSLCompileCommon.compile_commands(sasl='AUTO')
+
+
+def functions():
+    return SaslAutoWinSSLCompile.defn()
+
+
+def tasks():
+    res = []
+
+    SASL_TO_FUNC = {
+        'auto': SaslAutoWinSSLCompile,
+    }
+
+    res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX)
+    res += generate_test_tasks(SSL, TAG, TEST_MATRIX)
+
+    return res
+
+
+def variants():
+    expansions = {
+        'CLIENT_SIDE_ENCRYPTION': 'on',
+        'DEBUG': 'ON',
+    }
+
+    return [
+        BuildVariant(
+            name=TAG,
+            display_name=TAG,
+            tasks=[EvgTaskRef(name=f'.{TAG}')],
+            expansions=expansions,
+        ),
+    ]

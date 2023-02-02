@@ -3361,35 +3361,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-server-auth-sasl-winssl-cse
-  tags:
-  - auth
-  - client-side-encryption
-  - latest
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-latest-server-noauth-sasl-openssl-cse
   tags:
   - client-side-encryption
@@ -3448,35 +3419,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-server-noauth-sasl-winssl-cse
-  tags:
-  - client-side-encryption
-  - latest
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-latest-replica-set-auth-sasl-openssl-cse
   tags:
   - auth
@@ -3535,35 +3477,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-replica-set-auth-sasl-winssl-cse
-  tags:
-  - auth
-  - client-side-encryption
-  - latest
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-latest-replica-set-noauth-sasl-openssl-cse
   tags:
   - client-side-encryption
@@ -3622,35 +3535,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-replica-set-noauth-sasl-winssl-cse
-  tags:
-  - client-side-encryption
-  - latest
-  - noauth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-6.0-server-auth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -3709,35 +3593,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-server-auth-sasl-winssl-cse
-  tags:
-  - '6.0'
-  - auth
-  - client-side-encryption
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-6.0-server-noauth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -3796,35 +3651,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-server-noauth-sasl-winssl-cse
-  tags:
-  - '6.0'
-  - client-side-encryption
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-6.0-replica-set-auth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -3883,35 +3709,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-replica-set-auth-sasl-winssl-cse
-  tags:
-  - '6.0'
-  - auth
-  - client-side-encryption
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-6.0-replica-set-noauth-sasl-openssl-cse
   tags:
   - '6.0'
@@ -3970,35 +3767,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-replica-set-noauth-sasl-winssl-cse
-  tags:
-  - '6.0'
-  - client-side-encryption
-  - noauth
-  - replica_set
-  - sasl
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: winssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-5.0-server-auth-sasl-openssl-cse
   tags:
   - '5.0'
@@ -4057,35 +3825,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-5.0-server-auth-sasl-winssl-cse
-  tags:
-  - '5.0'
-  - auth
-  - client-side-encryption
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-5.0-server-noauth-sasl-openssl-cse
   tags:
   - '5.0'
@@ -4144,35 +3883,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-5.0-server-noauth-sasl-winssl-cse
-  tags:
-  - '5.0'
-  - client-side-encryption
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-4.4-server-auth-sasl-openssl-cse
   tags:
   - '4.4'
@@ -4231,35 +3941,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.4-server-auth-sasl-winssl-cse
-  tags:
-  - '4.4'
-  - auth
-  - client-side-encryption
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-4.4-server-noauth-sasl-openssl-cse
   tags:
   - '4.4'
@@ -4318,35 +3999,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.4-server-noauth-sasl-winssl-cse
-  tags:
-  - '4.4'
-  - client-side-encryption
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-4.2-server-auth-sasl-openssl-cse
   tags:
   - '4.2'
@@ -4405,35 +4057,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.2-server-auth-sasl-winssl-cse
-  tags:
-  - '4.2'
-  - auth
-  - client-side-encryption
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-4.2-server-noauth-sasl-openssl-cse
   tags:
   - '4.2'
@@ -4492,35 +4115,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.2-server-noauth-sasl-winssl-cse
-  tags:
-  - '4.2'
-  - client-side-encryption
-  - noauth
-  - sasl
-  - server
-  - winssl
-  depends_on:
-    name: debug-compile-sasl-winssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-winssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: winssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: winssl
 - name: test-dns-openssl
   depends_on:
     name: debug-compile-sasl-openssl
@@ -12732,15 +12326,12 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .debug-compile .sspi !.openssl-static
-  - .server .winssl .latest
   - .server .openssl .latest !.nosasl
   - .latest .nossl
   - .nosasl .latest .nossl
   - test-dns-winssl
   - test-dns-auth-winssl
   - debug-compile-aws
-  - .5.0 .winssl !.nosasl .server
-  - .4.4 .winssl !.nosasl .server
   - test-aws-openssl-regular-4.4
   - test-aws-openssl-regular-latest
   - .authentication-tests .openssl !.sasl
@@ -12761,7 +12352,6 @@ buildvariants:
   - .debug-compile !.sspi .nossl
   - .debug-compile .sspi !.openssl-static
   - .authentication-tests .winssl
-  - .4.2 .winssl !.nosasl .server .client-side-encryption
 - name: windows-2015-32
   display_name: Windows (i686) (VS 2015)
   expansions:
