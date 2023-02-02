@@ -1,4 +1,11 @@
 buildvariants:
+  - name: cse-matrix-darwinssl
+    display_name: cse-matrix-darwinssl
+    expansions:
+      CLIENT_SIDE_ENCRYPTION: "on"
+      DEBUG: "ON"
+    tasks:
+      - name: .cse-matrix-darwinssl
   - name: sasl-matrix-darwinssl
     display_name: sasl-matrix-darwinssl
     expansions:

@@ -3361,35 +3361,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-server-auth-sasl-darwinssl-cse
-  tags:
-  - auth
-  - client-side-encryption
-  - darwinssl
-  - latest
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-latest-server-auth-sasl-winssl-cse
   tags:
   - auth
@@ -3477,35 +3448,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-server-noauth-sasl-darwinssl-cse
-  tags:
-  - client-side-encryption
-  - darwinssl
-  - latest
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-latest-server-noauth-sasl-winssl-cse
   tags:
   - client-side-encryption
@@ -3593,35 +3535,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-replica-set-auth-sasl-darwinssl-cse
-  tags:
-  - auth
-  - client-side-encryption
-  - darwinssl
-  - latest
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-latest-replica-set-auth-sasl-winssl-cse
   tags:
   - auth
@@ -3709,35 +3622,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-latest-replica-set-noauth-sasl-darwinssl-cse
-  tags:
-  - client-side-encryption
-  - darwinssl
-  - latest
-  - noauth
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-latest-replica-set-noauth-sasl-winssl-cse
   tags:
   - client-side-encryption
@@ -3825,35 +3709,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-server-auth-sasl-darwinssl-cse
-  tags:
-  - '6.0'
-  - auth
-  - client-side-encryption
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-6.0-server-auth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -3941,35 +3796,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-server-noauth-sasl-darwinssl-cse
-  tags:
-  - '6.0'
-  - client-side-encryption
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-6.0-server-noauth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -4057,35 +3883,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-replica-set-auth-sasl-darwinssl-cse
-  tags:
-  - '6.0'
-  - auth
-  - client-side-encryption
-  - darwinssl
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-6.0-replica-set-auth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -4173,35 +3970,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-6.0-replica-set-noauth-sasl-darwinssl-cse
-  tags:
-  - '6.0'
-  - client-side-encryption
-  - darwinssl
-  - noauth
-  - replica_set
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: darwinssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-6.0-replica-set-noauth-sasl-winssl-cse
   tags:
   - '6.0'
@@ -4289,35 +4057,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-5.0-server-auth-sasl-darwinssl-cse
-  tags:
-  - '5.0'
-  - auth
-  - client-side-encryption
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-5.0-server-auth-sasl-winssl-cse
   tags:
   - '5.0'
@@ -4405,35 +4144,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-5.0-server-noauth-sasl-darwinssl-cse
-  tags:
-  - '5.0'
-  - client-side-encryption
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-5.0-server-noauth-sasl-winssl-cse
   tags:
   - '5.0'
@@ -4521,35 +4231,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.4-server-auth-sasl-darwinssl-cse
-  tags:
-  - '4.4'
-  - auth
-  - client-side-encryption
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-4.4-server-auth-sasl-winssl-cse
   tags:
   - '4.4'
@@ -4637,35 +4318,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.4-server-noauth-sasl-darwinssl-cse
-  tags:
-  - '4.4'
-  - client-side-encryption
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-4.4-server-noauth-sasl-winssl-cse
   tags:
   - '4.4'
@@ -4753,35 +4405,6 @@ tasks:
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.2-server-auth-sasl-darwinssl-cse
-  tags:
-  - '4.2'
-  - auth
-  - client-side-encryption
-  - darwinssl
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-4.2-server-auth-sasl-winssl-cse
   tags:
   - '4.2'
@@ -4869,35 +4492,6 @@ tasks:
       AUTH: noauth
       CLIENT_SIDE_ENCRYPTION: 'on'
       SSL: openssl-static
-- name: test-4.2-server-noauth-sasl-darwinssl-cse
-  tags:
-  - '4.2'
-  - client-side-encryption
-  - darwinssl
-  - noauth
-  - sasl
-  - server
-  depends_on:
-    name: debug-compile-sasl-darwinssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: darwinssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'off'
-      AUTH: noauth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: darwinssl
 - name: test-4.2-server-noauth-sasl-winssl-cse
   tags:
   - '4.2'
@@ -13109,11 +12703,7 @@ buildvariants:
   - .debug-compile !.sspi .nossl
   - .debug-compile .clang
   - .authentication-tests .darwinssl
-  - .latest .darwinssl !.nosasl .server .client-side-encryption
   - .latest .nossl
-  - .5.0 .darwinssl !.nosasl .server .client-side-encryption
-  - .4.4 .darwinssl !.nosasl .server .client-side-encryption
-  - .4.2 .darwinssl !.nosasl .server .client-side-encryption
   - test-dns-darwinssl
   - test-dns-auth-darwinssl
   - debug-compile-lto

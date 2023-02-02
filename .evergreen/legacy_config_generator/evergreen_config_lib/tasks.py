@@ -432,8 +432,7 @@ class IntegrationTask(MatrixTask):
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
                ('auth', [True, False]),
                ('sasl', ['sasl', 'sspi', False]),
-               ('ssl', ['openssl', 'openssl-static',
-                        'darwinssl', 'winssl', False]),
+               ('ssl', ['openssl', 'openssl-static', 'winssl', False]),
                ('cse', [True, False])])
 
     def __init__(self, *args, **kwargs):
@@ -528,7 +527,6 @@ class IntegrationTask(MatrixTask):
     def _check_allowed(self):
         if not self.cse and not self.sanitizer:
             # Relocated to config_generator.
-            prohibit(self.ssl == 'darwinssl')
             prohibit(self.ssl == 'winssl')
             prohibit(self.ssl == 'openssl-static')
             prohibit(self.ssl == 'openssl')
