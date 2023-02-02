@@ -532,6 +532,7 @@ class IntegrationTask(MatrixTask):
             prohibit(self.ssl == 'winssl')
             prohibit(self.ssl == 'openssl-static')
             prohibit(self.ssl == 'openssl')
+            prohibit(not self.ssl)
 
         if self.sanitizer == 'tsan':
             require(self.ssl == 'openssl')

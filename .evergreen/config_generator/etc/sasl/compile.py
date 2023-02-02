@@ -15,7 +15,7 @@ from config_generator.components.funcs.upload_build import UploadBuild
 
 
 class CompileCommon(Function):
-    ssl: ClassVar[str]
+    ssl: ClassVar[str | None]
 
     @classmethod
     def compile_commands(cls, sasl=None) -> list[EvgCommand]:

@@ -5,6 +5,12 @@ buildvariants:
       DEBUG: "ON"
     tasks:
       - name: .sasl-matrix-darwinssl
+  - name: sasl-matrix-nossl
+    display_name: sasl-matrix-nossl
+    expansions:
+      DEBUG: "ON"
+    tasks:
+      - name: .sasl-matrix-nossl
   - name: sasl-matrix-openssl
     display_name: sasl-matrix-openssl
     expansions:
