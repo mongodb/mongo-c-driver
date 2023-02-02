@@ -280,6 +280,19 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile.sh
+  sasl-auto-openssl-compile:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        env:
+          SASL: AUTO
+          SSL: OPENSSL
+        args:
+          - -c
+          - .evergreen/scripts/compile.sh
   sasl-auto-openssl-static-compile:
     - command: subprocess.exec
       type: test
@@ -318,6 +331,18 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile.sh
+  sasl-off-openssl-compile:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        env:
+          SSL: OPENSSL
+        args:
+          - -c
+          - .evergreen/scripts/compile.sh
   sasl-off-openssl-static-compile:
     - command: subprocess.exec
       type: test
@@ -339,6 +364,19 @@ functions:
         add_expansions_to_env: true
         env:
           SSL: WINDOWS
+        args:
+          - -c
+          - .evergreen/scripts/compile.sh
+  sasl-sspi-openssl-compile:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        env:
+          SASL: SSPI
+          SSL: OPENSSL
         args:
           - -c
           - .evergreen/scripts/compile.sh
