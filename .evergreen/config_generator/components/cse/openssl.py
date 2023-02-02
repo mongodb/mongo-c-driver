@@ -2,6 +2,7 @@ from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_task import EvgTaskRef
 
 from config_generator.etc.compile import generate_compile_tasks
+from config_generator.etc.function import merge_defns
 
 from config_generator.etc.cse.compile import CompileCommon
 from config_generator.etc.cse.test import generate_test_tasks
@@ -49,19 +50,28 @@ class OpenSSLCompileCommon(CompileCommon):
     ssl = 'OPENSSL'
 
 
+class SaslOffOpenSSLCompile(OpenSSLCompileCommon):
+    name = 'cse-sasl-off-openssl-compile'
+    commands = OpenSSLCompileCommon.compile_commands()
+
+
 class SaslAutoOpenSSLCompile(OpenSSLCompileCommon):
     name = 'cse-sasl-auto-openssl-compile'
     commands = OpenSSLCompileCommon.compile_commands(sasl='AUTO')
 
 
 def functions():
-    return SaslAutoOpenSSLCompile.defn()
+    return merge_defns(
+        SaslOffOpenSSLCompile.defn(),
+        SaslAutoOpenSSLCompile.defn(),
+    )
 
 
 def tasks():
     res = []
 
     SASL_TO_FUNC = {
+        'off': SaslOffOpenSSLCompile,
         'auto': SaslAutoOpenSSLCompile,
     }
 

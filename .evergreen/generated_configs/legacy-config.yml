@@ -473,20 +473,6 @@ tasks:
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-asan-gcc
-  tags:
-  - special
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env CFLAGS="-pthread" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: debug-compile-asan-clang-openssl
   tags:
   - asan-clang
@@ -1213,21 +1199,6 @@ tasks:
         set -o errexit
         env CFLAGS="-Wno-redundant-decls" DEBUG="ON" SASL="OFF" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-tsan-openssl
-  tags:
-  - special
-  - tsan
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF" SANITIZE="thread" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: build-and-test-with-toolchain
   commands:
   - command: s3.get
@@ -1245,1112 +1216,6 @@ tasks:
       script: |-
         set -o errexit
         bash ./.evergreen/scripts/build-and-test-with-toolchain.sh
-- name: test-asan-latest-server-auth-nosasl-openssl-cse
-  tags:
-  - client-side-encryption
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-openssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-openssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl
-- name: test-asan-latest-server-auth-nosasl-openssl
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-latest-server-noauth-nosasl-nossl
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: nossl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-latest-replica-set-auth-nosasl-openssl-cse
-  tags:
-  - client-side-encryption
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-openssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-openssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl
-- name: test-asan-latest-replica-set-auth-nosasl-openssl
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-latest-replica-set-noauth-nosasl-nossl
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: nossl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-latest-sharded-auth-nosasl-openssl
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: latest
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-latest-sharded-noauth-nosasl-nossl
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: latest
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-6.0-server-auth-nosasl-openssl-cse
-  tags:
-  - '6.0'
-  - client-side-encryption
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-openssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-openssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl
-- name: test-asan-6.0-server-auth-nosasl-openssl
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-6.0-server-noauth-nosasl-nossl
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: nossl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-6.0-replica-set-auth-nosasl-openssl-cse
-  tags:
-  - '6.0'
-  - client-side-encryption
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-openssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-openssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl
-      TOPOLOGY: replica_set
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl
-- name: test-asan-6.0-replica-set-auth-nosasl-openssl
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-6.0-replica-set-noauth-nosasl-nossl
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: nossl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-6.0-sharded-auth-nosasl-openssl
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '6.0'
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-6.0-sharded-noauth-nosasl-nossl
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '6.0'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-5.0-server-auth-nosasl-openssl-cse
-  tags:
-  - '5.0'
-  - client-side-encryption
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-openssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-openssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl
-- name: test-asan-5.0-server-auth-nosasl-openssl
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-5.0-server-noauth-nosasl-nossl
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: nossl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-5.0-replica-set-auth-nosasl-openssl
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-5.0-replica-set-noauth-nosasl-nossl
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: nossl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-5.0-sharded-auth-nosasl-openssl
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '5.0'
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-5.0-sharded-noauth-nosasl-nossl
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '5.0'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-4.4-server-auth-nosasl-openssl-cse
-  tags:
-  - '4.4'
-  - client-side-encryption
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-openssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-openssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl
-- name: test-asan-4.4-server-auth-nosasl-openssl
-  tags:
-  - '4.4'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-4.4-server-noauth-nosasl-nossl
-  tags:
-  - '4.4'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: nossl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-4.4-replica-set-auth-nosasl-openssl
-  tags:
-  - '4.4'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-4.4-replica-set-noauth-nosasl-nossl
-  tags:
-  - '4.4'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: nossl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-4.4-sharded-auth-nosasl-openssl
-  tags:
-  - '4.4'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.4'
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-4.4-sharded-noauth-nosasl-nossl
-  tags:
-  - '4.4'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.4'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-4.2-server-auth-nosasl-openssl-cse
-  tags:
-  - '4.2'
-  - client-side-encryption
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-openssl-cse
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-openssl-cse
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: fetch-det
-  - func: run-mock-kms-servers
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      CLIENT_SIDE_ENCRYPTION: 'on'
-      SSL: openssl
-- name: test-asan-4.2-server-auth-nosasl-openssl
-  tags:
-  - '4.2'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-4.2-server-noauth-nosasl-nossl
-  tags:
-  - '4.2'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: nossl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-4.2-replica-set-auth-nosasl-openssl
-  tags:
-  - '4.2'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-4.2-replica-set-noauth-nosasl-nossl
-  tags:
-  - '4.2'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: nossl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-4.2-sharded-auth-nosasl-openssl
-  tags:
-  - '4.2'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.2'
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-4.2-sharded-noauth-nosasl-nossl
-  tags:
-  - '4.2'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.2'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-4.0-server-auth-nosasl-openssl
-  tags:
-  - '4.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-4.0-server-noauth-nosasl-nossl
-  tags:
-  - '4.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: nossl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-4.0-replica-set-auth-nosasl-openssl
-  tags:
-  - '4.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-4.0-replica-set-noauth-nosasl-nossl
-  tags:
-  - '4.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: nossl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-4.0-sharded-auth-nosasl-openssl
-  tags:
-  - '4.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '4.0'
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-4.0-sharded-noauth-nosasl-nossl
-  tags:
-  - '4.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '4.0'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-3.6-server-auth-nosasl-openssl
-  tags:
-  - '3.6'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-3.6-server-noauth-nosasl-nossl
-  tags:
-  - '3.6'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: nossl
-      TOPOLOGY: server
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-3.6-replica-set-auth-nosasl-openssl
-  tags:
-  - '3.6'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-3.6-replica-set-noauth-nosasl-nossl
-  tags:
-  - '3.6'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: nossl
-      TOPOLOGY: replica_set
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
-- name: test-asan-3.6-sharded-auth-nosasl-openssl
-  tags:
-  - '3.6'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      MONGODB_VERSION: '3.6'
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: openssl
-- name: test-asan-3.6-sharded-noauth-nosasl-nossl
-  tags:
-  - '3.6'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      MONGODB_VERSION: '3.6'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      SSL: nossl
 - name: test-tsan-latest-server-auth-nosasl-openssl
   tags:
   - latest
@@ -2370,7 +1235,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-latest-server-noauth-nosasl-openssl
@@ -2392,7 +1256,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-latest-replica-set-auth-nosasl-openssl
@@ -2414,7 +1277,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-latest-replica-set-noauth-nosasl-openssl
@@ -2436,7 +1298,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-latest-sharded-auth-nosasl-openssl
@@ -2458,7 +1319,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-latest-sharded-noauth-nosasl-openssl
@@ -2480,7 +1340,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-6.0-server-auth-nosasl-openssl
@@ -2502,7 +1361,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-6.0-server-noauth-nosasl-openssl
@@ -2524,7 +1382,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-6.0-replica-set-auth-nosasl-openssl
@@ -2546,7 +1403,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-6.0-replica-set-noauth-nosasl-openssl
@@ -2568,7 +1424,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-6.0-sharded-auth-nosasl-openssl
@@ -2590,7 +1445,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-6.0-sharded-noauth-nosasl-openssl
@@ -2612,7 +1466,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-5.0-server-auth-nosasl-openssl
@@ -2634,7 +1487,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-5.0-server-noauth-nosasl-openssl
@@ -2656,7 +1508,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-5.0-replica-set-auth-nosasl-openssl
@@ -2678,7 +1529,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-5.0-replica-set-noauth-nosasl-openssl
@@ -2700,7 +1550,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-5.0-sharded-auth-nosasl-openssl
@@ -2722,7 +1571,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-5.0-sharded-noauth-nosasl-openssl
@@ -2744,7 +1592,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-4.4-server-auth-nosasl-openssl
@@ -2766,7 +1613,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-4.4-server-noauth-nosasl-openssl
@@ -2788,7 +1634,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-4.4-replica-set-auth-nosasl-openssl
@@ -2810,7 +1655,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-4.4-replica-set-noauth-nosasl-openssl
@@ -2832,7 +1676,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-4.4-sharded-auth-nosasl-openssl
@@ -2854,7 +1697,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-4.4-sharded-noauth-nosasl-openssl
@@ -2876,7 +1718,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-4.2-server-auth-nosasl-openssl
@@ -2898,7 +1739,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-4.2-server-noauth-nosasl-openssl
@@ -2920,7 +1760,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-4.2-replica-set-auth-nosasl-openssl
@@ -2942,7 +1781,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-4.2-replica-set-noauth-nosasl-openssl
@@ -2964,7 +1802,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-4.2-sharded-auth-nosasl-openssl
@@ -2986,7 +1823,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-4.2-sharded-noauth-nosasl-openssl
@@ -3008,7 +1844,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-4.0-server-auth-nosasl-openssl
@@ -3030,7 +1865,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-4.0-server-noauth-nosasl-openssl
@@ -3052,7 +1886,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-4.0-replica-set-auth-nosasl-openssl
@@ -3074,7 +1907,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-4.0-replica-set-noauth-nosasl-openssl
@@ -3096,7 +1928,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-4.0-sharded-auth-nosasl-openssl
@@ -3118,7 +1949,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-4.0-sharded-noauth-nosasl-openssl
@@ -3140,7 +1970,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-3.6-server-auth-nosasl-openssl
@@ -3162,7 +1991,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-3.6-server-noauth-nosasl-openssl
@@ -3184,7 +2012,6 @@ tasks:
       TOPOLOGY: server
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-3.6-replica-set-auth-nosasl-openssl
@@ -3206,7 +2033,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-3.6-replica-set-noauth-nosasl-openssl
@@ -3228,7 +2054,6 @@ tasks:
       TOPOLOGY: replica_set
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-tsan-3.6-sharded-auth-nosasl-openssl
@@ -3250,7 +2075,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       SSL: openssl
 - name: test-tsan-3.6-sharded-noauth-nosasl-openssl
@@ -3272,7 +2096,6 @@ tasks:
       TOPOLOGY: sharded_cluster
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: noauth
       SSL: openssl
 - name: test-coverage-latest-replica-set-auth-sasl-openssl-cse
@@ -3296,7 +2119,6 @@ tasks:
   - func: run-mock-kms-servers
   - func: run-tests
     vars:
-      ASAN: 'off'
       AUTH: auth
       CLIENT_SIDE_ENCRYPTION: 'on'
       COVERAGE: 'ON'
@@ -11416,7 +10238,6 @@ buildvariants:
   run_on: ubuntu1804-test
   tasks:
   - .compression !.zstd
-  - debug-compile-asan-gcc
   - debug-compile-nosrv
   - release-compile
   - debug-compile-nosasl-nossl
@@ -11438,7 +10259,6 @@ buildvariants:
   run_on: ubuntu1604-test
   tasks:
   - .compression !.zstd
-  - debug-compile-asan-gcc
   - debug-compile-nosrv
   - release-compile
   - debug-compile-nosasl-nossl
@@ -11633,34 +10453,6 @@ buildvariants:
   - .authentication-tests .openssl
   - .latest .nossl
   batchtime: 1440
-- name: asan-ubuntu
-  display_name: ASAN Tests (Ubuntu 18.04)
-  expansions:
-    CC: clang
-  run_on: ubuntu1804-test
-  tasks:
-  - .debug-compile .asan-clang
-  - .test-asan !.3.6
-  batchtime: 1440
-- name: asan-ubuntu-with-mongocryptd
-  display_name: ASAN Tests with mongocryptd (Ubuntu 18.04)
-  expansions:
-    CC: clang
-    SKIP_CRYPT_SHARED_LIB: 'on'
-  run_on: ubuntu1804-test
-  tasks:
-  - debug-compile-asan-openssl-cse
-  - .test-asan !.3.6 .client-side-encryption
-  batchtime: 1440
-- name: asan-ubuntu-ubuntu1604
-  display_name: ASAN Tests (Ubuntu 16.04)
-  expansions:
-    CC: clang
-  run_on: ubuntu1604-test
-  tasks:
-  - .debug-compile .asan-clang
-  - .test-asan .3.6
-  batchtime: 1440
 - name: clang60ubuntu
   display_name: clang 6.0 (Ubuntu 18.04)
   expansions:
@@ -11668,9 +10460,7 @@ buildvariants:
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-aws
-  - debug-compile-nosasl-openssl-static
   - debug-compile-sasl-openssl-static
-  - debug-compile-sspi-openssl-static
   - .authentication-tests .asan
   - test-aws-openssl-regular-latest
   - test-aws-openssl-ec2-latest

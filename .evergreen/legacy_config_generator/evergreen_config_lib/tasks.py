@@ -179,14 +179,6 @@ all_tasks = [
                 CHECK_LOG='ON',
                 sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF'),
-    # include -pthread in CFLAGS on gcc to address the issue explained here:
-    # https://groups.google.com/forum/#!topic/address-sanitizer/JxnwgrWOLuc
-    SpecialTask('debug-compile-asan-gcc',
-                compression='zlib',
-                CFLAGS='-pthread',
-                CHECK_LOG='ON',
-                sanitize=['address'],
-                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"),
     SpecialTask('debug-compile-asan-clang-openssl',
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
@@ -400,13 +392,6 @@ all_tasks = [
     CompileTask('debug-compile-nosasl-openssl-1.0.1',
                 prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
                 CFLAGS="-Wno-redundant-decls", SSL="OPENSSL", SASL="OFF"),
-    SpecialTask('debug-compile-tsan-openssl',
-                tags=['tsan'],
-                CFLAGS='-fno-omit-frame-pointer',
-                CHECK_LOG='ON',
-                sanitize=['thread'],
-                SSL='OPENSSL',
-                EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF'),
     NamedTask('build-and-test-with-toolchain',
               commands=[
                   OD([('command', 's3.get'),
@@ -425,7 +410,7 @@ all_tasks = [
 
 
 class IntegrationTask(MatrixTask):
-    axes = OD([('sanitizer', ['asan', 'tsan', False]),
+    axes = OD([('sanitizer', ['tsan', False]),
                ('coverage', ['coverage', False]),
                ('version', ['latest', '6.0', '5.0',
                             '4.4', '4.2', '4.0', '3.6']),
@@ -440,8 +425,6 @@ class IntegrationTask(MatrixTask):
         if self.coverage:
             self.add_tags('test-coverage')
             self.add_tags(self.version)
-        elif self.sanitizer == "asan":
-            self.add_tags('test-asan', self.version)
         elif self.sanitizer == "tsan":
             self.add_tags('tsan')
             self.add_tags(self.version)
@@ -457,15 +440,7 @@ class IntegrationTask(MatrixTask):
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
         # Coverage tasks use a build function instead of depending on a task.
         if not self.coverage:
-            if self.sanitizer == "asan" and self.ssl and self.cse:
-                self.add_dependency('debug-compile-asan-%s-cse' % (
-                    self.display('ssl'),))
-            elif self.sanitizer == "asan" and self.ssl:
-                self.add_dependency('debug-compile-asan-clang-%s' % (
-                    self.display('ssl'),))
-            elif self.sanitizer == "asan":
-                self.add_dependency('debug-compile-asan-clang')
-            elif self.sanitizer == 'tsan' and self.ssl:
+            if self.sanitizer == 'tsan' and self.ssl:
                 self.add_dependency('debug-compile-tsan-%s' %
                                     self.display('ssl'))
             elif self.cse:
@@ -514,7 +489,6 @@ class IntegrationTask(MatrixTask):
         if self.coverage:
             extra["COVERAGE"] = 'ON'
         commands.append(func('run-tests',
-                             ASAN='on' if self.sanitizer == 'asan' else 'off',
                              AUTH=self.display('auth'),
                              SSL=self.display('ssl'),
                              **extra))
@@ -562,10 +536,6 @@ class IntegrationTask(MatrixTask):
             require(self.cse)
             require(self.version == 'latest')
 
-        if self.sanitizer == "asan":
-            prohibit(self.sasl)
-            prohibit(self.coverage)
-
             # Address sanitizer only with auth+SSL or no auth + no SSL.
             if self.auth:
                 require(self.ssl == 'openssl')
@@ -580,10 +550,9 @@ class IntegrationTask(MatrixTask):
                 require(self.topology in ('server', 'replica_set'))
             else:
                 require(self.topology == 'server')
-            if self.sanitizer != "asan":
-                # limit to SASL=AUTO to reduce redundant tasks.
-                require(self.sasl)
-                require(self.sasl != 'sspi')
+            # limit to SASL=AUTO to reduce redundant tasks.
+            require(self.sasl)
+            require(self.sasl != 'sspi')
             require(self.ssl)
 
 

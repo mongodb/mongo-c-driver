@@ -27,6 +27,16 @@ buildvariants:
       DEBUG: "ON"
     tasks:
       - name: .cse-matrix-winssl
+  - name: sanitizers-matrix-asan
+    display_name: sanitizers-matrix-asan
+    expansions:
+      ASAN: "on"
+      CFLAGS: -fno-omit-frame-pointer
+      CHECK_LOG: "ON"
+      EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF
+      SANITIZE: address,undefined
+    tasks:
+      - name: .sanitizers-matrix-asan
   - name: sasl-matrix-darwinssl
     display_name: sasl-matrix-darwinssl
     expansions:
