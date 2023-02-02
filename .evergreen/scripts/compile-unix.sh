@@ -211,6 +211,8 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
     ..
   make -j "$(nproc)" install
   popd # libmongocrypt/cmake-build
+  # Fail if the C driver is unable to find the installed libmongocrypt.
+  configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 else
   # Avoid symbol collisions with libmongocrypt installed via apt/yum.
   # Note: may be overwritten by ${EXTRA_CONFIGURE_FLAGS}.

@@ -104,11 +104,13 @@ if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
   git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1
   mkdir libmongocrypt/cmake-build
   pushd libmongocrypt/cmake-build
-  "${cmake_binary}" -G "${CC}" "-DCMAKE_PREFIX_PATH=${install_dir}/lib/cmake" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="${install_dir}" ../
+  "${cmake_binary}" -G "${CC}" "-DCMAKE_PREFIX_PATH=$(to_windows_path "${install_dir}/lib/cmake")" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="$(to_windows_path "${install_dir}")" ../
   "${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"
   popd # libmongocrypt/cmake-build
+  # Fail if the C driver is unable to find the installed libmongocrypt.
+  configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 fi
 
-"${cmake_binary}" -G "$CC" "-DCMAKE_PREFIX_PATH=${install_dir}/lib/cmake" "${configure_flags[@]}"
+"${cmake_binary}" -G "$CC" "${configure_flags[@]}"
 "${cmake_binary}" --build . --target ALL_BUILD --config "${build_config}" -- "${compile_flags[@]}"
 "${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"
