@@ -25,18 +25,6 @@ class CompileCommon(Function):
 
         return [
             expansions_update(updates=updates),
-            # TODO: move into separate task?
-            bash_exec(
-                command_type=EvgCommandType.TEST,
-                script='EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh',
-                working_dir='mongoc',
-                add_expansions_to_env=True,
-            ),
-            bash_exec(
-                command_type=EvgCommandType.TEST,
-                script='rm CMakeCache.txt',
-                working_dir='mongoc',
-            ),
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 script='EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh',

@@ -82,23 +82,6 @@ functions:
         binary: bash
         working_dir: mongoc
         add_expansions_to_env: true
-        args:
-          - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        args:
-          - -c
-          - rm CMakeCache.txt
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
         env:
           COMPILE_LIBMONGOCRYPT: "ON"
         args:
@@ -110,23 +93,6 @@ functions:
         updates:
           - { key: SSL, value: OPENSSL }
           - { key: SASL, value: AUTO }
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        args:
-          - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        args:
-          - -c
-          - rm CMakeCache.txt
     - command: subprocess.exec
       type: test
       params:
@@ -150,23 +116,6 @@ functions:
         binary: bash
         working_dir: mongoc
         add_expansions_to_env: true
-        args:
-          - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        args:
-          - -c
-          - rm CMakeCache.txt
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
         env:
           COMPILE_LIBMONGOCRYPT: "ON"
         args:
@@ -184,23 +133,6 @@ functions:
         binary: bash
         working_dir: mongoc
         add_expansions_to_env: true
-        args:
-          - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        args:
-          - -c
-          - rm CMakeCache.txt
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
         env:
           COMPILE_LIBMONGOCRYPT: "ON"
         args:
@@ -211,23 +143,6 @@ functions:
       params:
         updates:
           - { key: SSL, value: OPENSSL }
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        args:
-          - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        args:
-          - -c
-          - rm CMakeCache.txt
     - command: subprocess.exec
       type: test
       params:
