@@ -9088,12 +9088,7 @@ buildvariants:
   tasks:
   - debug-compile-scan-build
   - release-compile
-  - debug-compile-nosasl-nossl
   - debug-compile-rdtscp
-  - .debug-compile !.sspi .openssl
-  - .debug-compile !.sspi .nossl
-  - .4.0 .openssl !.nosasl .server
-  - .3.6 .openssl !.nosasl .server
 - name: clang35
   display_name: clang 3.5 (Debian 8.1)
   expansions:
