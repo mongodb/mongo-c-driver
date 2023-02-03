@@ -37,6 +37,15 @@ buildvariants:
       SANITIZE: address,undefined
     tasks:
       - name: .sanitizers-matrix-asan
+  - name: sanitizers-matrix-tsan
+    display_name: sanitizers-matrix-tsan
+    expansions:
+      CFLAGS: -fno-omit-frame-pointer
+      CHECK_LOG: "ON"
+      EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF
+      SANITIZE: thread
+    tasks:
+      - name: .sanitizers-matrix-tsan
   - name: sasl-matrix-darwinssl
     display_name: sasl-matrix-darwinssl
     expansions:

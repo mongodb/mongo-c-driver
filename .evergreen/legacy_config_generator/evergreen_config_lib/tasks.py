@@ -410,8 +410,7 @@ all_tasks = [
 
 
 class IntegrationTask(MatrixTask):
-    axes = OD([('sanitizer', ['tsan', False]),
-               ('coverage', ['coverage', False]),
+    axes = OD([('coverage', ['coverage', False]),
                ('version', ['latest', '6.0', '5.0',
                             '4.4', '4.2', '4.0', '3.6']),
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
@@ -425,9 +424,6 @@ class IntegrationTask(MatrixTask):
         if self.coverage:
             self.add_tags('test-coverage')
             self.add_tags(self.version)
-        elif self.sanitizer == "tsan":
-            self.add_tags('tsan')
-            self.add_tags(self.version)
         else:
             self.add_tags(self.topology,
                           self.version,
@@ -440,10 +436,7 @@ class IntegrationTask(MatrixTask):
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
         # Coverage tasks use a build function instead of depending on a task.
         if not self.coverage:
-            if self.sanitizer == 'tsan' and self.ssl:
-                self.add_dependency('debug-compile-tsan-%s' %
-                                    self.display('ssl'))
-            elif self.cse:
+            if self.cse:
                 self.add_dependency('debug-compile-%s-%s-cse' %
                                     (self.display('sasl'), self.display('ssl')))
             else:
@@ -499,20 +492,13 @@ class IntegrationTask(MatrixTask):
         return task
 
     def _check_allowed(self):
-        if not self.cse and not self.sanitizer:
+        if not self.cse:
             # Relocated to config_generator.
             prohibit(not self.ssl)
 
-        if not self.sanitizer and not self.coverage:
+        if not self.coverage:
             # Relocated to config_generator.
             prohibit(self.ssl == 'openssl')
-
-        if self.sanitizer == 'tsan':
-            require(self.ssl == 'openssl')
-            prohibit(self.sasl)
-            prohibit(self.coverage)
-            prohibit(self.cse)
-            prohibit(self.version == "3.0")
 
         if self.auth:
             require(self.ssl)
