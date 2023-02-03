@@ -76,3 +76,9 @@ buildvariants:
       DEBUG: "ON"
     tasks:
       - name: .sasl-matrix-winssl
+  - name: std-matrix-c11
+    display_name: std-matrix-c11
+    expansions:
+      C_STD_VERSION: "11"
+    tasks:
+      - name: .std-matrix-c11
