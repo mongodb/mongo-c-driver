@@ -397,39 +397,24 @@ all_tasks = [
 ]
 
 
-class IntegrationTask(MatrixTask):
-    axes = OD([('coverage', ['coverage', False]),
-               ('version', ['latest', '6.0', '5.0',
-                            '4.4', '4.2', '4.0', '3.6']),
-               ('topology', ['server', 'replica_set', 'sharded_cluster']),
-               ('auth', [True, False]),
-               ('sasl', ['sasl', 'sspi', False]),
-               ('ssl', ['openssl', False]),
-               ('cse', [True, False])])
+class CoverageTask(MatrixTask):
+    axes = OD([('version', ['latest']),
+               ('topology', ['replica_set']),
+               ('auth', [True]),
+               ('sasl', ['sasl']),
+               ('ssl', ['openssl']),
+               ('cse', [True])])
 
     def __init__(self, *args, **kwargs):
-        super(IntegrationTask, self).__init__(*args, **kwargs)
-        if self.coverage:
-            self.add_tags('test-coverage')
-            self.add_tags(self.version)
-        else:
-            self.add_tags(self.topology,
-                          self.version,
-                          self.display('ssl'),
-                          self.display('sasl'),
-                          self.display('auth'))
+        super(CoverageTask, self).__init__(*args, **kwargs)
+
+        self.name_prefix = 'test-coverage'
+
+        self.add_tags('test-coverage')
+        self.add_tags(self.version)
 
         if self.cse:
             self.add_tags("client-side-encryption")
-        # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
-        # Coverage tasks use a build function instead of depending on a task.
-        if not self.coverage:
-            if self.cse:
-                self.add_dependency('debug-compile-%s-%s-cse' %
-                                    (self.display('sasl'), self.display('ssl')))
-            else:
-                self.add_dependency('debug-compile-%s-%s' % (
-                    self.display('sasl'), self.display('ssl')))
 
     @property
     def name(self):
@@ -446,15 +431,15 @@ class IntegrationTask(MatrixTask):
             if getattr(self, axis_name) or axis_name in ('auth', 'sasl', 'ssl'))
 
     def to_dict(self):
-        task = super(IntegrationTask, self).to_dict()
+        task = super(CoverageTask, self).to_dict()
         commands = task['commands']
         if self.depends_on:
             commands.append(
                 func('fetch-build', BUILD_NAME=self.depends_on['name']))
-        if self.coverage:
-            # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
-            commands.append(
-                func('compile coverage', SASL='AUTO', SSL='OPENSSL'))
+
+        # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
+        commands.append(
+            func('compile coverage', SASL='AUTO', SSL='OPENSSL'))
 
         commands.append(func('fetch-det'))
         commands.append(func('bootstrap-mongo-orchestration',
@@ -463,58 +448,35 @@ class IntegrationTask(MatrixTask):
                              AUTH='auth' if self.auth else 'noauth',
                              SSL=self.display('ssl')))
         extra = {}
+
         if self.cse:
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
             commands.append(func('fetch-det'))
             commands.append(func('run-mock-kms-servers'))
-        if self.coverage:
-            extra["COVERAGE"] = 'ON'
+        extra["COVERAGE"] = 'ON'
         commands.append(func('run-tests',
                              AUTH=self.display('auth'),
                              SSL=self.display('ssl'),
                              **extra))
-        if self.coverage:
-            commands.append(func('upload coverage'))
-            commands.append(func('update codecov.io'))
+        commands.append(func('upload coverage'))
+        commands.append(func('update codecov.io'))
 
         return task
 
     def _check_allowed(self):
-        if not self.cse:
-            # Relocated to config_generator.
-            prohibit(not self.ssl)
-
-        if not self.coverage:
-            # Relocated to config_generator.
-            prohibit(self.ssl == 'openssl')
-
-        if self.auth:
-            require(self.ssl)
-
-        if self.sasl == 'sspi':
-            # Only one self.
-            require(self.topology == 'server')
-            require(self.version == 'latest')
-            require(self.ssl == 'winssl')
-            require(self.auth)
-
-        if not self.ssl:
-            prohibit(self.sasl)
-
         # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
-        if self.coverage:
-            require(self.topology == 'replica_set')
-            require(self.auth)
-            require(self.sasl == 'sasl')
-            require(self.ssl == 'openssl')
-            require(self.cse)
-            require(self.version == 'latest')
+        require(self.topology == 'replica_set')
+        require(self.auth)
+        require(self.sasl == 'sasl')
+        require(self.ssl == 'openssl')
+        require(self.cse)
+        require(self.version == 'latest')
 
-            # Address sanitizer only with auth+SSL or no auth + no SSL.
-            if self.auth:
-                require(self.ssl == 'openssl')
-            else:
-                prohibit(self.ssl)
+        # Address sanitizer only with auth+SSL or no auth + no SSL.
+        if self.auth:
+            require(self.ssl == 'openssl')
+        else:
+            prohibit(self.ssl)
 
         if self.cse:
             require(self.version == 'latest' or parse_version(
@@ -530,7 +492,7 @@ class IntegrationTask(MatrixTask):
             require(self.ssl)
 
 
-all_tasks = chain(all_tasks, IntegrationTask.matrix())
+all_tasks = chain(all_tasks, CoverageTask.matrix())
 
 
 class DNSTask(MatrixTask):
