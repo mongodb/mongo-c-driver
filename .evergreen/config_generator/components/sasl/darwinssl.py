@@ -15,7 +15,8 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('macos-1014', 'clang', None, ['auto']),
+    ('macos-1014',       'clang', None, ['auto']),
+    ('macos-1100-arm64', 'clang', None, ['auto']),
 ]
 
 TEST_MATRIX = [

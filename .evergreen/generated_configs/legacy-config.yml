@@ -9590,13 +9590,6 @@ buildvariants:
   - debug-compile-nosasl-openssl
   - debug-compile-nosasl-nossl
   - .versioned-api
-- name: macos_m1
-  display_name: macOS m1 (Apple LLVM)
-  expansions:
-    CC: clang
-  run_on: macos-1100-arm64
-  tasks:
-  - debug-compile-sasl-darwinssl
 - name: testazurekms-variant
   display_name: Azure KMS
   run_on: debian10-small

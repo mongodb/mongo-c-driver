@@ -3139,6 +3139,14 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
+  - name: sasl-auto-darwinssl-macos-1100-arm64-clang-compile
+    run_on: macos-1100-arm64
+    tags: [sasl-matrix-darwinssl, compile, macos-1100-arm64, clang, sasl-auto]
+    commands:
+      - func: sasl-auto-darwinssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
   - name: sasl-auto-openssl-debian10-gcc-compile
     run_on: debian10-large
     tags: [sasl-matrix-openssl, compile, debian10, gcc, sasl-auto]
