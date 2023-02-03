@@ -8,13 +8,10 @@ ROOT=$(pwd)
 INSTALL_DIR=$ROOT/install
 . .evergreen/scripts/find-cmake.sh
 echo "Installing libmongocrypt ... begin"
-# TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
-git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1
-$CMAKE -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
-    -DBUILD_TESTING=OFF \
-    "-H$ROOT/libmongocrypt" \
-    "-B$ROOT/libmongocrypt"
-$CMAKE --build "$ROOT/libmongocrypt" --target install
+git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
+MONGOCRYPT_INSTALL_PREFIX=${INSTALL_DIR} \
+DEFAULT_BUILD_ONLY=true \
+    ./libmongocrypt/.evergreen/compile.sh
 echo "Installing libmongocrypt ... end"
 
 echo "Compile test-gcpkms ... begin"

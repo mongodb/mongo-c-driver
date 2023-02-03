@@ -93,50 +93,23 @@ class SpecialTask(CompileTask):
 
 class CompileWithClientSideEncryption(CompileTask):
     def __init__(self, *args, **kwargs):
-        # Compiling with ClientSideEncryption support is a little strange.
-        # It requires linking against the library libmongocrypt. But libmongocrypt
-        # depends on libbson. So we do the following:
-        # 1. Build and install libbson normally
-        # 2. Build and install libmongocrypt (which links against the previously built libbson)
-        # 3. Build and install libmongoc
-        # First, compile and install without CSE.
-        # Then, compile and install libmongocrypt.
-        compile_with_cse = CompileTask(*args,
-                                       COMPILE_LIBMONGOCRYPT="ON",
-                                       EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON",
-                                       **kwargs).to_dict()
-        extra_script = "rm CMakeCache.txt\n" + \
-                       compile_with_cse["commands"][0]["params"]["script"]
-
-        # Skip running mock server tests, because those were already run in the non-CSE build.
+        # Compiling with ClientSideEncryption support requires linking against the library libmongocrypt.
         super(CompileWithClientSideEncryption, self).__init__(*args,
-                                                              extra_script=extra_script,
-                                                              EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF",
+                                                              COMPILE_LIBMONGOCRYPT="ON",
+                                                              EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON",
                                                               **kwargs)
         self.add_tags('client-side-encryption', 'special')
 
 
 class CompileWithClientSideEncryptionAsan(CompileTask):
     def __init__(self, *args, **kwargs):
-        compile_with_cse = CompileTask(*args,
-                                       CFLAGS="-fno-omit-frame-pointer",
-                                       COMPILE_LIBMONGOCRYPT="ON",
-                                       CHECK_LOG="ON",
-                                       sanitize=['address'],
-                                       EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF",
-                                       PATH='/usr/lib/llvm-3.8/bin:$PATH',
-                                       **kwargs).to_dict()
-        extra_script = "rm CMakeCache.txt\n" + \
-                       compile_with_cse["commands"][0]["params"]["script"]
-
-        # Skip running mock server tests, because those were already run in the non-CSE build.
         super(CompileWithClientSideEncryptionAsan, self).__init__(*args,
                                                                   CFLAGS="-fno-omit-frame-pointer",
-                                                                  extra_script=extra_script,
+                                                                  COMPILE_LIBMONGOCRYPT="ON",
                                                                   CHECK_LOG="ON",
                                                                   sanitize=[
                                                                       'address'],
-                                                                  EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
+                                                                  EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF",
                                                                   PATH='/usr/lib/llvm-3.8/bin:$PATH',
                                                                   **kwargs)
         self.add_tags('client-side-encryption')

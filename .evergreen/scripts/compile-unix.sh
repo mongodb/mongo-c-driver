@@ -195,22 +195,10 @@ if [[ "${OSTYPE}" == darwin* ]]; then
 fi
 
 if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
-  # Build libmongocrypt, using the previously fetched installed source.
-  # TODO(CDRIVER-4394) update to use libmongocrypt 1.7.0 once there is a stable 1.7.0 release.
-  git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0-alpha1
-
-  mkdir libmongocrypt/cmake-build
-  pushd libmongocrypt/cmake-build
-  "${CMAKE}" \
-    -DENABLE_SHARED_BSON=ON \
-    -DCMAKE_BUILD_TYPE="Debug" \
-    -DMONGOCRYPT_MONGOC_DIR="${mongoc_dir}" \
-    -DCMAKE_INSTALL_PREFIX="${install_dir}" \
-    -DCMAKE_PREFIX_PATH="${cmake_prefix_path}" \
-    -DBUILD_TESTING=OFF \
-    ..
-  make -j "$(nproc)" install
-  popd # libmongocrypt/cmake-build
+  git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
+  MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
+    DEFAULT_BUILD_ONLY=true \
+    ./libmongocrypt/.evergreen/compile.sh
   # Fail if the C driver is unable to find the installed libmongocrypt.
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 else

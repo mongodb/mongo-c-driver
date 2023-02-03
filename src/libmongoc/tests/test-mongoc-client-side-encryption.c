@@ -3862,8 +3862,25 @@ range_explicit_encryption_setup (const char *typeStr)
 
    /* Create the values 0, 6, 30, 200, and 201 as BSON values. */
    {
-      if (0 == strcmp ("DoubleNoPrecision", typeStr) ||
-          0 == strcmp ("DoublePrecision", typeStr)) {
+      if (0 == strcmp ("DecimalNoPrecision", typeStr) ||
+          0 == strcmp ("DecimalPrecision", typeStr)) {
+         reef->zero.value_type = BSON_TYPE_DECIMAL128;
+         ASSERT (
+            bson_decimal128_from_string ("0", &reef->zero.value.v_decimal128));
+         reef->six.value_type = BSON_TYPE_DECIMAL128;
+         ASSERT (
+            bson_decimal128_from_string ("6", &reef->six.value.v_decimal128));
+         reef->thirty.value_type = BSON_TYPE_DECIMAL128;
+         ASSERT (bson_decimal128_from_string (
+            "30", &reef->thirty.value.v_decimal128));
+         reef->twoHundred.value_type = BSON_TYPE_DECIMAL128;
+         ASSERT (bson_decimal128_from_string (
+            "200", &reef->twoHundred.value.v_decimal128));
+         reef->twoHundredOne.value_type = BSON_TYPE_DECIMAL128;
+         ASSERT (bson_decimal128_from_string (
+            "201", &reef->twoHundredOne.value.v_decimal128));
+      } else if (0 == strcmp ("DoubleNoPrecision", typeStr) ||
+                 0 == strcmp ("DoublePrecision", typeStr)) {
          reef->zero.value_type = BSON_TYPE_DOUBLE;
          reef->zero.value.v_double = 0;
          reef->six.value_type = BSON_TYPE_DOUBLE;
@@ -3916,9 +3933,11 @@ range_explicit_encryption_setup (const char *typeStr)
    {
       reef->ro = mongoc_client_encryption_encrypt_range_opts_new ();
       mongoc_client_encryption_encrypt_range_opts_set_sparsity (reef->ro, 1);
-      if (0 == strcmp ("DoubleNoPrecision", typeStr)) {
+      if (0 == strcmp ("DoubleNoPrecision", typeStr) ||
+          0 == strcmp ("DecimalNoPrecision", typeStr)) {
          // DoubleNoPrecision does not need more range options.
-      } else if (0 == strcmp ("DoublePrecision", typeStr)) {
+      } else if (0 == strcmp ("DoublePrecision", typeStr) ||
+                 0 == strcmp ("DecimalPrecision", typeStr)) {
          mongoc_client_encryption_encrypt_range_opts_set_min_max (
             reef->ro, &reef->zero, &reef->twoHundred);
          mongoc_client_encryption_encrypt_range_opts_set_precision (reef->ro,
@@ -4293,8 +4312,9 @@ test_range_explicit_encryption_case6 (void *ctx)
    const char *typeStr = (const char *) ctx;
 
    // This test case should be skipped if the encrypted field is
-   // encryptedDoubleNoPrecision.
-   if (0 == strcmp (typeStr, "DoubleNoPrecision")) {
+   // encryptedDoubleNoPrecision or encryptedDecimalNoPrecision.
+   if (0 == strcmp (typeStr, "DoubleNoPrecision") ||
+       0 == strcmp (typeStr, "DecimalNoPrecision")) {
       MONGOC_DEBUG ("skipping test");
       return;
    }
@@ -4334,8 +4354,9 @@ test_range_explicit_encryption_case7 (void *ctx)
    const char *typeStr = (const char *) ctx;
 
    // This test case should be skipped if the encrypted field is
-   // encryptedDoubleNoPrecision.
-   if (0 == strcmp (typeStr, "DoubleNoPrecision")) {
+   // encryptedDoubleNoPrecision or encryptedDecimalNoPrecision.
+   if (0 == strcmp (typeStr, "DoubleNoPrecision") ||
+       0 == strcmp (typeStr, "DecimalNoPrecision")) {
       MONGOC_DEBUG ("skipping test");
       return;
    }
@@ -4381,9 +4402,12 @@ test_range_explicit_encryption_case8 (void *ctx)
    const char *typeStr = (const char *) ctx;
 
    // This test case should be skipped if the encrypted field is
-   // encryptedDoublePrecision or encryptedDoubleNoPrecision.
+   // encryptedDoublePrecision or encryptedDoubleNoPrecision or
+   // encryptedDecimalPrecision or encryptedDecimalNoPrecision.
    if (0 == strcmp (typeStr, "DoubleNoPrecision") ||
-       0 == strcmp (typeStr, "DoublePrecision")) {
+       0 == strcmp (typeStr, "DoublePrecision") ||
+       0 == strcmp (typeStr, "DecimalPrecision") ||
+       0 == strcmp (typeStr, "DecimalNoPrecision")) {
       MONGOC_DEBUG ("skipping test");
       return;
    }
@@ -7085,6 +7109,8 @@ test_client_side_encryption_install (TestSuite *suite)
    // Add test cases for prose test: 22. Range Explicit Encryption.
    {
       const char *rangeTypes[] = {
+         "DecimalNoPrecision",
+         "DecimalPrecision",
          "DoubleNoPrecision",
          "DoublePrecision",
          "Date",
@@ -7117,15 +7143,30 @@ test_client_side_encryption_install (TestSuite *suite)
                "/client_side_encryption/range_explicit_encryption/%s/%s",
                rc.name,
                rangeType);
-            TestSuite_AddFull (
-               suite,
-               test_name,
-               rc.fn,
-               NULL /* dtor */,
-               (void *) rangeTypes[i] /* ctx */,
-               test_framework_skip_if_no_client_side_encryption,
-               test_framework_skip_if_max_wire_version_less_than_19,
-               test_framework_skip_if_single);
+
+            // Skip DecimalNoPrecision if not a replica set.
+            if (0 == strcmp (rangeType, "DecimalNoPrecision")) {
+               TestSuite_AddFull (
+                  suite,
+                  test_name,
+                  rc.fn,
+                  NULL /* dtor */,
+                  (void *) rangeTypes[i] /* ctx */,
+                  test_framework_skip_if_no_client_side_encryption,
+                  test_framework_skip_if_max_wire_version_less_than_19,
+                  test_framework_skip_if_not_replset);
+            } else {
+               TestSuite_AddFull (
+                  suite,
+                  test_name,
+                  rc.fn,
+                  NULL /* dtor */,
+                  (void *) rangeTypes[i] /* ctx */,
+                  test_framework_skip_if_no_client_side_encryption,
+                  test_framework_skip_if_max_wire_version_less_than_19,
+                  test_framework_skip_if_single);
+            }
+
             bson_free (test_name);
          }
       }

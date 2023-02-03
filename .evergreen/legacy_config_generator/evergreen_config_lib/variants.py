@@ -93,7 +93,7 @@ all_variants = [
              'release-compile',
              'debug-compile-nosasl-nossl',
              'debug-compile-rdtscp',
-             '.debug-compile !.sspi .openssl',
+             '.debug-compile !.sspi .openssl !.client-side-encryption',
              '.debug-compile !.sspi .nossl',
              '.4.0 .openssl !.nosasl .server',
              '.3.6 .openssl !.nosasl .server'],

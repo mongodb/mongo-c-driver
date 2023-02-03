@@ -1126,9 +1126,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-        rm CMakeCache.txt
-        set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-openssl-static-cse
@@ -1146,9 +1143,6 @@ tasks:
       add_expansions_to_env: true
       shell: bash
       script: |-
-        set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
-        rm CMakeCache.txt
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
   - func: upload-build
@@ -1168,9 +1162,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
-        rm CMakeCache.txt
-        set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-winssl-cse
@@ -1189,9 +1180,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
-        rm CMakeCache.txt
-        set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-asan-openssl-cse
@@ -1207,9 +1195,6 @@ tasks:
       add_expansions_to_env: true
       shell: bash
       script: |-
-        set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-        rm CMakeCache.txt
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload-build
@@ -21794,7 +21779,7 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-rdtscp
-  - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .openssl !.client-side-encryption
   - .debug-compile !.sspi .nossl
   - .4.0 .openssl !.nosasl .server
   - .3.6 .openssl !.nosasl .server
