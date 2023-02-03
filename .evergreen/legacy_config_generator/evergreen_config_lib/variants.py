@@ -167,8 +167,6 @@ all_variants = [
             ['.compression !.zstd',
              'debug-compile-scan-build',
              'debug-compile-asan-clang',
-             'debug-compile-ubsan',
-             'debug-compile-ubsan-with-extra-alignment',
              'release-compile',
              'debug-compile-nosasl-nossl',
              'debug-compile-no-align',

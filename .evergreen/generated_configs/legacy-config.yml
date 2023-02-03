@@ -489,34 +489,6 @@ tasks:
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-ubsan
-  tags:
-  - special
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-ubsan-with-extra-alignment
-  tags:
-  - special
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer -fno-sanitize-recover=alignment" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON" SANITIZE="undefined" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: debug-compile-scan-build
   tags:
   - clang
@@ -9231,8 +9203,6 @@ buildvariants:
   - .compression !.zstd
   - debug-compile-scan-build
   - debug-compile-asan-clang
-  - debug-compile-ubsan
-  - debug-compile-ubsan-with-extra-alignment
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
