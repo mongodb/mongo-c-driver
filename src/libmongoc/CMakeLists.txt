@@ -1046,6 +1046,7 @@ function (mongoc_add_test test use_shared)
 endfunction ()
 
 mongoc_add_test (test-libmongoc FALSE ${PROJECT_SOURCE_DIR}/tests/test-libmongoc-main.c)
+mongoc_add_test (test-atlas-executor FALSE ${PROJECT_SOURCE_DIR}/tests/test-atlas-executor)
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 mongoc_add_test (test-azurekms FALSE ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
