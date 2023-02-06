@@ -1063,6 +1063,7 @@ mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongo
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 mongoc_add_test (test-azurekms FALSE ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
 mongoc_add_test (test-gcpkms FALSE ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c)
+mongoc_add_test (test-awsauth FALSE ${PROJECT_SOURCE_DIR}/tests/test-awsauth.c)
 
 if (ENABLE_TESTS)
    # "make test" doesn't compile tests, so we create "make check" which compiles

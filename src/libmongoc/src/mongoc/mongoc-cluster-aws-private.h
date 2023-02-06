@@ -29,7 +29,7 @@ _mongoc_cluster_auth_node_aws (mongoc_cluster_t *cluster,
                                bson_error_t *error);
 
 /* The following are declared in the private header for testing. It is only used
- * in test-mongoc-aws.c and mongoc-cluster.aws.c */
+ * in test-mongoc-aws.c, mongoc-cluster-aws.c, and test-awsauth.c */
 typedef struct {
    char *access_key_id;
    char *secret_access_key;
