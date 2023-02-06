@@ -857,54 +857,7 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
    )
 endif ()
 
-function (mongoc_add_test test use_shared)
-   if (ENABLE_TESTS)
-      add_executable (${test} ${ARGN})
-      target_link_libraries (${test}
-         PRIVATE
-            $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
-            $<$<PLATFORM_ID:Windows>:shlwapi>
-            $<$<BOOL:${use_shared}>:mongoc_shared>
-            $<$<NOT:$<BOOL:${use_shared}>>:mongoc_static>
-            ${LIBRARIES}
-            ${RESOLV_LIBRARIES}
-      )
-      # We have tests that test our deprecated api.
-      target_compile_options (${test}
-         PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
-      )
-      target_include_directories (${test}
-         PRIVATE
-            ${PROJECT_SOURCE_DIR}/tests
-            ${MONGOC_INTERNAL_INCLUDE_DIRS}
-            $<$<BOOL:${use_shared}>:${BSON_INCLUDE_DIRS}>
-            $<$<NOT:$<BOOL:${use_shared}>>:${BSON_STATIC_INCLUDE_DIRS}>
-      )
-      target_compile_definitions (${test}
-         PUBLIC
-            "MONGOC_COMPILATION"
-            "BSON_COMPILATION"
-            "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
-      )
-   endif ()
-endfunction ()
-
-function (mongoc_add_example example use_shared)
-   if (ENABLE_EXAMPLES)
-      add_executable (${example} ${ARGN})
-      if (${use_shared})
-         target_link_libraries (${example} mongoc_shared ${LIBRARIES})
-      else ()
-         target_link_libraries (${example} mongoc_static ${LIBRARIES})
-      endif ()
-      if (WIN32)
-         target_link_libraries (${example} shlwapi)
-      endif ()
-      set (EXAMPLES ${EXAMPLES} ${example})
-   endif ()
-endfunction ()
-
-set (test-libmongoc-sources
+add_library (test-libmongoc-lib STATIC
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.h
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-atomic.c
@@ -1042,7 +995,7 @@ set (test-libmongoc-sources
 )
 
 if (MONGOC_ENABLE_SSL)
-   set (test-libmongoc-sources ${test-libmongoc-sources}
+   target_sources (test-libmongoc-lib PRIVATE
       ${PROJECT_SOURCE_DIR}/tests/ssl-test.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-side-encryption.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c
@@ -1053,12 +1006,46 @@ if (MONGOC_ENABLE_SSL)
 endif ()
 
 if (MONGOC_ENABLE_SASL_CYRUS)
-   set (test-libmongoc-sources ${test-libmongoc-sources}
+   target_sources (test-libmongoc-lib PRIVATE
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cyrus.c
    )
 endif ()
 
-mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
+target_link_libraries (test-libmongoc-lib
+   PUBLIC
+      $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
+      $<$<PLATFORM_ID:Windows>:shlwapi>
+      $<$<BOOL:${use_shared}>:mongoc_shared>
+      $<$<NOT:$<BOOL:${use_shared}>>:mongoc_static>
+      ${LIBRARIES}
+      ${RESOLV_LIBRARIES}
+)
+# We have tests that test our deprecated api.
+target_compile_options (test-libmongoc-lib
+   PUBLIC $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
+)
+target_include_directories (test-libmongoc-lib
+   PUBLIC
+      ${PROJECT_SOURCE_DIR}/tests
+      ${MONGOC_INTERNAL_INCLUDE_DIRS}
+      $<$<BOOL:${use_shared}>:${BSON_INCLUDE_DIRS}>
+      $<$<NOT:$<BOOL:${use_shared}>>:${BSON_STATIC_INCLUDE_DIRS}>
+)
+target_compile_definitions (test-libmongoc-lib
+   PUBLIC
+      "MONGOC_COMPILATION"
+      "BSON_COMPILATION"
+      "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
+)
+
+function (mongoc_add_test test use_shared)
+   if (ENABLE_TESTS)
+      add_executable (${test} ${ARGN})
+      target_link_libraries (${test} PRIVATE test-libmongoc-lib)
+   endif ()
+endfunction ()
+
+mongoc_add_test (test-libmongoc FALSE ${PROJECT_SOURCE_DIR}/tests/test-libmongoc-main.c)
 mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 mongoc_add_test (test-azurekms FALSE ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
@@ -1072,6 +1059,21 @@ if (ENABLE_TESTS)
       DEPENDS test-libmongoc
    )
 endif ()
+
+function (mongoc_add_example example use_shared)
+   if (ENABLE_EXAMPLES)
+      add_executable (${example} ${ARGN})
+      if (${use_shared})
+         target_link_libraries (${example} mongoc_shared ${LIBRARIES})
+      else ()
+         target_link_libraries (${example} mongoc_static ${LIBRARIES})
+      endif ()
+      if (WIN32)
+         target_link_libraries (${example} shlwapi)
+      endif ()
+      set (EXAMPLES ${EXAMPLES} ${example})
+   endif ()
+endfunction ()
 
 # examples/
 mongoc_add_example (example-client TRUE ${PROJECT_SOURCE_DIR}/examples/example-client.c)
