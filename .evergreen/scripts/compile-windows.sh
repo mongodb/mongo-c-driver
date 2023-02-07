@@ -73,12 +73,15 @@ else
   configure_flags_append "-DENABLE_SSL=${SSL}"
 fi
 
+declare -a extra_configure_flags
+IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
+
 if [[ "${CC}" =~ mingw ]]; then
   # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
   configure_flags_append "-DCMAKE_CXX_STANDARD=11"
 
   env \
-    CONFIGURE_FLAGS="${configure_flags[*]}" \
+    CONFIGURE_FLAGS="${configure_flags[*]} ${extra_configure_flags[*]}" \
     INSTALL_DIR="${install_dir}" \
     NJOBS="$(nproc)" \
     cmd.exe /c "$(to_windows_path "${script_dir}/compile-windows-mingw.bat")"
