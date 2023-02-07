@@ -12,6 +12,7 @@ check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC "Visual Studio 15 2017 Win64"
 check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
 check_var_opt DEBUG "OFF"
+check_var_opt EXTRA_CONFIGURE_FLAGS
 check_var_opt RELEASE "OFF"
 check_var_opt SASL "SSPI"   # CMake default: AUTO.
 check_var_opt SNAPPY        # CMake default: AUTO.
@@ -98,16 +99,33 @@ declare compile_flags=(
   "/m" # Number of concurrent processes. No value=# of cpus
 )
 
+declare -a extra_configure_flags
+IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
+
 if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
-  git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
-  MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
+  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
+  # TODO: remove once latest libmongocrypt release contains commit 4c4aa8bf.
+  {
+    echo "1.7.0+4c4aa8bf" >|libmongocrypt/VERSION_CURRENT
+    git -C libmongocrypt fetch -q origin master
+    git -C libmongocrypt checkout -q 4c4aa8bf # Allows -DENABLE_MONGOC=OFF.
+  }
+  declare -a crypt_cmake_flags
+  crypt_cmake_flags=(
+    "-DMONGOCRYPT_MONGOC_DIR=$(to_windows_path "${mongoc_dir}")"
+    "-DBUILD_TESTING=OFF"
+    "-DENABLE_ONLINE_TESTS=OFF"
+    "-DENABLE_MONGOC=OFF"
+  )
+  MONGOCRYPT_INSTALL_PREFIX="${install_dir}" \
     DEFAULT_BUILD_ONLY=true \
-    LIBMONGOCRYPT_BUILD_TYPE=${build_config} \
+    LIBMONGOCRYPT_BUILD_TYPE="${build_config}" \
+    LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]}" \
     ./libmongocrypt/.evergreen/compile.sh
   # Fail if the C driver is unable to find the installed libmongocrypt.
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 fi
 
-"${cmake_binary}" -G "$CC" "${configure_flags[@]}"
+"${cmake_binary}" -G "$CC" "${configure_flags[@]}" "${extra_configure_flags[@]}"
 "${cmake_binary}" --build . --target ALL_BUILD --config "${build_config}" -- "${compile_flags[@]}"
 "${cmake_binary}" --build . --target INSTALL --config "${build_config}" -- "${compile_flags[@]}"

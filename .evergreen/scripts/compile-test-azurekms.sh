@@ -9,8 +9,15 @@ INSTALL_DIR=$ROOT/install
 . .evergreen/scripts/find-cmake.sh
 echo "Installing libmongocrypt ... begin"
 git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
+# TODO: remove once latest libmongocrypt release contains commit 4c4aa8bf.
+{
+    echo "1.7.0+4c4aa8bf" >|libmongocrypt/VERSION_CURRENT
+    git -C libmongocrypt fetch -q origin master
+    git -C libmongocrypt checkout -q 4c4aa8bf # Allows -DENABLE_MONGOC=OFF.
+}
 MONGOCRYPT_INSTALL_PREFIX=${INSTALL_DIR} \
-DEFAULT_BUILD_ONLY=true \
+    DEFAULT_BUILD_ONLY=true \
+    LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="-DMONGOCRYPT_MONGOC_DIR=$ROOT -DBUILD_TESTING=OFF -DENABLE_ONLINE_TESTS=OFF -DENABLE_MONGOC=OFF" \
     ./libmongocrypt/.evergreen/compile.sh
 echo "Installing libmongocrypt ... end"
 
