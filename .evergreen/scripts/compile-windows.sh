@@ -102,9 +102,6 @@ declare compile_flags=(
   "/m" # Number of concurrent processes. No value=# of cpus
 )
 
-declare -a extra_configure_flags
-IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
-
 if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
   git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
   # TODO: remove once latest libmongocrypt release contains commit 4c4aa8bf.
