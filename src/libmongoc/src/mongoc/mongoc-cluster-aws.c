@@ -555,14 +555,6 @@ fail:
    return ret;
 }
 
-void
-_mongoc_aws_credentials_cleanup (_mongoc_aws_credentials_t *creds)
-{
-   bson_free (creds->access_key_id);
-   bson_free (creds->secret_access_key);
-   bson_free (creds->session_token);
-}
-
 /*
  * Validate the STS host returned by the server and derive the region.
  *
@@ -999,12 +991,6 @@ fail:
    return false;
 }
 
-void
-_mongoc_aws_credentials_cleanup (_mongoc_aws_credentials_t *creds)
-{
-   return;
-}
-
 bool
 _mongoc_validate_and_derive_region (char *sts_fqdn,
                                     uint32_t sts_fqdn_len,
@@ -1018,3 +1004,11 @@ fail:
 }
 
 #endif /* MONGOC_ENABLE_MONGODB_AWS_AUTH */
+
+void
+_mongoc_aws_credentials_cleanup (_mongoc_aws_credentials_t *creds)
+{
+   bson_free (creds->access_key_id);
+   bson_free (creds->secret_access_key);
+   bson_free (creds->session_token);
+}
