@@ -1012,3 +1012,139 @@ _mongoc_aws_credentials_cleanup (_mongoc_aws_credentials_t *creds)
    bson_free (creds->secret_access_key);
    bson_free (creds->session_token);
 }
+
+void
+_mongoc_aws_credentials_copy_to (const _mongoc_aws_credentials_t *src,
+                                 _mongoc_aws_credentials_t *dst)
+{
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
+
+   dst->access_key_id = bson_strdup (src->access_key_id);
+   dst->secret_access_key = bson_strdup (src->secret_access_key);
+   dst->session_token = bson_strdup (src->session_token);
+   dst->expiration_ms = src->expiration_ms;
+}
+
+_mongoc_aws_credentials_cache_t mongoc_aws_credentials_cache;
+
+void
+_mongoc_aws_credentials_cache_init (void)
+{
+   _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
+   bson_mutex_init (&cache->mutex);
+}
+
+static bool
+check_expired (const _mongoc_aws_credentials_t *creds)
+{
+   struct timeval now;
+   if (0 != bson_gettimeofday (&now)) {
+      MONGOC_WARNING ("bson_gettimeofday returned failure. Assuming AWS "
+                      "credentials are expired.");
+      return true;
+   }
+   uint64_t now_ms = (1000 * now.tv_sec) + (now.tv_usec / 1000);
+   return now_ms + MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS >
+          creds->expiration_ms;
+}
+
+void
+_mongoc_aws_credentials_cache_lock (void)
+{
+   _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
+   bson_mutex_lock (&cache->mutex);
+}
+
+void
+_mongoc_aws_credentials_cache_unlock (void)
+{
+   _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
+   bson_mutex_unlock (&cache->mutex);
+}
+
+void
+_mongoc_aws_credentials_cache_put_nolock (
+   const _mongoc_aws_credentials_t *creds)
+{
+   _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
+   BSON_ASSERT_PARAM (creds);
+
+   if (check_expired (creds)) {
+      // Do not add expired credentials.
+      return;
+   }
+   _mongoc_aws_credentials_cache_clear_nolock ();
+   _mongoc_aws_credentials_copy_to (creds, &cache->cached.value);
+   cache->cached.set = true;
+}
+
+void
+_mongoc_aws_credentials_cache_put (const _mongoc_aws_credentials_t *creds)
+{
+   _mongoc_aws_credentials_cache_lock ();
+   _mongoc_aws_credentials_cache_put_nolock (creds);
+   _mongoc_aws_credentials_cache_unlock ();
+}
+
+bool
+_mongoc_aws_credentials_cache_get_nolock (_mongoc_aws_credentials_t *creds)
+{
+   _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
+   BSON_ASSERT_PARAM (creds);
+   bool found_valid = false;
+   bool expired = false;
+   if (cache->cached.set) {
+      expired = check_expired (&cache->cached.value);
+      if (!expired) {
+         found_valid = true;
+         _mongoc_aws_credentials_copy_to (&cache->cached.value, creds);
+      }
+   } else {
+      // Zero creds, so callers can safely call _mongoc_aws_credentials_cleanup.
+      *creds = (_mongoc_aws_credentials_t){0};
+   }
+   if (expired) {
+      _mongoc_aws_credentials_cache_clear_nolock ();
+      return false;
+   }
+   return found_valid;
+}
+
+bool
+_mongoc_aws_credentials_cache_get (_mongoc_aws_credentials_t *creds)
+{
+   _mongoc_aws_credentials_cache_lock ();
+   bool got = _mongoc_aws_credentials_cache_get_nolock (creds);
+   _mongoc_aws_credentials_cache_unlock ();
+   return got;
+}
+
+void
+_mongoc_aws_credentials_cache_clear_nolock (void)
+{
+   _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
+
+   if (cache->cached.set) {
+      _mongoc_aws_credentials_cleanup (&cache->cached.value);
+   }
+   cache->cached.set = false;
+}
+
+void
+_mongoc_aws_credentials_cache_clear (void)
+{
+   _mongoc_aws_credentials_cache_lock ();
+   _mongoc_aws_credentials_cache_clear_nolock ();
+   _mongoc_aws_credentials_cache_unlock ();
+}
+
+void
+_mongoc_aws_credentials_cache_cleanup (void)
+{
+   _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
+   if (cache->cached.set) {
+      _mongoc_aws_credentials_cleanup (&cache->cached.value);
+   }
+   bson_mutex_destroy (&cache->mutex);
+}
