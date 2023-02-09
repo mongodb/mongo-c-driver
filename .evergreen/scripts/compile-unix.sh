@@ -19,6 +19,7 @@ check_var_opt ENABLE_SHM_COUNTERS # CMake default: AUTO.
 check_var_opt EXTRA_CMAKE_PREFIX_PATH
 check_var_opt EXTRA_CONFIGURE_FLAGS
 check_var_opt ENABLE_RDTSCP "OFF"
+check_var_opt MARCH
 check_var_opt RELEASE "OFF"
 check_var_opt SANITIZE
 check_var_opt SASL "OFF"     # CMake default: AUTO.
@@ -120,20 +121,23 @@ if [[ -n "${ZSTD}" ]]; then
   fi
 fi
 
-declare flags
+declare -a flags
+
+case "${MARCH}" in
+i686)
+  flags+=("-m32" "-march=i386")
+  ;;
+esac
 
 case "${HOSTTYPE}" in
 s390x)
-  flags="-march=z196 -mtune=zEC12"
+  flags+=("-march=z196" "-mtune=zEC12")
   ;;
 x86_64)
-  flags="-m64 -march=x86-64"
+  flags+=("-m64" "-march=x86-64")
   ;;
 powerpc64le)
-  flags="-mcpu=power8 -mtune=power8 -mcmodel=medium"
-  ;;
-*)
-  flags=""
+  flags+=("-mcpu=power8" "-mtune=power8" "-mcmodel=medium")
   ;;
 esac
 
@@ -143,8 +147,8 @@ export CXX
 export CFLAGS
 export CXXFLAGS
 
-CFLAGS+=" ${flags}"
-CXXFLAGS+=" ${flags}"
+CFLAGS+=" ${flags[*]}"
+CXXFLAGS+=" ${flags[*]}"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
   CFLAGS+=" -Wno-unknown-pragmas"
