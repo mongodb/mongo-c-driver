@@ -694,7 +694,7 @@ functions:
         args:
           - -c
           - |
-            mkdir mongoc
+            mkdir -p mongoc
             touch mongoc/test-results.json
     - command: attach.results
       params:
