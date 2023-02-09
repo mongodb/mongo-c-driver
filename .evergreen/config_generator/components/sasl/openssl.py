@@ -76,16 +76,10 @@ class SaslAutoOpenSSLCompile(OpenSSLCompileCommon):
     commands = OpenSSLCompileCommon.compile_commands(sasl='AUTO')
 
 
-class SaslSspiOpenSSLCompile(OpenSSLCompileCommon):
-    name = 'sasl-sspi-openssl-compile'
-    commands = OpenSSLCompileCommon.compile_commands(sasl='SSPI')
-
-
 def functions():
     return merge_defns(
         SaslOffOpenSSLCompile.defn(),
         SaslAutoOpenSSLCompile.defn(),
-        SaslSspiOpenSSLCompile.defn(),
     )
 
 
@@ -95,7 +89,6 @@ def tasks():
     SASL_TO_FUNC = {
         'off': SaslOffOpenSSLCompile,
         'auto': SaslAutoOpenSSLCompile,
-        'sspi': SaslSspiOpenSSLCompile,
     }
 
     res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX)

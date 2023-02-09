@@ -75,16 +75,10 @@ class SaslAutoNoSSLCompile(NoSSLCompileCommon):
     commands = NoSSLCompileCommon.compile_commands(sasl='AUTO')
 
 
-class SaslSspiNoSSLCompile(NoSSLCompileCommon):
-    name = 'sasl-sspi-nossl-compile'
-    commands = NoSSLCompileCommon.compile_commands(sasl='SSPI')
-
-
 def functions():
     return merge_defns(
         SaslOffNoSSLCompile.defn(),
         SaslAutoNoSSLCompile.defn(),
-        SaslSspiNoSSLCompile.defn(),
     )
 
 
@@ -94,7 +88,6 @@ def tasks():
     SASL_TO_FUNC = {
         'off': SaslOffNoSSLCompile,
         'auto': SaslAutoNoSSLCompile,
-        'sspi': SaslSspiNoSSLCompile,
     }
 
     res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX)
