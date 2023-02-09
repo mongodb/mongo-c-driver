@@ -3769,6 +3769,38 @@ tasks:
         vars:
           CC: clang
       - func: upload-build
+  - name: std-c11-sasl-cyrus-openssl-debian10-clang-compile
+    run_on: debian10-large
+    tags: [std-matrix-c11, compile, debian10, clang, std-c11, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: std-c11-sasl-cyrus-openssl-debian10-gcc-compile
+    run_on: debian10-large
+    tags: [std-matrix-c11, compile, debian10, gcc, std-c11, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+      - func: upload-build
+  - name: std-c11-sasl-cyrus-openssl-debian11-clang-compile
+    run_on: debian11-large
+    tags: [std-matrix-c11, compile, debian11, clang, std-c11, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: std-c11-sasl-cyrus-openssl-debian11-gcc-compile
+    run_on: debian11-large
+    tags: [std-matrix-c11, compile, debian11, gcc, std-c11, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+      - func: upload-build
   - name: std-c11-sasl-cyrus-openssl-debian81-clang-compile
     run_on: debian81-large
     tags: [std-matrix-c11, compile, debian81, clang, std-c11, sasl-cyrus]
@@ -3814,6 +3846,22 @@ tasks:
   - name: std-c11-sasl-cyrus-openssl-ubuntu1804-gcc-compile
     run_on: ubuntu1804-large
     tags: [std-matrix-c11, compile, ubuntu1804, gcc, std-c11, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+      - func: upload-build
+  - name: std-c11-sasl-cyrus-openssl-ubuntu2004-clang-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix-c11, compile, ubuntu2004, clang, std-c11, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: std-c11-sasl-cyrus-openssl-ubuntu2004-gcc-compile
+    run_on: ubuntu2004-large
+    tags: [std-matrix-c11, compile, ubuntu2004, gcc, std-c11, sasl-cyrus]
     commands:
       - func: sasl-cyrus-openssl-compile
         vars:

@@ -19,6 +19,12 @@ COMPILE_MATRIX = [
     ('ubuntu1604', 'clang', None,   ['cyrus']),
     ('ubuntu1804', 'clang', 'i686', ['cyrus']),
     ('ubuntu1804', 'gcc',   None,   ['cyrus']),
+    ('debian10',   'clang', None,   ['cyrus']),
+    ('debian10',   'gcc',   None,   ['cyrus']),
+    ('debian11',   'clang', None,   ['cyrus']),
+    ('debian11',   'gcc',   None,   ['cyrus']),
+    ('ubuntu2004', 'clang', None,   ['cyrus']),
+    ('ubuntu2004', 'gcc',   None,   ['cyrus']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
