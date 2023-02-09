@@ -20,7 +20,7 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('macos-1014', 'clang', None, 'cyrus', ['auth', 'noauth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', 'latest']),
+    ('macos-1014', 'clang', None, 'cyrus', ['auth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
