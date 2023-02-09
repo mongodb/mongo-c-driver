@@ -194,10 +194,29 @@ if [[ "${OSTYPE}" == darwin* ]]; then
   }
 fi
 
+declare -a extra_configure_flags
+IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
+
 if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
-  git clone --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
+  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
+  # TODO: remove once latest libmongocrypt release contains commit 4c4aa8bf.
+  {
+    pushd libmongocrypt
+    echo "1.7.0+4c4aa8bf" >|VERSION_CURRENT
+    git fetch -q origin master
+    git checkout -q 4c4aa8bf # Allows -DENABLE_MONGOC=OFF.
+    popd                     # libmongocrypt
+  }
+  declare -a crypt_cmake_flags
+  crypt_cmake_flags=(
+    "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
+    "-DBUILD_TESTING=OFF"
+    "-DENABLE_ONLINE_TESTS=OFF"
+    "-DENABLE_MONGOC=OFF"
+  )
   MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
     DEFAULT_BUILD_ONLY=true \
+    LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]}" \
     ./libmongocrypt/.evergreen/compile.sh
   # Fail if the C driver is unable to find the installed libmongocrypt.
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
@@ -224,14 +243,12 @@ if [[ "${ANALYZE}" == "ON" ]]; then
   # scan-build `--exclude`` flag is not available on all Evergreen variants.
   configure_flags_append "-DENABLE_ZLIB=OFF"
 
-  # shellcheck disable=SC2086
-  "${scan_build_binary}" "${CMAKE}" "${configure_flags[@]}" ${EXTRA_CONFIGURE_FLAGS} .
+  "${scan_build_binary}" "${CMAKE}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
 
   # Put clang static analyzer results in scan/ and fail build if warnings found.
   "${scan_build_binary}" -o scan --status-bugs make -j "$(nproc)" all
 else
-  # shellcheck disable=SC2086
-  "${CMAKE}" "${configure_flags[@]}" ${EXTRA_CONFIGURE_FLAGS} .
+  "${CMAKE}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
   make -j "$(nproc)" all
   make install
 fi
