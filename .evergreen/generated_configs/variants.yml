@@ -73,3 +73,9 @@ buildvariants:
       C_STD_VERSION: "11"
     tasks:
       - name: .std-matrix-c11
+  - name: std-matrix-c17
+    display_name: std-matrix-c17
+    expansions:
+      CFLAGS: -std=c17
+    tasks:
+      - name: .std-matrix-c17

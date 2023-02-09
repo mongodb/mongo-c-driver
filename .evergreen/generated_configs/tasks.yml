@@ -3867,6 +3867,22 @@ tasks:
         vars:
           CC: gcc
       - func: upload-build
+  - name: std-c17-sasl-cyrus-openssl-debian10-gcc-compile
+    run_on: debian10-large
+    tags: [std-matrix-c17, compile, debian10, gcc, std-c17, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+      - func: upload-build
+  - name: std-c17-sasl-cyrus-openssl-debian11-gcc-compile
+    run_on: debian11-large
+    tags: [std-matrix-c17, compile, debian11, gcc, std-c17, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+      - func: upload-build
   - name: tsan-sasl-off-openssl-ubuntu1804-clang-compile
     run_on: ubuntu1804-large
     tags: [sanitizers-matrix-tsan, compile, ubuntu1804, clang, tsan, sasl-off]
