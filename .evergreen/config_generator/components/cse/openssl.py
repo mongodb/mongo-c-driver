@@ -28,19 +28,18 @@ COMPILE_MATRIX = [
     ('windows-64-vs2017', 'vs2017x64', None, ['cyrus']),
 ]
 
+# TODO (CDRIVER-3789): test cse with the 'sharded' topology.
 TEST_MATRIX = [
-    ('debian10',          'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
-    ('debian11',          'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
-    ('debian92',          'clang',     None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',        'latest']),
-    ('debian92',          'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',        'latest']),
-    ('rhel80',            'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
-    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [              '5.0', '6.0', 'latest']),
-    ('ubuntu1604',        'clang',     None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4',                       ]),
-    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',        'latest']),
-    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',                ]),
-    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server', 'replica'], [                            'latest']),
-    ('ubuntu2004',        'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
-    ('windows-64-vs2017', 'vs2017x64', None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
+    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
+    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
+    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
+    ('windows-64-vs2017', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
+
+    # Test 6.0+ with a replica set since Queryable Encryption does not support the 'server' topology.
+    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', 'latest']),
+    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', 'latest']),
+    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', 'latest']),
+    ('windows-64-vs2017', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
