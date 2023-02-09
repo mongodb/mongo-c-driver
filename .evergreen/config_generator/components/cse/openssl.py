@@ -15,32 +15,32 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('debian10',          'gcc',       None, ['auto']),
-    ('debian11',          'gcc',       None, ['auto']),
-    ('debian92',          'clang',     None, ['auto']),
-    ('debian92',          'gcc',       None, ['auto']),
-    ('rhel80',            'gcc',       None, ['auto']),
-    ('rhel83-zseries',    'gcc',       None, ['auto']),
-    ('ubuntu1604',        'clang',     None, ['auto']),
-    ('ubuntu1804-arm64',  'gcc',       None, ['auto']),
-    ('ubuntu1804',        'gcc',       None, ['auto']),
-    ('ubuntu2004',        'gcc',       None, ['auto']),
-    ('windows-64-vs2017', 'vs2017x64', None, ['auto']),
+    ('debian10',          'gcc',       None, ['cyrus']),
+    ('debian11',          'gcc',       None, ['cyrus']),
+    ('debian92',          'clang',     None, ['cyrus']),
+    ('debian92',          'gcc',       None, ['cyrus']),
+    ('rhel80',            'gcc',       None, ['cyrus']),
+    ('rhel83-zseries',    'gcc',       None, ['cyrus']),
+    ('ubuntu1604',        'clang',     None, ['cyrus']),
+    ('ubuntu1804-arm64',  'gcc',       None, ['cyrus']),
+    ('ubuntu1804',        'gcc',       None, ['cyrus']),
+    ('ubuntu2004',        'gcc',       None, ['cyrus']),
+    ('windows-64-vs2017', 'vs2017x64', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('debian10',          'gcc',       None, 'auto', ['auth', 'noauth'], ['server',          ], [                            'latest']),
-    ('debian11',          'gcc',       None, 'auto', ['auth', 'noauth'], ['server',          ], [                            'latest']),
-    ('debian92',          'clang',     None, 'auto', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',        'latest']),
-    ('debian92',          'gcc',       None, 'auto', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',        'latest']),
-    ('rhel80',            'gcc',       None, 'auto', ['auth', 'noauth'], ['server',          ], [                            'latest']),
-    ('rhel83-zseries',    'gcc',       None, 'auto', ['auth', 'noauth'], ['server',          ], [              '5.0', '6.0', 'latest']),
-    ('ubuntu1604',        'clang',     None, 'auto', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4',                       ]),
-    ('ubuntu1804-arm64',  'gcc',       None, 'auto', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',        'latest']),
-    ('ubuntu1804',        'gcc',       None, 'auto', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',                ]),
-    ('ubuntu1804',        'gcc',       None, 'auto', ['auth', 'noauth'], ['server', 'replica'], [                            'latest']),
-    ('ubuntu2004',        'gcc',       None, 'auto', ['auth', 'noauth'], ['server',          ], [                            'latest']),
-    ('windows-64-vs2017', 'vs2017x64', None, 'auto', ['auth', 'noauth'], ['server',          ], [                            'latest']),
+    ('debian10',          'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
+    ('debian11',          'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
+    ('debian92',          'clang',     None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',        'latest']),
+    ('debian92',          'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',        'latest']),
+    ('rhel80',            'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
+    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [              '5.0', '6.0', 'latest']),
+    ('ubuntu1604',        'clang',     None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4',                       ]),
+    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',        'latest']),
+    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], ['4.2', '4.4', '5.0',                ]),
+    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server', 'replica'], [                            'latest']),
+    ('ubuntu2004',        'gcc',       None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
+    ('windows-64-vs2017', 'vs2017x64', None, 'cyrus', ['auth', 'noauth'], ['server',          ], [                            'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -55,15 +55,15 @@ class SaslOffOpenSSLCompile(OpenSSLCompileCommon):
     commands = OpenSSLCompileCommon.compile_commands()
 
 
-class SaslAutoOpenSSLCompile(OpenSSLCompileCommon):
-    name = 'cse-sasl-auto-openssl-compile'
-    commands = OpenSSLCompileCommon.compile_commands(sasl='AUTO')
+class SaslCyrusOpenSSLCompile(OpenSSLCompileCommon):
+    name = 'cse-sasl-cyrus-openssl-compile'
+    commands = OpenSSLCompileCommon.compile_commands(sasl='CYRUS')
 
 
 def functions():
     return merge_defns(
         SaslOffOpenSSLCompile.defn(),
-        SaslAutoOpenSSLCompile.defn(),
+        SaslCyrusOpenSSLCompile.defn(),
     )
 
 
@@ -72,7 +72,7 @@ def tasks():
 
     SASL_TO_FUNC = {
         'off': SaslOffOpenSSLCompile,
-        'auto': SaslAutoOpenSSLCompile,
+        'cyrus': SaslCyrusOpenSSLCompile,
     }
 
     MORE_TAGS = ['cse']

@@ -14,13 +14,13 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('windows-64-vs2015', 'vs2015x64', None, ['auto']),
-    ('windows-64-vs2017', 'vs2017x64', None, ['auto']),
+    ('windows-64-vs2015', 'vs2015x64', None, ['cyrus']),
+    ('windows-64-vs2017', 'vs2017x64', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('windows-64-vs2015', 'vs2015x64', None, 'auto', ['auth', 'noauth'], ['server'], ['4.2',                       ]),
-    ('windows-64-vs2017', 'vs2017x64', None, 'auto', ['auth', 'noauth'], ['server'], [       '4.4', '5.0', 'latest']),
+    ('windows-64-vs2015', 'vs2015x64', None, 'cyrus', ['auth', 'noauth'], ['server'], ['4.2',                       ]),
+    ('windows-64-vs2017', 'vs2017x64', None, 'cyrus', ['auth', 'noauth'], ['server'], [       '4.4', '5.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -30,20 +30,20 @@ class WinSSLCompileCommon(CompileCommon):
     ssl = 'WINDOWS'
 
 
-class SaslAutoWinSSLCompile(WinSSLCompileCommon):
-    name = 'cse-sasl-auto-winssl-compile'
-    commands = WinSSLCompileCommon.compile_commands(sasl='AUTO')
+class SaslCyrusWinSSLCompile(WinSSLCompileCommon):
+    name = 'cse-sasl-cyrus-winssl-compile'
+    commands = WinSSLCompileCommon.compile_commands(sasl='CYRUS')
 
 
 def functions():
-    return SaslAutoWinSSLCompile.defn()
+    return SaslCyrusWinSSLCompile.defn()
 
 
 def tasks():
     res = []
 
     SASL_TO_FUNC = {
-        'auto': SaslAutoWinSSLCompile,
+        'cyrus': SaslCyrusWinSSLCompile,
     }
 
     MORE_TAGS = ['cse']

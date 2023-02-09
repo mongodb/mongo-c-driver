@@ -70,12 +70,12 @@ functions:
         args:
           - -c
           - .evergreen/scripts/check-preludes.py .
-  cse-sasl-auto-darwinssl-compile:
+  cse-sasl-cyrus-darwinssl-compile:
     - command: expansions.update
       params:
         updates:
           - { key: SSL, value: DARWIN }
-          - { key: SASL, value: AUTO }
+          - { key: SASL, value: CYRUS }
     - command: subprocess.exec
       type: test
       params:
@@ -87,12 +87,12 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-  cse-sasl-auto-openssl-compile:
+  cse-sasl-cyrus-openssl-compile:
     - command: expansions.update
       params:
         updates:
           - { key: SSL, value: OPENSSL }
-          - { key: SASL, value: AUTO }
+          - { key: SASL, value: CYRUS }
     - command: subprocess.exec
       type: test
       params:
@@ -104,12 +104,12 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-  cse-sasl-auto-openssl-static-compile:
+  cse-sasl-cyrus-openssl-static-compile:
     - command: expansions.update
       params:
         updates:
           - { key: SSL, value: OPENSSL_STATIC }
-          - { key: SASL, value: AUTO }
+          - { key: SASL, value: CYRUS }
     - command: subprocess.exec
       type: test
       params:
@@ -121,12 +121,12 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-  cse-sasl-auto-winssl-compile:
+  cse-sasl-cyrus-winssl-compile:
     - command: expansions.update
       params:
         updates:
           - { key: SSL, value: WINDOWS }
-          - { key: SASL, value: AUTO }
+          - { key: SASL, value: CYRUS }
     - command: subprocess.exec
       type: test
       params:
@@ -351,7 +351,7 @@ functions:
         args:
           - -c
           - .evergreen/scripts/run-tests.sh
-  sasl-auto-darwinssl-compile:
+  sasl-cyrus-darwinssl-compile:
     - command: subprocess.exec
       type: test
       params:
@@ -359,12 +359,12 @@ functions:
         working_dir: mongoc
         add_expansions_to_env: true
         env:
-          SASL: AUTO
+          SASL: CYRUS
           SSL: DARWIN
         args:
           - -c
           - .evergreen/scripts/compile.sh
-  sasl-auto-nossl-compile:
+  sasl-cyrus-nossl-compile:
     - command: subprocess.exec
       type: test
       params:
@@ -372,12 +372,12 @@ functions:
         working_dir: mongoc
         add_expansions_to_env: true
         env:
-          SASL: AUTO
+          SASL: CYRUS
           SSL: "OFF"
         args:
           - -c
           - .evergreen/scripts/compile.sh
-  sasl-auto-openssl-compile:
+  sasl-cyrus-openssl-compile:
     - command: subprocess.exec
       type: test
       params:
@@ -385,12 +385,12 @@ functions:
         working_dir: mongoc
         add_expansions_to_env: true
         env:
-          SASL: AUTO
+          SASL: CYRUS
           SSL: OPENSSL
         args:
           - -c
           - .evergreen/scripts/compile.sh
-  sasl-auto-openssl-static-compile:
+  sasl-cyrus-openssl-static-compile:
     - command: subprocess.exec
       type: test
       params:
@@ -398,7 +398,7 @@ functions:
         working_dir: mongoc
         add_expansions_to_env: true
         env:
-          SASL: AUTO
+          SASL: CYRUS
           SSL: OPENSSL_STATIC
         args:
           - -c

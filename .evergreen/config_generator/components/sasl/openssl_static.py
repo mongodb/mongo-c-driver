@@ -15,19 +15,19 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-  ('debian92',      'gcc',   None, ['auto']),
-  ('debian92',      'clang', None, ['auto']),
-  ('debian10',      'gcc',   None, ['auto']),
-  ('debian11',      'gcc',   None, ['auto']),
-  ('ubuntu2004',    'gcc',   None, ['auto']),
+  ('debian92',      'gcc',   None, ['cyrus']),
+  ('debian92',      'clang', None, ['cyrus']),
+  ('debian10',      'gcc',   None, ['cyrus']),
+  ('debian11',      'gcc',   None, ['cyrus']),
+  ('ubuntu2004',    'gcc',   None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-  ('debian92',      'clang', None, 'auto', ['noauth', 'auth'], ['server'], ['latest']),
-  ('debian92',      'gcc',   None, 'auto', ['noauth', 'auth'], ['server'], ['latest']),
-  ('debian10',      'gcc',   None, 'auto', ['noauth', 'auth'], ['server'], ['latest']),
-  ('debian11',      'gcc',   None, 'auto', ['noauth', 'auth'], ['server'], ['latest']),
-  ('ubuntu2004',    'gcc',   None, 'auto', ['noauth', 'auth'], ['server'], ['latest']),
+  ('debian92',      'clang', None, 'cyrus', ['noauth', 'auth'], ['server'], ['latest']),
+  ('debian92',      'gcc',   None, 'cyrus', ['noauth', 'auth'], ['server'], ['latest']),
+  ('debian10',      'gcc',   None, 'cyrus', ['noauth', 'auth'], ['server'], ['latest']),
+  ('debian11',      'gcc',   None, 'cyrus', ['noauth', 'auth'], ['server'], ['latest']),
+  ('ubuntu2004',    'gcc',   None, 'cyrus', ['noauth', 'auth'], ['server'], ['latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -42,15 +42,15 @@ class SaslOffStaticOpenSSLCompile(StaticOpenSSLCompileCommon):
     commands = StaticOpenSSLCompileCommon.compile_commands()
 
 
-class SaslAutoStaticOpenSSLCompile(StaticOpenSSLCompileCommon):
-    name = 'sasl-auto-openssl-static-compile'
-    commands = StaticOpenSSLCompileCommon.compile_commands(sasl='AUTO')
+class SaslCyrusStaticOpenSSLCompile(StaticOpenSSLCompileCommon):
+    name = 'sasl-cyrus-openssl-static-compile'
+    commands = StaticOpenSSLCompileCommon.compile_commands(sasl='CYRUS')
 
 
 def functions():
     return merge_defns(
         SaslOffStaticOpenSSLCompile.defn(),
-        SaslAutoStaticOpenSSLCompile.defn(),
+        SaslCyrusStaticOpenSSLCompile.defn(),
     )
 
 
@@ -59,7 +59,7 @@ def tasks():
 
     SASL_TO_FUNC = {
         'off': SaslOffStaticOpenSSLCompile,
-        'auto': SaslAutoStaticOpenSSLCompile,
+        'cyrus': SaslCyrusStaticOpenSSLCompile,
     }
 
     res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX)

@@ -14,11 +14,11 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('macos-1014', 'clang', None, ['auto']),
+    ('macos-1014', 'clang', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('macos-1014', 'clang', None, 'auto', ['auth', 'noauth'], ['server'], ['4.2', '4.4', '5.0', 'latest']),
+    ('macos-1014', 'clang', None, 'cyrus', ['auth', 'noauth'], ['server'], ['4.2', '4.4', '5.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -28,20 +28,20 @@ class DarwinSSLCompileCommon(CompileCommon):
     ssl = 'DARWIN'
 
 
-class SaslAutoDarwinSSLCompile(DarwinSSLCompileCommon):
-    name = 'cse-sasl-auto-darwinssl-compile'
-    commands = DarwinSSLCompileCommon.compile_commands(sasl='AUTO')
+class SaslCyrusDarwinSSLCompile(DarwinSSLCompileCommon):
+    name = 'cse-sasl-cyrus-darwinssl-compile'
+    commands = DarwinSSLCompileCommon.compile_commands(sasl='CYRUS')
 
 
 def functions():
-    return SaslAutoDarwinSSLCompile.defn()
+    return SaslCyrusDarwinSSLCompile.defn()
 
 
 def tasks():
     res = []
 
     SASL_TO_FUNC = {
-        'auto': SaslAutoDarwinSSLCompile,
+        'cyrus': SaslCyrusDarwinSSLCompile,
     }
 
     MORE_TAGS = ['cse']

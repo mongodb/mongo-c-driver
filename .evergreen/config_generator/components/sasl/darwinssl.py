@@ -15,12 +15,12 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('macos-1014',       'clang', None, ['auto']),
-    ('macos-1100-arm64', 'clang', None, ['auto']),
+    ('macos-1014',       'clang', None, ['cyrus']),
+    ('macos-1100-arm64', 'clang', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('macos-1014', 'clang', None, 'auto', ['auth', 'noauth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', 'latest']),
+    ('macos-1014', 'clang', None, 'cyrus', ['auth', 'noauth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -35,15 +35,15 @@ class SaslOffDarwinSSLCompile(DarwinSSLCompileCommon):
     commands = DarwinSSLCompileCommon.compile_commands()
 
 
-class SaslAutoDarwinSSLCompile(DarwinSSLCompileCommon):
-    name = 'sasl-auto-darwinssl-compile'
-    commands = DarwinSSLCompileCommon.compile_commands(sasl='AUTO')
+class SaslCyrusDarwinSSLCompile(DarwinSSLCompileCommon):
+    name = 'sasl-cyrus-darwinssl-compile'
+    commands = DarwinSSLCompileCommon.compile_commands(sasl='CYRUS')
 
 
 def functions():
     return merge_defns(
         SaslOffDarwinSSLCompile.defn(),
-        SaslAutoDarwinSSLCompile.defn(),
+        SaslCyrusDarwinSSLCompile.defn(),
     )
 
 
@@ -52,7 +52,7 @@ def tasks():
 
     SASL_TO_FUNC = {
         'off': SaslOffDarwinSSLCompile,
-        'auto': SaslAutoDarwinSSLCompile,
+        'cyrus': SaslCyrusDarwinSSLCompile,
     }
 
     res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX)
