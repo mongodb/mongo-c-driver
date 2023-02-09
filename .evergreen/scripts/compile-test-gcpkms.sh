@@ -11,9 +11,11 @@ echo "Installing libmongocrypt ... begin"
 git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
 # TODO: remove once latest libmongocrypt release contains commit 4c4aa8bf.
 {
+    pushd libmongocrypt
     echo "1.7.0+4c4aa8bf" >|libmongocrypt/VERSION_CURRENT
-    git -C libmongocrypt fetch -q origin master
-    git -C libmongocrypt checkout -q 4c4aa8bf # Allows -DENABLE_MONGOC=OFF.
+    git fetch -q origin master
+    git checkout -q 4c4aa8bf # Allows -DENABLE_MONGOC=OFF.
+    popd # libmongocrypt
 }
 MONGOCRYPT_INSTALL_PREFIX=${INSTALL_DIR} \
     DEFAULT_BUILD_ONLY=true \
