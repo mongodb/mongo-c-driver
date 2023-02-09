@@ -36,27 +36,16 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('ubuntu1804',        'gcc',        None, 'off',  ['noauth', 'auth'], [          'replica'], [                                          'latest']),
+    ('rhel81-power8',     'gcc',       None, 'cyrus', ['auth'], ['server',          ], [       '4.2', '4.4', '5.0', '6.0', 'latest']),
+    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server',          ], [                     '5.0', '6.0', 'latest']),
+    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server',          ], [       '4.2', '4.4', '5.0', '6.0', 'latest']),
+    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.0', '4.2', '4.4', '5.0', '6.0', 'latest']),
+    ('windows-64-vs2017', 'vs2017x64', None, 'cyrus', ['auth'], ['server',          ], [                                   'latest']),
 
-    ('debian10',          'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [                                          'latest']),
-    ('debian11',          'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [                                          'latest']),
-    ('debian81',          'clang',      None, 'cyrus', ['noauth', 'auth'], ['server',          ], [       '4.0',                                     ]),
-    ('debian81',          'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [       '4.0',                                     ]),
-    ('debian92',          'clang',      None, 'cyrus', ['noauth', 'auth'], ['server',          ], [              '4.2', '4.4', '5.0',        'latest']),
-    ('debian92',          'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [              '4.2', '4.4', '5.0',        'latest']),
-    ('rhel70',            'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], ['3.6', '4.0', '4.2', '4.4', '5.0',        'latest']),
-    ('rhel80',            'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [                                          'latest']),
-    ('rhel81-power8',     'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [              '4.2', '4.4', '5.0',        'latest']),
-    ('rhel83-zseries',    'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [                            '5.0', '6.0', 'latest']),
-    ('ubuntu1404',        'clang',      None, 'cyrus', ['noauth', 'auth'], ['server',          ], ['3.6', '4.0',                                     ]),
-    ('ubuntu1404',        'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], ['3.6', '4.0',                                     ]),
-    ('ubuntu1604-arm64',  'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [       '4.0',                                     ]),
-    ('ubuntu1604',        'clang',      None, 'cyrus', ['noauth', 'auth'], ['server',          ], ['3.6', '4.0', '4.2', '4.4',                       ]),
-    ('ubuntu1804-arm64',  'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [              '4.2', '4.4', '5.0',        'latest']),
-    ('ubuntu1804',        'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [              '4.2', '4.4', '5.0',                ]),
-    ('ubuntu1804',        'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server', 'replica'], [       '4.0',                             'latest']),
-    ('ubuntu2004',        'gcc',        None, 'cyrus', ['noauth', 'auth'], ['server',          ], [                                          'latest']),
-    ('windows-64-vs2017', 'vs2017x64',  None, 'cyrus', ['noauth', 'auth'], ['server',          ], [                                          'latest']),
+    # Test ARM64 + 4.0 on Ubuntu 16.04, as MongoDB server does not produce
+    # downloads for Ubuntu 18.04 arm64.
+    # See: https://www.mongodb.com/docs/manual/administration/production-notes/
+    ('ubuntu1604-arm64', 'gcc', None, 'cyrus', ['auth'], ['server'], ['4.0']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
