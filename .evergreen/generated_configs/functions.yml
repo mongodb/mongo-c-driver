@@ -457,6 +457,16 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile.sh
+  std-compile:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        args:
+          - -c
+          - .evergreen/scripts/compile-std.sh
   stop-load-balancer:
     - command: subprocess.exec
       params:

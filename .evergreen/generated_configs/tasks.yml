@@ -3761,128 +3761,128 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: std-c11-sasl-cyrus-openssl-archlinux-clang-compile
+  - name: std-c11-archlinux-clang-compile
     run_on: archlinux-large
-    tags: [std-matrix-c11, compile, archlinux, clang, std-c11, sasl-cyrus]
+    tags: [std-matrix, archlinux, clang, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: clang
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-debian10-clang-compile
+          C_STD_VERSION: 11
+  - name: std-c11-debian10-clang-compile
     run_on: debian10-large
-    tags: [std-matrix-c11, compile, debian10, clang, std-c11, sasl-cyrus]
+    tags: [std-matrix, debian10, clang, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: clang
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-debian10-gcc-compile
+          C_STD_VERSION: 11
+  - name: std-c11-debian10-gcc-compile
     run_on: debian10-large
-    tags: [std-matrix-c11, compile, debian10, gcc, std-c11, sasl-cyrus]
+    tags: [std-matrix, debian10, gcc, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: gcc
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-debian11-clang-compile
+          C_STD_VERSION: 11
+  - name: std-c11-debian11-clang-compile
     run_on: debian11-large
-    tags: [std-matrix-c11, compile, debian11, clang, std-c11, sasl-cyrus]
+    tags: [std-matrix, debian11, clang, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: clang
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-debian11-gcc-compile
+          C_STD_VERSION: 11
+  - name: std-c11-debian11-gcc-compile
     run_on: debian11-large
-    tags: [std-matrix-c11, compile, debian11, gcc, std-c11, sasl-cyrus]
+    tags: [std-matrix, debian11, gcc, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: gcc
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-debian81-clang-compile
+          C_STD_VERSION: 11
+  - name: std-c11-debian81-clang-compile
     run_on: debian81-large
-    tags: [std-matrix-c11, compile, debian81, clang, std-c11, sasl-cyrus]
+    tags: [std-matrix, debian81, clang, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: clang
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-debian92-clang-compile
+          C_STD_VERSION: 11
+  - name: std-c11-debian92-clang-compile
     run_on: debian92-large
-    tags: [std-matrix-c11, compile, debian92, clang, std-c11, sasl-cyrus]
+    tags: [std-matrix, debian92, clang, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: clang
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-ubuntu1604-clang-compile
+          C_STD_VERSION: 11
+  - name: std-c11-ubuntu1604-clang-compile
     run_on: ubuntu1604-large
-    tags: [std-matrix-c11, compile, ubuntu1604, clang, std-c11, sasl-cyrus]
+    tags: [std-matrix, ubuntu1604, clang, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: clang
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-ubuntu1604-clang-i686-compile
+          C_STD_VERSION: 11
+  - name: std-c11-ubuntu1604-clang-i686-compile
     run_on: ubuntu1604-large
-    tags: [std-matrix-c11, compile, ubuntu1604, clang, std-c11, i686, sasl-cyrus]
+    tags: [std-matrix, ubuntu1604, clang, compile, i686, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: clang
+          C_STD_VERSION: 11
           MARCH: i686
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-ubuntu1804-clang-i686-compile
+  - name: std-c11-ubuntu1804-clang-i686-compile
     run_on: ubuntu1804-large
-    tags: [std-matrix-c11, compile, ubuntu1804, clang, std-c11, i686, sasl-cyrus]
+    tags: [std-matrix, ubuntu1804, clang, compile, i686, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: clang
+          C_STD_VERSION: 11
           MARCH: i686
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-ubuntu1804-gcc-compile
+  - name: std-c11-ubuntu1804-gcc-compile
     run_on: ubuntu1804-large
-    tags: [std-matrix-c11, compile, ubuntu1804, gcc, std-c11, sasl-cyrus]
+    tags: [std-matrix, ubuntu1804, gcc, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: gcc
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-ubuntu2004-clang-compile
+          C_STD_VERSION: 11
+  - name: std-c11-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
-    tags: [std-matrix-c11, compile, ubuntu2004, clang, std-c11, sasl-cyrus]
+    tags: [std-matrix, ubuntu2004, clang, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: clang
-      - func: upload-build
-  - name: std-c11-sasl-cyrus-openssl-ubuntu2004-gcc-compile
+          C_STD_VERSION: 11
+  - name: std-c11-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
-    tags: [std-matrix-c11, compile, ubuntu2004, gcc, std-c11, sasl-cyrus]
+    tags: [std-matrix, ubuntu2004, gcc, compile, std-c11]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: gcc
-      - func: upload-build
-  - name: std-c17-sasl-cyrus-openssl-debian10-gcc-compile
+          C_STD_VERSION: 11
+  - name: std-c17-debian10-gcc-compile
     run_on: debian10-large
-    tags: [std-matrix-c17, compile, debian10, gcc, std-c17, sasl-cyrus]
+    tags: [std-matrix, debian10, gcc, compile, std-c17]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: gcc
-      - func: upload-build
-  - name: std-c17-sasl-cyrus-openssl-debian11-gcc-compile
+          CFLAGS: -std=c17
+  - name: std-c17-debian11-gcc-compile
     run_on: debian11-large
-    tags: [std-matrix-c17, compile, debian11, gcc, std-c17, sasl-cyrus]
+    tags: [std-matrix, debian11, gcc, compile, std-c17]
     commands:
-      - func: sasl-cyrus-openssl-compile
+      - func: std-compile
         vars:
           CC: gcc
-      - func: upload-build
+          CFLAGS: -std=c17
   - name: tsan-sasl-off-openssl-ubuntu1804-clang-compile
     run_on: ubuntu1804-large
     tags: [sanitizers-matrix-tsan, compile, ubuntu1804, clang, tsan, sasl-off]
