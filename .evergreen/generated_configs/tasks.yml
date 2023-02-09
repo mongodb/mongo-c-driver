@@ -1968,46 +1968,6 @@ tasks:
         vars:
           CC: Visual Studio 14 2015 Win64
       - func: upload-build
-  - name: cse-sasl-cyrus-winssl-vs2015-x64-test-4.2-server-auth
-    run_on: windows-64-vs2015-small
-    tags: [cse-matrix-winssl, test, windows-64-vs2015, vs2015x64, sasl-cyrus, cse, auth, server, "4.2"]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-vs2015-x64-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-vs2015-x64-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: Visual Studio 14 2015 Win64 }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: winssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-winssl-vs2015-x64-test-4.2-server-noauth
-    run_on: windows-64-vs2015-small
-    tags: [cse-matrix-winssl, test, windows-64-vs2015, vs2015x64, sasl-cyrus, cse, noauth, server, "4.2"]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-vs2015-x64-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-vs2015-x64-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: Visual Studio 14 2015 Win64 }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: winssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
   - name: cse-sasl-cyrus-winssl-vs2017-x64-compile
     run_on: windows-64-vs2017-large
     tags: [cse-matrix-winssl, compile, windows-64-vs2017, vs2017x64, cse, sasl-cyrus]
@@ -2016,6 +1976,26 @@ tasks:
         vars:
           CC: Visual Studio 15 2017 Win64
       - func: upload-build
+  - name: cse-sasl-cyrus-winssl-vs2017-x64-test-4.2-server-auth
+    run_on: windows-64-vs2017-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-cyrus, cse, auth, server, "4.2"]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-vs2017-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-vs2017-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-winssl-vs2017-x64-test-4.4-server-auth
     run_on: windows-64-vs2017-small
     tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-cyrus, cse, auth, server, "4.4"]
@@ -2029,26 +2009,6 @@ tasks:
           updates:
             - { key: CC, value: Visual Studio 15 2017 Win64 }
             - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: winssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-winssl-vs2017-x64-test-4.4-server-noauth
-    run_on: windows-64-vs2017-small
-    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-cyrus, cse, noauth, server, "4.4"]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-vs2017-x64-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-vs2017-x64-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
-            - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
             - { key: SSL, value: winssl }
@@ -2076,9 +2036,9 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-vs2017-x64-test-5.0-server-noauth
+  - name: cse-sasl-cyrus-winssl-vs2017-x64-test-6.0-replica-auth
     run_on: windows-64-vs2017-small
-    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-cyrus, cse, noauth, server, "5.0"]
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-cyrus, cse, auth, replica, "6.0"]
     depends_on: [{ name: cse-sasl-cyrus-winssl-vs2017-x64-compile }]
     commands:
       - func: fetch-build
@@ -2088,9 +2048,49 @@ tasks:
         params:
           updates:
             - { key: CC, value: Visual Studio 15 2017 Win64 }
-            - { key: AUTH, value: noauth }
-            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-vs2017-x64-test-6.0-server-auth
+    run_on: windows-64-vs2017-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-cyrus, cse, auth, server, "6.0"]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-vs2017-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-vs2017-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-vs2017-x64-test-latest-replica-auth
+    run_on: windows-64-vs2017-small
+    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-cyrus, cse, auth, replica, latest]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-vs2017-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-vs2017-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: Visual Studio 15 2017 Win64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: replica_set }
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -2109,26 +2109,6 @@ tasks:
           updates:
             - { key: CC, value: Visual Studio 15 2017 Win64 }
             - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: latest }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: winssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-winssl-vs2017-x64-test-latest-server-noauth
-    run_on: windows-64-vs2017-small
-    tags: [cse-matrix-winssl, test, windows-64-vs2017, vs2017x64, sasl-cyrus, cse, noauth, server, latest]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-vs2017-x64-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-vs2017-x64-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: Visual Studio 15 2017 Win64 }
-            - { key: AUTH, value: noauth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
             - { key: SSL, value: winssl }
