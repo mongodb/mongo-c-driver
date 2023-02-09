@@ -25,19 +25,11 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('windows-64-vs2017', 'vs2017x64', None, 'off',   ['noauth', 'auth'], ['server'], [                                   'latest']),
+    ('windows-64-vs2017', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', '6.0', 'latest']),
 
-    ('windows-64-vs2013', 'vs2013x86', None, 'off',   ['noauth', 'auth'], ['server'], [       '4.0', '4.2',                       ]),
-    ('windows-64-vs2015', 'vs2015x86', None, 'off',   ['noauth', 'auth'], ['server'], [       '4.0', '4.2',                       ]),
-    ('windows-64-vs2017', 'vs2017x86', None, 'off',   ['noauth', 'auth'], ['server'], [                                   'latest']),
-
-    ('windows-64-vs2013', 'vs2013x64', None, 'cyrus', ['noauth', 'auth'], ['server'], [       '4.0', '4.2',                       ]),
-    ('windows-64-vs2015', 'vs2015x64', None, 'cyrus', ['noauth', 'auth'], ['server'], ['3.6', '4.0', '4.2',                       ]),
-    ('windows-64-vs2017', 'vs2017x64', None, 'cyrus', ['noauth', 'auth'], ['server'], [                     '4.4', '5.0', 'latest']),
-
-    ('windows-64-vs2017', 'mingw',     None, 'sspi',  [          'auth'], ['server'], [                                   'latest']),
-    ('windows-64-vs2017', 'vs2017x64', None, 'sspi',  [          'auth'], ['server'], [                                   'latest']),
-    ('windows-64-vs2017', 'vs2017x86', None, 'sspi',  [          'auth'], ['server'], [                                   'latest']),
+    ('windows-64-vs2017', 'mingw',     None, 'sspi',  ['auth'], ['server'], ['latest']),
+    ('windows-64-vs2017', 'vs2017x64', None, 'sspi',  ['auth'], ['server'], ['latest']),
+    ('windows-64-vs2017', 'vs2017x86', None, 'sspi',  ['auth'], ['server'], ['latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
