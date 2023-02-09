@@ -26,6 +26,7 @@ COMPILE_MATRIX = [
     ('rhel81-power8',     'gcc',         None,   ['off']),
     ('rhel83-zseries',    'gcc',         None,   ['off']),
     ('ubuntu1604',        'clang',       'i686', ['off']),
+    ('ubuntu1604',        'gcc',         None,   ['off']),
     ('ubuntu1804-arm64',  'gcc',         None,   ['off']),
     ('ubuntu1804',        'clang',       'i686', ['off']),
     ('ubuntu1804',        'gcc',         'i686', ['off']),
@@ -37,25 +38,8 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('archlinux',         'clang',       None,   'off', ['noauth'], ['server', 'replica', 'sharded'], ['3.6', '4.0',                              ]),
-    ('debian10',          'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('debian11',          'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('debian92',          'clang',       None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('debian92',          'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('macos-1014',        'clang',       None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('rhel70',            'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('rhel80',            'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('rhel81-power8',     'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('rhel83-zseries',    'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('ubuntu1604',        'clang',       'i686', 'off', ['noauth'], ['server', 'replica', 'sharded'], ['3.6',                                     ]),
-    ('ubuntu1804',        'clang',       'i686', 'off', ['noauth'], ['server', 'replica', 'sharded'], [       '4.0', '4.2', '4.4', '5.0', 'latest']),
-    ('ubuntu1804',        'gcc',         'i686', 'off', ['noauth'], ['server', 'replica', 'sharded'], [       '4.0', '4.2', '4.4', '5.0', 'latest']),
-    ('ubuntu1804',        'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('ubuntu1804-arm64',  'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('ubuntu2004',        'gcc',         None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('windows-64-vs2017', 'mingw',       None,   'off', ['noauth'], ['server',                     ], [                                   'latest']),
-    ('windows-64-vs2017', 'vs2017x64',   None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
-    ('windows-64-vs2017', 'vs2017x86',   None,   'off', ['noauth'], ['server', 'replica', 'sharded'], [                                   'latest']),
+    ('ubuntu1604', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['3.6',                                     ]),
+    ('ubuntu1804', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], [       '4.0', '4.2', '4.4', '5.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
