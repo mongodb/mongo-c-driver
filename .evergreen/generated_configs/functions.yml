@@ -104,23 +104,6 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-  cse-sasl-cyrus-openssl-static-compile:
-    - command: expansions.update
-      params:
-        updates:
-          - { key: SSL, value: OPENSSL_STATIC }
-          - { key: SASL, value: CYRUS }
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        env:
-          COMPILE_LIBMONGOCRYPT: "ON"
-        args:
-          - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
   cse-sasl-cyrus-winssl-compile:
     - command: expansions.update
       params:
@@ -256,6 +239,16 @@ functions:
             for file in $(find .evergreen/scripts -type f); do
                 chmod +rx "$file" || exit
             done
+  openssl-static-compile:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        args:
+          - -c
+          - .evergreen/scripts/compile-openssl-static.sh
   prepare-kerberos:
     - command: subprocess.exec
       type: setup
@@ -390,19 +383,6 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile.sh
-  sasl-cyrus-openssl-static-compile:
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        env:
-          SASL: CYRUS
-          SSL: OPENSSL_STATIC
-        args:
-          - -c
-          - .evergreen/scripts/compile.sh
   sasl-cyrus-winssl-compile:
     - command: subprocess.exec
       type: test
@@ -449,18 +429,6 @@ functions:
         add_expansions_to_env: true
         env:
           SSL: OPENSSL
-        args:
-          - -c
-          - .evergreen/scripts/compile.sh
-  sasl-off-openssl-static-compile:
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        env:
-          SSL: OPENSSL_STATIC
         args:
           - -c
           - .evergreen/scripts/compile.sh
