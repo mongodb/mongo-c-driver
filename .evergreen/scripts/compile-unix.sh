@@ -202,7 +202,7 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
   # TODO: remove once latest libmongocrypt release contains commit 4c4aa8bf.
   {
     pushd libmongocrypt
-    echo "1.7.0+4c4aa8bf" >|libmongocrypt/VERSION_CURRENT
+    echo "1.7.0+4c4aa8bf" >|VERSION_CURRENT
     git fetch -q origin master
     git checkout -q 4c4aa8bf # Allows -DENABLE_MONGOC=OFF.
     popd # libmongocrypt
