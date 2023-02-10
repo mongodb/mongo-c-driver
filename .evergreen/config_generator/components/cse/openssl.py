@@ -30,7 +30,9 @@ COMPILE_MATRIX = [
 
 # TODO (CDRIVER-3789): test cse with the 'sharded' topology.
 TEST_MATRIX = [
-    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
+    # 4.2 and 4.4 not available on rhel83-zseries.
+    ('rhel83-zseries', 'gcc', None, 'cyrus', ['auth'], ['server'], ['5.0']),
+
     ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
     ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
     ('windows-64-vs2017', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
