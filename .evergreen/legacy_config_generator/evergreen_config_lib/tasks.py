@@ -885,6 +885,11 @@ class OCSPTask(MatrixTask):
 
     def to_dict(self):
         task = super(MatrixTask, self).to_dict()
+
+        # OCSP tests should run with a batchtime of 14 days. Avoid running OCSP
+        # tests in patch builds by default (only in commit builds).
+        task['patchable'] = False
+
         commands = task['commands']
         commands.append(
             func('fetch-build', BUILD_NAME=self.depends_on['name']))
