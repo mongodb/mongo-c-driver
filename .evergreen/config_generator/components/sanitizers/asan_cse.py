@@ -2,7 +2,7 @@ from config_generator.etc.compile import generate_compile_tasks
 
 from config_generator.etc.sanitizers.test import generate_test_tasks
 
-from config_generator.components.cse.openssl import SaslOffOpenSSLCompile
+from config_generator.components.cse.openssl import SaslCyrusOpenSSLCompile
 
 from config_generator.components.sanitizers.asan import TAG
 
@@ -10,12 +10,12 @@ from config_generator.components.sanitizers.asan import TAG
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('ubuntu1804', 'clang', None, ['off']),
+    ('ubuntu1804', 'clang', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('ubuntu1804', 'clang', None, 'off', ['auth'], ['server',          ], ['4.2', '4.4', '5.0',                ]),
-    ('ubuntu1804', 'clang', None, 'off', ['auth'], ['server', 'replica'], [                     '6.0', 'latest']),
+    ('ubuntu1804', 'clang', None, 'cyrus', ['auth'], ['server',          ], ['4.2', '4.4', '5.0',                ]),
+    ('ubuntu1804', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], [                     '6.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -29,7 +29,7 @@ def tasks():
 
     SSL = 'openssl'
     SASL_TO_FUNC = {
-        'off': SaslOffOpenSSLCompile,
+        'cyrus': SaslCyrusOpenSSLCompile,
     }
 
     res += generate_compile_tasks(

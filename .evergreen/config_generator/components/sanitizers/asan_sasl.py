@@ -3,7 +3,7 @@ from config_generator.etc.compile import generate_compile_tasks
 from config_generator.etc.sanitizers.test import generate_test_tasks
 
 from config_generator.components.sasl.nossl import SaslOffNoSSLCompile
-from config_generator.components.sasl.openssl import SaslOffOpenSSLCompile
+from config_generator.components.sasl.openssl import SaslCyrusOpenSSLCompile
 
 from config_generator.components.sanitizers.asan import TAG
 
@@ -11,8 +11,8 @@ from config_generator.components.sanitizers.asan import TAG
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('ubuntu1604', 'clang', None, ['off']),
-    ('ubuntu1804', 'clang', None, ['off']),
+    ('ubuntu1604', 'clang', None, ['off', 'cyrus']),
+    ('ubuntu1804', 'clang', None, ['off', 'cyrus']),
 ]
 
 TEST_NOSSL_MATRIX = [
@@ -21,8 +21,8 @@ TEST_NOSSL_MATRIX = [
 ]
 
 TEST_OPENSSL_MATRIX = [
-    ('ubuntu1604', 'clang', None, 'off', ['auth'], ['server', 'replica', 'sharded'], ['3.6',                                            ]),
-    ('ubuntu1804', 'clang', None, 'off', ['auth'], ['server', 'replica', 'sharded'], [       '4.0', '4.2', '4.4', '5.0', '6.0', 'latest']),
+    ('ubuntu1604', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['3.6',                                            ]),
+    ('ubuntu1804', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], [       '4.0', '4.2', '4.4', '5.0', '6.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -30,12 +30,16 @@ TEST_OPENSSL_MATRIX = [
 
 MORE_TAGS = ['asan']
 
+SASL_TO_FUNC = {
+    'off': SaslOffNoSSLCompile,
+    'cyrus': SaslCyrusOpenSSLCompile,
+}
+
 
 def nossl_tasks():
     res = []
 
     SSL = 'nossl'
-    SASL_TO_FUNC = {'off': SaslOffNoSSLCompile}
 
     res += generate_compile_tasks(
         SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS
@@ -50,7 +54,6 @@ def openssl_tasks():
     res = []
 
     SSL = 'openssl'
-    SASL_TO_FUNC = {'off': SaslOffOpenSSLCompile}
 
     res += generate_compile_tasks(
         SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS
