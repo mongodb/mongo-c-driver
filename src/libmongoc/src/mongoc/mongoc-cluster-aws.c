@@ -296,6 +296,40 @@ fail:
    return ret;
 }
 
+// parse_expiration parses the "Expiration" string value returned from an ECS or
+// EC2 response. "Expiration" is expected to be an ISO-8601 string. Example:
+// "2023-02-07T20:04:27Z". On success, `expiration_ms` is set to the expiration
+// time as milliseconds from the Unix epoch.
+static bool
+expiration_to_ms (const char *expiration_str,
+                  int64_t *expiration_ms,
+                  bson_error_t *error)
+{
+   bson_error_t json_err;
+   bson_t date_doc;
+   bson_iter_t date_iter;
+   char *date_doc_str;
+   bool ret = false;
+
+   // libbson has private API `_bson_iso8601_date_parse` to parse ISO-8601
+   // strings. The private API is inaccessible to libmongoc.
+   // Create a temporary bson document with a $date to parse.
+   date_doc_str = bson_strdup_printf ("{\"Expiration\" : {\"$date\" : \"%s\"}}",
+                                      expiration_str);
+
+   if (!bson_init_from_json (&date_doc, date_doc_str, -1, &json_err)) {
+      bson_free (date_doc_str);
+      AUTH_ERROR_AND_FAIL ("failed to parse Expiration: %s", json_err.message);
+   }
+   BSON_ASSERT (bson_iter_init_find (&date_iter, &date_doc, "Expiration"));
+   *expiration_ms = bson_iter_date_time (&date_iter);
+   bson_free (date_doc_str);
+   bson_destroy (&date_doc);
+   ret = true;
+fail:
+   return ret;
+}
+
 static bool
 _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
 {
@@ -350,6 +384,15 @@ _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       ecs_session_token = bson_iter_utf8 (&iter, NULL);
    }
 
+   int64_t expiration_ms = 0;
+   if (bson_iter_init_find_case (&iter, response_json, "Expiration") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      if (!expiration_to_ms (
+             bson_iter_utf8 (&iter, NULL), &expiration_ms, error)) {
+         goto fail;
+      }
+   }
+
    if (!_validate_and_set_creds (ecs_access_key_id,
                                  ecs_secret_access_key,
                                  ecs_session_token,
@@ -358,6 +401,7 @@ _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       goto fail;
    }
 
+   creds->expiration_ms = expiration_ms;
 
    ret = true;
 fail:
@@ -469,6 +513,15 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       ec2_session_token = bson_iter_utf8 (&iter, NULL);
    }
 
+   int64_t expiration_ms = 0;
+   if (bson_iter_init_find_case (&iter, response_json, "Expiration") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      if (!expiration_to_ms (
+             bson_iter_utf8 (&iter, NULL), &expiration_ms, error)) {
+         goto fail;
+      }
+   }
+
    if (!_validate_and_set_creds (ec2_access_key_id,
                                  ec2_secret_access_key,
                                  ec2_session_token,
@@ -476,6 +529,7 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
                                  error)) {
       goto fail;
    }
+   creds->expiration_ms = expiration_ms;
 
    ret = true;
 fail:
@@ -513,6 +567,14 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
    creds->secret_access_key = NULL;
    creds->session_token = NULL;
 
+   // Check cache before enviroment variables. This is required by the
+   // specification: "Even if the environment variables are present in
+   // subsequent authorization attempts, the driver MUST use the cached
+   // credentials"
+   if (_mongoc_aws_credentials_cache_get (creds)) {
+      goto succeed;
+   }
+
    if (uri) {
       TRACE ("%s", "checking URI for credentials");
       if (!_obtain_creds_from_uri (creds, uri, error)) {
@@ -531,20 +593,46 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
       goto succeed;
    }
 
-   TRACE ("%s", "checking ECS metadata for credentials");
-   if (!_obtain_creds_from_ecs (creds, error)) {
-      goto fail;
-   }
-   if (!_creds_empty (creds)) {
-      goto succeed;
-   }
+   // Try to fetch credentials from cacheable sources: ECS or EC2.
+   // Lock the cache to prevent duplicate requests.
+   {
+      _mongoc_aws_credentials_cache_lock ();
 
-   TRACE ("%s", "checking EC2 metadata for credentials");
-   if (!_obtain_creds_from_ec2 (creds, error)) {
-      goto fail;
-   }
-   if (!_creds_empty (creds)) {
-      goto succeed;
+      // Check again if credentials have been cached.
+      if (_mongoc_aws_credentials_cache_get_nolock (creds)) {
+         _mongoc_aws_credentials_cache_unlock ();
+         goto succeed;
+      }
+
+      TRACE ("%s", "checking ECS metadata for credentials");
+      if (!_obtain_creds_from_ecs (creds, error)) {
+         _mongoc_aws_credentials_cache_unlock ();
+         goto fail;
+      }
+      if (!_creds_empty (creds)) {
+         if (creds->expiration_ms != 0) {
+            // Only try to cache credentials if an expiration time is included.
+            _mongoc_aws_credentials_cache_put_nolock (creds);
+         }
+         _mongoc_aws_credentials_cache_unlock ();
+         goto succeed;
+      }
+
+      TRACE ("%s", "checking EC2 metadata for credentials");
+      if (!_obtain_creds_from_ec2 (creds, error)) {
+         _mongoc_aws_credentials_cache_unlock ();
+         goto fail;
+      }
+      if (!_creds_empty (creds)) {
+         if (creds->expiration_ms != 0) {
+            // Only try to cache credentials if an expiration time is included.
+            _mongoc_aws_credentials_cache_put_nolock (creds);
+         }
+         _mongoc_aws_credentials_cache_unlock ();
+         goto succeed;
+      }
+
+      _mongoc_aws_credentials_cache_unlock ();
    }
 
    AUTH_ERROR_AND_FAIL ("unable to get credentials\n");
@@ -959,6 +1047,9 @@ _mongoc_cluster_auth_node_aws (mongoc_cluster_t *cluster,
 
    ret = true;
 fail:
+   if (!ret) {
+      _mongoc_aws_credentials_cache_clear ();
+   }
    _mongoc_aws_credentials_cleanup (&creds);
    bson_free (sts_fqdn);
    bson_free (region);
