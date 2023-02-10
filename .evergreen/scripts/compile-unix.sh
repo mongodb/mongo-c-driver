@@ -205,7 +205,7 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
     echo "1.7.0+4c4aa8bf" >|VERSION_CURRENT
     git fetch -q origin master
     git checkout -q 4c4aa8bf # Allows -DENABLE_MONGOC=OFF.
-    popd # libmongocrypt
+    popd                     # libmongocrypt
   }
   declare -a crypt_cmake_flags
   crypt_cmake_flags=(
@@ -214,7 +214,10 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
     "-DENABLE_ONLINE_TESTS=OFF"
     "-DENABLE_MONGOC=OFF"
   )
-  MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
+  exec 3>/dev/null
+  BASH_XTRACEFD="3" \
+    DEBUG="0" \
+    MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
     DEFAULT_BUILD_ONLY=true \
     LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]}" \
     ./libmongocrypt/.evergreen/compile.sh
