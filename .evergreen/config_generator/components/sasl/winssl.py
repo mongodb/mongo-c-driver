@@ -41,7 +41,7 @@ class WinSSLCompileCommon(CompileCommon):
 
 class SaslOffWinSSLCompile(WinSSLCompileCommon):
     name = 'sasl-off-winssl-compile'
-    commands = WinSSLCompileCommon.compile_commands()
+    commands = WinSSLCompileCommon.compile_commands(sasl='OFF')
 
 
 class SaslCyrusWinSSLCompile(WinSSLCompileCommon):

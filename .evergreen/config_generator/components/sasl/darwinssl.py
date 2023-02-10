@@ -32,7 +32,7 @@ class DarwinSSLCompileCommon(CompileCommon):
 
 class SaslOffDarwinSSLCompile(DarwinSSLCompileCommon):
     name = 'sasl-off-darwinssl-compile'
-    commands = DarwinSSLCompileCommon.compile_commands()
+    commands = DarwinSSLCompileCommon.compile_commands(sasl='OFF')
 
 
 class SaslCyrusDarwinSSLCompile(DarwinSSLCompileCommon):

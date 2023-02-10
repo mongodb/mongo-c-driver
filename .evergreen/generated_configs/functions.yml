@@ -126,6 +126,7 @@ functions:
       params:
         updates:
           - { key: SSL, value: OPENSSL }
+          - { key: SASL, value: "OFF" }
     - command: subprocess.exec
       type: test
       params:
@@ -404,6 +405,7 @@ functions:
         working_dir: mongoc
         add_expansions_to_env: true
         env:
+          SASL: "OFF"
           SSL: DARWIN
         args:
           - -c
@@ -416,6 +418,7 @@ functions:
         working_dir: mongoc
         add_expansions_to_env: true
         env:
+          SASL: "OFF"
           SSL: "OFF"
         args:
           - -c
@@ -428,6 +431,7 @@ functions:
         working_dir: mongoc
         add_expansions_to_env: true
         env:
+          SASL: "OFF"
           SSL: OPENSSL
         args:
           - -c
@@ -440,6 +444,7 @@ functions:
         working_dir: mongoc
         add_expansions_to_env: true
         env:
+          SASL: "OFF"
           SSL: WINDOWS
         args:
           - -c

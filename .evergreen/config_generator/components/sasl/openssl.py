@@ -57,7 +57,7 @@ class OpenSSLCompileCommon(CompileCommon):
 
 class SaslOffOpenSSLCompile(OpenSSLCompileCommon):
     name = 'sasl-off-openssl-compile'
-    commands = OpenSSLCompileCommon.compile_commands()
+    commands = OpenSSLCompileCommon.compile_commands(sasl='OFF')
 
 
 class SaslCyrusOpenSSLCompile(OpenSSLCompileCommon):
