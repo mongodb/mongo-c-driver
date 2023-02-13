@@ -170,7 +170,8 @@ fi
 # Ensure find-cmake.sh is sourced *before* add-build-dirs-to-paths.sh
 # to avoid interfering with potential CMake build configuration.
 # shellcheck source=.evergreen/scripts/find-cmake.sh
-. "${script_dir}/find-cmake.sh" # ${CMAKE}
+. "${script_dir}/find-cmake-latest.sh"
+CMAKE="$(find_cmake_latest)"
 
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"

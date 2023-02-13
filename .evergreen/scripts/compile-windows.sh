@@ -97,7 +97,12 @@ else
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
-declare cmake_binary="/cygdrive/c/cmake/bin/cmake"
+# shellcheck source=.evergreen/scripts/find-cmake-version.sh
+. "${script_dir}/find-cmake-latest.sh"
+
+declare cmake_binary
+cmake_binary="$(find_cmake_latest)"
+
 declare compile_flags=(
   "/m" # Number of concurrent processes. No value=# of cpus
 )
