@@ -14,15 +14,15 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('macos-1014', 'clang', None, ['cyrus']),
+    ('macos-1015', 'clang', None, ['cyrus']),
 ]
 
 # TODO (CDRIVER-3789): test cse with the 'sharded' topology.
 TEST_MATRIX = [
-    ('macos-1014', 'clang', None, 'cyrus', ['auth'], ['server', 'replica' ], ['4.2', '4.4', '5.0']),
+    ('macos-1015', 'clang', None, 'cyrus', ['auth'], ['server', 'replica' ], ['4.2', '4.4', '5.0']),
 
     # Test 6.0+ with a replica set since Queryable Encryption does not support the 'server' topology.
-    ('macos-1014', 'clang', None, 'cyrus', ['auth'], ['server', 'replica' ], ['6.0', 'latest']),
+    ('macos-1015', 'clang', None, 'cyrus', ['auth'], ['server', 'replica' ], ['6.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
