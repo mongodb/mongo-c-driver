@@ -9025,6 +9025,7 @@ tasks:
   - func: fetch-source
   - command: shell.exec
     params:
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
@@ -9066,6 +9067,7 @@ tasks:
   - func: fetch-source
   - command: shell.exec
     params:
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
@@ -9089,6 +9091,7 @@ tasks:
   - func: fetch-source
   - command: shell.exec
     params:
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
@@ -9127,6 +9130,7 @@ tasks:
   commands:
   - command: shell.exec
     params:
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit

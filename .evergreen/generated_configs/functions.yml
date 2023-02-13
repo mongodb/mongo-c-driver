@@ -5,6 +5,7 @@ functions:
       params:
         binary: bash
         working_dir: mongoc
+        add_expansions_to_env: true
         args:
           - -c
           - .evergreen/scripts/abi-compliance-check.sh

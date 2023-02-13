@@ -51,7 +51,7 @@ def _create_tasks():
           AZUREKMS_CMD="tar xf testazurekms.tgz" \
             $DRIVERS_TOOLS/.evergreen/csfle/azurekms/run-command.sh
           echo "Untarring file ... end"
-        ''', test=False),
+        ''', test=False, add_expansions_to_env=True),
         shell_exec (r'''
           export AZUREKMS_RESOURCEGROUP=${testazurekms_resourcegroup}
           export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
@@ -69,7 +69,7 @@ def _create_tasks():
           pushd mongoc
           ./.evergreen/scripts/compile-test-azurekms.sh
           popd
-        ''', test=False),
+        ''', test=False, add_expansions_to_env=True),
         shell_exec (r'''
           LD_LIBRARY_PATH=$PWD/install \
           MONGODB_URI='mongodb://localhost:27017' \
