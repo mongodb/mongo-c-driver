@@ -15,26 +15,10 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('archlinux',         'clang',       None,   ['off']),
-    ('debian10',          'gcc',         None,   ['off']),
-    ('debian11',          'gcc',         None,   ['off']),
-    ('debian92',          'clang',       None,   ['off']),
-    ('debian92',          'gcc',         None,   ['off']),
     ('macos-1014',        'clang',       None,   ['off']),
-    ('rhel70',            'gcc',         None,   ['off']),
-    ('rhel80',            'gcc',         None,   ['off']),
-    ('rhel81-power8',     'gcc',         None,   ['off']),
-    ('rhel83-zseries',    'gcc',         None,   ['off']),
-    ('ubuntu1604',        'clang',       'i686', ['off']),
     ('ubuntu1604',        'gcc',         None,   ['off']),
-    ('ubuntu1804-arm64',  'gcc',         None,   ['off']),
-    ('ubuntu1804',        'clang',       'i686', ['off']),
-    ('ubuntu1804',        'gcc',         'i686', ['off']),
     ('ubuntu1804',        'gcc',         None,   ['off']),
-    ('ubuntu2004',        'gcc',         None,   ['off']),
-    ('windows-64-vs2017', 'mingw',       None,   ['off']),
     ('windows-64-vs2017', 'vs2017x64',   None,   ['off']),
-    ('windows-64-vs2017', 'vs2017x86',   None,   ['off']),
 ]
 
 TEST_MATRIX = [

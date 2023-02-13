@@ -2680,46 +2680,6 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: sasl-off-nossl-archlinux-clang-compile
-    run_on: archlinux-large
-    tags: [sasl-matrix-nossl, compile, archlinux, clang, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-off-nossl-debian10-gcc-compile
-    run_on: debian10-large
-    tags: [sasl-matrix-nossl, compile, debian10, gcc, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-debian11-gcc-compile
-    run_on: debian11-large
-    tags: [sasl-matrix-nossl, compile, debian11, gcc, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-debian92-clang-compile
-    run_on: debian92-large
-    tags: [sasl-matrix-nossl, compile, debian92, clang, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: clang
-      - func: upload-build
-  - name: sasl-off-nossl-debian92-gcc-compile
-    run_on: debian92-large
-    tags: [sasl-matrix-nossl, compile, debian92, gcc, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
   - name: sasl-off-nossl-macos-1014-clang-compile
     run_on: macos-1014
     tags: [sasl-matrix-nossl, compile, macos-1014, clang, sasl-off]
@@ -2727,47 +2687,6 @@ tasks:
       - func: sasl-off-nossl-compile
         vars:
           CC: clang
-      - func: upload-build
-  - name: sasl-off-nossl-rhel70-gcc-compile
-    run_on: rhel70-large
-    tags: [sasl-matrix-nossl, compile, rhel70, gcc, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-rhel80-gcc-compile
-    run_on: rhel80-large
-    tags: [sasl-matrix-nossl, compile, rhel80, gcc, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-rhel81-power8-gcc-compile
-    run_on: rhel81-power8-large
-    tags: [sasl-matrix-nossl, compile, rhel81-power8, gcc, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-rhel83-zseries-gcc-compile
-    run_on: rhel83-zseries-large
-    tags: [sasl-matrix-nossl, compile, rhel83-zseries, gcc, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-ubuntu1604-clang-i686-compile
-    run_on: ubuntu1604-large
-    tags: [sasl-matrix-nossl, compile, ubuntu1604, clang, i686, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: clang
-          MARCH: i686
       - func: upload-build
   - name: sasl-off-nossl-ubuntu1604-gcc-compile
     run_on: ubuntu1604-large
@@ -2834,23 +2753,6 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: sasl-off-nossl-ubuntu1804-arm64-gcc-compile
-    run_on: ubuntu1804-arm64-large
-    tags: [sasl-matrix-nossl, compile, ubuntu1804-arm64, gcc, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-ubuntu1804-clang-i686-compile
-    run_on: ubuntu1804-large
-    tags: [sasl-matrix-nossl, compile, ubuntu1804, clang, i686, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: clang
-          MARCH: i686
-      - func: upload-build
   - name: sasl-off-nossl-ubuntu1804-gcc-compile
     run_on: ubuntu1804-large
     tags: [sasl-matrix-nossl, compile, ubuntu1804, gcc, sasl-off]
@@ -2858,15 +2760,6 @@ tasks:
       - func: sasl-off-nossl-compile
         vars:
           CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-ubuntu1804-gcc-i686-compile
-    run_on: ubuntu1804-large
-    tags: [sasl-matrix-nossl, compile, ubuntu1804, gcc, i686, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-          MARCH: i686
       - func: upload-build
   - name: sasl-off-nossl-ubuntu1804-gcc-test-4.0-replica-noauth
     run_on: ubuntu1804-small
@@ -3153,22 +3046,6 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: sasl-off-nossl-ubuntu2004-gcc-compile
-    run_on: ubuntu2004-large
-    tags: [sasl-matrix-nossl, compile, ubuntu2004, gcc, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
-  - name: sasl-off-nossl-vs2017-mingw-compile
-    run_on: windows-64-vs2017-large
-    tags: [sasl-matrix-nossl, compile, windows-64-vs2017, mingw, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: mingw
-      - func: upload-build
   - name: sasl-off-nossl-vs2017-x64-compile
     run_on: windows-64-vs2017-large
     tags: [sasl-matrix-nossl, compile, windows-64-vs2017, vs2017x64, sasl-off]
@@ -3176,14 +3053,6 @@ tasks:
       - func: sasl-off-nossl-compile
         vars:
           CC: Visual Studio 15 2017 Win64
-      - func: upload-build
-  - name: sasl-off-nossl-vs2017-x86-compile
-    run_on: windows-64-vs2017-large
-    tags: [sasl-matrix-nossl, compile, windows-64-vs2017, vs2017x86, sasl-off]
-    commands:
-      - func: sasl-off-nossl-compile
-        vars:
-          CC: Visual Studio 15 2017
       - func: upload-build
   - name: sasl-off-openssl-ubuntu1804-gcc-compile
     run_on: ubuntu1804-large
