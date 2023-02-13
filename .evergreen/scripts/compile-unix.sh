@@ -228,6 +228,7 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
     "-DENABLE_MONGOC=OFF"
   )
   DEBUG="0" \
+    CMAKE_EXE="${cmake_binary}" \
     MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
     DEFAULT_BUILD_ONLY=true \
     LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]}" \
