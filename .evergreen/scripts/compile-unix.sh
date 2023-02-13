@@ -173,6 +173,8 @@ fi
 . "${script_dir}/find-cmake-latest.sh"
 CMAKE="$(find_cmake_latest)"
 
+"${CMAKE:?}" --version
+
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
 

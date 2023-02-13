@@ -103,6 +103,8 @@ fi
 declare cmake_binary
 cmake_binary="$(find_cmake_latest)"
 
+"${cmake_binary:?}" --version
+
 declare compile_flags=(
   "/m" # Number of concurrent processes. No value=# of cpus
 )
