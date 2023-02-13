@@ -30,11 +30,6 @@ class DarwinSSLCompileCommon(CompileCommon):
     ssl = 'DARWIN'
 
 
-class SaslOffDarwinSSLCompile(DarwinSSLCompileCommon):
-    name = 'sasl-off-darwinssl-compile'
-    commands = DarwinSSLCompileCommon.compile_commands(sasl='OFF')
-
-
 class SaslCyrusDarwinSSLCompile(DarwinSSLCompileCommon):
     name = 'sasl-cyrus-darwinssl-compile'
     commands = DarwinSSLCompileCommon.compile_commands(sasl='CYRUS')
@@ -42,7 +37,6 @@ class SaslCyrusDarwinSSLCompile(DarwinSSLCompileCommon):
 
 def functions():
     return merge_defns(
-        SaslOffDarwinSSLCompile.defn(),
         SaslCyrusDarwinSSLCompile.defn(),
     )
 
@@ -51,7 +45,6 @@ def tasks():
     res = []
 
     SASL_TO_FUNC = {
-        'off': SaslOffDarwinSSLCompile,
         'cyrus': SaslCyrusDarwinSSLCompile,
     }
 

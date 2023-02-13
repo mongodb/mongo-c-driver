@@ -51,11 +51,6 @@ class OpenSSLCompileCommon(CompileCommon):
     ssl = 'OPENSSL'
 
 
-class SaslOffOpenSSLCompile(OpenSSLCompileCommon):
-    name = 'cse-sasl-off-openssl-compile'
-    commands = OpenSSLCompileCommon.compile_commands(sasl='OFF')
-
-
 class SaslCyrusOpenSSLCompile(OpenSSLCompileCommon):
     name = 'cse-sasl-cyrus-openssl-compile'
     commands = OpenSSLCompileCommon.compile_commands(sasl='CYRUS')
@@ -63,7 +58,6 @@ class SaslCyrusOpenSSLCompile(OpenSSLCompileCommon):
 
 def functions():
     return merge_defns(
-        SaslOffOpenSSLCompile.defn(),
         SaslCyrusOpenSSLCompile.defn(),
     )
 
@@ -72,7 +66,6 @@ def tasks():
     res = []
 
     SASL_TO_FUNC = {
-        'off': SaslOffOpenSSLCompile,
         'cyrus': SaslCyrusOpenSSLCompile,
     }
 

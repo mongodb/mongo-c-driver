@@ -121,23 +121,6 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-  cse-sasl-off-openssl-compile:
-    - command: expansions.update
-      params:
-        updates:
-          - { key: SSL, value: OPENSSL }
-          - { key: SASL, value: "OFF" }
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        env:
-          COMPILE_LIBMONGOCRYPT: "ON"
-        args:
-          - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
   early-termination:
     - command: subprocess.exec
       params:
@@ -358,19 +341,6 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile.sh
-  sasl-cyrus-nossl-compile:
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        env:
-          SASL: CYRUS
-          SSL: "OFF"
-        args:
-          - -c
-          - .evergreen/scripts/compile.sh
   sasl-cyrus-openssl-compile:
     - command: subprocess.exec
       type: test
@@ -397,19 +367,6 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile.sh
-  sasl-off-darwinssl-compile:
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        env:
-          SASL: "OFF"
-          SSL: DARWIN
-        args:
-          - -c
-          - .evergreen/scripts/compile.sh
   sasl-off-nossl-compile:
     - command: subprocess.exec
       type: test
@@ -420,19 +377,6 @@ functions:
         env:
           SASL: "OFF"
           SSL: "OFF"
-        args:
-          - -c
-          - .evergreen/scripts/compile.sh
-  sasl-off-openssl-compile:
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        add_expansions_to_env: true
-        env:
-          SASL: "OFF"
-          SSL: OPENSSL
         args:
           - -c
           - .evergreen/scripts/compile.sh

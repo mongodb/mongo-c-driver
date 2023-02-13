@@ -38,15 +38,9 @@ class SaslOffNoSSLCompile(NoSSLCompileCommon):
     commands = NoSSLCompileCommon.compile_commands(sasl='OFF')
 
 
-class SaslCyrusNoSSLCompile(NoSSLCompileCommon):
-    name = 'sasl-cyrus-nossl-compile'
-    commands = NoSSLCompileCommon.compile_commands(sasl='CYRUS')
-
-
 def functions():
     return merge_defns(
         SaslOffNoSSLCompile.defn(),
-        SaslCyrusNoSSLCompile.defn(),
     )
 
 
@@ -55,7 +49,6 @@ def tasks():
 
     SASL_TO_FUNC = {
         'off': SaslOffNoSSLCompile,
-        'cyrus': SaslCyrusNoSSLCompile,
     }
 
     res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX)
