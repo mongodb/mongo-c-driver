@@ -196,15 +196,23 @@ fi
 echo "SSL Version: $(pkg-config --modversion libssl 2>/dev/null || echo "N/A")"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
-  # llvm-cov is installed from brew.
-  # Add path to scan-build and lcov, but with low priority to avoid overwriting
-  # paths to other system-installed LLVM binaries such as clang.
-  PATH="${PATH}:/usr/local/opt/llvm/bin"
-
   # MacOS does not have nproc.
   nproc() {
     sysctl -n hw.logicalcpu
   }
+
+  if [[ "${ANALYZE}" == "ON" || "${COVERAGE}" == "ON" ]]; then
+    # Avoid CMake confusing LLVM vs. Apple LLVM linkers on MacOS:
+    #   ld64.lld: warning: ignoring unknown argument: -search_paths_first
+    #   ld64.lld: warning: ignoring unknown argument: -headerpad_max_install_names
+    #   ld64.lld: warning: -sdk_version is required when emitting min version load command
+    configure_flags_append "-DMONGO_USE_LLD=OFF"
+
+    # llvm-cov is installed from brew.
+    # Add path to scan-build and lcov, but with low priority to avoid overwriting
+    # paths to other system-installed LLVM binaries such as clang.
+    PATH="${PATH}:/usr/local/opt/llvm/bin"
+  fi
 fi
 
 declare -a extra_configure_flags
