@@ -203,12 +203,12 @@ IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
 
 if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
   git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
-  # TODO: remove once latest libmongocrypt release contains commit 4c4aa8bf.
+  # TODO: remove once latest libmongocrypt release contains commit c6f65fe6.
   {
     pushd libmongocrypt
-    echo "1.7.0+4c4aa8bf" >|VERSION_CURRENT
+    echo "1.7.0+c6f65fe6" >|VERSION_CURRENT
     git fetch -q origin master
-    git checkout -q 4c4aa8bf # Allows -DENABLE_MONGOC=OFF.
+    git checkout -q c6f65fe6 # Allows -DENABLE_MONGOC=OFF.
     popd                     # libmongocrypt
   }
   declare -a crypt_cmake_flags
@@ -218,7 +218,8 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
     "-DENABLE_ONLINE_TESTS=OFF"
     "-DENABLE_MONGOC=OFF"
   )
-  MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
+  DEBUG="0" \
+    MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
     DEFAULT_BUILD_ONLY=true \
     LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]}" \
     ./libmongocrypt/.evergreen/compile.sh
