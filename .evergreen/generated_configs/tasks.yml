@@ -3070,14 +3070,6 @@ tasks:
         vars:
           CC: Visual Studio 15 2017 Win64
       - func: upload-build
-  - name: sasl-off-openssl-ubuntu1804-gcc-compile
-    run_on: ubuntu1804-large
-    tags: [sasl-matrix-openssl, compile, ubuntu1804, gcc, sasl-off]
-    commands:
-      - func: sasl-off-openssl-compile
-        vars:
-          CC: gcc
-      - func: upload-build
   - name: sasl-off-winssl-vs2013-x86-compile
     run_on: windows-64-vs2013-large
     tags: [sasl-matrix-winssl, compile, windows-64-vs2013, vs2013x86, sasl-off]
