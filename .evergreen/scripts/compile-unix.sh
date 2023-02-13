@@ -7,6 +7,7 @@ set -o pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
 check_var_opt ANALYZE "OFF"
+check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
 check_var_opt CFLAGS
@@ -167,13 +168,18 @@ if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
-# Ensure find-cmake.sh is sourced *before* add-build-dirs-to-paths.sh
-# to avoid interfering with potential CMake build configuration.
-# shellcheck source=.evergreen/scripts/find-cmake.sh
-. "${script_dir}/find-cmake-latest.sh"
-CMAKE="$(find_cmake_latest)"
+declare cmake_binary
+if [[ "${BYPASS_FIND_CMAKE}" == "OFF" ]]; then
+  # Ensure find-cmake.sh is sourced *before* add-build-dirs-to-paths.sh
+  # to avoid interfering with potential CMake build configuration.
+  # shellcheck source=.evergreen/scripts/find-cmake.sh
+  . "${script_dir}/find-cmake-latest.sh"
+  cmake_binary="$(find_cmake_latest)"
+else
+  cmake_binary="cmake"
+fi
 
-"${CMAKE:?}" --version
+"${cmake_binary:?}" --version
 
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
@@ -251,12 +257,12 @@ if [[ "${ANALYZE}" == "ON" ]]; then
   # scan-build `--exclude`` flag is not available on all Evergreen variants.
   configure_flags_append "-DENABLE_ZLIB=OFF"
 
-  "${scan_build_binary}" "${CMAKE}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
+  "${scan_build_binary}" "${cmake_binary}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
 
   # Put clang static analyzer results in scan/ and fail build if warnings found.
   "${scan_build_binary}" -o scan --status-bugs make -j "$(nproc)" all
 else
-  "${CMAKE}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
+  "${cmake_binary}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
   make -j "$(nproc)" all
   make install
 fi

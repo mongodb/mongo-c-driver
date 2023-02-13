@@ -71,6 +71,7 @@ for ssl_ver in "${ssl_vers[@]}"; do
   output_file="$(mktemp)"
 
   env \
+    BYPASS_FIND_CMAKE="ON" \
     EXTRA_CMAKE_PREFIX_PATH="${ssl_base_dir};${toolchain_base_dir}" \
     EXTRA_CONFIGURE_FLAGS="-DCMAKE_VERBOSE_MAKEFILE=ON" \
     LD_LIBRARY_PATH="${ssl_lib_dir}:${toolchain_lib_dir}" \
