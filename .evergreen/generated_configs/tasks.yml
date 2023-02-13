@@ -1866,6 +1866,22 @@ tasks:
         vars:
           CC: clang
       - func: upload-build
+  - name: sasl-cyrus-openssl-archlinux-clang-compile
+    run_on: archlinux-large
+    tags: [sasl-matrix-openssl, compile, archlinux, clang, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: sasl-cyrus-openssl-archlinux-gcc-compile
+    run_on: archlinux-large
+    tags: [sasl-matrix-openssl, compile, archlinux, gcc, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+      - func: upload-build
   - name: sasl-cyrus-openssl-debian10-gcc-compile
     run_on: debian10-large
     tags: [sasl-matrix-openssl, compile, debian10, gcc, sasl-cyrus]
