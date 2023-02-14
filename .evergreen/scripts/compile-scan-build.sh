@@ -48,13 +48,6 @@ if [[ "${OSTYPE:?}" == darwin* ]]; then
   #   ld64.lld: warning: ignoring unknown argument: -headerpad_max_install_names
   #   ld64.lld: warning: -sdk_version is required when emitting min version load command
   configure_flags_append "-DMONGO_USE_LLD=OFF"
-
-  # Silence ranlib warnings: file: <static library> has no symbols.
-  # See: https://stackoverflow.com/a/33067191
-  configure_flags_append "-DCMAKE_C_ARCHIVE_CREATE=<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>"
-  configure_flags_append "-DCMAKE_CXX_ARCHIVE_CREATE=<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>"
-  configure_flags_append "-DCMAKE_C_ARCHIVE_FINISH=<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>"
-  configure_flags_append "-DCMAKE_CXX_ARCHIVE_FINISH=<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>"
 fi
 
 declare -a flags
