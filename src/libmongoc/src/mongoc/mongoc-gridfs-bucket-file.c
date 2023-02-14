@@ -23,6 +23,12 @@
 #include "mongoc-collection-private.h"
 #include "mongoc-util-private.h"
 
+#ifndef _WIN32
+#define IOV_MEMCPY_CAST(...) (char *) (__VA_ARGS__)
+#else
+#define IOV_MEMCPY_CAST(...) (__VA_ARGS__)
+#endif
+
 /* Returns the minimum of two numbers */
 static size_t
 _mongoc_min (const size_t a, const size_t b)
@@ -367,12 +373,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
          space_available = file->chunk_size - file->in_buffer;
          to_write = _mongoc_min (bytes_available, space_available);
          memcpy (file->buffer + file->in_buffer,
-#ifndef _WIN32
-                 (char *)
-#endif
-                       iov[i]
-                          .iov_base +
-                    written_this_iov,
+                 IOV_MEMCPY_CAST (iov[i].iov_base) + written_this_iov,
                  to_write);
          file->in_buffer += to_write;
          written_this_iov += to_write;
@@ -421,15 +422,9 @@ _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file,
          bytes_available = file->in_buffer - file->bytes_read;
          space_available = iov[i].iov_len - read_this_iov;
          to_read = _mongoc_min (bytes_available, space_available);
-         memcpy (
-#ifndef _WIN32
-            (char *)
-#endif
-                  iov[i]
-                     .iov_base +
-               read_this_iov,
-            file->buffer + file->bytes_read,
-            to_read);
+         memcpy (IOV_MEMCPY_CAST (iov[i].iov_base) + read_this_iov,
+                 file->buffer + file->bytes_read,
+                 to_read);
          file->bytes_read += to_read;
          read_this_iov += to_read;
          total += to_read;

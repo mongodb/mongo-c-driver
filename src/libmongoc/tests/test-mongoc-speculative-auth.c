@@ -248,40 +248,6 @@ _test_mongoc_speculative_auth (bool pooled,
 }
 
 static void
-_setup_speculative_auth_x_509 (mongoc_uri_t *uri)
-{
-   mongoc_uri_set_auth_mechanism (uri, "MONGODB-X509");
-   mongoc_uri_set_username (
-      uri,
-      "CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry");
-}
-
-static void
-_compare_auth_cmd_x509 (bson_t *auth_cmd)
-{
-   bson_t *expected_auth_cmd = BCON_NEW (
-      "authenticate",
-      BCON_INT32 (1),
-      "mechanism",
-      BCON_UTF8 ("MONGODB-X509"),
-      "user",
-      BCON_UTF8 (
-         "CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry"),
-      "db",
-      BCON_UTF8 ("$external"));
-
-   char *auth_cmd_str = bson_as_canonical_extended_json (auth_cmd, NULL);
-   char *expected_auth_cmd_str =
-      bson_as_canonical_extended_json (expected_auth_cmd, NULL);
-
-   ASSERT_CMPSTR (auth_cmd_str, expected_auth_cmd_str);
-
-   bson_free (auth_cmd_str);
-   bson_free (expected_auth_cmd_str);
-   bson_destroy (expected_auth_cmd);
-}
-
-static void
 _setup_speculative_auth_scram (mongoc_uri_t *uri)
 {
    mongoc_uri_set_username (uri, "sasl");
@@ -339,6 +305,43 @@ test_mongoc_speculative_auth_request_none_pool (void)
       true, false, NULL, false, NULL, NULL, NULL, true);
 }
 
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
+   defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+static void
+_setup_speculative_auth_x_509 (mongoc_uri_t *uri)
+{
+   mongoc_uri_set_auth_mechanism (uri, "MONGODB-X509");
+   mongoc_uri_set_username (
+      uri,
+      "CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry");
+}
+
+static void
+_compare_auth_cmd_x509 (bson_t *auth_cmd)
+{
+   bson_t *expected_auth_cmd = BCON_NEW (
+      "authenticate",
+      BCON_INT32 (1),
+      "mechanism",
+      BCON_UTF8 ("MONGODB-X509"),
+      "user",
+      BCON_UTF8 (
+         "CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry"),
+      "db",
+      BCON_UTF8 ("$external"));
+
+   char *auth_cmd_str = bson_as_canonical_extended_json (auth_cmd, NULL);
+   char *expected_auth_cmd_str =
+      bson_as_canonical_extended_json (expected_auth_cmd, NULL);
+
+   ASSERT_CMPSTR (auth_cmd_str, expected_auth_cmd_str);
+
+   bson_free (auth_cmd_str);
+   bson_free (expected_auth_cmd_str);
+   bson_destroy (expected_auth_cmd);
+}
+
 static void
 test_mongoc_speculative_auth_request_x509 (void)
 {
@@ -382,6 +385,8 @@ test_mongoc_speculative_auth_request_x509_pool (void)
 
    bson_destroy (response);
 }
+#endif /* MONGOC_ENABLE_SSL_* */
+
 
 static void
 test_mongoc_speculative_auth_request_scram (void)
@@ -433,12 +438,6 @@ test_speculative_auth_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/speculative_auth/request_none",
                                 test_mongoc_speculative_auth_request_none);
-#if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
-   defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-   TestSuite_AddMockServerTest (suite,
-                                "/speculative_auth/request_x509",
-                                test_mongoc_speculative_auth_request_x509);
-#endif /* MONGOC_ENABLE_SSL_* */
    TestSuite_AddMockServerTest (suite,
                                 "/speculative_auth/request_scram",
                                 test_mongoc_speculative_auth_request_scram);
@@ -447,6 +446,9 @@ test_speculative_auth_install (TestSuite *suite)
                                 test_mongoc_speculative_auth_request_none_pool);
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
    defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+   TestSuite_AddMockServerTest (suite,
+                                "/speculative_auth/request_x509",
+                                test_mongoc_speculative_auth_request_x509);
    TestSuite_AddMockServerTest (suite,
                                 "/speculative_auth_pool/request_x509",
                                 test_mongoc_speculative_auth_request_x509_pool);

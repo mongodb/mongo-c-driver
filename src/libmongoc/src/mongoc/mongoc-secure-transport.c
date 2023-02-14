@@ -395,7 +395,7 @@ mongoc_secure_transport_setup_certificate (
    TRACE ("Setting client certificate %s", success ? "succeeded" : "failed");
 
    CFRelease (items);
-   return true;
+   return success;
 }
 
 bool
@@ -447,7 +447,7 @@ mongoc_secure_transport_setup_ca (
    TRACE ("Setting certificate authority %s (%s)",
           success ? "succeeded" : "failed",
           opt->ca_file);
-   return true;
+   return success;
 }
 
 OSStatus
