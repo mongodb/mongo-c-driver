@@ -9,8 +9,9 @@ from shrub.v3.evg_task import EvgTask
 from shrub.v3.evg_command import subprocess_exec
 
 
-# Equivalent to EvgTask but with the run_on field.
-class EvgTaskWithRunOn(EvgTask):
+# Equivalent to EvgTask but defines additional properties.
+class Task(EvgTask):
+    disable: bool = False
     run_on: str
 
 

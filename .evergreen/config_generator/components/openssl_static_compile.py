@@ -7,7 +7,7 @@ from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import to_cc
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
-from config_generator.etc.utils import EvgTaskWithRunOn
+from config_generator.etc.utils import Task
 
 SSL = 'openssl-static'
 TAG = f'{SSL}-matrix'
@@ -65,7 +65,7 @@ def tasks():
         task_name = f'openssl-static-compile-{distro_str}'
 
         res.append(
-            EvgTaskWithRunOn(
+            Task(
                 name=task_name,
                 run_on=distro.name,
                 tags=tags,

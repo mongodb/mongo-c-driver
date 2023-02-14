@@ -7,7 +7,7 @@ from shrub.v3.evg_task import EvgTaskDependency
 from config_generator.etc.distros import find_small_distro
 from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import to_cc
-from config_generator.etc.utils import EvgTaskWithRunOn
+from config_generator.etc.utils import Task
 
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
@@ -61,7 +61,7 @@ def generate_test_tasks(SSL, TAG, MATRIX):
             test_commands.append(RunTests.call())
 
             res.append(
-                EvgTaskWithRunOn(
+                Task(
                     name=test_task_name,
                     run_on=test_distro.name,
                     tags=test_tags,
