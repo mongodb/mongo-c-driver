@@ -166,9 +166,6 @@ all_tasks = [
                 SSL='OFF'),
     CompileTask('debug-compile-lto', CFLAGS='-flto'),
     CompileTask('debug-compile-lto-thin', CFLAGS='-flto=thin'),
-    SpecialTask('debug-compile-c11',
-                tags=['debug-compile', 'c11', 'stdflags'],
-                C_STD_VERSION='11'),
     CompileTask('debug-compile-no-counters',
                 tags=['debug-compile', 'no-counters'],
                 ENABLE_SHM_COUNTERS='OFF'),
@@ -179,14 +176,6 @@ all_tasks = [
                 CHECK_LOG='ON',
                 sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF'),
-    # include -pthread in CFLAGS on gcc to address the issue explained here:
-    # https://groups.google.com/forum/#!topic/address-sanitizer/JxnwgrWOLuc
-    SpecialTask('debug-compile-asan-gcc',
-                compression='zlib',
-                CFLAGS='-pthread',
-                CHECK_LOG='ON',
-                sanitize=['address'],
-                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"),
     SpecialTask('debug-compile-asan-clang-openssl',
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
@@ -195,18 +184,6 @@ all_tasks = [
                 sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                 SSL='OPENSSL'),
-    SpecialTask('debug-compile-ubsan',
-                compression='zlib',
-                CFLAGS='-fno-omit-frame-pointer -fno-sanitize-recover=alignment',
-                CHECK_LOG='ON',
-                sanitize=['undefined'],
-                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"),
-    SpecialTask('debug-compile-ubsan-with-extra-alignment',
-                compression='zlib',
-                CFLAGS='-fno-omit-frame-pointer -fno-sanitize-recover=alignment',
-                CHECK_LOG='ON',
-                sanitize=['undefined'],
-                EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=ON"),
     SpecialTask('debug-compile-scan-build',
                 tags=['clang', 'debug-compile', 'scan-build'],
                 continue_on_err=True,
@@ -400,13 +377,6 @@ all_tasks = [
     CompileTask('debug-compile-nosasl-openssl-1.0.1',
                 prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
                 CFLAGS="-Wno-redundant-decls", SSL="OPENSSL", SASL="OFF"),
-    SpecialTask('debug-compile-tsan-openssl',
-                tags=['tsan'],
-                CFLAGS='-fno-omit-frame-pointer',
-                CHECK_LOG='ON',
-                sanitize=['thread'],
-                SSL='OPENSSL',
-                EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF'),
     NamedTask('build-and-test-with-toolchain',
               commands=[
                   OD([('command', 's3.get'),
@@ -424,57 +394,24 @@ all_tasks = [
 ]
 
 
-class IntegrationTask(MatrixTask):
-    axes = OD([('sanitizer', ['asan', 'tsan', False]),
-               ('coverage', ['coverage', False]),
-               ('version', ['latest', '6.0', '5.0',
-                            '4.4', '4.2', '4.0', '3.6']),
-               ('topology', ['server', 'replica_set', 'sharded_cluster']),
-               ('auth', [True, False]),
-               ('sasl', ['sasl', 'sspi', False]),
-               ('ssl', ['openssl', 'openssl-static',
-                        'darwinssl', 'winssl', False]),
-               ('cse', [True, False])])
+class CoverageTask(MatrixTask):
+    axes = OD([('version', ['latest']),
+               ('topology', ['replica_set']),
+               ('auth', [True]),
+               ('sasl', ['sasl']),
+               ('ssl', ['openssl']),
+               ('cse', [True])])
 
     def __init__(self, *args, **kwargs):
-        super(IntegrationTask, self).__init__(*args, **kwargs)
-        if self.coverage:
-            self.add_tags('test-coverage')
-            self.add_tags(self.version)
-        elif self.sanitizer == "asan":
-            self.add_tags('test-asan', self.version)
-        elif self.sanitizer == "tsan":
-            self.add_tags('tsan')
-            self.add_tags(self.version)
-        else:
-            self.add_tags(self.topology,
-                          self.version,
-                          self.display('ssl'),
-                          self.display('sasl'),
-                          self.display('auth'))
+        super(CoverageTask, self).__init__(*args, **kwargs)
+
+        self.name_prefix = 'test-coverage'
+
+        self.add_tags('test-coverage')
+        self.add_tags(self.version)
 
         if self.cse:
             self.add_tags("client-side-encryption")
-        # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
-        # Coverage tasks use a build function instead of depending on a task.
-        if not self.coverage:
-            if self.sanitizer == "asan" and self.ssl and self.cse:
-                self.add_dependency('debug-compile-asan-%s-cse' % (
-                    self.display('ssl'),))
-            elif self.sanitizer == "asan" and self.ssl:
-                self.add_dependency('debug-compile-asan-clang-%s' % (
-                    self.display('ssl'),))
-            elif self.sanitizer == "asan":
-                self.add_dependency('debug-compile-asan-clang')
-            elif self.sanitizer == 'tsan' and self.ssl:
-                self.add_dependency('debug-compile-tsan-%s' %
-                                    self.display('ssl'))
-            elif self.cse:
-                self.add_dependency('debug-compile-%s-%s-cse' %
-                                    (self.display('sasl'), self.display('ssl')))
-            else:
-                self.add_dependency('debug-compile-%s-%s' % (
-                    self.display('sasl'), self.display('ssl')))
 
     @property
     def name(self):
@@ -491,15 +428,15 @@ class IntegrationTask(MatrixTask):
             if getattr(self, axis_name) or axis_name in ('auth', 'sasl', 'ssl'))
 
     def to_dict(self):
-        task = super(IntegrationTask, self).to_dict()
+        task = super(CoverageTask, self).to_dict()
         commands = task['commands']
         if self.depends_on:
             commands.append(
                 func('fetch-build', BUILD_NAME=self.depends_on['name']))
-        if self.coverage:
-            # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
-            commands.append(
-                func('compile coverage', SASL='AUTO', SSL='OPENSSL'))
+
+        # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
+        commands.append(
+            func('compile coverage', SASL='AUTO', SSL='OPENSSL'))
 
         commands.append(func('fetch-det'))
         commands.append(func('bootstrap-mongo-orchestration',
@@ -508,62 +445,35 @@ class IntegrationTask(MatrixTask):
                              AUTH='auth' if self.auth else 'noauth',
                              SSL=self.display('ssl')))
         extra = {}
+
         if self.cse:
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
             commands.append(func('fetch-det'))
             commands.append(func('run-mock-kms-servers'))
-        if self.coverage:
-            extra["COVERAGE"] = 'ON'
+        extra["COVERAGE"] = 'ON'
         commands.append(func('run-tests',
-                             ASAN='on' if self.sanitizer == 'asan' else 'off',
                              AUTH=self.display('auth'),
                              SSL=self.display('ssl'),
                              **extra))
-        if self.coverage:
-            commands.append(func('upload coverage'))
-            commands.append(func('update codecov.io'))
+        commands.append(func('upload coverage'))
+        commands.append(func('update codecov.io'))
 
         return task
 
     def _check_allowed(self):
-        if self.sanitizer == 'tsan':
-            require(self.ssl == 'openssl')
-            prohibit(self.sasl)
-            prohibit(self.coverage)
-            prohibit(self.cse)
-            prohibit(self.version == "3.0")
-
-        if self.auth:
-            require(self.ssl)
-
-        if self.sasl == 'sspi':
-            # Only one self.
-            require(self.topology == 'server')
-            require(self.version == 'latest')
-            require(self.ssl == 'winssl')
-            require(self.auth)
-
-        if not self.ssl:
-            prohibit(self.sasl)
-
         # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
-        if self.coverage:
-            require(self.topology == 'replica_set')
-            require(self.auth)
-            require(self.sasl == 'sasl')
+        require(self.topology == 'replica_set')
+        require(self.auth)
+        require(self.sasl == 'sasl')
+        require(self.ssl == 'openssl')
+        require(self.cse)
+        require(self.version == 'latest')
+
+        # Address sanitizer only with auth+SSL or no auth + no SSL.
+        if self.auth:
             require(self.ssl == 'openssl')
-            require(self.cse)
-            require(self.version == 'latest')
-
-        if self.sanitizer == "asan":
-            prohibit(self.sasl)
-            prohibit(self.coverage)
-
-            # Address sanitizer only with auth+SSL or no auth + no SSL.
-            if self.auth:
-                require(self.ssl == 'openssl')
-            else:
-                prohibit(self.ssl)
+        else:
+            prohibit(self.ssl)
 
         if self.cse:
             require(self.version == 'latest' or parse_version(
@@ -573,14 +483,13 @@ class IntegrationTask(MatrixTask):
                 require(self.topology in ('server', 'replica_set'))
             else:
                 require(self.topology == 'server')
-            if self.sanitizer != "asan":
-                # limit to SASL=AUTO to reduce redundant tasks.
-                require(self.sasl)
-                require(self.sasl != 'sspi')
+            # limit to SASL=AUTO to reduce redundant tasks.
+            require(self.sasl)
+            require(self.sasl != 'sspi')
             require(self.ssl)
 
 
-all_tasks = chain(all_tasks, IntegrationTask.matrix())
+all_tasks = chain(all_tasks, CoverageTask.matrix())
 
 
 class DNSTask(MatrixTask):

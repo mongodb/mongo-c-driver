@@ -440,6 +440,7 @@ timesub (const int64_t *const timep,
    tmp->tm_sec = (int64_t) (rem % SECSPERMIN) + hit;
    ip = mon_lengths[isleap (y)];
    tmp->tm_mon = 0;
+   BSON_ASSERT (tmp->tm_mon < MONSPERYEAR);
    while (idays >= ip[tmp->tm_mon]) {
       idays -= ip[tmp->tm_mon++];
       BSON_ASSERT (tmp->tm_mon < MONSPERYEAR);

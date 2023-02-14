@@ -194,6 +194,9 @@ if [[ "${CLIENT_SIDE_ENCRYPTION}" == "on" ]]; then
     export MONGOC_TEST_CRYPT_SHARED_LIB_PATH="${CRYPT_SHARED_LIB_PATH}"
     echo "crypt_shared library will be loaded with cryptSharedLibPath: [${MONGOC_TEST_CRYPT_SHARED_LIB_PATH}]"
   fi
+
+  # Limit tests executed to CSE tests.
+  test_args+=("-l" "/client_side_encryption/*")
 fi
 
 if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then

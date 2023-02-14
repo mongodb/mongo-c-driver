@@ -10,7 +10,7 @@ class UploadTestResults(Function):
         # Ensure attach_results does not fail even if no tests results exist.
         bash_exec(
             script='''\
-                mkdir mongoc
+                mkdir -p mongoc
                 touch mongoc/test-results.json
             '''
         ),

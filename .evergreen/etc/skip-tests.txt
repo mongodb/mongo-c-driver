@@ -43,11 +43,6 @@
 /change_stream/live/track_resume_token # (CDRIVER-4344) Condition 'bson_compare (resume_token, &doc2_rt) == 0' failed
 /change_stream/resumable_error # (CDRIVER-4345) getMore: not found
 /BulkOperation/split # (CDRIVER-4346) Assert Failure: count of split_1512376901_50824 is 97759, not 100010
-/client_side_encryption/datakey_and_double_encryption # (CDRIVER-4347) TLS handshake failed: Failed OCSP verification
-/client_side_encryption/corpus # (CDRIVER-4347) TLS handshake failed: Failed OCSP verification
-/client_side_encryption/custom_endpoint # (CDRIVER-4347) mongoc: OCSP response failed verification: error:27069065:OCSP routines:OCSP_basic_verify:certificate verify error
-/client_side_encryption/kms_tls/wrong_host # (CDRIVER-4347) [TLS handshake failed: Failed certificate verification] does not contain [IP address mismatch]
-/client_side_encryption/kms_tls_options # (CDRIVER-4347) [TLS handshake failed: Failed certificate verification] does not contain [IP address mismatch]
 /ClientPool/pop_timeout # (CDRIVER-4348) precondition failed: duration_usec / 1000 >= 1990
 /Client/get_handshake_hello_response/pooled # (CDRIVER-4349) Assert Failure: "Unknown" != "PossiblePrimary"
 

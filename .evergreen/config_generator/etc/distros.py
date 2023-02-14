@@ -34,9 +34,6 @@ class Distro(BaseModel):
     size: Literal['small', 'large'] | None = None
     arch: Literal['arm64', 'power8', 'zseries'] | None = None
 
-    def __hash__(self):
-        return self.name.__hash__()
-
     @validator('os_ver')
     @classmethod
     def validate_os_ver(cls, value):
