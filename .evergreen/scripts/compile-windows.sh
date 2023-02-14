@@ -115,29 +115,11 @@ declare compile_flags=(
 )
 
 if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
-  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
-  # TODO: remove once latest libmongocrypt release contains commit c6f65fe6.
-  {
-    pushd libmongocrypt
-    echo "1.7.0+c6f65fe6" >|VERSION_CURRENT
-    git fetch -q origin master
-    git checkout -q c6f65fe6 # Allows -DENABLE_MONGOC=OFF.
-    popd                     # libmongocrypt
-  }
-  declare -a crypt_cmake_flags
-  crypt_cmake_flags=(
-    "-DMONGOCRYPT_MONGOC_DIR=$(to_windows_path "${mongoc_dir}")"
-    "-DBUILD_TESTING=OFF"
-    "-DENABLE_ONLINE_TESTS=OFF"
-    "-DENABLE_MONGOC=OFF"
-  )
-  DEBUG="0" \
-    CMAKE_EXE="${cmake_binary}" \
-    MONGOCRYPT_INSTALL_PREFIX="${install_dir}" \
-    DEFAULT_BUILD_ONLY=true \
-    LIBMONGOCRYPT_BUILD_TYPE="${build_config}" \
-    LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]}" \
-    ./libmongocrypt/.evergreen/compile.sh
+  echo "Installing libmongocrypt..."
+  # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
+  "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "$(to_windows_path ${mongoc_dir})" "${install_dir}" >/dev/null
+  echo "Installing libmongocrypt... done."
+
   # Fail if the C driver is unable to find the installed libmongocrypt.
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 fi
