@@ -732,6 +732,7 @@ tasks:
   - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, compile, macos-1015, clang, cse, sasl-cyrus]
+    disable: true
     commands:
       - func: cse-sasl-cyrus-darwinssl-compile
         vars:
@@ -741,6 +742,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, "4.2"]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:
@@ -761,6 +763,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, "4.2"]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:
@@ -781,6 +784,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, "4.4"]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:
@@ -801,6 +805,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, "4.4"]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:
@@ -821,6 +826,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, "5.0"]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:
@@ -841,6 +847,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, "5.0"]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:
@@ -861,6 +868,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, "6.0"]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:
@@ -881,6 +889,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, "6.0"]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:
@@ -901,6 +910,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, latest]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:
@@ -921,6 +931,7 @@ tasks:
     run_on: macos-1015
     tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, latest]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
+    disable: true
     commands:
       - func: fetch-build
         vars:

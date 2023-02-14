@@ -56,6 +56,10 @@ def tasks():
 
     res += generate_test_tasks(SSL, TAG, TEST_MATRIX)
 
+    # TODO: remove once MONGOCRYPT-443 is resolved.
+    for task in res:
+        task.disable = True
+
     return res
 
 
