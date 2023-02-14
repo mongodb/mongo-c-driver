@@ -909,19 +909,6 @@ tasks:
     variant: releng
   commands:
   - func: link sample program mingw bson
-- name: debug-compile-scan-build
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        .evergreen/scripts/compile-scan-build.sh
-  - func: upload scan artifacts
 - name: debian-package-build
   commands:
   - command: shell.exec
@@ -9276,7 +9263,6 @@ buildvariants:
     CC: clang
   run_on: ubuntu1404-build
   tasks:
-  - debug-compile-scan-build
   - release-compile
   - debug-compile-rdtscp
 - name: clang35
@@ -9326,7 +9312,6 @@ buildvariants:
     MARCH: i686
   run_on: ubuntu1804-test
   tasks:
-  - debug-compile-scan-build
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
@@ -9339,7 +9324,6 @@ buildvariants:
     MARCH: i686
   run_on: ubuntu1604-test
   tasks:
-  - debug-compile-scan-build
   - release-compile
   - debug-compile-no-align
 - name: clang38ubuntu
@@ -9349,7 +9333,6 @@ buildvariants:
   run_on: ubuntu1604-test
   tasks:
   - .compression !.zstd
-  - debug-compile-scan-build
   - release-compile
   - debug-compile-sasl-openssl
   - debug-compile-nosasl-openssl
@@ -9492,7 +9475,6 @@ buildvariants:
   - debug-compile-nosrv
   - debug-compile-sasl-darwinssl
   - debug-compile-nosasl-nossl
-  - debug-compile-scan-build
   - .authentication-tests .darwinssl
   - .latest .nossl
   - test-dns-darwinssl
@@ -9605,7 +9587,6 @@ buildvariants:
   run_on: ubuntu1804-arm64-large
   tasks:
   - .compression !.snappy !.zstd
-  - debug-compile-scan-build
   - debug-compile-no-align
   - release-compile
   - debug-compile-nosasl-nossl
@@ -9622,7 +9603,6 @@ buildvariants:
   run_on: ubuntu1604-arm64-large
   tasks:
   - .compression !.snappy !.zstd
-  - debug-compile-scan-build
   - debug-compile-no-align
   - release-compile
   batchtime: 1440

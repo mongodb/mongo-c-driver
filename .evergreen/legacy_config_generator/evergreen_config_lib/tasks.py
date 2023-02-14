@@ -311,13 +311,6 @@ all_tasks = [
     LinkTask('link-with-bson-mingw',
              suffix_commands=[func('link sample program mingw bson')],
              orchestration=False),
-    NamedTask('debug-compile-scan-build',
-              commands=[
-                  shell_mongoc('.evergreen/scripts/compile-scan-build.sh',
-                               test=True,
-                               add_expansions_to_env=True,
-                               redirect_standard_error_to_output=True),
-                  func('upload scan artifacts')]),
     NamedTask('debian-package-build',
               commands=[
                   shell_mongoc('export IS_PATCH="${is_patch}"\n'
