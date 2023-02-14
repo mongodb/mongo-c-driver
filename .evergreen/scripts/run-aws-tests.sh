@@ -46,8 +46,9 @@ declare drivers_tools_dir
 drivers_tools_dir="$(to_absolute "${mongoc_dir}/../drivers-evergreen-tools")"
 
 declare mongodb_bin_dir="${mongoc_dir}/mongodb/bin"
-declare mongoc_ping="${mongoc_dir}/src/libmongoc/mongoc-ping"
+declare test_awsauth="${mongoc_dir}/src/libmongoc/test-awsauth"
 
+# TODO: test-awsauth statically links. Remove env vars set in these blocks:
 # Add libmongoc-1.0 and libbson-1.0 to library path, so mongoc-ping can find them at runtime.
 if [[ "${OSTYPE}" == "cygwin" ]]; then
   export PATH
@@ -56,7 +57,7 @@ if [[ "${OSTYPE}" == "cygwin" ]]; then
 
   chmod -f +x src/libmongoc/Debug/* src/libbson/Debug/* || true
 
-  mongoc_ping="${mongoc_dir}/src/libmongoc/Debug/mongoc-ping.exe"
+  test_awsauth="${mongoc_dir}/src/libmongoc/Debug/test-awsauth.exe"
 elif [[ "${OSTYPE}" == darwin* ]]; then
   export DYLD_LIBRARY_PATH
   DYLD_LIBRARY_PATH+=":${mongoc_dir}/src/libmongoc"
@@ -69,24 +70,14 @@ fi
 
 expect_success() {
   echo "Should succeed:"
-  if ! "${mongoc_ping}" "${1:?}"; then
-    echo "Unexpected auth failure" 1>&2
+  if ! "${test_awsauth}" "${1:?}" "EXPECT_SUCCESS"; then
     exit 1
   fi
 }
 
 expect_failure() {
   echo "Should fail:"
-  if "${mongoc_ping}" "${1:?}" >output.txt 2>&1; then
-    echo "Unexpected - authed but it should not have" 1>&2
-    exit 1
-  else
-    echo "auth failed as expected"
-  fi
-
-  if ! grep "Authentication failed" output.txt >/dev/null; then
-    echo "Unexpected, error was not an authentication failure:" 1>&2
-    cat output.txt 1>&2
+  if ! "${test_awsauth}" "${1:?}" "EXPECT_FAILURE"; then
     exit 1
   fi
 }
