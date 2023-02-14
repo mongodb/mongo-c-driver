@@ -262,7 +262,7 @@ all_variants = [
              'debug-compile-nosrv',
              'debug-compile-sasl-darwinssl',
              'debug-compile-nosasl-nossl',
-             '.debug-compile .clang',
+             'debug-compile-scan-build',
              '.authentication-tests .darwinssl',
              '.latest .nossl',
              'test-dns-darwinssl',

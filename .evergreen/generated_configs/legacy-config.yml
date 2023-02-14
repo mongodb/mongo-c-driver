@@ -472,34 +472,6 @@ tasks:
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-scan-build
-  tags:
-  - clang
-  - debug-compile
-  - scan-build
-  - special
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env ANALYZE="ON" CC="clang" DEBUG="ON" bash .evergreen/scripts/compile.sh
-  - func: upload-build
-  - func: upload scan artifacts
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        if find scan -name \*.html | grep -q html; then
-          exit 123
-        fi
 - name: compile-tracing
   commands:
   - command: shell.exec
@@ -937,6 +909,19 @@ tasks:
     variant: releng
   commands:
   - func: link sample program mingw bson
+- name: debug-compile-scan-build
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      add_expansions_to_env: true
+      redirect_standard_error_to_output: true
+      shell: bash
+      script: |-
+        set -o errexit
+        .evergreen/scripts/compile-scan-build.sh
+  - func: upload scan artifacts
 - name: debian-package-build
   commands:
   - command: shell.exec
@@ -9507,7 +9492,7 @@ buildvariants:
   - debug-compile-nosrv
   - debug-compile-sasl-darwinssl
   - debug-compile-nosasl-nossl
-  - .debug-compile .clang
+  - debug-compile-scan-build
   - .authentication-tests .darwinssl
   - .latest .nossl
   - test-dns-darwinssl

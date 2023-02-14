@@ -6,7 +6,6 @@ set -o pipefail
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-check_var_opt ANALYZE "OFF"
 check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
@@ -155,6 +154,10 @@ if [[ "${OSTYPE}" == darwin* ]]; then
   CFLAGS+=" -Wno-unknown-pragmas"
 fi
 
+if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
+  configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
+fi
+
 case "${CC}" in
 clang)
   CXX=clang++
@@ -163,10 +166,6 @@ gcc)
   CXX=g++
   ;;
 esac
-
-if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
-  configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
-fi
 
 declare cmake_binary
 if [[ "${BYPASS_FIND_CMAKE}" == "OFF" ]]; then
@@ -200,19 +199,6 @@ if [[ "${OSTYPE}" == darwin* ]]; then
   nproc() {
     sysctl -n hw.logicalcpu
   }
-
-  if [[ "${ANALYZE}" == "ON" || "${COVERAGE}" == "ON" ]]; then
-    # Avoid CMake confusing LLVM vs. Apple LLVM linkers on MacOS:
-    #   ld64.lld: warning: ignoring unknown argument: -search_paths_first
-    #   ld64.lld: warning: ignoring unknown argument: -headerpad_max_install_names
-    #   ld64.lld: warning: -sdk_version is required when emitting min version load command
-    configure_flags_append "-DMONGO_USE_LLD=OFF"
-
-    # llvm-cov is installed from brew.
-    # Add path to scan-build and lcov, but with low priority to avoid overwriting
-    # paths to other system-installed LLVM binaries such as clang.
-    PATH="${PATH}:/usr/local/opt/llvm/bin"
-  fi
 fi
 
 declare -a extra_configure_flags
@@ -249,29 +235,6 @@ else
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
-if [[ "${ANALYZE}" == "ON" ]]; then
-  # Clang static analyzer, available on Ubuntu 16.04 images.
-  # https://clang-analyzer.llvm.org/scan-build.html
-  #
-  # On images other than Ubuntu 16.04, use scan-build-3.9 if
-  # scan-build is not found.
-  declare scan_build_binary
-  if command -v scan-build 2>/dev/null; then
-    scan_build_binary="scan-build"
-  else
-    scan_build_binary="scan-build-3.9"
-  fi
-
-  # Do not include bundled zlib in scan-build analysis.
-  # scan-build `--exclude`` flag is not available on all Evergreen variants.
-  configure_flags_append "-DENABLE_ZLIB=OFF"
-
-  "${scan_build_binary}" "${cmake_binary}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
-
-  # Put clang static analyzer results in scan/ and fail build if warnings found.
-  "${scan_build_binary}" -o scan --status-bugs make -j "$(nproc)" all
-else
-  "${cmake_binary}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
-  make -j "$(nproc)" all
-  make install
-fi
+"${cmake_binary}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
+make -j "$(nproc)" all
+make install

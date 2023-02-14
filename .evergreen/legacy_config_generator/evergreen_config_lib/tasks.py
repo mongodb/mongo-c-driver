@@ -184,17 +184,6 @@ all_tasks = [
                 sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                 SSL='OPENSSL'),
-    SpecialTask('debug-compile-scan-build',
-                tags=['clang', 'debug-compile', 'scan-build'],
-                continue_on_err=True,
-                ANALYZE='ON',
-                CC='clang',
-                suffix_commands=[
-                    func('upload scan artifacts'),
-                    shell_mongoc('''
-                        if find scan -name \*.html | grep -q html; then
-                          exit 123
-                        fi''')]),
     CompileTask('compile-tracing',
                 TRACING='ON', CFLAGS='-Werror -Wno-cast-align'),
     CompileTask('release-compile',
@@ -322,6 +311,13 @@ all_tasks = [
     LinkTask('link-with-bson-mingw',
              suffix_commands=[func('link sample program mingw bson')],
              orchestration=False),
+    NamedTask('debug-compile-scan-build',
+              commands=[
+                  shell_mongoc('.evergreen/scripts/compile-scan-build.sh',
+                               test=True,
+                               add_expansions_to_env=True,
+                               redirect_standard_error_to_output=True),
+                  func('upload scan artifacts')]),
     NamedTask('debian-package-build',
               commands=[
                   shell_mongoc('export IS_PATCH="${is_patch}"\n'
