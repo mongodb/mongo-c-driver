@@ -339,7 +339,7 @@ timesub (const int64_t *const timep,
    register int64_t idays; /* unsigned would be so 2003 */
    register int_fast64_t rem;
    int64_t y;
-   register const int *ip;
+   register const int (*ip)[MONSPERYEAR];
    register int_fast64_t corr;
    register int64_t hit;
    register int64_t i;
@@ -438,11 +438,10 @@ timesub (const int64_t *const timep,
    ** representation. This uses "... ??:59:60" et seq.
    */
    tmp->tm_sec = (int64_t) (rem % SECSPERMIN) + hit;
-   ip = mon_lengths[isleap (y)];
+   ip = mon_lengths + (isleap (y) ? 1 : 0);
    tmp->tm_mon = 0;
-   BSON_ASSERT (tmp->tm_mon < MONSPERYEAR);
-   while (idays >= ip[tmp->tm_mon]) {
-      idays -= ip[tmp->tm_mon++];
+   while (idays >= (*ip)[tmp->tm_mon]) {
+      idays -= (*ip)[tmp->tm_mon++];
       BSON_ASSERT (tmp->tm_mon < MONSPERYEAR);
    }
    tmp->tm_mday = (int64_t) (idays + 1);
