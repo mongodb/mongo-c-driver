@@ -30,6 +30,29 @@ make_tmpdir_in() {
   printf "%s" "${tmpdir}"
 }
 
+# Identify the cache directory to use.
+mongoc_cache_dir() {
+  declare local_cache_dir
+  case "${OSTYPE:?}" in
+  cygwin)
+    if [[ "${distro_id}" == windows-64-2016 ]]; then
+      local_cache_dir="$(cygpath -au)" || return
+    else
+      local_cache_dir="$(cygpath -au "${LOCALAPPDATA:?}")" || return
+    fi
+    ;;
+  darwin*)
+    local_cache_dir="${HOME:?}/Library/Caches"
+    ;;
+  linux*)
+    local_cache_dir="${HOME:?}/.cache"
+    ;;
+  esac
+  : "${local_cache_dir:?"unrecognized operating system ${OSTYPE:?}"}"
+
+  printf "%s" "${local_cache_dir:?}/mongo-c-driver"
+}
+
 # Ensure "good enough" atomicity when two or more tasks running on the same host
 # attempt to install a version of CMake.
 cmake_replace_latest() {
@@ -83,7 +106,9 @@ find_cmake_version() {
   declare -r patch="${3:?"missing CMake patch version"}"
   declare -r version="${major}.${minor}.${patch}"
 
-  declare -r cache_dir="$HOME/.cache/mongo-c-driver"
+  declare cache_dir
+  cache_dir="$(mongoc_cache_dir)" || return
+
   declare -r cmake_cache_dir="${cache_dir}/cmake-${version}"
   declare -r cmake_binary="${cmake_cache_dir}/bin/cmake"
 
