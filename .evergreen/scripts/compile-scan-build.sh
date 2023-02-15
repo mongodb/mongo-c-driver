@@ -60,16 +60,13 @@ esac
 
 case "${HOSTTYPE}" in
 s390x)
-  flags="-march=z196 -mtune=zEC12"
+  flags+="-march=z196 -mtune=zEC12"
   ;;
 x86_64)
-  flags="-m64 -march=x86-64"
+  flags+="-m64 -march=x86-64"
   ;;
 powerpc64le)
-  flags="-mcpu=power8 -mtune=power8 -mcmodel=medium"
-  ;;
-*)
-  flags=""
+  flags+="-mcpu=power8 -mtune=power8 -mcmodel=medium"
   ;;
 esac
 
