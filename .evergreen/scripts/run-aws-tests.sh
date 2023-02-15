@@ -9,19 +9,6 @@
 # run-aws-tests.sh EC2
 #
 # Optional environment variables:
-#
-# drivers_tools_dir
-#   The path to clone of https://github.com/mongodb-labs/drivers-evergreen-tools.
-#   Defaults to $(pwd)../drivers-evergreen-tools
-# mongoc_dir
-#   The path to the build of mongo-c-driver (e.g. mongo-c-driver/cmake-build).
-#   Defaults to $(pwd)
-# mongoc_dir
-#   The path to mongo-c-driver source (may be same as mongoc_dir).
-#   Defaults to $(pwd)
-# mongodb_bin_dir
-#   The path to mongodb binaries.
-#   Defaults to $(pwd)/mongodb/bin
 # iam_auth_ecs_account and iam_auth_ecs_secret_access_key
 #   Set to access key id/secret access key. Required for some tests.
 
