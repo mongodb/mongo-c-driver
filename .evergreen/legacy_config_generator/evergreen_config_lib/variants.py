@@ -253,8 +253,7 @@ all_variants = [
     Variant('darwin',
             '*Darwin, macOS (Apple LLVM)',
             'macos-1014',
-            ['.compression !.snappy !.zstd',
-             # Remove !.zstd in CDRIVER-3483.
+            ['.compression !.snappy',
              'release-compile',
              'debug-compile-nosasl-nossl',
              'debug-compile-rdtscp',
