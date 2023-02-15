@@ -35,24 +35,8 @@ drivers_tools_dir="$(to_absolute "${mongoc_dir}/../drivers-evergreen-tools")"
 declare mongodb_bin_dir="${mongoc_dir}/mongodb/bin"
 declare test_awsauth="${mongoc_dir}/src/libmongoc/test-awsauth"
 
-# TODO: test-awsauth statically links. Remove env vars set in these blocks:
-# Add libmongoc-1.0 and libbson-1.0 to library path, so mongoc-ping can find them at runtime.
 if [[ "${OSTYPE}" == "cygwin" ]]; then
-  export PATH
-  PATH+=":${mongoc_dir}/src/libmongoc/Debug"
-  PATH+=":${mongoc_dir}/src/libbson/Debug"
-
-  chmod -f +x src/libmongoc/Debug/* src/libbson/Debug/* || true
-
   test_awsauth="${mongoc_dir}/src/libmongoc/Debug/test-awsauth.exe"
-elif [[ "${OSTYPE}" == darwin* ]]; then
-  export DYLD_LIBRARY_PATH
-  DYLD_LIBRARY_PATH+=":${mongoc_dir}/src/libmongoc"
-  DYLD_LIBRARY_PATH+=":${mongoc_dir}/src/libbson"
-else
-  export LD_LIBRARY_PATH
-  LD_LIBRARY_PATH+=":${mongoc_dir}/src/libmongoc"
-  LD_LIBRARY_PATH+=":$mongoc_dir/src/libbson"
 fi
 
 expect_success() {

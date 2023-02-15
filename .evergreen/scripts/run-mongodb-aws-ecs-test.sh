@@ -4,16 +4,10 @@
 
 echo "run-mongodb-aws-ecs-test.sh"
 
-# TODO: remove paths and comment.
-# Set paths so mongoc-ping can find dependencies
-export LD_LIBRARY_PATH
-LD_LIBRARY_PATH+=":/root/mongoc/src/libmongoc"
-LD_LIBRARY_PATH+=":/root/mongoc/src/libbson"
 
 expect_success() {
   echo "Should succeed:"
   if ! /root/mongoc/src/libmongoc/test-awsauth "${1:?}" "EXPECT_SUCCESS"; then
-    echo "Unexpected auth failure" 1>&2
     exit 1
   fi
 }
