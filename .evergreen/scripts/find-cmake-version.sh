@@ -141,6 +141,7 @@ find_cmake_version() {
     "--fail"
   )
 
+  # TODO: remove once BUILD-16817 is resolved.
   case "${distro_id:?}" in
   rhel71-power8-* | ubuntu1404-* | ubuntu1604-power8-*)
     # Workaround SSL certificate verification failures on certain distros.
