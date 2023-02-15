@@ -3,10 +3,10 @@
 # Test runner for AWS authentication.
 #
 # This script is meant to be run in parts (so to isolate the AWS tests).
-# Pass the desired test first argument (REGULAR, EC2, ECS, ASSUME_ROLE, LAMBDA)
+# Pass the desired test as the environment variable TESTCASE: (REGULAR, EC2, ECS, ASSUME_ROLE, LAMBDA)
 #
 # Example:
-# run-aws-tests.sh EC2
+# TESTCASE=EC2 run-aws-tests.sh
 #
 # Optional environment variables:
 # iam_auth_ecs_account and iam_auth_ecs_secret_access_key
