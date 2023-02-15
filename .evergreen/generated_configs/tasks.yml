@@ -1747,6 +1747,7 @@ tasks:
   - name: sasl-cyrus-darwinssl-macos-1015-clang-compile
     run_on: macos-1015
     tags: [sasl-matrix-darwinssl, compile, macos-1015, clang, sasl-cyrus]
+    disable: true
     commands:
       - func: sasl-cyrus-darwinssl-compile
         vars:
