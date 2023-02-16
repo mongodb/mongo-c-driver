@@ -3200,10 +3200,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: scan-build-macos-1014-clang
-    run_on: macos-1014
-    tags: [scan-build-matrix, macos-1014, clang]
-    disable: true
+  - name: scan-build-macos-1100-clang
+    run_on: macos-1100
+    tags: [scan-build-matrix, macos-1100, clang]
     commands:
       - func: scan-build
         vars:
