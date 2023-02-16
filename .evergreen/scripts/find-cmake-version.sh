@@ -56,7 +56,7 @@ local_cache_dir() {
 
 # Ensure "good enough" atomicity when two or more tasks running on the same host
 # attempt to install a version of CMake.
-cmake_replace_latest() {
+cmake_replace_version() {
   declare -r cache="${1:?"missing path to cache directory"}"
   declare -r root="${2:?"missing path to latest CMake root directory"}"
   declare -r version="${3:?"missing latest CMake version"}"
@@ -210,7 +210,7 @@ find_cmake_version() {
       if curl "${curl_args[@]}" "${cmake_url}" --output "cmake.${extension}"; then
         "${decompressor}" "${decompressor_args[@]}" "cmake.${extension}" || return
 
-        cmake_replace_latest "${cache_dir}" "$(pwd)/${root_dir}" "${version}" || return
+        cmake_replace_version "${cache_dir}" "$(pwd)/${root_dir}" "${version}" || return
 
         # Verify CMake binary works as expected.
         command -v "${cmake_binary}" || return
@@ -268,7 +268,7 @@ find_cmake_version() {
     } >/dev/null   # Only interested in errors.
     popd || return # "cmake-${version}"
 
-    cmake_replace_latest "${cache_dir}" "$(pwd)/install-dir" "${version}" || return
+    cmake_replace_version "${cache_dir}" "$(pwd)/install-dir" "${version}" || return
 
     # Verify CMake binary works as expected.
     command -v "${cmake_binary}" || return
