@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Used to workaround curl certificate verification failures on certain distros.
+# Used to workaround curl certificate validation failures on certain distros.
 : "${distro_id:?"missing required Evergreen expansion"}"
 
 # Create a temporary directory in the existing directory $1.
@@ -184,7 +184,7 @@ find_cmake_version() {
   # TODO: remove once BUILD-16817 is resolved.
   case "${distro_id:?}" in
   rhel71-power8-* | ubuntu1404-* | ubuntu1604-power8-*)
-    # Workaround SSL certificate verification failures on certain distros.
+    # Workaround SSL certificate validation failures on certain distros.
     curl_args+=("-k")
     ;;
   esac
