@@ -277,10 +277,6 @@ test_derive_region (void *unused)
 static void
 test_aws_cache (void)
 {
-   struct timeval now;
-   ASSERT_CMPINT (0, ==, bson_gettimeofday (&now));
-   uint64_t now_ms = (1000 * now.tv_sec) + (now.tv_usec / 1000);
-
    _mongoc_aws_credentials_t valid_creds = {0};
    valid_creds.access_key_id = bson_strdup ("access_key_id");
    valid_creds.secret_access_key = bson_strdup ("secret_access_key");
