@@ -87,9 +87,9 @@ if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
-# Ensure find-cmake.sh is sourced *before* add-build-dirs-to-paths.sh
+# Ensure find-cmake-latest.sh is sourced *before* add-build-dirs-to-paths.sh
 # to avoid interfering with potential CMake build configuration.
-# shellcheck source=.evergreen/scripts/find-cmake.sh
+# shellcheck source=.evergreen/scripts/find-cmake-latest.sh
 . "${script_dir}/find-cmake-latest.sh"
 cmake_binary="$(find_cmake_latest)"
 
