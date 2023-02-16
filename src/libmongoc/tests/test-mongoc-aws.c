@@ -285,17 +285,19 @@ test_aws_cache (void)
    valid_creds.access_key_id = bson_strdup ("access_key_id");
    valid_creds.secret_access_key = bson_strdup ("secret_access_key");
    valid_creds.session_token = bson_strdup ("session_token");
-   // Set expiration to one minute after window.
-   valid_creds.expiration_ms =
-      now_ms + MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS + (60 * 1000);
+   // Set expiration to one minute from now.
+   valid_creds.expiration.set = true;
+   valid_creds.expiration.value =
+      mcd_timer_expire_after (mcd_milliseconds (60 * 1000));
 
    _mongoc_aws_credentials_t expired_creds = {0};
    expired_creds.access_key_id = bson_strdup ("access_key_id");
    expired_creds.secret_access_key = bson_strdup ("secret_access_key");
    expired_creds.session_token = bson_strdup ("session_token");
-   // Set expiration to one minute before window.
-   expired_creds.expiration_ms =
-      now_ms + MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS - (60 * 1000);
+   // Set expiration to one minute before.
+   expired_creds.expiration.set = true;
+   expired_creds.expiration.value =
+      mcd_timer_expire_after (mcd_milliseconds (-60 * 1000));
 
    _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
    _mongoc_aws_credentials_cache_clear ();
@@ -344,7 +346,7 @@ test_aws_cache (void)
       ASSERT (found);
 
       // Manually expire the credentials.
-      cache->cached.value.expiration_ms = expired_creds.expiration_ms;
+      cache->cached.value.expiration.value = expired_creds.expiration.value;
       found = _mongoc_aws_credentials_cache_get (&got);
       ASSERT (!found);
       _mongoc_aws_credentials_cleanup (&got);

@@ -17,6 +17,7 @@
 /* All interaction with kms_message is limited to this file. */
 
 #include "common-b64-private.h"
+#include "mcd-time.h"
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-host-list-private.h"
@@ -296,35 +297,55 @@ fail:
    return ret;
 }
 
-// parse_expiration parses the "Expiration" string value returned from an ECS or
-// EC2 response. "Expiration" is expected to be an ISO-8601 string. Example:
-// "2023-02-07T20:04:27Z". On success, `expiration_ms` is set to the expiration
-// time as milliseconds from the Unix epoch.
+// expiration_to_timer parses the "Expiration" string value returned from
+// an ECS or EC2 response. "Expiration" is expected to be an ISO-8601 string.
+// Example: "2023-02-07T20:04:27Z". On success, `expiration_timer` is set to the
+// expiration time.
 static bool
-expiration_to_ms (const char *expiration_str,
-                  int64_t *expiration_ms,
-                  bson_error_t *error)
+expiration_to_timer (const char *expiration_str,
+                     mcd_timer *expiration_timer,
+                     bson_error_t *error)
 {
-   bson_error_t json_err;
-   bson_t date_doc;
-   bson_iter_t date_iter;
-   char *date_doc_str;
    bool ret = false;
 
-   // libbson has private API `_bson_iso8601_date_parse` to parse ISO-8601
-   // strings. The private API is inaccessible to libmongoc.
-   // Create a temporary bson document with a $date to parse.
-   date_doc_str = bson_strdup_printf ("{\"Expiration\" : {\"$date\" : \"%s\"}}",
-                                      expiration_str);
+   // get expiration time in milliseconds since Unix Epoch.
+   int64_t expiration_ms;
+   {
+      bson_error_t json_err;
+      bson_t date_doc;
+      bson_iter_t date_iter;
+      char *date_doc_str;
+      // libbson has private API `_bson_iso8601_date_parse` to parse ISO-8601
+      // strings. The private API is inaccessible to libmongoc.
+      // Create a temporary bson document with a $date to parse.
+      date_doc_str = bson_strdup_printf (
+         "{\"Expiration\" : {\"$date\" : \"%s\"}}", expiration_str);
 
-   if (!bson_init_from_json (&date_doc, date_doc_str, -1, &json_err)) {
+      if (!bson_init_from_json (&date_doc, date_doc_str, -1, &json_err)) {
+         bson_free (date_doc_str);
+         AUTH_ERROR_AND_FAIL ("failed to parse Expiration: %s",
+                              json_err.message);
+      }
+      BSON_ASSERT (bson_iter_init_find (&date_iter, &date_doc, "Expiration"));
+      expiration_ms = bson_iter_date_time (&date_iter);
       bson_free (date_doc_str);
-      AUTH_ERROR_AND_FAIL ("failed to parse Expiration: %s", json_err.message);
+      bson_destroy (&date_doc);
    }
-   BSON_ASSERT (bson_iter_init_find (&date_iter, &date_doc, "Expiration"));
-   *expiration_ms = bson_iter_date_time (&date_iter);
-   bson_free (date_doc_str);
-   bson_destroy (&date_doc);
+
+   // get current time in milliseconds since Unix Epoch.
+   int64_t now_ms;
+   {
+      struct timeval now;
+      if (0 != bson_gettimeofday (&now)) {
+         AUTH_ERROR_AND_FAIL ("bson_gettimeofday returned failure. Unable to "
+                              "determine expiration.");
+      } else {
+         now_ms = (1000 * now.tv_sec) + (now.tv_usec / 1000);
+      }
+   }
+
+   *expiration_timer = mcd_timer_expire_after (mcd_milliseconds (
+      expiration_ms - now_ms - MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS));
    ret = true;
 fail:
    return ret;
@@ -384,13 +405,15 @@ _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       ecs_session_token = bson_iter_utf8 (&iter, NULL);
    }
 
-   int64_t expiration_ms = 0;
+   mcd_timer expiration_timer;
+   bool expiration_set;
    if (bson_iter_init_find_case (&iter, response_json, "Expiration") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
-      if (!expiration_to_ms (
-             bson_iter_utf8 (&iter, NULL), &expiration_ms, error)) {
+      if (!expiration_to_timer (
+             bson_iter_utf8 (&iter, NULL), &expiration_timer, error)) {
          goto fail;
       }
+      expiration_set = true;
    }
 
    if (!_validate_and_set_creds (ecs_access_key_id,
@@ -401,7 +424,10 @@ _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       goto fail;
    }
 
-   creds->expiration_ms = expiration_ms;
+   if (expiration_set) {
+      creds->expiration.value = expiration_timer;
+      creds->expiration.set = true;
+   }
 
    ret = true;
 fail:
@@ -513,13 +539,15 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       ec2_session_token = bson_iter_utf8 (&iter, NULL);
    }
 
-   int64_t expiration_ms = 0;
+   mcd_timer expiration_timer;
+   bool expiration_set;
    if (bson_iter_init_find_case (&iter, response_json, "Expiration") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
-      if (!expiration_to_ms (
-             bson_iter_utf8 (&iter, NULL), &expiration_ms, error)) {
+      if (!expiration_to_timer (
+             bson_iter_utf8 (&iter, NULL), &expiration_timer, error)) {
          goto fail;
       }
+      expiration_set = true;
    }
 
    if (!_validate_and_set_creds (ec2_access_key_id,
@@ -529,7 +557,11 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
                                  error)) {
       goto fail;
    }
-   creds->expiration_ms = expiration_ms;
+
+   if (expiration_set) {
+      creds->expiration.value = expiration_timer;
+      creds->expiration.set = true;
+   }
 
    ret = true;
 fail:
@@ -610,7 +642,7 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
          goto fail;
       }
       if (!_creds_empty (creds)) {
-         if (creds->expiration_ms != 0) {
+         if (creds->expiration.set) {
             // Only try to cache credentials if an expiration time is included.
             _mongoc_aws_credentials_cache_put_nolock (creds);
          }
@@ -624,7 +656,7 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
          goto fail;
       }
       if (!_creds_empty (creds)) {
-         if (creds->expiration_ms != 0) {
+         if (creds->expiration.set) {
             // Only try to cache credentials if an expiration time is included.
             _mongoc_aws_credentials_cache_put_nolock (creds);
          }
@@ -1114,7 +1146,7 @@ _mongoc_aws_credentials_copy_to (const _mongoc_aws_credentials_t *src,
    dst->access_key_id = bson_strdup (src->access_key_id);
    dst->secret_access_key = bson_strdup (src->secret_access_key);
    dst->session_token = bson_strdup (src->session_token);
-   dst->expiration_ms = src->expiration_ms;
+   dst->expiration = src->expiration;
 }
 
 _mongoc_aws_credentials_cache_t mongoc_aws_credentials_cache;
@@ -1129,15 +1161,11 @@ _mongoc_aws_credentials_cache_init (void)
 static bool
 check_expired (const _mongoc_aws_credentials_t *creds)
 {
-   struct timeval now;
-   if (0 != bson_gettimeofday (&now)) {
-      MONGOC_WARNING ("bson_gettimeofday returned failure. Assuming AWS "
-                      "credentials are expired.");
+   if (!creds->expiration.set) {
       return true;
    }
-   uint64_t now_ms = (1000 * now.tv_sec) + (now.tv_usec / 1000);
-   return now_ms + MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS >
-          creds->expiration_ms;
+   return mcd_get_milliseconds (
+             mcd_timer_remaining (creds->expiration.value)) == 0;
 }
 
 void

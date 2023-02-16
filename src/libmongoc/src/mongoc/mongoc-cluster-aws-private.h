@@ -20,6 +20,7 @@
 #define MONGOC_CLUSTER_AWS_PRIVATE_H
 
 #include "bson/bson.h"
+#include "mcd-time.h"
 #include "mongoc/mongoc-cluster-private.h"
 #include "common-thread-private.h" // bson_mutex_t
 
@@ -35,10 +36,12 @@ typedef struct {
    char *access_key_id;
    char *secret_access_key;
    char *session_token;
-   // expiration is the time in milliseconds since the Epoch when these
-   // credentials expire. If expiration is 0, the credentials do not have a
-   // known expiration.
-   uint64_t expiration_ms;
+   // expiration_timer is the time when these credentials expire.
+   // If expiration_timer is 0, the credentials do not have a known expiration.
+   struct {
+      mcd_timer value;
+      bool set;
+   } expiration;
 } _mongoc_aws_credentials_t;
 
 #define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS 60 * 5 * 1000
