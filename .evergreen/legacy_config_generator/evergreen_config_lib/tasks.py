@@ -826,7 +826,7 @@ all_tasks = chain(all_tasks, [aws_compile_task])
 
 
 class AWSTestTask(MatrixTask):
-    axes = OD([('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role']),
+    axes = OD([('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role', 'assume_role_with_web_identity']),
                ('version', ['latest', '5.0', '4.4'])])
 
     name_prefix = 'test-aws-openssl'

@@ -397,7 +397,10 @@ all_variants = [
         'test-aws-openssl-ec2-4.4',
         'test-aws-openssl-ecs-4.4',
         'test-aws-openssl-assume_role-4.4',
-        'test-aws-openssl-lambda-4.4'
+        'test-aws-openssl-lambda-4.4',
+        'test-aws-openssl-assume_role_with_web_identity-latest',
+        'test-aws-openssl-assume_role_with_web_identity-5.0',
+        'test-aws-openssl-assume_role_with_web_identity-4.4',
     ], {'CC': 'clang'}),
     Variant('mongohouse',
             'Mongohouse Test',
