@@ -106,8 +106,6 @@ echo "Installing libmongocrypt..."
 "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" >/dev/null
 echo "Installing libmongocrypt... done."
 
-configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
-
 # scan-build binary is available in different locations depending on the distro.
 # Search for a match in order of preference as listed.
 declare -a scan_build_directories
