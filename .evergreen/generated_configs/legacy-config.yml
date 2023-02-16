@@ -472,34 +472,6 @@ tasks:
         set -o errexit
         env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-scan-build
-  tags:
-  - clang
-  - debug-compile
-  - scan-build
-  - special
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env ANALYZE="ON" CC="clang" DEBUG="ON" bash .evergreen/scripts/compile.sh
-  - func: upload-build
-  - func: upload scan artifacts
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        if find scan -name \*.html | grep -q html; then
-          exit 123
-        fi
 - name: compile-tracing
   commands:
   - command: shell.exec
@@ -9025,6 +8997,7 @@ tasks:
   - func: fetch-source
   - command: shell.exec
     params:
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
@@ -9066,6 +9039,7 @@ tasks:
   - func: fetch-source
   - command: shell.exec
     params:
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
@@ -9089,6 +9063,7 @@ tasks:
   - func: fetch-source
   - command: shell.exec
     params:
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
@@ -9127,6 +9102,7 @@ tasks:
   commands:
   - command: shell.exec
     params:
+      add_expansions_to_env: true
       shell: bash
       script: |-
         set -o errexit
@@ -9287,7 +9263,6 @@ buildvariants:
     CC: clang
   run_on: ubuntu1404-build
   tasks:
-  - debug-compile-scan-build
   - release-compile
   - debug-compile-rdtscp
 - name: clang35
@@ -9337,7 +9312,6 @@ buildvariants:
     MARCH: i686
   run_on: ubuntu1804-test
   tasks:
-  - debug-compile-scan-build
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
@@ -9350,7 +9324,6 @@ buildvariants:
     MARCH: i686
   run_on: ubuntu1604-test
   tasks:
-  - debug-compile-scan-build
   - release-compile
   - debug-compile-no-align
 - name: clang38ubuntu
@@ -9360,7 +9333,6 @@ buildvariants:
   run_on: ubuntu1604-test
   tasks:
   - .compression !.zstd
-  - debug-compile-scan-build
   - release-compile
   - debug-compile-sasl-openssl
   - debug-compile-nosasl-openssl
@@ -9503,7 +9475,6 @@ buildvariants:
   - debug-compile-nosrv
   - debug-compile-sasl-darwinssl
   - debug-compile-nosasl-nossl
-  - .debug-compile .clang
   - .authentication-tests .darwinssl
   - .latest .nossl
   - test-dns-darwinssl
@@ -9616,7 +9587,6 @@ buildvariants:
   run_on: ubuntu1804-arm64-large
   tasks:
   - .compression !.snappy !.zstd
-  - debug-compile-scan-build
   - debug-compile-no-align
   - release-compile
   - debug-compile-nosasl-nossl
@@ -9633,7 +9603,6 @@ buildvariants:
   run_on: ubuntu1604-arm64-large
   tasks:
   - .compression !.snappy !.zstd
-  - debug-compile-scan-build
   - debug-compile-no-align
   - release-compile
   batchtime: 1440

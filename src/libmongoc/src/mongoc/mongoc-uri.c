@@ -1574,6 +1574,8 @@ error:
 static bool
 mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (str);
+
    char *before_slash = NULL;
    const char *tmp;
 
@@ -1601,6 +1603,8 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    if (!mongoc_uri_parse_before_slash (uri, before_slash, error)) {
       goto error;
    }
+
+   BSON_ASSERT (str);
 
    if (*str) {
       if (*str == '/') {

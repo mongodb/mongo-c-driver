@@ -2605,6 +2605,36 @@ test_mongoc_client_descriptions_pooled (void *unused)
 }
 
 
+static bool
+is_standalone_or_rs_primary_or_mongos (const char *server_type)
+{
+   BSON_ASSERT_PARAM (server_type);
+   // Avoid -Woverlength-strings in ASSERT macros.
+   return strcmp (server_type, "Standalone") == 0 ||
+          strcmp (server_type, "RSPrimary") == 0 ||
+          strcmp (server_type, "Mongos") == 0;
+}
+
+static bool
+is_standalone_or_rs_secondary_or_mongos (const char *server_type)
+{
+   BSON_ASSERT_PARAM (server_type);
+   // Avoid -Woverlength-strings in ASSERT macros.
+   return strcmp (server_type, "Standalone") == 0 ||
+          strcmp (server_type, "RSSecondary") == 0 ||
+          strcmp (server_type, "Mongos") == 0;
+}
+
+static bool
+is_standalone_or_mongos (const char *server_type)
+{
+   BSON_ASSERT_PARAM (server_type);
+   // Avoid -Woverlength-strings in ASSERT macros.
+   return strcmp (server_type, "Standalone") == 0 ||
+          strcmp (server_type, "Mongos") == 0;
+}
+
+
 static void
 _test_mongoc_client_select_server (bool pooled)
 {
@@ -2629,9 +2659,7 @@ _test_mongoc_client_select_server (bool pooled)
 
    ASSERT (sd);
    server_type = mongoc_server_description_type (sd);
-   ASSERT (!strcmp (server_type, "Standalone") ||
-           !strcmp (server_type, "RSPrimary") ||
-           !strcmp (server_type, "Mongos"));
+   ASSERT (is_standalone_or_rs_primary_or_mongos (server_type));
 
    /* Do not inherit read prefs from the client. */
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -2645,9 +2673,7 @@ _test_mongoc_client_select_server (bool pooled)
 
    ASSERT (sd);
    server_type = mongoc_server_description_type (sd);
-   ASSERT (!strcmp (server_type, "Standalone") ||
-           !strcmp (server_type, "RSPrimary") ||
-           !strcmp (server_type, "Mongos"));
+   ASSERT (is_standalone_or_rs_primary_or_mongos (server_type));
 
    mongoc_server_description_destroy (sd);
    sd = mongoc_client_select_server (client,
@@ -2657,9 +2683,7 @@ _test_mongoc_client_select_server (bool pooled)
 
    ASSERT (sd);
    server_type = mongoc_server_description_type (sd);
-   ASSERT (!strcmp (server_type, "Standalone") ||
-           !strcmp (server_type, "RSPrimary") ||
-           !strcmp (server_type, "Mongos"));
+   ASSERT (is_standalone_or_rs_primary_or_mongos (server_type));
 
    mongoc_server_description_destroy (sd);
    sd = mongoc_client_select_server (client,
@@ -2669,9 +2693,7 @@ _test_mongoc_client_select_server (bool pooled)
 
    ASSERT (sd);
    server_type = mongoc_server_description_type (sd);
-   ASSERT (!strcmp (server_type, "Standalone") ||
-           !strcmp (server_type, "RSSecondary") ||
-           !strcmp (server_type, "Mongos"));
+   ASSERT (is_standalone_or_rs_secondary_or_mongos (server_type));
 
    mongoc_server_description_destroy (sd);
    mongoc_read_prefs_destroy (prefs);
@@ -2746,8 +2768,7 @@ _test_mongoc_client_select_server_error (bool pooled)
    if (tdtype == MONGOC_TOPOLOGY_SINGLE || tdtype == MONGOC_TOPOLOGY_SHARDED) {
       ASSERT (sd);
       server_type = mongoc_server_description_type (sd);
-      ASSERT (!strcmp (server_type, "Standalone") ||
-              !strcmp (server_type, "Mongos"));
+      ASSERT (is_standalone_or_mongos (server_type));
       mongoc_server_description_destroy (sd);
    } else {
       ASSERT (!sd);

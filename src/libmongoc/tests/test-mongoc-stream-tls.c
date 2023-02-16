@@ -277,6 +277,7 @@ test_mongoc_tls_expired (void)
 }
 
 
+#if !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 static void
 test_mongoc_tls_common_name (void)
 {
@@ -297,6 +298,7 @@ test_mongoc_tls_common_name (void)
    ASSERT_CMPINT (cr.result, ==, SSL_TEST_SUCCESS);
    ASSERT_CMPINT (sr.result, ==, SSL_TEST_SUCCESS);
 }
+#endif // !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 
 
 static void

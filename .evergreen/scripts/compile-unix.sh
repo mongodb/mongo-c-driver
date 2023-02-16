@@ -6,7 +6,7 @@ set -o pipefail
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 
-check_var_opt ANALYZE "OFF"
+check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
 check_var_opt CFLAGS
@@ -154,6 +154,10 @@ if [[ "${OSTYPE}" == darwin* ]]; then
   CFLAGS+=" -Wno-unknown-pragmas"
 fi
 
+if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
+  configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
+fi
+
 case "${CC}" in
 clang)
   CXX=clang++
@@ -163,14 +167,18 @@ gcc)
   ;;
 esac
 
-if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
-  configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
+declare cmake_binary
+if [[ "${BYPASS_FIND_CMAKE}" == "OFF" ]]; then
+  # Ensure find-cmake-latest.sh is sourced *before* add-build-dirs-to-paths.sh
+  # to avoid interfering with potential CMake build configuration.
+  # shellcheck source=.evergreen/scripts/find-cmake-latest.sh
+  . "${script_dir}/find-cmake-latest.sh"
+  cmake_binary="$(find_cmake_latest)"
+else
+  cmake_binary="cmake"
 fi
 
-# Ensure find-cmake.sh is sourced *before* add-build-dirs-to-paths.sh
-# to avoid interfering with potential CMake build configuration.
-# shellcheck source=.evergreen/scripts/find-cmake.sh
-. "${script_dir}/find-cmake.sh" # ${CMAKE}
+"${cmake_binary:?}" --version
 
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
@@ -187,11 +195,6 @@ fi
 echo "SSL Version: $(pkg-config --modversion libssl 2>/dev/null || echo "N/A")"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
-  # llvm-cov is installed from brew.
-  # Add path to scan-build and lcov, but with low priority to avoid overwriting
-  # paths to other system-installed LLVM binaries such as clang.
-  PATH="${PATH}:/usr/local/opt/llvm/bin"
-
   # MacOS does not have nproc.
   nproc() {
     sysctl -n hw.logicalcpu
@@ -202,27 +205,11 @@ declare -a extra_configure_flags
 IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
 
 if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
-  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
-  # TODO: remove once latest libmongocrypt release contains commit c6f65fe6.
-  {
-    pushd libmongocrypt
-    echo "1.7.0+c6f65fe6" >|VERSION_CURRENT
-    git fetch -q origin master
-    git checkout -q c6f65fe6 # Allows -DENABLE_MONGOC=OFF.
-    popd                     # libmongocrypt
-  }
-  declare -a crypt_cmake_flags
-  crypt_cmake_flags=(
-    "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
-    "-DBUILD_TESTING=OFF"
-    "-DENABLE_ONLINE_TESTS=OFF"
-    "-DENABLE_MONGOC=OFF"
-  )
-  DEBUG="0" \
-    MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
-    DEFAULT_BUILD_ONLY=true \
-    LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]}" \
-    ./libmongocrypt/.evergreen/compile.sh
+  echo "Installing libmongocrypt..."
+  # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
+  "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" >/dev/null
+  echo "Installing libmongocrypt... done."
+
   # Fail if the C driver is unable to find the installed libmongocrypt.
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 else
@@ -231,29 +218,6 @@ else
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
-if [[ "${ANALYZE}" == "ON" ]]; then
-  # Clang static analyzer, available on Ubuntu 16.04 images.
-  # https://clang-analyzer.llvm.org/scan-build.html
-  #
-  # On images other than Ubuntu 16.04, use scan-build-3.9 if
-  # scan-build is not found.
-  declare scan_build_binary
-  if command -v scan-build 2>/dev/null; then
-    scan_build_binary="scan-build"
-  else
-    scan_build_binary="scan-build-3.9"
-  fi
-
-  # Do not include bundled zlib in scan-build analysis.
-  # scan-build `--exclude`` flag is not available on all Evergreen variants.
-  configure_flags_append "-DENABLE_ZLIB=OFF"
-
-  "${scan_build_binary}" "${CMAKE}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
-
-  # Put clang static analyzer results in scan/ and fail build if warnings found.
-  "${scan_build_binary}" -o scan --status-bugs make -j "$(nproc)" all
-else
-  "${CMAKE}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
-  make -j "$(nproc)" all
-  make install
-fi
+"${cmake_binary}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
+make -j "$(nproc)" all
+make install
