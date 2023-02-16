@@ -30,27 +30,28 @@ make_tmpdir_in() {
   printf "%s" "${tmpdir}"
 }
 
-# Identify the cache directory to use.
-mongoc_cache_dir() {
-  declare local_cache_dir
+# Identify the cache directory to use on the current distro.
+local_cache_dir() {
+  declare res
   case "${OSTYPE:?}" in
   cygwin)
-    if [[ "${distro_id}" == windows-64-2016 ]]; then
-      local_cache_dir="$(cygpath -au)" || return
+    if [[ "${distro_id:?}" == windows-64-2016 ]]; then
+      # Remove once BUILD-16821 is resolved.
+      res="${HOME:?}/.cache" || return
     else
-      local_cache_dir="$(cygpath -au "${LOCALAPPDATA:?}")" || return
+      res="$(cygpath -au "${LOCALAPPDATA:?}")" || return
     fi
     ;;
   darwin*)
-    local_cache_dir="${HOME:?}/Library/Caches"
+    res="${HOME:?}/Library/Caches"
     ;;
   linux*)
-    local_cache_dir="${HOME:?}/.cache"
+    res="${HOME:?}/.cache"
     ;;
   esac
-  : "${local_cache_dir:?"unrecognized operating system ${OSTYPE:?}"}"
+  : "${res:?"unrecognized operating system ${OSTYPE:?}"}"
 
-  printf "%s" "${local_cache_dir:?}/mongo-c-driver"
+  printf "%s" "${res:?}"
 }
 
 # Ensure "good enough" atomicity when two or more tasks running on the same host
@@ -87,8 +88,10 @@ cmake_replace_latest() {
 #   find_cmake_version 3 1 0
 #   cmake_binary="$(find_cmake_version 3 1 0)"
 #   cmake_binary="$(find_cmake_version 3 25 0 2>/dev/null)"
+#   BYPASS_CMAKE_CACHE=ON cmake_binary="$(find_cmake_version 3 25 0)"
 #
-# Return 0 (true) if a CMake binary matching the requested version is available.
+# Return 0 (true) if a CMake binary matching the requested version is available
+# or successfully obtained from https://cmake.org/files.
 # Return a non-zero (false) value otherwise.
 #
 # If successful, print the name of the CMake binary to stdout (pipe 1).
@@ -101,26 +104,38 @@ cmake_replace_latest() {
 #   cmake_binary="$(find_cmake_version 3 25 0)" || exit
 #   "${cmake_binary:?}" -S path-to-source -B path-to-build
 find_cmake_version() {
+  # If the BYPASS_CMAKE_CACHE environment variable is set to "ON", the check for
+  # an existing CMake binary in the mongo-c-driver CMake cache will be skipped
+  # and the requested CMake binary will be unconditionally downloaded and
+  # installed from scratch.
+  : "${BYPASS_CMAKE_CACHE:="OFF"}"
+
   declare -r major="${1:?"missing CMake major version"}"
   declare -r minor="${2:?"missing CMake minor version"}"
   declare -r patch="${3:?"missing CMake patch version"}"
   declare -r version="${major}.${minor}.${patch}"
 
   declare cache_dir
-  cache_dir="$(mongoc_cache_dir)" || return
+  cache_dir="$(local_cache_dir)/mongo-c-driver" || return
 
   declare -r cmake_cache_dir="${cache_dir}/cmake-${version}"
   declare -r cmake_binary="${cmake_cache_dir}/bin/cmake"
 
-  if command -v "${cmake_binary}" >/dev/null; then
-    if "${cmake_binary}" --version | grep -q "${version}"; then
-      echo "Found CMake ${version} in mongo-c-driver CMake cache" 1>&2
-      printf "%s" "${cmake_binary}"
-      return # No work to be done: required CMake binary already exists in cache.
-    fi
+  if [[ "${BYPASS_CMAKE_CACHE:?}" == "ON" ]]; then
+    echo "Bypassing lookup of CMake ${version} in mongo-c-driver CMake cache" 1>&2
+  else
+    if command -v "${cmake_binary}" >/dev/null; then
+      if "${cmake_binary}" --version | grep -q "${version}"; then
+        echo "Found CMake ${version} in mongo-c-driver CMake cache" 1>&2
+        printf "%s" "${cmake_binary}"
+        return # No work to be done: required CMake binary already exists in cache.
+      fi
 
-    # Shouldn't happen, but log if it does.
-    echo "Found inconsistent CMake version in mongo-c-driver CMake cache" 1>&2
+      # Shouldn't happen, but log if it does.
+      echo "Found inconsistent CMake version in mongo-c-driver CMake cache" 1>&2
+    else
+      echo "CMake ${version} is not present in mongo-c-driver CMake cache" 1>&2
+    fi
   fi
 
   declare platform
