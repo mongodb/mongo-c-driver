@@ -117,7 +117,7 @@ declare compile_flags=(
 if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
   echo "Installing libmongocrypt..."
   # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-  "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "$(to_windows_path ${mongoc_dir})" "${install_dir}" >/dev/null
+  "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "$(to_windows_path "${mongoc_dir}")" "${install_dir}" >/dev/null
   echo "Installing libmongocrypt... done."
 
   # Fail if the C driver is unable to find the installed libmongocrypt.
