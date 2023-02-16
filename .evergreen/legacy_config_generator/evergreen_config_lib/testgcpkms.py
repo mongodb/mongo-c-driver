@@ -46,7 +46,7 @@ def _create_tasks():
             echo "Untarring file ... begin"
             GCPKMS_CMD="tar xf testgcpkms.tgz" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
             echo "Untarring file ... end"
-            ''', test=False),
+            ''', test=False, add_expansions_to_env=True),
            shell_exec (r'''
             export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}
@@ -61,7 +61,7 @@ def _create_tasks():
         shell_exec (r'''
             pushd mongoc
             ./.evergreen/scripts/compile-test-gcpkms.sh
-            popd''', test=False),
+            popd''', test=False, add_expansions_to_env=True),
          shell_exec (r'''
             export GCPKMS_GCLOUD=${GCPKMS_GCLOUD}
             export GCPKMS_PROJECT=${GCPKMS_PROJECT}

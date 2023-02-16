@@ -11,6 +11,7 @@ class CheckABICompliance(Function):
     commands = [
         bash_exec(
             command_type=EvgCommandType.SETUP,
+            add_expansions_to_env=True,
             working_dir='mongoc',
             script='.evergreen/scripts/abi-compliance-check.sh'
         ),
