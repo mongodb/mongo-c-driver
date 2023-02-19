@@ -41,16 +41,12 @@ fi
 
 expect_success() {
   echo "Should succeed:"
-  if ! "${test_awsauth}" "${1:?}" "EXPECT_SUCCESS"; then
-    exit 1
-  fi
+  "${test_awsauth}" "${1:?}" "EXPECT_SUCCESS" || exit
 }
 
 expect_failure() {
   echo "Should fail:"
-  if ! "${test_awsauth}" "${1:?}" "EXPECT_FAILURE"; then
-    exit 1
-  fi
+  "${test_awsauth}" "${1:?}" "EXPECT_FAILURE" || exit
 }
 
 url_encode() {

@@ -7,9 +7,7 @@ echo "run-mongodb-aws-ecs-test.sh"
 
 expect_success() {
   echo "Should succeed:"
-  if ! /root/mongoc/src/libmongoc/test-awsauth "${1:?}" "EXPECT_SUCCESS"; then
-    exit 1
-  fi
+  /root/mongoc/src/libmongoc/test-awsauth "${1:?}" "EXPECT_SUCCESS"
 }
 
 expect_success "${1:?}"
