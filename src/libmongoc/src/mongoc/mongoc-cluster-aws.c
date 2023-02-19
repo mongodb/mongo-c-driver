@@ -582,9 +582,8 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
 {
    bool ret = false;
 
-   creds->access_key_id = NULL;
-   creds->secret_access_key = NULL;
-   creds->session_token = NULL;
+   BSON_ASSERT_PARAM (creds);
+   *creds = MONGOC_AWS_CREDENTIALS_INIT;
 
    // Check cache before enviroment variables. This is required by the
    // specification: "Even if the environment variables are present in
@@ -1035,7 +1034,7 @@ _mongoc_cluster_auth_node_aws (mongoc_cluster_t *cluster,
    char *sts_fqdn = NULL;
    char *region = NULL;
    int conv_id = 0;
-   _mongoc_aws_credentials_t creds = {0};
+   _mongoc_aws_credentials_t creds = MONGOC_AWS_CREDENTIALS_INIT;
 
    if (!_mongoc_aws_credentials_obtain (cluster->client->uri, &creds, error)) {
       goto fail;
@@ -1208,7 +1207,7 @@ _mongoc_aws_credentials_cache_get_nolock (_mongoc_aws_credentials_t *creds)
       }
    } else {
       // Zero creds, so callers can safely call _mongoc_aws_credentials_cleanup.
-      *creds = (_mongoc_aws_credentials_t){0};
+      *creds = MONGOC_AWS_CREDENTIALS_INIT;
    }
    if (expired) {
       _mongoc_aws_credentials_cache_clear_nolock ();

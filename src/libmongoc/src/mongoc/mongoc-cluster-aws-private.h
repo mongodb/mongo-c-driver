@@ -45,6 +45,13 @@ typedef struct {
    } expiration;
 } _mongoc_aws_credentials_t;
 
+#define MONGOC_AWS_CREDENTIALS_INIT                                            \
+   (_mongoc_aws_credentials_t)                                                 \
+   {                                                                           \
+      .access_key_id = NULL, .secret_access_key = NULL, .session_token = NULL, \
+      .expiration = {0},                                                       \
+   }
+
 #define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS 60 * 5 * 1000
 
 // _mongoc_aws_credentials_cache_t is a thread-safe global cache of AWS
