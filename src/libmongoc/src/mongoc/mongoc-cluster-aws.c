@@ -340,7 +340,8 @@ expiration_to_mcd_timer (const char *expiration_str,
          AUTH_ERROR_AND_FAIL ("bson_gettimeofday returned failure. Unable to "
                               "determine expiration.");
       } else {
-         now_ms = (1000 * now.tv_sec) + (now.tv_usec / 1000);
+         now_ms =
+            (1000 * (int64_t) now.tv_sec) + ((int64_t) now.tv_usec / 1000);
       }
    }
 
