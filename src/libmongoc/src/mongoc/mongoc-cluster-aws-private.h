@@ -36,8 +36,9 @@ typedef struct {
    char *access_key_id;
    char *secret_access_key;
    char *session_token;
-   // expiration_timer is the time when these credentials expire.
-   // If expiration_timer is 0, the credentials do not have a known expiration.
+   // expiration is the time when these credentials expire.
+   // If expiration.set is false, the credentials do not have a known
+   // expiration.
    struct {
       mcd_timer value;
       bool set;
