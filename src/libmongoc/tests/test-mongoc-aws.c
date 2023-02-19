@@ -275,8 +275,9 @@ test_derive_region (void *unused)
 // test_aws_cache unit tests the _mongoc_aws_credentials_cache_t. It does not
 // require libmongoc to be built with MONGOC_ENABLE_MONGODB_AWS_AUTH.
 static void
-test_aws_cache (void)
+test_aws_cache (void *unused)
 {
+   BSON_UNUSED (unused);
    _mongoc_aws_credentials_t valid_creds = MONGOC_AWS_CREDENTIALS_INIT;
    valid_creds.access_key_id = bson_strdup ("access_key_id");
    valid_creds.secret_access_key = bson_strdup ("secret_access_key");
