@@ -150,22 +150,6 @@ clear_env (void)
    ASSERT (_mongoc_setenv ("AWS_SESSION_TOKEN", ""));
 }
 
-// can_setenv returns true if process is able to set environment variables and
-// get them back.
-static bool
-can_setenv (void)
-{
-   if (!_mongoc_setenv ("MONGOC_TEST_CANARY", "VALUE")) {
-      return false;
-   }
-   char *got = _mongoc_getenv ("MONGOC_TEST_CANARY");
-   if (NULL == got) {
-      return false;
-   }
-   bson_free (got);
-   return true;
-}
-
 // caching_expected returns true if MONGODB-AWS authentication is expected to
 // cache credentials. Caching is expected when credentials are not passed
 // through the URI or environment variables.
@@ -312,12 +296,6 @@ test_cache_with_env (const mongoc_uri_t *uri)
    if (!caching_expected (uri)) {
       printf ("Caching credentials is not expected. Skipping tests expecting "
               "credential caching.\n");
-      return;
-   }
-
-   if (!can_setenv ()) {
-      printf ("Process is unable to setenv. Skipping tests that require "
-              "setting environment variables\n");
       return;
    }
 
