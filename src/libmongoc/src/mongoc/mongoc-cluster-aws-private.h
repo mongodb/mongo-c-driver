@@ -49,7 +49,7 @@ typedef struct {
    (_mongoc_aws_credentials_t)                                                 \
    {                                                                           \
       .access_key_id = NULL, .secret_access_key = NULL, .session_token = NULL, \
-      .expiration = {0},                                                       \
+      .expiration = {{0}},                                                     \
    }
 
 #define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS 60 * 5 * 1000
