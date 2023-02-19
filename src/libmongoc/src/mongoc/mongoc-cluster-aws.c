@@ -297,14 +297,14 @@ fail:
    return ret;
 }
 
-// expiration_to_timer parses the "Expiration" string value returned from
+// expiration_to_mcd_timer parses the "Expiration" string value returned from
 // an ECS or EC2 response. "Expiration" is expected to be an ISO-8601 string.
 // Example: "2023-02-07T20:04:27Z". On success, `expiration_timer` is set to the
 // expiration time.
 static bool
-expiration_to_timer (const char *expiration_str,
-                     mcd_timer *expiration_timer,
-                     bson_error_t *error)
+expiration_to_mcd_timer (const char *expiration_str,
+                         mcd_timer *expiration_timer,
+                         bson_error_t *error)
 {
    bool ret = false;
 
@@ -409,7 +409,7 @@ _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
    bool expiration_set;
    if (bson_iter_init_find_case (&iter, response_json, "Expiration") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
-      if (!expiration_to_timer (
+      if (!expiration_to_mcd_timer (
              bson_iter_utf8 (&iter, NULL), &expiration_timer, error)) {
          goto fail;
       }
@@ -543,7 +543,7 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
    bool expiration_set;
    if (bson_iter_init_find_case (&iter, response_json, "Expiration") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
-      if (!expiration_to_timer (
+      if (!expiration_to_mcd_timer (
              bson_iter_utf8 (&iter, NULL), &expiration_timer, error)) {
          goto fail;
       }
