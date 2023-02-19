@@ -406,15 +406,13 @@ _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       ecs_session_token = bson_iter_utf8 (&iter, NULL);
    }
 
-   mcd_timer expiration_timer;
-   bool expiration_set;
    if (bson_iter_init_find_case (&iter, response_json, "Expiration") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       if (!expiration_to_mcd_timer (
-             bson_iter_utf8 (&iter, NULL), &expiration_timer, error)) {
+             bson_iter_utf8 (&iter, NULL), &creds->expiration.value, error)) {
          goto fail;
       }
-      expiration_set = true;
+      creds->expiration.set = true;
    }
 
    if (!_validate_and_set_creds (ecs_access_key_id,
@@ -423,11 +421,6 @@ _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
                                  creds,
                                  error)) {
       goto fail;
-   }
-
-   if (expiration_set) {
-      creds->expiration.value = expiration_timer;
-      creds->expiration.set = true;
    }
 
    ret = true;
@@ -540,15 +533,13 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       ec2_session_token = bson_iter_utf8 (&iter, NULL);
    }
 
-   mcd_timer expiration_timer;
-   bool expiration_set;
    if (bson_iter_init_find_case (&iter, response_json, "Expiration") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       if (!expiration_to_mcd_timer (
-             bson_iter_utf8 (&iter, NULL), &expiration_timer, error)) {
+             bson_iter_utf8 (&iter, NULL), &creds->expiration.value, error)) {
          goto fail;
       }
-      expiration_set = true;
+      creds->expiration.set = true;
    }
 
    if (!_validate_and_set_creds (ec2_access_key_id,
@@ -557,11 +548,6 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
                                  creds,
                                  error)) {
       goto fail;
-   }
-
-   if (expiration_set) {
-      creds->expiration.value = expiration_timer;
-      creds->expiration.set = true;
    }
 
    ret = true;
