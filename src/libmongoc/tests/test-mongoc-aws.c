@@ -375,5 +375,10 @@ test_aws_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_aws);
-   TestSuite_Add (suite, "/aws/cache", test_aws_cache);
+   TestSuite_AddFull (suite,
+                      "/aws/cache",
+                      test_aws_cache,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_aws);
 }

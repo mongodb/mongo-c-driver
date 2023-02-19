@@ -143,13 +143,12 @@ static BSON_ONCE_FUN (_mongoc_do_init)
 
 #if defined(MONGOC_ENABLE_MONGODB_AWS_AUTH)
    kms_message_init ();
+   _mongoc_aws_credentials_cache_init ();
 #endif
 
 #if defined(MONGOC_ENABLE_OCSP_OPENSSL)
    _mongoc_ocsp_cache_init ();
 #endif
-
-   _mongoc_aws_credentials_cache_init ();
 
    BSON_ONCE_RETURN;
 }
@@ -190,13 +189,12 @@ static BSON_ONCE_FUN (_mongoc_do_cleanup)
 
 #if defined(MONGOC_ENABLE_MONGODB_AWS_AUTH)
    kms_message_cleanup ();
+   _mongoc_aws_credentials_cache_cleanup ();
 #endif
 
 #if defined(MONGOC_ENABLE_OCSP_OPENSSL)
    _mongoc_ocsp_cache_cleanup ();
 #endif
-
-   _mongoc_aws_credentials_cache_cleanup ();
 
    BSON_ONCE_RETURN;
 }
