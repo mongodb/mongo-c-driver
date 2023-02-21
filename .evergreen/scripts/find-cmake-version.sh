@@ -35,12 +35,7 @@ local_cache_dir() {
   declare res
   case "${OSTYPE:?}" in
   cygwin)
-    if [[ "${distro_id:?}" == windows-64-2016 ]]; then
-      # Remove once BUILD-16821 is resolved.
-      res="${HOME:?}/.cache" || return
-    else
-      res="$(cygpath -au "${LOCALAPPDATA:?}")" || return
-    fi
+    res="$(cygpath -au "${LOCALAPPDATA:?}")" || return
     ;;
   darwin*)
     res="${HOME:?}/Library/Caches"
