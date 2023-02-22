@@ -49,7 +49,7 @@ typedef struct {
    (_mongoc_aws_credentials_t)                                                 \
    {                                                                           \
       .access_key_id = NULL, .secret_access_key = NULL, .session_token = NULL, \
-      .expiration = {{0}},                                                     \
+      .expiration = {.value = {.expire_at = {0}}, .set = false},               \
    }
 
 #define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS 60 * 5 * 1000
@@ -96,9 +96,10 @@ _mongoc_aws_credentials_cache_get_nolock (_mongoc_aws_credentials_t *creds);
 
 // _mongoc_aws_credentials_cache_get returns true if cached credentials were
 // retrieved.
-// The passed `creds` is expected to be initialized with MONGOC_AWS_CREDENTIALS_INIT.
-// Returns true if there are valid cached credentials. Retrieved credentials are
-// copied to `creds`. Callers are expected to call
+// The passed `creds` is expected to be initialized with
+// MONGOC_AWS_CREDENTIALS_INIT. Returns true if there are valid cached
+// credentials. Retrieved credentials are copied to `creds`. Callers are
+// expected to call
 // `_mongoc_aws_credentials_cleanup` on `creds`.
 // Returns false and zeroes `creds` if there are no valid cached credentials.
 bool
