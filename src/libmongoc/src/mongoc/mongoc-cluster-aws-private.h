@@ -96,7 +96,7 @@ _mongoc_aws_credentials_cache_get_nolock (_mongoc_aws_credentials_t *creds);
 
 // _mongoc_aws_credentials_cache_get returns true if cached credentials were
 // retrieved.
-// The passed `creds` is expected to be uninitialized or zeroed.
+// The passed `creds` is expected to be initialized with MONGOC_AWS_CREDENTIALS_INIT.
 // Returns true if there are valid cached credentials. Retrieved credentials are
 // copied to `creds`. Callers are expected to call
 // `_mongoc_aws_credentials_cleanup` on `creds`.

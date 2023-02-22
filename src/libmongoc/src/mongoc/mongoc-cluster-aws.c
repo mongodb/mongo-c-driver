@@ -1205,9 +1205,6 @@ _mongoc_aws_credentials_cache_get_nolock (_mongoc_aws_credentials_t *creds)
          found_valid = true;
          _mongoc_aws_credentials_copy_to (&cache->cached.value, creds);
       }
-   } else {
-      // Zero creds, so callers can safely call _mongoc_aws_credentials_cleanup.
-      *creds = MONGOC_AWS_CREDENTIALS_INIT;
    }
    if (expired) {
       _mongoc_aws_credentials_cache_clear_nolock ();
