@@ -194,7 +194,6 @@ static void
 test_cache (const mongoc_uri_t *uri)
 {
    bson_error_t error;
-   _mongoc_aws_credentials_t creds;
 
    if (!caching_expected (uri)) {
       printf ("Caching credentials is not expected. Skipping tests expecting "
@@ -207,6 +206,7 @@ test_cache (const mongoc_uri_t *uri)
 
    // Create a new client.
    {
+      _mongoc_aws_credentials_t creds = MONGOC_AWS_CREDENTIALS_INIT;
       mongoc_client_t *client = mongoc_client_new_from_uri (uri);
       ASSERT (client);
 
@@ -220,7 +220,7 @@ test_cache (const mongoc_uri_t *uri)
    }
    // Override the cached credentials with an "Expiration" that is within one
    // minute of the current UTC time.
-   _mongoc_aws_credentials_t first_cached;
+   _mongoc_aws_credentials_t first_cached = MONGOC_AWS_CREDENTIALS_INIT;
    {
       ASSERT (mongoc_aws_credentials_cache.cached.set);
       mongoc_aws_credentials_cache.cached.value.expiration.set = true;
@@ -233,6 +233,7 @@ test_cache (const mongoc_uri_t *uri)
 
    // Create a new client.
    {
+      _mongoc_aws_credentials_t creds = MONGOC_AWS_CREDENTIALS_INIT;
       mongoc_client_t *client = mongoc_client_new_from_uri (uri);
       ASSERT (client);
       // Ensure that a ``find`` operation updates the credentials in the cache.
@@ -259,6 +260,7 @@ test_cache (const mongoc_uri_t *uri)
 
    // Create a new client.
    {
+      _mongoc_aws_credentials_t creds = MONGOC_AWS_CREDENTIALS_INIT;
       mongoc_client_t *client = mongoc_client_new_from_uri (uri);
       ASSERT (client);
 
@@ -291,7 +293,6 @@ static void
 test_cache_with_env (const mongoc_uri_t *uri)
 {
    bson_error_t error;
-   _mongoc_aws_credentials_t creds;
 
    if (!caching_expected (uri)) {
       printf ("Caching credentials is not expected. Skipping tests expecting "
@@ -304,6 +305,7 @@ test_cache_with_env (const mongoc_uri_t *uri)
 
    // Create a new client.
    {
+      _mongoc_aws_credentials_t creds = MONGOC_AWS_CREDENTIALS_INIT;
       mongoc_client_t *client = mongoc_client_new_from_uri (uri);
       ASSERT (client);
 
@@ -332,6 +334,7 @@ test_cache_with_env (const mongoc_uri_t *uri)
 
    // Create a new client.
    {
+      _mongoc_aws_credentials_t creds = MONGOC_AWS_CREDENTIALS_INIT;
       mongoc_client_t *client = mongoc_client_new_from_uri (uri);
       ASSERT (client);
       // Ensure that a ``find`` operation succeeds and does not add credentials
@@ -368,6 +371,7 @@ test_cache_with_env (const mongoc_uri_t *uri)
 
    // Create a new client.
    {
+      _mongoc_aws_credentials_t creds = MONGOC_AWS_CREDENTIALS_INIT;
       mongoc_client_t *client = mongoc_client_new_from_uri (uri);
       ASSERT (client);
 
@@ -385,6 +389,7 @@ test_cache_with_env (const mongoc_uri_t *uri)
 
    // Create a new client.
    {
+      _mongoc_aws_credentials_t creds = MONGOC_AWS_CREDENTIALS_INIT;
       mongoc_client_t *client = mongoc_client_new_from_uri (uri);
       ASSERT (client);
 
@@ -433,7 +438,7 @@ test_multithreaded (const mongoc_uri_t *uri)
    // Verify that credentials are cached.
    if (caching_expected (uri)) {
       // Assert credentials are cached.
-      _mongoc_aws_credentials_t creds;
+      _mongoc_aws_credentials_t creds = MONGOC_AWS_CREDENTIALS_INIT;
       bool found = _mongoc_aws_credentials_cache_get (&creds);
       ASSERT (found);
       _mongoc_aws_credentials_cleanup (&creds);
