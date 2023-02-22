@@ -160,7 +160,6 @@ WINDOWS_DISTROS = [
     Distro(name='windows-2022-large', os='windows', os_type='windows', os_ver='2022'),
     Distro(name='windows-2022-small', os='windows', os_type='windows', os_ver='2022'),
 
-    Distro(name='windows-64-2016', os='windows', os_type='windows', os_ver='2016'),
     Distro(name='windows-64-2019', os='windows', os_type='windows', os_ver='2019'),
 
     Distro(name='windows-64-vsMulti-small', os='windows', os_type='windows', vs_ver='vsMulti', size='small'),
