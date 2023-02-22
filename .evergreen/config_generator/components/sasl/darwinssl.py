@@ -16,11 +16,13 @@ TAG = f'sasl-matrix-{SSL}'
 # fmt: off
 COMPILE_MATRIX = [
     ('macos-1014',       'clang', None, ['cyrus']),
+    ('macos-1015',       'clang', None, ['cyrus']),
+    ('macos-1100',       'clang', None, ['cyrus']),
     ('macos-1100-arm64', 'clang', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('macos-1014', 'clang', None, 'cyrus', ['auth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', 'latest']),
+    ('macos-1100', 'clang', None, 'cyrus', ['auth'], ['server'], ['3.6', '4.0', '4.2', '4.4', '5.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -50,6 +52,11 @@ def tasks():
 
     res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX)
     res += generate_test_tasks(SSL, TAG, TEST_MATRIX)
+
+    # TODO: remove once MONGOCRYPT-443 is resolved.
+    for task in res:
+        if task.run_on == 'macos-1015':
+            task.disable = True
 
     return res
 

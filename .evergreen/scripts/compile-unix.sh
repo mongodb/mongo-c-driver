@@ -113,14 +113,6 @@ else
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
-if [[ -n "${ZSTD}" ]]; then
-  # Since zstd is inconsistently installed on macos-1014.
-  # Remove this check in CDRIVER-3483.
-  if [[ "${OSTYPE}" != darwin* ]]; then
-    configure_flags_append "-DENABLE_ZSTD=${ZSTD}"
-  fi
-fi
-
 declare -a flags
 
 case "${MARCH}" in

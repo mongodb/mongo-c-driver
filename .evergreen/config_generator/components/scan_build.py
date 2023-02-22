@@ -17,7 +17,7 @@ TAG = 'scan-build-matrix'
 # pylint: disable=line-too-long
 # fmt: off
 MATRIX = [
-    ('macos-1014',       'clang', None  ),
+    ('macos-1100',       'clang', None  ),
     ('ubuntu1404',       'clang', None  ),
     ('ubuntu1604-arm64', 'clang', None  ),
     ('ubuntu1604',       'clang', 'i686'),

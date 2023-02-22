@@ -9467,7 +9467,7 @@ buildvariants:
     CC: clang
   run_on: macos-1014
   tasks:
-  - .compression !.snappy !.zstd
+  - .compression !.snappy
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-rdtscp

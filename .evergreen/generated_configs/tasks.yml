@@ -729,24 +729,22 @@ tasks:
   - name: check-headers
     commands:
       - func: check-headers
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, compile, macos-1015, clang, cse, sasl-cyrus]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, compile, macos-1100, clang, cse, sasl-cyrus]
     commands:
       - func: cse-sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
       - func: upload-build
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-4.2-replica-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, "4.2"]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-4.2-replica-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "4.2"]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -759,15 +757,14 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-4.2-server-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, "4.2"]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-4.2-server-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "4.2"]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -780,15 +777,14 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-4.4-replica-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, "4.4"]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-4.4-replica-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "4.4"]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -801,15 +797,14 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-4.4-server-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, "4.4"]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-4.4-server-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "4.4"]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -822,15 +817,14 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-5.0-replica-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, "5.0"]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-5.0-replica-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "5.0"]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -843,15 +837,14 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-5.0-server-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, "5.0"]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-5.0-server-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "5.0"]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -864,15 +857,14 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-6.0-replica-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, "6.0"]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-6.0-replica-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, "6.0"]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -885,15 +877,14 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-6.0-server-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, "6.0"]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-6.0-server-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, "6.0"]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -906,15 +897,14 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-latest-replica-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, replica, latest]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-latest-replica-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, replica, latest]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -927,15 +917,14 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-1015-clang-test-latest-server-auth
-    run_on: macos-1015
-    tags: [cse-matrix-darwinssl, test, macos-1015, clang, sasl-cyrus, cse, auth, server, latest]
-    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile }]
-    disable: true
+  - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-test-latest-server-auth
+    run_on: macos-1100
+    tags: [cse-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, cse, auth, server, latest]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1015-clang-compile
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -1755,14 +1744,39 @@ tasks:
         vars:
           CC: clang
       - func: upload-build
-  - name: sasl-cyrus-darwinssl-macos-1014-clang-test-3.6-server-auth
-    run_on: macos-1014
-    tags: [sasl-matrix-darwinssl, test, macos-1014, clang, sasl-cyrus, auth, server, "3.6"]
-    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1014-clang-compile }]
+  - name: sasl-cyrus-darwinssl-macos-1015-clang-compile
+    run_on: macos-1015
+    tags: [sasl-matrix-darwinssl, compile, macos-1015, clang, sasl-cyrus]
+    disable: true
+    commands:
+      - func: sasl-cyrus-darwinssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: sasl-cyrus-darwinssl-macos-1100-arm64-clang-compile
+    run_on: macos-1100-arm64
+    tags: [sasl-matrix-darwinssl, compile, macos-1100-arm64, clang, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-darwinssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: sasl-cyrus-darwinssl-macos-1100-clang-compile
+    run_on: macos-1100
+    tags: [sasl-matrix-darwinssl, compile, macos-1100, clang, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-darwinssl-compile
+        vars:
+          CC: clang
+      - func: upload-build
+  - name: sasl-cyrus-darwinssl-macos-1100-clang-test-3.6-server-auth
+    run_on: macos-1100
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "3.6"]
+    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-cyrus-darwinssl-macos-1014-clang-compile
+          BUILD_NAME: sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -1774,14 +1788,14 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: sasl-cyrus-darwinssl-macos-1014-clang-test-4.0-server-auth
-    run_on: macos-1014
-    tags: [sasl-matrix-darwinssl, test, macos-1014, clang, sasl-cyrus, auth, server, "4.0"]
-    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1014-clang-compile }]
+  - name: sasl-cyrus-darwinssl-macos-1100-clang-test-4.0-server-auth
+    run_on: macos-1100
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "4.0"]
+    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-cyrus-darwinssl-macos-1014-clang-compile
+          BUILD_NAME: sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -1793,14 +1807,14 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: sasl-cyrus-darwinssl-macos-1014-clang-test-4.2-server-auth
-    run_on: macos-1014
-    tags: [sasl-matrix-darwinssl, test, macos-1014, clang, sasl-cyrus, auth, server, "4.2"]
-    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1014-clang-compile }]
+  - name: sasl-cyrus-darwinssl-macos-1100-clang-test-4.2-server-auth
+    run_on: macos-1100
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "4.2"]
+    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-cyrus-darwinssl-macos-1014-clang-compile
+          BUILD_NAME: sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -1812,14 +1826,14 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: sasl-cyrus-darwinssl-macos-1014-clang-test-4.4-server-auth
-    run_on: macos-1014
-    tags: [sasl-matrix-darwinssl, test, macos-1014, clang, sasl-cyrus, auth, server, "4.4"]
-    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1014-clang-compile }]
+  - name: sasl-cyrus-darwinssl-macos-1100-clang-test-4.4-server-auth
+    run_on: macos-1100
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "4.4"]
+    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-cyrus-darwinssl-macos-1014-clang-compile
+          BUILD_NAME: sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -1831,14 +1845,14 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: sasl-cyrus-darwinssl-macos-1014-clang-test-5.0-server-auth
-    run_on: macos-1014
-    tags: [sasl-matrix-darwinssl, test, macos-1014, clang, sasl-cyrus, auth, server, "5.0"]
-    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1014-clang-compile }]
+  - name: sasl-cyrus-darwinssl-macos-1100-clang-test-5.0-server-auth
+    run_on: macos-1100
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, "5.0"]
+    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-cyrus-darwinssl-macos-1014-clang-compile
+          BUILD_NAME: sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -1850,14 +1864,14 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: sasl-cyrus-darwinssl-macos-1014-clang-test-latest-server-auth
-    run_on: macos-1014
-    tags: [sasl-matrix-darwinssl, test, macos-1014, clang, sasl-cyrus, auth, server, latest]
-    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1014-clang-compile }]
+  - name: sasl-cyrus-darwinssl-macos-1100-clang-test-latest-server-auth
+    run_on: macos-1100
+    tags: [sasl-matrix-darwinssl, test, macos-1100, clang, sasl-cyrus, auth, server, latest]
+    depends_on: [{ name: sasl-cyrus-darwinssl-macos-1100-clang-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-cyrus-darwinssl-macos-1014-clang-compile
+          BUILD_NAME: sasl-cyrus-darwinssl-macos-1100-clang-compile
       - command: expansions.update
         params:
           updates:
@@ -1869,14 +1883,6 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: sasl-cyrus-darwinssl-macos-1100-arm64-clang-compile
-    run_on: macos-1100-arm64
-    tags: [sasl-matrix-darwinssl, compile, macos-1100-arm64, clang, sasl-cyrus]
-    commands:
-      - func: sasl-cyrus-darwinssl-compile
-        vars:
-          CC: clang
-      - func: upload-build
   - name: sasl-cyrus-openssl-archlinux-clang-compile
     run_on: archlinux-large
     tags: [sasl-matrix-openssl, compile, archlinux, clang, sasl-cyrus]
@@ -3194,10 +3200,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-tests
-  - name: scan-build-macos-1014-clang
-    run_on: macos-1014
-    tags: [scan-build-matrix, macos-1014, clang]
-    disable: true
+  - name: scan-build-macos-1100-clang
+    run_on: macos-1100
+    tags: [scan-build-matrix, macos-1100, clang]
     commands:
       - func: scan-build
         vars:
