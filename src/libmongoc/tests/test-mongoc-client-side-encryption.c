@@ -6212,10 +6212,9 @@ test_auto_datakeys (void *unused)
       require (
          keyWithType ("0", doc), //
          parse (require (allOf (key ("keyId"), strEqual ("keepme")), nop))),
-      require (
-         keyWithType ("1", doc),
-         parse (require (allOf (keyWithType ("keyId", int32)),
-                         do (ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
+      require (keyWithType ("1", doc),
+               parse (require (allOf (keyWithType ("keyId", int32)),
+                               do(ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
    ASSERT (bsonParseError == NULL);
    bson_destroy (&out_fields);
 
@@ -6285,11 +6284,9 @@ test_create_encrypted_collection_simple (void *unused)
                                            kv ("bsonType", cstr ("string")),
                                            kv ("keyId", null)))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
-   mongoc_client_encryption_datakey_opts_t *const dkOpts =
-      mongoc_client_encryption_datakey_opts_new ();
    mongoc_collection_t *const coll =
       mongoc_client_encryption_create_encrypted_collection (
-         ce, db, "test-coll", &ccOpts, NULL, "local", dkOpts, &error);
+         ce, db, "test-coll", &ccOpts, NULL, "local", NULL, &error);
    ASSERT_OR_PRINT (coll, error);
    bson_destroy (&ccOpts);
 
@@ -6304,7 +6301,6 @@ test_create_encrypted_collection_simple (void *unused)
    bson_destroy (&doc);
 
    bson_destroy (kmsProviders);
-   mongoc_client_encryption_datakey_opts_destroy (dkOpts);
    mongoc_collection_destroy (coll);
    mongoc_database_drop (db, &error);
    mongoc_database_destroy (db);
@@ -6349,13 +6345,11 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    ASSERT_OR_PRINT (ce, error);
 
    // Create the encrypted collection
-   bsonBuildDecl (ccOpts, do ());
+   bsonBuildDecl (ccOpts, do());
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
-   mongoc_client_encryption_datakey_opts_t *const dkOpts =
-      mongoc_client_encryption_datakey_opts_new ();
    mongoc_collection_t *const coll =
       mongoc_client_encryption_create_encrypted_collection (
-         ce, db, collName, &ccOpts, NULL, "local", dkOpts, &error);
+         ce, db, collName, &ccOpts, NULL, "local", NULL, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -6363,7 +6357,6 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    bson_destroy (&ccOpts);
 
    bson_destroy (kmsProviders);
-   mongoc_client_encryption_datakey_opts_destroy (dkOpts);
    mongoc_collection_destroy (coll);
    mongoc_database_drop (db, &error);
    mongoc_database_destroy (db);
@@ -6466,11 +6459,9 @@ test_create_encrypted_collection_bad_keyId (void *unused)
                                            kv ("bsonType", cstr ("string")),
                                            kv ("keyId", bool (true))))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
-   mongoc_client_encryption_datakey_opts_t *const dkOpts =
-      mongoc_client_encryption_datakey_opts_new ();
    mongoc_collection_t *const coll =
       mongoc_client_encryption_create_encrypted_collection (
-         ce, db, "test-coll", &ccOpts, NULL, "local", dkOpts, &error);
+         ce, db, "test-coll", &ccOpts, NULL, "local", NULL, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_QUERY,
                           MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -6478,7 +6469,6 @@ test_create_encrypted_collection_bad_keyId (void *unused)
    bson_destroy (&ccOpts);
 
    bson_destroy (kmsProviders);
-   mongoc_client_encryption_datakey_opts_destroy (dkOpts);
    mongoc_collection_destroy (coll);
    mongoc_database_drop (db, &error);
    mongoc_database_destroy (db);
@@ -6534,12 +6524,10 @@ test_create_encrypted_collection_insert (void *unused)
                                            kv ("bsonType", cstr ("string")),
                                            kv ("keyId", null)))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
-   mongoc_client_encryption_datakey_opts_t *const dkOpts =
-      mongoc_client_encryption_datakey_opts_new ();
    bson_t new_opts;
    mongoc_collection_t *const coll =
       mongoc_client_encryption_create_encrypted_collection (
-         ce, db, "testing1", &ccOpts, &new_opts, "local", dkOpts, &error);
+         ce, db, "testing1", &ccOpts, &new_opts, "local", NULL, &error);
    ASSERT_OR_PRINT (coll, error);
    bson_destroy (&ccOpts);
 
@@ -6555,7 +6543,7 @@ test_create_encrypted_collection_insert (void *unused)
             visitEach (require (type (doc)),
                        parse (require (key ("keyId"),
                                        require (type (binary)),
-                                       do ({
+                                       do({
                                           bson_value_copy (
                                              bson_iter_value (
                                                 (bson_iter_t *) &bsonVisitIter),
@@ -6592,7 +6580,6 @@ test_create_encrypted_collection_insert (void *unused)
    bson_destroy (&doc);
    bson_value_destroy (&ciphertext);
    bson_destroy (kmsProviders);
-   mongoc_client_encryption_datakey_opts_destroy (dkOpts);
    mongoc_collection_destroy (coll);
    mongoc_database_drop (db, &error);
    mongoc_database_destroy (db);

@@ -328,7 +328,7 @@ mongoc_client_encryption_create_encrypted_collection (
    const bson_t *in_options,
    bson_t *opt_out_options,
    const char *const kms_provider,
-   const mongoc_client_encryption_datakey_opts_t *dk_opts,
+   const bson_t *opt_masterkey,
    bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS
