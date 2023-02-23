@@ -1481,6 +1481,10 @@ entity_destroy (entity_t *entity)
 
       _mongoc_array_destroy (array);
       bson_free (array);
+   } else if (0 == strcmp ("size_t", entity->type)) {
+      size_t *v = entity->value;
+
+      bson_free (v);
    } else {
       test_error ("Attempting to destroy unrecognized entity type: %s, id: %s",
                   entity->type,
@@ -1655,6 +1659,18 @@ entity_map_get_bson_array (entity_map_t *entity_map,
    return (mongoc_array_t *) entity->value;
 }
 
+size_t *
+entity_map_get_size_t (entity_map_t *entity_map,
+                       const char *id,
+                       bson_error_t *error)
+{
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "size_t", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (size_t *) entity->value;
+}
+
 mongoc_client_session_t *
 entity_map_get_session (entity_map_t *entity_map,
                         const char *id,
@@ -1797,6 +1813,15 @@ entity_map_add_bson_array (entity_map_t *em,
    mongoc_array_t *array = BSON_ALIGNED_ALLOC (mongoc_array_t);
    mongoc_array_aligned_init (array, bson_t *);
    return _entity_map_add (em, id, "bson_array", (void *) array, error);
+}
+
+bool
+entity_map_add_size_t (entity_map_t *em,
+                       const char *id,
+                       size_t *value,
+                       bson_error_t *error)
+{
+   return _entity_map_add (em, id, "size_t", value, error);
 }
 
 /* implement $$sessionLsid */
