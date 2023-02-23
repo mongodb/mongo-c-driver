@@ -291,7 +291,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
       *bson,
       // All clients require an ID string
       find (keyWithType ("id", utf8), storeStrDup (entity->id)),
-      else(error ("A client 'id' string is required")),
+      else (error ("A client 'id' string is required")),
       // Optional 'uriOptions' for the client
       find (key ("uriOptions"),
             if (not(type (doc)),
@@ -301,34 +301,34 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
       find (key ("useMultipleMongoses"),
             if (not(type (bool)),
                 then (error ("'useMultipleMongoses' must be a bool value"))),
-            do(use_multiple_mongoses_set = true),
+            do (use_multiple_mongoses_set = true),
             storeBool (use_multiple_mongoses)),
       // Events to observe:
-      find (
-         key ("observeEvents"),
-         if (not(type (array)),
-             then (error ("'observeEvents' must be an array"))),
-         visitEach (case (
-            // Ensure all elements are strings:
-            when (not(type (utf8)),
-                  error ("Every 'observeEvents' element must be a string")),
-            // Dispatch based on the event name:
-            when (strEqual ("commandStartedEvent"),
-                  do(mongoc_apm_set_command_started_cb (callbacks,
-                                                        command_started))),
-            when (strEqual ("commandFailedEvent"),
-                  do(mongoc_apm_set_command_failed_cb (callbacks,
-                                                       command_failed))),
-            when (strEqual ("commandSucceededEvent"),
-                  do(mongoc_apm_set_command_succeeded_cb (callbacks,
-                                                          command_succeeded))),
-            // Unsupported (but known) event names:
-            when (eval (is_unsupported_event_type (
-                     bson_iter_utf8 (&bsonVisitIter, NULL))),
-                  do(MONGOC_DEBUG ("Skipping unsupported event type '%s'",
-                                   bsonAs (cstr)))),
-            // An unknown event name is a hard-error:
-            else(do(test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
+      find (key ("observeEvents"),
+            if (not(type (array)),
+                then (error ("'observeEvents' must be an array"))),
+            visitEach (case (
+               // Ensure all elements are strings:
+               when (not(type (utf8)),
+                     error ("Every 'observeEvents' element must be a string")),
+               // Dispatch based on the event name:
+               when (strEqual ("commandStartedEvent"),
+                     do (mongoc_apm_set_command_started_cb (callbacks,
+                                                            command_started))),
+               when (strEqual ("commandFailedEvent"),
+                     do (mongoc_apm_set_command_failed_cb (callbacks,
+                                                           command_failed))),
+               when (strEqual ("commandSucceededEvent"),
+                     do (mongoc_apm_set_command_succeeded_cb (
+                        callbacks, command_succeeded))),
+               // Unsupported (but known) event names:
+               when (eval (is_unsupported_event_type (
+                        bson_iter_utf8 (&bsonVisitIter, NULL))),
+                     do (MONGOC_DEBUG ("Skipping unsupported event type '%s'",
+                                       bsonAs (cstr)))),
+               // An unknown event name is a hard-error:
+               else (do (
+                  test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
       // Command events to ignore
       find (
          key ("ignoreCommandMonitoringEvents"),
@@ -343,7 +343,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
          key ("serverApi"),
          if (not(type (doc)), then (error ("'serverApi' must be a document"))),
          parse ( // The "version" string is required first:
-            find (keyWithType ("version", utf8), do({
+            find (keyWithType ("version", utf8), do ({
                      mongoc_server_api_version_t ver;
                      if (!mongoc_server_api_version_from_string (bsonAs (cstr),
                                                                  &ver)) {
@@ -352,23 +352,24 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                         api = mongoc_server_api_new (ver);
                      }
                   })),
-            else(error ("Missing 'version' property in 'serverApi' object")),
+            else (error ("Missing 'version' property in 'serverApi' object")),
             // Toggle strictness:
             find (key ("strict"),
                   if (not(type (bool)),
                       then (error ("'serverApi.strict' must be a bool"))),
-                  do(mongoc_server_api_strict (api, bsonAs (bool)))),
+                  do (mongoc_server_api_strict (api, bsonAs (bool)))),
             // Toggle deprecation errors:
             find (
                key ("deprecationErrors"),
                if (not(type (bool)),
                    then (error ("serverApi.deprecationErrors must be a bool"))),
-               do(mongoc_server_api_deprecation_errors (api, bsonAs (bool)))))),
+               do (
+                  mongoc_server_api_deprecation_errors (api, bsonAs (bool)))))),
       // Toggle observation of sensitive commands
       find (key ("observeSensitiveCommands"),
             if (not(type (bool)),
                 then (error ("'observeSensitiveCommands' must be a bool"))),
-            do({
+            do ({
                bool *p = entity->observe_sensitive_commands =
                   bson_malloc (sizeof (bool));
                *p = bsonAs (bool);
