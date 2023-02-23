@@ -91,6 +91,11 @@ entity_map_add_bson (entity_map_t *em,
                      bson_val_t *val,
                      bson_error_t *error);
 
+bool
+entity_map_add_bson_array (entity_map_t *em,
+                           const char *id,
+                           bson_error_t *error);
+
 /* Returns NULL and sets @error if @id does not map to an entry. */
 entity_t *
 entity_map_get (entity_map_t *em, const char *id, bson_error_t *error);
@@ -146,6 +151,11 @@ bson_val_t *
 entity_map_get_bson (entity_map_t *entity_map,
                      const char *id,
                      bson_error_t *error);
+
+mongoc_array_t *
+entity_map_get_bson_array (entity_map_t *entity_map,
+                           const char *id,
+                           bson_error_t *error);
 
 mongoc_gridfs_bucket_t *
 entity_map_get_bucket (entity_map_t *entity_map,

@@ -1470,6 +1470,17 @@ entity_destroy (entity_t *entity)
 
       mongoc_cursor_destroy (findcursor->cursor);
       bson_free (findcursor);
+   } else if (0 == strcmp ("bson_array", entity->type)) {
+      mongoc_array_t *array = entity->value;
+
+      bson_t **const begin = array->data;
+      bson_t **const end = begin + array->len;
+      for (bson_t **iter = begin; iter != end; ++iter) {
+         bson_destroy (*iter);
+      }
+
+      _mongoc_array_destroy (array);
+      bson_free (array);
    } else {
       test_error ("Attempting to destroy unrecognized entity type: %s, id: %s",
                   entity->type,
@@ -1631,6 +1642,19 @@ entity_map_get_bson (entity_map_t *entity_map,
    return (bson_val_t *) entity->value;
 }
 
+mongoc_array_t *
+entity_map_get_bson_array (entity_map_t *entity_map,
+                           const char *id,
+                           bson_error_t *error)
+{
+   entity_t *entity =
+      _entity_map_get_by_type (entity_map, id, "bson_array", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (mongoc_array_t *) entity->value;
+}
+
 mongoc_client_session_t *
 entity_map_get_session (entity_map_t *entity_map,
                         const char *id,
@@ -1760,6 +1784,19 @@ entity_map_add_bson (entity_map_t *em,
                      bson_error_t *error)
 {
    return _entity_map_add (em, id, "bson", (void *) bson_val_copy (val), error);
+}
+
+bool
+entity_map_add_bson_array (entity_map_t *em,
+                           const char *id,
+                           bson_error_t *error)
+{
+   // Note: the specification states we should be storing a BSON object of array
+   // type, but we use an array of BSON objects instead to make append and
+   // iteration easier.
+   mongoc_array_t *array = BSON_ALIGNED_ALLOC (mongoc_array_t);
+   mongoc_array_aligned_init (array, bson_t *);
+   return _entity_map_add (em, id, "bson_array", (void *) array, error);
 }
 
 /* implement $$sessionLsid */
