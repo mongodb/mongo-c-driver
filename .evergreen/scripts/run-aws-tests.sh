@@ -3,25 +3,12 @@
 # Test runner for AWS authentication.
 #
 # This script is meant to be run in parts (so to isolate the AWS tests).
-# Pass the desired test first argument (REGULAR, EC2, ECS, ASSUME_ROLE, LAMBDA)
+# Pass the desired test as the environment variable TESTCASE: (REGULAR, EC2, ECS, ASSUME_ROLE, LAMBDA)
 #
 # Example:
-# run-aws-tests.sh EC2
+# TESTCASE=EC2 run-aws-tests.sh
 #
 # Optional environment variables:
-#
-# drivers_tools_dir
-#   The path to clone of https://github.com/mongodb-labs/drivers-evergreen-tools.
-#   Defaults to $(pwd)../drivers-evergreen-tools
-# mongoc_dir
-#   The path to the build of mongo-c-driver (e.g. mongo-c-driver/cmake-build).
-#   Defaults to $(pwd)
-# mongoc_dir
-#   The path to mongo-c-driver source (may be same as mongoc_dir).
-#   Defaults to $(pwd)
-# mongodb_bin_dir
-#   The path to mongodb binaries.
-#   Defaults to $(pwd)/mongodb/bin
 # iam_auth_ecs_account and iam_auth_ecs_secret_access_key
 #   Set to access key id/secret access key. Required for some tests.
 
@@ -46,49 +33,20 @@ declare drivers_tools_dir
 drivers_tools_dir="$(to_absolute "${mongoc_dir}/../drivers-evergreen-tools")"
 
 declare mongodb_bin_dir="${mongoc_dir}/mongodb/bin"
-declare mongoc_ping="${mongoc_dir}/src/libmongoc/mongoc-ping"
+declare test_awsauth="${mongoc_dir}/src/libmongoc/test-awsauth"
 
-# Add libmongoc-1.0 and libbson-1.0 to library path, so mongoc-ping can find them at runtime.
 if [[ "${OSTYPE}" == "cygwin" ]]; then
-  export PATH
-  PATH+=":${mongoc_dir}/src/libmongoc/Debug"
-  PATH+=":${mongoc_dir}/src/libbson/Debug"
-
-  chmod -f +x src/libmongoc/Debug/* src/libbson/Debug/* || true
-
-  mongoc_ping="${mongoc_dir}/src/libmongoc/Debug/mongoc-ping.exe"
-elif [[ "${OSTYPE}" == darwin* ]]; then
-  export DYLD_LIBRARY_PATH
-  DYLD_LIBRARY_PATH+=":${mongoc_dir}/src/libmongoc"
-  DYLD_LIBRARY_PATH+=":${mongoc_dir}/src/libbson"
-else
-  export LD_LIBRARY_PATH
-  LD_LIBRARY_PATH+=":${mongoc_dir}/src/libmongoc"
-  LD_LIBRARY_PATH+=":$mongoc_dir/src/libbson"
+  test_awsauth="${mongoc_dir}/src/libmongoc/Debug/test-awsauth.exe"
 fi
 
 expect_success() {
   echo "Should succeed:"
-  if ! "${mongoc_ping}" "${1:?}"; then
-    echo "Unexpected auth failure" 1>&2
-    exit 1
-  fi
+  "${test_awsauth}" "${1:?}" "EXPECT_SUCCESS" || exit
 }
 
 expect_failure() {
   echo "Should fail:"
-  if "${mongoc_ping}" "${1:?}" >output.txt 2>&1; then
-    echo "Unexpected - authed but it should not have" 1>&2
-    exit 1
-  else
-    echo "auth failed as expected"
-  fi
-
-  if ! grep "Authentication failed" output.txt >/dev/null; then
-    echo "Unexpected, error was not an authentication failure:" 1>&2
-    cat output.txt 1>&2
-    exit 1
-  fi
+  "${test_awsauth}" "${1:?}" "EXPECT_FAILURE" || exit
 }
 
 url_encode() {
