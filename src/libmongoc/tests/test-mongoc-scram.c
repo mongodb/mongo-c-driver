@@ -267,16 +267,24 @@ typedef enum {
 void
 _check_error (const bson_error_t *error, test_error_t expected_error)
 {
-   int32_t domain = 0;
-   int32_t code = 0;
+   uint32_t domain = 0;
+   uint32_t code = 0;
    const char *message = "";
 
    switch (expected_error) {
-   case MONGOC_TEST_AUTH_ERROR:
+   case MONGOC_TEST_AUTH_ERROR: {
       domain = MONGOC_ERROR_CLIENT;
       code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
-      message = "Authentication failed";
+      ASSERT_CMPUINT32 (error->domain, ==, domain);
+      ASSERT_CMPUINT32 (error->code, ==, code);
+      const char *const a = "Authentication failed";
+      const char *const b = "Unable to use";
+      const bool found =
+         strstr (error->message, a) || strstr (error->message, b);
+      ASSERT_WITH_MSG (
+         found, "[%s] does not contain [%s] or [%s]", error->message, a, b);
       break;
+   }
    case MONGOC_TEST_USER_NOT_FOUND_ERROR:
       domain = MONGOC_ERROR_CLIENT;
       code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
