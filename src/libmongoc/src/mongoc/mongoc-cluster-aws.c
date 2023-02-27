@@ -27,6 +27,7 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-http-private.h"
+#include "mongoc-ssl-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"
@@ -135,7 +136,8 @@ fail:
  * credentials.
  */
 static bool
-_send_http_request (const char *ip,
+_send_http_request (bool use_tls,
+                    const char *ip,
                     int port,
                     const char *method,
                     const char *path,
@@ -148,6 +150,7 @@ _send_http_request (const char *ip,
    mongoc_http_response_t res;
    const int socket_timeout_ms = 10000;
    bool ret;
+   mongoc_ssl_opt_t ssl_opt = {0};
 
    *http_response_body = NULL;
    *http_response_headers = NULL;
@@ -159,10 +162,14 @@ _send_http_request (const char *ip,
    req.method = method;
    req.path = path;
    req.extra_headers = headers;
+   if (use_tls) {
+      _mongoc_ssl_opts_copy_to (
+         mongoc_ssl_opt_get_default (), &ssl_opt, true /* copy_internal */);
+   }
    ret = _mongoc_http_send (&req,
                             socket_timeout_ms,
-                            false /* use_tls */,
-                            NULL /* ssl_opts */,
+                            use_tls /* use_tls */,
+                            use_tls ? &ssl_opt : NULL,
                             &res,
                             error);
 
@@ -173,6 +180,7 @@ _send_http_request (const char *ip,
    }
 
    _mongoc_http_response_cleanup (&res);
+   _mongoc_ssl_opts_cleanup (&ssl_opt, true);
    return ret;
 }
 
@@ -372,7 +380,8 @@ _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       return true;
    }
 
-   if (!_send_http_request ("169.254.170.2",
+   if (!_send_http_request (false /* use_tls */,
+                            "169.254.170.2",
                             80,
                             "GET",
                             relative_ecs_uri,
@@ -452,7 +461,8 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
    const char *ip = "169.254.169.254";
 
    /* Get the token. */
-   if (!_send_http_request (ip,
+   if (!_send_http_request (false /* use_tls */,
+                            ip,
                             80,
                             "PUT",
                             "/latest/api/token",
@@ -476,7 +486,8 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       bson_strdup_printf ("X-aws-ec2-metadata-token: %s\r\n", token);
 
    /* Get the role name. */
-   if (!_send_http_request (ip,
+   if (!_send_http_request (false /* use_tls */,
+                            ip,
                             80,
                             "GET",
                             "/latest/meta-data/iam/security-credentials/",
@@ -499,7 +510,8 @@ _obtain_creds_from_ec2 (_mongoc_aws_credentials_t *creds, bson_error_t *error)
       "/latest/meta-data/iam/security-credentials/%s", role_name);
    bson_free (http_response_headers);
    http_response_headers = NULL;
-   if (!_send_http_request (ip,
+   if (!_send_http_request (false /* use_tls */,
+                            ip,
                             80,
                             "GET",
                             path_with_role,
