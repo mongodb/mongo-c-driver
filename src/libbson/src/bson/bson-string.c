@@ -90,7 +90,9 @@ bson_string_free (bson_string_t *string, /* IN */
 {
    char *ret = NULL;
 
-   BSON_ASSERT (string);
+   if (!string) {
+      return NULL;
+   }
 
    if (!free_segment) {
       ret = string->str;
