@@ -186,7 +186,7 @@ should_ignore_event (entity_t *client_entity, event_t *event)
       bool is_observed = false;
 
       for (observe_event_t *iter = begin; iter != end; ++iter) {
-         if (strcmp (iter->type, event->type) == 0) {
+         if (bson_strcasecmp (iter->type, event->type) == 0) {
             is_observed = true;
             break;
          }
@@ -290,7 +290,7 @@ store_event_to_entities (entity_t *entity, const char *type)
    bson_error_t error = {0};
 
    for (store_event_t *iter = begin; iter != end; ++iter) {
-      if (strcmp (iter->type, type) == 0) {
+      if (bson_strcasecmp (iter->type, type) == 0) {
          mongoc_array_t *arr =
             entity_map_get_bson_array (em, iter->entity_id, &error);
          ASSERT_OR_PRINT (arr, error);
@@ -411,7 +411,7 @@ set_command_callback (mongoc_apm_callbacks_t *callbacks, const char *type)
    };
 
    for (const command_to_cb_t *iter = commands; iter->type; ++iter) {
-      if (strcmp (type, iter->type) == 0) {
+      if (bson_strcasecmp (type, iter->type) == 0) {
          iter->set (callbacks, iter->cb);
          return;
       }
@@ -480,9 +480,9 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                when (not(type (utf8)),
                      error ("Every 'observeEvents' element must be a string")),
                // Dispatch based on the event name:
-               when (anyOf (strEqual ("commandStartedEvent"),
-                            strEqual ("commandFailedEvent"),
-                            strEqual ("commandSucceededEvent")),
+               when (anyOf (iStrEqual ("commandStartedEvent"),
+                            iStrEqual ("commandFailedEvent"),
+                            iStrEqual ("commandSucceededEvent")),
                      do ({
                         const char *const type =
                            bson_iter_utf8 (&bsonVisitIter, NULL);

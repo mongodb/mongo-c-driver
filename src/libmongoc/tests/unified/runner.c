@@ -1047,7 +1047,7 @@ test_check_event (test_t *test,
    bson_iter_init (&iter, expected);
    bson_iter_next (&iter);
    expected_event_type = bson_iter_key (&iter);
-   if (0 != strcmp (expected_event_type, actual->type)) {
+   if (0 != bson_strcasecmp (expected_event_type, actual->type)) {
       test_set_error (error,
                       "expected event type: %s, but got: %s",
                       expected_event_type,

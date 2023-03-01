@@ -185,7 +185,7 @@ is_unsupported_event_type (const char *event_type)
    char **iter;
 
    for (iter = unsupported_event_types; *iter != NULL; iter++) {
-      if (0 == strcmp (event_type, *iter)) {
+      if (0 == bson_strcasecmp (event_type, *iter)) {
          return true;
       }
    }
