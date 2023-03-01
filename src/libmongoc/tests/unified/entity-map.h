@@ -34,6 +34,15 @@ typedef struct _event_t {
    struct _event_t *next;
 } event_t;
 
+typedef struct _observe_event_t {
+   const char *type; // Non-owning. Type of event to observe.
+} observe_event_t;
+
+typedef struct _store_event_t {
+   const char *entity_id; // Non-owning. Target entity to store event.
+   const char *type;      // Non-owning. Type of event to store.
+} store_event_t;
+
 typedef struct _entity_t {
    char *id;
    char *type;
@@ -42,6 +51,9 @@ typedef struct _entity_t {
    bool *observe_sensitive_commands;
    struct _entity_t *next;
    event_t *events;
+   struct _entity_map_t *entity_map; // Parent entity map.
+   mongoc_array_t observe_events;    // observe_event_t [N].
+   mongoc_array_t store_events;      // store_event_t [N].
    bson_t *lsid;
    char *session_client_id;
 } entity_t;
@@ -53,7 +65,7 @@ typedef struct _entity_findcursor_t entity_findcursor_t;
  * 1. Uniqueness. Attempting to create two entries with the same id is an error.
  * 2. Referential integrity. Attempting to get with an unknown id is an error.
  */
-typedef struct {
+typedef struct _entity_map_t {
    entity_t *entities;
    bool reduced_heartbeat;
 } entity_map_t;
