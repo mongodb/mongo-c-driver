@@ -495,9 +495,9 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds,
    bool ret = false;
    char *http_response_headers = NULL;
    char *http_response_body = NULL;
-   char *AWS_WEB_IDENTITY_TOKEN_FILE = NULL;
-   char *AWS_ROLE_ARN = NULL;
-   char *AWS_ROLE_SESSION_NAME = NULL;
+   char *aws_web_identity_token_file = NULL;
+   char *aws_role_arn = NULL;
+   char *aws_role_session_name = NULL;
    bson_t *response_bson = NULL;
    bson_iter_t iter;
    const char *access_key_id = NULL;
@@ -508,21 +508,21 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds,
    bson_string_t *token_file_contents = NULL;
    char *path_and_query = NULL;
 
-   AWS_WEB_IDENTITY_TOKEN_FILE = _mongoc_getenv ("AWS_WEB_IDENTITY_TOKEN_FILE");
-   AWS_ROLE_ARN = _mongoc_getenv ("AWS_ROLE_ARN");
-   if (!AWS_WEB_IDENTITY_TOKEN_FILE ||
-       strlen (AWS_WEB_IDENTITY_TOKEN_FILE) == 0 || !AWS_ROLE_ARN ||
-       strlen (AWS_ROLE_ARN) == 0) {
-      bson_free (AWS_ROLE_ARN);
-      bson_free (AWS_WEB_IDENTITY_TOKEN_FILE);
+   aws_web_identity_token_file = _mongoc_getenv ("AWS_WEB_IDENTITY_TOKEN_FILE");
+   aws_role_arn = _mongoc_getenv ("AWS_ROLE_ARN");
+   if (!aws_web_identity_token_file ||
+       strlen (aws_web_identity_token_file) == 0 || !aws_role_arn ||
+       strlen (aws_role_arn) == 0) {
+      bson_free (aws_role_arn);
+      bson_free (aws_web_identity_token_file);
       // Not an error. May need to obtain credentials another way.
       return true;
    }
 
-   AWS_ROLE_SESSION_NAME = _mongoc_getenv ("AWS_ROLE_SESSION_NAME");
-   if (!AWS_ROLE_SESSION_NAME) {
-      AWS_ROLE_SESSION_NAME = generate_AWS_ROLE_SESSION_NAME (error);
-      if (!AWS_ROLE_SESSION_NAME) {
+   aws_role_session_name = _mongoc_getenv ("AWS_ROLE_SESSION_NAME");
+   if (!aws_role_session_name) {
+      aws_role_session_name = generate_AWS_ROLE_SESSION_NAME (error);
+      if (!aws_role_session_name) {
          goto fail;
       }
    }
@@ -530,11 +530,11 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds,
    // Read the contents of the file given by ``AWS_WEB_IDENTITY_TOKEN_FILE``.
    {
       fstream = mongoc_stream_file_new_for_path (
-         AWS_WEB_IDENTITY_TOKEN_FILE, O_RDONLY, 0);
+         aws_web_identity_token_file, O_RDONLY, 0);
       if (!fstream) {
          AUTH_ERROR_AND_FAIL (
             "failed to open AWS_WEB_IDENTITY_TOKEN_FILE: %s. Reason: %s",
-            AWS_WEB_IDENTITY_TOKEN_FILE,
+            aws_web_identity_token_file,
             strerror (errno));
       }
 
@@ -559,7 +559,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds,
          } else {
             AUTH_ERROR_AND_FAIL (
                "failed to read AWS_WEB_IDENTITY_TOKEN_FILE: %s. Reason: %s",
-               AWS_WEB_IDENTITY_TOKEN_FILE,
+               aws_web_identity_token_file,
                strerror (errno));
          }
       }
@@ -568,8 +568,8 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds,
    path_and_query =
       bson_strdup_printf ("/?Action=AssumeRoleWithWebIdentity&RoleSessionName=%"
                           "s&RoleArn=%s&WebIdentityToken=%s&Version=2011-06-15",
-                          AWS_ROLE_SESSION_NAME,
-                          AWS_ROLE_ARN,
+                          aws_role_session_name,
+                          aws_role_arn,
                           token_file_contents->str);
 
    // send an HTTP request to sts.amazonaws.com.
@@ -690,9 +690,9 @@ fail:
    bson_free (http_response_body);
    bson_string_free (token_file_contents, true /* free segment */);
    mongoc_stream_destroy (fstream);
-   bson_free (AWS_ROLE_SESSION_NAME);
-   bson_free (AWS_ROLE_ARN);
-   bson_free (AWS_WEB_IDENTITY_TOKEN_FILE);
+   bson_free (aws_role_session_name);
+   bson_free (aws_role_arn);
+   bson_free (aws_web_identity_token_file);
    return ret;
 }
 
