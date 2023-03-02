@@ -92,6 +92,29 @@ test_wire_server_versions (void)
       "_mongoc_wire_version_to_server_version");
 }
 
+static void
+test_bin_to_hex (void)
+{
+   const char *bin = "foobar";
+   const char *expect = "666f6f626172";
+
+   char *got = bin_to_hex ((const uint8_t *) bin, strlen (bin));
+   ASSERT_CMPSTR (got, expect);
+   bson_free (got);
+}
+
+static void
+test_hex_to_bin (void)
+{
+   const char *hexstr = "666f6f62617200";
+   const char *expect = "foobar";
+
+   uint32_t len;
+   uint8_t *got = hex_to_bin (hexstr, &len);
+   ASSERT_CMPSTR ((const char *) got, expect);
+   ASSERT_CMPUINT32 (len, ==, 7);
+   bson_free (got);
+}
 
 void
 test_util_install (TestSuite *suite)
@@ -101,4 +124,6 @@ test_util_install (TestSuite *suite)
    TestSuite_Add (suite, "/Util/lowercase_utf8", test_lowercase_utf8);
    TestSuite_Add (
       suite, "/Util/wire_server_versions", test_wire_server_versions);
+   TestSuite_Add (suite, "/Util/bin_to_hex", test_bin_to_hex);
+   TestSuite_Add (suite, "/Util/hex_to_bin", test_hex_to_bin);
 }
