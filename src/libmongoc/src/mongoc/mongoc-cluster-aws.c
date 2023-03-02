@@ -545,7 +545,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds,
          ssize_t got = mongoc_stream_read (
             fstream,
             buf,
-            sizeof (buf) - 1 /* subtract 1 to for null terminator */,
+            sizeof (buf) - 1 /* leave space for null terminator */,
             0 /* min_bytes */,
             0 /* timeout_msec. Unused for file stream. */);
 
