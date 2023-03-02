@@ -61,6 +61,7 @@ typedef struct {
    bson_t *outcome;
    entity_map_t *entity_map;
    failpoint_t *failpoints;
+   bool loop_operation_executed;
 } test_t;
 
 /* Set server_id to 0 if the failpoint was not against a pinned mongos. */
