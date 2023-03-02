@@ -174,19 +174,23 @@ if [[ "${TESTCASE}" == "ASSUME_ROLE_WITH_WEB_IDENTITY" ]]; then
   AWS_ROLE_ARN="${iam_auth_assume_web_role_name}" \
   AWS_WEB_IDENTITY_TOKEN_FILE="${iam_web_identity_token_file}" \
     expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
+
   echo "Valid credentials via Web Identity with session name - should succeed"
   AWS_ROLE_ARN="${iam_auth_assume_web_role_name}" \
   AWS_WEB_IDENTITY_TOKEN_FILE="${iam_web_identity_token_file}" \
   AWS_ROLE_SESSION_NAME=test \
     expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
+
   echo "Invalid AWS_ROLE_ARN via Web Identity with session name - should fail"
   AWS_ROLE_ARN="invalid_role_arn" \
   AWS_WEB_IDENTITY_TOKEN_FILE="${iam_web_identity_token_file}" \
     expect_failure "mongodb://localhost/?authMechanism=MONGODB-AWS"
+
   echo "Invalid AWS_WEB_IDENTITY_TOKEN_FILE via Web Identity with session name - should fail"
   AWS_ROLE_ARN="${iam_auth_assume_web_role_name}" \
   AWS_WEB_IDENTITY_TOKEN_FILE="/invalid/path" \
     expect_failure "mongodb://localhost/?authMechanism=MONGODB-AWS"
+
   echo "Invalid AWS_ROLE_SESSION_NAME via Web Identity with session name - should fail"
   AWS_ROLE_ARN="${iam_auth_assume_web_role_name}" \
   AWS_WEB_IDENTITY_TOKEN_FILE="${iam_web_identity_token_file}" \
