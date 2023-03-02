@@ -19,12 +19,6 @@
 
 #include "mongoc/mongoc.h"
 
-uint8_t *
-hex_to_bin (const char *hex, uint32_t *len);
-
-char *
-bin_to_hex (const uint8_t *bin, uint32_t len);
-
 bson_t *
 bson_copy_and_sort (const bson_t *in);
 

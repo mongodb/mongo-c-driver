@@ -241,6 +241,12 @@ _mongoc_iter_document_as_bson (const bson_iter_t *iter,
                                bson_t *bson,
                                bson_error_t *error);
 
+uint8_t *
+hex_to_bin (const char *hex, uint32_t *len);
+
+char *
+bin_to_hex (const uint8_t *bin, uint32_t len);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_UTIL_PRIVATE_H */
