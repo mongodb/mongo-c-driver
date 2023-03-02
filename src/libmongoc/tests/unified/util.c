@@ -191,3 +191,23 @@ is_unsupported_event_type (const char *event_type)
    }
    return false;
 }
+
+int64_t
+usecs_since_epoch (void)
+{
+   struct timeval tv;
+   BSON_ASSERT (bson_gettimeofday (&tv) == 0);
+
+   BSON_ASSERT (bson_in_range_signed (int64_t, tv.tv_sec));
+   BSON_ASSERT (bson_in_range_signed (int64_t, tv.tv_usec));
+
+   const int64_t secs = (int64_t) tv.tv_sec;
+   const int64_t usecs = (int64_t) tv.tv_usec;
+
+   const int64_t factor = 1000000;
+
+   BSON_ASSERT (INT64_MAX / factor >= secs);
+   BSON_ASSERT (INT64_MAX - (factor * secs) >= usecs);
+
+   return tv.tv_sec * factor + usecs;
+}
