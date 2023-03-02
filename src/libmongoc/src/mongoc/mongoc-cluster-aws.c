@@ -566,8 +566,10 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds,
    }
 
    path_and_query =
-      bson_strdup_printf ("/?Action=AssumeRoleWithWebIdentity&RoleSessionName=%"
-                          "s&RoleArn=%s&WebIdentityToken=%s&Version=2011-06-15",
+      bson_strdup_printf ("/?Action=AssumeRoleWithWebIdentity"
+                          "&RoleSessionName=%s"
+                          "&RoleArn=%s"
+                          "&WebIdentityToken=%s&Version=2011-06-15",
                           aws_role_session_name,
                           aws_role_arn,
                           token_file_contents->str);
