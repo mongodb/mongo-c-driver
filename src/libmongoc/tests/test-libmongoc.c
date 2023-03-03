@@ -485,6 +485,9 @@ test_framework_get_host (void)
    if (env_uri) {
       /* choose first host */
       hosts = mongoc_uri_get_hosts (env_uri);
+      ASSERT_WITH_MSG (hosts,
+                       "could not obtain hosts from URI [%s]",
+                       mongoc_uri_get_string (env_uri));
       host = bson_strdup (hosts->host);
       mongoc_uri_destroy (env_uri);
       return host;
