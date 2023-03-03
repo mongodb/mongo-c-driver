@@ -1161,10 +1161,14 @@ test_framework_get_uri_str ()
    char *uri_str_no_auth;
    char *uri_str;
 
-   /* no_auth also contains compressors. */
-
-   uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
-   uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
+   if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
+      // User and password is already embedded in URI.
+      return test_framework_get_uri_str_no_auth (NULL);
+   } else {
+      /* no_auth also contains compressors. */
+      uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
+      uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
+   }
 
    bson_free (uri_str_no_auth);
 
