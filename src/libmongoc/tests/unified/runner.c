@@ -286,7 +286,10 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner,
    bool cmd_ret = false;
    bson_error_t cmd_error = {0};
 
-   if (0 == test_framework_skip_if_no_txns ()) {
+   if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
+      // Not applicable when running as test-atlas-executor.
+      return true;
+   } else if (0 == test_framework_skip_if_no_txns ()) {
       ret = true;
       goto done;
    }
@@ -349,37 +352,47 @@ done:
 static test_runner_t *
 test_runner_new (void)
 {
-   test_runner_t *test_runner = NULL;
-   mongoc_apm_callbacks_t *callbacks = NULL;
-   mongoc_uri_t *uri = NULL;
    bson_error_t error;
-   bson_t reply;
 
-   test_runner = bson_malloc0 (sizeof (test_runner_t));
-   /* Create a client for internal test operations (e.g. checking server
-    * version) */
+   // Avoid executing unnecessary commands when running as test-atlas-executor.
+   const bool is_atlas = test_framework_getenv_bool ("MONGOC_TEST_ATLAS");
+
+   test_runner_t *const test_runner = bson_malloc0 (sizeof (test_runner_t));
+
    _mongoc_array_init (&test_runner->server_ids, sizeof (uint32_t));
-   callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
-   uri = test_framework_get_uri ();
-   /* In load balanced mode, the internal client must use the
-    * SINGLE_LB_MONGOS_URI. */
-   if (!test_framework_is_loadbalanced ()) {
-      /* Always use multiple mongoses if speaking to a mongos.
-       * Some test operations require communicating with all known mongos */
-      if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
-         test_error ("error applying multiple mongos: %s", error.message);
-      }
-   }
-   test_runner->internal_client =
-      test_framework_client_new_from_uri (uri, NULL);
-   test_framework_set_ssl_opts (test_runner->internal_client);
-   mongoc_uri_destroy (uri);
 
-   mongoc_client_set_apm_callbacks (
-      test_runner->internal_client, callbacks, test_runner);
+   {
+      mongoc_uri_t *const uri = test_framework_get_uri ();
+
+      test_runner->internal_client =
+         test_framework_client_new_from_uri (uri, NULL);
+
+      /* In load balanced mode, the internal client must use the
+       * SINGLE_LB_MONGOS_URI. */
+      if (!is_atlas && !test_framework_is_loadbalanced ()) {
+         /* Always use multiple mongoses if speaking to a mongos.
+          * Some test operations require communicating with all known mongos */
+         if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
+            test_error ("error applying multiple mongos: %s", error.message);
+         }
+      }
+
+      mongoc_uri_destroy (uri);
+   }
+
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new ();
+      mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
+      mongoc_client_set_apm_callbacks (
+         test_runner->internal_client, callbacks, test_runner);
+      mongoc_apm_callbacks_destroy (callbacks);
+   }
+
+   test_framework_set_ssl_opts (test_runner->internal_client);
+
    mongoc_client_set_error_api (test_runner->internal_client,
                                 MONGOC_ERROR_API_VERSION_2);
+
    test_runner->topology_type =
       get_topology_type (test_runner->internal_client);
    server_semver (test_runner->internal_client, &test_runner->server_version);
@@ -390,21 +403,24 @@ test_runner_new (void)
    if (!test_runner_terminate_open_transactions (test_runner, &error)) {
       test_error ("error terminating transactions: %s", error.message);
    }
-   mongoc_apm_callbacks_destroy (callbacks);
 
-   /* Cache server parameters to check runOnRequirements. */
-   if (!mongoc_client_command_simple (test_runner->internal_client,
-                                      "admin",
-                                      tmp_bson ("{'getParameter': '*'}"),
-                                      NULL,
-                                      &reply,
-                                      &error)) {
-      test_error ("error getting server parameters: %s, full reply: %s",
-                  error.message,
-                  tmp_json (&reply));
+   {
+      bson_t reply;
+      /* Cache server parameters to check runOnRequirements. */
+      if (!mongoc_client_command_simple (test_runner->internal_client,
+                                         "admin",
+                                         tmp_bson ("{'getParameter': '*'}"),
+                                         NULL,
+                                         &reply,
+                                         &error)) {
+         test_error ("error getting server parameters: %s, full reply: %s",
+                     error.message,
+                     tmp_json (&reply));
+      }
+      test_runner->server_parameters = bson_copy (&reply);
+      bson_destroy (&reply);
    }
-   test_runner->server_parameters = bson_copy (&reply);
-   bson_destroy (&reply);
+
    return test_runner;
 }
 
