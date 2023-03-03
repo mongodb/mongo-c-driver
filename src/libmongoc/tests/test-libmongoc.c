@@ -1111,7 +1111,9 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       add_option_to_uri_str (uri_string, MONGOC_URI_COMPRESSORS, compressors);
       bson_free (compressors);
    }
-   /* make tests a little more resilient to transient errors */
+
+   // Required by test-atlas-executor. Not required by normal unified test
+   // runner, but make tests a little more resilient to transient errors.
    add_option_to_uri_str (
       uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
