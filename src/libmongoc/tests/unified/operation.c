@@ -3668,7 +3668,10 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       op->session = session;
    }
 
-   MONGOC_DEBUG ("running operation: %s", tmp_json (op_bson));
+   // Avoid spamming output with sub-operations when executing loop operation.
+   if (!test->loop_operation_executed || operation_loop_terminated) {
+      MONGOC_DEBUG ("running operation: %s", tmp_json (op_bson));
+   }
 
    num_ops = sizeof (op_to_fn_map) / sizeof (op_to_fn_t);
    result = result_new ();
