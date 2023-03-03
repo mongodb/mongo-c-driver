@@ -987,11 +987,26 @@ set_name (bson_t *hello_response)
 static bool
 uri_str_has_db (bson_string_t *uri_string)
 {
-   const char *after_scheme;
+   BSON_ASSERT_PARAM (uri_string);
 
-   ASSERT_STARTSWITH (uri_string->str, "mongodb://");
-   after_scheme = uri_string->str + strlen ("mongodb://");
-   return strchr (after_scheme, '/') != NULL;
+   const char *const str = uri_string->str;
+   const char *const standard = "mongodb://";
+   const char *const srv = "mongodb+srv://";
+
+   const bool is_standard = strstr (str, standard) == str;
+   const bool is_srv = strstr (str, srv) == str;
+
+   ASSERT_WITH_MSG (is_standard || is_srv,
+                    "[%s] does not start with [%s] or [%s]",
+                    uri_string->str,
+                    standard,
+                    srv);
+
+   if (is_standard) {
+      return strchr (str + strlen (standard), '/') != NULL;
+   } else {
+      return strchr (str + strlen (srv), '/') != NULL;
+   }
 }
 
 
