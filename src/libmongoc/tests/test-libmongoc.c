@@ -1176,10 +1176,12 @@ test_framework_get_uri_str ()
 mongoc_uri_t *
 test_framework_get_uri ()
 {
-   char *test_uri_str = test_framework_get_uri_str ();
-   mongoc_uri_t *uri = mongoc_uri_new (test_uri_str);
+   bson_error_t error = {0};
 
-   BSON_ASSERT (uri);
+   char *test_uri_str = test_framework_get_uri_str ();
+   mongoc_uri_t *uri = mongoc_uri_new_with_error (test_uri_str, &error);
+
+   ASSERT_OR_PRINT (uri, error);
    bson_free (test_uri_str);
 
    return uri;
