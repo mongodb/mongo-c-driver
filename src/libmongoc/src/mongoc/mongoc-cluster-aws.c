@@ -668,7 +668,7 @@ _obtain_creds_from_assumerolewithwebidentity (_mongoc_aws_credentials_t *creds,
       // "Expiration" is returned as a double representing the number of seconds
       // since Unix Epoch. This differs from the ISO-8601 string returned in EC2
       // and ECS responses.
-      int64_t expiration_ms = ((int64_t) bson_iter_double (&iter)) * 1000;
+      int64_t expiration_ms = (int64_t) (1000.0 * bson_iter_double (&iter));
       if (!expiration_ms_to_timer (
              expiration_ms, &creds->expiration.value, error)) {
          goto fail;
