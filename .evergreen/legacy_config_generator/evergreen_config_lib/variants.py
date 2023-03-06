@@ -46,6 +46,7 @@ all_variants = [
              'link-with-cmake-ssl-deprecated',
              'link-with-cmake-snappy',
              'link-with-cmake-snappy-deprecated',
+             # TODO(CDRIVER-4580): After 1.24.0 is released, replace all occurrences of macos-1014 with macos-1100.
              OD([('name', 'link-with-cmake-mac'), ('distros', ['macos-1014'])]),
              OD([('name', 'link-with-cmake-mac-deprecated'),
                  ('distros', ['macos-1014'])]),
