@@ -83,7 +83,6 @@ void
 _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
 {
    mongoc_topology_description_t *prev_td = NULL;
-   size_t i;
    mongoc_server_description_t *sd;
 
    if (td->opened) {
@@ -111,8 +110,8 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
       _mongoc_topology_description_monitor_changed (prev_td, td);
    }
 
-   for (i = 0; i < mc_tpld_servers (td)->items_len; i++) {
-      sd = mongoc_set_get_item (mc_tpld_servers (td), (int) i);
+   for (size_t i = 0u; i < mc_tpld_servers (td)->items_len; i++) {
+      sd = mongoc_set_get_item (mc_tpld_servers (td), i);
       _mongoc_topology_description_monitor_server_opening (td, sd);
    }
 

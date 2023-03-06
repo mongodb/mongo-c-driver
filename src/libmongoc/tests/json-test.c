@@ -140,9 +140,8 @@ server_description_by_hostname (const mongoc_topology_description_t *topology,
 {
    const mongoc_set_t *set = mc_tpld_servers_const (topology);
    const mongoc_server_description_t *server_iter;
-   int i;
 
-   for (i = 0; i < set->items_len; i++) {
+   for (size_t i = 0; i < set->items_len; i++) {
       server_iter =
          mongoc_set_get_item_const (mc_tpld_servers_const (topology), i);
 

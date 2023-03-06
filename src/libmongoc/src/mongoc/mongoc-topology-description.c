@@ -121,7 +121,6 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
                                       mongoc_topology_description_t *dst)
 {
    size_t nitems;
-   size_t i;
    const mongoc_server_description_t *sd;
    uint32_t id;
 
@@ -139,9 +138,9 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
 
    nitems = bson_next_power_of_two (mc_tpld_servers_const (src)->items_len);
    dst->_servers_ = mongoc_set_new (nitems, _mongoc_topology_server_dtor, NULL);
-   for (i = 0; i < mc_tpld_servers_const (src)->items_len; i++) {
-      sd = mongoc_set_get_item_and_id_const (
-         mc_tpld_servers_const (src), (int) i, &id);
+   for (size_t i = 0u; i < mc_tpld_servers_const (src)->items_len; i++) {
+      sd =
+         mongoc_set_get_item_and_id_const (mc_tpld_servers_const (src), i, &id);
       mongoc_set_add (
          mc_tpld_servers (dst), id, mongoc_server_description_new_copy (sd));
    }
@@ -568,11 +567,10 @@ int32_t
 mongoc_topology_description_lowest_max_wire_version (
    const mongoc_topology_description_t *td)
 {
-   int i;
    int32_t ret = INT32_MAX;
    const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
-   for (i = 0; (size_t) i < servers->items_len; i++) {
+   for (size_t i = 0u; (size_t) i < servers->items_len; i++) {
       const mongoc_server_description_t *sd =
          mongoc_set_get_item_const (servers, i);
       if (sd->type != MONGOC_SERVER_UNKNOWN &&
@@ -603,8 +601,8 @@ bool
 mongoc_topology_description_all_sds_have_write_date (
    const mongoc_topology_description_t *td)
 {
-   int i;
-   for (i = 0; (size_t) i < mc_tpld_servers_const (td)->items_len; i++) {
+   for (size_t i = 0u; (size_t) i < mc_tpld_servers_const (td)->items_len;
+        i++) {
       const mongoc_server_description_t *sd =
          mongoc_set_get_item_const (mc_tpld_servers_const (td), i);
 
@@ -957,10 +955,9 @@ bool
 mongoc_topology_description_has_data_node (
    const mongoc_topology_description_t *td)
 {
-   int i;
    const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
-   for (i = 0; i < (int) servers->items_len; i++) {
+   for (size_t i = 0u; i < servers->items_len; i++) {
       const mongoc_server_description_t *sd =
          mongoc_set_get_item_const (servers, i);
       if (_is_data_node (sd)) {
@@ -1537,7 +1534,6 @@ _mongoc_topology_description_remove_unreported_servers (
    const mongoc_server_description_t *primary)
 {
    mongoc_array_t to_remove;
-   int i;
 
    _mongoc_array_init (&to_remove, sizeof (mongoc_server_description_t *));
 
@@ -1546,7 +1542,7 @@ _mongoc_topology_description_remove_unreported_servers (
     * mongoc_server_description_cleanup on the primary itself if it
     * doesn't report its own connection_address in its hosts list.
     * See hosts_differ_from_seeds.json */
-   for (i = 0; i < mc_tpld_servers_const (topology)->items_len; i++) {
+   for (size_t i = 0u; i < mc_tpld_servers_const (topology)->items_len; i++) {
       const mongoc_server_description_t *member =
          mongoc_set_get_item_const (mc_tpld_servers_const (topology), i);
       const char *address = member->connection_address;
@@ -1557,7 +1553,7 @@ _mongoc_topology_description_remove_unreported_servers (
 
    /* now it's safe to call _mongoc_topology_description_remove_server,
     * even on the primary */
-   for (i = 0; i < to_remove.len; i++) {
+   for (size_t i = 0u; i < to_remove.len; i++) {
       const mongoc_server_description_t *member =
          _mongoc_array_index (&to_remove, mongoc_server_description_t *, i);
 
@@ -2076,15 +2072,14 @@ _mongoc_topology_description_update_session_timeout (
    mongoc_topology_description_t *td)
 {
    mongoc_set_t *set;
-   size_t i;
    mongoc_server_description_t *sd;
 
    set = mc_tpld_servers (td);
 
    td->session_timeout_minutes = MONGOC_NO_SESSIONS;
 
-   for (i = 0; i < set->items_len; i++) {
-      sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
+   for (size_t i = 0; i < set->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (set, i);
       if (!_is_data_node (sd)) {
          continue;
       }
@@ -2118,14 +2113,13 @@ static void
 _mongoc_topology_description_check_compatible (
    mongoc_topology_description_t *td)
 {
-   size_t i;
    mongoc_set_t const *const servers = mc_tpld_servers_const (td);
 
    memset (&td->compatibility_error, 0, sizeof (bson_error_t));
 
-   for (i = 0; i < servers->items_len; i++) {
+   for (size_t i = 0; i < servers->items_len; i++) {
       mongoc_server_description_t const *const sd =
-         mongoc_set_get_item_const (servers, (int) i);
+         mongoc_set_get_item_const (servers, i);
       if (sd->type == MONGOC_SERVER_UNKNOWN ||
           sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY) {
          continue;
@@ -2417,7 +2411,6 @@ mongoc_server_description_t **
 mongoc_topology_description_get_servers (
    const mongoc_topology_description_t *td, size_t *n /* OUT */)
 {
-   size_t i;
    const mongoc_set_t *const set =
       mc_tpld_servers_const (BSON_ASSERT_PTR_INLINE (td));
    /* enough room for all descriptions, even if some are unknown  */
@@ -2428,9 +2421,9 @@ mongoc_topology_description_get_servers (
 
    *n = 0;
 
-   for (i = 0; i < set->items_len; ++i) {
+   for (size_t i = 0; i < set->items_len; ++i) {
       const mongoc_server_description_t *sd =
-         mongoc_set_get_item_const (set, (int) i);
+         mongoc_set_get_item_const (set, i);
 
       if (sd->type != MONGOC_SERVER_UNKNOWN) {
          sds[*n] = mongoc_server_description_new_copy (sd);

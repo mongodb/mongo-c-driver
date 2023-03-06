@@ -71,12 +71,11 @@ mongoc_topology_reconcile (const mongoc_topology_t *topology,
 {
    mongoc_set_t *servers;
    mongoc_server_description_t *sd;
-   int i;
    mongoc_topology_scanner_node_t *ele, *tmp;
 
    servers = mc_tpld_servers (td);
    /* Add newly discovered nodes */
-   for (i = 0; i < (int) servers->items_len; i++) {
+   for (size_t i = 0u; i < servers->items_len; i++) {
       sd = mongoc_set_get_item (servers, i);
       _mongoc_topology_reconcile_add_nodes (sd, topology->scanner);
    }

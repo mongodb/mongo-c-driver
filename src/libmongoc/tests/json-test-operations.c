@@ -2123,12 +2123,11 @@ index_exists (mongoc_client_t *client, const bson_t *operation)
 static uint32_t
 _get_total_pool_cleared_event (json_test_ctx_t *ctx)
 {
-   uint32_t i;
    uint32_t total = 0;
    mc_shared_tpld td = mc_tpld_take_ref (ctx->client->topology);
 
    /* Go get total generation counts. */
-   for (i = 0; i < mc_tpld_servers_const (td.ptr)->items_len; i++) {
+   for (size_t i = 0u; i < mc_tpld_servers_const (td.ptr)->items_len; i++) {
       const mongoc_server_description_t *sd;
 
       sd = mongoc_set_get_item_const (mc_tpld_servers_const (td.ptr), i);

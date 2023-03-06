@@ -488,13 +488,12 @@ dump_hosts (mongoc_host_list_t *hosts)
 static void
 dump_topology_description (const mongoc_topology_description_t *td)
 {
-   size_t i;
    const mongoc_server_description_t *sd;
    const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
    MONGOC_DEBUG ("topology hosts:");
-   for (i = 0; i < servers->items_len; ++i) {
-      sd = mongoc_set_get_item_const (servers, (int) i);
+   for (size_t i = 0u; i < servers->items_len; ++i) {
+      sd = mongoc_set_get_item_const (servers, i);
       MONGOC_DEBUG ("- %s", sd->host.host_and_port);
    }
 }

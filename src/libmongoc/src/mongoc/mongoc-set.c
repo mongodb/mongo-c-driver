@@ -111,7 +111,7 @@ mongoc_set_get (mongoc_set_t *set, uint32_t id)
 }
 
 void *
-mongoc_set_get_item (mongoc_set_t *set, int idx)
+mongoc_set_get_item (mongoc_set_t *set, size_t idx)
 {
    BSON_ASSERT (set);
    BSON_ASSERT (idx < set->items_len);
@@ -121,7 +121,9 @@ mongoc_set_get_item (mongoc_set_t *set, int idx)
 
 
 void *
-mongoc_set_get_item_and_id (mongoc_set_t *set, int idx, uint32_t *id /* OUT */)
+mongoc_set_get_item_and_id (mongoc_set_t *set,
+                            size_t idx,
+                            uint32_t *id /* OUT */)
 {
    BSON_ASSERT (set);
    BSON_ASSERT (id);
