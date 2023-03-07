@@ -500,7 +500,7 @@ increment_overflow32 (int_fast32_t *const lp, int64_t const m)
 
    if ((l >= 0) ? (m > INT_FAST32_MAX - l) : (m < INT_FAST32_MIN - l))
       return true;
-   *lp += m;
+   *lp += (int_fast32_t) m;
    return false;
 }
 
