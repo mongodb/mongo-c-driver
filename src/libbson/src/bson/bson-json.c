@@ -1186,8 +1186,9 @@ _bson_json_read_start_map (bson_json_reader_t *reader) /* IN */
           * expected a legacy Binary format. now we see the second "{", so
           * backtrack and parse $type query operator. */
          bson->read_state = BSON_JSON_IN_START_MAP;
+         BSON_ASSERT (bson_in_range_unsigned (int, len));
          STACK_PUSH_DOC (bson_append_document_begin (
-            STACK_BSON_PARENT, key, len, STACK_BSON_CHILD));
+            STACK_BSON_PARENT, key, (int) len, STACK_BSON_CHILD));
          _bson_json_save_map_key (bson, (const uint8_t *) "$type", 5);
          break;
       case BSON_JSON_LF_CODE:
