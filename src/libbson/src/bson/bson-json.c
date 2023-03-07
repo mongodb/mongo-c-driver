@@ -831,7 +831,7 @@ static bool
 _unhexlify_uuid (const char *uuid, uint8_t *out, size_t max)
 {
    unsigned int byte;
-   int x = 0;
+   size_t x = 0;
    int i = 0;
 
    BSON_ASSERT (strlen (uuid) == 32);
@@ -2233,8 +2233,11 @@ bson_json_reader_read (bson_json_reader_t *reader, /* IN */
 
          /* accumulate a key or string value */
          if (reader->json_text_pos != -1) {
-            if (reader->json_text_pos < reader->json->pos) {
-               accum = BSON_MIN (reader->json->pos - reader->json_text_pos, r);
+            if (bson_cmp_less_su (reader->json_text_pos, reader->json->pos)) {
+               BSON_ASSERT (
+                  bson_in_range_unsigned (ssize_t, reader->json->pos));
+               accum = BSON_MIN (
+                  (ssize_t) reader->json->pos - reader->json_text_pos, r);
                /* if this chunk stopped mid-token, buf_offset is how far into
                 * our current chunk the token begins. */
                buf_offset = AT_LEAST_0 (reader->json_text_pos - start_pos);
