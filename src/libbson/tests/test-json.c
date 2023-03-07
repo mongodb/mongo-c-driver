@@ -2679,13 +2679,13 @@ test_bson_array_as_json (void)
 
    str = bson_array_as_json (&d, &len);
    ASSERT_CMPSTR (str, "[ ]");
-   ASSERT_CMPINT (len, ==, 3);
+   ASSERT_CMPSIZE_T (len, ==, 3u);
    bson_free (str);
 
    BSON_APPEND_INT32 (&d, "0", 1);
    str = bson_array_as_json (&d, &len);
    ASSERT_CMPSTR (str, "[ 1 ]");
-   ASSERT_CMPINT (len, ==, 5);
+   ASSERT_CMPSIZE_T (len, ==, 5u);
    bson_free (str);
 
    /* test corrupted bson */
@@ -2909,10 +2909,11 @@ test_bson_as_json_with_opts (bson_t *bson,
    char *str = bson_as_json_with_opts (bson, &json_len, opts);
 
    ASSERT_CMPSTR (str, expected);
-   ASSERT_CMPINT (json_len, ==, strlen (expected));
+   ASSERT_CMPSIZE_T (json_len, ==, strlen (expected));
 
    if (max_len != BSON_MAX_LEN_UNLIMITED) {
-      ASSERT_CMPINT (json_len, <=, max_len);
+      ASSERT (bson_in_range_signed (size_t, max_len));
+      ASSERT_CMPSIZE_T (json_len, <=, (size_t) max_len);
    }
 
    bson_free (str);
@@ -2936,12 +2937,16 @@ run_bson_as_json_with_opts_tests (bson_t *bson,
                                   bson_json_mode_t mode,
                                   const char *expected)
 {
-   size_t len = strlen (expected);
+   const size_t ulen = strlen (expected);
    char *truncated;
-   size_t i;
+
+   BSON_ASSERT (bson_in_range_unsigned (int, ulen));
+   const int len = (int) ulen;
 
    /* Test with 0 length (empty string). */
    test_bson_as_json_with_opts (bson, mode, 0, "");
+
+   BSON_ASSERT (INT_MAX - 2 >= len);
 
    /* Test with a limit that does not truncate the string. */
    test_bson_as_json_with_opts (bson, mode, len + 2, expected);
@@ -2950,8 +2955,8 @@ run_bson_as_json_with_opts_tests (bson_t *bson,
    test_bson_as_json_with_opts (bson, mode, BSON_MAX_LEN_UNLIMITED, expected);
 
    /* Test every possible limit from 0 to length. */
-   for (i = 0; i < len; i++) {
-      truncated = truncate_string (expected, i);
+   for (int i = 0; i < len; i++) {
+      truncated = truncate_string (expected, (size_t) i);
       test_bson_as_json_with_opts (bson, mode, i, truncated);
       bson_free (truncated);
    }
