@@ -19,6 +19,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "bson-cmp.h"
 #include "bson-decimal128.h"
 #include "bson-types.h"
 #include "bson-macros.h"
@@ -628,7 +629,8 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
        bson_cmp_greater_us (radix_position, exponent + (1 << 14))) {
       exponent = BSON_DECIMAL128_EXPONENT_MIN;
    } else {
-      exponent -= radix_position;
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, radix_position));
+      exponent -= (int32_t) radix_position;
    }
 
    /* Attempt to normalize the exponent */
