@@ -3044,7 +3044,7 @@ test_bson_as_json_with_opts_array (void)
 static void
 test_bson_as_json_with_opts_binary (void)
 {
-   const uint8_t data[] = {1, 2.0, 3, 4};
+   const uint8_t data[] = {1, 2, 3, 4};
    bson_t *b;
 
    b = bson_new ();
