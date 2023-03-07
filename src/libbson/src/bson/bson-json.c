@@ -628,7 +628,13 @@ _bson_json_read_integer (bson_json_reader_t *reader, uint64_t val, int64_t sign)
          bson_append_int32 (
             STACK_BSON_CHILD, key, (int) len, (int) (val * sign));
       } else if (sign == -1) {
+#if defined(_WIN32) && !defined(__MINGW32__)
+         // Unary negation of unsigned integer is deliberate.
+#pragma warning(suppress : 4146)
          bson_append_int64 (STACK_BSON_CHILD, key, (int) len, (int64_t) -val);
+#else
+         bson_append_int64 (STACK_BSON_CHILD, key, (int) len, (int64_t) -val);
+#endif // defined(_WIN32) && !defined(__MINGW32__)
       } else {
          bson_append_int64 (STACK_BSON_CHILD, key, (int) len, (int64_t) val);
       }
