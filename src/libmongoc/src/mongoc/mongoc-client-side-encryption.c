@@ -345,9 +345,7 @@ static void
 _clear_datakey_keyaltnames (mongoc_client_encryption_datakey_opts_t *opts)
 {
    if (opts->keyaltnames) {
-      int i;
-
-      for (i = 0; i < opts->keyaltnames_count; i++) {
+      for (uint32_t i = 0u; i < opts->keyaltnames_count; i++) {
          bson_free (opts->keyaltnames[i]);
       }
       bson_free (opts->keyaltnames);
@@ -391,8 +389,6 @@ mongoc_client_encryption_datakey_opts_set_keyaltnames (
    char **keyaltnames,
    uint32_t keyaltnames_count)
 {
-   int i;
-
    if (!opts) {
       return;
    }
@@ -403,7 +399,7 @@ mongoc_client_encryption_datakey_opts_set_keyaltnames (
 
    if (keyaltnames_count) {
       opts->keyaltnames = bson_malloc (sizeof (char *) * keyaltnames_count);
-      for (i = 0; i < keyaltnames_count; i++) {
+      for (uint32_t i = 0u; i < keyaltnames_count; i++) {
          opts->keyaltnames[i] = bson_strdup (keyaltnames[i]);
       }
       opts->keyaltnames_count = keyaltnames_count;
