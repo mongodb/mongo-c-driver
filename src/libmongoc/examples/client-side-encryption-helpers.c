@@ -3,26 +3,24 @@
 uint8_t *
 hex_to_bin (const char *hex, uint32_t *len)
 {
-   int i;
-   int hex_len;
-   uint8_t *out;
-
-   hex_len = strlen (hex);
+   const size_t hex_len = strlen (hex);
    if (hex_len % 2 != 0) {
       return NULL;
    }
 
-   *len = hex_len / 2;
-   out = bson_malloc0 (*len);
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, hex_len / 2u));
 
-   for (i = 0; i < hex_len; i += 2) {
+   *len = (uint32_t) (hex_len / 2u);
+   uint8_t *const out = bson_malloc0 (*len);
+
+   for (size_t i = 0u; i < hex_len; i += 2u) {
       uint32_t hex_char;
 
       if (1 != sscanf (hex + i, "%2x", &hex_char)) {
          bson_free (out);
          return NULL;
       }
-      out[i / 2] = (uint8_t) hex_char;
+      out[i / 2u] = (uint8_t) hex_char;
    }
    return out;
 }
