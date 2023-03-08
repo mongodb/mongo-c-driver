@@ -434,7 +434,7 @@ test_mongoc_speculative_auth_request_scram_pool (void)
 void
 test_speculative_auth_install (TestSuite *suite)
 {
-#ifdef MONGOC_ENABLE_CRYPTO
+#if defined(MONGOC_ENABLE_CRYPTO) && defined(MONGOC_ENABLE_SASL)
    TestSuite_AddMockServerTest (suite,
                                 "/speculative_auth/request_none",
                                 test_mongoc_speculative_auth_request_none);
@@ -457,5 +457,5 @@ test_speculative_auth_install (TestSuite *suite)
       suite,
       "/speculative_auth_pool/request_scram",
       test_mongoc_speculative_auth_request_scram_pool);
-#endif /* MONGOC_ENABLE_CRYPTO */
+#endif // defined(MONGOC_ENABLE_CRYPTO) && defined(MONGOC_ENABLE_SASL)
 }
