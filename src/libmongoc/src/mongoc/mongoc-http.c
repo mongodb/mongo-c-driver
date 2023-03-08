@@ -88,6 +88,14 @@ _mongoc_http_render_request_head (const mongoc_http_request_t *req)
    return string;
 }
 
+static int32_t
+_mongoc_http_msec_remaining (mcd_timer timer)
+{
+   const int64_t msec = mcd_get_milliseconds (mcd_timer_remaining (timer));
+   BSON_ASSERT (bson_in_range_signed (int32_t, msec));
+   return (int32_t) msec;
+}
+
 bool
 _mongoc_http_send (const mongoc_http_request_t *req,
                    int timeout_ms,
@@ -100,7 +108,6 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    mongoc_host_list_t host_list;
    bool ret = false;
    mongoc_iovec_t iovec;
-   ssize_t bytes_read;
    char *path = NULL;
    bson_string_t *http_request = NULL;
    mongoc_buffer_t http_response_buf;
@@ -121,7 +128,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
 
    stream = mongoc_client_connect_tcp (
       // +1 to prevent passing zero as a timeout
-      mcd_get_milliseconds (mcd_timer_remaining (timer)) + 1,
+      _mongoc_http_msec_remaining (timer) + 1,
       &host_list,
       error);
    if (!stream) {
@@ -161,10 +168,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
 
       stream = tls_stream;
       if (!mongoc_stream_tls_handshake_block (
-             stream,
-             req->host,
-             mcd_get_milliseconds (mcd_timer_remaining (timer)),
-             error)) {
+             stream, req->host, _mongoc_http_msec_remaining (timer), error)) {
          goto fail;
       }
    }
@@ -183,11 +187,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    iovec.iov_len = http_request->len;
 
    if (!_mongoc_stream_writev_full (
-          stream,
-          &iovec,
-          1,
-          mcd_get_milliseconds (mcd_timer_remaining (timer)),
-          error)) {
+          stream, &iovec, 1, _mongoc_http_msec_remaining (timer), error)) {
       goto fail;
    }
 
@@ -195,22 +195,18 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       iovec.iov_base = (void *) req->body;
       iovec.iov_len = req->body_len;
       if (!_mongoc_stream_writev_full (
-             stream,
-             &iovec,
-             1,
-             mcd_get_milliseconds (mcd_timer_remaining (timer)),
-             error)) {
+             stream, &iovec, 1, _mongoc_http_msec_remaining (timer), error)) {
          goto fail;
       }
    }
 
    /* Read until connection close. */
    while (1) {
-      bytes_read = _mongoc_buffer_try_append_from_stream (
+      const ssize_t bytes_read = _mongoc_buffer_try_append_from_stream (
          &http_response_buf,
          stream,
          1024 * 32,
-         mcd_get_milliseconds (mcd_timer_remaining (timer)));
+         _mongoc_http_msec_remaining (timer));
       if (mongoc_stream_should_retry (stream)) {
          continue;
       }
@@ -300,10 +296,13 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       goto fail;
    }
 
-   res->headers_len = ptr - http_response_str;
-   res->headers = bson_strndup (http_response_str, res->headers_len);
+   const size_t headers_len = (size_t) (ptr - http_response_str);
+   BSON_ASSERT (bson_in_range_unsigned (int, headers_len));
+
+   res->headers_len = (int) headers_len;
+   res->headers = bson_strndup (http_response_str, headers_len);
    res->body_len =
-      http_response_buf.len - res->headers_len - strlen (header_delimiter);
+      http_response_buf.len - headers_len - strlen (header_delimiter);
    /* Add a NULL character in case caller assumes NULL terminated. */
    res->body = bson_malloc0 (res->body_len + 1);
    memcpy (res->body, ptr + strlen (header_delimiter), res->body_len);
