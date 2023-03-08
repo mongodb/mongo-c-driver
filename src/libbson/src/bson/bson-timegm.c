@@ -225,47 +225,54 @@ struct rule {
 */
 
 static void
-gmtload (struct state *sp);
+gmtload (struct state *const sp);
 static struct bson_tm *
-gmtsub (const int64_t *timep, int_fast32_t offset, struct bson_tm *tmp);
+gmtsub (const int64_t *const timep,
+        const int_fast32_t offset,
+        struct bson_tm *const tmp);
 static int64_t
-increment_overflow (int64_t *number, int64_t delta);
+increment_overflow (int64_t *const ip, int64_t j);
 static int64_t
-leaps_thru_end_of (int64_t y) ATTRIBUTE_PURE;
+leaps_thru_end_of (register const int64_t y) ATTRIBUTE_PURE;
 static int64_t
-increment_overflow32 (int_fast32_t *number, int64_t delta);
+increment_overflow32 (int_fast32_t *const lp, int64_t const m);
 static int64_t
-normalize_overflow32 (int_fast32_t *tensptr, int64_t *unitsptr, int64_t base);
+normalize_overflow32 (int_fast32_t *const tensptr,
+                      int64_t *const unitsptr,
+                      const int64_t base);
 static int64_t
-normalize_overflow (int64_t *tensptr, int64_t *unitsptr, int64_t base);
+normalize_overflow (int64_t *const tensptr,
+                    int64_t *const unitsptr,
+                    const int64_t base);
 static int64_t
-time1 (struct bson_tm *tmp,
-       struct bson_tm *(*funcp) (const int64_t *,
-                                 int_fast32_t,
-                                 struct bson_tm *),
-       int_fast32_t offset);
+time1 (struct bson_tm *const tmp,
+       struct bson_tm *(*const funcp) (const int64_t *,
+                                       int_fast32_t,
+                                       struct bson_tm *),
+       const int_fast32_t offset);
 static int64_t
-time2 (struct bson_tm *tmp,
-       struct bson_tm *(*funcp) (const int64_t *,
-                                 int_fast32_t,
-                                 struct bson_tm *),
-       int_fast32_t offset,
-       int64_t *okayp);
+time2 (struct bson_tm *const tmp,
+       struct bson_tm *(*const funcp) (const int64_t *,
+                                       int_fast32_t,
+                                       struct bson_tm *),
+       const int_fast32_t offset,
+       int64_t *const okayp);
 static int64_t
-time2sub (struct bson_tm *tmp,
-          struct bson_tm *(*funcp) (const int64_t *,
-                                    int_fast32_t,
-                                    struct bson_tm *),
-          int_fast32_t offset,
-          int64_t *okayp,
-          int64_t do_norm_secs);
+time2sub (struct bson_tm *const tmp,
+          struct bson_tm *(*const funcp) (const int64_t *,
+                                          int_fast32_t,
+                                          struct bson_tm *),
+          const int_fast32_t offset,
+          int64_t *const okayp,
+          const int64_t do_norm_secs);
 static struct bson_tm *
-timesub (const int64_t *timep,
-         int_fast32_t offset,
-         const struct state *sp,
-         struct bson_tm *tmp);
+timesub (const int64_t *const timep,
+         const int_fast32_t offset,
+         register const struct state *const sp,
+         register struct bson_tm *const tmp);
 static int64_t
-tmcomp (const struct bson_tm *atmp, const struct bson_tm *btmp);
+tmcomp (register const struct bson_tm *const atmp,
+        register const struct bson_tm *const btmp);
 
 static struct state gmtmem;
 #define gmtptr (&gmtmem)
