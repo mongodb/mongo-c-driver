@@ -312,7 +312,7 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
 
    memcpy (file->buffer, data, data_len);
    file->in_buffer = data_len;
-   file->bytes_read = 0;
+   file->bytes_read = 0u;
    file->curr_chunk++;
 
    return true;
@@ -323,19 +323,11 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
                                    const mongoc_iovec_t *iov,
                                    size_t iovcnt)
 {
-   uint32_t total;
-   size_t bytes_available;
-   size_t space_available;
-   int32_t written_this_iov;
-   size_t to_write;
-   size_t i;
-   bool r;
-
    BSON_ASSERT (file);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
 
-   total = 0;
+   size_t total = 0;
 
    if (file->err.code) {
       return -1;
@@ -350,8 +342,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
    }
 
    if (!file->bucket->indexed) {
-      r = _mongoc_gridfs_bucket_create_indexes (file->bucket, &file->err);
-      if (!r) {
+      if (!_mongoc_gridfs_bucket_create_indexes (file->bucket, &file->err)) {
          /* Error is set on file. */
          return -1;
       } else {
@@ -359,27 +350,34 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
       }
    }
 
-   for (i = 0; i < iovcnt; i++) {
-      written_this_iov = 0;
+   BSON_ASSERT (bson_in_range_signed (size_t, file->chunk_size));
+   const size_t chunk_size = (size_t) file->chunk_size;
+
+   for (size_t i = 0u; i < iovcnt; i++) {
+      size_t written_this_iov = 0u;
 
       while (written_this_iov < iov[i].iov_len) {
-         bytes_available = iov[i].iov_len - written_this_iov;
-         space_available = file->chunk_size - file->in_buffer;
-         to_write = _mongoc_min (bytes_available, space_available);
+         const size_t bytes_available = iov[i].iov_len - written_this_iov;
+         const size_t space_available = chunk_size - file->in_buffer;
+         const size_t to_write = _mongoc_min (bytes_available, space_available);
+
          memcpy (file->buffer + file->in_buffer,
                  ((char *) iov[i].iov_base) + written_this_iov,
                  to_write);
+
          file->in_buffer += to_write;
          written_this_iov += to_write;
          total += to_write;
-         if (file->in_buffer == file->chunk_size) {
+
+         if (file->in_buffer == chunk_size) {
             /* Buffer is filled, write the chunk */
             _mongoc_gridfs_bucket_write_chunk (file);
          }
       }
    }
 
-   return total;
+   BSON_ASSERT (bson_in_range_unsigned (ssize_t, total));
+   return (ssize_t) total;
 }
 
 ssize_t
@@ -387,19 +385,9 @@ _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file,
                                   mongoc_iovec_t *iov,
                                   size_t iovcnt)
 {
-   uint32_t total;
-   size_t bytes_available;
-   size_t space_available;
-   int32_t read_this_iov;
-   size_t to_read;
-   bool r;
-   size_t i;
-
    BSON_ASSERT (file);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
-
-   total = 0;
 
    if (file->err.code) {
       return -1;
@@ -409,36 +397,42 @@ _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file,
       return 0;
    }
 
-   for (i = 0; i < iovcnt; i++) {
-      read_this_iov = 0;
+   size_t total = 0u;
+
+   for (size_t i = 0u; i < iovcnt; i++) {
+      size_t read_this_iov = 0u;
 
       while (read_this_iov < iov[i].iov_len) {
-         bytes_available = file->in_buffer - file->bytes_read;
-         space_available = iov[i].iov_len - read_this_iov;
-         to_read = _mongoc_min (bytes_available, space_available);
+         const size_t bytes_available = file->in_buffer - file->bytes_read;
+         const size_t space_available = iov[i].iov_len - read_this_iov;
+         const size_t to_read = _mongoc_min (bytes_available, space_available);
+
          memcpy (((char *) iov[i].iov_base) + read_this_iov,
                  file->buffer + file->bytes_read,
                  to_read);
+
          file->bytes_read += to_read;
          read_this_iov += to_read;
          total += to_read;
+
          if (file->bytes_read == file->in_buffer) {
             /* Everything in the current chunk has been read, so read a new
              * chunk */
-            r = _mongoc_gridfs_bucket_read_chunk (file);
-            if (!r) {
+            if (!_mongoc_gridfs_bucket_read_chunk (file)) {
                /* an error occured while reading the chunk */
                return -1;
             }
             if (file->finished) {
                /* There's nothing left to read */
-               RETURN (total);
+               BSON_ASSERT (bson_in_range_unsigned (ssize_t, total));
+               RETURN ((ssize_t) total);
             }
          }
       }
    }
 
-   RETURN (total);
+   BSON_ASSERT (bson_in_range_unsigned (ssize_t, total));
+   RETURN ((ssize_t) total);
 }
 
 

@@ -46,7 +46,7 @@ typedef struct {
 
    /* for reading */
    mongoc_cursor_t *cursor;
-   int32_t bytes_read;
+   size_t bytes_read;
    bool finished;
 
    /* Error */
