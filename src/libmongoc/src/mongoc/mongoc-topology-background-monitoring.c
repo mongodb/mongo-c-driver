@@ -182,13 +182,12 @@ _remove_orphaned_server_monitors (mongoc_set_t *server_monitors,
 {
    uint32_t *server_monitor_ids_to_remove;
    uint32_t n_server_monitor_ids_to_remove = 0;
-   int i;
 
    /* Signal shutdown to server monitors no longer in the topology description.
     */
    server_monitor_ids_to_remove =
       bson_malloc0 (sizeof (uint32_t) * server_monitors->items_len);
-   for (i = 0; i < server_monitors->items_len; i++) {
+   for (size_t i = 0u; i < server_monitors->items_len; i++) {
       mongoc_server_monitor_t *server_monitor;
       uint32_t id;
 
@@ -204,7 +203,7 @@ _remove_orphaned_server_monitors (mongoc_set_t *server_monitors,
    }
 
    /* Remove freed server monitors that have completed shutdown. */
-   for (i = 0; i < n_server_monitor_ids_to_remove; i++) {
+   for (uint32_t i = 0u; i < n_server_monitor_ids_to_remove; i++) {
       mongoc_set_rm (server_monitors, server_monitor_ids_to_remove[i]);
    }
    bson_free (server_monitor_ids_to_remove);
