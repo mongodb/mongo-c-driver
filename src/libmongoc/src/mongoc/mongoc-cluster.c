@@ -58,6 +58,8 @@
 
 #include <bson/bson-dsl.h>
 
+#include <inttypes.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
 
@@ -251,7 +253,6 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    bson_t *reply_ptr;
    char *cmd_ns;
    uint32_t request_id;
-   int32_t msg_len;
    size_t doc_len;
    bool ret = false;
    char *output = NULL;
@@ -333,6 +334,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
       GOTO (done);
    }
 
+   uint32_t msg_len;
    memcpy (&msg_len, reply_header_buf, 4);
    msg_len = BSON_UINT32_FROM_LE (msg_len);
    if ((msg_len < reply_header_size) ||
@@ -346,7 +348,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
       _handle_network_error (cluster, cmd->server_stream, error);
       GOTO (done);
    }
-   doc_len = (size_t) msg_len - reply_header_size;
+   doc_len = msg_len - reply_header_size;
 
    if (BSON_UINT32_FROM_LE (rpc.header.opcode) == MONGOC_OPCODE_COMPRESSED) {
       bson_t tmp = BSON_INITIALIZER;
@@ -3277,12 +3279,14 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
 
    max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
-   if (BSON_UINT32_FROM_LE (rpc->header.msg_len) > max_msg_size) {
+   if (bson_cmp_greater_us (BSON_UINT32_FROM_LE (rpc->header.msg_len),
+                            max_msg_size)) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_TOO_BIG,
                       "Attempted to send an RPC larger than the "
-                      "max allowed message size. Was %u, allowed %u.",
+                      "max allowed message size. Was %" PRIu32
+                      ", allowed %" PRId32 ".",
                       BSON_UINT32_FROM_LE (rpc->header.msg_len),
                       max_msg_size);
       GOTO (done);
