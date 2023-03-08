@@ -155,8 +155,6 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
    uint8_t significand_msb; /* the most signifcant significand bits (50-46) */
    _bson_uint128_t
       significand128; /* temporary storage for significand decoding */
-   size_t i;          /* indexing variables */
-   int j, k;
 
    memset (significand_str, 0, sizeof (significand_str));
 
@@ -212,7 +210,7 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
        */
       is_zero = true;
    } else {
-      for (k = 3; k >= 0; k--) {
+      for (int k = 3; k >= 0; k--) {
          uint32_t least_digits = 0;
          _bson_uint128_divide1B (
             significand128, &significand128, &least_digits);
@@ -223,7 +221,7 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
             continue;
          }
 
-         for (j = 8; j >= 0; j--) {
+         for (int j = 8; j >= 0; j--) {
             significand[k * 9 + j] = least_digits % 10;
             least_digits /= 10;
          }
@@ -264,7 +262,8 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
          *(str_out++) = '.';
       }
 
-      for (i = 0; i < significand_digits && (str_out - str) < 36; i++) {
+      for (uint32_t i = 0; i < significand_digits && (str_out - str) < 36;
+           i++) {
          *(str_out++) = *(significand_read++) + '0';
       }
       /* Exponent */
@@ -273,7 +272,8 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
    } else {
       /* Regular format with no decimal place */
       if (exponent >= 0) {
-         for (i = 0; i < significand_digits && (str_out - str) < 36; i++) {
+         for (uint32_t i = 0; i < significand_digits && (str_out - str) < 36;
+              i++) {
             *(str_out++) = *(significand_read++) + '0';
          }
          *str_out = '\0';
@@ -281,7 +281,7 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
          int32_t radix_position = significand_digits + exponent;
 
          if (radix_position > 0) { /* non-zero digits before radix */
-            for (i = 0;
+            for (int32_t i = 0;
                  i < radix_position && (str_out - str) < BSON_DECIMAL128_STRING;
                  i++) {
                *(str_out++) = *(significand_read++) + '0';
@@ -295,8 +295,9 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
             *(str_out++) = '0';
          }
 
-         for (i = 0;
-              (i < significand_digits - BSON_MAX (radix_position - 1, 0)) &&
+         for (uint32_t i = 0;
+              bson_cmp_greater_us (significand_digits - i,
+                                   BSON_MAX (radix_position - 1, 0)) &&
               (str_out - str) < BSON_DECIMAL128_STRING;
               i++) {
             *(str_out++) = *(significand_read++) + '0';
@@ -623,7 +624,8 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    /* to represent user input */
 
    /* Overflow prevention */
-   if (exponent <= radix_position && radix_position - exponent > (1 << 14)) {
+   if (bson_cmp_less_equal_su (exponent, radix_position) &&
+       bson_cmp_greater_us (radix_position, exponent + (1 << 14))) {
       exponent = BSON_DECIMAL128_EXPONENT_MIN;
    } else {
       exponent -= radix_position;
