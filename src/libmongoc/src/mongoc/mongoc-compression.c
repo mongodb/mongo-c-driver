@@ -48,7 +48,8 @@ mongoc_compressor_max_compressed_length (int32_t compressor_id, size_t len)
 
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
    case MONGOC_COMPRESSOR_ZLIB_ID:
-      return compressBound (len);
+      BSON_ASSERT (bson_in_range_unsigned (unsigned_long, len));
+      return compressBound ((unsigned long) len);
       break;
 #endif
 
@@ -173,12 +174,11 @@ mongoc_uncompress (int32_t compressor_id,
 
    case MONGOC_COMPRESSOR_ZLIB_ID: {
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-      int ok;
-
-      ok = uncompress (uncompressed,
-                       (unsigned long *) uncompressed_len,
-                       compressed,
-                       compressed_len);
+      BSON_ASSERT (bson_in_range_unsigned (unsigned_long, compressed_len));
+      const int ok = uncompress (uncompressed,
+                                 (unsigned long *) uncompressed_len,
+                                 compressed,
+                                 (unsigned long) compressed_len);
 
       return ok == Z_OK;
 #else
@@ -193,11 +193,10 @@ mongoc_uncompress (int32_t compressor_id,
 #ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
       int ok;
 
-      ok =
-         ZSTD_decompress ((void *) uncompressed,
-                          *uncompressed_len,
-                          (const void *) compressed,
-                          compressed_len);
+      ok = ZSTD_decompress ((void *) uncompressed,
+                            *uncompressed_len,
+                            (const void *) compressed,
+                            compressed_len);
 
       if (!ZSTD_isError (ok)) {
          *uncompressed_len = ok;
@@ -249,10 +248,11 @@ mongoc_compress (int32_t compressor_id,
 
    case MONGOC_COMPRESSOR_ZLIB_ID:
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+      BSON_ASSERT (bson_in_range_unsigned (unsigned_long, uncompressed_len));
       return compress2 ((unsigned char *) compressed,
                         (unsigned long *) compressed_len,
                         (unsigned char *) uncompressed,
-                        uncompressed_len,
+                        (unsigned long) uncompressed_len,
                         compression_level) == Z_OK;
 #else
       MONGOC_ERROR ("Client attempting to use compress with zlib, but zlib "
