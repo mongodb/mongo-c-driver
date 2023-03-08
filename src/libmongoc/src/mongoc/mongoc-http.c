@@ -299,13 +299,16 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    const size_t headers_len = (size_t) (ptr - http_response_str);
    BSON_ASSERT (bson_in_range_unsigned (int, headers_len));
 
-   res->headers_len = (int) headers_len;
-   res->headers = bson_strndup (http_response_str, headers_len);
-   res->body_len =
+   const size_t body_len =
       http_response_buf.len - headers_len - strlen (header_delimiter);
+   BSON_ASSERT (bson_in_range_unsigned (int, body_len));
+
+   res->headers_len = (int) headers_len;
+   res->headers = bson_strndup (http_response_str, (size_t) headers_len);
+   res->body_len = (int) body_len;
    /* Add a NULL character in case caller assumes NULL terminated. */
-   res->body = bson_malloc0 (res->body_len + 1);
-   memcpy (res->body, ptr + strlen (header_delimiter), res->body_len);
+   res->body = bson_malloc0 (body_len + 1u);
+   memcpy (res->body, ptr + strlen (header_delimiter), body_len);
    ret = true;
 
 fail:
