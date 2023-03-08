@@ -1933,9 +1933,7 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
    }
 
    if (keyaltnames) {
-      int i;
-
-      for (i = 0; i < keyaltnames_count; i++) {
+      for (uint32_t i = 0u; i < keyaltnames_count; i++) {
          bool keyaltname_ret;
          mongocrypt_binary_t *keyaltname_bin;
          bson_t *keyaltname_doc;
