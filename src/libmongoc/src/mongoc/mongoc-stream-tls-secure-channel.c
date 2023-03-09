@@ -381,9 +381,12 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
 
       TRACE ("iov %zu size: %zu", i, iov[i].iov_len);
       while (iov_pos < iov[i].iov_len) {
+         BSON_ASSERT (buf_end >= buf_tail);
+         const size_t buf_remaining = (size_t) (buf_end - buf_tail);
+
          if (buf_head != buf_tail ||
-             ((i + 1 < iovcnt) &&
-              ((buf_end - buf_tail) > (iov[i].iov_len - iov_pos)))) {
+             ((i + 1u < iovcnt) &&
+              (buf_remaining > (iov[i].iov_len - iov_pos)))) {
             /* If we have either of:
              *   - buffered bytes already
              *   - another iovec to send after this one and we don't have more
@@ -391,7 +394,7 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
              *
              * copy into the buffer */
 
-            bytes = BSON_MIN (iov[i].iov_len - iov_pos, buf_end - buf_tail);
+            bytes = BSON_MIN (iov[i].iov_len - iov_pos, buf_remaining);
 
             memcpy (buf_tail, (char *) iov[i].iov_base + iov_pos, bytes);
             buf_tail += bytes;
