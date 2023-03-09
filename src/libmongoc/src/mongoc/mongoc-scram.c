@@ -820,12 +820,15 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
    uint8_t server_signature[MONGOC_SCRAM_HASH_MAX_SIZE];
 
    if (!*scram->server_key) {
+      const size_t key_len = strlen (MONGOC_SCRAM_SERVER_KEY);
+      BSON_ASSERT (bson_in_range_unsigned (int, key_len));
+
       /* ServerKey := HMAC(SaltedPassword, "Server Key") */
       mongoc_crypto_hmac (&scram->crypto,
                           scram->salted_password,
                           _scram_hash_size (scram),
                           (uint8_t *) MONGOC_SCRAM_SERVER_KEY,
-                          strlen (MONGOC_SCRAM_SERVER_KEY),
+                          (int) key_len,
                           scram->server_key);
    }
 
