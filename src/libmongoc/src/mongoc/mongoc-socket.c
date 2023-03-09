@@ -1214,8 +1214,6 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
                                size_t iovcnt)         /* IN */
 {
    ssize_t ret = 0;
-   size_t i;
-   ssize_t wrote;
 
    ENTRY;
 
@@ -1223,11 +1221,13 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
 
-   for (i = 0; i < iovcnt; i++) {
-      wrote = send (sock->sd, iov[i].iov_base, iov[i].iov_len, 0);
+   for (size_t i = 0u; i < iovcnt; i++) {
 #ifdef _WIN32
+      BSON_ASSERT (bson_in_range_unsigned (int, iov[i].iov_len));
+      const int wrote = send (sock->sd, iov[i].iov_base, (int) iov[i].iov_len, 0);
       if (wrote == SOCKET_ERROR) {
 #else
+      const ssize_t wrote = send (sock->sd, iov[i].iov_base, iov[i].iov_len, 0);
       if (wrote == -1) {
 #endif
          _mongoc_socket_capture_errno (sock);
@@ -1240,7 +1240,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
 
       ret += wrote;
 
-      if (wrote != iov[i].iov_len) {
+      if (bson_cmp_not_equal_su (wrote, iov[i].iov_len)) {
          RETURN (ret);
       }
    }
@@ -1290,8 +1290,14 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock, /* IN */
    DUMP_IOVEC (sendbuf, iov, iovcnt);
 
 #ifdef _WIN32
-   ret = WSASend (
-      sock->sd, (LPWSABUF) iov, iovcnt, &dwNumberofBytesSent, 0, NULL, NULL);
+   BSON_ASSERT (bson_in_range_unsigned (unsigned_long, iovcnt));
+   ret = WSASend (sock->sd,
+                  (LPWSABUF) iov,
+                  (DWORD) iovcnt,
+                  &dwNumberofBytesSent,
+                  0,
+                  NULL,
+                  NULL);
    TRACE ("WSASend sent: %ld (out of: %zu), ret: %d",
           dwNumberofBytesSent,
           iov->iov_len,
@@ -1299,7 +1305,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock, /* IN */
 #else
    memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
-   msg.msg_iovlen = (int) iovcnt;
+   msg.msg_iovlen = iovcnt;
    ret = sendmsg (sock->sd,
                   &msg,
 #ifdef MSG_NOSIGNAL
