@@ -41,7 +41,7 @@ bool
 _mongoc_stream_writev_full (mongoc_stream_t *stream,
                             mongoc_iovec_t *iov,
                             size_t iovcnt,
-                            int32_t timeout_msec,
+                            int64_t timeout_msec,
                             bson_error_t *error);
 
 mongoc_stream_t *

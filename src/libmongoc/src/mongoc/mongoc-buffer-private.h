@@ -55,20 +55,20 @@ bool
 _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
                                    mongoc_stream_t *stream,
                                    size_t size,
-                                   int32_t timeout_msec,
+                                   int64_t timeout_msec,
                                    bson_error_t *error);
 
 ssize_t
 _mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
                                        mongoc_stream_t *stream,
                                        size_t size,
-                                       int32_t timeout_msec);
+                                       int64_t timeout_msec);
 
 ssize_t
 _mongoc_buffer_fill (mongoc_buffer_t *buffer,
                      mongoc_stream_t *stream,
                      size_t min_bytes,
-                     int32_t timeout_msec,
+                     int64_t timeout_msec,
                      bson_error_t *error);
 
 void

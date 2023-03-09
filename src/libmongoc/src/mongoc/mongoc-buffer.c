@@ -172,7 +172,7 @@ bool
 _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
                                    mongoc_stream_t *stream,
                                    size_t size,
-                                   int32_t timeout_msec,
+                                   int64_t timeout_msec,
                                    bson_error_t *error)
 {
    uint8_t *buf;
@@ -197,18 +197,28 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
 
    BSON_ASSERT ((buffer->len + size) <= buffer->datalen);
 
-   ret = mongoc_stream_read (stream, buf, size, size, timeout_msec);
-   if (ret != size) {
+   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, timeout_msec))) {
+      // CDRIVER-4589
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to read %" PRIu64
-                      " bytes: socket error or timeout",
-                      (uint64_t) size);
+                      "timeout_msec value %" PRIu64
+                      " exceeds supported 32-bit range",
+                      timeout_msec);
       RETURN (false);
    }
 
-   buffer->len += ret;
+   ret = mongoc_stream_read (stream, buf, size, size, (int32_t) timeout_msec);
+   if (bson_cmp_not_equal_su (ret, size)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failed to read %zu bytes: socket error or timeout",
+                      size);
+      RETURN (false);
+   }
+
+   buffer->len += (size_t) ret;
 
    RETURN (true);
 }
@@ -229,7 +239,7 @@ ssize_t
 _mongoc_buffer_fill (mongoc_buffer_t *buffer,
                      mongoc_stream_t *stream,
                      size_t min_bytes,
-                     int32_t timeout_msec,
+                     int64_t timeout_msec,
                      bson_error_t *error)
 {
    ssize_t ret;
@@ -244,7 +254,8 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
    BSON_ASSERT (buffer->datalen);
 
    if (min_bytes <= buffer->len) {
-      RETURN (buffer->len);
+      BSON_ASSERT (bson_in_range_unsigned (ssize_t, buffer->len));
+      RETURN ((ssize_t) buffer->len);
    }
 
    min_bytes -= buffer->len;
@@ -257,31 +268,46 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    avail_bytes = buffer->datalen - buffer->len;
 
-   ret = mongoc_stream_read (
-      stream, &buffer->data[buffer->len], avail_bytes, min_bytes, timeout_msec);
-
-   if (ret == -1) {
+   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, timeout_msec))) {
+      // CDRIVER-4589
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to buffer %u bytes",
-                      (unsigned) min_bytes);
+                      "timeout_msec value %" PRIu64
+                      " exceeds supported 32-bit range",
+                      timeout_msec);
+      RETURN (false);
+   }
+
+   ret = mongoc_stream_read (stream,
+                             &buffer->data[buffer->len],
+                             avail_bytes,
+                             min_bytes,
+                             (int32_t) timeout_msec);
+
+   if (ret < 0) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failed to buffer %zu bytes",
+                      min_bytes);
       RETURN (-1);
    }
 
-   buffer->len += ret;
+   buffer->len += (size_t) ret;
 
    if (buffer->len < min_bytes) {
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "Could only buffer %u of %u bytes",
-                      (unsigned) buffer->len,
-                      (unsigned) min_bytes);
+                      "Could only buffer %zu of %zu bytes",
+                      buffer->len,
+                      min_bytes);
       RETURN (-1);
    }
 
-   RETURN (buffer->len);
+   BSON_ASSERT (bson_in_range_unsigned (ssize_t, buffer->len));
+   RETURN ((ssize_t) buffer->len);
 }
 
 
@@ -302,7 +328,7 @@ ssize_t
 _mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
                                        mongoc_stream_t *stream,
                                        size_t size,
-                                       int32_t timeout_msec)
+                                       int64_t timeout_msec)
 {
    uint8_t *buf;
    ssize_t ret;
@@ -326,10 +352,18 @@ _mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
 
    BSON_ASSERT ((buffer->len + size) <= buffer->datalen);
 
-   ret = mongoc_stream_read (stream, buf, size, 0, timeout_msec);
+   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, timeout_msec))) {
+      // CDRIVER-4589
+      MONGOC_ERROR ("timeout_msec value %" PRIu64
+                    " exceeds supported 32-bit range",
+                    timeout_msec);
+      RETURN (-1);
+   }
+
+   ret = mongoc_stream_read (stream, buf, size, 0, (int32_t) timeout_msec);
 
    if (ret > 0) {
-      buffer->len += ret;
+      buffer->len += (size_t) ret;
    }
 
    RETURN (ret);

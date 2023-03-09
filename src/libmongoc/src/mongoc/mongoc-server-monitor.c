@@ -65,9 +65,9 @@ struct _mongoc_server_monitor_t {
 
    /* Default time to sleep between hello checks (reduced when a scan is
     * requested) */
-   uint64_t heartbeat_frequency_ms;
+   int64_t heartbeat_frequency_ms;
    /* The minimum time to sleep between hello checks. */
-   uint64_t min_heartbeat_frequency_ms;
+   int64_t min_heartbeat_frequency_ms;
    int64_t connect_timeout_ms;
    bool use_tls;
 #ifdef MONGOC_ENABLE_SSL
@@ -78,7 +78,7 @@ struct _mongoc_server_monitor_t {
     * stream. */
    mongoc_stream_initiator_t initiator;
    void *initiator_context;
-   int64_t request_id;
+   int32_t request_id;
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
 
@@ -705,7 +705,7 @@ _server_monitor_awaitable_hello (mongoc_server_monitor_t *server_monitor,
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    bson_append_document (
       &cmd, "topologyVersion", 15, &description->topology_version);
-   bson_append_int32 (
+   bson_append_int64 (
       &cmd, "maxAwaitTimeMS", 14, server_monitor->heartbeat_frequency_ms);
    bson_append_utf8 (&cmd, "$db", 3, "admin", 5);
 
