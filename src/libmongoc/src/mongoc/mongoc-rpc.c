@@ -840,26 +840,15 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
                       mongoc_rpc_t *rpc_le,
                       bson_error_t *error)
 {
-   char *output;
-   size_t output_length = 0;
-   size_t allocate = BSON_UINT32_FROM_LE (rpc_le->header.msg_len) - 16;
-   char *data;
-   int size;
-   int32_t compression_level = -1;
+   const size_t allocate = BSON_UINT32_FROM_LE (rpc_le->header.msg_len) - 16u;
+   BSON_ASSERT (allocate > 0u);
 
-   if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
-      compression_level = mongoc_uri_get_option_as_int32 (
-         cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
-   }
-
-   BSON_ASSERT (allocate > 0);
-   data = bson_malloc0 (allocate);
-   size = _mongoc_cluster_buffer_iovec (
+   char *const data = bson_malloc0 (allocate);
+   const size_t size = _mongoc_cluster_buffer_iovec (
       cluster->iov.data, cluster->iov.len, 16, data);
-   BSON_ASSERT (size);
-
-   output_length =
+   size_t output_length =
       mongoc_compressor_max_compressed_length (compressor_id, size);
+
    if (!output_length) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
@@ -870,7 +859,16 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
       return NULL;
    }
 
-   output = (char *) bson_malloc0 (output_length);
+   int32_t compression_level = -1;
+
+   if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
+      compression_level = mongoc_uri_get_option_as_int32 (
+         cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
+   }
+
+   BSON_ASSERT (size > 0u);
+
+   char *const output = (char *) bson_malloc0 (output_length);
    if (mongoc_compress (compressor_id,
                         compression_level,
                         data,
@@ -886,10 +884,13 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
       rpc_le->header.response_to =
          BSON_UINT32_FROM_LE (rpc_le->header.response_to);
 
-      rpc_le->compressed.uncompressed_size = size;
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, size));
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, output_length));
+
+      rpc_le->compressed.uncompressed_size = (int32_t) size;
       rpc_le->compressed.compressor_id = compressor_id;
       rpc_le->compressed.compressed_message = (const uint8_t *) output;
-      rpc_le->compressed.compressed_message_len = output_length;
+      rpc_le->compressed.compressed_message_len = (int32_t) output_length;
       bson_free (data);
 
 
