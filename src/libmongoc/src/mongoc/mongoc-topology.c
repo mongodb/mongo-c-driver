@@ -270,32 +270,29 @@ _tpld_destroy_and_free (void *tpl_descr)
 
 const mongoc_host_list_t **
 _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
-                             const int32_t max_hosts,
+                             const size_t max_hosts,
                              size_t *const hl_array_size)
 {
-   size_t hl_size;
-   size_t idx;
    const mongoc_host_list_t **hl_array;
 
-   BSON_ASSERT (max_hosts >= 0);
    BSON_ASSERT_PARAM (hl_array_size);
 
-   hl_size = (size_t) _mongoc_host_list_length (hl);
+   const size_t hl_size = _mongoc_host_list_length (hl);
 
-   if (hl_size == 0) {
-      *hl_array_size = 0;
+   if (hl_size == 0u) {
+      *hl_array_size = 0u;
       return NULL;
    }
 
    hl_array = bson_malloc (hl_size * sizeof (mongoc_host_list_t *));
 
-   for (idx = 0u; hl; hl = hl->next) {
+   for (size_t idx = 0u; hl; hl = hl->next) {
       hl_array[idx++] = hl;
    }
 
-   if (max_hosts == 0 ||             /* Unlimited. */
-       hl_size == 1u ||              /* Trivial case. */
-       hl_size <= (size_t) max_hosts /* Already satisfies limit. */
+   if (max_hosts == 0u ||   // Unlimited.
+       hl_size == 1u ||     // Trivial case.
+       hl_size <= max_hosts // Already satisfies limit.
    ) {
       /* No random shuffle or selection required. */
       *hl_array_size = hl_size;
@@ -306,7 +303,7 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
     * and less than the number of hosts in the DNS result, the driver MUST
     * randomly select that many hosts and use them to populate the seedlist.
     * Drivers SHOULD use the `Fisher-Yates shuffle` for randomization. */
-   for (idx = hl_size - 1u; idx > 0u; --idx) {
+   for (size_t idx = hl_size - 1u; idx > 0u; --idx) {
       /* 0 <= swap_pos <= idx */
       const size_t swap_pos =
          _mongoc_rand_size_t (0u, idx, _mongoc_simple_rand_size_t);
@@ -522,6 +519,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    td->max_hosts =
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0);
 
+   if (td->max_hosts < 0) {
+      topology->valid = false;
+   }
+
    /*
     * Set topology type from URI:
     *   + if directConnection=true
@@ -595,23 +596,22 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       return topology;
    }
 
-   {
-      size_t idx = 0u;
-      size_t hl_array_size = 0u;
+   size_t hl_array_size = 0u;
+
+   BSON_ASSERT (bson_in_range_signed (size_t, td->max_hosts));
+   const mongoc_host_list_t *const *hl_array =
+      _mongoc_apply_srv_max_hosts (hl, (size_t) td->max_hosts, &hl_array_size);
+
+   for (size_t idx = 0u; idx < hl_array_size; ++idx) {
+      const mongoc_host_list_t *const elem = hl_array[idx];
+
       uint32_t id = 0u;
 
-      const mongoc_host_list_t *const *hl_array =
-         _mongoc_apply_srv_max_hosts (hl, td->max_hosts, &hl_array_size);
-
-      for (idx = 0u; idx < hl_array_size; ++idx) {
-         const mongoc_host_list_t *const elem = hl_array[idx];
-
-         mongoc_topology_description_add_server (td, elem->host_and_port, &id);
-         mongoc_topology_scanner_add (topology->scanner, elem, id, false);
-      }
-
-      bson_free ((void *) hl_array);
+      mongoc_topology_description_add_server (td, elem->host_and_port, &id);
+      mongoc_topology_scanner_add (topology->scanner, elem, id, false);
    }
+
+   bson_free ((void *) hl_array);
 
    return topology;
 }

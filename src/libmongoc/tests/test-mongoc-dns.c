@@ -167,16 +167,15 @@ _host_list_matches (const bson_t *test, context_t *ctx)
    }
 
    else if (bson_iter_init_find (&iter, test, "numHosts")) {
-      const int expected = bson_iter_as_int64 (&iter);
-      int actual = 0;
+      const int64_t expected = bson_iter_as_int64 (&iter);
 
       bson_mutex_lock (&ctx->mutex);
-      actual = _mongoc_host_list_length (ctx->hosts);
+      const size_t actual = _mongoc_host_list_length (ctx->hosts);
       _mongoc_host_list_destroy_all (ctx->hosts);
       ctx->hosts = NULL;
       bson_mutex_unlock (&ctx->mutex);
 
-      ret = expected == actual;
+      ret = bson_cmp_equal_su (expected, actual);
    }
 
    return ret;
@@ -910,10 +909,13 @@ _mock_rr_resolver_prose_test_10 (const char *service,
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
+      const size_t count = _mongoc_host_list_length (rr_data->hosts);
+      BSON_ASSERT (bson_in_range_unsigned (uint32_t, count));
+
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
                                    "localhost.test.build.10gen.cc:27019",
                                    "localhost.test.build.10gen.cc:27020");
-      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->count = (uint32_t) count;
       rr_data->min_ttl = 0u;
       rr_data->txt_record_opts = NULL;
    }
@@ -1011,9 +1013,12 @@ _mock_rr_resolver_prose_test_11 (const char *service,
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
+      const size_t count = _mongoc_host_list_length (rr_data->hosts);
+      BSON_ASSERT (bson_in_range_unsigned (uint32_t, count));
+
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
                                    "localhost.test.build.10gen.cc:27020");
-      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->count = (uint32_t) count;
       rr_data->min_ttl = 0u;
       rr_data->txt_record_opts = NULL;
    }
@@ -1110,10 +1115,13 @@ _mock_rr_resolver_prose_test_12 (const char *service,
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
+      const size_t count = _mongoc_host_list_length (rr_data->hosts);
+      BSON_ASSERT (bson_in_range_unsigned (uint32_t, count));
+
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
                                    "localhost.test.build.10gen.cc:27019",
                                    "localhost.test.build.10gen.cc:27020");
-      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->count = (uint32_t) count;
       rr_data->min_ttl = 0u;
       rr_data->txt_record_opts = NULL;
    }
