@@ -219,8 +219,6 @@ _server_monitor_send_and_recv_hello_opmsg (
 {
    mongoc_rpc_t rpc = {._init = 0};
    mongoc_array_t array_to_write;
-   mongoc_iovec_t *iovec;
-   int niovec;
 
    mongoc_buffer_t buffer;
    uint32_t reply_len;
@@ -240,8 +238,8 @@ _server_monitor_send_and_recv_hello_opmsg (
    _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
    _mongoc_rpc_gather (&rpc, &array_to_write);
 
-   iovec = (mongoc_iovec_t *) array_to_write.data;
-   niovec = array_to_write.len;
+   mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
+   const size_t niovec = array_to_write.len;
    _mongoc_rpc_swab_to_le (&rpc);
 
    MONITOR_LOG (server_monitor,
@@ -323,8 +321,6 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
 {
    mongoc_rpc_t rpc = {._init = 0};
    mongoc_array_t array_to_write;
-   mongoc_iovec_t *iovec;
-   int niovec;
    mongoc_buffer_t buffer;
    uint32_t reply_len;
    bson_t temp_reply;
@@ -344,8 +340,9 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
    _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
    _mongoc_rpc_gather (&rpc, &array_to_write);
-   iovec = (mongoc_iovec_t *) array_to_write.data;
-   niovec = array_to_write.len;
+
+   mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
+   const size_t niovec = array_to_write.len;
    _mongoc_rpc_swab_to_le (&rpc);
 
    if (!_mongoc_stream_writev_full (server_monitor->stream,
@@ -436,8 +433,6 @@ _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
 {
    mongoc_rpc_t rpc = {._init = 0};
    mongoc_array_t array_to_write;
-   mongoc_iovec_t *iovec;
-   int niovec;
 
    rpc.header.msg_len = 0;
    rpc.header.request_id = server_monitor->request_id++;
@@ -451,8 +446,8 @@ _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
    _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
    _mongoc_rpc_gather (&rpc, &array_to_write);
 
-   iovec = (mongoc_iovec_t *) array_to_write.data;
-   niovec = array_to_write.len;
+   mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
+   const size_t niovec = array_to_write.len;
    _mongoc_rpc_swab_to_le (&rpc);
 
    MONITOR_LOG (server_monitor,
