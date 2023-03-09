@@ -103,6 +103,11 @@ make_uri (mongoc_array_t *servers)
 
    uri = mongoc_uri_new (uri_str->str);
 
+   // Many mock server tests do not expect retryable handshakes. Disable by
+   // default: tests that expect or require retryable handshakes must opt-in.
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, false);
+
    bson_string_free (uri_str, true);
 
    return uri;

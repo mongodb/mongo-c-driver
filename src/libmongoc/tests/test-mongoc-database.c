@@ -1089,7 +1089,6 @@ test_get_collection_names_error (void)
                            WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
    client = test_framework_client_new_from_uri (uri, NULL);
 
    database = mongoc_client_get_database (client, "test");

@@ -2918,9 +2918,6 @@ test_unordered_bulk_writes_with_error (void)
                            mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   /* disable retryable writes, so we move to the next operation on error */
-   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, false);
-
    client = test_framework_client_new_from_uri (uri, NULL);
 
    collection = mongoc_client_get_collection (client, "db", "test");

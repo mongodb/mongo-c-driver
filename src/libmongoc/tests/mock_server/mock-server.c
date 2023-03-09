@@ -391,6 +391,11 @@ mock_server_run (mock_server_t *server)
       bound_port);
    server->uri = mongoc_uri_new (server->uri_str);
 
+   // Many mock server tests do not expect retryable handshakes. Disable by
+   // default: tests that expect or require retryable handshakes must opt-in.
+   mongoc_uri_set_option_as_bool (server->uri, MONGOC_URI_RETRYREADS, false);
+   mongoc_uri_set_option_as_bool (server->uri, MONGOC_URI_RETRYWRITES, false);
+
    r = mcommon_thread_create (
       &server->main_thread, main_thread, (void *) server);
    BSON_ASSERT (r == 0);
