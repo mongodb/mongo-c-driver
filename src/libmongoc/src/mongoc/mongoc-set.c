@@ -74,13 +74,9 @@ mongoc_set_add (mongoc_set_t *set, uint32_t id, void *item)
 void
 mongoc_set_rm (mongoc_set_t *set, uint32_t id)
 {
-   mongoc_set_item_t *ptr;
-   mongoc_set_item_t key;
-   int i;
+   const mongoc_set_item_t key = {.id = id};
 
-   key.id = id;
-
-   ptr = (mongoc_set_item_t *) bsearch (
+   mongoc_set_item_t *const ptr = (mongoc_set_item_t *) bsearch (
       &key, set->items, set->items_len, sizeof (key), mongoc_set_id_cmp);
 
    if (ptr) {
@@ -88,12 +84,12 @@ mongoc_set_rm (mongoc_set_t *set, uint32_t id)
          set->dtor (ptr->item, set->dtor_ctx);
       }
 
-      i = ptr - set->items;
+      const size_t index = (size_t) (ptr - set->items);
 
-      if (i != set->items_len - 1) {
-         memmove (set->items + i,
-                  set->items + i + 1,
-                  (set->items_len - (i + 1)) * sizeof (key));
+      if (index != set->items_len - 1u) {
+         memmove (set->items + index,
+                  set->items + index + 1u,
+                  (set->items_len - (index + 1u)) * sizeof (key));
       }
 
       set->items_len--;
