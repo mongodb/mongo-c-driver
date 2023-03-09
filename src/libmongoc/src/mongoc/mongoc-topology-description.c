@@ -514,7 +514,7 @@ _mongoc_try_mode_secondary (mongoc_array_t *set, /* OUT */
                             const mongoc_topology_description_t *topology,
                             const mongoc_read_prefs_t *read_pref,
                             bool *must_use_primary,
-                            size_t local_threshold_ms)
+                            int64_t local_threshold_ms)
 {
    mongoc_read_prefs_t *secondary;
 
@@ -765,13 +765,11 @@ mongoc_topology_description_suitable_servers (
    const mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t *read_pref,
    bool *must_use_primary,
-   size_t local_threshold_ms)
+   int64_t local_threshold_ms)
 {
    mongoc_suitable_data_t data;
 
    const mongoc_set_t *td_servers = mc_tpld_servers_const (topology);
-   int64_t nearest = -1;
-   int i;
    const mongoc_read_mode_t given_read_mode =
       mongoc_read_prefs_get_mode (read_pref);
    const bool override_use_primary =
@@ -857,7 +855,7 @@ mongoc_topology_description_suitable_servers (
          }
 
          if (data.read_mode == MONGOC_READ_SECONDARY) {
-            for (i = 0; i < data.candidates_len; i++) {
+            for (size_t i = 0u; i < data.candidates_len; i++) {
                if (data.candidates[i] &&
                    data.candidates[i]->type != MONGOC_SERVER_RS_SECONDARY) {
                   TRACE ("Rejected [%s] [%s] for mode [%s] with RS topology",
@@ -919,18 +917,25 @@ mongoc_topology_description_suitable_servers (
     *   - primary_preferred and no primary read
     *   - sharded anything
     * Find the nearest, then select within the window */
-
-   for (i = 0; i < data.candidates_len; i++) {
-      if (data.candidates[i] &&
-          (nearest == -1 ||
-           nearest > data.candidates[i]->round_trip_time_msec)) {
-         nearest = data.candidates[i]->round_trip_time_msec;
+   int64_t nearest = INT64_MAX;
+   bool found = false;
+   for (size_t i = 0u; i < data.candidates_len; i++) {
+      if (data.candidates[i]) {
+         nearest = BSON_MIN (nearest, data.candidates[i]->round_trip_time_msec);
+         found = true;
       }
    }
 
-   for (i = 0; i < data.candidates_len; i++) {
-      if (data.candidates[i] && (data.candidates[i]->round_trip_time_msec <=
-                                 nearest + local_threshold_ms)) {
+   // No candidates remaining.
+   if (!found) {
+      goto DONE;
+   }
+
+   const int64_t rtt_limit = nearest + local_threshold_ms;
+
+   for (size_t i = 0u; i < data.candidates_len; i++) {
+      if (data.candidates[i] &&
+          (data.candidates[i]->round_trip_time_msec <= rtt_limit)) {
          _mongoc_array_append_val (set, data.candidates[i]);
       }
    }
