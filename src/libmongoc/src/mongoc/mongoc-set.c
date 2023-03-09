@@ -180,11 +180,10 @@ mongoc_set_for_each_with_id (mongoc_set_t *set,
                              mongoc_set_for_each_with_id_cb_t cb,
                              void *ctx)
 {
-   size_t i;
    mongoc_set_item_t *old_set;
-   size_t items_len;
 
-   items_len = set->items_len;
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, set->items_len));
+   const uint32_t items_len = (uint32_t) set->items_len;
 
    /* prevent undefined behavior of memcpy(NULL) */
    if (items_len == 0) {
@@ -194,7 +193,7 @@ mongoc_set_for_each_with_id (mongoc_set_t *set,
    old_set = (mongoc_set_item_t *) bson_malloc (sizeof (*old_set) * items_len);
    memcpy (old_set, set->items, sizeof (*old_set) * items_len);
 
-   for (i = 0; i < items_len; i++) {
+   for (uint32_t i = 0u; i < items_len; i++) {
       if (!cb (i, old_set[i].item, ctx)) {
          break;
       }
