@@ -131,8 +131,6 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
                                      mongoc_write_result_t *result,
                                      bson_error_t *error)
 {
-   int64_t started;
-   int32_t max_bson_obj_size;
    const uint8_t *data;
    mongoc_rpc_t rpc;
    uint32_t request_id;
@@ -155,9 +153,10 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
 
-   started = bson_get_monotonic_time ();
+   int64_t started = bson_get_monotonic_time ();
 
-   max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
+   const int32_t max_bson_obj_size =
+      mongoc_server_stream_max_bson_obj_size (server_stream);
 
    if (!command->n_documents) {
       bson_set_error (error,
@@ -181,9 +180,10 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
       bson_iter_document (&q_iter, &len, &data);
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
-      if (len > max_bson_obj_size) {
+      if (bson_cmp_greater_us (len, max_bson_obj_size)) {
+         BSON_ASSERT (bson_in_range_unsigned (int32_t, len));
          _mongoc_write_command_too_large_error (
-            error, 0, len, max_bson_obj_size);
+            error, 0, (int32_t) len, max_bson_obj_size);
          result->failed = true;
          bson_reader_destroy (reader);
          bson_free (ns);
@@ -245,7 +245,6 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
                                      mongoc_write_result_t *result,
                                      bson_error_t *error)
 {
-   int64_t started;
    mongoc_iovec_t *iov;
    mongoc_rpc_t rpc;
    uint32_t size = 0;
@@ -254,8 +253,6 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
    uint32_t n_docs_in_batch;
    uint32_t request_id = 0;
    uint32_t idx = 0;
-   int32_t max_msg_size;
-   int32_t max_bson_obj_size;
    bson_reader_t *reader;
    const bson_t *bson;
    bool eof;
@@ -272,10 +269,12 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
    BSON_ASSERT (collection);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
 
-   started = bson_get_monotonic_time ();
+   int64_t started = bson_get_monotonic_time ();
 
-   max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
-   max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
+   const int32_t max_bson_obj_size =
+      mongoc_server_stream_max_bson_obj_size (server_stream);
+   const int32_t max_msg_size =
+      mongoc_server_stream_max_msg_size (server_stream);
 
    if (!command->n_documents) {
       bson_set_error (error,
@@ -302,10 +301,12 @@ again:
       BSON_ASSERT (n_docs_in_batch <= idx);
       BSON_ASSERT (idx <= command->n_documents);
 
-      if (bson->len > max_bson_obj_size) {
+      if (bson_cmp_greater_us (bson->len, max_bson_obj_size)) {
+         BSON_ASSERT (bson_in_range_unsigned (int32_t, bson->len));
+
          /* document is too large */
          _mongoc_write_command_too_large_error (
-            error, idx, bson->len, max_bson_obj_size);
+            error, idx, (int32_t) bson->len, max_bson_obj_size);
 
          data_offset += bson->len;
 
@@ -386,8 +387,6 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
                                      mongoc_write_result_t *result,
                                      bson_error_t *error)
 {
-   int64_t started;
-   int32_t max_bson_obj_size;
    mongoc_rpc_t rpc;
    uint32_t request_id = 0;
    bson_iter_t subiter;
@@ -395,9 +394,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
    const uint8_t *data = NULL;
    uint32_t len = 0;
    bool val = false;
-   char *ns;
    bool r;
-   bson_reader_t *reader;
    const bson_t *bson;
    bool eof;
 
@@ -411,14 +408,16 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
 
-   started = bson_get_monotonic_time ();
+   int64_t started = bson_get_monotonic_time ();
 
-   max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
+   const int32_t max_bson_obj_size =
+      mongoc_server_stream_max_bson_obj_size (server_stream);
 
-   ns = bson_strdup_printf ("%s.%s", database, collection);
+   char *const ns = bson_strdup_printf ("%s.%s", database, collection);
 
-   reader =
+   bson_reader_t *const reader =
       bson_reader_new_from_data (command->payload.data, command->payload.len);
+
    while ((bson = bson_reader_read (reader, &eof))) {
       /* ensure the document has "q" and "u" document fields in that order */
       r = (bson_iter_init (&subiter, bson) && bson_iter_find (&subiter, "q") &&
@@ -444,11 +443,12 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
             bson_iter_document (&subiter, &len, &data);
 
             BSON_ASSERT (data);
-            BSON_ASSERT (len >= 5);
+            BSON_ASSERT (len >= 5u);
 
-            if (len > max_bson_obj_size) {
+            if (bson_cmp_greater_us (len, max_bson_obj_size)) {
+               BSON_ASSERT (bson_in_range_unsigned (int32_t, len));
                _mongoc_write_command_too_large_error (
-                  error, 0, len, max_bson_obj_size);
+                  error, 0, (int32_t) len, max_bson_obj_size);
                result->failed = true;
                bson_reader_destroy (reader);
                bson_free (ns);
@@ -463,9 +463,10 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
             BSON_ASSERT (data);
             BSON_ASSERT (len >= 5);
 
-            if (len > max_bson_obj_size) {
+            if (bson_cmp_greater_us (len, max_bson_obj_size)) {
+               BSON_ASSERT (bson_in_range_unsigned (int32_t, len));
                _mongoc_write_command_too_large_error (
-                  error, 0, len, max_bson_obj_size);
+                  error, 0, (int32_t) len, max_bson_obj_size);
                result->failed = true;
                bson_reader_destroy (reader);
                bson_free (ns);
