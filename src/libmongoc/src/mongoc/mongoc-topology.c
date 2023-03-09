@@ -229,10 +229,6 @@ static int
 _server_session_should_prune (mongoc_server_session_t *session,
                               mongoc_topology_t *topo)
 {
-   bool is_loadbalanced;
-   int timeout;
-   mc_shared_tpld td;
-
    BSON_ASSERT_PARAM (session);
    BSON_ASSERT_PARAM (topo);
 
@@ -247,9 +243,9 @@ _server_session_should_prune (mongoc_server_session_t *session,
    }
 
    /* Check for a timeout */
-   td = mc_tpld_take_ref (topo);
-   timeout = td.ptr->session_timeout_minutes;
-   is_loadbalanced = td.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED;
+   mc_shared_tpld td = mc_tpld_take_ref (topo);
+   const int64_t timeout = td.ptr->session_timeout_minutes;
+   const bool is_loadbalanced = td.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED;
    mc_tpld_drop_ref (&td);
 
    /** Load balanced topology sessions never expire */
@@ -336,8 +332,6 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
 mongoc_topology_t *
 mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 {
-   int64_t heartbeat_default;
-   int64_t heartbeat;
    mongoc_topology_t *topology;
    mongoc_topology_description_type_t init_type;
    mongoc_topology_description_t *td;
@@ -366,11 +360,12 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
                                                   topology);
 
    topology->valid = false;
-   heartbeat_default =
+
+   const int32_t heartbeat_default =
       single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED
                       : MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
 
-   heartbeat = mongoc_uri_get_option_as_int32 (
+   const int32_t heartbeat = mongoc_uri_get_option_as_int32 (
       uri, MONGOC_URI_HEARTBEATFREQUENCYMS, heartbeat_default);
 
    topology->_shared_descr_._sptr_ = mongoc_shared_ptr_create (
