@@ -133,6 +133,20 @@ test_mongoc_scram_sasl_prep (void)
 #endif
 
 static void
+_clear_scram_users (void)
+{
+   mongoc_client_t *const client = test_framework_new_default_client ();
+   ASSERT (client);
+   mongoc_database_t *const db = mongoc_client_get_database (client, "admin");
+   ASSERT (db);
+   (void) mongoc_database_remove_user (db, "sha1", NULL);
+   (void) mongoc_database_remove_user (db, "sha256", NULL);
+   (void) mongoc_database_remove_user (db, "both", NULL);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+}
+
+static void
 _create_scram_users (void)
 {
    mongoc_client_t *client;
@@ -424,6 +438,8 @@ test_mongoc_scram_auth (void *ctx)
 {
    BSON_UNUSED (ctx);
 
+   _clear_scram_users ();
+
    /* Auth spec: "Create three test users, one with only SHA-1, one with only
     * SHA-256 and one with both" */
    _create_scram_users ();
@@ -481,6 +497,19 @@ static int
 skip_if_icu (void)
 {
    return !skip_if_no_icu ();
+}
+
+static void
+_clear_saslprep_users (void)
+{
+   mongoc_client_t *const client = test_framework_new_default_client ();
+   ASSERT (client);
+   mongoc_database_t *const db = mongoc_client_get_database (client, "admin");
+   ASSERT (db);
+   (void) mongoc_database_remove_user (db, "IX", NULL);
+   (void) mongoc_database_remove_user (db, ROMAN_NUMERAL_NINE, NULL);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
 }
 
 static void
@@ -607,6 +636,7 @@ test_mongoc_saslprep_auth (void *ctx)
 {
    BSON_UNUSED (ctx);
 
+   _clear_saslprep_users ();
    _create_saslprep_users ();
    _test_mongoc_scram_saslprep_auth (false);
    _test_mongoc_scram_saslprep_auth (true);
@@ -632,6 +662,7 @@ test_mongoc_saslprep_auth_no_icu (void *ctx)
 {
    BSON_UNUSED (ctx);
 
+   _clear_saslprep_users ();
    _create_saslprep_users ();
    _test_mongoc_scram_saslprep_auth_no_icu (false);
    _test_mongoc_scram_saslprep_auth_no_icu (true);
