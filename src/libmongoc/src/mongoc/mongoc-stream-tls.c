@@ -79,11 +79,10 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
    int events;
    ssize_t ret = 0;
    mongoc_stream_poll_t poller;
-   int64_t now;
    int64_t expire = 0;
 
    if (timeout_msec >= 0) {
-      expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
+      expire = bson_get_monotonic_time () + (timeout_msec * 1000);
    }
 
    /*
@@ -109,16 +108,19 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
          poller.events = events;
          poller.revents = 0;
 
-         if (expire) {
-            now = bson_get_monotonic_time ();
-            if ((expire - now) < 0) {
+         if (expire >= 0) {
+            const int64_t now = bson_get_monotonic_time ();
+            const int64_t remaining = expire - now;
+            if (remaining < 0) {
                bson_set_error (error,
                                MONGOC_ERROR_STREAM,
                                MONGOC_ERROR_STREAM_SOCKET,
                                "TLS handshake timed out.");
                return false;
             } else {
-               timeout_msec = (expire - now) / 1000L;
+               const int64_t msec = remaining / 1000;
+               BSON_ASSERT (bson_in_range_signed (int32_t, msec));
+               timeout_msec = (int32_t) msec;
             }
          }
          ret = mongoc_stream_poll (&poller, 1, timeout_msec);
