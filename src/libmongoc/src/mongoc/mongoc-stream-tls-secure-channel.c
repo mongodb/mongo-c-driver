@@ -86,11 +86,6 @@
 #define SP_PROT_TLS1_2_CLIENT 0x00000800
 #endif
 
-size_t
-mongoc_secure_channel_write (mongoc_stream_tls_t *tls,
-                             const void *data,
-                             size_t data_length);
-
 
 static void
 _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
@@ -834,7 +829,7 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
       error->code = 0;
    }
 
-   TRACE ("Getting ready for state: %d, timeout is %d",
+   TRACE ("Getting ready for state: %d, timeout is %" PRId64,
           secure_channel->connecting_state + 1,
           tls->timeout_msec);
 
