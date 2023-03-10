@@ -165,7 +165,7 @@ run_uri_test (const char *uri_string,
       for (bson_iter_init (&iter, hosts);
            bson_iter_next (&iter) && bson_iter_recurse (&iter, &host_iter);) {
          const char *host = "localhost";
-         int port = 27017;
+         int64_t port = 27017;
          bool ok = false;
 
          if (bson_iter_find (&host_iter, "host") &&
@@ -186,7 +186,7 @@ run_uri_test (const char *uri_string,
 
          if (!ok) {
             fprintf (stderr,
-                     "Could not find '%s':%d in uri '%s'\n",
+                     "Could not find '%s':%" PRId64 " in uri '%s'\n",
                      host,
                      port,
                      mongoc_uri_get_string (uri));
