@@ -115,12 +115,12 @@ _upload_file_from_str (mongoc_gridfs_bucket_t *bucket,
                        bson_value_t *file_id)
 {
    bson_error_t error;
-   size_t nwritten;
-   mongoc_stream_t *up = mongoc_gridfs_bucket_open_upload_stream (
+   mongoc_stream_t *const up = mongoc_gridfs_bucket_open_upload_stream (
       bucket, filename, opts, file_id, &error);
    ASSERT_OR_PRINT (up, error);
-   nwritten = mongoc_stream_write (up, (void *) content, strlen (content), 0);
-   ASSERT_CMPINT (nwritten, ==, strlen (content));
+   const size_t nwritten =
+      mongoc_stream_write (up, (void *) content, strlen (content), 0);
+   ASSERT_CMPSIZE_T (nwritten, ==, strlen (content));
    mongoc_stream_destroy (up);
 }
 
