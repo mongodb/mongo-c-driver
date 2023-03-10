@@ -2239,22 +2239,23 @@ wait_for_primary_change (json_test_ctx_t *ctx, const bson_t *operation)
 static void
 assert_event_count (json_test_ctx_t *ctx, const bson_t *operation)
 {
-   const char *event_name;
-   uint32_t count;
-   uint32_t total = 0;
+   int64_t total = 0;
 
-   event_name = bson_lookup_utf8 (operation, "arguments.event");
-   count = bson_lookup_int32 (operation, "arguments.count");
+   const char *const event_name =
+      bson_lookup_utf8 (operation, "arguments.event");
+   const int32_t count = bson_lookup_int32 (operation, "arguments.count");
 
    if (0 == strcmp (event_name, "ServerMarkedUnknownEvent")) {
       total = ctx->total_ServerMarkedUnknownEvent;
    } else if (0 == strcmp (event_name, "PoolClearedEvent")) {
-      total = _get_total_pool_cleared_event (ctx);
+      total = (int64_t) _get_total_pool_cleared_event (ctx);
    } else {
       test_error ("Unknown event: %s", event_name);
    }
+
    if (count != total) {
-      test_error ("event count %s mismatched. Expected %d, but have %d",
+      test_error ("event count %s mismatched. Expected %" PRId32
+                  ", but have %" PRId64,
                   event_name,
                   count,
                   total);
