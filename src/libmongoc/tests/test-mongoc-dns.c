@@ -500,19 +500,19 @@ static void
 check_topology_description (mongoc_topology_description_t *td,
                             mongoc_host_list_t *hosts)
 {
-   int nhosts = 0;
+   size_t nhosts = 0u;
    mongoc_host_list_t *host;
    const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
    for (host = hosts; host; host = host->next) {
-      uint32_t server_count;
+      ++nhosts;
 
-      nhosts++;
       /* Check that "host" is already in the topology description by upserting
        * it, and ensuring that the number of servers remains constant. */
-      server_count = servers->items_len;
+      const size_t server_count = servers->items_len;
       BSON_ASSERT (mongoc_topology_description_add_server (
          td, host->host_and_port, NULL));
+
       if (server_count != servers->items_len) {
          dump_topology_description (td);
          dump_hosts (hosts);
