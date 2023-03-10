@@ -562,11 +562,10 @@ test_mongoc_platform_truncate (int drop)
    char *undropped;
    char *expected;
    char big_string[HANDSHAKE_MAX_SIZE];
-   int handshake_remaining_space;
 
    /* Need to know how much space storing fields in our BSON will take
     * so that we can make our platform string the correct length here */
-   int handshake_bson_size = 163;
+   const size_t handshake_bson_size = 163;
    _reset_handshake ();
 
    md = _mongoc_handshake_get ();
@@ -590,8 +589,8 @@ test_mongoc_platform_truncate (int drop)
    bson_free (md->flags);
    md->flags = bson_strdup ("test_h");
 
-   handshake_remaining_space =
-      HANDSHAKE_MAX_SIZE -
+   size_t handshake_remaining_space =
+      (size_t) HANDSHAKE_MAX_SIZE -
       (strlen (md->os_type) + strlen (md->os_name) + strlen (md->os_version) +
        strlen (md->os_architecture) + strlen (md->driver_name) +
        strlen (md->driver_version) + strlen (md->compiler_info) +
@@ -610,8 +609,8 @@ test_mongoc_platform_truncate (int drop)
       undropped = bson_strdup_printf ("%s%s", md->compiler_info, md->flags);
    }
 
-   memset (big_string, 'a', handshake_remaining_space + 1);
-   big_string[handshake_remaining_space + 1] = '\0';
+   memset (big_string, 'a', handshake_remaining_space + 1u);
+   big_string[handshake_remaining_space + 1u] = '\0';
 
    ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
    ASSERT (_mongoc_handshake_build_doc_with_application (&doc, "my app"));
