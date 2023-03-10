@@ -118,12 +118,12 @@ host_list_contains (const mongoc_host_list_t *hl, const char *host_and_port)
 }
 
 
-static int
+static int64_t
 hosts_count (const bson_t *test)
 {
    bson_iter_t iter;
    bson_iter_t hosts;
-   int c = 0;
+   int64_t c = 0;
 
    if (bson_iter_init_find (&iter, test, "hosts")) {
       BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
@@ -220,7 +220,6 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t ssl_opts;
 #endif
-   int n_hosts;
    bson_error_t error;
    bool r;
    const char *uri_str;
@@ -312,10 +311,10 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    BSON_ASSERT (client->ssl_opts.allow_invalid_hostname);
 #endif
 
-   n_hosts = hosts_count (test);
+   const int64_t n_hosts = hosts_count (test);
 
    if (pooled) {
-      if (n_hosts && !expect_error) {
+      if (n_hosts > 0 && !expect_error) {
          WAIT_UNTIL (_host_list_matches (test, &ctx));
       } else {
          r = mongoc_client_command_simple (
@@ -331,7 +330,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
        * connections need to authenticate, and the credentials in the tests do
        * not correspond to the test users. TODO (CDRIVER-4046): unskip these
        * tests. */
-      if (n_hosts && !expect_error) {
+      if (n_hosts > 0 && !expect_error) {
          r = mongoc_client_command_simple (
             client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
          ASSERT_OR_PRINT (r, error);
