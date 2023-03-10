@@ -217,7 +217,7 @@ _server_monitor_send_and_recv_hello_opmsg (
    bson_t *reply,
    bson_error_t *error)
 {
-   mongoc_rpc_t rpc = {0};
+   mongoc_rpc_t rpc = {._init = 0};
    mongoc_array_t array_to_write;
    mongoc_iovec_t *iovec;
    int niovec;
@@ -321,7 +321,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                        bson_t *reply,
                                        bson_error_t *error)
 {
-   mongoc_rpc_t rpc;
+   mongoc_rpc_t rpc = {._init = 0};
    mongoc_array_t array_to_write;
    mongoc_iovec_t *iovec;
    int niovec;
@@ -434,7 +434,7 @@ _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
                                       bson_t *cmd,
                                       bson_error_t *error)
 {
-   mongoc_rpc_t rpc = {0};
+   mongoc_rpc_t rpc = {._init = 0};
    mongoc_array_t array_to_write;
    mongoc_iovec_t *iovec;
    int niovec;
