@@ -62,7 +62,7 @@ mcd_azure_imds_request_destroy (mcd_azure_imds_request *req)
    bson_free (req->_owned_path);
    bson_free (req->_owned_host);
    bson_free (req->_owned_headers);
-   *req = (mcd_azure_imds_request){0};
+   *req = MCD_AZURE_IMDS_REQUEST_INIT;
 }
 
 bool
@@ -175,7 +175,7 @@ mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
    mongoc_http_response_t resp;
    _mongoc_http_response_init (&resp);
 
-   mcd_azure_imds_request req = {0};
+   mcd_azure_imds_request req = MCD_AZURE_IMDS_REQUEST_INIT;
    mcd_azure_imds_request_init (
       &req, opt_imds_host, opt_port, opt_extra_headers);
 

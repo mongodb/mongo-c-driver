@@ -80,6 +80,13 @@ typedef struct mcd_azure_imds_request {
    char *_owned_headers;
 } mcd_azure_imds_request;
 
+#define MCD_AZURE_IMDS_REQUEST_INIT                         \
+   (mcd_azure_imds_request)                                 \
+   {                                                        \
+      .req = {0}, ._owned_path = NULL, ._owned_host = NULL, \
+      ._owned_headers = NULL,                               \
+   }
+
 /**
  * @brief Initialize a new IMDS HTTP request
  *
