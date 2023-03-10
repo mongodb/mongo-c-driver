@@ -2689,8 +2689,6 @@ _test_session_dirty_helper (bool retry_succeeds)
    bool ret;
    bson_error_t error;
    bson_t *failpoint_cmd;
-   int pooled_session_count_pre;
-   int pooled_session_count_post;
    int fail_count;
    mongoc_uri_t *uri;
 
@@ -2757,14 +2755,14 @@ _test_session_dirty_helper (bool retry_succeeds)
     * dirty */
    BSON_ASSERT (session->server_session->dirty);
 
-   pooled_session_count_pre =
+   const size_t pooled_session_count_pre =
       mongoc_server_session_pool_size (client->topology->session_pool);
    mongoc_client_session_destroy (session);
-   pooled_session_count_post =
+   const size_t pooled_session_count_post =
       mongoc_server_session_pool_size (client->topology->session_pool);
 
    /* Check that destroying in the session did not add it back to the pool. */
-   ASSERT_CMPINT (pooled_session_count_pre, ==, pooled_session_count_post);
+   ASSERT_CMPSIZE_T (pooled_session_count_pre, ==, pooled_session_count_post);
 
    mongoc_client_command_simple (
       client,
