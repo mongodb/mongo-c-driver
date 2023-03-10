@@ -674,9 +674,14 @@ test_datakey_and_double_encryption_creating_and_using (
 
    hello = bson_strdup_printf ("hello %s", kms_provider);
 
-   to_encrypt.value_type = BSON_TYPE_UTF8;
-   to_encrypt.value.v_utf8.str = bson_strdup (hello);
-   to_encrypt.value.v_utf8.len = strlen (to_encrypt.value.v_utf8.str);
+   {
+      to_encrypt.value_type = BSON_TYPE_UTF8;
+      to_encrypt.value.v_utf8.str = bson_strdup (hello);
+
+      const size_t len = strlen (to_encrypt.value.v_utf8.str);
+      ASSERT (bson_in_range_unsigned (uint32_t, len));
+      to_encrypt.value.v_utf8.len = (uint32_t) len;
+   }
 
    ret = mongoc_client_encryption_encrypt (
       client_encryption, &to_encrypt, encrypt_opts, &encrypted, &error);
@@ -5215,11 +5220,14 @@ decryption_events_setup (void)
       mongoc_client_encryption_encrypt_opts_t *eOpts;
       bson_error_t error;
       bson_value_t plaintext;
-
       eOpts = mongoc_client_encryption_encrypt_opts_new ();
       plaintext.value_type = BSON_TYPE_UTF8;
       plaintext.value.v_utf8.str = "hello";
-      plaintext.value.v_utf8.len = strlen (plaintext.value.v_utf8.str);
+
+      const size_t len = strlen (plaintext.value.v_utf8.str);
+      ASSERT (bson_in_range_unsigned (uint32_t, len));
+
+      plaintext.value.v_utf8.len = (uint32_t) len;
 
       mongoc_client_encryption_encrypt_opts_set_algorithm (
          eOpts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
