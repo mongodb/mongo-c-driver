@@ -195,9 +195,9 @@ test_sdam_cb (bson_t *test)
          mc_tpld_renew_ref (&td, client->topology);
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &servers);
-            ASSERT_CMPINT (bson_count_keys (&servers),
-                           ==,
-                           mc_tpld_servers_const (td.ptr)->items_len);
+            ASSERT_CMPSIZE_T (bson_count_keys (&servers),
+                              ==,
+                              mc_tpld_servers_const (td.ptr)->items_len);
 
             bson_iter_init (&servers_iter, &servers);
 
