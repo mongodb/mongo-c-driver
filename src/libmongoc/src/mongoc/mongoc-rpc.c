@@ -318,44 +318,46 @@
          printf ("\n");                                    \
       }                                                    \
    } while (0);
-#define SECTION_ARRAY_FIELD(_name)                                          \
-   do {                                                                     \
-      ssize_t _i;                                                           \
-      printf ("  " #_name " : %d\n", rpc->n_##_name);                       \
-      for (_i = 0; _i < rpc->n_##_name; _i++) {                             \
-         if (rpc->_name[_i].payload_type == 0) {                            \
-            do {                                                            \
-               bson_t b;                                                    \
-               char *s;                                                     \
-               int32_t __l;                                                 \
-               memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);      \
-               __l = BSON_UINT32_FROM_LE (__l);                             \
-               BSON_ASSERT (bson_init_static (                              \
-                  &b, rpc->_name[_i].payload.bson_document, __l));          \
-               s = bson_as_relaxed_extended_json (&b, NULL);                \
-               printf ("  Type %d: %s\n", rpc->_name[_i].payload_type, s);  \
-               bson_free (s);                                               \
-               bson_destroy (&b);                                           \
-            } while (0);                                                    \
-         } else if (rpc->_name[_i].payload_type == 1) {                     \
-            bson_reader_t *__r;                                             \
-            int max = rpc->_name[_i].payload.sequence.size -                \
-                      strlen (rpc->_name[_i].payload.sequence.identifier) - \
-                      1 - sizeof (int32_t);                                 \
-            bool __eof;                                                     \
-            const bson_t *__b;                                              \
-            printf ("  Identifier: %s\n",                                   \
-                    rpc->_name[_i].payload.sequence.identifier);            \
-            printf ("  Size: %d\n", max);                                   \
-            __r = bson_reader_new_from_data (                               \
-               rpc->_name[_i].payload.sequence.bson_documents, max);        \
-            while ((__b = bson_reader_read (__r, &__eof))) {                \
-               char *s = bson_as_relaxed_extended_json (__b, NULL);         \
-               bson_free (s);                                               \
-            }                                                               \
-            bson_reader_destroy (__r);                                      \
-         }                                                                  \
-      }                                                                     \
+#define SECTION_ARRAY_FIELD(_name)                                         \
+   do {                                                                    \
+      printf ("  " #_name " : %d\n", rpc->n_##_name);                      \
+      for (ssize_t _i = 0; _i < rpc->n_##_name; _i++) {                    \
+         if (rpc->_name[_i].payload_type == 0) {                           \
+            do {                                                           \
+               bson_t b;                                                   \
+               char *s;                                                    \
+               int32_t __l;                                                \
+               memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);     \
+               __l = BSON_UINT32_FROM_LE (__l);                            \
+               BSON_ASSERT (bson_init_static (                             \
+                  &b, rpc->_name[_i].payload.bson_document, __l));         \
+               s = bson_as_relaxed_extended_json (&b, NULL);               \
+               printf ("  Type %d: %s\n", rpc->_name[_i].payload_type, s); \
+               bson_free (s);                                              \
+               bson_destroy (&b);                                          \
+            } while (0);                                                   \
+         } else if (rpc->_name[_i].payload_type == 1) {                    \
+            bson_reader_t *__r;                                            \
+            BSON_ASSERT (bson_in_range_signed (                            \
+               size_t, rpc->_name[_i].payload.sequence.size));             \
+            const size_t max_size =                                        \
+               (size_t) rpc->_name[_i].payload.sequence.size -             \
+               strlen (rpc->_name[_i].payload.sequence.identifier) - 1u -  \
+               sizeof (int32_t);                                           \
+            bool __eof;                                                    \
+            const bson_t *__b;                                             \
+            printf ("  Identifier: %s\n",                                  \
+                    rpc->_name[_i].payload.sequence.identifier);           \
+            printf ("  Size: %zu\n", max_size);                            \
+            __r = bson_reader_new_from_data (                              \
+               rpc->_name[_i].payload.sequence.bson_documents, max_size);  \
+            while ((__b = bson_reader_read (__r, &__eof))) {               \
+               char *s = bson_as_relaxed_extended_json (__b, NULL);        \
+               bson_free (s);                                              \
+            }                                                              \
+            bson_reader_destroy (__r);                                     \
+         }                                                                 \
+      }                                                                    \
    } while (0);
 #define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) {                \
