@@ -1721,10 +1721,9 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 static bool
 _in_deny_list (const bson_t *test, char **deny_list, uint32_t deny_list_len)
 {
-   int i;
    const char *desc = bson_lookup_utf8 (test, "description");
 
-   for (i = 0; i < deny_list_len; i++) {
+   for (uint32_t i = 0; i < deny_list_len; i++) {
       if (0 == strcmp (desc, deny_list[i])) {
          return true;
       }
@@ -2030,8 +2029,6 @@ _install_json_test_suite_with_check (TestSuite *suite,
 {
    char test_paths[MAX_NUM_TESTS][MAX_TEST_NAME_LENGTH];
    int num_tests;
-   int i;
-   int j;
    bson_t *test;
    char *skip_json;
    char *ext;
@@ -2052,7 +2049,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
    num_tests =
       collect_tests_from_dir (&test_paths[0], resolved, 0, MAX_NUM_TESTS);
 
-   for (i = 0; i < num_tests; i++) {
+   for (int i = 0; i < num_tests; i++) {
       test = get_bson_from_json_file (test_paths[i]);
       skip_json = COALESCE (strstr (test_paths[i], "/json"),
                             strstr (test_paths[i], "\\json"));
@@ -2063,7 +2060,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
       ext[0] = '\0';
 
       test = _skip_if_unsupported (skip_json, test);
-      for (j = 0; j < suite->failing_flaky_skips.len; j++) {
+      for (size_t j = 0u; j < suite->failing_flaky_skips.len; j++) {
          TestSkip *skip =
             _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, j);
          if (0 == strcmp (skip_json, skip->test_name)) {
