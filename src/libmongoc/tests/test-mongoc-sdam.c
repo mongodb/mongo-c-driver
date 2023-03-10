@@ -259,7 +259,7 @@ test_sdam_cb (bson_t *test)
          } else if (strcmp ("maxElectionId", bson_iter_key (&outcome_iter)) ==
                     0) {
             const bson_oid_t *expected_oid;
-            bson_oid_t zeroed = {0};
+            bson_oid_t zeroed = {.bytes = {0}};
 
             expected_oid = bson_iter_oid (&outcome_iter);
 
