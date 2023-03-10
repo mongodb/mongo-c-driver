@@ -777,7 +777,6 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    bson_t query;
    bson_t child;
    bson_t opts;
-   const bson_t *chunk;
    const char *key;
    bson_iter_t iter;
    int64_t existing_chunks;
@@ -842,6 +841,8 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
          BSON_ASSERT (file->cursor);
       }
+
+      const bson_t *chunk = NULL;
 
       /* we might have had a cursor before, then seeked ahead past a chunk.
        * iterate until we're on the right chunk */
