@@ -134,7 +134,7 @@ _mongoc_aws_credentials_cleanup (_mongoc_aws_credentials_t *creds);
 
 bool
 _mongoc_validate_and_derive_region (char *sts_fqdn,
-                                    uint32_t sts_fqdn_len,
+                                    size_t sts_fqdn_len,
                                     char **region,
                                     bson_error_t *error);
 

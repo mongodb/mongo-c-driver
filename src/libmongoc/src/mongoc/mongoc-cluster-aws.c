@@ -954,7 +954,7 @@ fail:
  */
 bool
 _mongoc_validate_and_derive_region (char *sts_fqdn,
-                                    uint32_t sts_fqdn_len,
+                                    size_t sts_fqdn_len,
                                     char **region,
                                     bson_error_t *error)
 {
@@ -968,11 +968,11 @@ _mongoc_validate_and_derive_region (char *sts_fqdn,
 
    /* Drivers must also validate that the host is greater than 0 and less than
     * or equal to 255 bytes per RFC 1035 */
-   if (sts_fqdn_len == 0) {
+   if (sts_fqdn_len == 0u) {
       AUTH_ERROR_AND_FAIL ("invalid STS host: empty");
    }
 
-   if (sts_fqdn_len > 255) {
+   if (sts_fqdn_len > 255u) {
       AUTH_ERROR_AND_FAIL ("invalid STS host: too large");
    }
 
@@ -1386,7 +1386,7 @@ fail:
 
 bool
 _mongoc_validate_and_derive_region (char *sts_fqdn,
-                                    uint32_t sts_fqdn_len,
+                                    size_t sts_fqdn_len,
                                     char **region,
                                     bson_error_t *error)
 {
