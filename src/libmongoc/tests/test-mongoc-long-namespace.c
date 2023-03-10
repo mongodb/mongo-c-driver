@@ -94,11 +94,11 @@ test_fixture_init (test_fixture_t *test_fixture,
    test_fixture->coll =
       mongoc_database_get_collection (test_fixture->db, test_fixture->ns_coll);
    ASSERT_CMPSTR (test_fixture->coll->collection, test_fixture->ns_coll);
-   ASSERT_CMPINT (
+   ASSERT_CMPSIZE_T (
       test_fixture->coll->collectionlen, ==, strlen (test_fixture->ns_coll));
    ASSERT_CMPSTR (test_fixture->coll->db, test_fixture->ns_db);
    ASSERT_CMPSTR (test_fixture->coll->ns, test_fixture->ns);
-   ASSERT_CMPINT (test_fixture->coll->nslen, ==, strlen (test_fixture->ns));
+   ASSERT_CMPSIZE_T (test_fixture->coll->nslen, ==, strlen (test_fixture->ns));
 
    /* Drop 'coll'. */
    ret = mongoc_collection_drop (test_fixture->coll, &error);
@@ -114,11 +114,11 @@ test_fixture_init (test_fixture_t *test_fixture,
       test_fixture->db, test_fixture->ns_coll, NULL /* opts */, &error);
    ASSERT_OR_PRINT (test_fixture->coll, error);
    ASSERT_CMPSTR (test_fixture->coll->collection, test_fixture->ns_coll);
-   ASSERT_CMPINT (
+   ASSERT_CMPSIZE_T (
       test_fixture->coll->collectionlen, ==, strlen (test_fixture->ns_coll));
    ASSERT_CMPSTR (test_fixture->coll->db, test_fixture->ns_db);
    ASSERT_CMPSTR (test_fixture->coll->ns, test_fixture->ns);
-   ASSERT_CMPINT (test_fixture->coll->nslen, ==, strlen (test_fixture->ns));
+   ASSERT_CMPSIZE_T (test_fixture->coll->nslen, ==, strlen (test_fixture->ns));
 
    mongoc_apm_callbacks_destroy (callbacks);
 }
@@ -468,8 +468,8 @@ collection_rename (test_fixture_t *test_fixture)
    ASSERT_CMPSTR (test_fixture->coll->db, new_db);
    ASSERT_CMPSTR (test_fixture->coll->collection, new_coll);
    ASSERT_CMPSTR (test_fixture->coll->ns, new_ns);
-   ASSERT_CMPINT (test_fixture->coll->nslen, ==, strlen (new_ns));
-   ASSERT_CMPINT (test_fixture->coll->collectionlen, ==, strlen (new_coll));
+   ASSERT_CMPSIZE_T (test_fixture->coll->nslen, ==, strlen (new_ns));
+   ASSERT_CMPSIZE_T (test_fixture->coll->collectionlen, ==, strlen (new_coll));
 
    /* Check that source collections do not exist anymore.  Use a separate client
     * so commands
