@@ -2465,7 +2465,8 @@ operation_download (test_t *test,
    if (stream) {
       while ((bytes_read =
                  mongoc_stream_read (stream, buf, sizeof (buf), 1, 0)) > 0) {
-         _mongoc_array_append_vals (&all_bytes, buf, bytes_read);
+         ASSERT (bson_in_range_signed (uint32_t, bytes_read));
+         _mongoc_array_append_vals (&all_bytes, buf, (uint32_t) bytes_read);
       }
       mongoc_gridfs_bucket_stream_error (stream, &op_error);
    }
