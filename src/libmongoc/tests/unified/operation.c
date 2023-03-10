@@ -218,7 +218,8 @@ operation_list_database_names (test_t *test,
             const char *key = NULL;
             const size_t key_len =
                bson_uint32_to_string (idx++, &key, buffer, sizeof (buffer));
-            bson_append_utf8 (&element, key, key_len, *names_iter, -1);
+            ASSERT (bson_in_range_unsigned (int, key_len));
+            bson_append_utf8 (&element, key, (int) key_len, *names_iter, -1);
          }
          bson_append_array_end (&bson, &element);
 
@@ -2471,7 +2472,8 @@ operation_download (test_t *test,
       mongoc_gridfs_bucket_stream_error (stream, &op_error);
    }
 
-   val = bson_val_from_bytes (all_bytes.data, all_bytes.len);
+   ASSERT (bson_in_range_unsigned (uint32_t, all_bytes.len));
+   val = bson_val_from_bytes (all_bytes.data, (uint32_t) all_bytes.len);
    result_from_val_and_reply (result, val, NULL, &op_error);
 
    ret = true;
