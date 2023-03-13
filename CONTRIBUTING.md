@@ -15,13 +15,7 @@ The mongo-c-driver has a few guidelines that help direct the process.
 ### Portability
 
 mongo-c-driver is portable software. It needs to run on a multitude of
-operating systems and architectures.
-
- * Linux (RHEL 5 and newer)
- * FreeBSD (10 and newer)
- * Windows (Vista and newer)
- * macOS (10.8 and newer)
- * ARM/SPARC/x86/x86_64
+[Supported Platforms](https://mongoc.org/libmongoc/current/installing.html#supported-platforms).
 
 
 ### Licensing
