@@ -1,7 +1,7 @@
 libbson 1.24.0 (Unreleased)
 ===========================
 
-  * Support will be dropped for macOS 10.14 and 10.15 in an upcoming release.
+  * Support for macOS 10.14 will be dropped in an upcoming release.
 
 libbson 1.23.2
 ==============
