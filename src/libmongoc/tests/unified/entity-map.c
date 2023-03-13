@@ -45,7 +45,7 @@ static void
 entity_destroy (entity_t *entity);
 
 entity_map_t *
-entity_map_new ()
+entity_map_new (void)
 {
    return bson_malloc0 (sizeof (entity_map_t));
 }
