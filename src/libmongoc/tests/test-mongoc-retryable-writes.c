@@ -80,7 +80,7 @@ test_rs_failover (void)
 
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
-   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
    client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    cs = mongoc_client_start_session (client, NULL, &error);
@@ -144,7 +144,7 @@ test_command_with_opts (void *ctx)
    BSON_UNUSED (ctx);
 
    uri = test_framework_get_uri ();
-   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
 
    client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
@@ -216,7 +216,7 @@ test_insert_one_unacknowledged (void)
    server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
    client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
@@ -264,7 +264,7 @@ test_update_one_unacknowledged (void)
    server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
    client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
@@ -315,7 +315,7 @@ test_delete_one_unacknowledged (void)
    server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
    client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
@@ -363,7 +363,7 @@ test_bulk_operation_execute_unacknowledged (void)
    server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
    client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
@@ -412,7 +412,7 @@ test_remove_unacknowledged (void)
    server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
    client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
@@ -519,6 +519,7 @@ static void
 test_unsupported_storage_engine_error (void)
 {
    mock_rs_t *rs;
+   mongoc_uri_t *uri;
    mongoc_client_t *client;
    mongoc_collection_t *coll;
    bson_t reply;
@@ -533,7 +534,9 @@ test_unsupported_storage_engine_error (void)
 
    rs = mock_rs_with_auto_hello (WIRE_VERSION_RETRY_WRITES, true, 0, 0);
    mock_rs_run (rs);
-   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
+   uri = mongoc_uri_copy (mock_rs_get_uri (rs));
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
+   client = test_framework_client_new_from_uri (uri, NULL);
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
@@ -566,6 +569,7 @@ test_unsupported_storage_engine_error (void)
    future_destroy (future);
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
    mock_rs_destroy (rs);
 }
 

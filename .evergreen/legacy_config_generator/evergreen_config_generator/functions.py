@@ -56,6 +56,7 @@ def shell_exec(script,
                working_dir=None,
                background=False,
                add_expansions_to_env=False,
+               redirect_standard_error_to_output=False,
                ):
     dedented = ''
     if errexit:
@@ -84,6 +85,9 @@ def shell_exec(script,
 
     if add_expansions_to_env:
         command['params']['add_expansions_to_env'] = True
+
+    if redirect_standard_error_to_output:
+        command['params']['redirect_standard_error_to_output'] = True
 
     command['params']['shell'] = 'bash'
     command['params']['script'] = dedented

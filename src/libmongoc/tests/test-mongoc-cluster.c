@@ -174,7 +174,6 @@ _test_cluster_node_disconnect (bool pooled)
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
 
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
@@ -1368,8 +1367,6 @@ _test_cluster_hello_fails (bool hangup)
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    /* increase heartbeatFrequencyMS to prevent background server selection. */
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
-   /* prevent retryable handshakes from interfering with mock server hangups */
-   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, false);
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
    mongoc_client_pool_set_error_api (pool, 2);
    mongoc_uri_destroy (uri);

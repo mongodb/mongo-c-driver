@@ -36,6 +36,7 @@ configure_flags_append_if_not_null() {
 configure_flags_append "-DCMAKE_PREFIX_PATH=${install_dir}"
 configure_flags_append "-DCMAKE_SKIP_RPATH=TRUE" # Avoid hardcoding absolute paths to dependency libraries.
 configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
+configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 
@@ -87,10 +88,12 @@ if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
-# Ensure find-cmake.sh is sourced *before* add-build-dirs-to-paths.sh
+# Ensure find-cmake-latest.sh is sourced *before* add-build-dirs-to-paths.sh
 # to avoid interfering with potential CMake build configuration.
-# shellcheck source=.evergreen/scripts/find-cmake.sh
-. "${script_dir}/find-cmake.sh" # ${CMAKE}
+# shellcheck source=.evergreen/scripts/find-cmake-latest.sh
+. "${script_dir}/find-cmake-latest.sh"
+declare cmake_binary
+cmake_binary="$(find_cmake_latest)"
 
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
@@ -105,31 +108,13 @@ if [[ "${OSTYPE}" == darwin* ]]; then
   }
 fi
 
-git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0
-# TODO: remove once latest libmongocrypt release contains commit 4c4aa8bf.
-{
-  pushd libmongocrypt
-  echo "1.7.0+4c4aa8bf" >|VERSION_CURRENT
-  git fetch -q origin master
-  git checkout -q 4c4aa8bf # Allows -DENABLE_MONGOC=OFF.
-  popd                     # libmongocrypt
-}
-declare -a crypt_cmake_flags
-crypt_cmake_flags=(
-  "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
-  "-DBUILD_TESTING=OFF"
-  "-DENABLE_ONLINE_TESTS=OFF"
-  "-DENABLE_MONGOC=OFF"
-)
-MONGOCRYPT_INSTALL_PREFIX=${install_dir} \
-  DEFAULT_BUILD_ONLY=true \
-  LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]}" \
-  ./libmongocrypt/.evergreen/compile.sh
-# Fail if the C driver is unable to find the installed libmongocrypt.
-configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+echo "Installing libmongocrypt..."
+# shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
+"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" >/dev/null
+echo "Installing libmongocrypt... done."
 
 echo "CFLAGS: ${CFLAGS}"
 echo "configure_flags: ${configure_flags[*]}"
 
-"${CMAKE}" "${configure_flags[@]}" .
+"${cmake_binary}" "${configure_flags[@]}" .
 make -j "$(nproc)" all

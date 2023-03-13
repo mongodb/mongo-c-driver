@@ -3,8 +3,6 @@
 set -o errexit
 set -o pipefail
 
-echo "BUILDING WITH TOOLCHAIN"
-
 # Configure environment with toolchain components
 if [[ -d /opt/mongo-c-toolchain ]]; then
   sudo rm -r /opt/mongo-c-toolchain
@@ -14,10 +12,11 @@ sudo mkdir /opt/mongo-c-toolchain
 
 declare toolchain_tar_gz
 toolchain_tar_gz=$(readlink -f ../mongo-c-toolchain.tar.gz)
-sudo tar -xvf "${toolchain_tar_gz}" -C /opt/mongo-c-toolchain
+sudo tar -xf "${toolchain_tar_gz}" -C /opt/mongo-c-toolchain
 
-echo "--- TOOLCHAIN MANIFEST ---"
+echo "--- TOOLCHAIN MANIFEST BEGIN ---"
 cat /opt/mongo-c-toolchain/MANIFEST.txt
+echo "--- TOOLCHAIN MANIFEST END ---"
 
 declare addl_path
 addl_path="$(readlink -f /opt/mongo-c-toolchain/bin):${PATH:-}"
@@ -45,6 +44,8 @@ declare -a ssl_vers=(
 )
 
 for ssl_ver in "${ssl_vers[@]}"; do
+  echo "TESTING TOOLCHAIN COMPONENTS FOR ${ssl_ver}..."
+
   cp -a ../mongoc "../mongoc-${ssl_ver}"
   pushd "../mongoc-${ssl_ver}"
 
@@ -71,25 +72,31 @@ for ssl_ver in "${ssl_vers[@]}"; do
   output_file="$(mktemp)"
 
   env \
+    BYPASS_FIND_CMAKE="ON" \
+    CFLAGS="-Wno-redundant-decls" \
     EXTRA_CMAKE_PREFIX_PATH="${ssl_base_dir};${toolchain_base_dir}" \
     EXTRA_CONFIGURE_FLAGS="-DCMAKE_VERBOSE_MAKEFILE=ON" \
     LD_LIBRARY_PATH="${ssl_lib_dir}:${toolchain_lib_dir}" \
     PATH="${new_path}" \
     SSL="${ssl}" \
-    bash .evergreen/scripts/compile-unix.sh 2>&1 | tee -a "${output_file}"
+    bash .evergreen/scripts/compile-unix.sh 2>&1 >|"${output_file}"
 
   # Verify that the toolchain components were used
   if grep -Ec "[-]I/opt/mongo-c-toolchain/include" "${output_file}" >/dev/null &&
     grep -Ec "[-]I/opt/mongo-c-toolchain/${ssl_ver}/include" "${output_file}" >/dev/null &&
     grep -Ec "[-]L/opt/mongo-c-toolchain/lib" "${output_file}" >/dev/null &&
     grep -Ec "/opt/mongo-c-toolchain/${ssl_ver}/lib" "${output_file}" >/dev/null; then
-    echo "Toolchain components for ${ssl_ver} were detected in build output...continuing."
+    echo "TOOLCHAIN COMPONENTS FOR ${ssl_ver} DETECTED IN BUILD OUTPUT."
   else
-    echo "TOOLCHAIN COMPONENTS FOR ${ssl_ver} NOT DETECTED IN BUILD OUTPUT...ABORTING!" 1>&2
+    echo "TOOLCHAIN COMPONENTS FOR ${ssl_ver} NOT DETECTED IN BUILD OUTPUT! ABORTING!" 1>&2
+    echo "BUILD OUTPUT:"
+    cat "${output_file}"
     exit 1
   fi
 
   rm -f "${output_file}"
 
   popd # "mongoc-${ssl_ver}"
+
+  echo "TESTING TOOLCHAIN COMPONENTS FOR ${ssl_ver}... DONE."
 done

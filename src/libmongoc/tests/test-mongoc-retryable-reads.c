@@ -93,7 +93,7 @@ test_cmd_helpers (void *ctx)
    BSON_UNUSED (ctx);
 
    uri = test_framework_get_uri ();
-   mongoc_uri_set_option_as_bool (uri, "retryReads", true);
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYREADS, true);
 
    client = test_framework_client_new_from_uri (uri, NULL);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);

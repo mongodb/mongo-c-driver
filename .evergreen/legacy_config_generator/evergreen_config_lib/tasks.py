@@ -184,17 +184,6 @@ all_tasks = [
                 sanitize=['address'],
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                 SSL='OPENSSL'),
-    SpecialTask('debug-compile-scan-build',
-                tags=['clang', 'debug-compile', 'scan-build'],
-                continue_on_err=True,
-                ANALYZE='ON',
-                CC='clang',
-                suffix_commands=[
-                    func('upload scan artifacts'),
-                    shell_mongoc('''
-                        if find scan -name \*.html | grep -q html; then
-                          exit 123
-                        fi''')]),
     CompileTask('compile-tracing',
                 TRACING='ON', CFLAGS='-Werror -Wno-cast-align'),
     CompileTask('release-compile',
@@ -826,11 +815,11 @@ class IPTask(MatrixTask):
 all_tasks = chain(all_tasks, IPTask.matrix())
 
 aws_compile_task = NamedTask('debug-compile-aws', commands=[shell_mongoc('''
-        # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
+        # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         . .evergreen/scripts/find-cmake.sh
         export CC='${CC}'
         $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
-        $CMAKE --build . --target mongoc-ping
+        $CMAKE --build . --target test-awsauth
 '''), func('upload-build')])
 
 all_tasks = chain(all_tasks, [aws_compile_task])

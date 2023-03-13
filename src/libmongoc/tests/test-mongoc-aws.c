@@ -272,6 +272,88 @@ test_derive_region (void *unused)
 #undef WITH_LEN
 }
 
+// test_aws_cache unit tests the _mongoc_aws_credentials_cache_t. It does not
+// require libmongoc to be built with MONGOC_ENABLE_MONGODB_AWS_AUTH.
+static void
+test_aws_cache (void *unused)
+{
+   BSON_UNUSED (unused);
+   _mongoc_aws_credentials_t valid_creds = MONGOC_AWS_CREDENTIALS_INIT;
+   valid_creds.access_key_id = bson_strdup ("access_key_id");
+   valid_creds.secret_access_key = bson_strdup ("secret_access_key");
+   valid_creds.session_token = bson_strdup ("session_token");
+   // Set expiration to one minute from now.
+   valid_creds.expiration.set = true;
+   valid_creds.expiration.value =
+      mcd_timer_expire_after (mcd_milliseconds (60 * 1000));
+
+   _mongoc_aws_credentials_t expired_creds = MONGOC_AWS_CREDENTIALS_INIT;
+   expired_creds.access_key_id = bson_strdup ("access_key_id");
+   expired_creds.secret_access_key = bson_strdup ("secret_access_key");
+   expired_creds.session_token = bson_strdup ("session_token");
+   // Set expiration to one minute before.
+   expired_creds.expiration.set = true;
+   expired_creds.expiration.value =
+      mcd_timer_expire_after (mcd_milliseconds (-60 * 1000));
+
+   _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
+   _mongoc_aws_credentials_cache_clear ();
+
+   // Expect `get` to return nothing initially.
+   {
+      _mongoc_aws_credentials_t got = MONGOC_AWS_CREDENTIALS_INIT;
+      bool found = _mongoc_aws_credentials_cache_get (&got);
+      ASSERT (!found);
+   }
+
+   // Expect `get` to return after valid credentials are added with `put`.
+   {
+      _mongoc_aws_credentials_t got = MONGOC_AWS_CREDENTIALS_INIT;
+      _mongoc_aws_credentials_cache_put (&valid_creds);
+      bool found = _mongoc_aws_credentials_cache_get (&got);
+      ASSERT (found);
+      ASSERT_CMPSTR (got.access_key_id, valid_creds.access_key_id);
+      ASSERT_CMPSTR (got.secret_access_key, valid_creds.secret_access_key);
+      ASSERT_CMPSTR (got.session_token, valid_creds.session_token);
+      _mongoc_aws_credentials_cleanup (&got);
+   }
+
+   // Expect `clear` to clear cached credentials.
+   {
+      _mongoc_aws_credentials_t got = MONGOC_AWS_CREDENTIALS_INIT;
+      _mongoc_aws_credentials_cache_put (&valid_creds);
+      _mongoc_aws_credentials_cache_clear ();
+      bool found = _mongoc_aws_credentials_cache_get (&got);
+      ASSERT (!found);
+   }
+
+   // Expect expired credentials are not added to cache.
+   {
+      _mongoc_aws_credentials_t got = MONGOC_AWS_CREDENTIALS_INIT;
+      _mongoc_aws_credentials_cache_put (&expired_creds);
+      bool found = _mongoc_aws_credentials_cache_get (&got);
+      ASSERT (!found);
+   }
+
+   // Expect credentials that expire are not returned from cache.
+   {
+      _mongoc_aws_credentials_t got = MONGOC_AWS_CREDENTIALS_INIT;
+      _mongoc_aws_credentials_cache_put (&valid_creds);
+      bool found = _mongoc_aws_credentials_cache_get (&got);
+      ASSERT (found);
+
+      // Manually expire the credentials.
+      cache->cached.value.expiration.value = expired_creds.expiration.value;
+      found = _mongoc_aws_credentials_cache_get (&got);
+      ASSERT (!found);
+      _mongoc_aws_credentials_cleanup (&got);
+   }
+
+   _mongoc_aws_credentials_cache_clear ();
+   _mongoc_aws_credentials_cleanup (&expired_creds);
+   _mongoc_aws_credentials_cleanup (&valid_creds);
+}
+
 void
 test_aws_install (TestSuite *suite)
 {
@@ -291,6 +373,12 @@ test_aws_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/aws/derive_region",
                       test_derive_region,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_aws);
+   TestSuite_AddFull (suite,
+                      "/aws/cache",
+                      test_aws_cache,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_aws);

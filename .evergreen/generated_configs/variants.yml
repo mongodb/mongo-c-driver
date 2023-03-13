@@ -67,6 +67,10 @@ buildvariants:
       DEBUG: "ON"
     tasks:
       - name: .sasl-matrix-winssl
+  - name: scan-build-matrix
+    display_name: scan-build-matrix
+    tasks:
+      - name: .scan-build-matrix
   - name: std-matrix
     display_name: std-matrix
     tasks:

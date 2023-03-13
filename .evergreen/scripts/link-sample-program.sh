@@ -72,14 +72,7 @@ else
   STATIC_CMAKE_OPTION="-DENABLE_STATIC=OFF -DENABLE_TESTS=OFF"
 fi
 
-# Since zstd inconsitently installed on macos-1014
-# Remove this check in CDRIVER-3483.
-if [ "darwin" = "$OS" ]; then
-   ZSTD="OFF"
-else
-   ZSTD="AUTO"
-fi
-
+ZSTD="AUTO"
 
 $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_BSON=ON -DENABLE_ZSTD=$ZSTD .
 $CMAKE --build .

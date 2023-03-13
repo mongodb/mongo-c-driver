@@ -1417,6 +1417,7 @@ test_custom_endpoint (void *unused)
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
 
    TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
@@ -1439,6 +1440,7 @@ test_custom_endpoint (void *unused)
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
 
    TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
@@ -1461,6 +1463,7 @@ test_custom_endpoint (void *unused)
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
 
    TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
@@ -1484,11 +1487,11 @@ test_custom_endpoint (void *unused)
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
-   BSON_ASSERT (!res);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_CONNECT,
                           "Failed to connect");
+   BSON_ASSERT (!res);
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
@@ -1509,8 +1512,8 @@ test_custom_endpoint (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
-   BSON_ASSERT (!res);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "");
+   BSON_ASSERT (!res);
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
@@ -1531,11 +1534,11 @@ test_custom_endpoint (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
-   BSON_ASSERT (!res);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_NAME_RESOLUTION,
                           "Failed to resolve");
+   BSON_ASSERT (!res);
    bson_value_destroy (&keyid);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
@@ -1552,6 +1555,7 @@ test_custom_endpoint (void *unused)
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "azure", datakey_opts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
 
    TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
@@ -1589,6 +1593,7 @@ test_custom_endpoint (void *unused)
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "gcp", datakey_opts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
 
    TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
@@ -1655,6 +1660,7 @@ test_custom_endpoint (void *unused)
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_NAME_RESOLUTION,
                           "Failed to resolve");
+   BSON_ASSERT (!res);
    bson_value_destroy (&keyid);
 
    bson_destroy (masterkey);

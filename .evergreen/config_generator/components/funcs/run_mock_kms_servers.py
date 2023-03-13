@@ -16,7 +16,6 @@ class RunMockKMSServers(Function):
         bash_exec(
             command_type=command_type,
             working_dir='drivers-evergreen-tools/.evergreen/csfle',
-            add_expansions_to_env=True,
             script='''\
                 set -o errexit
                 echo "Preparing KMS TLS venv environment..."
