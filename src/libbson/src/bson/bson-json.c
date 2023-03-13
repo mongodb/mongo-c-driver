@@ -741,6 +741,15 @@ _bson_json_parse_double (bson_json_reader_t *reader,
    *d = strtod (val, NULL);
 
 #ifdef _MSC_VER
+#ifdef INFINITY
+   const double pos_inf = INFINITY;
+   const double neg_inf = -pos_inf;
+#else
+   const unsigned long inf_rep[2] = {0x00000000, 0x7ff00000};
+   const double pos_inf = *(double *) inf;
+   const double neg_inf = -pos_inf;
+#endif
+
    /* Microsoft's strtod parses "NaN", "Infinity", "-Infinity" as 0 */
    if (*d == 0.0) {
       if (!_strnicmp (val, "nan", vlen)) {
@@ -754,20 +763,10 @@ _bson_json_parse_double (bson_json_reader_t *reader,
 #endif
          return true;
       } else if (!_strnicmp (val, "infinity", vlen)) {
-#ifdef INFINITY
-         *d = INFINITY;
-#else
-         unsigned long inf[2] = {0x00000000, 0x7ff00000};
-         *d = *(double *) inf;
-#endif
+         *d = pos_inf;
          return true;
       } else if (!_strnicmp (val, "-infinity", vlen)) {
-#ifdef INFINITY
-         *d = -INFINITY;
-#else
-         unsigned long inf[2] = {0x00000000, 0xfff00000};
-         *d = *(double *) inf;
-#endif
+         *d = neg_inf;
          return true;
       }
    }

@@ -210,6 +210,13 @@ set (HEADERS_FORWARDING
 )
 
 add_library (bson_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
+   message (STATUS "Disabling warning C4756 for VS 2013 and older")
+   # Macro constant INFINITY triggers constant arithmetic overflow warnings in
+   # VS 2013, but VS 2013 doesn't support inline warning suppression.
+   # Remove once support for VS 2013 is dropped.
+   target_compile_options(bson_shared PRIVATE /wd4756)
+endif ()
 set (CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_compile_definitions (bson_shared
    PRIVATE
@@ -278,6 +285,13 @@ endif ()
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (bson_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+   if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
+      message (STATUS "Disabling warning C4756 for VS 2013 and older")
+      # Macro constant INFINITY triggers constant arithmetic overflow warnings in
+      # VS 2013, but VS 2013 doesn't support inline warning suppression.
+      # Remove once support for VS 2013 is dropped.
+      target_compile_options(bson_static PRIVATE /wd4756)
+   endif ()
    target_compile_definitions (bson_static
       PUBLIC
          BSON_STATIC

@@ -386,10 +386,13 @@ test_bson_as_json_double_nonfinite (void)
    char *str;
    char *expected;
 
+   const double pos_inf = INFINITY;
+   const double neg_inf = -pos_inf;
+
    b = bson_new ();
    BSON_ASSERT (bson_append_double (b, "nan", -1, NAN));
-   BSON_ASSERT (bson_append_double (b, "pos_inf", -1, INFINITY));
-   BSON_ASSERT (bson_append_double (b, "neg_inf", -1, -INFINITY));
+   BSON_ASSERT (bson_append_double (b, "pos_inf", -1, pos_inf));
+   BSON_ASSERT (bson_append_double (b, "neg_inf", -1, neg_inf));
    str = bson_as_json (b, &len);
 
    expected = bson_strdup_printf ("{"
@@ -397,8 +400,8 @@ test_bson_as_json_double_nonfinite (void)
                                   " \"pos_inf\" : %.20g,"
                                   " \"neg_inf\" : %.20g }",
                                   NAN,
-                                  INFINITY,
-                                  -INFINITY);
+                                  pos_inf,
+                                  neg_inf);
 
    ASSERT_CMPSTR (str, expected);
 
