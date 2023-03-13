@@ -76,7 +76,9 @@ _mongoc_openssl_init (void)
 
    SSL_library_init ();
    SSL_load_error_strings ();
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
    ERR_load_BIO_strings ();
+#endif
    OpenSSL_add_all_algorithms ();
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
    _mongoc_openssl_thread_startup ();
