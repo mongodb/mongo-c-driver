@@ -270,8 +270,8 @@ _tpld_destroy_and_free (void *tpl_descr)
 
 const mongoc_host_list_t **
 _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
-                             const size_t max_hosts,
-                             size_t *const hl_array_size)
+                             size_t max_hosts,
+                             size_t *hl_array_size)
 {
    const mongoc_host_list_t **hl_array;
 
@@ -1943,12 +1943,11 @@ _topology_collect_errors (const mongoc_topology_description_t *td,
 {
    const mongoc_server_description_t *server_description;
    bson_string_t *error_message;
-   int i;
 
    memset (error_out, 0, sizeof (bson_error_t));
    error_message = bson_string_new ("");
 
-   for (i = 0; i < mc_tpld_servers_const (td)->items_len; i++) {
+   for (size_t i = 0u; i < mc_tpld_servers_const (td)->items_len; i++) {
       const bson_error_t *error;
 
       server_description = mc_tpld_servers_const (td)->items[i].item;
