@@ -1014,7 +1014,6 @@ test_run_operations (test_t *test, bson_error_t *error)
 {
    bool ret = false;
    bson_iter_t iter;
-   int i = 0;
 
    BSON_FOREACH (test->operations, iter)
    {
@@ -1026,8 +1025,6 @@ test_run_operations (test_t *test, bson_error_t *error)
                                       tmp_json (&op_bson));
          goto done;
       }
-
-      i++;
    }
 
    ret = true;
