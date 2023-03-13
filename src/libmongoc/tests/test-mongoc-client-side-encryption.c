@@ -6238,9 +6238,34 @@ test_auto_datakeys (void *unused)
 }
 
 static void
-test_create_encrypted_collection_simple (void *unused)
+_do_cec_test (void (*test) (const char *kmsProvider, const bson_t *masterKey))
 {
-   BSON_UNUSED (unused);
+   // Run the test using the "local" key:
+   test ("local", NULL);
+   // Run the test using an AWS key:
+   bsonBuildDecl (masterKey,
+                  kv ("region", cstr ("us-east-1")),
+                  kv ("key",
+                      cstr ("arn:aws:kms:us-east-1:579766882180:key/"
+                            "89fcc2c4-08b0-4bd9-9f25-e30687b580d0")));
+   test ("aws", &masterKey);
+   bson_destroy (&masterKey);
+}
+
+// Declare a createEncryptedCollection test case (See usage below)
+#define CEC_TEST(name, ...)               \
+   static void name##_impl (__VA_ARGS__); \
+   static void name (void *unused)        \
+   {                                      \
+      BSON_UNUSED (unused);               \
+      _do_cec_test (name##_impl);         \
+   }                                      \
+   static void name##_impl (__VA_ARGS__)
+
+CEC_TEST (test_create_encrypted_collection_simple,
+          const char *kmsProvider,
+          const bson_t *opt_masterKey)
+{
    bson_error_t error = {0};
    mongoc_client_t *const client = test_framework_new_default_client ();
    bson_t *const kmsProviders = _make_kms_providers (false, true);
@@ -6285,8 +6310,14 @@ test_create_encrypted_collection_simple (void *unused)
                                            kv ("keyId", null)))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    mongoc_collection_t *const coll =
-      mongoc_client_encryption_create_encrypted_collection (
-         ce, db, "test-coll", &ccOpts, NULL, "local", NULL, &error);
+      mongoc_client_encryption_create_encrypted_collection (ce,
+                                                            db,
+                                                            "test-coll",
+                                                            &ccOpts,
+                                                            NULL,
+                                                            kmsProvider,
+                                                            opt_masterKey,
+                                                            &error);
    ASSERT_OR_PRINT (coll, error);
    bson_destroy (&ccOpts);
 
@@ -6310,7 +6341,11 @@ test_create_encrypted_collection_simple (void *unused)
 
 static void
 test_create_encrypted_collection_no_encryptedFields_helper (
-   mongoc_client_t *client, const char *dbName, const char *collName)
+   mongoc_client_t *client,
+   const char *dbName,
+   const char *collName,
+   const char *kmsProvider,
+   const bson_t *const opt_masterKey)
 {
    bson_error_t error = {0};
    bson_t *const kmsProviders = _make_kms_providers (false, true);
@@ -6349,7 +6384,7 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    mongoc_collection_t *const coll =
       mongoc_client_encryption_create_encrypted_collection (
-         ce, db, collName, &ccOpts, NULL, "local", NULL, &error);
+         ce, db, collName, &ccOpts, NULL, kmsProvider, opt_masterKey, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -6363,12 +6398,10 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    mongoc_client_encryption_destroy (ce);
 }
 
-
-static void
-test_create_encrypted_collection_no_encryptedFields (void *unused)
+CEC_TEST (test_create_encrypted_collection_no_encryptedFields,
+          const char *kmsProvider,
+          const bson_t *const opt_masterKey)
 {
-   BSON_UNUSED (unused);
-
    const char *dbName = "cec-test-db";
    const char *collName = "test-coll";
 
@@ -6376,7 +6409,7 @@ test_create_encrypted_collection_no_encryptedFields (void *unused)
    {
       mongoc_client_t *const client = test_framework_new_default_client ();
       test_create_encrypted_collection_no_encryptedFields_helper (
-         client, dbName, collName);
+         client, dbName, collName, kmsProvider, opt_masterKey);
       mongoc_client_destroy (client);
    }
 
@@ -6403,7 +6436,7 @@ test_create_encrypted_collection_no_encryptedFields (void *unused)
          mongoc_client_enable_auto_encryption (client, aeOpts, &error), error);
 
       test_create_encrypted_collection_no_encryptedFields_helper (
-         client, dbName, collName);
+         client, dbName, collName, kmsProvider, opt_masterKey);
 
       bson_free (namespace);
       bson_destroy (kmsProviders);
@@ -6412,10 +6445,10 @@ test_create_encrypted_collection_no_encryptedFields (void *unused)
    }
 }
 
-static void
-test_create_encrypted_collection_bad_keyId (void *unused)
+CEC_TEST (test_create_encrypted_collection_bad_keyId,
+          const char *const kmsProvider,
+          const bson_t *const opt_masterKey)
 {
-   BSON_UNUSED (unused);
    bson_error_t error = {0};
    mongoc_client_t *const client = test_framework_new_default_client ();
    bson_t *const kmsProviders = _make_kms_providers (false, true);
@@ -6460,8 +6493,14 @@ test_create_encrypted_collection_bad_keyId (void *unused)
                                            kv ("keyId", bool (true))))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    mongoc_collection_t *const coll =
-      mongoc_client_encryption_create_encrypted_collection (
-         ce, db, "test-coll", &ccOpts, NULL, "local", NULL, &error);
+      mongoc_client_encryption_create_encrypted_collection (ce,
+                                                            db,
+                                                            "test-coll",
+                                                            &ccOpts,
+                                                            NULL,
+                                                            kmsProvider,
+                                                            opt_masterKey,
+                                                            &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_QUERY,
                           MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -6477,10 +6516,10 @@ test_create_encrypted_collection_bad_keyId (void *unused)
 }
 
 // Implements Prose Test 21. Case: 4.
-static void
-test_create_encrypted_collection_insert (void *unused)
+CEC_TEST (test_create_encrypted_collection_insert,
+          const char *const kmsProvider,
+          const bson_t *const opt_masterKey)
 {
-   BSON_UNUSED (unused);
    bson_error_t error = {0};
    mongoc_client_t *const client = test_framework_new_default_client ();
    bson_t *const kmsProviders = _make_kms_providers (false, true);
@@ -6526,8 +6565,14 @@ test_create_encrypted_collection_insert (void *unused)
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    bson_t new_opts;
    mongoc_collection_t *const coll =
-      mongoc_client_encryption_create_encrypted_collection (
-         ce, db, "testing1", &ccOpts, &new_opts, "local", NULL, &error);
+      mongoc_client_encryption_create_encrypted_collection (ce,
+                                                            db,
+                                                            "testing1",
+                                                            &ccOpts,
+                                                            &new_opts,
+                                                            kmsProvider,
+                                                            opt_masterKey,
+                                                            &error);
    ASSERT_OR_PRINT (coll, error);
    bson_destroy (&ccOpts);
 
