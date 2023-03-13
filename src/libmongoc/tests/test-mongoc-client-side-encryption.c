@@ -6244,18 +6244,11 @@ test_auto_datakeys (void *unused)
 }
 
 static void
-_do_cec_test (void (*test) (const char *kmsProvider, const bson_t *masterKey))
+_do_cec_test (void (*test) (const char *kmsProvider))
 {
    // Run the test using the "local" key:
-   test ("local", NULL);
-   // Run the test using an AWS key:
-   bsonBuildDecl (masterKey,
-                  kv ("region", cstr ("us-east-1")),
-                  kv ("key",
-                      cstr ("arn:aws:kms:us-east-1:579766882180:key/"
-                            "89fcc2c4-08b0-4bd9-9f25-e30687b580d0")));
-   test ("aws", &masterKey);
-   bson_destroy (&masterKey);
+   test ("local");
+   test ("aws");
 }
 
 // Declare a createEncryptedCollection test case (See usage below)
@@ -6268,13 +6261,12 @@ _do_cec_test (void (*test) (const char *kmsProvider, const bson_t *masterKey))
    }                                      \
    static void name##_impl (__VA_ARGS__)
 
-CEC_TEST (test_create_encrypted_collection_simple,
-          const char *kmsProvider,
-          const bson_t *opt_masterKey)
+CEC_TEST (test_create_encrypted_collection_simple, const char *kmsProvider)
 {
    bson_error_t error = {0};
    mongoc_client_t *const client = test_framework_new_default_client ();
-   bson_t *const kmsProviders = _make_kms_providers (false, true);
+   bson_t *const kmsProviders = _make_kms_providers (true, true);
+   bson_t *const tlsOptions = _make_tls_opts ();
 
    const char *const dbName = "cec-test-db";
 
@@ -6299,6 +6291,7 @@ CEC_TEST (test_create_encrypted_collection_simple,
    mongoc_client_encryption_opts_t *const ceOpts =
       mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (ceOpts, kmsProviders);
+   mongoc_client_encryption_opts_set_tls_opts (ceOpts, tlsOptions);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       ceOpts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (ceOpts, client);
@@ -6315,17 +6308,13 @@ CEC_TEST (test_create_encrypted_collection_simple,
                                            kv ("bsonType", cstr ("string")),
                                            kv ("keyId", null)))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
+   bson_t *const mkey = _make_kms_masterkey (kmsProvider);
    mongoc_collection_t *const coll =
-      mongoc_client_encryption_create_encrypted_collection (ce,
-                                                            db,
-                                                            "test-coll",
-                                                            &ccOpts,
-                                                            NULL,
-                                                            kmsProvider,
-                                                            opt_masterKey,
-                                                            &error);
+      mongoc_client_encryption_create_encrypted_collection (
+         ce, db, "test-coll", &ccOpts, NULL, kmsProvider, mkey, &error);
    ASSERT_OR_PRINT (coll, error);
    bson_destroy (&ccOpts);
+   bson_destroy (mkey);
 
    bsonBuildDecl (doc, kv ("ssn", cstr ("123-45-6789")));
    const bool okay =
@@ -6338,6 +6327,7 @@ CEC_TEST (test_create_encrypted_collection_simple,
    bson_destroy (&doc);
 
    bson_destroy (kmsProviders);
+   bson_destroy (tlsOptions);
    mongoc_collection_destroy (coll);
    mongoc_database_drop (db, &error);
    mongoc_database_destroy (db);
@@ -6350,11 +6340,11 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    mongoc_client_t *client,
    const char *dbName,
    const char *collName,
-   const char *kmsProvider,
-   const bson_t *const opt_masterKey)
+   const char *kmsProvider)
 {
    bson_error_t error = {0};
-   bson_t *const kmsProviders = _make_kms_providers (false, true);
+   bson_t *const kmsProviders = _make_kms_providers (true, true);
+   bson_t *const tlsOptions = _make_tls_opts ();
 
    // Drop prior data
    {
@@ -6377,6 +6367,7 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    mongoc_client_encryption_opts_t *const ceOpts =
       mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (ceOpts, kmsProviders);
+   mongoc_client_encryption_opts_set_tls_opts (ceOpts, tlsOptions);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       ceOpts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (ceOpts, client);
@@ -6388,16 +6379,19 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    // Create the encrypted collection
    bsonBuildDecl (ccOpts, do());
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
+   bson_t *const mkey = _make_kms_masterkey (kmsProvider);
    mongoc_collection_t *const coll =
       mongoc_client_encryption_create_encrypted_collection (
-         ce, db, collName, &ccOpts, NULL, kmsProvider, opt_masterKey, &error);
+         ce, db, collName, &ccOpts, NULL, kmsProvider, mkey, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "No 'encryptedFields' are defined");
    bson_destroy (&ccOpts);
+   bson_destroy (mkey);
 
    bson_destroy (kmsProviders);
+   bson_destroy (tlsOptions);
    mongoc_collection_destroy (coll);
    mongoc_database_drop (db, &error);
    mongoc_database_destroy (db);
@@ -6405,8 +6399,7 @@ test_create_encrypted_collection_no_encryptedFields_helper (
 }
 
 CEC_TEST (test_create_encrypted_collection_no_encryptedFields,
-          const char *kmsProvider,
-          const bson_t *const opt_masterKey)
+          const char *kmsProvider)
 {
    const char *dbName = "cec-test-db";
    const char *collName = "test-coll";
@@ -6415,7 +6408,7 @@ CEC_TEST (test_create_encrypted_collection_no_encryptedFields,
    {
       mongoc_client_t *const client = test_framework_new_default_client ();
       test_create_encrypted_collection_no_encryptedFields_helper (
-         client, dbName, collName, kmsProvider, opt_masterKey);
+         client, dbName, collName, kmsProvider);
       mongoc_client_destroy (client);
    }
 
@@ -6427,7 +6420,7 @@ CEC_TEST (test_create_encrypted_collection_no_encryptedFields,
       mongoc_auto_encryption_opts_t *aeOpts =
          mongoc_auto_encryption_opts_new ();
       bson_t *const kmsProviders =
-         _make_kms_providers (false /* with aws */, true /* with local */);
+         _make_kms_providers (true /* with aws */, true /* with local */);
       char *namespace = bson_strdup_printf ("%s.%s", dbName, collName);
       bson_t *encryptedFieldsMap =
          tmp_bson ("{'%s': {'fields': []}}", namespace);
@@ -6442,7 +6435,7 @@ CEC_TEST (test_create_encrypted_collection_no_encryptedFields,
          mongoc_client_enable_auto_encryption (client, aeOpts, &error), error);
 
       test_create_encrypted_collection_no_encryptedFields_helper (
-         client, dbName, collName, kmsProvider, opt_masterKey);
+         client, dbName, collName, kmsProvider);
 
       bson_free (namespace);
       bson_destroy (kmsProviders);
@@ -6452,12 +6445,12 @@ CEC_TEST (test_create_encrypted_collection_no_encryptedFields,
 }
 
 CEC_TEST (test_create_encrypted_collection_bad_keyId,
-          const char *const kmsProvider,
-          const bson_t *const opt_masterKey)
+          const char *const kmsProvider)
 {
    bson_error_t error = {0};
    mongoc_client_t *const client = test_framework_new_default_client ();
-   bson_t *const kmsProviders = _make_kms_providers (false, true);
+   bson_t *const kmsProviders = _make_kms_providers (true, true);
+   bson_t *const tlsOptions = _make_tls_opts ();
 
    const char *const dbName = "cec-test-db";
 
@@ -6482,6 +6475,7 @@ CEC_TEST (test_create_encrypted_collection_bad_keyId,
    mongoc_client_encryption_opts_t *const ceOpts =
       mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (ceOpts, kmsProviders);
+   mongoc_client_encryption_opts_set_tls_opts (ceOpts, tlsOptions);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       ceOpts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (ceOpts, client);
@@ -6498,22 +6492,19 @@ CEC_TEST (test_create_encrypted_collection_bad_keyId,
                                            kv ("bsonType", cstr ("string")),
                                            kv ("keyId", bool (true))))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
+   bson_t *const mkey = _make_kms_masterkey (kmsProvider);
    mongoc_collection_t *const coll =
-      mongoc_client_encryption_create_encrypted_collection (ce,
-                                                            db,
-                                                            "test-coll",
-                                                            &ccOpts,
-                                                            NULL,
-                                                            kmsProvider,
-                                                            opt_masterKey,
-                                                            &error);
+      mongoc_client_encryption_create_encrypted_collection (
+         ce, db, "test-coll", &ccOpts, NULL, kmsProvider, mkey, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_QUERY,
                           MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                           "create.encryptedFields.fields.keyId");
    bson_destroy (&ccOpts);
+   bson_destroy (mkey);
 
    bson_destroy (kmsProviders);
+   bson_destroy (tlsOptions);
    mongoc_collection_destroy (coll);
    mongoc_database_drop (db, &error);
    mongoc_database_destroy (db);
@@ -6523,12 +6514,12 @@ CEC_TEST (test_create_encrypted_collection_bad_keyId,
 
 // Implements Prose Test 21. Case: 4.
 CEC_TEST (test_create_encrypted_collection_insert,
-          const char *const kmsProvider,
-          const bson_t *const opt_masterKey)
+          const char *const kmsProvider)
 {
    bson_error_t error = {0};
    mongoc_client_t *const client = test_framework_new_default_client ();
-   bson_t *const kmsProviders = _make_kms_providers (false, true);
+   bson_t *const kmsProviders = _make_kms_providers (true, true);
+   bson_t *const tlsOptions = _make_tls_opts ();
 
    const char *const dbName = "cec-test-db";
 
@@ -6553,6 +6544,7 @@ CEC_TEST (test_create_encrypted_collection_insert,
    mongoc_client_encryption_opts_t *const ceOpts =
       mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (ceOpts, kmsProviders);
+   mongoc_client_encryption_opts_set_tls_opts (ceOpts, tlsOptions);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       ceOpts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (ceOpts, client);
@@ -6570,17 +6562,13 @@ CEC_TEST (test_create_encrypted_collection_insert,
                                            kv ("keyId", null)))))));
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    bson_t new_opts;
+   bson_t *const mkey = _make_kms_masterkey (kmsProvider);
    mongoc_collection_t *const coll =
-      mongoc_client_encryption_create_encrypted_collection (ce,
-                                                            db,
-                                                            "testing1",
-                                                            &ccOpts,
-                                                            &new_opts,
-                                                            kmsProvider,
-                                                            opt_masterKey,
-                                                            &error);
+      mongoc_client_encryption_create_encrypted_collection (
+         ce, db, "testing1", &ccOpts, &new_opts, kmsProvider, mkey, &error);
    ASSERT_OR_PRINT (coll, error);
    bson_destroy (&ccOpts);
+   bson_destroy (mkey);
 
    // Extract the encryption key ID that was generated by
    // CreateEncryptedCollection:
@@ -6631,6 +6619,7 @@ CEC_TEST (test_create_encrypted_collection_insert,
    bson_destroy (&doc);
    bson_value_destroy (&ciphertext);
    bson_destroy (kmsProviders);
+   bson_destroy (tlsOptions);
    mongoc_collection_destroy (coll);
    mongoc_database_drop (db, &error);
    mongoc_database_destroy (db);
