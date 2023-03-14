@@ -1521,12 +1521,18 @@ test_generate_atlas_results (test_t *test, bson_error_t *error)
    append_size_t (&results_doc, "numIterations", iterations ? *iterations : 0u);
    append_size_t (&results_doc, "numSuccesses", successes ? *successes : 0u);
 
+#ifdef WIN32
+   const int perms = _S_IWRITE;
+#else
+   const int perms = S_IRWXU;
+#endif
+
    mongoc_stream_t *const events_file = mongoc_stream_file_new_for_path (
-      "events.json", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+      "events.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
    ASSERT_WITH_MSG (events_file, "could not open events.json");
 
    mongoc_stream_t *const results_file = mongoc_stream_file_new_for_path (
-      "results.json", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+      "results.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
    ASSERT_WITH_MSG (results_file, "could not open results.json");
 
    size_t events_json_len = 0u;
