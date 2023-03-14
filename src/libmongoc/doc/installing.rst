@@ -12,7 +12,8 @@ The MongoDB C Driver is continuously tested on a variety of platforms including:
 
 - Archlinux
 - Debian 9.2, 10.0, 11.0
-- macOS 10.14
+- macOS 10.14 (Will be dropped in an upcoming release)
+- macOS 11.0 (x86_64 and arm64)
 - Microsoft Windows Server 2008, 2016
 - RHEL 7.0, 7.1, 8.1, 8.2, 8.3
 - Ubuntu 16.04, 18.04, 20.04
