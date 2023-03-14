@@ -8,6 +8,7 @@
 
 #include <bson/bson.h>
 
+#include <assert.h>
 #include <signal.h>
 #include <stdio.h>
 
@@ -60,8 +61,7 @@ void (*original_sigint_handler) (int) = NULL;
 static void
 sigint_handler (int sigint)
 {
-   BSON_ASSERT (sigint == SIGINT);
-   MONGOC_DEBUG ("detected request to terminate loop operation");
+   assert (sigint == SIGINT);
    operation_loop_terminated = true;
    signal (SIGINT, original_sigint_handler);
 }
