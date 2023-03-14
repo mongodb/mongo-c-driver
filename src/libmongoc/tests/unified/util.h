@@ -19,12 +19,6 @@
 
 #include "mongoc/mongoc.h"
 
-uint8_t *
-hex_to_bin (const char *hex, uint32_t *len);
-
-char *
-bin_to_hex (const uint8_t *bin, uint32_t len);
-
 bson_t *
 bson_copy_and_sort (const bson_t *in);
 
@@ -34,7 +28,9 @@ bson_type_from_string (const char *in);
 const char *
 bson_type_to_string (bson_type_t btype);
 
-/* Returns true if this is an event type (part of observeEvents or expectedEvents) that is unsupported and not emitted by the C driver. */
-bool is_unsupported_event_type (const char* event_type);
+/* Returns true if this is an event type (part of observeEvents or
+ * expectedEvents) that is unsupported and not emitted by the C driver. */
+bool
+is_unsupported_event_type (const char *event_type);
 
 #endif /* UNIFIED_UTIL_H */

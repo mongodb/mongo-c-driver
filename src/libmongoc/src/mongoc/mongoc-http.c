@@ -217,7 +217,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       if (bytes_read <= 0) {
          break;
       }
-      if (http_response_buf.datalen > 1024 * 1024 * 8) {
+      if (http_response_buf.len > 1024 * 1024 * 8) {
          bson_set_error (error,
                          MONGOC_ERROR_STREAM,
                          MONGOC_ERROR_STREAM_SOCKET,
@@ -243,8 +243,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    }
 
    http_response_str = (char *) http_response_buf.data;
-   const char *const resp_end_ptr =
-      http_response_str + http_response_buf.datalen;
+   const char *const resp_end_ptr = http_response_str + http_response_buf.len;
 
 
    const char *proto_leader_10 = "HTTP/1.0 ";

@@ -17,6 +17,7 @@
 #include "operation.h"
 
 #include "mongoc-array-private.h"
+#include "mongoc-util-private.h" // hex_to_bin
 #include "result.h"
 #include "test-diagnostics.h"
 #include "util.h"

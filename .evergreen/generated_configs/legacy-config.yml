@@ -267,7 +267,12 @@ functions:
             "iam_auth_assume_role_name" : "${iam_auth_assume_role_name}",
             "iam_auth_ec2_instance_account" : "${iam_auth_ec2_instance_account}",
             "iam_auth_ec2_instance_secret_access_key" : "${iam_auth_ec2_instance_secret_access_key}",
-            "iam_auth_ec2_instance_profile" : "${iam_auth_ec2_instance_profile}"
+            "iam_auth_ec2_instance_profile" : "${iam_auth_ec2_instance_profile}",
+            "iam_auth_assume_web_role_name": "${iam_auth_assume_web_role_name}",
+            "iam_web_identity_issuer": "${iam_web_identity_issuer}",
+            "iam_web_identity_rsa_key": "${iam_web_identity_rsa_key}",
+            "iam_web_identity_jwks_uri": "${iam_web_identity_jwks_uri}",
+            "iam_web_identity_token_file": "${iam_web_identity_token_file}"
         }
         EOF
   - command: shell.exec
@@ -2050,6 +2055,57 @@ tasks:
   - func: run aws tests
     vars:
       TESTCASE: ASSUME_ROLE
+- name: test-aws-openssl-assume_role_with_web_identity-latest
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch-build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: fetch-det
+  - func: bootstrap-mongo-orchestration
+    vars:
+      AUTH: auth
+      MONGODB_VERSION: latest
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+  - func: run aws tests
+    vars:
+      TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
+- name: test-aws-openssl-assume_role_with_web_identity-5.0
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch-build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: fetch-det
+  - func: bootstrap-mongo-orchestration
+    vars:
+      AUTH: auth
+      MONGODB_VERSION: '5.0'
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+  - func: run aws tests
+    vars:
+      TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
+- name: test-aws-openssl-assume_role_with_web_identity-4.4
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch-build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: fetch-det
+  - func: bootstrap-mongo-orchestration
+    vars:
+      AUTH: auth
+      MONGODB_VERSION: '4.4'
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+  - func: run aws tests
+    vars:
+      TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
 - name: ocsp-openssl-test_1-rsa-delegate-latest
   tags:
   - ocsp-openssl
@@ -9639,6 +9695,9 @@ buildvariants:
   - test-aws-openssl-ecs-4.4
   - test-aws-openssl-assume_role-4.4
   - test-aws-openssl-lambda-4.4
+  - test-aws-openssl-assume_role_with_web_identity-latest
+  - test-aws-openssl-assume_role_with_web_identity-5.0
+  - test-aws-openssl-assume_role_with_web_identity-4.4
 - name: mongohouse
   display_name: Mongohouse Test
   run_on: ubuntu1804-test
