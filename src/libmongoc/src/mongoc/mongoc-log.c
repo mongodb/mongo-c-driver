@@ -224,21 +224,20 @@ mongoc_log_default_handler (mongoc_log_level_t log_level,
 void
 mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
 {
-   bson_string_t *str, *astr;
-   int32_t _i;
-   uint8_t _v;
-
    if (!_mongoc_log_trace_is_enabled ()) {
       return;
    }
 
-   str = bson_string_new (NULL);
-   astr = bson_string_new (NULL);
-   for (_i = 0; _i < _l; _i++) {
-      _v = *(_b + _i);
+   bson_string_t *const str = bson_string_new (NULL);
+   bson_string_t *const astr = bson_string_new (NULL);
 
-      if ((_i % 16) == 0) {
-         bson_string_append_printf (str, "%05x: ", _i);
+   size_t _i;
+   for (_i = 0u; _i < _l; _i++) {
+      const uint8_t _v = *(_b + _i);
+      const size_t rem = _i % 16u;
+
+      if (rem == 0u) {
+         bson_string_append_printf (str, "%05zx: ", _i);
       }
 
       bson_string_append_printf (str, " %02x", _v);
@@ -248,18 +247,18 @@ mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l)
          bson_string_append (astr, " .");
       }
 
-      if ((_i % 16) == 15) {
+      if (rem == 15u) {
          mongoc_log (
             MONGOC_LOG_LEVEL_TRACE, domain, "%s %s", str->str, astr->str);
          bson_string_truncate (str, 0);
          bson_string_truncate (astr, 0);
-      } else if ((_i % 16) == 7) {
+      } else if (rem == 7u) {
          bson_string_append (str, " ");
          bson_string_append (astr, " ");
       }
    }
 
-   if (_i != 16) {
+   if (_i != 16u) {
       mongoc_log (
          MONGOC_LOG_LEVEL_TRACE, domain, "%-56s %s", str->str, astr->str);
    }
