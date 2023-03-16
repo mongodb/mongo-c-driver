@@ -1573,15 +1573,12 @@ run_distinct_on_each_mongos (test_t *test,
 {
    bool ret = false;
    bson_t *cmd = NULL;
-   int i;
    test_runner_t *runner = test->test_file->test_runner;
 
    cmd = BCON_NEW ("distinct", coll_name, "key", "x", "query", "{", "}");
 
-   for (i = 0; i < runner->server_ids.len; i++) {
-      uint32_t server_id;
-
-      server_id = _mongoc_array_index (&runner->server_ids, uint32_t, i);
+   for (size_t i = 0u; i < runner->server_ids.len; i++) {
+      const uint32_t server_id = _mongoc_array_index (&runner->server_ids, uint32_t, i);
       if (!mongoc_client_command_simple_with_server_id (
              test->test_file->test_runner->internal_client,
              db_name,
