@@ -1498,6 +1498,8 @@ test_generate_atlas_results (test_t *test, bson_error_t *error)
       return true;
    }
 
+   MONGOC_DEBUG ("generating events.json and results.json files...");
+
    size_t *const iterations =
       entity_map_get_size_t (test->entity_map, "iterations", NULL);
    size_t *const successes =
@@ -1560,6 +1562,8 @@ test_generate_atlas_results (test_t *test, bson_error_t *error)
 
    bson_destroy (&events_doc);
    bson_destroy (&results_doc);
+
+   MONGOC_DEBUG ("generating events.json and results.json files... done.");
 
    return true;
 }
