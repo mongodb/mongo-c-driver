@@ -213,7 +213,7 @@ typedef const bson_t *(*get_reply_func_t) (const void *);
 typedef const char *(*get_command_name_func_t) (const void *);
 typedef const char *(*get_database_name_func_t) (const void *);
 typedef const bson_oid_t *(*get_service_id_func_t) (const void *);
-typedef int64_t (*get_server_connection_id_func_t) (const void *);
+typedef int32_t (*get_server_connection_id_func_t) (const void *);
 
 
 typedef struct command_callback_funcs_t {
