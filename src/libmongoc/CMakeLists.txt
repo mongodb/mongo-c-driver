@@ -952,7 +952,6 @@ target_sources (test-libmongoc-lib PRIVATE
    ${PROJECT_SOURCE_DIR}/tests/mock_server/sync-queue.c
    ${PROJECT_SOURCE_DIR}/tests/test-conveniences.c
    ${PROJECT_SOURCE_DIR}/tests/test-happy-eyeballs.c
-   ${PROJECT_SOURCE_DIR}/tests/test-libmongoc.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-array.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-async.c
@@ -1073,7 +1072,7 @@ function (mongoc_add_test test)
 endfunction ()
 
 mongoc_add_test (test-libmongoc ${PROJECT_SOURCE_DIR}/tests/test-libmongoc-main.c)
-mongoc_add_test (test-atlas-executor ${PROJECT_SOURCE_DIR}/tests/test-atlas-executor)
+mongoc_add_test (test-atlas-executor ${PROJECT_SOURCE_DIR}/tests/test-atlas-executor.c)
 mongoc_add_test (test-mongoc-gssapi ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 mongoc_add_test (test-mongoc-cache ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 mongoc_add_test (test-azurekms ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
