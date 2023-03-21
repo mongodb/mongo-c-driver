@@ -32,29 +32,6 @@ TestSuite_Init_Atlas (TestSuite *suite, int argc, char **argv)
    };
 }
 
-bson_t *
-workload_spec_to_bson (const char *workload_spec)
-{
-   BSON_ASSERT_PARAM (workload_spec);
-
-   bson_t *const res = bson_new ();
-
-   const size_t workload_spec_len = strlen (workload_spec);
-   const size_t bson_json_default_buf_size = 1u << 14; // From bson-json.c.
-
-   bson_json_reader_t *const reader =
-      bson_json_data_reader_new (false, bson_json_default_buf_size);
-   bson_json_data_reader_ingest (
-      reader, (const uint8_t *) workload_spec, workload_spec_len);
-
-
-   bson_error_t error;
-   ASSERT_OR_PRINT (bson_json_reader_read (reader, res, &error) == 1, error);
-   bson_json_reader_destroy (reader);
-
-   return res;
-}
-
 // Used to ensure that repeated SIGINT are not ignored.
 void (*original_sigint_handler) (int) = NULL;
 
@@ -95,7 +72,10 @@ main (int argc, char **argv)
    TestSuite suite = {0};
    TestSuite_Init_Atlas (&suite, argc, argv);
 
-   bson_t *const bson = workload_spec_to_bson (argv[1]);
+   bson_error_t error;
+   bson_t *const bson =
+      bson_new_from_json ((const uint8_t *) argv[1], -1, &error);
+   ASSERT_OR_PRINT (bson, error);
 
    TestSuite_AddFull (&suite,
                       "test",
