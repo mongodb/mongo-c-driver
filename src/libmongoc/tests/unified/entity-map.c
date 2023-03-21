@@ -2011,7 +2011,7 @@ entity_map_add_bson_array (entity_map_t *em,
    // Note: the specification states we should be storing a BSON object of array
    // type, but we use an array of BSON objects instead to make append and
    // iteration easier.
-   mongoc_array_t *array = BSON_ALIGNED_ALLOC (mongoc_array_t);
+   mongoc_array_t *array = bson_malloc (sizeof (mongoc_array_t));
    mongoc_array_aligned_init (array, bson_t *);
    return _entity_map_add (em, id, "bson_array", (void *) array, error);
 }
