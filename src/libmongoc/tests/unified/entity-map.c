@@ -207,23 +207,28 @@ should_ignore_event (entity_t *client_entity, event_t *event)
 }
 
 
-typedef void *(*get_context_func_t) (const void *);
-typedef const bson_t *(*get_command_func_t) (const void *);
-typedef const bson_t *(*get_reply_func_t) (const void *);
-typedef const char *(*get_command_name_func_t) (const void *);
-typedef const char *(*get_database_name_func_t) (const void *);
-typedef const bson_oid_t *(*get_service_id_func_t) (const void *);
-typedef int32_t (*get_server_connection_id_func_t) (const void *);
+typedef void *(*apm_func_void_t) (const void *);
+typedef const bson_t *(*apm_func_bson_t) (const void *);
+typedef const char *(*apm_func_utf8_t) (const void *);
+typedef int64_t (*apm_func_int64_t) (const void *);
+typedef const bson_oid_t *(*apm_func_bson_oid_t) (const void *);
+typedef int32_t (*apm_func_int32_t) (const void *);
+typedef const mongoc_host_list_t *(*apm_func_host_list_t) (const void *);
+typedef void (*apm_func_serialize_t) (bson_t *, const void *);
 
 
 typedef struct command_callback_funcs_t {
-   get_context_func_t get_context;
-   get_command_func_t get_command;
-   get_reply_func_t get_reply;
-   get_command_name_func_t get_command_name;
-   get_database_name_func_t get_database_name;
-   get_service_id_func_t get_service_id;
-   get_server_connection_id_func_t get_server_connection_id;
+   apm_func_void_t get_context;
+   apm_func_bson_t get_command;
+   apm_func_bson_t get_reply;
+   apm_func_utf8_t get_command_name;
+   apm_func_utf8_t get_database_name;
+   apm_func_int64_t get_request_id;
+   apm_func_int64_t get_operation_id;
+   apm_func_bson_oid_t get_service_id;
+   apm_func_host_list_t get_host;
+   apm_func_int32_t get_server_connection_id;
+   apm_func_serialize_t serialize;
 } command_callback_funcs_t;
 
 
@@ -255,8 +260,10 @@ observe_event (entity_t *entity,
          bson_strdup (funcs.get_database_name (apm_command));
    }
 
-   if (funcs.get_service_id (apm_command)) {
-      bson_oid_copy (funcs.get_service_id (apm_command), &event->service_id);
+   BSON_ASSERT (funcs.get_service_id);
+   const bson_oid_t *const service_id = funcs.get_service_id (apm_command);
+   if (service_id) {
+      bson_oid_copy (service_id, &event->service_id);
    }
 
    BSON_ASSERT (funcs.get_server_connection_id);
@@ -272,7 +279,147 @@ observe_event (entity_t *entity,
 
 
 static void
-store_event_to_entities (entity_t *entity, const char *type)
+store_event_serialize_started (bson_t *doc,
+                               const mongoc_apm_command_started_t *apm_command)
+{
+   BSON_APPEND_DOCUMENT (
+      doc, "command", mongoc_apm_command_started_get_command (apm_command));
+
+   BSON_APPEND_UTF8 (
+      doc,
+      "databaseName",
+      mongoc_apm_command_started_get_database_name (apm_command));
+
+   BSON_APPEND_UTF8 (doc,
+                     "commandName",
+                     mongoc_apm_command_started_get_command_name (apm_command));
+
+   BSON_APPEND_INT64 (doc,
+                      "requestId",
+                      mongoc_apm_command_started_get_request_id (apm_command));
+
+   BSON_APPEND_INT64 (
+      doc,
+      "operationId",
+      mongoc_apm_command_started_get_operation_id (apm_command));
+
+   BSON_APPEND_UTF8 (
+      doc,
+      "connectionId",
+      mongoc_apm_command_started_get_host (apm_command)->host_and_port);
+
+   BSON_APPEND_INT32 (
+      doc,
+      "serverConnectionId",
+      mongoc_apm_command_started_get_server_connection_id (apm_command));
+
+   {
+      const bson_oid_t *const service_id =
+         mongoc_apm_command_started_get_service_id (apm_command);
+
+      if (service_id) {
+         BSON_APPEND_OID (doc, "serviceId", service_id);
+      }
+   }
+}
+
+
+static void
+store_event_serialize_failed (bson_t *doc,
+                              const mongoc_apm_command_failed_t *apm_command)
+{
+   BSON_APPEND_INT64 (
+      doc, "duration", mongoc_apm_command_failed_get_duration (apm_command));
+
+   BSON_APPEND_UTF8 (doc,
+                     "commandName",
+                     mongoc_apm_command_failed_get_command_name (apm_command));
+
+   {
+      bson_error_t error;
+      mongoc_apm_command_failed_get_error (apm_command, &error);
+      BSON_APPEND_UTF8 (doc, "failure", error.message);
+   }
+
+   BSON_APPEND_INT64 (
+      doc, "requestId", mongoc_apm_command_failed_get_request_id (apm_command));
+
+   BSON_APPEND_INT64 (doc,
+                      "operationId",
+                      mongoc_apm_command_failed_get_operation_id (apm_command));
+
+   BSON_APPEND_UTF8 (
+      doc,
+      "connectionId",
+      mongoc_apm_command_failed_get_host (apm_command)->host_and_port);
+
+   BSON_APPEND_INT32 (
+      doc,
+      "serverConnectionId",
+      mongoc_apm_command_failed_get_server_connection_id (apm_command));
+
+   {
+      const bson_oid_t *const service_id =
+         mongoc_apm_command_failed_get_service_id (apm_command);
+
+      if (service_id) {
+         BSON_APPEND_OID (doc, "serviceId", service_id);
+      }
+   }
+}
+
+
+static void
+store_event_serialize_succeeded (
+   bson_t *doc, const mongoc_apm_command_succeeded_t *apm_command)
+{
+   BSON_APPEND_INT64 (
+      doc, "duration", mongoc_apm_command_succeeded_get_duration (apm_command));
+
+   BSON_APPEND_DOCUMENT (
+      doc, "reply", mongoc_apm_command_succeeded_get_reply (apm_command));
+
+   BSON_APPEND_UTF8 (
+      doc,
+      "commandName",
+      mongoc_apm_command_succeeded_get_command_name (apm_command));
+
+   BSON_APPEND_INT64 (
+      doc,
+      "requestId",
+      mongoc_apm_command_succeeded_get_request_id (apm_command));
+
+   BSON_APPEND_INT64 (
+      doc,
+      "operationId",
+      mongoc_apm_command_succeeded_get_operation_id (apm_command));
+
+   BSON_APPEND_UTF8 (
+      doc,
+      "connectionId",
+      mongoc_apm_command_succeeded_get_host (apm_command)->host_and_port);
+
+   BSON_APPEND_INT32 (
+      doc,
+      "serverConnectionId",
+      mongoc_apm_command_succeeded_get_server_connection_id (apm_command));
+
+   {
+      const bson_oid_t *const service_id =
+         mongoc_apm_command_succeeded_get_service_id (apm_command);
+
+      if (service_id) {
+         BSON_APPEND_OID (doc, "serviceId", service_id);
+      }
+   }
+}
+
+
+static void
+store_event_to_entities (entity_t *entity,
+                         command_callback_funcs_t funcs,
+                         const char *type,
+                         const void *apm_command)
 {
    BSON_ASSERT_PARAM (entity);
    BSON_ASSERT_PARAM (type);
@@ -296,8 +443,16 @@ store_event_to_entities (entity_t *entity, const char *type)
          ASSERT_OR_PRINT (arr, error);
 
          bson_t *doc = bson_new ();
+
+         // Spec: the following fields MUST be stored with each event document:
          BSON_APPEND_UTF8 (doc, "name", type);
          BSON_APPEND_DOUBLE (doc, "observedAt", secs);
+
+         // The event subscriber MUST serialize the events it receives into a
+         // document, using the documented properties of the event as field
+         // names, and append the document to the list stored in the specified
+         // entity.
+         funcs.serialize (doc, apm_command);
 
          _mongoc_array_append_val (arr, doc); // Transfer ownership.
       }
@@ -317,7 +472,7 @@ apm_command_callback (command_callback_funcs_t funcs,
    entity_t *const entity = (entity_t *) funcs.get_context (apm_command);
 
    observe_event (entity, funcs, type, apm_command);
-   store_event_to_entities (entity, type);
+   store_event_to_entities (entity, funcs, type, apm_command);
 }
 
 
@@ -325,19 +480,23 @@ static void
 command_started (const mongoc_apm_command_started_t *started)
 {
    command_callback_funcs_t funcs = {
-      .get_context =
-         (get_context_func_t) mongoc_apm_command_started_get_context,
-      .get_command =
-         (get_command_func_t) mongoc_apm_command_started_get_command,
+      .get_context = (apm_func_void_t) mongoc_apm_command_started_get_context,
+      .get_command = (apm_func_bson_t) mongoc_apm_command_started_get_command,
       .get_reply = NULL,
       .get_command_name =
-         (get_command_name_func_t) mongoc_apm_command_started_get_command_name,
-      .get_database_name = (get_database_name_func_t)
-         mongoc_apm_command_started_get_database_name,
+         (apm_func_utf8_t) mongoc_apm_command_started_get_command_name,
+      .get_database_name =
+         (apm_func_utf8_t) mongoc_apm_command_started_get_database_name,
+      .get_request_id =
+         (apm_func_int64_t) mongoc_apm_command_started_get_request_id,
+      .get_operation_id =
+         (apm_func_int64_t) mongoc_apm_command_started_get_operation_id,
       .get_service_id =
-         (get_service_id_func_t) mongoc_apm_command_started_get_service_id,
-      .get_server_connection_id = (get_server_connection_id_func_t)
-         mongoc_apm_command_started_get_server_connection_id,
+         (apm_func_bson_oid_t) mongoc_apm_command_started_get_service_id,
+      .get_host = (apm_func_host_list_t) mongoc_apm_command_started_get_host,
+      .get_server_connection_id =
+         (apm_func_int32_t) mongoc_apm_command_started_get_server_connection_id,
+      .serialize = (apm_func_serialize_t) store_event_serialize_started,
    };
 
    apm_command_callback (funcs, "commandStartedEvent", started);
@@ -347,16 +506,22 @@ static void
 command_failed (const mongoc_apm_command_failed_t *failed)
 {
    command_callback_funcs_t funcs = {
-      .get_context = (get_context_func_t) mongoc_apm_command_failed_get_context,
+      .get_context = (apm_func_void_t) mongoc_apm_command_failed_get_context,
       .get_command = NULL,
-      .get_reply = (get_reply_func_t) mongoc_apm_command_failed_get_reply,
+      .get_reply = (apm_func_bson_t) mongoc_apm_command_failed_get_reply,
       .get_command_name =
-         (get_command_name_func_t) mongoc_apm_command_failed_get_command_name,
+         (apm_func_utf8_t) mongoc_apm_command_failed_get_command_name,
       .get_database_name = NULL,
+      .get_request_id =
+         (apm_func_int64_t) mongoc_apm_command_failed_get_request_id,
+      .get_operation_id =
+         (apm_func_int64_t) mongoc_apm_command_failed_get_operation_id,
       .get_service_id =
-         (get_service_id_func_t) mongoc_apm_command_failed_get_service_id,
-      .get_server_connection_id = (get_server_connection_id_func_t)
-         mongoc_apm_command_failed_get_server_connection_id,
+         (apm_func_bson_oid_t) mongoc_apm_command_failed_get_service_id,
+      .get_host = (apm_func_host_list_t) mongoc_apm_command_failed_get_host,
+      .get_server_connection_id =
+         (apm_func_int32_t) mongoc_apm_command_failed_get_server_connection_id,
+      .serialize = (apm_func_serialize_t) store_event_serialize_failed,
    };
 
    apm_command_callback (funcs, "commandFailedEvent", failed);
@@ -366,17 +531,22 @@ static void
 command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
 {
    command_callback_funcs_t funcs = {
-      .get_context =
-         (get_context_func_t) mongoc_apm_command_succeeded_get_context,
+      .get_context = (apm_func_void_t) mongoc_apm_command_succeeded_get_context,
       .get_command = NULL,
-      .get_reply = (get_reply_func_t) mongoc_apm_command_succeeded_get_reply,
-      .get_command_name = (get_command_name_func_t)
-         mongoc_apm_command_succeeded_get_command_name,
+      .get_reply = (apm_func_bson_t) mongoc_apm_command_succeeded_get_reply,
+      .get_command_name =
+         (apm_func_utf8_t) mongoc_apm_command_succeeded_get_command_name,
       .get_database_name = NULL,
+      .get_request_id =
+         (apm_func_int64_t) mongoc_apm_command_succeeded_get_request_id,
+      .get_operation_id =
+         (apm_func_int64_t) mongoc_apm_command_succeeded_get_operation_id,
       .get_service_id =
-         (get_service_id_func_t) mongoc_apm_command_succeeded_get_service_id,
-      .get_server_connection_id = (get_server_connection_id_func_t)
+         (apm_func_bson_oid_t) mongoc_apm_command_succeeded_get_service_id,
+      .get_host = (apm_func_host_list_t) mongoc_apm_command_succeeded_get_host,
+      .get_server_connection_id = (apm_func_int32_t)
          mongoc_apm_command_succeeded_get_server_connection_id,
+      .serialize = (apm_func_serialize_t) store_event_serialize_succeeded,
    };
 
    apm_command_callback (funcs, "commandSucceededEvent", succeeded);
