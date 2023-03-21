@@ -903,3 +903,42 @@ _mongoc_iter_document_as_bson (const bson_iter_t *iter,
 
    return true;
 }
+
+uint8_t *
+hex_to_bin (const char *hex, uint32_t *len)
+{
+   int i;
+   int hex_len;
+   uint8_t *out;
+
+   hex_len = strlen (hex);
+   if (hex_len % 2 != 0) {
+      return NULL;
+   }
+
+   *len = hex_len / 2;
+   out = bson_malloc0 (*len);
+
+   for (i = 0; i < hex_len; i += 2) {
+      uint32_t hex_char;
+
+      if (1 != sscanf (hex + i, "%2x", &hex_char)) {
+         bson_free (out);
+         return NULL;
+      }
+      out[i / 2] = (uint8_t) hex_char;
+   }
+   return out;
+}
+
+char *
+bin_to_hex (const uint8_t *bin, uint32_t len)
+{
+   char *out = bson_malloc0 (2 * len + 1);
+   uint32_t i;
+
+   for (i = 0; i < len; i++) {
+      bson_snprintf (out + (2 * i), 3, "%02x", bin[i]);
+   }
+   return out;
+}

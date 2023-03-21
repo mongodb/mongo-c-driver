@@ -44,7 +44,7 @@ information:
 - The version of the driver you are trying to build (branch or tag).
     - Examples: ``r1.17`` (branch), ``1.9.5`` (tag)
 - Host OS, version, and architecture.
-    - Examples: Windows 10 64-bit x86, Ubuntu 16.04 64-bit x86, macOS 10.13
+    - Examples: Windows 10 64-bit x86, Ubuntu 16.04 64-bit x86, macOS 11.0
 - C Compiler and version.
     - Examples: GCC 7.3.0, Visual Studio Community 2017, clang 3.9, XCode 9.3
 - The output of any ``cmake``, ``make``, or other commands executed during the build.
