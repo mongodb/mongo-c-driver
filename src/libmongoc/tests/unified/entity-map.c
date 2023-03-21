@@ -282,8 +282,10 @@ static void
 store_event_serialize_started (bson_t *doc,
                                const mongoc_apm_command_started_t *apm_command)
 {
-   BSON_APPEND_DOCUMENT (
-      doc, "command", mongoc_apm_command_started_get_command (apm_command));
+   // Spec: The test runner MAY omit the command field for CommandStartedEvent
+   // and reply field for CommandSucceededEvent.
+   // BSON_APPEND_DOCUMENT (
+   //    doc, "command", mongoc_apm_command_started_get_command (apm_command));
 
    BSON_APPEND_UTF8 (
       doc,
@@ -376,8 +378,10 @@ store_event_serialize_succeeded (
    BSON_APPEND_INT64 (
       doc, "duration", mongoc_apm_command_succeeded_get_duration (apm_command));
 
-   BSON_APPEND_DOCUMENT (
-      doc, "reply", mongoc_apm_command_succeeded_get_reply (apm_command));
+   // Spec: The test runner MAY omit the command field for CommandStartedEvent
+   // and reply field for CommandSucceededEvent.
+   // BSON_APPEND_DOCUMENT (
+   //    doc, "reply", mongoc_apm_command_succeeded_get_reply (apm_command));
 
    BSON_APPEND_UTF8 (
       doc,
