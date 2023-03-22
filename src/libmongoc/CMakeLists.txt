@@ -1035,6 +1035,10 @@ if (ENABLE_TESTS)
             $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
             mongoc_static
       )
+      # We have tests that test our deprecated api.
+      target_compile_options (test-libmongoc-lib
+         PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
+      )
       target_include_directories (${test}
          PRIVATE
             ${PROJECT_SOURCE_DIR}/tests
