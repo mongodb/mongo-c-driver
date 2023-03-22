@@ -1036,7 +1036,7 @@ if (ENABLE_TESTS)
             mongoc_static
       )
       # We have tests that test our deprecated api.
-      target_compile_options (test-libmongoc-lib
+      target_compile_options (${test}
          PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
       )
       target_include_directories (${test}
