@@ -170,5 +170,5 @@ usecs_since_epoch (void)
    BSON_ASSERT (INT64_MAX / factor >= secs);
    BSON_ASSERT (INT64_MAX - (factor * secs) >= usecs);
 
-   return tv.tv_sec * factor + usecs;
+   return secs * factor + usecs;
 }
