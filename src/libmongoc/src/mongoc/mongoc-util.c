@@ -675,9 +675,9 @@ _mongoc_getenv (const char *name)
       return NULL;
    }
 #else
-
-   if (getenv (name) && strlen (getenv (name))) {
-      return bson_strdup (getenv (name));
+   char* const var = getenv (name);
+   if (var && strlen (var)) {
+      return bson_strdup (var);
    } else {
       return NULL;
    }
