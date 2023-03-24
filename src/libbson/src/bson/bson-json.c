@@ -741,26 +741,13 @@ _bson_json_parse_double (bson_json_reader_t *reader,
    *d = strtod (val, NULL);
 
 #ifdef _MSC_VER
-#ifdef INFINITY
    const double pos_inf = INFINITY;
    const double neg_inf = -pos_inf;
-#else
-   const unsigned long inf_rep[2] = {0x00000000, 0x7ff00000};
-   const double pos_inf = *(double *) inf;
-   const double neg_inf = -pos_inf;
-#endif
 
    /* Microsoft's strtod parses "NaN", "Infinity", "-Infinity" as 0 */
    if (*d == 0.0) {
       if (!_strnicmp (val, "nan", vlen)) {
-#ifdef NAN
          *d = NAN;
-#else
-         /* Visual Studio 2010 doesn't define NAN or INFINITY
-          * https://msdn.microsoft.com/en-us/library/w22adx1s(v=vs.100).aspx */
-         unsigned long nan[2] = {0xffffffff, 0x7fffffff};
-         *d = *(double *) nan;
-#endif
          return true;
       } else if (!_strnicmp (val, "infinity", vlen)) {
          *d = pos_inf;

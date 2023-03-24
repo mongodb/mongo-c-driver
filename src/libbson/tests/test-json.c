@@ -377,7 +377,6 @@ test_bson_as_json_double (void)
 }
 
 
-#if defined(NAN) && defined(INFINITY)
 static void
 test_bson_as_json_double_nonfinite (void)
 {
@@ -409,7 +408,6 @@ test_bson_as_json_double_nonfinite (void)
    bson_free (str);
    bson_destroy (b);
 }
-#endif
 
 
 static void
@@ -3467,11 +3465,9 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/as_json/int32", test_bson_as_json_int32);
    TestSuite_Add (suite, "/bson/as_json/int64", test_bson_as_json_int64);
    TestSuite_Add (suite, "/bson/as_json/double", test_bson_as_json_double);
-#if defined(NAN) && defined(INFINITY)
    TestSuite_Add (suite,
                   "/bson/as_json/double/nonfinite",
                   test_bson_as_json_double_nonfinite);
-#endif
    TestSuite_Add (suite, "/bson/as_json/code", test_bson_as_json_code);
    TestSuite_Add (
       suite, "/bson/as_json/date_time", test_bson_as_json_date_time);
