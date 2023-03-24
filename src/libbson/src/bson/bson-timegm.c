@@ -271,8 +271,7 @@ timesub (const int64_t *const timep,
          const struct state *const sp,
          struct bson_tm *const tmp);
 static int64_t
-tmcomp (const struct bson_tm *const atmp,
-        const struct bson_tm *const btmp);
+tmcomp (const struct bson_tm *const atmp, const struct bson_tm *const btmp);
 
 static struct state gmtmem;
 #define gmtptr (&gmtmem)
@@ -531,8 +530,7 @@ normalize_overflow32 (int_fast32_t *const tensptr,
 }
 
 static int64_t
-tmcomp (const struct bson_tm *const atmp,
-        const struct bson_tm *const btmp)
+tmcomp (const struct bson_tm *const atmp, const struct bson_tm *const btmp)
 {
    int64_t result;
 
