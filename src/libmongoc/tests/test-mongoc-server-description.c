@@ -388,33 +388,54 @@ test_server_description_connection_id (void)
    bson_t *hello;
    bson_error_t error;
 
-   mongoc_server_description_init (&sd, "host:1234", 1);
-   hello = BCON_NEW ("minWireVersion",
-                     BCON_INT32 (WIRE_VERSION_MIN),
-                     "maxWireVersion",
-                     BCON_INT32 (WIRE_VERSION_MAX),
-                     "connectionId",
-                     BCON_INT32 (1));
-   memset (&error, 0, sizeof (bson_error_t));
-   mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
-   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
-   BSON_ASSERT (sd.server_connection_id == 1);
-
-   mongoc_server_description_reset (&sd);
-   bson_destroy (hello);
-   hello = BCON_NEW ("minWireVersion",
-                     BCON_INT32 (WIRE_VERSION_MIN),
-                     "maxWireVersion",
-                     BCON_INT32 (WIRE_VERSION_MAX),
-                     "connectionId",
-                     BCON_INT64 (1));
-   memset (&error, 0, sizeof (bson_error_t));
-   mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
-   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
-   BSON_ASSERT (sd.server_connection_id == 1);
-
-   bson_destroy (hello);
-   mongoc_server_description_cleanup (&sd);
+   // Test an int32.
+   {
+      mongoc_server_description_init (&sd, "host:1234", 1);
+      hello = BCON_NEW ("minWireVersion",
+                        BCON_INT32 (WIRE_VERSION_MIN),
+                        "maxWireVersion",
+                        BCON_INT32 (WIRE_VERSION_MAX),
+                        "connectionId",
+                        BCON_INT32 (1));
+      memset (&error, 0, sizeof (bson_error_t));
+      mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
+      BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+      ASSERT_CMPINT64 (sd.server_connection_id, ==, 1);
+      mongoc_server_description_cleanup (&sd);
+      bson_destroy (hello);
+   }
+   // Test an int64.
+   {
+      mongoc_server_description_init (&sd, "host:1234", 1);
+      hello = BCON_NEW ("minWireVersion",
+                        BCON_INT32 (WIRE_VERSION_MIN),
+                        "maxWireVersion",
+                        BCON_INT32 (WIRE_VERSION_MAX),
+                        "connectionId",
+                        BCON_INT64 (1));
+      memset (&error, 0, sizeof (bson_error_t));
+      mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
+      BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+      ASSERT_CMPINT64 (sd.server_connection_id, ==, 1);
+      bson_destroy (hello);
+      mongoc_server_description_cleanup (&sd);
+   }
+   // Test a double.
+   {
+      mongoc_server_description_init (&sd, "host:1234", 1);
+      hello = BCON_NEW ("minWireVersion",
+                        BCON_INT32 (WIRE_VERSION_MIN),
+                        "maxWireVersion",
+                        BCON_INT32 (WIRE_VERSION_MAX),
+                        "connectionId",
+                        BCON_DOUBLE (1));
+      memset (&error, 0, sizeof (bson_error_t));
+      mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
+      BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+      BSON_ASSERT (sd.server_connection_id == 1);
+      bson_destroy (hello);
+      mongoc_server_description_cleanup (&sd);
+   }
 }
 
 static void
