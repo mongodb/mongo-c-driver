@@ -3318,7 +3318,7 @@ append_loop_error (entity_map_t *em,
 
 // Expected to be set by a SIGINT (on Linux and OS X) or CTRL_BREAK_EVENT (on
 // Windows) handler when test suite is being executed by test-atlas-executor.
-bool operation_loop_terminated = false;
+volatile sig_atomic_t operation_loop_terminated = false;
 
 static bool
 operation_loop (test_t *test,
