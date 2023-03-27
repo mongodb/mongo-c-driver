@@ -19,12 +19,13 @@
 #include <bson/bson.h>
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 typedef struct {
    uint32_t depth;
-   int max_depth;
+   uint32_t max_depth;
    bool valid;
 } check_depth_t;
 
@@ -74,7 +75,7 @@ _check_depth_document (const bson_iter_t *iter,
 }
 
 void
-check_depth (const bson_t *bson, int max_depth)
+check_depth (const bson_t *bson, uint32_t max_depth)
 {
    bson_iter_t iter;
    check_depth_t state = {0};
@@ -87,7 +88,8 @@ check_depth (const bson_t *bson, int max_depth)
    state.max_depth = max_depth;
    _check_depth_document (&iter, NULL, bson, &state);
    if (!state.valid) {
-      printf ("document exceeds maximum depth of %d\n", state.max_depth);
+      printf ("document exceeds maximum depth of %" PRIu32 "\n",
+              state.max_depth);
    } else {
       char *as_json = bson_as_canonical_extended_json (bson, NULL);
       printf ("document %s ", as_json);
@@ -102,9 +104,7 @@ main (int argc, char **argv)
    bson_reader_t *bson_reader;
    const bson_t *bson;
    bool reached_eof;
-   char *filename;
    bson_error_t error;
-   int max_depth;
 
    if (argc != 3) {
       fprintf (stderr, "usage: %s FILE MAX_DEPTH\n", argv[0]);
@@ -112,16 +112,19 @@ main (int argc, char **argv)
       fprintf (stderr, "does not exceed MAX_DEPTH\n");
    }
 
-   filename = argv[1];
-   max_depth = atoi (argv[2]);
+   const char *const filename = argv[1];
+   const int max_depth = atoi (argv[2]);
+
    bson_reader = bson_reader_new_from_file (filename, &error);
    if (!bson_reader) {
       printf ("could not read %s: %s\n", filename, error.message);
       return 1;
    }
 
+   BSON_ASSERT (bson_in_range_signed (uint32_t, max_depth));
+
    while ((bson = bson_reader_read (bson_reader, &reached_eof))) {
-      check_depth (bson, max_depth);
+      check_depth (bson, (uint32_t) max_depth);
    }
 
    if (!reached_eof) {

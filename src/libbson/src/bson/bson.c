@@ -2993,12 +2993,13 @@ _bson_as_json_visit_after (const bson_iter_t *iter, const char *key, void *data)
       return false;
    }
 
-   if (state->str->len >= state->max_len) {
+   if (bson_cmp_greater_equal_us (state->str->len, state->max_len)) {
       state->max_len_reached = true;
 
-      if (state->str->len > state->max_len) {
+      if (bson_cmp_greater_us (state->str->len, state->max_len)) {
+         BSON_ASSERT (bson_in_range_signed (uint32_t, state->max_len));
          /* Truncate string to maximum length */
-         bson_string_truncate (state->str, state->max_len);
+         bson_string_truncate (state->str, (uint32_t) state->max_len);
       }
 
       return true;
@@ -3106,7 +3107,8 @@ _bson_as_json_visit_codewscope (const bson_iter_t *iter,
 
    /* Encode scope with the same mode */
    if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
-      max_scope_len = BSON_MAX (0, state->max_len - state->str->len);
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, state->str->len));
+      max_scope_len = BSON_MAX (0, state->max_len - (int32_t) state->str->len);
    }
 
    scope = _bson_as_json_visit_all (v_scope, NULL, state->mode, max_scope_len);
@@ -3165,7 +3167,9 @@ _bson_as_json_visit_document (const bson_iter_t *iter,
       child_state.mode = state->mode;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
       if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
-         child_state.max_len = BSON_MAX (0, state->max_len - state->str->len);
+         BSON_ASSERT (bson_in_range_unsigned (int32_t, state->str->len));
+         child_state.max_len =
+            BSON_MAX (0, state->max_len - (int32_t) state->str->len);
       }
 
       child_state.max_len_reached = child_state.max_len == 0;
@@ -3216,7 +3220,9 @@ _bson_as_json_visit_array (const bson_iter_t *iter,
       child_state.mode = state->mode;
       child_state.max_len = BSON_MAX_LEN_UNLIMITED;
       if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
-         child_state.max_len = BSON_MAX (0, state->max_len - state->str->len);
+         BSON_ASSERT (bson_in_range_unsigned (int32_t, state->str->len));
+         child_state.max_len =
+            BSON_MAX (0, state->max_len - (int32_t) state->str->len);
       }
 
       child_state.max_len_reached = child_state.max_len == 0;

@@ -81,8 +81,12 @@ static bson_metrics_state_t state;
 static int
 compar_bson_type_metrics (const void *a, const void *b)
 {
-   return (((bson_type_metrics_t *) b)->count -
-           ((bson_type_metrics_t *) a)->count);
+   const uint64_t a_count = ((bson_type_metrics_t *) a)->count;
+   const uint64_t b_count = ((bson_type_metrics_t *) b)->count;
+   if (a_count == b_count) {
+      return 0;
+   }
+   return a_count < b_count ? -1 : 1;
 }
 
 /*

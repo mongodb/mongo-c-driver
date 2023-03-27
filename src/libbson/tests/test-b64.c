@@ -36,7 +36,7 @@ _test_encode_helper (char *input,
    ASSERT_CMPSIZE_T (target_size, ==, (size_t) expected_output_len + 1);
    /* returned value does not count trailing NULL. */
    ret = mcommon_b64_ntop ((uint8_t *) input, input_len, output, target_size);
-   ASSERT_CMPINT (target_size - 1, ==, ret);
+   ASSERT (bson_cmp_equal_us (target_size - 1u, ret));
    ASSERT_CMPSTR (output, expected_output);
    bson_free (output);
 }

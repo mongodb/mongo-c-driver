@@ -40,7 +40,10 @@ _aligned_alloc_impl (size_t alignment, size_t num_bytes)
 #elif defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L
 {
    void *mem = NULL;
-   (void) posix_memalign (&mem, alignment, num_bytes);
+
+   // Workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66425.
+   BSON_MAYBE_UNUSED int ret = posix_memalign (&mem, alignment, num_bytes);
+
    return mem;
 }
 #else
