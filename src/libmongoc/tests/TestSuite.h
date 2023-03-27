@@ -85,6 +85,13 @@ bson_open (const char *filename, int flags, ...)
 #endif
 
 
+#define TEST_NOFORK (1 << 1)
+#define TEST_HELPTEXT (1 << 2)
+#define TEST_DEBUGOUTPUT (1 << 3)
+#define TEST_TRACE (1 << 4)
+#define TEST_LISTTESTS (1 << 5)
+
+
 #define CERT_CA CERT_TEST_DIR "/ca.pem"
 #define CERT_CRL CERT_TEST_DIR "/crl.pem"
 #define CERT_SERVER CERT_TEST_DIR "/server.pem" /* 127.0.0.1 & localhost */

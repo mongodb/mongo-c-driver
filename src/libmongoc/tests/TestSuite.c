@@ -50,12 +50,6 @@ static bson_mutex_t gTestMutex;
 static TestSuite *gTestSuite;
 
 
-#define TEST_NOFORK (1 << 1)
-#define TEST_HELPTEXT (1 << 2)
-#define TEST_DEBUGOUTPUT (1 << 3)
-#define TEST_TRACE (1 << 4)
-#define TEST_LISTTESTS (1 << 5)
-
 MONGOC_PRINTF_FORMAT (1, 2)
 static void
 test_msg (const char *format, ...)

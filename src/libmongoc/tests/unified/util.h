@@ -33,4 +33,7 @@ bson_type_to_string (bson_type_t btype);
 bool
 is_unsupported_event_type (const char *event_type);
 
+int64_t
+usecs_since_epoch (void);
+
 #endif /* UNIFIED_UTIL_H */

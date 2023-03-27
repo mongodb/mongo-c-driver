@@ -61,6 +61,7 @@ typedef struct {
    bson_t *outcome;
    entity_map_t *entity_map;
    failpoint_t *failpoints;
+   bool loop_operation_executed;
 } test_t;
 
 /* Set server_id to 0 if the failpoint was not against a pinned mongos. */
@@ -73,5 +74,8 @@ register_failpoint (test_t *test,
 /* Run a directory of test files through the unified test runner. */
 void
 run_unified_tests (TestSuite *suite, const char *base, const char *subdir);
+
+void
+run_one_test_file (bson_t *bson);
 
 #endif /* UNIFIED_RUNNER_H */

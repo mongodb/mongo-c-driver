@@ -19,6 +19,20 @@
 #define TEST_LIBMONGOC_H
 
 
+struct _TestSuite;
+struct _bson_t;
+struct _server_version_t;
+
+
+void
+test_libmongoc_init (struct _TestSuite *suite,
+                     const char *name,
+                     int argc,
+                     char **argv);
+void
+test_libmongoc_destroy (struct _TestSuite *suite);
+
+
 mongoc_database_t *
 get_test_database (mongoc_client_t *client);
 char *

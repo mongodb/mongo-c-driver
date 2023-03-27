@@ -762,7 +762,6 @@ endif ()
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
-target_include_directories (mongoc_shared BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
@@ -804,7 +803,6 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       target_compile_options (mongoc_static PUBLIC -fPIC)
       message ("Adding -fPIC to compilation of mongoc_static components")
    endif ()
-   target_include_directories (mongoc_static BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
@@ -856,53 +854,6 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
       DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
 endif ()
-
-function (mongoc_add_test test use_shared)
-   if (ENABLE_TESTS)
-      add_executable (${test} ${ARGN})
-      target_link_libraries (${test}
-         PRIVATE
-            $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
-            $<$<PLATFORM_ID:Windows>:shlwapi>
-            $<$<BOOL:${use_shared}>:mongoc_shared>
-            $<$<NOT:$<BOOL:${use_shared}>>:mongoc_static>
-            ${LIBRARIES}
-            ${RESOLV_LIBRARIES}
-      )
-      # We have tests that test our deprecated api.
-      target_compile_options (${test}
-         PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
-      )
-      target_include_directories (${test}
-         PRIVATE
-            ${PROJECT_SOURCE_DIR}/tests
-            ${MONGOC_INTERNAL_INCLUDE_DIRS}
-            $<$<BOOL:${use_shared}>:${BSON_INCLUDE_DIRS}>
-            $<$<NOT:$<BOOL:${use_shared}>>:${BSON_STATIC_INCLUDE_DIRS}>
-      )
-      target_compile_definitions (${test}
-         PUBLIC
-            "MONGOC_COMPILATION"
-            "BSON_COMPILATION"
-            "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
-      )
-   endif ()
-endfunction ()
-
-function (mongoc_add_example example use_shared)
-   if (ENABLE_EXAMPLES)
-      add_executable (${example} ${ARGN})
-      if (${use_shared})
-         target_link_libraries (${example} mongoc_shared ${LIBRARIES})
-      else ()
-         target_link_libraries (${example} mongoc_static ${LIBRARIES})
-      endif ()
-      if (WIN32)
-         target_link_libraries (${example} shlwapi)
-      endif ()
-      set (EXAMPLES ${EXAMPLES} ${example})
-   endif ()
-endfunction ()
 
 set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/corpus-test.c
@@ -1058,14 +1009,61 @@ if (MONGOC_ENABLE_SASL_CYRUS)
    )
 endif ()
 
-mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
-mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
-mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
-mongoc_add_test (test-azurekms FALSE ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
-mongoc_add_test (test-gcpkms FALSE ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c)
-mongoc_add_test (test-awsauth FALSE ${PROJECT_SOURCE_DIR}/tests/test-awsauth.c)
-
 if (ENABLE_TESTS)
+   add_library (test-libmongoc-lib STATIC ${test-libmongoc-sources})
+   target_link_libraries (test-libmongoc-lib PUBLIC mongoc_static)
+   # We have tests that test our deprecated api.
+   target_compile_options (test-libmongoc-lib
+      PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
+   )
+   target_include_directories (test-libmongoc-lib
+      PRIVATE
+         ${PROJECT_SOURCE_DIR}/tests
+         ${BSON_STATIC_INCLUDE_DIRS}
+   )
+   target_compile_definitions (test-libmongoc-lib
+      PUBLIC
+         "MONGOC_COMPILATION"
+         "BSON_COMPILATION"
+         "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
+   )
+
+   function (mongoc_add_test test)
+      add_executable (${test} ${ARGN})
+      target_link_libraries (${test}
+         PUBLIC
+            $<$<C_COMPILER_ID:MSVC>:DbgHelp.dll>
+            mongoc_static
+      )
+      # We have tests that test our deprecated api.
+      target_compile_options (${test}
+         PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wno-deprecated-declarations>
+      )
+      target_include_directories (${test}
+         PRIVATE
+            ${PROJECT_SOURCE_DIR}/tests
+            ${BSON_STATIC_INCLUDE_DIRS}
+      )
+      target_compile_definitions (${test}
+         PUBLIC
+            "MONGOC_COMPILATION"
+            "BSON_COMPILATION"
+            "MCOMMON_NAME_PREFIX=_mongoc_mcommon"
+      )
+   endfunction ()
+
+   mongoc_add_test (test-libmongoc ${PROJECT_SOURCE_DIR}/tests/test-libmongoc-main.c)
+   target_link_libraries (test-libmongoc PUBLIC test-libmongoc-lib)
+
+   mongoc_add_test (test-atlas-executor ${PROJECT_SOURCE_DIR}/tests/test-atlas-executor.c)
+   target_link_libraries (test-atlas-executor PUBLIC test-libmongoc-lib)
+
+   mongoc_add_test (test-mongoc-gssapi ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
+   mongoc_add_test (test-mongoc-cache ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
+   mongoc_add_test (test-azurekms ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
+   mongoc_add_test (test-gcpkms ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c)
+   mongoc_add_test (test-awsauth ${PROJECT_SOURCE_DIR}/tests/test-awsauth.c)
+
    # "make test" doesn't compile tests, so we create "make check" which compiles
    # and runs tests: https://gitlab.kitware.com/cmake/cmake/issues/8774
    add_custom_target (check COMMAND ${CMAKE_CTEST_COMMAND} -V
@@ -1073,60 +1071,71 @@ if (ENABLE_TESTS)
    )
 endif ()
 
-# examples/
-mongoc_add_example (example-client TRUE ${PROJECT_SOURCE_DIR}/examples/example-client.c)
-mongoc_add_example (example-collection-watch TRUE ${PROJECT_SOURCE_DIR}/examples/example-collection-watch.c)
-if (NOT WIN32)
-   mongoc_add_example (example-resume TRUE ${PROJECT_SOURCE_DIR}/examples/example-resume.c)
-endif()
-mongoc_add_example (example-start-at-optime TRUE ${PROJECT_SOURCE_DIR}/examples/example-start-at-optime.c)
-mongoc_add_example (example-command-monitoring TRUE ${PROJECT_SOURCE_DIR}/examples/example-command-monitoring.c)
-mongoc_add_example (example-command-with-opts TRUE ${PROJECT_SOURCE_DIR}/examples/example-command-with-opts.c)
-mongoc_add_example (example-create-indexes TRUE ${PROJECT_SOURCE_DIR}/examples/example-create-indexes.c)
-mongoc_add_example (example-gridfs TRUE ${PROJECT_SOURCE_DIR}/examples/example-gridfs.c)
-mongoc_add_example (example-gridfs-bucket TRUE ${PROJECT_SOURCE_DIR}/examples/example-gridfs-bucket.c)
-if (NOT WIN32 AND ENABLE_EXAMPLES)
-   mongoc_add_example (example-pool TRUE ${PROJECT_SOURCE_DIR}/examples/example-pool.c)
-   target_link_libraries (example-pool Threads::Threads)
-endif ()
-mongoc_add_example (example-scram TRUE ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
-mongoc_add_example (example-sdam-monitoring TRUE ${PROJECT_SOURCE_DIR}/examples/example-sdam-monitoring.c)
-mongoc_add_example (example-session TRUE ${PROJECT_SOURCE_DIR}/examples/example-session.c)
-mongoc_add_example (example-transaction TRUE ${PROJECT_SOURCE_DIR}/examples/example-transaction.c)
-mongoc_add_example (example-update TRUE ${PROJECT_SOURCE_DIR}/examples/example-update.c)
-mongoc_add_example (find-and-modify TRUE ${PROJECT_SOURCE_DIR}/examples/find-and-modify.c)
-mongoc_add_example (hello_mongoc TRUE ${PROJECT_SOURCE_DIR}/examples/hello_mongoc.c)
-mongoc_add_example (mongoc-dump TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-dump.c)
-mongoc_add_example (mongoc-ping TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-ping.c)
-mongoc_add_example (mongoc-tail TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-tail.c)
+if (ENABLE_EXAMPLES)
+   function (mongoc_add_example example)
+      add_executable (${example} ${ARGN})
+      target_link_libraries (${example} mongoc_shared ${LIBRARIES})
+      if (WIN32)
+         target_link_libraries (${example} shlwapi)
+      endif ()
+      set (EXAMPLES ${EXAMPLES} ${example})
+   endfunction ()
 
-# examples/aggregation/
-mongoc_add_example (aggregation1 TRUE ${PROJECT_SOURCE_DIR}/examples/aggregation/aggregation1.c)
+   # examples/
+   mongoc_add_example (example-client ${PROJECT_SOURCE_DIR}/examples/example-client.c)
+   mongoc_add_example (example-collection-watch ${PROJECT_SOURCE_DIR}/examples/example-collection-watch.c)
+   if (NOT WIN32)
+      mongoc_add_example (example-resume ${PROJECT_SOURCE_DIR}/examples/example-resume.c)
+   endif()
+   mongoc_add_example (example-start-at-optime ${PROJECT_SOURCE_DIR}/examples/example-start-at-optime.c)
+   mongoc_add_example (example-command-monitoring ${PROJECT_SOURCE_DIR}/examples/example-command-monitoring.c)
+   mongoc_add_example (example-command-with-opts ${PROJECT_SOURCE_DIR}/examples/example-command-with-opts.c)
+   mongoc_add_example (example-create-indexes ${PROJECT_SOURCE_DIR}/examples/example-create-indexes.c)
+   mongoc_add_example (example-gridfs ${PROJECT_SOURCE_DIR}/examples/example-gridfs.c)
+   mongoc_add_example (example-gridfs-bucket ${PROJECT_SOURCE_DIR}/examples/example-gridfs-bucket.c)
+   if (NOT WIN32 AND ENABLE_EXAMPLES)
+      mongoc_add_example (example-pool ${PROJECT_SOURCE_DIR}/examples/example-pool.c)
+      target_link_libraries (example-pool Threads::Threads)
+   endif ()
+   mongoc_add_example (example-scram ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
+   mongoc_add_example (example-sdam-monitoring ${PROJECT_SOURCE_DIR}/examples/example-sdam-monitoring.c)
+   mongoc_add_example (example-session ${PROJECT_SOURCE_DIR}/examples/example-session.c)
+   mongoc_add_example (example-transaction ${PROJECT_SOURCE_DIR}/examples/example-transaction.c)
+   mongoc_add_example (example-update ${PROJECT_SOURCE_DIR}/examples/example-update.c)
+   mongoc_add_example (find-and-modify ${PROJECT_SOURCE_DIR}/examples/find-and-modify.c)
+   mongoc_add_example (hello_mongoc ${PROJECT_SOURCE_DIR}/examples/hello_mongoc.c)
+   mongoc_add_example (mongoc-dump ${PROJECT_SOURCE_DIR}/examples/mongoc-dump.c)
+   mongoc_add_example (mongoc-ping ${PROJECT_SOURCE_DIR}/examples/mongoc-ping.c)
+   mongoc_add_example (mongoc-tail ${PROJECT_SOURCE_DIR}/examples/mongoc-tail.c)
 
-# examples/basic_aggregation/
-mongoc_add_example (basic-aggregation TRUE ${PROJECT_SOURCE_DIR}/examples/basic_aggregation/basic-aggregation.c)
+   # examples/aggregation/
+   mongoc_add_example (aggregation1 ${PROJECT_SOURCE_DIR}/examples/aggregation/aggregation1.c)
 
-# examples/bulk/
-mongoc_add_example (bulk-collation TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk-collation.c)
-mongoc_add_example (bulk1 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk1.c)
-mongoc_add_example (bulk2 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk2.c)
-mongoc_add_example (bulk3 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk3.c)
-mongoc_add_example (bulk4 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk4.c)
-mongoc_add_example (bulk5 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk5.c)
-mongoc_add_example (bulk6 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk6.c)
+   # examples/basic_aggregation/
+   mongoc_add_example (basic-aggregation ${PROJECT_SOURCE_DIR}/examples/basic_aggregation/basic-aggregation.c)
 
-# examples/common_operations/
-mongoc_add_example (common-operations TRUE ${PROJECT_SOURCE_DIR}/examples/common_operations/common-operations.c)
+   # examples/bulk/
+   mongoc_add_example (bulk-collation ${PROJECT_SOURCE_DIR}/examples/bulk/bulk-collation.c)
+   mongoc_add_example (bulk1 ${PROJECT_SOURCE_DIR}/examples/bulk/bulk1.c)
+   mongoc_add_example (bulk2 ${PROJECT_SOURCE_DIR}/examples/bulk/bulk2.c)
+   mongoc_add_example (bulk3 ${PROJECT_SOURCE_DIR}/examples/bulk/bulk3.c)
+   mongoc_add_example (bulk4 ${PROJECT_SOURCE_DIR}/examples/bulk/bulk4.c)
+   mongoc_add_example (bulk5 ${PROJECT_SOURCE_DIR}/examples/bulk/bulk5.c)
+   mongoc_add_example (bulk6 ${PROJECT_SOURCE_DIR}/examples/bulk/bulk6.c)
 
-# examples/find_and_modify_with_opts/
-mongoc_add_example (fam TRUE ${PROJECT_SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
+   # examples/common_operations/
+   mongoc_add_example (common-operations ${PROJECT_SOURCE_DIR}/examples/common_operations/common-operations.c)
 
-if (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
-   mongoc_add_example (client-side-encryption-schema-map TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-schema-map.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-   mongoc_add_example (client-side-encryption-server-schema TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-server-schema.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-   mongoc_add_example (client-side-encryption-explicit TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-   mongoc_add_example (client-side-encryption-auto-decryption TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-   mongoc_add_example (client-side-encryption-doc-snippets TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-doc-snippets.c)
+   # examples/find_and_modify_with_opts/
+   mongoc_add_example (fam ${PROJECT_SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
+
+   if (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
+      mongoc_add_example (client-side-encryption-schema-map ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-schema-map.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+      mongoc_add_example (client-side-encryption-server-schema ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-server-schema.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+      mongoc_add_example (client-side-encryption-explicit ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+      mongoc_add_example (client-side-encryption-auto-decryption ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+      mongoc_add_example (client-side-encryption-doc-snippets ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-doc-snippets.c)
+   endif ()
 endif ()
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)

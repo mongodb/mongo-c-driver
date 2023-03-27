@@ -286,7 +286,10 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner,
    bool cmd_ret = false;
    bson_error_t cmd_error = {0};
 
-   if (0 == test_framework_skip_if_no_txns ()) {
+   if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
+      // Not applicable when running as test-atlas-executor.
+      return true;
+   } else if (0 == test_framework_skip_if_no_txns ()) {
       ret = true;
       goto done;
    }
@@ -349,37 +352,47 @@ done:
 static test_runner_t *
 test_runner_new (void)
 {
-   test_runner_t *test_runner = NULL;
-   mongoc_apm_callbacks_t *callbacks = NULL;
-   mongoc_uri_t *uri = NULL;
    bson_error_t error;
-   bson_t reply;
 
-   test_runner = bson_malloc0 (sizeof (test_runner_t));
-   /* Create a client for internal test operations (e.g. checking server
-    * version) */
+   // Avoid executing unnecessary commands when running as test-atlas-executor.
+   const bool is_atlas = test_framework_getenv_bool ("MONGOC_TEST_ATLAS");
+
+   test_runner_t *const test_runner = bson_malloc0 (sizeof (test_runner_t));
+
    _mongoc_array_init (&test_runner->server_ids, sizeof (uint32_t));
-   callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
-   uri = test_framework_get_uri ();
-   /* In load balanced mode, the internal client must use the
-    * SINGLE_LB_MONGOS_URI. */
-   if (!test_framework_is_loadbalanced ()) {
-      /* Always use multiple mongoses if speaking to a mongos.
-       * Some test operations require communicating with all known mongos */
-      if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
-         test_error ("error applying multiple mongos: %s", error.message);
-      }
-   }
-   test_runner->internal_client =
-      test_framework_client_new_from_uri (uri, NULL);
-   test_framework_set_ssl_opts (test_runner->internal_client);
-   mongoc_uri_destroy (uri);
 
-   mongoc_client_set_apm_callbacks (
-      test_runner->internal_client, callbacks, test_runner);
+   {
+      mongoc_uri_t *const uri = test_framework_get_uri ();
+
+      test_runner->internal_client =
+         test_framework_client_new_from_uri (uri, NULL);
+
+      /* In load balanced mode, the internal client must use the
+       * SINGLE_LB_MONGOS_URI. */
+      if (!is_atlas && !test_framework_is_loadbalanced ()) {
+         /* Always use multiple mongoses if speaking to a mongos.
+          * Some test operations require communicating with all known mongos */
+         if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
+            test_error ("error applying multiple mongos: %s", error.message);
+         }
+      }
+
+      mongoc_uri_destroy (uri);
+   }
+
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new ();
+      mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
+      mongoc_client_set_apm_callbacks (
+         test_runner->internal_client, callbacks, test_runner);
+      mongoc_apm_callbacks_destroy (callbacks);
+   }
+
+   test_framework_set_ssl_opts (test_runner->internal_client);
+
    mongoc_client_set_error_api (test_runner->internal_client,
                                 MONGOC_ERROR_API_VERSION_2);
+
    test_runner->topology_type =
       get_topology_type (test_runner->internal_client);
    server_semver (test_runner->internal_client, &test_runner->server_version);
@@ -390,21 +403,24 @@ test_runner_new (void)
    if (!test_runner_terminate_open_transactions (test_runner, &error)) {
       test_error ("error terminating transactions: %s", error.message);
    }
-   mongoc_apm_callbacks_destroy (callbacks);
 
-   /* Cache server parameters to check runOnRequirements. */
-   if (!mongoc_client_command_simple (test_runner->internal_client,
-                                      "admin",
-                                      tmp_bson ("{'getParameter': '*'}"),
-                                      NULL,
-                                      &reply,
-                                      &error)) {
-      test_error ("error getting server parameters: %s, full reply: %s",
-                  error.message,
-                  tmp_json (&reply));
+   {
+      bson_t reply;
+      /* Cache server parameters to check runOnRequirements. */
+      if (!mongoc_client_command_simple (test_runner->internal_client,
+                                         "admin",
+                                         tmp_bson ("{'getParameter': '*'}"),
+                                         NULL,
+                                         &reply,
+                                         &error)) {
+         test_error ("error getting server parameters: %s, full reply: %s",
+                     error.message,
+                     tmp_json (&reply));
+      }
+      test_runner->server_parameters = bson_copy (&reply);
+      bson_destroy (&reply);
    }
-   test_runner->server_parameters = bson_copy (&reply);
-   bson_destroy (&reply);
+
    return test_runner;
 }
 
@@ -1047,7 +1063,7 @@ test_check_event (test_t *test,
    bson_iter_init (&iter, expected);
    bson_iter_next (&iter);
    expected_event_type = bson_iter_key (&iter);
-   if (0 != strcmp (expected_event_type, actual->type)) {
+   if (0 != bson_strcasecmp (expected_event_type, actual->type)) {
       test_set_error (error,
                       "expected event type: %s, but got: %s",
                       expected_event_type,
@@ -1432,6 +1448,126 @@ done:
    return ret;
 }
 
+static void
+append_size_t (bson_t *doc, const char *key, size_t value)
+{
+   BSON_ASSERT (bson_in_range_unsigned (int64_t, value));
+   BSON_ASSERT (BSON_APPEND_INT64 (doc, key, (int64_t) value));
+}
+
+static void
+append_bson_array (bson_t *doc, const char *key, const mongoc_array_t *array)
+{
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT (array || true);
+
+   if (!array) {
+      bson_t empty = BSON_INITIALIZER;
+      BSON_ASSERT (BSON_APPEND_ARRAY (doc, key, &empty));
+      bson_destroy (&empty);
+   } else {
+      bson_t **const begin = array->data;
+      bson_t **const end = begin + array->len;
+
+      bson_t elements;
+
+      uint32_t index = 0u;
+      char buffer[16] = {0};
+      const char *index_key = NULL;
+
+      BSON_ASSERT (BSON_APPEND_ARRAY_BEGIN (doc, key, &elements));
+      for (bson_t **iter = begin; iter != end; ++iter) {
+         BSON_ASSERT (bson_uint32_to_string (
+            index++, &index_key, buffer, sizeof (buffer)));
+         BSON_ASSERT (BSON_APPEND_DOCUMENT (&elements, index_key, *iter));
+      }
+      BSON_ASSERT (bson_append_array_end (doc, &elements));
+   }
+}
+
+static bool
+test_generate_atlas_results (test_t *test, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (test);
+   BSON_ASSERT_PARAM (error);
+
+   // This is only applicable when the unified test runner is being run by
+   // test-atlas-executor. Must be implemented within unified test runner in
+   // order to capture entities before destruction of parent test object.
+   if (!test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
+      return true;
+   }
+
+   MONGOC_DEBUG ("generating events.json and results.json files...");
+
+   size_t *const iterations =
+      entity_map_get_size_t (test->entity_map, "iterations", NULL);
+   size_t *const successes =
+      entity_map_get_size_t (test->entity_map, "successes", NULL);
+   mongoc_array_t *const errors =
+      entity_map_get_bson_array (test->entity_map, "errors", NULL);
+   mongoc_array_t *const failures =
+      entity_map_get_bson_array (test->entity_map, "failures", NULL);
+   mongoc_array_t *const events =
+      entity_map_get_bson_array (test->entity_map, "events", NULL);
+
+   bson_t events_doc = BSON_INITIALIZER;
+   bson_t results_doc = BSON_INITIALIZER;
+
+   append_bson_array (&events_doc, "events", events);
+   append_bson_array (&events_doc, "failures", failures);
+   append_bson_array (&events_doc, "errors", errors);
+
+   append_size_t (&results_doc, "numErrors", errors ? errors->len : 0u);
+   append_size_t (&results_doc, "numFailures", failures ? failures->len : 0u);
+   append_size_t (&results_doc, "numIterations", iterations ? *iterations : 0u);
+   append_size_t (&results_doc, "numSuccesses", successes ? *successes : 0u);
+
+#ifdef WIN32
+   const int perms = _S_IWRITE;
+#else
+   const int perms = S_IRWXU;
+#endif
+
+   mongoc_stream_t *const events_file = mongoc_stream_file_new_for_path (
+      "events.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
+   ASSERT_WITH_MSG (events_file, "could not open events.json");
+
+   mongoc_stream_t *const results_file = mongoc_stream_file_new_for_path (
+      "results.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
+   ASSERT_WITH_MSG (results_file, "could not open results.json");
+
+   size_t events_json_len = 0u;
+   size_t results_json_len = 0u;
+   char *const events_json = bson_as_json (&events_doc, &events_json_len);
+   char *const results_json = bson_as_json (&results_doc, &results_json_len);
+
+   ASSERT_WITH_MSG (events_json,
+                    "failed to convert events BSON document to JSON");
+   ASSERT_WITH_MSG (results_json,
+                    "failed to convert results BSON document to JSON");
+
+   ASSERT_WITH_MSG (
+      mongoc_stream_write (events_file, events_json, events_json_len, 500) > 0,
+      "failed to write events to events.json");
+   ASSERT_WITH_MSG (mongoc_stream_write (
+                       results_file, results_json, results_json_len, 500) > 0,
+                    "failed to write results to results.json");
+
+   bson_free (events_json);
+   bson_free (results_json);
+
+   mongoc_stream_destroy (events_file);
+   mongoc_stream_destroy (results_file);
+
+   bson_destroy (&events_doc);
+   bson_destroy (&results_doc);
+
+   MONGOC_DEBUG ("generating events.json and results.json files... done.");
+
+   return true;
+}
+
 static bool
 run_distinct_on_each_mongos (test_t *test,
                              char *db_name,
@@ -1632,6 +1768,11 @@ test_run (test_t *test, bson_error_t *error)
 
    if (!test_check_outcome (test, error)) {
       test_diagnostics_error_info ("%s", "checking outcome");
+      goto done;
+   }
+
+   if (!test_generate_atlas_results (test, error)) {
+      test_diagnostics_error_info ("%s", "generating Atlas test results");
       goto done;
    }
 
