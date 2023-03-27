@@ -400,7 +400,7 @@ test_server_description_connection_id (void)
       memset (&error, 0, sizeof (bson_error_t));
       mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
       BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
-      BSON_ASSERT (sd.server_connection_id == 1);
+      ASSERT_CMPINT64 (sd.server_connection_id, ==, 1);
       mongoc_server_description_cleanup (&sd);
       bson_destroy (hello);
    }
@@ -416,7 +416,7 @@ test_server_description_connection_id (void)
       memset (&error, 0, sizeof (bson_error_t));
       mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
       BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
-      BSON_ASSERT (sd.server_connection_id == 1);
+      ASSERT_CMPINT64 (sd.server_connection_id, ==, 1);
       bson_destroy (hello);
       mongoc_server_description_cleanup (&sd);
    }
