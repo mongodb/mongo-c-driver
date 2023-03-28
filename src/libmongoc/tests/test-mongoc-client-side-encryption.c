@@ -6246,7 +6246,6 @@ test_auto_datakeys (void *unused)
 static void
 _do_cec_test (void (*test) (const char *kmsProvider))
 {
-   // Run the test using the "local" key:
    test ("local");
    test ("aws");
 }
