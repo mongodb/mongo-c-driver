@@ -16,7 +16,7 @@ Synopsis
         const bson_t *in_options,
         bson_t *out_options,
         const char *kms_provider,
-        const mongoc_client_encryption_datakey_opts_t *dk_opts,
+        const bson_t *opt_masterKey,
         bson_error_t *error)
     BSON_GNUC_WARN_UNUSED_RESULT;
 
@@ -47,8 +47,9 @@ Parameters
   must be destroyed by the caller. If ``NULL``, has no effect.
 * ``kms_provider``: The name of the KMS provider to use for generating new data
   encryption keys for encrypted fields within the collection.
-* ``dk_opts``: Additional options to be used when creating data encryption keys
-  for the collection.
+* ``opt_masterKey``: If provided, used as the masterkey option when data
+  encryption keys need to be created. (See:
+  :doc:`mongoc_client_encryption_datakey_opts_set_masterkey`)
 * ``error``: Optional output parameter pointing to storage for a
   :symbol:`bson_error_t`. If an error occurs, will be initialized with error
   information.

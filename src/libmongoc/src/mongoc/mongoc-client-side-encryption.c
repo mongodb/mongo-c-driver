@@ -974,7 +974,7 @@ mongoc_client_encryption_create_encrypted_collection (
    const bson_t *in_options,
    bson_t *out_options,
    const char *const kms_provider,
-   const mongoc_client_encryption_datakey_opts_t *dk_opts,
+   const bson_t *opt_masterkey,
    bson_error_t *error)
 {
    BSON_UNUSED (enc);
@@ -983,7 +983,7 @@ mongoc_client_encryption_create_encrypted_collection (
    BSON_UNUSED (in_options);
    BSON_UNUSED (out_options);
    BSON_UNUSED (kms_provider);
-   BSON_UNUSED (dk_opts);
+   BSON_UNUSED (opt_masterkey);
 
    _disabled_error (error);
    return NULL;
@@ -2932,7 +2932,7 @@ mongoc_client_encryption_create_encrypted_collection (
    const bson_t *in_options,
    bson_t *out_options,
    const char *const kms_provider,
-   const mongoc_client_encryption_datakey_opts_t *dk_opts,
+   const bson_t *opt_masterkey,
    bson_error_t *error)
 {
    BSON_ASSERT_PARAM (enc);
@@ -2940,8 +2940,8 @@ mongoc_client_encryption_create_encrypted_collection (
    BSON_ASSERT_PARAM (name);
    BSON_ASSERT_PARAM (in_options);
    BSON_ASSERT (out_options || true);
+   BSON_ASSERT (opt_masterkey || true);
    BSON_ASSERT_PARAM (kms_provider);
-   BSON_ASSERT_PARAM (dk_opts);
    BSON_ASSERT (error || true);
 
    mongoc_collection_t *ret = NULL;
@@ -2949,6 +2949,13 @@ mongoc_client_encryption_create_encrypted_collection (
    bson_t in_encryptedFields = BSON_INITIALIZER;
    bson_t new_encryptedFields = BSON_INITIALIZER;
    bson_t local_new_options = BSON_INITIALIZER;
+
+   mongoc_client_encryption_datakey_opts_t *dk_opts =
+      mongoc_client_encryption_datakey_opts_new ();
+   if (opt_masterkey) {
+      mongoc_client_encryption_datakey_opts_set_masterkey (dk_opts,
+                                                           opt_masterkey);
+   }
 
    if (!out_options) {
       // We'll use our own storage for the new options
@@ -3036,6 +3043,7 @@ mongoc_client_encryption_create_encrypted_collection (
 done:
    bson_destroy (&new_encryptedFields);
    bson_destroy (&in_encryptedFields);
+   mongoc_client_encryption_datakey_opts_destroy (dk_opts);
    // Destroy the local options, which may or may not have been used. If unused,
    // the new options are now owned by the caller and this is a no-op.
    bson_destroy (&local_new_options);
