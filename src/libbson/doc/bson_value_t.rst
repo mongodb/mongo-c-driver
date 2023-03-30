@@ -62,6 +62,7 @@ Synopsis
            uint32_t len;
            char *symbol;
         } v_symbol;
+        bson_decimal128_t v_decimal128;
      } value;
   } bson_value_t;
 

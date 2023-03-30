@@ -29,8 +29,13 @@ Synopsis
 Description
 -----------
 
-The :symbol:`bson_decimal128_t` structure
-represents the IEEE-754 Decimal128 data type.
+The :symbol:`bson_decimal128_t` structure represents the IEEE-754 Decimal128
+data type. The type ``bson_decimal128_t`` is an aggregate that contains two
+``uint64_t``\ s, named ``high`` and ``low``. The declaration and layout order
+between them depends on the endian order of the target platform: ``low`` will
+always correspond to the low-order bits of the Decimal128 object, while ``high``
+corresponds to the high-order bits. The ``bson_decimal128_t`` always has a size
+of sixteen (``16``), and can be bit-cast to/from a ``_Decimal128``.
 
 .. only:: html
 
