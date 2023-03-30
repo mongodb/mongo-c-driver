@@ -6218,9 +6218,10 @@ test_auto_datakeys (void *unused)
       require (
          keyWithType ("0", doc), //
          parse (require (allOf (key ("keyId"), strEqual ("keepme")), nop))),
-      require (keyWithType ("1", doc),
-               parse (require (allOf (keyWithType ("keyId", int32)),
-                               do(ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
+      require (
+         keyWithType ("1", doc),
+         parse (require (allOf (keyWithType ("keyId", int32)),
+                         do (ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
    ASSERT (bsonParseError == NULL);
    bson_destroy (&out_fields);
 
@@ -6376,7 +6377,7 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    ASSERT_OR_PRINT (ce, error);
 
    // Create the encrypted collection
-   bsonBuildDecl (ccOpts, do());
+   bsonBuildDecl (ccOpts, do ());
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    bson_t *const mkey = _make_kms_masterkey (kmsProvider);
    mongoc_collection_t *const coll =
@@ -6581,7 +6582,7 @@ CEC_TEST (test_create_encrypted_collection_insert,
             visitEach (require (type (doc)),
                        parse (require (key ("keyId"),
                                        require (type (binary)),
-                                       do({
+                                       do ({
                                           bson_value_copy (
                                              bson_iter_value (
                                                 (bson_iter_t *) &bsonVisitIter),
