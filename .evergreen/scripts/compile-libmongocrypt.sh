@@ -5,16 +5,7 @@ compile_libmongocrypt() {
   declare -r mongoc_dir="${2:?}"
   declare -r install_dir="${3:?}"
 
-  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.7.0 || return
-
-  # TODO: remove once latest libmongocrypt release contains commit c6f65fe6.
-  {
-    pushd libmongocrypt || return
-    echo "1.7.0+c6f65fe6" >|VERSION_CURRENT
-    git fetch -q origin master || return
-    git checkout -q c6f65fe6 || return # Allows -DENABLE_MONGOC=OFF.
-    popd || return                     # libmongocrypt
-  }
+  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.8.0-alpha0 || return
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
