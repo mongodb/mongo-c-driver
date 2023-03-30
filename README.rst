@@ -92,5 +92,6 @@ https://www.mongoc.org/libmongoc/current/installing.html
 Resources
 ============
 
+* `Getting Started Tutorial <https://mongoc.org/libmongoc/current/tutorial.html>`_.
+* `MongoDB C Driver Examples <https://github.com/mongodb/mongo-c-driver/tree/master/src/libmongoc/examples>`_.
 * Tutorials, videos, and code examples using the MongoDB C Driver can also be found in the `MongoDB Developer Center <https://www.mongodb.com/developer/languages/c/>`_.
-* Examples of using the MongoDB C Driver can be found in the `MongoDB C Driver Examples <https://github.com/mongodb/mongo-c-driver/tree/master/src/libmongoc/examples>`_.
