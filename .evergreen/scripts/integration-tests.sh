@@ -92,6 +92,24 @@ find orchestration_configs -name \*.json | xargs perl -p -i -e "s|/tmp/orchestra
 export ORCHESTRATION_FILE="orchestration_configs/${TOPOLOGY}s/${ORCHESTRATION_FILE}.json"
 export ORCHESTRATION_URL="http://localhost:8889/v1/${TOPOLOGY}s"
 
+if [ "$CLIENT_SIDE_ENCRYPTION" = "on" -a "$MONGODB_VERSION" = "latest" ]; then
+  # This is a temporary workaround until featureFlagFLE2ProtocolVersion2 is enabled by default in SERVER-69563. Once latest server builds have SERVER-69563, this if block may be removed.
+  # DRIVERS-2590 tracks removal of this workaround.
+  echo "SERVER-69563: rewrite orchestration config to add setParameter featureFlagFLE2ProtocolVersion2=1 ... begin"
+  # Only attempt to enable the feature flag if the server is 7.0.0. The 'latest' builds may not be updated to 7.0 yet.
+  ACTUAL_MONGODB_VERSION=$(./mongodb/bin/mongod --version | head -1 | awk '{print $3}')
+  case $ACTUAL_MONGODB_VERSION in
+  v7*)
+   python $DIR/setfle2parameter.py $ORCHESTRATION_FILE > $ORCHESTRATION_FILE.modified
+   mv $ORCHESTRATION_FILE.modified $ORCHESTRATION_FILE
+   ;;
+  *)
+   echo "mongod version $ACTUAL_MONGODB_VERSION is not v7. Not enabling featureFlagFLE2ProtocolVersion2"
+   ;;
+  esac
+  echo "SERVER-69563: rewrite orchestration config to add setParameter featureFlagFLE2ProtocolVersion2=1 ... end"
+fi
+
 export TMPDIR=$MONGO_ORCHESTRATION_HOME/db
 echo From shell `date` > $MONGO_ORCHESTRATION_HOME/server.log
 
