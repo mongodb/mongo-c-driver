@@ -4069,6 +4069,17 @@ range_explicit_encryption_assert_cursor_results (ree_fixture *reef,
 static void
 test_range_explicit_encryption_case1 (void *ctx)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    // Case 1: can decrypt a payload
    const char *typeStr = (const char *) ctx;
    mongoc_client_encryption_encrypt_opts_t *eo;
@@ -4105,6 +4116,17 @@ test_range_explicit_encryption_case1 (void *ctx)
 static void
 test_range_explicit_encryption_case2 (void *ctx)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    // Case 2: can find encrypted range and return the maximum
    const char *typeStr = (const char *) ctx;
    ree_fixture *reef = range_explicit_encryption_setup (typeStr);
@@ -4157,6 +4179,17 @@ test_range_explicit_encryption_case2 (void *ctx)
 static void
 test_range_explicit_encryption_case3 (void *ctx)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    // Case 3: can find encrypted range and return the minimum
    const char *typeStr = (const char *) ctx;
    ree_fixture *reef = range_explicit_encryption_setup (typeStr);
@@ -4208,6 +4241,17 @@ test_range_explicit_encryption_case3 (void *ctx)
 static void
 test_range_explicit_encryption_case4 (void *ctx)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    // Case 4: can find encrypted range with an open range query
    const char *typeStr = (const char *) ctx;
    ree_fixture *reef = range_explicit_encryption_setup (typeStr);
@@ -4258,6 +4302,17 @@ test_range_explicit_encryption_case4 (void *ctx)
 static void
 test_range_explicit_encryption_case5 (void *ctx)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    // Case 5: can run an aggregation expression inside $expr
    const char *typeStr = (const char *) ctx;
    ree_fixture *reef = range_explicit_encryption_setup (typeStr);
@@ -4314,6 +4369,17 @@ test_range_explicit_encryption_case5 (void *ctx)
 static void
 test_range_explicit_encryption_case6 (void *ctx)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    // Case 6: encrypting a document greater than the maximum errors
    const char *typeStr = (const char *) ctx;
 
@@ -4356,6 +4422,17 @@ test_range_explicit_encryption_case6 (void *ctx)
 static void
 test_range_explicit_encryption_case7 (void *ctx)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    // Case 7: encrypting a document of a different type errors
    const char *typeStr = (const char *) ctx;
 
@@ -4404,6 +4481,17 @@ test_range_explicit_encryption_case7 (void *ctx)
 static void
 test_range_explicit_encryption_case8 (void *ctx)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    // Case 8: setting precision errors if the type is not a double
    const char *typeStr = (const char *) ctx;
 
@@ -4447,6 +4535,17 @@ test_range_explicit_encryption_case8 (void *ctx)
 static void
 test_explicit_encryption_case1 (void *unused)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    /* Case 1: can insert encrypted indexed and find */
    bson_error_t error;
    bool ok;
@@ -4534,6 +4633,17 @@ test_explicit_encryption_case1 (void *unused)
 static void
 test_explicit_encryption_case2 (void *unused)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    /* Case 2: can insert encrypted indexed and find with non-zero contention */
    bson_error_t error;
    bool ok;
@@ -4664,6 +4774,17 @@ test_explicit_encryption_case2 (void *unused)
 static void
 test_explicit_encryption_case3 (void *unused)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    /* Case 3: can insert encrypted unindexed */
    bson_error_t error;
    bool ok;
@@ -4736,6 +4857,17 @@ test_explicit_encryption_case3 (void *unused)
 static void
 test_explicit_encryption_case4 (void *unused)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    /* Case 4: can roundtrip encrypted indexed */
    bson_error_t error;
    bool ok;
@@ -4785,6 +4917,17 @@ test_explicit_encryption_case4 (void *unused)
 static void
 test_explicit_encryption_case5 (void *unused)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    /* Case 5: can roundtrip encrypted unindexed */
    bson_error_t error;
    bool ok;
@@ -5710,6 +5853,18 @@ test_rewrap_with_separate_client_encryption (void *unused)
 static void
 test_qe_docs_example (void *unused)
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
+
    bson_error_t error;
    mongoc_client_t *const client = test_framework_new_default_client ();
    bson_t *const kmsProviders =
@@ -6202,6 +6357,18 @@ static void
 test_auto_datakeys (void *unused)
 {
    BSON_UNUSED (unused);
+
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
    bson_error_t error = {0};
    bson_t in_fields = BSON_INITIALIZER;
    bsonBuildArray ( //
@@ -6247,6 +6414,18 @@ test_auto_datakeys (void *unused)
 static void
 _do_cec_test (void (*test) (const char *kmsProvider))
 {
+   if (test_framework_get_server_version () <
+       test_framework_str_to_version ("7.0.0")) {
+      MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+", BSON_FUNC);
+      return;
+   }
+   if (test_framework_is_serverless ()) {
+      MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless "
+                    "enables QEv2 protocol: DRIVERS-2589",
+                    BSON_FUNC);
+      return;
+   }
+
    test ("local");
    test ("aws");
 }
@@ -6964,7 +7143,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6973,7 +7151,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6982,7 +7159,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6991,7 +7167,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7000,7 +7175,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7042,7 +7216,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7093,7 +7266,6 @@ test_client_side_encryption_install (TestSuite *suite)
       NULL,
       NULL,
       test_framework_skip_if_no_client_side_encryption,
-      test_framework_skip_if_max_wire_version_less_than_17,
       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7103,7 +7275,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/createEncryptedCollection/"
@@ -7112,7 +7283,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
                       test_framework_skip_if_single);
    TestSuite_AddFull (
       suite,
@@ -7121,7 +7291,6 @@ test_client_side_encryption_install (TestSuite *suite)
       NULL,
       NULL,
       test_framework_skip_if_no_client_side_encryption,
-      test_framework_skip_if_max_wire_version_less_than_17,
       test_framework_skip_if_single);
    TestSuite_AddFull (
       suite,
@@ -7180,7 +7349,6 @@ test_client_side_encryption_install (TestSuite *suite)
                   NULL /* dtor */,
                   (void *) rangeTypes[i] /* ctx */,
                   test_framework_skip_if_no_client_side_encryption,
-                  test_framework_skip_if_max_wire_version_less_than_19,
                   test_framework_skip_if_not_replset);
             } else {
                TestSuite_AddFull (
@@ -7190,7 +7358,6 @@ test_client_side_encryption_install (TestSuite *suite)
                   NULL /* dtor */,
                   (void *) rangeTypes[i] /* ctx */,
                   test_framework_skip_if_no_client_side_encryption,
-                  test_framework_skip_if_max_wire_version_less_than_19,
                   test_framework_skip_if_single);
             }
 
