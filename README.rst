@@ -15,11 +15,11 @@ If libmongoc is not needed, it is possible to build and install only libbson.
 Documentation / Support / Feedback
 ==================================
 
-The documentation is available at https://www.mongoc.org/.
+The documentation is available at `MongoDB C Driver Docs <https://www.mongodb.com/docs/drivers/c/>`_ and https://www.mongoc.org.
 For issues with, questions about, or feedback for libmongoc, please look into
 our `support channels <http://www.mongodb.org/about/support>`_. Please
 do not email any of the libmongoc developers directly with issues or
-questions - you're more likely to get an answer on the `MongoDB Community Forums`_.
+questions - you're more likely to get an answer on the `MongoDB Community Forums`_ or `StackOverflow <https://stackoverflow.com/questions/tagged/mongodb+c>`_.
 
 Bugs / Feature Requests
 =======================
@@ -87,3 +87,10 @@ Installation
 
 Detailed installation instructions are in the manual:
 https://www.mongoc.org/libmongoc/current/installing.html
+
+
+Resources
+============
+
+* Tutorials, videos, and code examples using the MongoDB C Driver can also be found in the `MongoDB Developer Center <https://www.mongodb.com/developer/languages/c/>`_.
+* Examples of using the MongoDB C Driver can be found in the `MongoDB C Driver Examples <https://github.com/mongodb/mongo-c-driver/tree/master/src/libmongoc/examples>`_.
