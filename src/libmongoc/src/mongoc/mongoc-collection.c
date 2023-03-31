@@ -764,7 +764,7 @@ mongoc_collection_count_with_opts (
       kv ("query",
           if (query,                // If we have a query,
               then (bson (*query)), // Copy it
-              else(doc ()))),       // Otherwise, add an empty doc
+              else (doc ()))),      // Otherwise, add an empty doc
       if (limit, then (kv ("limit", int64 (limit)))),
       if (skip, then (kv ("skip", int64 (skip)))));
 
