@@ -293,7 +293,15 @@ _get_os_version (void)
    ZeroMemory (&osvi, sizeof (OSVERSIONINFO));
    osvi.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
 
-   if (GetVersionEx (&osvi)) {
+#if defined(_MSC_VER)
+   // CDRIVER-4263: GetVersionEx is deprecated.
+#pragma warning(suppress : 4996)
+   const BOOL res = GetVersionEx (&osvi);
+#else
+   const BOOL res = GetVersionEx (&osvi);
+#endif
+
+   if (res) {
       bson_snprintf (ret,
                      HANDSHAKE_OS_VERSION_MAX,
                      "%lu.%lu (%lu)",
