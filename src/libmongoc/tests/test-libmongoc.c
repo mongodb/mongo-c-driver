@@ -37,7 +37,12 @@
 
 #if defined(_MSC_VER) && defined(_WIN64)
 #include <errhandlingapi.h>
+
+// warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+#pragma warning(push)
+#pragma warning(disable : 4091)
 #include <DbgHelp.h>
+#pragma warning(pop)
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
