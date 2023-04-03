@@ -354,7 +354,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream,
 
             ret += child_ret;
 
-            if (child_ret < to_write_len) {
+            if (bson_cmp_less_su (child_ret, to_write_len)) {
                /* we timed out, so send back what we could send */
 
                RETURN (ret);
