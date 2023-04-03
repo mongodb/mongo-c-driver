@@ -4070,14 +4070,11 @@ range_explicit_encryption_assert_cursor_results (ree_fixture *reef,
    if (1) {                                                                   \
       if (test_framework_get_server_version () <                              \
           test_framework_str_to_version ("7.0.0")) {                          \
-         MONGOC_DEBUG ("skipping test: %s. Requires server 7.0.0+",           \
-                       BSON_FUNC);                                            \
-         return;                                                              \
-      }                                                                       \
-      if (test_framework_is_serverless ()) {                                  \
-         MONGOC_DEBUG ("skipping test: %s. Test is skipped until Serverless " \
-                       "enables QEv2 protocol: DRIVERS-2589",                 \
-                       BSON_FUNC);                                            \
+         MONGOC_DEBUG ("skipping %s: requires server 7.0.0+", BSON_FUNC);  \
+         return;                                                           \
+      }                                                                    \
+      if (test_framework_is_serverless ()) {                               \
+         MONGOC_DEBUG ("skipping %s: waiting on DRIVERS-2589", BSON_FUNC); \
          return;                                                              \
       }                                                                       \
    } else                                                                     \
