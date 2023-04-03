@@ -2515,7 +2515,7 @@ operation_upload (test_t *test,
       bucket, filename, bson_parser_get_extra (bp), &file_id, &op_error);
 
    if (stream) {
-      ssize_t total_written = 0;
+      size_t total_written = 0u;
       uint8_t *source_bytes;
       uint32_t source_bytes_len;
       bson_iter_t iter;
@@ -2529,17 +2529,12 @@ operation_upload (test_t *test,
       source_bytes =
          hex_to_bin (bson_iter_utf8 (&iter, NULL), &source_bytes_len);
       while (total_written < source_bytes_len) {
-         ssize_t bytes_written = 0;
-
-         bytes_written =
-            mongoc_stream_write (stream,
-                                 source_bytes,
-                                 (size_t) (source_bytes_len - total_written),
-                                 0);
+         const ssize_t bytes_written = mongoc_stream_write (
+            stream, source_bytes, source_bytes_len - total_written, 0);
          if (bytes_written < 0) {
             break;
          }
-         total_written += bytes_written;
+         total_written += (size_t) bytes_written;
       }
       mongoc_gridfs_bucket_stream_error (stream, &op_error);
       bson_free (source_bytes);
