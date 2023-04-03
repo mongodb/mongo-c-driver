@@ -62,16 +62,15 @@ test_conveniences_init ()
 void
 test_conveniences_cleanup (void)
 {
-   int i;
    bson_t *doc;
 
    if (gConveniencesInitialized) {
-      for (i = 0; i < gTmpBsonArray.len; i++) {
+      for (size_t i = 0u; i < gTmpBsonArray.len; i++) {
          doc = _mongoc_array_index (&gTmpBsonArray, bson_t *, i);
          bson_destroy (doc);
       }
 
-      for (i = 0; i < gTmpStringArray.len; i++) {
+      for (size_t i = 0u; i < gTmpStringArray.len; i++) {
          char *str;
 
          str = _mongoc_array_index (&gTmpStringArray, char *, i);
