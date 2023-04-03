@@ -2381,6 +2381,8 @@ WIRE_VERSION_CHECKS (14)
 WIRE_VERSION_CHECKS (17)
 /* wire version 19 begins with the 6.2 release. */
 WIRE_VERSION_CHECKS (19)
+/* wire version 21 begins with the 7.0 release. */
+WIRE_VERSION_CHECKS (21)
 
 int
 test_framework_skip_if_no_dual_ip_hostname (void)
@@ -2533,6 +2535,15 @@ bool
 test_framework_is_serverless (void)
 {
    return test_framework_getenv_bool ("MONGOC_TEST_IS_SERVERLESS");
+}
+
+int
+test_framework_skip_if_serverless (void)
+{
+   if (test_framework_is_serverless ()) {
+      return 0; // do not proceed
+   }
+   return 1; // proceed.
 }
 
 int

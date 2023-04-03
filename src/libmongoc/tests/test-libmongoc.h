@@ -215,6 +215,8 @@ WIRE_VERSION_CHECK_DECLS (14)
 WIRE_VERSION_CHECK_DECLS (17)
 /* wire version 19 begins with the 6.2 release. */
 WIRE_VERSION_CHECK_DECLS (19)
+/* wire version 21 begins with the 7.0 release. */
+WIRE_VERSION_CHECK_DECLS (21)
 
 #undef WIRE_VERSION_CHECK_DECLS
 
@@ -278,6 +280,9 @@ test_framework_skip_if_no_exhaust_cursors (void);
 
 bool
 test_framework_is_serverless (void);
+
+int
+test_framework_skip_if_serverless (void);
 
 bool
 test_framework_is_loadbalanced (void);
