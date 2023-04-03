@@ -48,7 +48,7 @@ struct _mock_rs_t {
 
 
 mock_server_t *
-get_server (mongoc_array_t *servers, int i)
+get_server (mongoc_array_t *servers, size_t i)
 {
    return _mongoc_array_index (servers, mock_server_t *, i);
 }
@@ -65,15 +65,14 @@ append_array (mongoc_array_t *dst, mongoc_array_t *src)
 char *
 hosts (mongoc_array_t *servers)
 {
-   int i;
    const char *host_and_port;
    bson_string_t *hosts_str = bson_string_new ("");
 
-   for (i = 0; i < servers->len; i++) {
+   for (size_t i = 0u; i < servers->len; i++) {
       host_and_port = mock_server_get_host_and_port (get_server (servers, i));
       bson_string_append_printf (hosts_str, "\"%s\"", host_and_port);
 
-      if (i < servers->len - 1) {
+      if (i + 1u < servers->len) {
          bson_string_append_printf (hosts_str, ", ");
       }
    }
@@ -85,16 +84,15 @@ hosts (mongoc_array_t *servers)
 mongoc_uri_t *
 make_uri (mongoc_array_t *servers)
 {
-   int i;
    const char *host_and_port;
    bson_string_t *uri_str = bson_string_new ("mongodb://");
    mongoc_uri_t *uri;
 
-   for (i = 0; i < servers->len; i++) {
+   for (size_t i = 0u; i < servers->len; i++) {
       host_and_port = mock_server_get_host_and_port (get_server (servers, i));
       bson_string_append_printf (uri_str, "%s", host_and_port);
 
-      if (i < servers->len - 1) {
+      if (i + 1u < servers->len) {
          bson_string_append_printf (uri_str, ",");
       }
    }
@@ -260,9 +258,7 @@ mock_rs_tag_secondary (mock_rs_t *rs, int server_number, const bson_t *tags)
 static void
 mock_rs_auto_endsessions (mock_rs_t *rs)
 {
-   int i;
-
-   for (i = 0; i < rs->servers.len; i++) {
+   for (size_t i = 0u; i < rs->servers.len; i++) {
       mock_server_auto_endsessions (get_server (&rs->servers, i));
    }
 }
@@ -331,7 +327,6 @@ rs_q_append (request_t *request, void *data)
 void
 mock_rs_run (mock_rs_t *rs)
 {
-   int i;
    mock_server_t *server;
    char *hello;
 
@@ -344,7 +339,7 @@ mock_rs_run (mock_rs_t *rs)
    /* start secondaries */
    _mongoc_array_init (&rs->secondaries, sizeof (mock_server_t *));
 
-   for (i = 0; i < rs->n_secondaries; i++) {
+   for (int i = 0; i < rs->n_secondaries; i++) {
       server = mock_server_new ();
       mock_server_run (server);
       _mongoc_array_append_val (&rs->secondaries, server);
@@ -353,7 +348,7 @@ mock_rs_run (mock_rs_t *rs)
    /* start arbiters */
    _mongoc_array_init (&rs->arbiters, sizeof (mock_server_t *));
 
-   for (i = 0; i < rs->n_arbiters; i++) {
+   for (int i = 0; i < rs->n_arbiters; i++) {
       server = mock_server_new ();
       mock_server_run (server);
       _mongoc_array_append_val (&rs->arbiters, server);
@@ -372,7 +367,7 @@ mock_rs_run (mock_rs_t *rs)
     * mock_rs_receives_query() &co. rs_q_append is added first so it
     * runs last, after auto_hello.
     */
-   for (i = 0; i < rs->servers.len; i++) {
+   for (size_t i = 0u; i < rs->servers.len; i++) {
       mock_server_autoresponds (
          get_server (&rs->servers, i), rs_q_append, (void *) rs, NULL);
    }
@@ -391,17 +386,17 @@ mock_rs_run (mock_rs_t *rs)
    }
 
    /* secondaries' hello response */
-   for (i = 0; i < rs->n_secondaries; i++) {
+   for (int i = 0; i < rs->n_secondaries; i++) {
       hello = secondary_json (rs, i);
-      mock_server_auto_hello (get_server (&rs->secondaries, i), hello);
+      mock_server_auto_hello (get_server (&rs->secondaries, (size_t) i), hello);
       bson_free (hello);
    }
 
    /* arbiters' hello response */
    hello = arbiter_json (rs);
 
-   for (i = 0; i < rs->n_arbiters; i++) {
-      mock_server_auto_hello (get_server (&rs->arbiters, i), hello);
+   for (int i = 0; i < rs->n_arbiters; i++) {
+      mock_server_auto_hello (get_server (&rs->arbiters, (size_t) i), hello);
    }
 
    bson_free (hello);
@@ -796,19 +791,17 @@ mock_rs_replies (request_t *request,
 static mongoc_server_description_type_t
 _mock_rs_server_type (mock_rs_t *rs, uint16_t port)
 {
-   int i;
-
    if (rs->primary && port == mock_server_get_port (rs->primary)) {
       return MONGOC_SERVER_RS_PRIMARY;
    }
 
-   for (i = 0; i < rs->secondaries.len; i++) {
+   for (size_t i = 0u; i < rs->secondaries.len; i++) {
       if (port == mock_server_get_port (get_server (&rs->secondaries, i))) {
          return MONGOC_SERVER_RS_SECONDARY;
       }
    }
 
-   for (i = 0; i < rs->arbiters.len; i++) {
+   for (size_t i = 0u; i < rs->arbiters.len; i++) {
       if (port == mock_server_get_port (get_server (&rs->arbiters, i))) {
          return MONGOC_SERVER_RS_ARBITER;
       }
@@ -964,14 +957,12 @@ mock_rs_stepdown (mock_rs_t *rs)
  */
 
 void
-mock_rs_elect (mock_rs_t *rs, int id)
+mock_rs_elect (mock_rs_t *rs, size_t id)
 {
    char *json;
-   size_t i;
    mock_server_t **ptrs;
 
    BSON_ASSERT (!rs->primary);
-   BSON_ASSERT (id >= 0);
    BSON_ASSERT (id < rs->secondaries.len);
 
    rs->primary = get_server (&rs->secondaries, id);
@@ -987,9 +978,9 @@ mock_rs_elect (mock_rs_t *rs, int id)
 
    ptrs = (mock_server_t **) rs->secondaries.data;
 
-   for (i = (size_t) id + 1; i < rs->secondaries.len; i++) {
-      ptrs[i - 1] = ptrs[i];
-      rs->secondary_tags[i - 1] = rs->secondary_tags[i];
+   for (size_t i = id + 1u; i < rs->secondaries.len; i++) {
+      ptrs[i - 1u] = ptrs[i];
+      rs->secondary_tags[i - 1u] = rs->secondary_tags[i];
    }
 
    rs->secondaries.len--;
@@ -1015,9 +1006,7 @@ mock_rs_elect (mock_rs_t *rs, int id)
 void
 mock_rs_destroy (mock_rs_t *rs)
 {
-   int i;
-
-   for (i = 0; i < rs->servers.len; i++) {
+   for (size_t i = 0u; i < rs->servers.len; i++) {
       mock_server_destroy (get_server (&rs->servers, i));
    }
 
@@ -1030,7 +1019,7 @@ mock_rs_destroy (mock_rs_t *rs)
    q_destroy (rs->q);
 
    bson_destroy (&rs->primary_tags);
-   for (i = 0; i < rs->n_secondaries; i++) {
+   for (int i = 0u; i < rs->n_secondaries; i++) {
       bson_destroy (rs->secondary_tags[i]);
    }
 
