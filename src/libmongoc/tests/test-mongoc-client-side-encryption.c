@@ -7004,7 +7004,6 @@ test_client_side_encryption_install (TestSuite *suite)
       test_framework_skip_if_max_wire_version_less_than_21,
       // Remove skip_if_serverless once DRIVERS-2589 is resolved.
       test_framework_skip_if_serverless,
-
       test_framework_skip_if_single);
 
    TestSuite_AddFull (
@@ -7062,7 +7061,6 @@ test_client_side_encryption_install (TestSuite *suite)
       test_framework_skip_if_max_wire_version_less_than_21,
       // Remove skip_if_serverless once DRIVERS-2589 is resolved.
       test_framework_skip_if_serverless,
-
       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
