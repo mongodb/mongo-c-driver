@@ -2474,7 +2474,6 @@ static void
 test_bson_as_json_string (void)
 {
    bson_t *all_types;
-   int i;
    char *actual;
    const char *expected =
       "{ \"double\" : { \"$numberDouble\" : \"1.0\" }, \"string\" : "
@@ -2498,9 +2497,9 @@ test_bson_as_json_string (void)
    all_types = bson_with_all_types ();
    actual = bson_as_canonical_extended_json (all_types, NULL);
 
-   for (i = 0; i < strlen (expected); i++) {
+   for (size_t i = 0u; i < strlen (expected); i++) {
       if (expected[i] != actual[i]) {
-         test_error ("character mismatch at %d. Expected: %s, got %s",
+         test_error ("character mismatch at %zu. Expected: %s, got %s",
                      i,
                      expected,
                      actual);
