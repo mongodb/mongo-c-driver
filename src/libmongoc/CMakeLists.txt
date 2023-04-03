@@ -1011,6 +1011,13 @@ endif ()
 
 if (ENABLE_TESTS)
    add_library (test-libmongoc-lib STATIC ${test-libmongoc-sources})
+   if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
+      message (STATUS "Disabling warning C4756 for VS 2013 and older")
+      # Macro constant INFINITY triggers constant arithmetic overflow warnings in
+      # VS 2013, but VS 2013 doesn't support inline warning suppression.
+      # Remove once support for VS 2013 is dropped.
+      target_compile_options(test-libmongoc-lib PRIVATE /wd4756)
+   endif ()
    target_link_libraries (test-libmongoc-lib PUBLIC mongoc_static)
    # We have tests that test our deprecated api.
    target_compile_options (test-libmongoc-lib
