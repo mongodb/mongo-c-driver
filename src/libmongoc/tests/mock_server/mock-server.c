@@ -876,9 +876,7 @@ mock_server_get_queue (mock_server_t *server)
 static void
 request_assert_no_duplicate_keys (request_t *request)
 {
-   int i;
-
-   for (i = 0; i < request->docs.len; i++) {
+   for (size_t i = 0u; i < request->docs.len; i++) {
       assert_no_duplicate_keys (request_get_doc (request, i));
    }
 }
