@@ -850,9 +850,9 @@ target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
 
 # mongoc-stat works if shared memory performance counters are enabled.
 if (ENABLE_SHM_COUNTERS STREQUAL "ON")
-   install (PROGRAMS ${PROJECT_BINARY_DIR}/mongoc-stat
-      DESTINATION ${CMAKE_INSTALL_BINDIR}
-   )
+   install (TARGETS mongoc-stat
+            EXPORT mongoc_targets
+            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif ()
 
 set (test-libmongoc-sources
