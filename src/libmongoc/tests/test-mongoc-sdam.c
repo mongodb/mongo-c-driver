@@ -369,7 +369,6 @@ sdam_integration_operation_cb (json_test_ctx_t *ctx,
 static void
 deactivate_failpoints_on_all_servers (mongoc_client_t *client)
 {
-   int i;
    uint32_t server_id;
    const mongoc_set_t *servers;
    bson_t cmd;
@@ -382,7 +381,7 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
    td = mc_tpld_take_ref (client->topology);
    servers = mc_tpld_servers_const (td.ptr);
 
-   for (i = 0; i < servers->items_len; i++) {
+   for (size_t i = 0u; i < servers->items_len; i++) {
       bool ret;
 
       server_id = servers->items[i].id;
