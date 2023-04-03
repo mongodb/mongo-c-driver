@@ -140,10 +140,8 @@ mongoc_set_get_item_and_id (mongoc_set_t *set, int idx, uint32_t *id /* OUT */)
 void
 mongoc_set_destroy (mongoc_set_t *set)
 {
-   int i;
-
    if (set->dtor) {
-      for (i = 0; i < set->items_len; i++) {
+      for (size_t i = 0u; i < set->items_len; i++) {
          set->dtor (set->items[i].item, set->dtor_ctx);
       }
    }
