@@ -292,7 +292,6 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
    struct pollfd *pfds;
 #endif
    int ret;
-   int i;
 
    ENTRY;
 
@@ -303,7 +302,7 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
    FD_ZERO (&write_fds);
    FD_ZERO (&error_fds);
 
-   for (i = 0; i < nsds; i++) {
+   for (size_t i = 0u; i < nsds; i++) {
       if (sds[i].events & POLLIN) {
          FD_SET (sds[i].socket->sd, &read_fds);
       }
@@ -325,7 +324,7 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
       return -1;
    }
 
-   for (i = 0; i < nsds; i++) {
+   for (size_t i = 0u; i < nsds; i++) {
       if (FD_ISSET (sds[i].socket->sd, &read_fds)) {
          sds[i].revents = POLLIN;
       } else if (FD_ISSET (sds[i].socket->sd, &write_fds)) {
@@ -339,14 +338,14 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
 #else
    pfds = (struct pollfd *) bson_malloc (sizeof (*pfds) * nsds);
 
-   for (i = 0; i < nsds; i++) {
+   for (size_t i = 0u; i < nsds; i++) {
       pfds[i].fd = sds[i].socket->sd;
       pfds[i].events = sds[i].events | POLLERR | POLLHUP;
       pfds[i].revents = 0;
    }
 
    ret = poll (pfds, nsds, timeout);
-   for (i = 0; i < nsds; i++) {
+   for (size_t i = 0u; i < nsds; i++) {
       sds[i].revents = pfds[i].revents;
    }
 
