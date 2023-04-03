@@ -346,18 +346,17 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
    mongoc_stream_poll_t *poller =
       (mongoc_stream_poll_t *) bson_malloc (sizeof (*poller) * nstreams);
 
-   int i;
    int last_type = 0;
    ssize_t rval = -1;
 
    errno = 0;
 
-   for (i = 0; i < nstreams; i++) {
+   for (size_t i = 0u; i < nstreams; i++) {
       poller[i].stream = mongoc_stream_get_root_stream (streams[i].stream);
       poller[i].events = streams[i].events;
       poller[i].revents = 0;
 
-      if (i == 0) {
+      if (i == 0u) {
          last_type = poller[i].stream->type;
       } else if (last_type != poller[i].stream->type) {
          errno = EINVAL;
@@ -373,7 +372,7 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
    rval = poller[0].stream->poll (poller, nstreams, timeout);
 
    if (rval > 0) {
-      for (i = 0; i < nstreams; i++) {
+      for (size_t i = 0u; i < nstreams; i++) {
          streams[i].revents = poller[i].revents;
       }
    }
