@@ -1,7 +1,17 @@
-libmongoc 1.24.0 (Unreleased)
-=============================
+libmongoc 1.23.3
+================
 
-  * Support for macOS 10.14 will be dropped in an upcoming release.
+Fixes:
+
+  * Better handle malformed `hello` responses
+  * Handle `connectionId` of type `double`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Gil Alon
+  * Kondaiah Valagonda
+
 
 
 libmongoc 1.23.2
@@ -17,26 +27,13 @@ Thanks to everyone who contributed to the development of this release.
   * Kyle Kloberdanz
 
 
-libmongoc 1.22.2
-================
-
-  * Fix connectivity to Atlas Data Lake
-  * Additional bugfixes from libbson 1.22.2
-
-Thanks to everyone who contributed to the development of this release.
-
-  * Andreas Braun
-  * Kevin Albertson
-  * Roberto C. Sánchez
-
-
 
 libmongoc 1.23.1
 ================
 
 Bug fixes:
 
-  * Fix connectivity to Atlas Data Lake 
+  * Fix connectivity to Atlas Data Lake
   * Fix crash when dropping a malformed Queryable Encryption collection.
 
 Thanks to everyone who contributed to the development of this release.
