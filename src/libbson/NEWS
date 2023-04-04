@@ -1,3 +1,16 @@
+libbson 1.23.3
+==============
+
+Fix:
+
+  * Don't use `aligned_alloc()` on Windows
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Jeroen Ooms
+
+
+
 libbson 1.23.2
 ==============
 

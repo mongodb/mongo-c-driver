@@ -1,3 +1,19 @@
+libmongoc 1.23.3
+================
+
+Fixes:
+
+  * Better handle malformed `hello` responses
+  * Handle `connectionId` of type `double`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Gil Alon
+  * Kondaiah Valagonda
+
+
+
 libmongoc 1.23.2
 ================
 
@@ -17,7 +33,7 @@ libmongoc 1.23.1
 
 Bug fixes:
 
-  * Fix connectivity to Atlas Data Lake 
+  * Fix connectivity to Atlas Data Lake
   * Fix crash when dropping a malformed Queryable Encryption collection.
 
 Thanks to everyone who contributed to the development of this release.
