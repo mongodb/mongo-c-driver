@@ -1,0 +1,64 @@
+{
+  "runOn": [
+    {
+      "minServerVersion": "6.0.0",
+      "maxServerVersion": "6.3.99",
+      "topology": [
+        "replicaset",
+        "sharded",
+        "load-balanced"
+      ]
+    }
+  ],
+  "database_name": "default",
+  "collection_name": "default",
+  "tests": [
+    {
+      "description": "driver returns an error if creating a QEv2 collection on unsupported server",
+      "clientOptions": {
+        "autoEncryptOpts": {
+          "kmsProviders": {
+            "aws": {}
+          },
+          "encryptedFieldsMap": {
+            "default.encryptedCollection": {
+              "escCollection": "enxcol_.encryptedCollection.esc",
+              "ecocCollection": "enxcol_.encryptedCollection.ecoc",
+              "fields": [
+                {
+                  "path": "firstName",
+                  "bsonType": "string",
+                  "keyId": {
+                    "$binary": {
+                      "subType": "04",
+                      "base64": "AAAAAAAAAAAAAAAAAAAAAA=="
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "operations": [
+        {
+          "name": "dropCollection",
+          "object": "database",
+          "arguments": {
+            "collection": "encryptedCollection"
+          }
+        },
+        {
+          "name": "createCollection",
+          "object": "database",
+          "arguments": {
+            "collection": "encryptedCollection"
+          },
+          "result": {
+            "errorContains": "Driver support of Queryable Encryption is incompatible with server. Upgrade server to use Queryable Encryption."
+          }
+        }
+      ]
+    }
+  ]
+}

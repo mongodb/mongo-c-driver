@@ -1105,6 +1105,30 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
       goto fail;
    }
 
+   // Check the wire version to ensure server is 7.0.0 or newer.
+   {
+      mongoc_server_stream_t *stream =
+         mongoc_cluster_stream_for_writes (&database->client->cluster,
+                                           NULL /* client session */,
+                                           NULL /* reply */,
+                                           error);
+      if (!stream) {
+         goto fail;
+      }
+      if (stream->sd->max_wire_version < WIRE_VERSION_7_0) {
+         bson_set_error (
+            error,
+            MONGOC_ERROR_PROTOCOL,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "Driver support of Queryable Encryption is incompatible "
+            "with server. Upgrade server to use Queryable Encryption.");
+         mongoc_server_stream_cleanup (stream);
+         goto fail;
+      }
+      mongoc_server_stream_cleanup (stream);
+   }
+
+
    /* Create data collection. */
    cc_opts = bson_copy (opts);
    if (!BSON_APPEND_DOCUMENT (cc_opts, "encryptedFields", encryptedFields)) {
