@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
     void
-    mongoc_client_encryption_encrypt_opts_set_min_max (
+    mongoc_client_encryption_encrypt_range_opts_set_min_max (
          mongoc_client_encryption_encrypt_range_opts_t *range_opts, 
          const bson_value_t *min,
          const bson_value_t *max);
