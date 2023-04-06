@@ -3,12 +3,27 @@ libbson 1.24.0 (Unreleased)
 
   * Support for macOS 10.14 will be dropped in an upcoming release.
 
+
+libbson 1.23.3
+==============
+
+Fix:
+
+  * Don't use `aligned_alloc()` on Windows
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Jeroen Ooms
+
+
+
 libbson 1.23.2
 ==============
 
 No changes since 1.23.1. Version incremented to match the libmongoc version.
 
 -- Kevin Albertson
+
 
 libbson 1.22.2
 ==============
