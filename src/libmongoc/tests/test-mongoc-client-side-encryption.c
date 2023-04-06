@@ -6202,6 +6202,7 @@ static void
 test_auto_datakeys (void *unused)
 {
    BSON_UNUSED (unused);
+
    bson_error_t error = {0};
    bson_t in_fields = BSON_INITIALIZER;
    bsonBuildArray ( //
@@ -6218,9 +6219,10 @@ test_auto_datakeys (void *unused)
       require (
          keyWithType ("0", doc), //
          parse (require (allOf (key ("keyId"), strEqual ("keepme")), nop))),
-      require (keyWithType ("1", doc),
-               parse (require (allOf (keyWithType ("keyId", int32)),
-                               do(ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
+      require (
+         keyWithType ("1", doc),
+         parse (require (allOf (keyWithType ("keyId", int32)),
+                         do (ASSERT_CMPINT32 (bsonAs (int32), ==, 42))))));
    ASSERT (bsonParseError == NULL);
    bson_destroy (&out_fields);
 
@@ -6376,7 +6378,7 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    ASSERT_OR_PRINT (ce, error);
 
    // Create the encrypted collection
-   bsonBuildDecl (ccOpts, do());
+   bsonBuildDecl (ccOpts, do ());
    mongoc_database_t *const db = mongoc_client_get_database (client, dbName);
    bson_t *const mkey = _make_kms_masterkey (kmsProvider);
    mongoc_collection_t *const coll =
@@ -6581,7 +6583,7 @@ CEC_TEST (test_create_encrypted_collection_insert,
             visitEach (require (type (doc)),
                        parse (require (key ("keyId"),
                                        require (type (binary)),
-                                       do({
+                                       do ({
                                           bson_value_copy (
                                              bson_iter_value (
                                                 (bson_iter_t *) &bsonVisitIter),
@@ -6957,14 +6959,17 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption);
 
-   TestSuite_AddFull (suite,
-                      "/client_side_encryption/explicit_encryption/case1",
-                      test_explicit_encryption_case1,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
-                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/explicit_encryption/case1",
+      test_explicit_encryption_case1,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_21,
+      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+      test_framework_skip_if_serverless,
+      test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/explicit_encryption/case2",
@@ -6972,35 +6977,46 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
+                      test_framework_skip_if_max_wire_version_less_than_21,
+                      // Remove skip_if_serverless once DRIVERS-2589 is resolved
+                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
-   TestSuite_AddFull (suite,
-                      "/client_side_encryption/explicit_encryption/case3",
-                      test_explicit_encryption_case3,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
-                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/explicit_encryption/case3",
+      test_explicit_encryption_case3,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_21,
+      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+      test_framework_skip_if_serverless,
+      test_framework_skip_if_single);
 
-   TestSuite_AddFull (suite,
-                      "/client_side_encryption/explicit_encryption/case4",
-                      test_explicit_encryption_case4,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
-                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/explicit_encryption/case4",
+      test_explicit_encryption_case4,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_21,
+      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+      test_framework_skip_if_serverless,
+      test_framework_skip_if_single);
 
-   TestSuite_AddFull (suite,
-                      "/client_side_encryption/explicit_encryption/case5",
-                      test_explicit_encryption_case5,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
-                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/explicit_encryption/case5",
+      test_explicit_encryption_case5,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_21,
+      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+      test_framework_skip_if_serverless,
+      test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/decryption_events/case1",
@@ -7035,14 +7051,17 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
-   TestSuite_AddFull (suite,
-                      "/client_side_encryption/qe_docs_example",
-                      test_qe_docs_example,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
-                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/qe_docs_example",
+      test_qe_docs_example,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_21,
+      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+      test_framework_skip_if_serverless,
+      test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms/callback",
@@ -7092,27 +7111,35 @@ test_client_side_encryption_install (TestSuite *suite)
       NULL,
       NULL,
       test_framework_skip_if_no_client_side_encryption,
-      test_framework_skip_if_max_wire_version_less_than_17,
+      test_framework_skip_if_max_wire_version_less_than_21,
+      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+      test_framework_skip_if_serverless,
       test_framework_skip_if_single);
 
-   TestSuite_AddFull (suite,
-                      "/client_side_encryption/createEncryptedCollection/"
-                      "missing-encryptedFields",
-                      test_create_encrypted_collection_no_encryptedFields,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
-                      test_framework_skip_if_single);
-   TestSuite_AddFull (suite,
-                      "/client_side_encryption/createEncryptedCollection/"
-                      "bad-keyId",
-                      test_create_encrypted_collection_bad_keyId,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_17,
-                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/createEncryptedCollection/"
+      "missing-encryptedFields",
+      test_create_encrypted_collection_no_encryptedFields,
+      NULL,
+      NULL,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_21,
+      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+      test_framework_skip_if_serverless,
+      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/createEncryptedCollection/"
+      "bad-keyId",
+      test_create_encrypted_collection_bad_keyId,
+      NULL,
+      NULL,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_21,
+      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+      test_framework_skip_if_serverless,
+      test_framework_skip_if_single);
    TestSuite_AddFull (
       suite,
       "/client_side_encryption/createEncryptedCollection/insert",
@@ -7120,7 +7147,9 @@ test_client_side_encryption_install (TestSuite *suite)
       NULL,
       NULL,
       test_framework_skip_if_no_client_side_encryption,
-      test_framework_skip_if_max_wire_version_less_than_17,
+      test_framework_skip_if_max_wire_version_less_than_21,
+      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+      test_framework_skip_if_serverless,
       test_framework_skip_if_single);
    TestSuite_AddFull (
       suite,
@@ -7179,7 +7208,9 @@ test_client_side_encryption_install (TestSuite *suite)
                   NULL /* dtor */,
                   (void *) rangeTypes[i] /* ctx */,
                   test_framework_skip_if_no_client_side_encryption,
-                  test_framework_skip_if_max_wire_version_less_than_19,
+                  test_framework_skip_if_max_wire_version_less_than_21,
+                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+                  test_framework_skip_if_serverless,
                   test_framework_skip_if_not_replset);
             } else {
                TestSuite_AddFull (
@@ -7189,7 +7220,9 @@ test_client_side_encryption_install (TestSuite *suite)
                   NULL /* dtor */,
                   (void *) rangeTypes[i] /* ctx */,
                   test_framework_skip_if_no_client_side_encryption,
-                  test_framework_skip_if_max_wire_version_less_than_19,
+                  test_framework_skip_if_max_wire_version_less_than_21,
+                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
+                  test_framework_skip_if_serverless,
                   test_framework_skip_if_single);
             }
 

@@ -1326,6 +1326,12 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    crypt = bson_malloc0 (sizeof (*crypt));
    crypt->handle = mongocrypt_new ();
 
+   // Enable the QEv2 protocol.
+   if (!mongocrypt_setopt_fle2v2 (crypt->handle, true)) {
+      _crypt_check_error (crypt->handle, error, true);
+      goto fail;
+   }
+
    // Stash away a copy of the user's kmsProviders in case we need to lazily
    // load credentials.
    bson_copy_to (kms_providers, &crypt->kms_providers);
