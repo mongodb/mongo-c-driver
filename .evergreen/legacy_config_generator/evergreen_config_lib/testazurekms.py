@@ -124,6 +124,11 @@ def _create_task_group():
     ]
 
     task_group.teardown_group = [
+        # Load expansions again. The setup task may have failed before running `expansions.update`.
+        OD([('command', 'expansions.update'),
+            ('params', OD([
+                ('file', 'testazurekms-expansions.yml'),
+            ]))]),
         shell_exec(r'''
             DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
                 export AZUREKMS_VMNAME=${AZUREKMS_VMNAME}
