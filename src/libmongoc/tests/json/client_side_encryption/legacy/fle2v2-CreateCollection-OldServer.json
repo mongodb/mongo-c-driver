@@ -22,16 +22,14 @@
           },
           "encryptedFieldsMap": {
             "default.encryptedCollection": {
-              "escCollection": "enxcol_.encryptedCollection.esc",
-              "ecocCollection": "enxcol_.encryptedCollection.ecoc",
               "fields": [
                 {
                   "path": "firstName",
                   "bsonType": "string",
                   "keyId": {
                     "$binary": {
-                      "subType": "04",
-                      "base64": "AAAAAAAAAAAAAAAAAAAAAA=="
+                      "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                      "subType": "04"
                     }
                   }
                 }
