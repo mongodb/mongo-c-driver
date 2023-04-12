@@ -2243,14 +2243,31 @@ test_count_read_concern_live (void *unused)
    collection = mongoc_client_get_collection (client, "test", "test");
    ASSERT (collection);
 
-   /* don't care if ns not found. */
-   (void) mongoc_collection_drop (collection, &error);
+   // Drop collection.
+   // Use writeConcern=majority so later readConcern=majority observes dropped
+   // collection.
+   {
+      mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      bson_t drop_opts = BSON_INITIALIZER;
+      mongoc_write_concern_append (wc, &drop_opts);
+      if (!mongoc_collection_drop_with_opts (collection, &drop_opts, &error)) {
+         // Ignore an "ns not found" error.
+         if (NULL == strstr (error.message, "ns not found")) {
+            ASSERT_OR_PRINT (false, error);
+         }
+      }
+
+      bson_destroy (&drop_opts);
+      mongoc_write_concern_destroy (wc);
+   }
 
    bson_init (&b);
    count = mongoc_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   ASSERT_OR_PRINT (count == 0, error);
+   ASSERT_OR_PRINT (count != -1, error);
+   ASSERT_CMPINT64 (count, ==, 0);
 
    /* Setting readConcern to NULL should not send readConcern */
    rc = mongoc_read_concern_new ();
@@ -2261,7 +2278,8 @@ test_count_read_concern_live (void *unused)
    count = mongoc_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   ASSERT_OR_PRINT (count == 0, error);
+   ASSERT_OR_PRINT (count != -1, error);
+   ASSERT_CMPINT64 (count, ==, 0);
    mongoc_read_concern_destroy (rc);
 
    /* readConcern: { level: local } should raise error pre 3.2 */
@@ -2273,7 +2291,8 @@ test_count_read_concern_live (void *unused)
    count = mongoc_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   ASSERT_OR_PRINT (count == 0, error);
+   ASSERT_OR_PRINT (count != -1, error);
+   ASSERT_CMPINT64 (count, ==, 0);
    mongoc_read_concern_destroy (rc);
 
    /* readConcern: { level: majority } should raise error pre 3.2 */
@@ -2285,7 +2304,8 @@ test_count_read_concern_live (void *unused)
    count = mongoc_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   ASSERT_OR_PRINT (count == 0, error);
+   ASSERT_OR_PRINT (count != -1, error);
+   ASSERT_CMPINT64 (count, ==, 0);
    mongoc_read_concern_destroy (rc);
 
    mongoc_collection_destroy (collection);
