@@ -31,7 +31,10 @@ def generate_test_tasks(SSL, TAG, MATRIX, MORE_COMPILE_TAGS=None, MORE_TEST_TAGS
     MORE_VARS = MORE_VARS if MORE_VARS else {}
 
     for distro_name, compiler, arch, sasl, auths, topologies, server_vers in MATRIX:
-        tags = [TAG, 'test', distro_name, compiler, f'sasl-{sasl}'] + MORE_COMPILE_TAGS
+        tags = [
+            TAG, 'test', distro_name, compiler, f'sasl-{sasl}'
+        ] + MORE_COMPILE_TAGS
+
         test_distro = find_small_distro(distro_name)
 
         compile_vars = []

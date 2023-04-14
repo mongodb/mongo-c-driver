@@ -5,6 +5,7 @@
 import http
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+
 class Simple(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(http.HTTPStatus.OK)
@@ -20,8 +21,11 @@ class Simple(BaseHTTPRequestHandler):
         self.wfile.write(
             'Response to POST by simple HTTP server'.encode('utf-8'))
 
+
 def main():
-    HTTPServer(server_address=('', 8000), RequestHandlerClass=Simple).serve_forever()
+    HTTPServer(server_address=('', 8000),
+               RequestHandlerClass=Simple).serve_forever()
+
 
 if __name__ == '__main__':
     main()
