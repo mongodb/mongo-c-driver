@@ -129,7 +129,7 @@ get_port (mongoc_socket_t *sock);
  */
 
 mock_server_t *
-mock_server_new ()
+mock_server_new (void)
 {
    mock_server_t *server =
       (mock_server_t *) bson_malloc0 (sizeof (mock_server_t));

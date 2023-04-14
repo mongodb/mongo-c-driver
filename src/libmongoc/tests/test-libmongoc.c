@@ -189,7 +189,7 @@ print_captured_logs (const char *prefix)
 #define DEFAULT_FUTURE_TIMEOUT_MS 10 * 1000
 
 int64_t
-get_future_timeout_ms ()
+get_future_timeout_ms (void)
 {
    return test_framework_getenv_int64 ("MONGOC_TEST_FUTURE_TIMEOUT_MS",
                                        DEFAULT_FUTURE_TIMEOUT_MS);
@@ -758,7 +758,7 @@ test_framework_add_user_password_from_env (const char *uri_str)
  *--------------------------------------------------------------------------
  */
 char *
-test_framework_get_compressors ()
+test_framework_get_compressors (void)
 {
    return test_framework_getenv ("MONGOC_TEST_COMPRESSORS");
 }
@@ -848,7 +848,7 @@ test_framework_get_ssl (void)
  *--------------------------------------------------------------------------
  */
 char *
-test_framework_get_unix_domain_socket_uri_str ()
+test_framework_get_unix_domain_socket_uri_str (void)
 {
    char *path;
    char *test_uri_str;
@@ -1161,7 +1161,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
  *--------------------------------------------------------------------------
  */
 char *
-test_framework_get_uri_str ()
+test_framework_get_uri_str (void)
 {
    char *uri_str_no_auth;
    char *uri_str;
@@ -1198,7 +1198,7 @@ test_framework_get_uri_str ()
  *--------------------------------------------------------------------------
  */
 mongoc_uri_t *
-test_framework_get_uri ()
+test_framework_get_uri (void)
 {
    bson_error_t error = {0};
 
@@ -1212,7 +1212,7 @@ test_framework_get_uri ()
 }
 
 mongoc_uri_t *
-test_framework_get_uri_multi_mongos_loadbalanced ()
+test_framework_get_uri_multi_mongos_loadbalanced (void)
 {
    char *uri_str_no_auth;
    char *uri_str;
@@ -1489,7 +1489,7 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 mongoc_client_t *
-test_framework_new_default_client ()
+test_framework_new_default_client (void)
 {
    char *test_uri_str = test_framework_get_uri_str ();
    mongoc_client_t *client = test_framework_client_new (test_uri_str, NULL);
@@ -1519,7 +1519,7 @@ test_framework_new_default_client ()
  *--------------------------------------------------------------------------
  */
 mongoc_client_t *
-test_framework_client_new_no_server_api ()
+test_framework_client_new_no_server_api (void)
 {
    mongoc_uri_t *uri = test_framework_get_uri ();
    mongoc_client_t *client = mongoc_client_new_from_uri (uri);
@@ -1721,7 +1721,7 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
  *--------------------------------------------------------------------------
  */
 mongoc_client_pool_t *
-test_framework_new_default_client_pool ()
+test_framework_new_default_client_pool (void)
 {
    mongoc_uri_t *test_uri = test_framework_get_uri ();
    mongoc_client_pool_t *pool =

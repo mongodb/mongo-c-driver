@@ -92,7 +92,7 @@ handle_abort (int signo)
 }
 
 void
-test_diagnostics_init ()
+test_diagnostics_init (void)
 {
    test_diagnostics_t *td = &diagnostics;
    memset (td, 0, sizeof (test_diagnostics_t));

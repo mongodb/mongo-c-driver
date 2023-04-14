@@ -74,7 +74,7 @@ BIO_set_init (BIO *b, int init)
 }
 
 BIO_METHOD *
-mongoc_stream_tls_openssl_bio_meth_new ()
+mongoc_stream_tls_openssl_bio_meth_new (void)
 {
    BIO_METHOD *meth = NULL;
 
