@@ -29,6 +29,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth-with-mongocrypt
@@ -51,6 +52,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth
@@ -72,6 +74,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth-with-mongocrypt
@@ -94,6 +97,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth
@@ -115,6 +119,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth-with-mongocrypt
@@ -137,6 +142,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-replica-auth
@@ -158,6 +164,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-replica-auth-with-mongocrypt
@@ -180,6 +187,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth
@@ -201,6 +209,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth-with-mongocrypt
@@ -223,6 +232,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-replica-auth
@@ -244,6 +254,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-replica-auth-with-mongocrypt
@@ -266,6 +277,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-server-auth
@@ -287,6 +299,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-server-auth-with-mongocrypt
@@ -309,6 +322,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1604-clang-compile
@@ -337,6 +351,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1604-clang-test-3.6-server-auth
     run_on: ubuntu1604-small
@@ -356,6 +371,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1604-clang-test-3.6-sharded-auth
     run_on: ubuntu1604-small
@@ -375,6 +391,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-compile
     run_on: ubuntu1804-large
@@ -402,6 +419,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-server-auth
     run_on: ubuntu1804-small
@@ -421,6 +439,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-sharded-auth
     run_on: ubuntu1804-small
@@ -440,6 +459,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-replica-auth
     run_on: ubuntu1804-small
@@ -459,6 +479,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth
     run_on: ubuntu1804-small
@@ -478,6 +499,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-sharded-auth
     run_on: ubuntu1804-small
@@ -497,6 +519,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-replica-auth
     run_on: ubuntu1804-small
@@ -516,6 +539,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth
     run_on: ubuntu1804-small
@@ -535,6 +559,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-sharded-auth
     run_on: ubuntu1804-small
@@ -554,6 +579,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-replica-auth
     run_on: ubuntu1804-small
@@ -573,6 +599,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth
     run_on: ubuntu1804-small
@@ -592,6 +619,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-sharded-auth
     run_on: ubuntu1804-small
@@ -611,6 +639,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-replica-auth
     run_on: ubuntu1804-small
@@ -630,6 +659,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth
     run_on: ubuntu1804-small
@@ -649,6 +679,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-sharded-auth
     run_on: ubuntu1804-small
@@ -668,6 +699,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-replica-auth
     run_on: ubuntu1804-small
@@ -687,6 +719,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-server-auth
     run_on: ubuntu1804-small
@@ -706,6 +739,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-sharded-auth
     run_on: ubuntu1804-small
@@ -725,6 +759,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: check-headers
     commands:
@@ -1787,6 +1822,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-4.0-server-auth
     run_on: macos-1100
@@ -1806,6 +1842,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-4.2-server-auth
     run_on: macos-1100
@@ -1825,6 +1862,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-4.4-server-auth
     run_on: macos-1100
@@ -1844,6 +1882,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-5.0-server-auth
     run_on: macos-1100
@@ -1863,6 +1902,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-1100-clang-test-latest-server-auth
     run_on: macos-1100
@@ -1882,6 +1922,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-archlinux-clang-compile
     run_on: archlinux-large
@@ -1989,6 +2030,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-4.4-server-auth
     run_on: rhel81-power8-small
@@ -2008,6 +2050,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-5.0-server-auth
     run_on: rhel81-power8-small
@@ -2027,6 +2070,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-6.0-server-auth
     run_on: rhel81-power8-small
@@ -2046,6 +2090,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel81-power8-gcc-test-latest-server-auth
     run_on: rhel81-power8-small
@@ -2065,6 +2110,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel83-zseries-gcc-compile
     run_on: rhel83-zseries-large
@@ -2092,6 +2138,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-6.0-server-auth
     run_on: rhel83-zseries-small
@@ -2111,6 +2158,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel83-zseries-gcc-test-latest-server-auth
     run_on: rhel83-zseries-small
@@ -2130,6 +2178,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1404-clang-compile
     run_on: ubuntu1404-large
@@ -2173,6 +2222,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1604-clang-compile
     run_on: ubuntu1604-large
@@ -2208,6 +2258,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-4.4-server-auth
     run_on: ubuntu1804-arm64-small
@@ -2227,6 +2278,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-5.0-server-auth
     run_on: ubuntu1804-arm64-small
@@ -2246,6 +2298,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-6.0-server-auth
     run_on: ubuntu1804-arm64-small
@@ -2265,6 +2318,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-arm64-gcc-test-latest-server-auth
     run_on: ubuntu1804-arm64-small
@@ -2284,6 +2338,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-compile
     run_on: ubuntu1804-large
@@ -2311,6 +2366,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.0-server-auth
     run_on: ubuntu1804-small
@@ -2330,6 +2386,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.2-replica-auth
     run_on: ubuntu1804-small
@@ -2349,6 +2406,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.2-server-auth
     run_on: ubuntu1804-small
@@ -2368,6 +2426,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.4-replica-auth
     run_on: ubuntu1804-small
@@ -2387,6 +2446,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-4.4-server-auth
     run_on: ubuntu1804-small
@@ -2406,6 +2466,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-5.0-replica-auth
     run_on: ubuntu1804-small
@@ -2425,6 +2486,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-5.0-server-auth
     run_on: ubuntu1804-small
@@ -2444,6 +2506,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-6.0-replica-auth
     run_on: ubuntu1804-small
@@ -2463,6 +2526,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-6.0-server-auth
     run_on: ubuntu1804-small
@@ -2482,6 +2546,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-latest-replica-auth
     run_on: ubuntu1804-small
@@ -2501,6 +2566,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu1804-gcc-test-latest-server-auth
     run_on: ubuntu1804-small
@@ -2520,6 +2586,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-gcc-compile
     run_on: ubuntu2004-large
@@ -2555,6 +2622,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-winssl-vs2013-x64-compile
     run_on: windows-64-vs2013-large
@@ -2598,6 +2666,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-winssl-vs2017-x64-test-4.0-server-auth
     run_on: windows-64-vs2017-small
@@ -2617,6 +2686,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-winssl-vs2017-x64-test-4.2-server-auth
     run_on: windows-64-vs2017-small
@@ -2636,6 +2706,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-winssl-vs2017-x64-test-4.4-server-auth
     run_on: windows-64-vs2017-small
@@ -2655,6 +2726,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-winssl-vs2017-x64-test-5.0-server-auth
     run_on: windows-64-vs2017-small
@@ -2674,6 +2746,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-winssl-vs2017-x64-test-6.0-server-auth
     run_on: windows-64-vs2017-small
@@ -2693,6 +2766,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-winssl-vs2017-x64-test-latest-server-auth
     run_on: windows-64-vs2017-small
@@ -2712,6 +2786,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-macos-1014-clang-compile
     run_on: macos-1014
@@ -2747,6 +2822,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1604-gcc-test-3.6-server-noauth
     run_on: ubuntu1604-small
@@ -2766,6 +2842,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1604-gcc-test-3.6-sharded-noauth
     run_on: ubuntu1604-small
@@ -2785,6 +2862,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-compile
     run_on: ubuntu1804-large
@@ -2812,6 +2890,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-4.0-server-noauth
     run_on: ubuntu1804-small
@@ -2831,6 +2910,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-4.0-sharded-noauth
     run_on: ubuntu1804-small
@@ -2850,6 +2930,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-4.2-replica-noauth
     run_on: ubuntu1804-small
@@ -2869,6 +2950,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-4.2-server-noauth
     run_on: ubuntu1804-small
@@ -2888,6 +2970,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-4.2-sharded-noauth
     run_on: ubuntu1804-small
@@ -2907,6 +2990,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-4.4-replica-noauth
     run_on: ubuntu1804-small
@@ -2926,6 +3010,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-4.4-server-noauth
     run_on: ubuntu1804-small
@@ -2945,6 +3030,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-4.4-sharded-noauth
     run_on: ubuntu1804-small
@@ -2964,6 +3050,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-5.0-replica-noauth
     run_on: ubuntu1804-small
@@ -2983,6 +3070,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-5.0-server-noauth
     run_on: ubuntu1804-small
@@ -3002,6 +3090,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-5.0-sharded-noauth
     run_on: ubuntu1804-small
@@ -3021,6 +3110,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-latest-replica-noauth
     run_on: ubuntu1804-small
@@ -3040,6 +3130,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-latest-server-noauth
     run_on: ubuntu1804-small
@@ -3059,6 +3150,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu1804-gcc-test-latest-sharded-noauth
     run_on: ubuntu1804-small
@@ -3078,6 +3170,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-vs2017-x64-compile
     run_on: windows-64-vs2017-large
@@ -3145,6 +3238,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-vs2017-x64-compile
     run_on: windows-64-vs2017-large
@@ -3172,6 +3266,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-vs2017-x86-compile
     run_on: windows-64-vs2017-large
@@ -3199,6 +3294,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: scan-build-macos-1100-clang
     run_on: macos-1100
@@ -3406,6 +3502,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-server-auth
     run_on: ubuntu1804-small
@@ -3425,6 +3522,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.0-sharded-auth
     run_on: ubuntu1804-small
@@ -3444,6 +3542,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-replica-auth
     run_on: ubuntu1804-small
@@ -3463,6 +3562,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-server-auth
     run_on: ubuntu1804-small
@@ -3482,6 +3582,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.2-sharded-auth
     run_on: ubuntu1804-small
@@ -3501,6 +3602,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-replica-auth
     run_on: ubuntu1804-small
@@ -3520,6 +3622,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-server-auth
     run_on: ubuntu1804-small
@@ -3539,6 +3642,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-4.4-sharded-auth
     run_on: ubuntu1804-small
@@ -3558,6 +3662,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-replica-auth
     run_on: ubuntu1804-small
@@ -3577,6 +3682,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-server-auth
     run_on: ubuntu1804-small
@@ -3596,6 +3702,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-5.0-sharded-auth
     run_on: ubuntu1804-small
@@ -3615,6 +3722,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-replica-auth
     run_on: ubuntu1804-small
@@ -3634,6 +3742,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-server-auth
     run_on: ubuntu1804-small
@@ -3653,6 +3762,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-6.0-sharded-auth
     run_on: ubuntu1804-small
@@ -3672,6 +3782,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-replica-auth
     run_on: ubuntu1804-small
@@ -3691,6 +3802,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-server-auth
     run_on: ubuntu1804-small
@@ -3710,6 +3822,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-test-latest-sharded-auth
     run_on: ubuntu1804-small
@@ -3729,4 +3842,5 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
       - func: run-tests

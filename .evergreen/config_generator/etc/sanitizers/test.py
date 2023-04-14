@@ -12,6 +12,7 @@ from config_generator.etc.utils import Task
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
+from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_mock_kms_servers import RunMockKMSServers
 from config_generator.components.funcs.run_tests import RunTests
 
@@ -77,6 +78,7 @@ def generate_test_tasks(SSL, TAG, MATRIX, MORE_COMPILE_TAGS=None, MORE_TEST_TAGS
             test_commands.append(expansions_update(updates=updates))
             test_commands.append(FetchDET.call())
             test_commands.append(BootstrapMongoOrchestration.call())
+            test_commands.append(RunSimpleHTTPServer.call())
 
             if 'cse' in MORE_COMPILE_TAGS:
                 test_commands.append(RunMockKMSServers.call())

@@ -1165,6 +1165,7 @@ tasks:
       MONGODB_VERSION: latest
       SSL: openssl
       TOPOLOGY: replica_set
+  - func: run-simple-http-server
   - func: fetch-det
   - func: run-mock-kms-servers
   - func: run-tests
@@ -1326,6 +1327,7 @@ tasks:
       AUTH: noauth
       ORCHESTRATION_FILE: zlib
       SSL: nossl
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: noauth
@@ -1348,6 +1350,7 @@ tasks:
       AUTH: noauth
       ORCHESTRATION_FILE: snappy
       SSL: nossl
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: noauth
@@ -1370,6 +1373,7 @@ tasks:
       AUTH: noauth
       ORCHESTRATION_FILE: zstd
       SSL: nossl
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: noauth
@@ -1394,6 +1398,7 @@ tasks:
       AUTH: noauth
       ORCHESTRATION_FILE: snappy-zlib-zstd
       SSL: nossl
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: noauth
@@ -1411,6 +1416,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       TOPOLOGY: server
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       URI: mongodb://localhost/?retryWrites=true
@@ -1429,6 +1435,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       TOPOLOGY: server
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       URI: null
@@ -1556,6 +1563,7 @@ tasks:
       REQUIRE_API_VERSION: 'true'
       SSL: ssl
       TOPOLOGY: server
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: auth
@@ -1578,6 +1586,7 @@ tasks:
       ORCHESTRATION_FILE: versioned-api-testing
       SSL: nossl
       TOPOLOGY: server
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       AUTH: noauth
@@ -1718,6 +1727,7 @@ tasks:
   - func: bootstrap-mongo-orchestration
     vars:
       IPV4_ONLY: 'off'
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       IPV4_ONLY: 'off'
@@ -1739,6 +1749,7 @@ tasks:
   - func: bootstrap-mongo-orchestration
     vars:
       IPV4_ONLY: 'off'
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       IPV4_ONLY: 'off'
@@ -1760,6 +1771,7 @@ tasks:
   - func: bootstrap-mongo-orchestration
     vars:
       IPV4_ONLY: 'on'
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       IPV4_ONLY: 'on'
@@ -1781,6 +1793,7 @@ tasks:
   - func: bootstrap-mongo-orchestration
     vars:
       IPV4_ONLY: 'on'
+  - func: run-simple-http-server
   - func: run-tests
     vars:
       IPV4_ONLY: 'on'
@@ -8958,6 +8971,7 @@ tasks:
       MONGODB_VERSION: '5.0'
       SSL: ssl
       TOPOLOGY: sharded_cluster
+  - func: run-simple-http-server
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -8985,6 +8999,7 @@ tasks:
       MONGODB_VERSION: latest
       SSL: ssl
       TOPOLOGY: sharded_cluster
+  - func: run-simple-http-server
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -9012,6 +9027,7 @@ tasks:
       MONGODB_VERSION: '5.0'
       SSL: nossl
       TOPOLOGY: sharded_cluster
+  - func: run-simple-http-server
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -9039,6 +9055,7 @@ tasks:
       MONGODB_VERSION: latest
       SSL: nossl
       TOPOLOGY: sharded_cluster
+  - func: run-simple-http-server
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018

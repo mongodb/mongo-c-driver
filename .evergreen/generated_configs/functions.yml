@@ -318,6 +318,20 @@ functions:
             python -u kms_kmip_server.py &
             deactivate
             echo "Starting mock KMS TLS servers... done."
+  run-simple-http-server:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        background: true
+        args:
+          - -c
+          - |
+            set -o errexit
+            echo "Starting simple HTTP server..."
+            .evergreen/scripts/simple_http_server.py
+            echo "Starting simple HTTP server... done."
   run-tests:
     - command: subprocess.exec
       type: test
