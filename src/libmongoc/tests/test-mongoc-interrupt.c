@@ -64,8 +64,6 @@ test_interrupt (void)
    mock_server_t *server;
    mongoc_interrupt_t *interrupt;
    mongoc_stream_poll_t *poller;
-   uint64_t started_ms;
-   int i;
    future_t *future;
    const mongoc_uri_t *uri;
    mongoc_stream_t *stream;
@@ -79,27 +77,33 @@ test_interrupt (void)
    poller[0].events = POLLIN;
 
    /* Test that sending an interrupt before the poll executes quickly. */
-   started_ms = _time_ms ();
-   poller[0].revents = 0;
-   _mongoc_interrupt_interrupt (interrupt);
-   mongoc_stream_poll (poller, 1, 10000);
-   _mongoc_interrupt_flush (interrupt);
-   ASSERT_CMPTIME (_time_ms () - started_ms, 10000);
+   {
+      const int64_t started_ms = _time_ms ();
+      poller[0].revents = 0;
+      _mongoc_interrupt_interrupt (interrupt);
+      mongoc_stream_poll (poller, 1, 10000);
+      _mongoc_interrupt_flush (interrupt);
+      ASSERT_CMPTIME (_time_ms () - started_ms, 10000);
+   }
 
    /* Test that an interrupt after polling executes quickly. */
-   started_ms = _time_ms ();
-   poller[0].revents = 0;
-   future = _future_interrupt (interrupt);
-   mongoc_stream_poll (poller, 1, 10000);
-   _mongoc_interrupt_flush (interrupt);
-   ASSERT_CMPTIME (_time_ms () - started_ms, 10000);
-   future_wait (future);
-   future_destroy (future);
+   {
+      const int64_t started_ms = _time_ms ();
+      poller[0].revents = 0;
+      future = _future_interrupt (interrupt);
+      mongoc_stream_poll (poller, 1, 10000);
+      _mongoc_interrupt_flush (interrupt);
+      ASSERT_CMPTIME (_time_ms () - started_ms, 10000);
+      future_wait (future);
+      future_destroy (future);
+   }
 
    /* Flushing with nothing queued up does not block. */
-   started_ms = _time_ms ();
-   _mongoc_interrupt_flush (interrupt);
-   ASSERT_CMPTIME (_time_ms () - started_ms, 10000);
+   {
+      const int64_t started_ms = _time_ms ();
+      _mongoc_interrupt_flush (interrupt);
+      ASSERT_CMPTIME (_time_ms () - started_ms, 10000);
+   }
 
    /* Test interrupting while polling on another socket. */
    server = mock_server_new ();
@@ -116,8 +120,8 @@ test_interrupt (void)
    poller[1].stream = stream;
    poller[1].events = POLLIN;
 
-   for (i = 0; i < 10; i++) {
-      started_ms = _time_ms ();
+   for (int i = 0; i < 10; i++) {
+      const int64_t started_ms = _time_ms ();
       _mongoc_interrupt_interrupt (interrupt);
       mongoc_stream_poll (poller, 2, 10000);
       ASSERT_CMPTIME (_time_ms () - started_ms, 10000);
@@ -130,8 +134,8 @@ test_interrupt (void)
    poller[1].revents = 0;
    poller[1].stream = _mongoc_interrupt_get_stream (interrupt);
 
-   for (i = 0; i < 10; i++) {
-      started_ms = _time_ms ();
+   for (int i = 0; i < 10; i++) {
+      const int64_t started_ms = _time_ms ();
       _mongoc_interrupt_interrupt (interrupt);
       mongoc_stream_poll (poller, 2, 10000);
       ASSERT_CMPTIME (_time_ms () - started_ms, 10000);

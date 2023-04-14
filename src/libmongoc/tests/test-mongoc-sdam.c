@@ -195,9 +195,9 @@ test_sdam_cb (bson_t *test)
          mc_tpld_renew_ref (&td, client->topology);
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &servers);
-            ASSERT_CMPINT (bson_count_keys (&servers),
-                           ==,
-                           mc_tpld_servers_const (td.ptr)->items_len);
+            ASSERT_CMPSIZE_T (bson_count_keys (&servers),
+                              ==,
+                              mc_tpld_servers_const (td.ptr)->items_len);
 
             bson_iter_init (&servers_iter, &servers);
 
@@ -259,7 +259,7 @@ test_sdam_cb (bson_t *test)
          } else if (strcmp ("maxElectionId", bson_iter_key (&outcome_iter)) ==
                     0) {
             const bson_oid_t *expected_oid;
-            bson_oid_t zeroed = {0};
+            bson_oid_t zeroed = {.bytes = {0}};
 
             expected_oid = bson_iter_oid (&outcome_iter);
 
@@ -369,7 +369,6 @@ sdam_integration_operation_cb (json_test_ctx_t *ctx,
 static void
 deactivate_failpoints_on_all_servers (mongoc_client_t *client)
 {
-   int i;
    uint32_t server_id;
    const mongoc_set_t *servers;
    bson_t cmd;
@@ -382,7 +381,7 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
    td = mc_tpld_take_ref (client->topology);
    servers = mc_tpld_servers_const (td.ptr);
 
-   for (i = 0; i < servers->items_len; i++) {
+   for (size_t i = 0u; i < servers->items_len; i++) {
       bool ret;
 
       server_id = servers->items[i].id;

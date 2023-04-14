@@ -2123,12 +2123,11 @@ index_exists (mongoc_client_t *client, const bson_t *operation)
 static uint32_t
 _get_total_pool_cleared_event (json_test_ctx_t *ctx)
 {
-   uint32_t i;
    uint32_t total = 0;
    mc_shared_tpld td = mc_tpld_take_ref (ctx->client->topology);
 
    /* Go get total generation counts. */
-   for (i = 0; i < mc_tpld_servers_const (td.ptr)->items_len; i++) {
+   for (size_t i = 0u; i < mc_tpld_servers_const (td.ptr)->items_len; i++) {
       const mongoc_server_description_t *sd;
 
       sd = mongoc_set_get_item_const (mc_tpld_servers_const (td.ptr), i);
@@ -2144,24 +2143,22 @@ _get_total_pool_cleared_event (json_test_ctx_t *ctx)
 static void
 wait_for_event (json_test_ctx_t *ctx, const bson_t *operation)
 {
-   const char *event_name;
-   int64_t count;
-   uint64_t expires_us;
    bool satisfied = false;
    int64_t measured = 0;
    int64_t total = 0;
 
-   event_name = bson_lookup_utf8 (operation, "arguments.event");
-   count = bson_lookup_int32 (operation, "arguments.count");
-   expires_us = bson_get_monotonic_time () + WAIT_FOR_EVENT_TIMEOUT_MS * 1000;
-   while (!satisfied && bson_get_monotonic_time () < expires_us) {
-      int64_t diff;
+   const char *const event_name =
+      bson_lookup_utf8 (operation, "arguments.event");
+   const int32_t count = bson_lookup_int32 (operation, "arguments.count");
+   const int64_t expires_us =
+      bson_get_monotonic_time () + WAIT_FOR_EVENT_TIMEOUT_MS * 1000;
 
+   while (!satisfied && bson_get_monotonic_time () < expires_us) {
       if (0 == strcmp (event_name, "ServerMarkedUnknownEvent")) {
          bson_mutex_lock (&ctx->mutex);
          measured = ctx->measured_ServerMarkedUnknownEvent;
          total = ctx->total_ServerMarkedUnknownEvent;
-         diff = total - measured;
+         const int64_t diff = total - measured;
          if (diff >= count) {
             /* "count" events were accounted for in the test. There may be more
              * later. */
@@ -2171,9 +2168,9 @@ wait_for_event (json_test_ctx_t *ctx, const bson_t *operation)
          bson_mutex_unlock (&ctx->mutex);
       } else if (0 == strcmp (event_name, "PoolClearedEvent")) {
          bson_mutex_lock (&ctx->mutex);
-         total = _get_total_pool_cleared_event (ctx);
+         total = (int64_t) _get_total_pool_cleared_event (ctx);
          measured = ctx->measured_PoolClearedEvent;
-         diff = total - measured;
+         const int64_t diff = total - measured;
          if (diff >= count) {
             /* "count" events were accounted for in the test. There may be more
              * later. */
@@ -2188,35 +2185,35 @@ wait_for_event (json_test_ctx_t *ctx, const bson_t *operation)
          _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
       }
    }
+
    if (!satisfied) {
-      test_error ("did not see enough %s events after 10s. %d total occurred. "
-                  "%d accounted for. But %d more expected",
+      test_error ("did not see enough %s events after 10s. %" PRId64
+                  " total occurred. %" PRId64 " accounted for. But %" PRId32
+                  " more expected",
                   event_name,
-                  (int) total,
-                  (int) measured,
-                  (int) count);
+                  total,
+                  measured,
+                  count);
    }
 }
 
 static void
 wait_for_primary_change (json_test_ctx_t *ctx, const bson_t *operation)
 {
-   uint64_t expires_us;
    bool satisfied = false;
    int64_t measured = 0;
    int64_t total = 0;
-   uint32_t timeout_ms;
 
-   timeout_ms = bson_lookup_int32 (operation, "arguments.timeoutMS");
-   expires_us = bson_get_monotonic_time () + timeout_ms * 1000;
+   const int32_t timeout_ms =
+      bson_lookup_int32 (operation, "arguments.timeoutMS");
+   const int64_t expires_us = bson_get_monotonic_time () + timeout_ms * 1000;
+
    while (!satisfied && bson_get_monotonic_time () < expires_us) {
-      int64_t diff;
-
       bson_mutex_lock (&ctx->mutex);
 
       total = ctx->total_PrimaryChangedEvent;
       measured = ctx->measured_PrimaryChangedEvent;
-      diff = total - measured;
+      const int64_t diff = total - measured;
       if (diff >= 1) {
          /* 1 event accounted for. There may be more later. */
          ctx->measured_PrimaryChangedEvent++;
@@ -2228,35 +2225,37 @@ wait_for_primary_change (json_test_ctx_t *ctx, const bson_t *operation)
          _mongoc_usleep (10 * 1000);
       }
    }
+
    if (!satisfied) {
-      test_error (
-         "did not see any primary change events after %dms. %d total occurred. "
-         "%d accounted for.",
-         timeout_ms,
-         (int) total,
-         (int) measured);
+      test_error ("did not see any primary change events after %" PRId32
+                  "ms. %" PRId64 " total occurred. "
+                  "%" PRId64 " accounted for.",
+                  timeout_ms,
+                  total,
+                  measured);
    }
 }
 
 static void
 assert_event_count (json_test_ctx_t *ctx, const bson_t *operation)
 {
-   const char *event_name;
-   uint32_t count;
-   uint32_t total = 0;
+   int64_t total = 0;
 
-   event_name = bson_lookup_utf8 (operation, "arguments.event");
-   count = bson_lookup_int32 (operation, "arguments.count");
+   const char *const event_name =
+      bson_lookup_utf8 (operation, "arguments.event");
+   const int32_t count = bson_lookup_int32 (operation, "arguments.count");
 
    if (0 == strcmp (event_name, "ServerMarkedUnknownEvent")) {
       total = ctx->total_ServerMarkedUnknownEvent;
    } else if (0 == strcmp (event_name, "PoolClearedEvent")) {
-      total = _get_total_pool_cleared_event (ctx);
+      total = (int64_t) _get_total_pool_cleared_event (ctx);
    } else {
       test_error ("Unknown event: %s", event_name);
    }
+
    if (count != total) {
-      test_error ("event count %s mismatched. Expected %d, but have %d",
+      test_error ("event count %s mismatched. Expected %" PRId32
+                  ", but have %" PRId64,
                   event_name,
                   count,
                   total);

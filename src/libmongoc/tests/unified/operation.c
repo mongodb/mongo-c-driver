@@ -218,7 +218,8 @@ operation_list_database_names (test_t *test,
             const char *key = NULL;
             const size_t key_len =
                bson_uint32_to_string (idx++, &key, buffer, sizeof (buffer));
-            bson_append_utf8 (&element, key, key_len, *names_iter, -1);
+            ASSERT (bson_in_range_unsigned (int, key_len));
+            bson_append_utf8 (&element, key, (int) key_len, *names_iter, -1);
          }
          bson_append_array_end (&bson, &element);
 
@@ -2465,12 +2466,14 @@ operation_download (test_t *test,
    if (stream) {
       while ((bytes_read =
                  mongoc_stream_read (stream, buf, sizeof (buf), 1, 0)) > 0) {
-         _mongoc_array_append_vals (&all_bytes, buf, bytes_read);
+         ASSERT (bson_in_range_signed (uint32_t, bytes_read));
+         _mongoc_array_append_vals (&all_bytes, buf, (uint32_t) bytes_read);
       }
       mongoc_gridfs_bucket_stream_error (stream, &op_error);
    }
 
-   val = bson_val_from_bytes (all_bytes.data, all_bytes.len);
+   ASSERT (bson_in_range_unsigned (uint32_t, all_bytes.len));
+   val = bson_val_from_bytes (all_bytes.data, (uint32_t) all_bytes.len);
    result_from_val_and_reply (result, val, NULL, &op_error);
 
    ret = true;
@@ -2515,7 +2518,7 @@ operation_upload (test_t *test,
       bucket, filename, bson_parser_get_extra (bp), &file_id, &op_error);
 
    if (stream) {
-      ssize_t total_written = 0;
+      size_t total_written = 0u;
       uint8_t *source_bytes;
       uint32_t source_bytes_len;
       bson_iter_t iter;
@@ -2529,17 +2532,12 @@ operation_upload (test_t *test,
       source_bytes =
          hex_to_bin (bson_iter_utf8 (&iter, NULL), &source_bytes_len);
       while (total_written < source_bytes_len) {
-         ssize_t bytes_written = 0;
-
-         bytes_written =
-            mongoc_stream_write (stream,
-                                 source_bytes,
-                                 (size_t) (source_bytes_len - total_written),
-                                 0);
+         const ssize_t bytes_written = mongoc_stream_write (
+            stream, source_bytes, source_bytes_len - total_written, 0);
          if (bytes_written < 0) {
             break;
          }
-         total_written += bytes_written;
+         total_written += (size_t) bytes_written;
       }
       mongoc_gridfs_bucket_stream_error (stream, &op_error);
       bson_free (source_bytes);

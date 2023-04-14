@@ -3700,7 +3700,7 @@ test_bulk_max_msg_size (void)
    stats_t stats = {0};
    int str_size = 16 * 1024 * 1024 - 24;
    char *msg = bson_malloc (str_size + 1);
-   int filler_string = 14445428;
+   size_t filler_string = 14445428u;
    mongoc_client_session_t *cs;
 
    memset (msg, 'a', str_size);
@@ -3725,12 +3725,12 @@ test_bulk_max_msg_size (void)
    /* Cluster time document argument is injected sometimes */
    if (!bson_empty (&client->topology->_shared_descr_.ptr->cluster_time)) {
       filler_string -= client->topology->_shared_descr_.ptr->cluster_time.len +
-                       strlen ("$clusterTime") + 2;
+                       strlen ("$clusterTime") + 2u;
    }
 
    /* API version may be appended */
    if (client->api) {
-      filler_string -= strlen ("apiVersion") + 7 +
+      filler_string -= strlen ("apiVersion") + 7u +
                        strlen (mongoc_server_api_version_to_string (
                           mongoc_server_api_get_version (client->api)));
    }
@@ -3739,12 +3739,12 @@ test_bulk_max_msg_size (void)
    if (cs) {
       /* sessions are supported */
       filler_string -=
-         mongoc_client_session_get_lsid (cs)->len + strlen ("lsid") + 2;
+         mongoc_client_session_get_lsid (cs)->len + strlen ("lsid") + 2u;
 
       /* TODO: this check can be removed once CDRIVER-3070 is resolved */
       if (test_framework_is_mongos () || test_framework_is_replset ()) {
          /* retryable writes includes a txnNumber (int64) */
-         filler_string -= strlen ("txnNumber") + 10;
+         filler_string -= strlen ("txnNumber") + 10u;
       }
 
       ASSERT_OR_PRINT (mongoc_client_session_append (cs, &opts, &error), error);
@@ -3769,7 +3769,8 @@ test_bulk_max_msg_size (void)
    /* fill up to the 48 000 000 bytes message size */
    bson_init (&doc);
    bson_append_int32 (&doc, "_id", -1, 3);
-   bson_append_utf8 (&doc, "msg", -1, msg, filler_string);
+   ASSERT (bson_in_range_unsigned (int, filler_string));
+   bson_append_utf8 (&doc, "msg", -1, msg, (int) filler_string);
    mongoc_bulk_operation_insert (bulk, &doc);
    bson_destroy (&doc);
 
@@ -3803,7 +3804,8 @@ test_bulk_max_msg_size (void)
    /* fill up to the 48 000 001 bytes message size */
    bson_init (&doc);
    bson_append_int32 (&doc, "_id", -1, 3);
-   bson_append_utf8 (&doc, "msg", -1, msg, filler_string + 1);
+   ASSERT (bson_in_range_unsigned (int, filler_string + 1u));
+   bson_append_utf8 (&doc, "msg", -1, msg, (int) (filler_string + 1u));
    mongoc_bulk_operation_insert (bulk, &doc);
    bson_destroy (&doc);
 

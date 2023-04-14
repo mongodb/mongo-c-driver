@@ -93,10 +93,9 @@ void
 mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 {
    mongoc_write_command_t *command;
-   int i;
 
    if (bulk) {
-      for (i = 0; i < bulk->commands.len; i++) {
+      for (size_t i = 0; i < bulk->commands.len; i++) {
          command =
             &_mongoc_array_index (&bulk->commands, mongoc_write_command_t, i);
          _mongoc_write_command_destroy (command);
@@ -750,7 +749,6 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
    mongoc_server_stream_t *server_stream;
    bool ret;
    uint32_t offset = 0;
-   int i;
 
    ENTRY;
 
@@ -807,7 +805,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
       GOTO (err);
    }
 
-   for (i = 0; i < bulk->commands.len; i++) {
+   for (size_t i = 0u; i < bulk->commands.len; i++) {
       if (bulk->server_id) {
          server_stream =
             mongoc_cluster_stream_for_server (cluster,

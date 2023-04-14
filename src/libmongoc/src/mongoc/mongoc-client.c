@@ -1708,7 +1708,7 @@ _mongoc_client_retryable_write_command_with_stream (
       bson_t reply;
       bson_error_t error;
       bool set;
-   } original_error = {0};
+   } original_error = {.reply = {0}, .error = {0}, false};
 
 retry:
    ret = mongoc_cluster_run_command_monitored (

@@ -58,6 +58,8 @@
 
 #include <bson/bson-dsl.h>
 
+#include <inttypes.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
 
@@ -154,13 +156,15 @@ _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
                               int skip,
                               char *buffer)
 {
-   int n;
    size_t buffer_offset = 0;
    int total_iov_len = 0;
-   int difference = 0;
+   size_t difference = 0;
 
-   for (n = 0; n < iovcnt; n++) {
-      total_iov_len += iov[n].iov_len;
+   for (size_t n = 0u; n < iovcnt; n++) {
+      BSON_ASSERT (bson_in_range_unsigned (int, iov[n].iov_len));
+      const int iov_len = (int) iov[n].iov_len;
+
+      total_iov_len += iov_len;
 
       if (total_iov_len <= skip) {
          continue;
@@ -169,10 +173,11 @@ _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
       /* If this iovec starts before the skip, and takes the total count
        * beyond the skip, we need to figure out the portion of the iovec
        * we should skip passed */
-      if (total_iov_len - iov[n].iov_len < skip) {
-         difference = skip - (total_iov_len - iov[n].iov_len);
+      const int remaining = total_iov_len - iov_len;
+      if (remaining < skip) {
+         difference = (size_t) (skip - remaining);
       } else {
-         difference = 0;
+         difference = 0u;
       }
 
       memcpy (buffer + buffer_offset,
@@ -251,7 +256,6 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    bson_t *reply_ptr;
    char *cmd_ns;
    uint32_t request_id;
-   int32_t msg_len;
    size_t doc_len;
    bool ret = false;
    char *output = NULL;
@@ -333,6 +337,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
       GOTO (done);
    }
 
+   uint32_t msg_len;
    memcpy (&msg_len, reply_header_buf, 4);
    msg_len = BSON_UINT32_FROM_LE (msg_len);
    if ((msg_len < reply_header_size) ||
@@ -346,7 +351,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
       _handle_network_error (cluster, cmd->server_stream, error);
       GOTO (done);
    }
-   doc_len = (size_t) msg_len - reply_header_size;
+   doc_len = msg_len - reply_header_size;
 
    if (BSON_UINT32_FROM_LE (rpc.header.opcode) == MONGOC_OPCODE_COMPRESSED) {
       bson_t tmp = BSON_INITIALIZER;
@@ -3277,12 +3282,14 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
 
    max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
-   if (BSON_UINT32_FROM_LE (rpc->header.msg_len) > max_msg_size) {
+   if (bson_cmp_greater_us (BSON_UINT32_FROM_LE (rpc->header.msg_len),
+                            max_msg_size)) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_TOO_BIG,
                       "Attempted to send an RPC larger than the "
-                      "max allowed message size. Was %u, allowed %u.",
+                      "max allowed message size. Was %" PRIu32
+                      ", allowed %" PRId32 ".",
                       BSON_UINT32_FROM_LE (rpc->header.msg_len),
                       max_msg_size);
       GOTO (done);
@@ -3343,7 +3350,6 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    bson_error_t err_local;
    int32_t msg_len;
    int32_t max_msg_size;
-   off_t pos;
 
    ENTRY;
 
@@ -3362,7 +3368,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    /*
     * Buffer the message length to determine how much more to read.
     */
-   pos = buffer->len;
+   const size_t pos = buffer->len;
    if (!_mongoc_buffer_append_from_stream (
           buffer, server_stream->stream, 4, cluster->sockettimeoutms, error)) {
       MONGOC_DEBUG (
@@ -3532,10 +3538,13 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    rpc.msg.sections[0] = section[0];
 
    if (cmd->payload) {
+      const size_t identifier_len = strlen (cmd->payload_identifier);
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, identifier_len));
+
       section[1].payload_type = 1;
       section[1].payload.sequence.size = cmd->payload_size +
-                                         strlen (cmd->payload_identifier) + 1 +
-                                         sizeof (int32_t);
+                                         (int32_t) identifier_len + 1 +
+                                         (int32_t) sizeof (int32_t);
       section[1].payload.sequence.identifier = cmd->payload_identifier;
       section[1].payload.sequence.bson_documents = cmd->payload;
       rpc.msg.sections[1] = section[1];

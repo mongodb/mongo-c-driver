@@ -467,23 +467,31 @@ mongoc_secure_channel_setup_crl (
    return false;
 }
 
-size_t
+ssize_t
 mongoc_secure_channel_read (mongoc_stream_tls_t *tls,
                             void *data,
                             size_t data_length)
 {
-   ssize_t length;
+   BSON_ASSERT_PARAM (tls);
+
+   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
+      // CDRIVER-4589
+      MONGOC_ERROR ("timeout_msec value %" PRIu64
+                    " exceeds supported 32-bit range",
+                    tls->timeout_msec);
+      return -1;
+   }
 
    errno = 0;
-   TRACE ("Wanting to read: %zu, timeout is %" PRId32,
+   TRACE ("Wanting to read: %zu, timeout is %" PRIu64,
           data_length,
           tls->timeout_msec);
    /* 4th argument is minimum bytes, while the data_length is the
     * size of the buffer. We are totally fine with just one TLS record (few
     *bytes)
     **/
-   length = mongoc_stream_read (
-      tls->base_stream, data, data_length, 0, tls->timeout_msec);
+   const ssize_t length = mongoc_stream_read (
+      tls->base_stream, data, data_length, 0, (int32_t) tls->timeout_msec);
 
    TRACE ("Got %zd", length);
 
@@ -494,19 +502,28 @@ mongoc_secure_channel_read (mongoc_stream_tls_t *tls,
    return 0;
 }
 
-size_t
+ssize_t
 mongoc_secure_channel_write (mongoc_stream_tls_t *tls,
                              const void *data,
                              size_t data_length)
 {
-   ssize_t length;
+   BSON_ASSERT_PARAM (tls);
+
+   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
+      // CDRIVER-4589
+      MONGOC_ERROR ("timeout_msec value %" PRIu64
+                    " exceeds supported 32-bit range",
+                    tls->timeout_msec);
+      return -1;
+   }
 
    errno = 0;
-   TRACE ("Wanting to write: %zd", data_length);
-   length = mongoc_stream_write (
-      tls->base_stream, (void *) data, data_length, tls->timeout_msec);
+   TRACE ("Wanting to write: %zu", data_length);
+   const ssize_t length = mongoc_stream_write (tls->base_stream,
+                                               (void *) data,
+                                               data_length,
+                                               (int32_t) tls->timeout_msec);
    TRACE ("Wrote: %zd", length);
-
 
    return length;
 }

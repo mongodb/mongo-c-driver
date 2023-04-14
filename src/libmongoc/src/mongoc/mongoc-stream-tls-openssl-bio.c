@@ -201,7 +201,6 @@ mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
 {
    mongoc_stream_tls_t *tls;
    mongoc_stream_tls_openssl_t *openssl;
-   int ret;
 
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
@@ -213,11 +212,23 @@ mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
       RETURN (-1);
    }
 
+   if (len < 0) {
+      RETURN (-1);
+   }
+
+   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
+      // CDRIVER-4589
+      MONGOC_ERROR ("timeout_msec value %" PRIu64
+                    " exceeds supported 32-bit range",
+                    tls->timeout_msec);
+      return -1;
+   }
+
    openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
 
    errno = 0;
-   ret = (int) mongoc_stream_read (
-      tls->base_stream, buf, len, 0, tls->timeout_msec);
+   const ssize_t ret = mongoc_stream_read (
+      tls->base_stream, buf, (size_t) len, 0, (int32_t) tls->timeout_msec);
    BIO_clear_retry_flags (b);
 
    if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
@@ -228,7 +239,9 @@ mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
       BIO_set_retry_read (openssl->bio);
    }
 
-   RETURN (ret);
+   BSON_ASSERT (bson_in_range_signed (int, ret));
+
+   RETURN ((int) ret);
 }
 
 
@@ -254,7 +267,6 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
    mongoc_stream_tls_t *tls;
    mongoc_stream_tls_openssl_t *openssl;
    mongoc_iovec_t iov;
-   int ret;
    ENTRY;
 
    BSON_ASSERT (b);
@@ -266,21 +278,33 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
       RETURN (-1);
    }
 
+   if (len < 0) {
+      RETURN (-1);
+   }
+
    openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
 
    iov.iov_base = (void *) buf;
-   iov.iov_len = len;
+   iov.iov_len = (size_t) len;
+
+   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, tls->timeout_msec))) {
+      // CDRIVER-4589
+      MONGOC_ERROR ("timeout_msec value %" PRIu64
+                    " exceeds supported 32-bit range",
+                    tls->timeout_msec);
+      RETURN (-1);
+   }
 
    errno = 0;
    TRACE ("mongoc_stream_writev is expected to write: %d", len);
-   ret =
-      (int) mongoc_stream_writev (tls->base_stream, &iov, 1, tls->timeout_msec);
+   const ssize_t ret = mongoc_stream_writev (
+      tls->base_stream, &iov, 1, (int32_t) tls->timeout_msec);
    BIO_clear_retry_flags (b);
 
    if (len > ret) {
-      TRACE ("Returned short write: %d of %d", ret, len);
+      TRACE ("Returned short write: %zd of %d", ret, len);
    } else {
-      TRACE ("Completed the %d", ret);
+      TRACE ("Completed the %zd", ret);
    }
    if (ret <= 0 && MONGOC_ERRNO_IS_AGAIN (errno)) {
       /* this BIO is not the same as "b", which openssl passed in to this func.
@@ -291,7 +315,9 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
       BIO_set_retry_write (openssl->bio);
    }
 
-   RETURN (ret);
+   BSON_ASSERT (bson_in_range_signed (int, ret));
+
+   RETURN ((int) ret);
 }
 
 

@@ -60,7 +60,12 @@ gcp_request_destroy (gcp_request *req)
    bson_free (req->_owned_headers);
    bson_free (req->_owned_host);
    bson_free (req->_owned_path);
-   *req = (gcp_request){0};
+   *req = (gcp_request){
+      .req = {0},
+      ._owned_path = NULL,
+      ._owned_host = NULL,
+      ._owned_headers = NULL,
+   };
 }
 
 void
@@ -138,7 +143,12 @@ gcp_access_token_from_gcp_server (gcp_service_account_token *out,
    mongoc_http_response_t resp;
    _mongoc_http_response_init (&resp);
 
-   gcp_request req = {0};
+   gcp_request req = {
+      .req = {0},
+      ._owned_path = NULL,
+      ._owned_host = NULL,
+      ._owned_headers = NULL,
+   };
    gcp_request_init (&req, opt_host, opt_port, opt_extra_headers);
 
    if (!_mongoc_http_send (&req.req, 3 * 1000, false, NULL, &resp, error)) {

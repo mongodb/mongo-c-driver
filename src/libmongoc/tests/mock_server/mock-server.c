@@ -363,8 +363,14 @@ mock_server_run (mock_server_t *server)
       bind_addr_len = sizeof (default_bind_addr);
    }
 
-   if (-1 == mongoc_socket_bind (
-                ssock, (struct sockaddr *) bind_addr, bind_addr_len)) {
+   // socklen_t: an unsigned opaque integral type of length of at least 32 bits.
+   // To forestall portability problems, it is recommended that applications
+   // should not use values larger than 2^32 - 1.
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, bind_addr_len));
+
+   if (-1 == mongoc_socket_bind (ssock,
+                                 (struct sockaddr *) bind_addr,
+                                 (uint32_t) bind_addr_len)) {
       perror ("Failed to bind socket");
       return 0;
    }
@@ -870,9 +876,7 @@ mock_server_get_queue (mock_server_t *server)
 static void
 request_assert_no_duplicate_keys (request_t *request)
 {
-   int i;
-
-   for (i = 0; i < request->docs.len; i++) {
+   for (size_t i = 0u; i < request->docs.len; i++) {
       assert_no_duplicate_keys (request_get_doc (request, i));
    }
 }

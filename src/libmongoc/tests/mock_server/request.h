@@ -52,7 +52,7 @@ request_new (const mongoc_buffer_t *buffer,
              sync_queue_t *replies);
 
 const bson_t *
-request_get_doc (const request_t *request, int n);
+request_get_doc (const request_t *request, size_t n);
 
 void
 assert_request_matches_flags (const request_t *request,

@@ -127,7 +127,7 @@ request_new (const mongoc_buffer_t *buffer,
 }
 
 const bson_t *
-request_get_doc (const request_t *request, int n)
+request_get_doc (const request_t *request, size_t n)
 {
    BSON_ASSERT (request);
    return _mongoc_array_index (&request->docs, const bson_t *, n);
@@ -536,7 +536,6 @@ request_matches_msg (const request_t *request,
    const bson_t *pattern;
    bson_error_t bson_error;
    bool is_command_doc;
-   int i;
 
    BSON_ASSERT (request);
    if (request->opcode != MONGOC_OPCODE_MSG) {
@@ -545,7 +544,7 @@ request_matches_msg (const request_t *request,
 
    BSON_ASSERT (request->docs.len >= 1);
 
-   for (i = 0; i < n_docs; i++) {
+   for (size_t i = 0u; i < n_docs; i++) {
       pattern = docs[i];
 
       /* make sure the pattern is reasonable, e.g. that we didn't pass a string
@@ -554,7 +553,7 @@ request_matches_msg (const request_t *request,
                                                  BSON_VALIDATE_EMPTY_KEYS |
                                                     BSON_VALIDATE_UTF8,
                                                  &bson_error),
-                       "invalid argument at position %d (note: must be "
+                       "invalid argument at position %zu (note: must be "
                        "bson_t*, not char*):\ndomain: %" PRIu32
                        ", code: %" PRIu32 ", message: %s\n",
                        i,
@@ -564,23 +563,23 @@ request_matches_msg (const request_t *request,
 
       if (i > request->docs.len) {
          fprintf (stderr,
-                  "Expected at least %d documents in request, got %d\n",
+                  "Expected at least %zu documents in request, got %zu\n",
                   i,
-                  (int) request->docs.len);
+                  request->docs.len);
          return false;
       }
 
       doc = request_get_doc (request, i);
       /* pass is_command=true for first doc, including "find" command */
-      is_command_doc = (i == 0);
+      is_command_doc = (i == 0u);
       assert_match_bson (doc, pattern, is_command_doc);
    }
 
    if (n_docs < request->docs.len) {
       fprintf (stderr,
-               "Expected %d documents in request, got %d\n",
-               (int) n_docs,
-               (int) request->docs.len);
+               "Expected %zu documents in request, got %zu\n",
+               n_docs,
+               request->docs.len);
       return false;
    }
 
@@ -878,7 +877,6 @@ request_from_insert (request_t *request, const mongoc_rpc_t *rpc)
    bson_string_t *insert_as_str = bson_string_new ("OP_INSERT");
    bson_t *doc;
    size_t n_documents;
-   size_t i;
    char *str;
 
    while (pos < end) {
@@ -893,13 +891,13 @@ request_from_insert (request_t *request, const mongoc_rpc_t *rpc)
 
    bson_string_append_printf (insert_as_str, " %d ", (int) n_documents);
 
-   for (i = 0; i < n_documents; i++) {
-      str = bson_as_json (request_get_doc (request, (int) i), NULL);
+   for (size_t i = 0u; i < n_documents; i++) {
+      str = bson_as_json (request_get_doc (request, i), NULL);
       BSON_ASSERT (str);
       bson_string_append (insert_as_str, str);
       bson_free (str);
 
-      if (i < n_documents - 1) {
+      if (i < n_documents - 1u) {
          bson_string_append (insert_as_str, ", ");
       }
    }

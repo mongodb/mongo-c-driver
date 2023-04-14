@@ -182,13 +182,12 @@ _remove_orphaned_server_monitors (mongoc_set_t *server_monitors,
 {
    uint32_t *server_monitor_ids_to_remove;
    uint32_t n_server_monitor_ids_to_remove = 0;
-   int i;
 
    /* Signal shutdown to server monitors no longer in the topology description.
     */
    server_monitor_ids_to_remove =
       bson_malloc0 (sizeof (uint32_t) * server_monitors->items_len);
-   for (i = 0; i < server_monitors->items_len; i++) {
+   for (size_t i = 0u; i < server_monitors->items_len; i++) {
       mongoc_server_monitor_t *server_monitor;
       uint32_t id;
 
@@ -204,7 +203,7 @@ _remove_orphaned_server_monitors (mongoc_set_t *server_monitors,
    }
 
    /* Remove freed server monitors that have completed shutdown. */
-   for (i = 0; i < n_server_monitor_ids_to_remove; i++) {
+   for (uint32_t i = 0u; i < n_server_monitor_ids_to_remove; i++) {
       mongoc_set_rm (server_monitors, server_monitor_ids_to_remove[i]);
    }
    bson_free (server_monitor_ids_to_remove);
@@ -223,7 +222,6 @@ _mongoc_topology_background_monitoring_reconcile (
    mongoc_topology_t *topology, mongoc_topology_description_t *td)
 {
    mongoc_set_t *server_descriptions = mc_tpld_servers (td);
-   int i;
 
    BSON_ASSERT (!topology->single_threaded);
 
@@ -234,7 +232,7 @@ _mongoc_topology_background_monitoring_reconcile (
    }
 
    /* Add newly discovered server monitors, and update existing ones. */
-   for (i = 0; i < server_descriptions->items_len; i++) {
+   for (size_t i = 0u; i < server_descriptions->items_len; i++) {
       mongoc_server_description_t *sd;
 
       sd = mongoc_set_get_item (server_descriptions, i);
@@ -257,7 +255,6 @@ _mongoc_topology_background_monitoring_request_scan (
    mongoc_topology_t *topology)
 {
    mongoc_set_t *server_monitors;
-   int i;
 
    BSON_ASSERT (!topology->single_threaded);
 
@@ -269,7 +266,7 @@ _mongoc_topology_background_monitoring_request_scan (
 
    server_monitors = topology->server_monitors;
 
-   for (i = 0; i < server_monitors->items_len; i++) {
+   for (size_t i = 0u; i < server_monitors->items_len; i++) {
       mongoc_server_monitor_t *server_monitor;
       uint32_t id;
 
@@ -289,9 +286,6 @@ void
 _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
 {
    mongoc_server_monitor_t *server_monitor;
-   int i;
-   int n_srv_monitors;
-   int n_rtt_monitors;
 
    BSON_ASSERT (!topology->single_threaded);
 
@@ -316,30 +310,30 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    bson_mutex_unlock (&topology->srv_polling_mtx);
 
    bson_mutex_lock (&topology->tpld_modification_mtx);
-   n_srv_monitors = topology->server_monitors->items_len;
-   n_rtt_monitors = topology->rtt_monitors->items_len;
+   const size_t n_srv_monitors = topology->server_monitors->items_len;
+   const size_t n_rtt_monitors = topology->rtt_monitors->items_len;
    bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    /* Signal all server monitors to shut down. */
-   for (i = 0; i < n_srv_monitors; i++) {
+   for (size_t i = 0u; i < n_srv_monitors; i++) {
       server_monitor = mongoc_set_get_item (topology->server_monitors, i);
       mongoc_server_monitor_request_shutdown (server_monitor);
    }
 
    /* Signal all RTT monitors to shut down. */
-   for (i = 0; i < n_rtt_monitors; i++) {
+   for (size_t i = 0u; i < n_rtt_monitors; i++) {
       server_monitor = mongoc_set_get_item (topology->rtt_monitors, i);
       mongoc_server_monitor_request_shutdown (server_monitor);
    }
 
-   for (i = 0; i < n_srv_monitors; i++) {
+   for (size_t i = 0u; i < n_srv_monitors; i++) {
       /* Wait for the thread to shutdown. */
       server_monitor = mongoc_set_get_item (topology->server_monitors, i);
       mongoc_server_monitor_wait_for_shutdown (server_monitor);
       mongoc_server_monitor_destroy (server_monitor);
    }
 
-   for (i = 0; i < n_rtt_monitors; i++) {
+   for (size_t i = 0u; i < n_rtt_monitors; i++) {
       /* Wait for the thread to shutdown. */
       server_monitor = mongoc_set_get_item (topology->rtt_monitors, i);
       mongoc_server_monitor_wait_for_shutdown (server_monitor);

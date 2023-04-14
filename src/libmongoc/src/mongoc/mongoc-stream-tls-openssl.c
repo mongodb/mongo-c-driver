@@ -210,10 +210,11 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls,
    BSON_ASSERT (buf_len);
 
    if (tls->timeout_msec >= 0) {
-      expire = bson_get_monotonic_time () + (tls->timeout_msec * 1000UL);
+      expire = bson_get_monotonic_time () + (tls->timeout_msec * 1000);
    }
 
-   ret = BIO_write (openssl->bio, buf, buf_len);
+   BSON_ASSERT (bson_in_range_unsigned (int, buf_len));
+   ret = BIO_write (openssl->bio, buf, (int) buf_len);
 
    if (ret <= 0) {
       return ret;
@@ -223,13 +224,13 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls,
       now = bson_get_monotonic_time ();
 
       if ((expire - now) < 0) {
-         if (ret < buf_len) {
+         if (bson_cmp_less_su (ret, buf_len)) {
             mongoc_counter_streams_timeout_inc ();
          }
 
          tls->timeout_msec = 0;
       } else {
-         tls->timeout_msec = (expire - now) / 1000L;
+         tls->timeout_msec = (expire - now) / 1000;
       }
    }
 
@@ -298,9 +299,12 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream,
       iov_pos = 0;
 
       while (iov_pos < iov[i].iov_len) {
+         BSON_ASSERT (buf_end >= buf_tail);
+         const size_t buf_remaining = (size_t) (buf_end - buf_tail);
+
          if (buf_head != buf_tail ||
              ((i + 1 < iovcnt) &&
-              ((buf_end - buf_tail) > (iov[i].iov_len - iov_pos)))) {
+              (buf_remaining > (iov[i].iov_len - iov_pos)))) {
             /* If we have either of:
              *   - buffered bytes already
              *   - another iovec to send after this one and we don't have more
@@ -308,7 +312,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream,
              *
              * copy into the buffer */
 
-            bytes = BSON_MIN (iov[i].iov_len - iov_pos, buf_end - buf_tail);
+            bytes = BSON_MIN (iov[i].iov_len - iov_pos, buf_remaining);
 
             memcpy (buf_tail, (char *) iov[i].iov_base + iov_pos, bytes);
             buf_tail += bytes;
@@ -318,7 +322,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream,
                /* If we're full, request send */
 
                to_write = buf_head;
-               to_write_len = buf_tail - buf_head;
+               to_write_len = (size_t) (buf_tail - buf_head);
 
                buf_tail = buf_head = buf;
             }
@@ -337,7 +341,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream,
 
             child_ret =
                _mongoc_stream_tls_openssl_write (tls, to_write, to_write_len);
-            if (child_ret != to_write_len) {
+            if (bson_cmp_not_equal_su (child_ret, to_write_len)) {
                TRACE ("Got child_ret: %ld while to_write_len is: %ld",
                       child_ret,
                       to_write_len);
@@ -354,7 +358,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream,
 
             ret += child_ret;
 
-            if (child_ret < to_write_len) {
+            if (bson_cmp_less_su (child_ret, to_write_len)) {
                /* we timed out, so send back what we could send */
 
                RETURN (ret);

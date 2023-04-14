@@ -220,7 +220,6 @@ _mongoc_stream_socket_poll (mongoc_stream_poll_t *streams,
                             int32_t timeout_msec)
 
 {
-   int i;
    ssize_t ret = -1;
    mongoc_socket_poll_t *sds;
    mongoc_stream_socket_t *ss;
@@ -229,7 +228,7 @@ _mongoc_stream_socket_poll (mongoc_stream_poll_t *streams,
 
    sds = (mongoc_socket_poll_t *) bson_malloc (sizeof (*sds) * nstreams);
 
-   for (i = 0; i < nstreams; i++) {
+   for (size_t i = 0u; i < nstreams; i++) {
       ss = (mongoc_stream_socket_t *) streams[i].stream;
 
       if (!ss->sock) {
@@ -243,7 +242,7 @@ _mongoc_stream_socket_poll (mongoc_stream_poll_t *streams,
    ret = mongoc_socket_poll (sds, nstreams, timeout_msec);
 
    if (ret > 0) {
-      for (i = 0; i < nstreams; i++) {
+      for (size_t i = 0u; i < nstreams; i++) {
          streams[i].revents = sds[i].revents;
       }
    }

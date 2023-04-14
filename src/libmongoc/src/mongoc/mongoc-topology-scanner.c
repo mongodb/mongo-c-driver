@@ -261,7 +261,6 @@ _build_handshake_cmd (const bson_t *basis_cmd,
    bson_t subdoc;
    bson_iter_t iter;
    const char *key;
-   int keylen;
    const bson_t *compressors;
    int count = 0;
    char buf[16];
@@ -285,7 +284,9 @@ _build_handshake_cmd (const bson_t *basis_cmd,
 
       if (bson_iter_init (&iter, compressors)) {
          while (bson_iter_next (&iter)) {
-            keylen = bson_uint32_to_string (count++, &key, buf, sizeof buf);
+            const size_t keylen =
+               bson_uint32_to_string (count++, &key, buf, sizeof (buf));
+            BSON_ASSERT (bson_in_range_unsigned (int, keylen));
             bson_append_utf8 (
                &subdoc, key, (int) keylen, bson_iter_key (&iter), -1);
          }

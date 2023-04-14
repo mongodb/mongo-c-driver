@@ -45,10 +45,9 @@ has_server_description (const mongoc_topology_t *topology,
    mc_shared_tpld td = mc_tpld_take_ref (topology);
    const mongoc_set_t *servers = mc_tpld_servers_const (td.ptr);
    bool found = false;
-   int i;
    const mongoc_server_description_t *sd;
 
-   for (i = 0; i < (int) servers->items_len; i++) {
+   for (size_t i = 0; i < servers->items_len; i++) {
       sd = mongoc_set_get_item_const (servers, i);
       if (!strcmp (sd->host.host_and_port, host_and_port)) {
          found = true;

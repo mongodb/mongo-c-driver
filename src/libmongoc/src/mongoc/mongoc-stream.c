@@ -346,18 +346,17 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
    mongoc_stream_poll_t *poller =
       (mongoc_stream_poll_t *) bson_malloc (sizeof (*poller) * nstreams);
 
-   int i;
    int last_type = 0;
    ssize_t rval = -1;
 
    errno = 0;
 
-   for (i = 0; i < nstreams; i++) {
+   for (size_t i = 0u; i < nstreams; i++) {
       poller[i].stream = mongoc_stream_get_root_stream (streams[i].stream);
       poller[i].events = streams[i].events;
       poller[i].revents = 0;
 
-      if (i == 0) {
+      if (i == 0u) {
          last_type = poller[i].stream->type;
       } else if (last_type != poller[i].stream->type) {
          errno = EINVAL;
@@ -373,7 +372,7 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
    rval = poller[0].stream->poll (poller, nstreams, timeout);
 
    if (rval > 0) {
-      for (i = 0; i < nstreams; i++) {
+      for (size_t i = 0u; i < nstreams; i++) {
          streams[i].revents = poller[i].revents;
       }
    }
@@ -426,19 +425,29 @@ bool
 _mongoc_stream_writev_full (mongoc_stream_t *stream,
                             mongoc_iovec_t *iov,
                             size_t iovcnt,
-                            int32_t timeout_msec,
+                            int64_t timeout_msec,
                             bson_error_t *error)
 {
    size_t total_bytes = 0;
-   int i;
    ssize_t r;
    ENTRY;
 
-   for (i = 0; i < iovcnt; i++) {
+   for (size_t i = 0u; i < iovcnt; i++) {
       total_bytes += iov[i].iov_len;
    }
 
-   r = mongoc_stream_writev (stream, iov, iovcnt, timeout_msec);
+   if (BSON_UNLIKELY (!bson_in_range_signed (int32_t, timeout_msec))) {
+      // CDRIVER-4589
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "timeout_msec value %" PRIu64
+                      " exceeds supported 32-bit range",
+                      timeout_msec);
+      RETURN (false);
+   }
+
+   r = mongoc_stream_writev (stream, iov, iovcnt, (int32_t) timeout_msec);
    TRACE ("writev returned: %zd", r);
 
    if (r < 0) {
@@ -459,14 +468,14 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
       RETURN (false);
    }
 
-   if (r != total_bytes) {
+   if (bson_cmp_not_equal_su (r, total_bytes)) {
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "Failure to send all requested bytes (only sent: %" PRIu64
-                      "/%" PRId64 " in %dms) during socket delivery",
+                      "/%zu in %" PRId64 "ms) during socket delivery",
                       (uint64_t) r,
-                      (int64_t) total_bytes,
+                      total_bytes,
                       timeout_msec);
 
       RETURN (false);

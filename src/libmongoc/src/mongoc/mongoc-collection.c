@@ -3581,7 +3581,7 @@ mongoc_collection_find_and_modify_with_opts (
       bson_t reply;
       bson_error_t error;
       bool set;
-   } original_error = {0};
+   } original_error = {.reply = {0}, .error = {0}, .set = false};
 
 retry:
    bson_destroy (reply_ptr);

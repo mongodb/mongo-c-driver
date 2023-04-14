@@ -118,7 +118,6 @@ _server_for_client (mongoc_stream_t *stream)
 static ssize_t
 _mock_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
 {
-   int i;
    ssize_t starting_nactive;
    /* call the real poll first. */
    /* TODO CDRIVER-2542: ZSeries appears to have excessive delay with repeated
@@ -130,9 +129,9 @@ _mock_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
    starting_nactive = nactive;
 
    /* check if any of the poll responses need to be overwritten. */
-   for (i = 0; i < nstreams; i++) {
+   for (size_t i = 0u; i < nstreams; i++) {
       mongoc_stream_t *stream =
-         mongoc_stream_get_root_stream ((streams + i)->stream);
+         mongoc_stream_get_root_stream (streams[i].stream);
       he_testcase_server_t *server = _server_for_client (stream);
 
       if (server) {

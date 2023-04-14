@@ -18,10 +18,10 @@
 #define MONGOC_LOG_DOMAIN "topology-test"
 
 typedef struct {
-   int n_started;
-   int n_succeeded;
-   int n_failed;
-   int n_unknowns;
+   size_t n_started;
+   size_t n_succeeded;
+   size_t n_failed;
+   size_t n_unknowns;
    bson_mutex_t mutex;
 } checks_t;
 
@@ -39,9 +39,9 @@ checks_cleanup (checks_t *checks)
 }
 
 static bool
-checks_cmp (checks_t *checks, const char *metric, char cmp, int expected)
+checks_cmp (checks_t *checks, const char *metric, char cmp, size_t expected)
 {
-   int actual = 0;
+   size_t actual = 0;
 
    bson_mutex_lock (&checks->mutex);
    if (0 == strcmp (metric, "n_started")) {
@@ -456,7 +456,6 @@ _test_topology_invalidate_server (bool pooled)
 {
    mongoc_server_description_t *fake_sd;
    const mongoc_server_description_t *sd;
-   mongoc_uri_t *uri;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool = NULL;
    bson_error_t error;
@@ -465,18 +464,18 @@ _test_topology_invalidate_server (bool pooled)
    uint32_t id;
    mongoc_server_stream_t *server_stream;
    checks_t checks;
-   int server_count;
-   mongoc_apm_callbacks_t *callbacks;
    mc_shared_tpld td;
    mc_tpld_modification tdmod;
 
    checks_init (&checks);
-   uri = test_framework_get_uri ();
+
+   mongoc_uri_t *const uri = test_framework_get_uri ();
    /* no auto heartbeat */
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", INT32_MAX);
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 3000);
-   server_count = test_framework_server_count ();
-   callbacks = heartbeat_callbacks ();
+
+   const size_t server_count = test_framework_server_count ();
+   mongoc_apm_callbacks_t *const callbacks = heartbeat_callbacks ();
 
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
@@ -1434,7 +1433,7 @@ has_known_server (mongoc_client_t *client)
 
 
 static void
-_test_hello_retry_single (bool hangup, int n_failures)
+_test_hello_retry_single (bool hangup, size_t n_failures)
 {
    checks_t checks;
    mongoc_apm_callbacks_t *callbacks;
@@ -1495,7 +1494,7 @@ _test_hello_retry_single (bool hangup, int n_failures)
    request = mock_server_receives_any_hello (server);
    ASSERT_CMPINT64 (bson_get_monotonic_time () - t, <, (int64_t) 250 * 1000);
 
-   if (n_failures == 2) {
+   if (n_failures == 2u) {
       if (hangup) {
          mock_server_hangs_up (request);
       }
@@ -1510,11 +1509,11 @@ _test_hello_retry_single (bool hangup, int n_failures)
 
    request_destroy (request);
 
-   ASSERT_CMPINT (checks.n_started, ==, 3);
-   WAIT_UNTIL (checks.n_succeeded == 3 - n_failures);
+   ASSERT_CMPSIZE_T (checks.n_started, ==, 3u);
+   WAIT_UNTIL (checks.n_succeeded == 3u - n_failures);
    WAIT_UNTIL (checks.n_failed == n_failures);
 
-   if (n_failures == 2) {
+   if (n_failures == 2u) {
       BSON_ASSERT (!has_known_server (client));
    } else {
       BSON_ASSERT (has_known_server (client));
@@ -1530,7 +1529,7 @@ _test_hello_retry_single (bool hangup, int n_failures)
 
 
 static void
-_test_hello_retry_pooled (bool hangup, int n_failures)
+_test_hello_retry_pooled (bool hangup, size_t n_failures)
 {
    checks_t checks;
    mongoc_apm_callbacks_t *callbacks;
@@ -1605,7 +1604,7 @@ _test_hello_retry_pooled (bool hangup, int n_failures)
     * check without waiting".
     */
    BSON_ASSERT (!has_known_server (client));
-   if (n_failures == 2) {
+   if (n_failures == 2u) {
       if (hangup) {
          mock_server_hangs_up (request);
       }
@@ -1616,9 +1615,9 @@ _test_hello_retry_pooled (bool hangup, int n_failures)
 
    request_destroy (request);
 
-   WAIT_UNTIL (checks_cmp (&checks, "n_succeeded", '=', 3 - n_failures));
+   WAIT_UNTIL (checks_cmp (&checks, "n_succeeded", '=', 3u - n_failures));
    WAIT_UNTIL (checks_cmp (&checks, "n_failed", '=', n_failures));
-   BSON_ASSERT (checks_cmp (&checks, "n_started", '=', 3));
+   BSON_ASSERT (checks_cmp (&checks, "n_started", '=', 3u));
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -1633,55 +1632,55 @@ _test_hello_retry_pooled (bool hangup, int n_failures)
 static void
 test_hello_retry_single_hangup (void)
 {
-   _test_hello_retry_single (true, 1);
+   _test_hello_retry_single (true, 1u);
 }
 
 
 static void
 test_hello_retry_single_timeout (void)
 {
-   _test_hello_retry_single (false, 1);
+   _test_hello_retry_single (false, 1u);
 }
 
 static void
 test_hello_retry_single_hangup_fail (void)
 {
-   _test_hello_retry_single (true, 2);
+   _test_hello_retry_single (true, 2u);
 }
 
 
 static void
 test_hello_retry_single_timeout_fail (void)
 {
-   _test_hello_retry_single (false, 2);
+   _test_hello_retry_single (false, 2u);
 }
 
 
 static void
 test_hello_retry_pooled_hangup (void)
 {
-   _test_hello_retry_pooled (true, 1);
+   _test_hello_retry_pooled (true, 1u);
 }
 
 
 static void
 test_hello_retry_pooled_timeout (void)
 {
-   _test_hello_retry_pooled (false, 1);
+   _test_hello_retry_pooled (false, 1u);
 }
 
 
 static void
 test_hello_retry_pooled_hangup_fail (void)
 {
-   _test_hello_retry_pooled (true, 2);
+   _test_hello_retry_pooled (true, 2u);
 }
 
 
 static void
 test_hello_retry_pooled_timeout_fail (void)
 {
-   _test_hello_retry_pooled (false, 2);
+   _test_hello_retry_pooled (false, 2u);
 }
 
 
@@ -2027,8 +2026,8 @@ _test_request_scan_on_error (bool pooled,
          /* after the 'ping' command and returning, the server should
           * have been marked as unknown. */
          BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
-         ASSERT_CMPINT (sd->last_update_time_usec, >=, ping_started_usec);
-         ASSERT_CMPINT (
+         ASSERT_CMPINT64 (sd->last_update_time_usec, >=, ping_started_usec);
+         ASSERT_CMPINT64 (
             sd->last_update_time_usec, <=, bson_get_monotonic_time ());
          /* check that the error on the server description matches the error
           * message in the response. */

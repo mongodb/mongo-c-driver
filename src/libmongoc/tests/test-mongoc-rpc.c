@@ -52,14 +52,10 @@ static void
 assert_rpc_equal (const char *filename, mongoc_rpc_t *rpc)
 {
    mongoc_array_t ar;
-   uint8_t *data;
-   mongoc_iovec_t *iov;
    size_t length;
-   off_t off = 0;
-   int r;
-   int i;
+   size_t off = 0u;
 
-   data = get_test_file (filename, &length);
+   uint8_t *const data = get_test_file (filename, &length);
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
 
    /*
@@ -82,14 +78,11 @@ assert_rpc_equal (const char *filename, mongoc_rpc_t *rpc)
    mongoc_rpc_printf(rpc);
 #endif
 
-   for (i = 0; i < ar.len; i++) {
-      iov = &_mongoc_array_index (&ar, mongoc_iovec_t, i);
-      ASSERT (iov->iov_len <= (length - off));
-      r = memcmp (&data[off], iov->iov_base, iov->iov_len);
-      if (r) {
-         fprintf (stderr, "\nError iovec: %u\n", i);
-      }
-      ASSERT (r == 0);
+   for (size_t i = 0u; i < ar.len; i++) {
+      mongoc_iovec_t *const iov = &_mongoc_array_index (&ar, mongoc_iovec_t, i);
+      ASSERT_CMPSIZE_T (iov->iov_len, <=, (length - off));
+      const int r = memcmp (&data[off], iov->iov_base, iov->iov_len);
+      ASSERT_WITH_MSG (r == 0, "iovec error at index %zu", i);
       off += iov->iov_len;
    }
 
@@ -608,7 +601,6 @@ test_mongoc_rpc_buffer_iov (void)
    size_t allocate;
    char *no_header, *full_opcode;
    char *matching_opcode;
-   int size;
    mongoc_iovec_t iov;
 
    bson_init (&b);
@@ -629,18 +621,23 @@ test_mongoc_rpc_buffer_iov (void)
 
    allocate = rpc.header.msg_len - 16;
 
-   BSON_ASSERT (allocate > 0);
-   full_opcode = bson_malloc0 (allocate + 16);
-   size = _mongoc_cluster_buffer_iovec (
-      (mongoc_iovec_t *) ar.data, ar.len, 0, full_opcode);
-   ASSERT_CMPINT (size, ==, 48);
+   {
+      BSON_ASSERT (allocate > 0);
+      full_opcode = bson_malloc0 (allocate + 16);
 
-   iov.iov_len = size;
-   iov.iov_base = full_opcode;
-   no_header = bson_malloc0 (allocate);
-   size = _mongoc_cluster_buffer_iovec (&iov, 1, 16, no_header);
+      const size_t size = _mongoc_cluster_buffer_iovec (
+         (mongoc_iovec_t *) ar.data, ar.len, 0, full_opcode);
+      ASSERT_CMPSIZE_T (size, ==, 48u);
 
-   ASSERT_CMPINT (size, ==, 32);
+      iov.iov_len = size;
+      iov.iov_base = full_opcode;
+      no_header = bson_malloc0 (allocate);
+   }
+
+   {
+      const size_t size = _mongoc_cluster_buffer_iovec (&iov, 1, 16, no_header);
+      ASSERT_CMPSIZE_T (size, ==, 32u);
+   }
 
    matching_opcode = bson_malloc0 (rpc.header.msg_len);
    memcpy (matching_opcode, full_opcode, 16);

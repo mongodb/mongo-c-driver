@@ -311,13 +311,12 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
    size_t total_bytes = 0;
    size_t offset;
    ssize_t bytes;
-   int i;
    /* if a continued write, then iovec will be set to a temporary copy */
    bool used_temp_iovec = false;
    mongoc_iovec_t *iovec = acmd->iovec;
    size_t niovec = acmd->niovec;
 
-   for (i = 0; i < acmd->niovec; i++) {
+   for (size_t i = 0u; i < acmd->niovec; i++) {
       total_bytes += acmd->iovec[i].iov_len;
    }
 
@@ -327,8 +326,10 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
        * iovec entry to be written. */
       offset = acmd->bytes_written;
 
+      size_t i = 0u;
+
       /* subtract the lengths of all iovec entries written so far. */
-      for (i = 0; i < acmd->niovec; i++) {
+      for (i = 0u; i < acmd->niovec; i++) {
          if (offset < acmd->iovec[i].iov_len) {
             break;
          }

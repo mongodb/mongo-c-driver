@@ -130,11 +130,11 @@ _mongoc_host_list_copy_all (const mongoc_host_list_t *src)
    return head;
 }
 
-int
+size_t
 _mongoc_host_list_length (const mongoc_host_list_t *list)
 {
    const mongoc_host_list_t *tmp;
-   int counter = 0;
+   size_t counter = 0u;
 
    tmp = list;
    while (tmp) {

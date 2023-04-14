@@ -118,12 +118,12 @@ host_list_contains (const mongoc_host_list_t *hl, const char *host_and_port)
 }
 
 
-static int
+static int64_t
 hosts_count (const bson_t *test)
 {
    bson_iter_t iter;
    bson_iter_t hosts;
-   int c = 0;
+   int64_t c = 0;
 
    if (bson_iter_init_find (&iter, test, "hosts")) {
       BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
@@ -167,16 +167,15 @@ _host_list_matches (const bson_t *test, context_t *ctx)
    }
 
    else if (bson_iter_init_find (&iter, test, "numHosts")) {
-      const int expected = bson_iter_as_int64 (&iter);
-      int actual = 0;
+      const int64_t expected = bson_iter_as_int64 (&iter);
 
       bson_mutex_lock (&ctx->mutex);
-      actual = _mongoc_host_list_length (ctx->hosts);
+      const size_t actual = _mongoc_host_list_length (ctx->hosts);
       _mongoc_host_list_destroy_all (ctx->hosts);
       ctx->hosts = NULL;
       bson_mutex_unlock (&ctx->mutex);
 
-      ret = expected == actual;
+      ret = bson_cmp_equal_su (expected, actual);
    }
 
    return ret;
@@ -221,7 +220,6 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t ssl_opts;
 #endif
-   int n_hosts;
    bson_error_t error;
    bool r;
    const char *uri_str;
@@ -313,10 +311,10 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    BSON_ASSERT (client->ssl_opts.allow_invalid_hostname);
 #endif
 
-   n_hosts = hosts_count (test);
+   const int64_t n_hosts = hosts_count (test);
 
    if (pooled) {
-      if (n_hosts && !expect_error) {
+      if (n_hosts > 0 && !expect_error) {
          WAIT_UNTIL (_host_list_matches (test, &ctx));
       } else {
          r = mongoc_client_command_simple (
@@ -332,7 +330,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
        * connections need to authenticate, and the credentials in the tests do
        * not correspond to the test users. TODO (CDRIVER-4046): unskip these
        * tests. */
-      if (n_hosts && !expect_error) {
+      if (n_hosts > 0 && !expect_error) {
          r = mongoc_client_command_simple (
             client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
          ASSERT_OR_PRINT (r, error);
@@ -488,13 +486,12 @@ dump_hosts (mongoc_host_list_t *hosts)
 static void
 dump_topology_description (const mongoc_topology_description_t *td)
 {
-   size_t i;
    const mongoc_server_description_t *sd;
    const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
    MONGOC_DEBUG ("topology hosts:");
-   for (i = 0; i < servers->items_len; ++i) {
-      sd = mongoc_set_get_item_const (servers, (int) i);
+   for (size_t i = 0u; i < servers->items_len; ++i) {
+      sd = mongoc_set_get_item_const (servers, i);
       MONGOC_DEBUG ("- %s", sd->host.host_and_port);
    }
 }
@@ -503,19 +500,19 @@ static void
 check_topology_description (mongoc_topology_description_t *td,
                             mongoc_host_list_t *hosts)
 {
-   int nhosts = 0;
+   size_t nhosts = 0u;
    mongoc_host_list_t *host;
    const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
    for (host = hosts; host; host = host->next) {
-      uint32_t server_count;
+      ++nhosts;
 
-      nhosts++;
       /* Check that "host" is already in the topology description by upserting
        * it, and ensuring that the number of servers remains constant. */
-      server_count = servers->items_len;
+      const size_t server_count = servers->items_len;
       BSON_ASSERT (mongoc_topology_description_add_server (
          td, host->host_and_port, NULL));
+
       if (server_count != servers->items_len) {
          dump_topology_description (td);
          dump_hosts (hosts);
@@ -911,10 +908,13 @@ _mock_rr_resolver_prose_test_10 (const char *service,
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
+      const size_t count = _mongoc_host_list_length (rr_data->hosts);
+      BSON_ASSERT (bson_in_range_unsigned (uint32_t, count));
+
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
                                    "localhost.test.build.10gen.cc:27019",
                                    "localhost.test.build.10gen.cc:27020");
-      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->count = (uint32_t) count;
       rr_data->min_ttl = 0u;
       rr_data->txt_record_opts = NULL;
    }
@@ -1012,9 +1012,12 @@ _mock_rr_resolver_prose_test_11 (const char *service,
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
+      const size_t count = _mongoc_host_list_length (rr_data->hosts);
+      BSON_ASSERT (bson_in_range_unsigned (uint32_t, count));
+
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
                                    "localhost.test.build.10gen.cc:27020");
-      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->count = (uint32_t) count;
       rr_data->min_ttl = 0u;
       rr_data->txt_record_opts = NULL;
    }
@@ -1111,10 +1114,13 @@ _mock_rr_resolver_prose_test_12 (const char *service,
    BSON_ASSERT_PARAM (error);
 
    if (rr_type == MONGOC_RR_SRV) {
+      const size_t count = _mongoc_host_list_length (rr_data->hosts);
+      BSON_ASSERT (bson_in_range_unsigned (uint32_t, count));
+
       rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
                                    "localhost.test.build.10gen.cc:27019",
                                    "localhost.test.build.10gen.cc:27020");
-      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->count = (uint32_t) count;
       rr_data->min_ttl = 0u;
       rr_data->txt_record_opts = NULL;
    }

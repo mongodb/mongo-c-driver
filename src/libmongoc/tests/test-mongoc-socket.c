@@ -183,9 +183,7 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
    mongoc_socket_t *conn_sock;
    mongoc_stream_t *stream;
    mongoc_iovec_t iov;
-   mongoc_socklen_t sock_len;
-   int amount = 0;
-   ssize_t r;
+
    char *buf = (char *) bson_malloc (gFourMB);
 
    iov.iov_base = buf;
@@ -198,17 +196,23 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
    server_addr.sin_port = htons (0);
 
-   r = mongoc_socket_bind (
-      listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
-   BSON_ASSERT (r == 0);
+   {
+      const int r = mongoc_socket_bind (
+         listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
+      ASSERT_CMPINT (r, ==, 0);
+   }
 
-   sock_len = sizeof (server_addr);
-   r = mongoc_socket_getsockname (
-      listen_sock, (struct sockaddr *) &server_addr, &sock_len);
-   BSON_ASSERT (r == 0);
+   {
+      mongoc_socklen_t sock_len = (mongoc_socklen_t) sizeof (server_addr);
+      const int r = mongoc_socket_getsockname (
+         listen_sock, (struct sockaddr *) &server_addr, &sock_len);
+      ASSERT_CMPINT (r, ==, 0);
+   }
 
-   r = mongoc_socket_listen (listen_sock, 10);
-   BSON_ASSERT (r == 0);
+   {
+      const int r = mongoc_socket_listen (listen_sock, 10);
+      ASSERT_CMPINT (r, ==, 0);
+   }
 
    bson_mutex_lock (&data->cond_mutex);
    data->server_port = ntohs (server_addr.sin_port);
@@ -226,15 +230,18 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
    while (!data->amount) {
       mongoc_cond_wait (&data->cond, &data->cond_mutex);
    }
-   amount = data->amount;
+   int amount = data->amount;
    data->amount = 0;
    bson_mutex_unlock (&data->cond_mutex);
 
    /* Start reading everything off the socket to unblock the client */
    do {
-      r = mongoc_stream_readv (stream, &iov, 1, amount, WAIT);
+      ASSERT (bson_in_range_signed (size_t, amount));
+      const ssize_t r =
+         mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
       if (r > 0) {
-         amount -= r;
+         ASSERT (bson_in_range_signed (int, r));
+         amount -= (int) r;
       }
    } while (amount > 0);
 
@@ -250,9 +257,12 @@ static BSON_THREAD_FUN (sendv_test_server, data_)
    bson_mutex_unlock (&data->cond_mutex);
 
    do {
-      r = mongoc_stream_readv (stream, &iov, 1, amount, WAIT);
+      ASSERT (bson_in_range_signed (size_t, amount));
+      const ssize_t r =
+         mongoc_stream_readv (stream, &iov, 1, (size_t) amount, WAIT);
       if (r > 0) {
-         amount -= r;
+         ASSERT (bson_in_range_signed (int, r));
+         amount -= (int) r;
       }
    } while (amount > 0);
    ASSERT_CMPINT (0, ==, amount);
@@ -269,11 +279,7 @@ static BSON_THREAD_FUN (sendv_test_client, data_)
 {
    socket_test_data_t *data = (socket_test_data_t *) data_;
    mongoc_socket_t *conn_sock;
-   ssize_t r;
-   int i;
-   int amount = 0;
    struct sockaddr_in server_addr = {0};
-   mongoc_stream_t *stream;
    mongoc_iovec_t iov;
    bool done = false;
    char *buf = (char *) bson_malloc (gFourMB);
@@ -298,18 +304,25 @@ static BSON_THREAD_FUN (sendv_test_client, data_)
    server_addr.sin_port = htons (data->server_port);
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
-   r = mongoc_socket_connect (
-      conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
-   BSON_ASSERT (r == 0);
+   {
+      const ssize_t r = mongoc_socket_connect (
+         conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
+      ASSERT_CMPSSIZE_T (r, ==, 0);
+   }
 
-   stream = mongoc_stream_socket_new (conn_sock);
+   mongoc_stream_t *const stream = mongoc_stream_socket_new (conn_sock);
 
-   for (i = 0; i < 5; i++) {
-      r = mongoc_stream_writev (stream, &iov, 1, WAIT);
+   int amount = 0;
+
+   for (int i = 0; i < 5; i++) {
+      const ssize_t r = mongoc_stream_writev (stream, &iov, 1, WAIT);
+
       if (r > 0) {
-         amount += r;
+         BSON_ASSERT (bson_in_range_signed (int, r));
+         amount += (int) r;
       }
-      if (r != gFourMB) {
+
+      if (bson_cmp_not_equal_su (r, gFourMB)) {
          if (!done) {
             bson_mutex_lock (&data->cond_mutex);
             data->amount = amount;

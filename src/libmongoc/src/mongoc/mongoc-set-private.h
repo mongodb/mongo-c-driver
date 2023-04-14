@@ -64,20 +64,22 @@ mongoc_set_get_const (const mongoc_set_t *set, uint32_t id)
 }
 
 void *
-mongoc_set_get_item (mongoc_set_t *set, int idx);
+mongoc_set_get_item (mongoc_set_t *set, size_t idx);
 
 static BSON_INLINE const void *
-mongoc_set_get_item_const (const mongoc_set_t *set, int idx)
+mongoc_set_get_item_const (const mongoc_set_t *set, size_t idx)
 {
    return mongoc_set_get_item ((mongoc_set_t *) set, idx);
 }
 
 void *
-mongoc_set_get_item_and_id (mongoc_set_t *set, int idx, uint32_t *id /* OUT */);
+mongoc_set_get_item_and_id (mongoc_set_t *set,
+                            size_t idx,
+                            uint32_t *id /* OUT */);
 
 static BSON_INLINE const void *
 mongoc_set_get_item_and_id_const (const mongoc_set_t *set,
-                                  int idx,
+                                  size_t idx,
                                   uint32_t *id)
 {
    return mongoc_set_get_item_and_id ((mongoc_set_t *) set, idx, id);

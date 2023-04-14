@@ -90,11 +90,10 @@ test_has_readable_writable_server_pooled (void)
 static const mongoc_server_description_t *
 _sd_for_host (mongoc_topology_description_t *td, const char *host)
 {
-   int i;
    const mongoc_server_description_t *sd;
    mongoc_set_t const *servers = mc_tpld_servers_const (td);
 
-   for (i = 0; i < (int) servers->items_len; i++) {
+   for (size_t i = 0u; i < servers->items_len; i++) {
       sd = mongoc_set_get_item_const (servers, i);
 
       if (!strcmp (sd->host.host, host)) {

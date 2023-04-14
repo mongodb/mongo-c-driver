@@ -149,7 +149,7 @@ mongoc_topology_description_suitable_servers (
    const mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t *read_pref,
    bool *must_use_primary,
-   size_t local_threshold_ms);
+   int64_t local_threshold_ms);
 
 bool
 mongoc_topology_description_has_data_node (

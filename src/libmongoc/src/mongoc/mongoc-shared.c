@@ -42,9 +42,9 @@ static BSON_ONCE_FUN (_init_mtx)
 }
 
 void
-mongoc_shared_ptr_reset (mongoc_shared_ptr *const ptr,
-                         void *const pointee,
-                         void (*const deleter) (void *))
+mongoc_shared_ptr_reset (mongoc_shared_ptr *ptr,
+                         void *pointee,
+                         void (*deleter) (void *))
 {
    BSON_ASSERT_PARAM (ptr);
    if (!mongoc_shared_ptr_is_null (*ptr)) {
@@ -65,14 +65,13 @@ mongoc_shared_ptr_reset (mongoc_shared_ptr *const ptr,
 }
 
 void
-mongoc_shared_ptr_assign (mongoc_shared_ptr *const out,
-                          mongoc_shared_ptr const from)
+mongoc_shared_ptr_assign (mongoc_shared_ptr *dest, mongoc_shared_ptr from)
 {
    /* Copy from 'from' *first*, since this might be a self-assignment. */
    mongoc_shared_ptr copied = mongoc_shared_ptr_copy (from);
-   BSON_ASSERT_PARAM (out);
-   mongoc_shared_ptr_reset_null (out);
-   *out = copied;
+   BSON_ASSERT_PARAM (dest);
+   mongoc_shared_ptr_reset_null (dest);
+   *dest = copied;
 }
 
 mongoc_shared_ptr
@@ -84,19 +83,18 @@ mongoc_shared_ptr_create (void *pointee, void (*deleter) (void *))
 }
 
 void
-mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *const out,
-                                mongoc_shared_ptr const from)
+mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *dest, mongoc_shared_ptr from)
 {
    mongoc_shared_ptr prev = MONGOC_SHARED_PTR_NULL;
-   BSON_ASSERT_PARAM (out);
+   BSON_ASSERT_PARAM (dest);
 
    /* We are effectively "copying" the 'from' */
    (void) mongoc_shared_ptr_copy (from);
 
    bson_shared_mutex_lock (&g_shared_ptr_mtx);
    /* Do the exchange. Quick! */
-   prev = *out;
-   *out = from;
+   prev = *dest;
+   *dest = from;
    bson_shared_mutex_unlock (&g_shared_ptr_mtx);
 
    /* Free the pointer that we just overwrote */
@@ -115,7 +113,7 @@ mongoc_atomic_shared_ptr_load (mongoc_shared_ptr const *ptr)
 }
 
 mongoc_shared_ptr
-mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr)
+mongoc_shared_ptr_copy (mongoc_shared_ptr ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
@@ -126,7 +124,7 @@ mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr)
 }
 
 void
-mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
+mongoc_shared_ptr_reset_null (mongoc_shared_ptr *ptr)
 {
    int prevcount = 0;
    BSON_ASSERT_PARAM (ptr);
@@ -147,7 +145,7 @@ mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
 }
 
 int
-mongoc_shared_ptr_use_count (mongoc_shared_ptr const ptr)
+mongoc_shared_ptr_use_count (mongoc_shared_ptr ptr)
 {
    BSON_ASSERT (
       !mongoc_shared_ptr_is_null (ptr) &&

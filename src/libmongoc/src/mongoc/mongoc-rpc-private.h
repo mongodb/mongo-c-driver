@@ -104,6 +104,7 @@ typedef union {
    mongoc_rpc_reply_header_t reply_header;
    mongoc_rpc_update_t update;
    mongoc_rpc_compressed_t compressed;
+   int32_t _init; // Used only for initialization.
 } mongoc_rpc_t;
 
 

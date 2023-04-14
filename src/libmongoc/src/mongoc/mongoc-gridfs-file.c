@@ -448,7 +448,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
    BSON_ASSERT (iovcnt);
 
    /* Reading when positioned past the end does nothing */
-   if (file->pos >= file->length) {
+   if (bson_cmp_greater_equal_us (file->pos, file->length)) {
       return 0;
    }
 
@@ -517,7 +517,8 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
    }
 
    /* When writing past the end-of-file, fill the gap with zeros */
-   if (file->pos > file->length && !_mongoc_gridfs_file_extend (file)) {
+   if (bson_cmp_greater_us (file->pos, file->length) &&
+       !_mongoc_gridfs_file_extend (file)) {
       return -1;
    }
 
@@ -580,19 +581,19 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 static ssize_t
 _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
 {
-   int64_t target_length;
-   ssize_t diff;
-
    ENTRY;
 
    BSON_ASSERT (file);
 
-   if (file->length >= file->pos) {
+   if (bson_cmp_greater_equal_su (file->length, file->pos)) {
       RETURN (0);
    }
 
-   diff = (ssize_t) (file->pos - file->length);
-   target_length = file->pos;
+   const uint64_t target_length = file->pos;
+
+   BSON_ASSERT (bson_in_range_signed (uint64_t, file->length));
+   const uint64_t diff = file->pos - (uint64_t) file->length;
+
    if (-1 == mongoc_gridfs_file_seek (file, 0, SEEK_END)) {
       RETURN (-1);
    }
@@ -603,8 +604,12 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
       }
 
       /* Set bytes until we reach the limit or fill a page */
-      file->pos += _mongoc_gridfs_file_page_memset0 (file->page,
-                                                     target_length - file->pos);
+      {
+         const uint64_t len = target_length - file->pos;
+         BSON_ASSERT (bson_in_range_unsigned (uint32_t, len));
+         file->pos +=
+            _mongoc_gridfs_file_page_memset0 (file->page, (uint32_t) len);
+      }
 
       if (file->pos == target_length) {
          /* We're done */
@@ -615,10 +620,12 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
       }
    }
 
-   file->length = target_length;
+   BSON_ASSERT (bson_in_range_unsigned (int64_t, target_length));
+   file->length = (int64_t) target_length;
    file->is_dirty = true;
 
-   RETURN (diff);
+   BSON_ASSERT (bson_in_range_unsigned (ssize_t, diff));
+   RETURN ((ssize_t) diff);
 }
 
 
@@ -770,7 +777,6 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    bson_t query;
    bson_t child;
    bson_t opts;
-   const bson_t *chunk;
    const char *key;
    bson_iter_t iter;
    int64_t existing_chunks;
@@ -836,9 +842,11 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
          BSON_ASSERT (file->cursor);
       }
 
+      const bson_t *chunk = NULL;
+
       /* we might have had a cursor before, then seeked ahead past a chunk.
        * iterate until we're on the right chunk */
-      while (file->cursor_range[0] <= file->n) {
+      while (bson_cmp_less_equal_us (file->cursor_range[0], file->n)) {
          if (!mongoc_cursor_next (file->cursor, &chunk)) {
             /* copy cursor error; if there's none, we're missing a chunk */
             if (!mongoc_cursor_error (file->cursor, &file->error)) {
@@ -884,7 +892,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       RETURN (0);
    }
 
-   if (len > file->chunk_size) {
+   if (bson_cmp_greater_us (len, file->chunk_size)) {
       bson_set_error (&file->error,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CORRUPT,
@@ -944,7 +952,8 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence)
       offset = delta;
       break;
    case SEEK_CUR:
-      offset = file->pos + delta;
+      BSON_ASSERT (bson_in_range_unsigned (int64_t, file->pos));
+      offset = (int64_t) file->pos + delta;
       break;
    case SEEK_END:
       offset = file->length + delta;
@@ -978,12 +987,17 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence)
       /** we'll pick up the seek when we fetch a page on the next action.  We
        * lazily load */
    } else if (file->page) {
-      BSON_ASSERT (
-         _mongoc_gridfs_file_page_seek (file->page, offset % file->chunk_size));
+      const int64_t n = offset % file->chunk_size;
+      BSON_ASSERT (bson_in_range_signed (uint32_t, n));
+      BSON_ASSERT (_mongoc_gridfs_file_page_seek (file->page, (uint32_t) n));
    }
 
-   file->pos = offset;
-   file->n = file->pos / file->chunk_size;
+   file->pos = (uint64_t) offset;
+
+   BSON_ASSERT (bson_in_range_signed (uint64_t, file->chunk_size));
+   const uint64_t n = file->pos / (uint64_t) file->chunk_size;
+   BSON_ASSERT (bson_in_range_unsigned (int32_t, n));
+   file->n = (int32_t) n;
 
    return 0;
 }

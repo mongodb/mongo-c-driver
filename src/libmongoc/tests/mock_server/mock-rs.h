@@ -122,7 +122,7 @@ void
 mock_rs_stepdown (mock_rs_t *rs);
 
 void
-mock_rs_elect (mock_rs_t *rs, int id);
+mock_rs_elect (mock_rs_t *rs, size_t id);
 
 void
 mock_rs_destroy (mock_rs_t *rs);

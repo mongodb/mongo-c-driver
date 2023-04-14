@@ -755,20 +755,20 @@ TestSuite_PrintJsonSystemHeader (FILE *stream)
 #define INFO_BUFFER_SIZE 32767
 
    SYSTEM_INFO si;
-   DWORD version = 0;
-   DWORD major_version = 0;
-   DWORD minor_version = 0;
-   DWORD build = 0;
 
    GetSystemInfo (&si);
-   version = GetVersion ();
 
-   major_version = (DWORD) (LOBYTE (LOWORD (version)));
-   minor_version = (DWORD) (HIBYTE (LOWORD (version)));
+#if defined(_MSC_VER)
+   // CDRIVER-4263: GetVersionEx is deprecated.
+#pragma warning(suppress : 4996)
+   const DWORD version = GetVersion ();
+#else
+   const DWORD version = GetVersion ();
+#endif
 
-   if (version < 0x80000000) {
-      build = (DWORD) (HIWORD (version));
-   }
+   const DWORD major_version = (DWORD) (LOBYTE (LOWORD (version)));
+   const DWORD minor_version = (DWORD) (HIBYTE (LOWORD (version)));
+   const DWORD build = version < 0x80000000u ? (DWORD) (HIWORD (version)) : 0u;
 
    fprintf (stream,
             "  \"host\": {\n"
@@ -941,8 +941,6 @@ TestSuite_TestMatchesName (const TestSuite *suite,
 bool
 test_matches (TestSuite *suite, Test *test)
 {
-   int i;
-
    if (suite->ctest_run) {
       /* We only want exactly the named test */
       return strcmp (test->name, suite->ctest_run) == 0;
@@ -953,7 +951,7 @@ test_matches (TestSuite *suite, Test *test)
       return true;
    }
 
-   for (i = 0; i < suite->match_patterns.len; i++) {
+   for (size_t i = 0u; i < suite->match_patterns.len; i++) {
       char *pattern = _mongoc_array_index (&suite->match_patterns, char *, i);
       if (TestSuite_TestMatchesName (suite, test, pattern)) {
          return true;
@@ -1157,7 +1155,6 @@ TestSuite_Destroy (TestSuite *suite)
 {
    Test *test;
    Test *tmp;
-   int i;
 
    bson_mutex_lock (&gTestMutex);
    gTestSuite = NULL;
@@ -1184,14 +1181,14 @@ TestSuite_Destroy (TestSuite *suite)
    free (suite->name);
    free (suite->prgname);
    free (suite->ctest_run);
-   for (i = 0; i < suite->match_patterns.len; i++) {
+   for (size_t i = 0u; i < suite->match_patterns.len; i++) {
       char *val = _mongoc_array_index (&suite->match_patterns, char *, i);
       bson_free (val);
    }
 
    _mongoc_array_destroy (&suite->match_patterns);
 
-   for (i = 0; i < suite->failing_flaky_skips.len; i++) {
+   for (size_t i = 0u; i < suite->failing_flaky_skips.len; i++) {
       TestSkip *val =
          _mongoc_array_index (&suite->failing_flaky_skips, TestSkip *, i);
       bson_free (val->test_name);

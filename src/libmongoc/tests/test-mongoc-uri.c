@@ -545,21 +545,21 @@ test_mongoc_uri_functions (void)
       3);
    ASSERT (
       mongoc_uri_set_option_as_int32 (uri, "serverselectiontimeoutms", 18));
-   ASSERT_CMPINT (
+   ASSERT_CMPINT32 (
       mongoc_uri_get_option_as_int32 (uri, "serverselectiontimeoutms", 19),
       ==,
       18);
 
-   ASSERT_CMPINT (
+   ASSERT_CMPINT32 (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 18), ==, 42);
-   ASSERT_CMPINT (
+   ASSERT_CMPINT64 (
       mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 18), ==, 42);
    ASSERT (mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 18));
-   ASSERT_CMPINT (
+   ASSERT_CMPINT32 (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 19), ==, 18);
 
    ASSERT (mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 20));
-   ASSERT_CMPINT (
+   ASSERT_CMPINT64 (
       mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 19), ==, 20);
 
    ASSERT (mongoc_uri_set_option_as_int32 (
@@ -2572,16 +2572,16 @@ test_mongoc_uri_int_options (void)
 
    /* Set an int64 option as int64 succeeds */
    ASSERT (mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 10));
-   ASSERT_CMPINT (
+   ASSERT_CMPINT32 (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 10);
-   ASSERT_CMPINT (
+   ASSERT_CMPINT64 (
       mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 10);
 
    /* Set an int64 option as int32 succeeds */
    ASSERT (mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 15));
-   ASSERT_CMPINT (
+   ASSERT_CMPINT32 (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 15);
-   ASSERT_CMPINT (
+   ASSERT_CMPINT64 (
       mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 15);
 
    /* Setting an int32 option through _as_int64 succeeds for 32-bit values but
@@ -2592,11 +2592,11 @@ test_mongoc_uri_int_options (void)
                         MONGOC_LOG_LEVEL_WARNING,
                         "Setting value for 32-bit option "
                         "\"zlibcompressionlevel\" through 64-bit method");
-   ASSERT_CMPINT (
+   ASSERT_CMPINT32 (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
       ==,
       9);
-   ASSERT_CMPINT (
+   ASSERT_CMPINT64 (
       mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
       ==,
       9);
@@ -2610,11 +2610,11 @@ test_mongoc_uri_int_options (void)
       MONGOC_LOG_LEVEL_WARNING,
       "Unsupported value for \"connecttimeoutms\": 2147483648,"
       " \"connecttimeoutms\" is not an int64 option");
-   ASSERT_CMPINT (
+   ASSERT_CMPINT32 (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 0),
       ==,
       0);
-   ASSERT_CMPINT (
+   ASSERT_CMPINT64 (
       mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 0),
       ==,
       0);
@@ -2624,11 +2624,11 @@ test_mongoc_uri_int_options (void)
    /* Setting an int32 option as int32 succeeds */
    ASSERT (
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 9));
-   ASSERT_CMPINT (
+   ASSERT_CMPINT32 (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
       ==,
       9);
-   ASSERT_CMPINT (
+   ASSERT_CMPINT64 (
       mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
       ==,
       9);

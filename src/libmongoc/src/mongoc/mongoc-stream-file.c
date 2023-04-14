@@ -128,13 +128,12 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream, /* IN */
 
 #ifdef _WIN32
    {
-      ssize_t nread;
-      size_t i;
-
       ENTRY;
 
-      for (i = 0; i < iovcnt; i++) {
-         nread = _read (file->fd, iov[i].iov_base, iov[i].iov_len);
+      for (size_t i = 0u; i < iovcnt; i++) {
+         BSON_ASSERT (bson_in_range_unsigned (unsigned_int, iov[i].iov_len));
+         const int nread =
+            _read (file->fd, iov[i].iov_base, (unsigned int) iov[i].iov_len);
          if (nread < 0) {
             ret = ret ? ret : -1;
             GOTO (done);
@@ -155,6 +154,7 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream, /* IN */
 #else
    {
       ENTRY;
+      BSON_ASSERT (bson_in_range_unsigned (int, iovcnt));
       ret = readv (file->fd, iov, (int) iovcnt);
       GOTO (done);
    }
@@ -180,12 +180,11 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream, /* IN */
 
 #ifdef _WIN32
    {
-      ssize_t nwrite;
-      size_t i;
-
-      for (i = 0; i < iovcnt; i++) {
-         nwrite = _write (file->fd, iov[i].iov_base, iov[i].iov_len);
-         if (nwrite != iov[i].iov_len) {
+      for (size_t i = 0; i < iovcnt; i++) {
+         BSON_ASSERT (bson_in_range_unsigned (unsigned_int, iov[i].iov_len));
+         const int nwrite =
+            _write (file->fd, iov[i].iov_base, (unsigned int) iov[i].iov_len);
+         if (bson_cmp_not_equal_su (nwrite, iov[i].iov_len)) {
             ret = ret ? ret : -1;
             goto done;
          }
@@ -195,6 +194,7 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream, /* IN */
    }
 #else
    {
+      BSON_ASSERT (bson_in_range_unsigned (int, iovcnt));
       ret = writev (file->fd, iov, (int) iovcnt);
       goto done;
    }

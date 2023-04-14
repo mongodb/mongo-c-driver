@@ -947,7 +947,6 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    uint32_t expected_id;
    uint32_t actual_id;
    const mongoc_server_description_t *sd = NULL;
-   int i;
 
    BSON_UNUSED (ctx);
 
@@ -1006,7 +1005,7 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    /* get a valid server id that's different from the pinned server id */
    servers =
       mc_tpld_servers_const (mc_tpld_unsafe_get_const (client->topology));
-   for (i = 0; i < servers->items_len; i++) {
+   for (size_t i = 0; i < servers->items_len; i++) {
       sd = mongoc_set_get_item_const (servers, i);
       if (sd && sd->id != actual_id) {
          break;

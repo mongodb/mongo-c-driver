@@ -65,9 +65,9 @@ struct _mongoc_server_monitor_t {
 
    /* Default time to sleep between hello checks (reduced when a scan is
     * requested) */
-   uint64_t heartbeat_frequency_ms;
+   int64_t heartbeat_frequency_ms;
    /* The minimum time to sleep between hello checks. */
-   uint64_t min_heartbeat_frequency_ms;
+   int64_t min_heartbeat_frequency_ms;
    int64_t connect_timeout_ms;
    bool use_tls;
 #ifdef MONGOC_ENABLE_SSL
@@ -78,7 +78,7 @@ struct _mongoc_server_monitor_t {
     * stream. */
    mongoc_stream_initiator_t initiator;
    void *initiator_context;
-   int64_t request_id;
+   int32_t request_id;
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
 
@@ -217,10 +217,8 @@ _server_monitor_send_and_recv_hello_opmsg (
    bson_t *reply,
    bson_error_t *error)
 {
-   mongoc_rpc_t rpc = {0};
+   mongoc_rpc_t rpc = {._init = 0};
    mongoc_array_t array_to_write;
-   mongoc_iovec_t *iovec;
-   int niovec;
 
    mongoc_buffer_t buffer;
    uint32_t reply_len;
@@ -240,8 +238,8 @@ _server_monitor_send_and_recv_hello_opmsg (
    _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
    _mongoc_rpc_gather (&rpc, &array_to_write);
 
-   iovec = (mongoc_iovec_t *) array_to_write.data;
-   niovec = array_to_write.len;
+   mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
+   const size_t niovec = array_to_write.len;
    _mongoc_rpc_swab_to_le (&rpc);
 
    MONITOR_LOG (server_monitor,
@@ -321,10 +319,8 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                        bson_t *reply,
                                        bson_error_t *error)
 {
-   mongoc_rpc_t rpc;
+   mongoc_rpc_t rpc = {._init = 0};
    mongoc_array_t array_to_write;
-   mongoc_iovec_t *iovec;
-   int niovec;
    mongoc_buffer_t buffer;
    uint32_t reply_len;
    bson_t temp_reply;
@@ -344,8 +340,9 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
    _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
    _mongoc_rpc_gather (&rpc, &array_to_write);
-   iovec = (mongoc_iovec_t *) array_to_write.data;
-   niovec = array_to_write.len;
+
+   mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
+   const size_t niovec = array_to_write.len;
    _mongoc_rpc_swab_to_le (&rpc);
 
    if (!_mongoc_stream_writev_full (server_monitor->stream,
@@ -434,10 +431,8 @@ _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
                                       bson_t *cmd,
                                       bson_error_t *error)
 {
-   mongoc_rpc_t rpc = {0};
+   mongoc_rpc_t rpc = {._init = 0};
    mongoc_array_t array_to_write;
-   mongoc_iovec_t *iovec;
-   int niovec;
 
    rpc.header.msg_len = 0;
    rpc.header.request_id = server_monitor->request_id++;
@@ -451,8 +446,8 @@ _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
    _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
    _mongoc_rpc_gather (&rpc, &array_to_write);
 
-   iovec = (mongoc_iovec_t *) array_to_write.data;
-   niovec = array_to_write.len;
+   mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
+   const size_t niovec = array_to_write.len;
    _mongoc_rpc_swab_to_le (&rpc);
 
    MONITOR_LOG (server_monitor,
@@ -705,7 +700,7 @@ _server_monitor_awaitable_hello (mongoc_server_monitor_t *server_monitor,
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    bson_append_document (
       &cmd, "topologyVersion", 15, &description->topology_version);
-   bson_append_int32 (
+   bson_append_int64 (
       &cmd, "maxAwaitTimeMS", 14, server_monitor->heartbeat_frequency_ms);
    bson_append_utf8 (&cmd, "$db", 3, "admin", 5);
 

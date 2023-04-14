@@ -37,7 +37,12 @@
 
 #if defined(_MSC_VER) && defined(_WIN64)
 #include <errhandlingapi.h>
+
+// warning C4091: 'typedef ': ignored on left of '' when no variable is declared
+#pragma warning(push)
+#pragma warning(disable : 4091)
 #include <DbgHelp.h>
+#pragma warning(pop)
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
@@ -2676,7 +2681,10 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
 
 
 void
-test_libmongoc_init (TestSuite *suite, const char *name, int argc, char **argv)
+test_libmongoc_init (TestSuite *suite,
+                     BSON_MAYBE_UNUSED const char *name,
+                     int argc,
+                     char **argv)
 {
 #if defined(_MSC_VER) && defined(_WIN64)
    SetUnhandledExceptionFilter (windows_exception_handler);

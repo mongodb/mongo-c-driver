@@ -409,8 +409,6 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
    uint8_t intermediate_digest[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t start_key[MONGOC_SCRAM_HASH_MAX_SIZE];
 
-   int i;
-   int k;
    uint8_t *output = scram->salted_password;
 
    memcpy (start_key, salt, salt_len);
@@ -431,15 +429,17 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
 
    /* intermediateDigest contains Ui and output contains the accumulated XOR:ed
     * result */
-   for (i = 2; i <= iterations; i++) {
+   for (uint32_t i = 2u; i <= iterations; i++) {
+      const int hash_size = _scram_hash_size (scram);
+
       mongoc_crypto_hmac (&scram->crypto,
                           password,
                           password_len,
                           intermediate_digest,
-                          _scram_hash_size (scram),
+                          hash_size,
                           intermediate_digest);
 
-      for (k = 0; k < _scram_hash_size (scram); k++) {
+      for (int k = 0; k < hash_size; k++) {
          output[k] ^= intermediate_digest[k];
       }
    }
@@ -669,7 +669,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    /* verify our nonce */
-   if (val_r_len < scram->encoded_nonce_len ||
+   if (bson_cmp_less_us (val_r_len, scram->encoded_nonce_len) ||
        mongoc_memcmp (val_r, scram->encoded_nonce, scram->encoded_nonce_len)) {
       bson_set_error (
          error,
@@ -820,12 +820,15 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
    uint8_t server_signature[MONGOC_SCRAM_HASH_MAX_SIZE];
 
    if (!*scram->server_key) {
+      const size_t key_len = strlen (MONGOC_SCRAM_SERVER_KEY);
+      BSON_ASSERT (bson_in_range_unsigned (int, key_len));
+
       /* ServerKey := HMAC(SaltedPassword, "Server Key") */
       mongoc_crypto_hmac (&scram->crypto,
                           scram->salted_password,
                           _scram_hash_size (scram),
                           (uint8_t *) MONGOC_SCRAM_SERVER_KEY,
-                          strlen (MONGOC_SCRAM_SERVER_KEY),
+                          (int) key_len,
                           scram->server_key);
    }
 

@@ -104,7 +104,7 @@ test_new_transaction_unpins (void *ctx)
       mongoc_cursor_destroy (cursor);
    }
 
-   ASSERT (_mongoc_host_list_length (servers) == 2);
+   ASSERT_CMPSIZE_T (_mongoc_host_list_length (servers), ==, 2u);
 
    bson_destroy (opts);
    _mongoc_host_list_destroy_all (servers);
@@ -176,7 +176,7 @@ test_non_transaction_unpins (void *ctx)
       mongoc_cursor_destroy (cursor);
    }
 
-   ASSERT (_mongoc_host_list_length (servers) == 2);
+   ASSERT_CMPSIZE_T (_mongoc_host_list_length (servers), ==, 2u);
 
    bson_destroy (opts);
    _mongoc_host_list_destroy_all (servers);

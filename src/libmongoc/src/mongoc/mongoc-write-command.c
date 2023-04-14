@@ -422,10 +422,11 @@ _mongoc_write_command_will_overflow (uint32_t len_so_far,
 
    BSON_ASSERT (max_bson_size);
 
-   if (len_so_far + document_len > max_cmd_size) {
+   if (bson_cmp_greater_us (len_so_far + document_len, max_cmd_size)) {
       return true;
    } else if (max_write_batch_size > 0 &&
-              n_documents_written >= max_write_batch_size) {
+              bson_cmp_greater_equal_us (n_documents_written,
+                                         max_write_batch_size)) {
       return true;
    }
 
@@ -458,7 +459,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    uint32_t payload_total_offset = 0;
    bool ship_it = false;
    int document_count = 0;
-   int32_t len;
    mongoc_server_stream_t *retry_server_stream = NULL;
 
    ENTRY;
@@ -530,22 +530,28 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       26 + parts.assembled.command->len + gCommandFieldLens[command->type] + 1;
 
    do {
-      memcpy (&len,
+      uint32_t ulen;
+      memcpy (&ulen,
               command->payload.data + payload_batch_size + payload_total_offset,
               4);
-      len = BSON_UINT32_FROM_LE (len);
+      ulen = BSON_UINT32_FROM_LE (ulen);
 
-      if (len > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
+      // Although messageLength is an int32, it should never be negative.
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, ulen));
+      const int32_t slen = (int32_t) ulen;
+
+      if (slen > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
          /* Quit if the document is too large */
          _mongoc_write_command_too_large_error (
-            error, index_offset, len, max_bson_obj_size);
+            error, index_offset, slen, max_bson_obj_size);
          result->failed = true;
          break;
 
-      } else if ((payload_batch_size + header) + len <= max_msg_size ||
+      } else if (bson_cmp_less_equal_us (payload_batch_size + header + ulen,
+                                         max_msg_size) ||
                  document_count == 0) {
          /* The current batch is still under max batch size in bytes */
-         payload_batch_size += len;
+         payload_batch_size += ulen;
 
          /* If this document filled the maximum document count */
          if (++document_count == max_document_count) {
@@ -587,7 +593,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             bson_t reply;
             bson_error_t error;
             bool set;
-         } original_error = {0};
+         } original_error = {.reply = {0}, .error = {0}, .set = false};
 
       retry:
          ret = mongoc_cluster_run_command_monitored (
@@ -850,7 +856,7 @@ again:
       len = bson->len;
       /* 1 byte to specify document type, 1 byte for key's null terminator */
       if (_mongoc_write_command_will_overflow (overhead,
-                                               key_len + len + 2 + ar.len,
+                                               key_len + len + 2u + ar.len,
                                                i,
                                                max_bson_obj_size,
                                                max_write_batch_size)) {
