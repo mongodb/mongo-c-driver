@@ -28,7 +28,7 @@ struct _sync_queue_t {
 
 
 sync_queue_t *
-q_new ()
+q_new (void)
 {
    sync_queue_t *q = (sync_queue_t *) bson_malloc (sizeof (sync_queue_t));
 

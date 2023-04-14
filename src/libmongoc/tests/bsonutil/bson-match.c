@@ -329,7 +329,7 @@ evaluate_special (bson_matcher_t *matcher,
 
 
 bson_matcher_t *
-bson_matcher_new ()
+bson_matcher_new (void)
 {
    bson_matcher_t *matcher = bson_malloc0 (sizeof (bson_matcher_t));
    /* Add default special functions. */

@@ -10,7 +10,7 @@
 /* clang-format off */
 
 future_value_t *
-future_value_new ()
+future_value_new (void)
 {
    return (future_value_t *) bson_malloc0 (sizeof (future_value_t));
 }
@@ -601,4 +601,3 @@ future_value_get_const_mongoc_write_concern_ptr (future_value_t *future_value)
    BSON_ASSERT (future_value->type == future_value_const_mongoc_write_concern_ptr_type);
    return future_value->value.const_mongoc_write_concern_ptr_value;
 }
-

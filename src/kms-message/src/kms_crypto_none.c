@@ -19,13 +19,13 @@
 #ifndef KMS_MESSAGE_ENABLE_CRYPTO
 
 int
-kms_crypto_init ()
+kms_crypto_init (void)
 {
    return 0;
 }
 
 void
-kms_crypto_cleanup ()
+kms_crypto_cleanup (void)
 {
 }
 

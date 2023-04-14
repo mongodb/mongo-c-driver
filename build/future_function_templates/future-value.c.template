@@ -3,7 +3,7 @@
 {{ header_comment }}
 
 future_value_t *
-future_value_new ()
+future_value_new (void)
 {
    return (future_value_t *) bson_malloc0 (sizeof (future_value_t));
 }
