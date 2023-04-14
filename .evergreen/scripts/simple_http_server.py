@@ -4,7 +4,6 @@
 
 import http
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import logging
 
 class Simple(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -22,7 +21,6 @@ class Simple(BaseHTTPRequestHandler):
             'Response to POST by simple HTTP server'.encode('utf-8'))
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
     HTTPServer(server_address=('', 8000), RequestHandlerClass=Simple).serve_forever()
 
 if __name__ == '__main__':
