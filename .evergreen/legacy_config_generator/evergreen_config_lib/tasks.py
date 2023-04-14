@@ -435,6 +435,7 @@ class CoverageTask(MatrixTask):
                              SSL=self.display('ssl')))
         extra = {}
 
+        commands.append(func('run-simple-http-server'))
         if self.cse:
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
             commands.append(func('fetch-det'))
@@ -579,6 +580,7 @@ class CompressionTask(MatrixTask):
                              AUTH='noauth',
                              SSL='nossl',
                              ORCHESTRATION_FILE=orchestration_file))
+        commands.append(func('run-simple-http-server'))
         commands.append(func('run-tests',
                              AUTH='noauth',
                              SSL='nossl',
@@ -619,6 +621,7 @@ class SpecialIntegrationTask(NamedTask):
                     func('bootstrap-mongo-orchestration',
                          MONGODB_VERSION=version,
                          TOPOLOGY=topology),
+                    func('run-simple-http-server'),
                     func('run-tests', URI=uri)] + (suffix_commands or [])
         super(SpecialIntegrationTask, self).__init__(task_name,
                                                      commands=commands,
@@ -710,6 +713,7 @@ all_tasks = chain(all_tasks, [
         commands=[func('fetch-det'),
                   func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='auth',
                        SSL='ssl', MONGODB_VERSION='5.0', REQUIRE_API_VERSION='true'),
+                  func('run-simple-http-server'),
                   func('run-tests', MONGODB_API_VERSION=1, AUTH='auth', SSL='ssl')]),
     PostCompileTask(
         'test-versioned-api-accept-version-two',
@@ -718,6 +722,7 @@ all_tasks = chain(all_tasks, [
         commands=[func('fetch-det'),
                   func('bootstrap-mongo-orchestration', TOPOLOGY='server', AUTH='noauth',
                        SSL='nossl', MONGODB_VERSION='5.0', ORCHESTRATION_FILE='versioned-api-testing'),
+                  func('run-simple-http-server'),
                   func('run-tests', MONGODB_API_VERSION=1, AUTH='noauth', SSL='nossl')]),
 ])
 
@@ -787,6 +792,7 @@ class IPTask(MatrixTask):
             func("fetch-det"),
             func('bootstrap-mongo-orchestration',
                  IPV4_ONLY=self.on_off(server='ipv4')),
+            func('run-simple-http-server'),
             func('run-tests',
                  IPV4_ONLY=self.on_off(server='ipv4'),
                  URI={'ipv6': 'mongodb://[::1]/',
@@ -1010,6 +1016,7 @@ class LoadBalancedTask(MatrixTask):
                              MONGODB_VERSION=self.version,
                              LOAD_BALANCER='on')
         commands.append(orchestration)
+        commands.append(func('run-simple-http-server'))
         commands.append(func("start load balancer",
                              MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
         commands.append(func('run-tests',

@@ -123,6 +123,11 @@ declare -a test_args=(
 
 # TODO (CDRIVER-4045): consolidate DNS tests into regular test tasks.
 if [[ "${DNS}" != "nodns" ]]; then
+  if [[ "${CC}" =~ mingw ]]; then
+    echo "ERROR - DNS tests not implemented for MinGW yet" 1>&2
+    exit 1
+  fi
+
   test_args+=("-l" "/initial_dns_seedlist_discovery/*")
 
   if [[ "${DNS}" = "loadbalanced" ]]; then
@@ -132,11 +137,29 @@ if [[ "${DNS}" != "nodns" ]]; then
   fi
 fi
 
+wait_for_server() {
+  declare name="${1:?"wait_for_server requires a server name"}"
+  declare port="${2:?"wait_for_server requires a server port"}"
+
+  for _ in $(seq 300); do
+    # Exit code 7: "Failed to connect to host".
+    if
+      curl -s --max-time 1 "localhost:${port}" >/dev/null
+      test ${?} -ne 7
+    then
+      return 0
+    else
+      sleep 1
+    fi
+  done
+  echo "Could not detect ${name} server on port ${port}" 1>&2
+  return 1
+}
+
 if [[ "${CC}" =~ mingw ]]; then
-  if [[ "${DNS}" != "nodns" ]]; then
-    echo "ERROR - DNS tests not implemented for MinGW yet" 1>&2
-    exit 1
-  fi
+  echo "Waiting for simple HTTP server to start..."
+  wait_for_server "simple HTTP" 8000
+  echo "Waiting for simple HTTP server to start... done."
 
   chmod -f +x ./src/libmongoc/test-libmongoc.exe
   cmd.exe /c "$(to_windows_path "${script_dir}/run-tests-mingw.bat")"
@@ -159,29 +182,14 @@ check_mongocryptd() {
 
 export MONGOC_TEST_MONITORING_VERBOSE=on
 
-# Ensure mock KMS servers are running before starting tests.
+# Limit tests to execute and ensure required servers are running.
 if [[ "${CLIENT_SIDE_ENCRYPTION}" == "on" ]]; then
   echo "Waiting for mock KMS servers to start..."
-  wait_for_kms_server() {
-    for _ in $(seq 300); do
-      # Exit code 7: "Failed to connect to host".
-      if
-        curl -s --max-time 1 "localhost:${1:?}"
-        test ${?} -ne 7
-      then
-        return 0
-      else
-        sleep 1
-      fi
-    done
-    echo "Could not detect mock KMS server on port ${1}" 1>&2
-    return 1
-  }
-  wait_for_kms_server 8999
-  wait_for_kms_server 9000
-  wait_for_kms_server 9001
-  wait_for_kms_server 9002
-  wait_for_kms_server 5698
+  wait_for_server "mock KMS" 8999
+  wait_for_server "mock KMS" 9000
+  wait_for_server "mock KMS" 9001
+  wait_for_server "mock KMS" 9002
+  wait_for_server "mock KMIP" 5698
   echo "Waiting for mock KMS servers to start... done."
 
   # Check if tests should use the crypt_shared library.
@@ -205,8 +213,10 @@ if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then
     exit 1
   fi
 
+  # Limit tests executed to load balancer tests.
   export MONGOC_TEST_LOADBALANCED=ON
 
+  # Limit tests executed to load balancer tests.
   test_args+=("-l" "/unified/*")
   test_args+=("-l" "/retryable_reads/*")
   test_args+=("-l" "/retryable_writes/*")
@@ -220,6 +230,13 @@ if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then
   test_args+=("-l" "/change_streams/unified/*")
   test_args+=("-l" "/versioned_api/*")
   test_args+=("-l" "/command_monitoring/unified/*")
+fi
+
+if [[ ! "${test_args[*]}" =~ "-l" ]]; then
+  # /http tests are only run if the set of tests to execute were not limited.
+  echo "Waiting for simple HTTP server to start..."
+  wait_for_server "simple HTTP" 8000
+  echo "Waiting for simple HTTP server to start... done."
 fi
 
 declare ld_preload="${LD_PRELOAD:-}"

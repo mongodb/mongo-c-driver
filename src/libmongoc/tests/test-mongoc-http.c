@@ -34,20 +34,11 @@ test_mongoc_http_get (void *unused)
 
    /* Basic GET request */
    req.method = "GET";
-   req.host = "httpbin.org";
+   req.host = "localhost";
    req.path = "get";
-   req.port = 80;
+   req.port = 8000;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
    ASSERT_OR_PRINT (r, error);
-
-   if (res.status == 502) {
-      // This test occasionally fails due to 502 Bad Gateway.
-      // Automatically attempt a retry and hope the issue resolved itself.
-      // ¯\_(ツ)_/¯
-      _mongoc_http_response_cleanup (&res);
-      r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
-      ASSERT_OR_PRINT (r, error);
-   }
 
    ASSERT_WITH_MSG (res.status == 200,
                     "unexpected status code %d\n"
@@ -75,20 +66,11 @@ test_mongoc_http_post (void *unused)
 
    /* Basic POST request with a body. */
    req.method = "POST";
-   req.host = "httpbin.org";
+   req.host = "localhost";
    req.path = "post";
-   req.port = 80;
+   req.port = 8000;
    r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
    ASSERT_OR_PRINT (r, error);
-
-   if (res.status == 502) {
-      // This test occasionally fails due to 502 Bad Gateway.
-      // Automatically attempt a retry and hope the issue resolved itself.
-      // ¯\_(ツ)_/¯
-      _mongoc_http_response_cleanup (&res);
-      r = _mongoc_http_send (&req, 10000, false, NULL, &res, &error);
-      ASSERT_OR_PRINT (r, error);
-   }
 
    ASSERT_WITH_MSG (res.status == 200,
                     "unexpected status code %d\n"
