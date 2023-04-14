@@ -173,6 +173,20 @@ functions:
             if [[ ! -d drivers-evergreen-tools ]]; then
                 git clone --depth=1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
             fi
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            set -o errexit
+            . drivers-evergreen-tools/.evergreen/find-python3.sh
+            echo "PYTHON3_BINARY: $(find_python3)" >|python3_binary.yml
+    - command: expansions.update
+      type: setup
+      params:
+        file: python3_binary.yml
   fetch-source:
     - command: git.get_project
       type: setup
@@ -330,7 +344,8 @@ functions:
           - |
             set -o errexit
             echo "Starting simple HTTP server..."
-            .evergreen/scripts/simple_http_server.py
+            command -V "${PYTHON3_BINARY}" >/dev/null
+            "${PYTHON3_BINARY}" .evergreen/scripts/simple_http_server.py
             echo "Starting simple HTTP server... done."
   run-tests:
     - command: subprocess.exec

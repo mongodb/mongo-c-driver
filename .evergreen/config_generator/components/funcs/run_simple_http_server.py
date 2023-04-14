@@ -15,7 +15,8 @@ class RunSimpleHTTPServer(Function):
             script='''\
                 set -o errexit
                 echo "Starting simple HTTP server..."
-                .evergreen/scripts/simple_http_server.py
+                command -V "${PYTHON3_BINARY}" >/dev/null
+                "${PYTHON3_BINARY}" .evergreen/scripts/simple_http_server.py
                 echo "Starting simple HTTP server... done."
             ''',
         ),

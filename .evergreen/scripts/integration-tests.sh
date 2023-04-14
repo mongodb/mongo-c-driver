@@ -95,7 +95,9 @@ export ORCHESTRATION_URL="http://localhost:8889/v1/${TOPOLOGY}s"
 export TMPDIR=$MONGO_ORCHESTRATION_HOME/db
 echo From shell `date` > $MONGO_ORCHESTRATION_HOME/server.log
 
-. ../drivers-evergreen-tools/.evergreen/find-python3.sh
+command -V "${PYTHON3_BINARY:?}" >/dev/null
+
+# shellcheck source=/dev/null
 . ../drivers-evergreen-tools/.evergreen/venv-utils.sh
 
 case "$OS" in
@@ -106,8 +108,7 @@ case "$OS" in
       echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
 
       # Make sure MO is running latest version
-      venvcreate "$(find_python3)" venv
-      PYTHON="python"
+      venvcreate "${PYTHON3_BINARY}" venv
       cd venv
       rm -rf mongo-orchestration
       git clone --depth 1 git@github.com:10gen/mongo-orchestration.git
@@ -120,9 +121,7 @@ case "$OS" in
    *)
       echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
 
-      venvcreate "$(find_python3)" venv
-      PYTHON="python"
-      PIP="python -m pip"
+      venvcreate "${PYTHON3_BINARY}" venv
       cd venv
       rm -rf mongo-orchestration
       # Make sure MO is running latest version
@@ -133,7 +132,7 @@ case "$OS" in
          echo "Disabling pip cache"
          PIP_PARAM="--no-cache-dir"
       fi
-      $PIP $PIP_PARAM install .
+      python -m pip $PIP_PARAM install .
       cd ../..
       mongo-orchestration -f orchestration.config -e default --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern start > $MONGO_ORCHESTRATION_HOME/out.log 2> $MONGO_ORCHESTRATION_HOME/err.log < /dev/null &
       ;;
