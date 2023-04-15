@@ -38,8 +38,9 @@ _getenv (const char *name)
       return NULL;
    }
 #else
-   if (getenv (name) && strlen (getenv (name))) {
-      return bson_strdup (getenv (name));
+   char *const value = getenv (name);
+   if (value && strlen (value)) {
+      return bson_strdup (value);
    } else {
       return NULL;
    }
