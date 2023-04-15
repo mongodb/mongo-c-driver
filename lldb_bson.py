@@ -1284,6 +1284,13 @@ class _BSONWalker:
 
     def __rmatmul__(self, lhs: Any) -> SBValue | str:
         """Implement the actual path resolution. This is the '@' operator."""
+        if isinstance(lhs, str):
+            # Evaluate the left-hand string as an expression within the target
+            target = lldb.debugger.GetSelectedTarget()
+            if target is None:
+                raise RuntimeError("Not attached to a debug target")
+            frame = target.process.selected_thread.frames[0]
+            lhs = frame.EvaluateExpression(lhs)
         val: SBValue
         if hasattr(lhs.__class__, "unwrap"):
             # CodeLLDB gives us a wrapper around SBValue, but we want the unwrapped
