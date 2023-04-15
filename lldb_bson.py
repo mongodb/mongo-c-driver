@@ -668,9 +668,9 @@ class BinaryDisplay(SyntheticDisplayBase[BinaryInfo]):
         # Size prefix:
         data_size = read_i32le(buf)
         # Type tag:
-        type = buf[5]
+        type = buf[4]
         # The remainder of the data:
-        data = buf[6:][:data_size]
+        data = buf[5:][:data_size]
         return BinaryInfo(type, data)
 
     @override
