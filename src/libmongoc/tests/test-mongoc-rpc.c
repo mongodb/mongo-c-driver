@@ -1,12 +1,14 @@
 #include <fcntl.h>
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-flags-private.h>
 #include <mongoc/mongoc-rpc-private.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "TestSuite.h"
+#include "test-conveniences.h"
 #include "mongoc/mongoc-cluster-private.h"
 
 
@@ -655,6 +657,143 @@ test_mongoc_rpc_buffer_iov (void)
 }
 
 
+static void
+test_mongoc_rpc_msg_checksum_gather (mongoc_rpc_t *rpc)
+{
+   mongoc_array_t array;
+   _mongoc_array_init (&array, sizeof (mongoc_iovec_t));
+
+   _mongoc_rpc_gather (rpc, &array);
+   _mongoc_rpc_swab_to_le (rpc);
+
+   // OP_MSG gather should always ignore the optional checksum.
+   ASSERT_CMPSIZE_T (array.len, ==, 7u);
+
+   const size_t expected_lens[] = {
+      4u, // MsgHeader.messageLength
+      4u, // MsgHeader.requestID
+      4u, // MsgHeader.responseTo
+      4u, // MsgHeader.opCode
+      4u, // OP_MSG.flagBits
+      1u, // OP_MSG.sections[0] Kind
+      11, // OP_MSG.sections[0] Payload
+   };
+
+   for (size_t i = 0u; i < array.len; ++i) {
+      const size_t expected = expected_lens[i];
+      const size_t actual =
+         _mongoc_array_index (&array, mongoc_iovec_t, i).iov_len;
+
+      ASSERT_WITH_MSG (expected == actual,
+                       "expected element %zu to have iov_len %zu, got %zu",
+                       i,
+                       expected,
+                       actual);
+   }
+
+   _mongoc_array_destroy (&array);
+}
+
+
+static void
+test_mongoc_rpc_msg_checksum (void)
+{
+   // OP_MSG scatter should be able to handle absence of checksum.
+   {
+      // clang-format off
+      unsigned char input[] = {
+         // OP_MSG.header
+         0x20, 0x00, 0x00, 0x00, // MsgHeader.messageLength (0x00000020 = 32)
+         0x01, 0x00, 0x00, 0x00, // MsgHeader.requestID     (0x00000001 = 1)
+         0x00, 0x00, 0x00, 0x00, // MsgHeader.responseTo    (0x00000000 = 0)
+         0xdd, 0x07, 0x00, 0x00, // MsgHeader.opCode        (0x000007dd = 2013 (OP_MSG))
+
+         // OP_MSG.flagBits
+         0x00, 0x00, 0x00, 0x00, // 0x00000000 = MONGOC_MSG_NONE (0)
+
+         // OP_MSG.sections
+         0x00,                               // Kind 0
+         0x0b, 0x00, 0x00, 0x00,             // Section size (0x0000000b = 11)
+         0x08, 0x68, 0x61, 0x73, 0x00, 0x00, // Boolean "has" (false)
+         0x00,                               // End Byte (empty document)
+      };
+      // clang-format on
+
+      mongoc_rpc_t rpc = {._init = 0};
+      ASSERT_WITH_MSG (_mongoc_rpc_scatter (&rpc, input, sizeof (input)),
+                       "failed to parse OP_MSG without checksum");
+      _mongoc_rpc_swab_from_le (&rpc);
+
+      ASSERT_CMPSIZE_T ((size_t) rpc.msg.msg_len, ==, sizeof (input));
+      ASSERT_CMPINT32 (rpc.msg.request_id, ==, 1);
+      ASSERT_CMPINT32 (rpc.msg.response_to, ==, 0);
+      ASSERT_CMPINT32 (rpc.msg.opcode, ==, MONGOC_OPCODE_MSG);
+      ASSERT_CMPUINT32 (
+         (uint32_t) rpc.msg.flags, ==, (uint32_t) MONGOC_MSG_NONE);
+      ASSERT_CMPINT32 (rpc.msg.n_sections, ==, 1);
+      ASSERT_CMPINT (rpc.msg.sections->payload_type, ==, 0);
+      {
+         bson_t doc;
+         ASSERT_WITH_MSG (
+            _mongoc_rpc_get_first_document (&rpc, &doc),
+            "failed to parse document in OP_MSG without checksum");
+         assert_match_bson (&doc, tmp_bson ("{'has': false}"), false);
+         bson_destroy (&doc);
+      }
+      ASSERT_CMPUINT32 (rpc.msg.checksum, ==, 0u);
+
+      test_mongoc_rpc_msg_checksum_gather (&rpc);
+   }
+
+   // OP_MSG scatter should be able to handle presence of checksum.
+   {
+      // clang-format off
+      unsigned char input[] = {
+         // OP_MSG.header
+         0x24, 0x00, 0x00, 0x00, // MsgHeader.messageLength (0x00000024 = 36)
+         0x01, 0x00, 0x00, 0x00, // MsgHeader.requestID     (0x00000001 = 1)
+         0x00, 0x00, 0x00, 0x00, // MsgHeader.responseTo    (0x00000000 = 0)
+         0xdd, 0x07, 0x00, 0x00, // MsgHeader.opCode        (0x000007dd = 2013 (OP_MSG))
+
+         // OP_MSG.flagBits
+         0x01, 0x00, 0x00, 0x00, // 0x00000001 = MONGOC_MSG_CHECKSUM_PRESENT (1)
+
+         // OP_MSG.sections
+         0x00,                               // Kind 0
+         0x0b, 0x00, 0x00, 0x00,             // Section size (0x0000000b = 11)
+         0x08, 0x68, 0x61, 0x73, 0x00, 0x01, // Boolean "has" (true)
+         0x00,                               // End Byte (empty document)
+         0x01, 0x02, 0x03, 0x04,             // Checksum (0x04030201 = 67305985)
+      };
+      // clang-format on
+
+      mongoc_rpc_t rpc = {._init = 0};
+      ASSERT_WITH_MSG (_mongoc_rpc_scatter (&rpc, input, sizeof (input)),
+                       "failed to parse OP_MSG with checksum");
+      _mongoc_rpc_swab_from_le (&rpc);
+
+      ASSERT_CMPSIZE_T ((size_t) rpc.msg.msg_len, ==, sizeof (input));
+      ASSERT_CMPINT32 (rpc.msg.request_id, ==, 1);
+      ASSERT_CMPINT32 (rpc.msg.response_to, ==, 0);
+      ASSERT_CMPINT32 (rpc.msg.opcode, ==, MONGOC_OPCODE_MSG);
+      ASSERT_CMPUINT32 (
+         (uint32_t) rpc.msg.flags, ==, (uint32_t) MONGOC_MSG_CHECKSUM_PRESENT);
+      ASSERT_CMPINT32 (rpc.msg.n_sections, ==, 1);
+      ASSERT_CMPINT (rpc.msg.sections->payload_type, ==, 0);
+      {
+         bson_t doc;
+         ASSERT_WITH_MSG (_mongoc_rpc_get_first_document (&rpc, &doc),
+                          "failed to parse document in OP_MSG with checksum");
+         assert_match_bson (&doc, tmp_bson ("{'has': true}"), false);
+         bson_destroy (&doc);
+      }
+      ASSERT_CMPUINT32 (rpc.msg.checksum, ==, 67305985);
+
+      test_mongoc_rpc_msg_checksum_gather (&rpc);
+   }
+}
+
+
 void
 test_rpc_install (TestSuite *suite)
 {
@@ -678,4 +817,5 @@ test_rpc_install (TestSuite *suite)
    TestSuite_Add (suite, "/Rpc/update/gather", test_mongoc_rpc_update_gather);
    TestSuite_Add (suite, "/Rpc/update/scatter", test_mongoc_rpc_update_scatter);
    TestSuite_Add (suite, "/Rpc/buffer/iov", test_mongoc_rpc_buffer_iov);
+   TestSuite_Add (suite, "/Rpc/msg/checksum", test_mongoc_rpc_msg_checksum);
 }
