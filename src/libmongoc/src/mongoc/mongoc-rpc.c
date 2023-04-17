@@ -1014,9 +1014,8 @@ _mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply)
       return _mongoc_rpc_reply_get_first_msg (&rpc->msg, reply);
    }
 
-   if (rpc->header.opcode == MONGOC_OPCODE_REPLY &&
-       _mongoc_rpc_reply_get_first (&rpc->reply, reply)) {
-      return true;
+   if (rpc->header.opcode == MONGOC_OPCODE_REPLY) {
+      return _mongoc_rpc_reply_get_first (&rpc->reply, reply);
    }
 
    return false;
@@ -1032,17 +1031,17 @@ _mongoc_rpc_reply_get_first_msg (mongoc_rpc_msg_t *reply_msg,
 
    int32_t document_len;
 
-   BSON_ASSERT (0 == reply_msg->sections[0].payload_type);
+   if (BSON_UNLIKELY (reply_msg->sections[0].payload_type != 0)) {
+      return false;
+   }
 
    /* As per the Wire Protocol documentation, each section has a 32 bit length
    field: */
    memcpy (&document_len, reply_msg->sections[0].payload.bson_document, 4);
    document_len = BSON_UINT32_FROM_LE (document_len);
 
-   bson_init_static (
+   return bson_init_static (
       bson_reply, reply_msg->sections[0].payload.bson_document, document_len);
-
-   return true;
 }
 
 bool
