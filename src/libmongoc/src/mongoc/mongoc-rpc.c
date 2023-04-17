@@ -540,7 +540,7 @@
       buf += __l;                                                           \
       buflen -= __l;                                                        \
       rpc->n_##_name++;                                                     \
-   } while (buflen);
+   } while (buflen > 4); // Only optional checksum can come after data sections.
 #define RAW_BUFFER_FIELD(_name)         \
    rpc->_name = (void *) buf;           \
    rpc->_name##_len = (int32_t) buflen; \
