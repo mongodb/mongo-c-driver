@@ -47,6 +47,7 @@
    iov.iov_len = 4;                          \
    header->msg_len += (int32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
+#define CHECKSUM_FIELD(_name) // Do not include optional checksum.
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name)                   \
    iov.iov_base = (void *) &rpc->_name;      \
@@ -176,6 +177,7 @@
 #undef SECTION_ARRAY_FIELD
 #undef RAW_BUFFER_FIELD
 #undef BSON_OPTIONAL
+#undef CHECKSUM_FIELD
 
 
 #if BSON_BYTE_ORDER == BSON_BIG_ENDIAN
@@ -188,6 +190,7 @@
    }
 #define UINT8_FIELD(_name)
 #define INT32_FIELD(_name) rpc->_name = BSON_UINT32_FROM_LE (rpc->_name);
+#define CHECKSUM_FIELD(_name) rpc->_name = BSON_UINT32_FROM_LE (rpc->_name);
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) rpc->_name = BSON_UINT64_FROM_LE (rpc->_name);
 #define CSTRING_FIELD(_name)
@@ -262,6 +265,7 @@
 #undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
+#undef CHECKSUM_FIELD
 
 #endif /* BSON_BYTE_ORDER == BSON_BIG_ENDIAN */
 
@@ -273,7 +277,9 @@
       _code                                                             \
    }
 #define UINT8_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
-#define INT32_FIELD(_name) printf ("  " #_name " : %d\n", rpc->_name);
+#define INT32_FIELD(_name) printf ("  " #_name " : %" PRId32 "\n", rpc->_name);
+#define CHECKSUM_FIELD(_name) \
+   printf ("  " #_name " : %" PRIu32 "\n", rpc->_name);
 #define ENUM_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT64_FIELD(_name) \
    printf ("  " #_name " : %" PRIi64 "\n", (int64_t) rpc->_name);
@@ -408,6 +414,7 @@
 #undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
+#undef CHECKSUM_FIELD
 
 
 #define RPC(_name, _code)                                             \
@@ -433,6 +440,12 @@
    memcpy (&rpc->_name, buf, 4); \
    buflen -= 4;                  \
    buf += 4;
+#define CHECKSUM_FIELD(_name)       \
+   if (buflen >= 4) {               \
+      memcpy (&rpc->_name, buf, 4); \
+      buflen -= 4;                  \
+      buf += 4;                     \
+   }
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name)       \
    if (buflen < 8) {             \
@@ -561,6 +574,7 @@
 #undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
+#undef CHECKSUM_FIELD
 
 
 /*

@@ -6,4 +6,5 @@ RPC(
   INT32_FIELD(opcode)
   ENUM_FIELD(flags)
   SECTION_ARRAY_FIELD(sections)
+  CHECKSUM_FIELD(checksum)
 )
