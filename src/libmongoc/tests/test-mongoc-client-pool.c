@@ -367,15 +367,13 @@ test_client_pool_destroy_without_pushing (void)
 static void
 command_started_cb (const mongoc_apm_command_started_t *event)
 {
-   int *count;
-
    if (strcmp (mongoc_apm_command_started_get_command_name (event),
                "endSessions") != 0) {
       return;
    }
 
-   count = (int *) mongoc_apm_command_started_get_context (event);
-   count++;
+   int *const count = (int *) mongoc_apm_command_started_get_context (event);
+   (*count)++;
 }
 
 /* tests that creating and destroying an unused session

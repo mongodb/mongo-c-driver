@@ -2339,14 +2339,14 @@ test_framework_skip_if_not_replset (void)
 
 /* convenience skip functions based on the wire version. */
 #define WIRE_VERSION_CHECKS(wv)                                         \
-   int test_framework_skip_if_max_wire_version_more_than_##wv ()        \
+   int test_framework_skip_if_max_wire_version_more_than_##wv (void)    \
    {                                                                    \
       if (!TestSuite_CheckLive ()) {                                    \
          return 0;                                                      \
       }                                                                 \
       return test_framework_max_wire_version_at_least (wv + 1) ? 0 : 1; \
    }                                                                    \
-   int test_framework_skip_if_max_wire_version_less_than_##wv ()        \
+   int test_framework_skip_if_max_wire_version_less_than_##wv (void)    \
    {                                                                    \
       if (!TestSuite_CheckLive ()) {                                    \
          return 0;                                                      \
