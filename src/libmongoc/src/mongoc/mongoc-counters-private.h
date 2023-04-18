@@ -178,9 +178,23 @@ enum {
          bson_atomic_int64_exchange (counter, 0, bson_memory_order_seq_cst);   \
       }                                                                        \
       bson_atomic_thread_fence ();                                             \
+   }                                                                           \
+   static BSON_INLINE int32_t mongoc_counter_##ident##_count (void)            \
+   {                                                                           \
+      int32_t _sum = 0;                                                        \
+      uint32_t _i;                                                             \
+      for (_i = 0; _i < _mongoc_get_cpu_count (); _i++) {                      \
+         const int64_t *counter =                                              \
+            &BSON_CONCAT (__mongoc_counter_, ident)                            \
+                .cpus[_i]                                                      \
+                .slots[BSON_CONCAT (COUNTER_, ident) % SLOTS_PER_CACHELINE];   \
+         _sum += bson_atomic_int64_fetch (counter, bson_memory_order_seq_cst); \
+      }                                                                        \
+      return _sum;                                                             \
    }
 #include "mongoc-counters.defs"
 #undef COUNTER
+
 #else
 /* when counters are disabled, these functions are no-ops */
 #define COUNTER(ident, Category, Name, Description)                   \
