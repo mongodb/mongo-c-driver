@@ -95,7 +95,7 @@ _make_agg_cmd (const char *ns,
 {
    const char *const dot = strstr (ns, ".");
    const char *error = NULL;
-   const char *error_hint = "";
+   const char *error_hint = NULL;
 
    bsonBuild (
       *command,

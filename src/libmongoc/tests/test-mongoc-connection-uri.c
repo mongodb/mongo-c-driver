@@ -283,7 +283,6 @@ test_connection_uri_cb (bson_t *scenario)
    bson_t auth;
    bson_t options;
    bool valid;
-   int c = 0;
 
    BSON_ASSERT (scenario);
 
@@ -296,7 +295,6 @@ test_connection_uri_cb (bson_t *scenario)
       bson_t test_case;
 
       bson_iter_bson (&tests_iter, &test_case);
-      c++;
 
       if (test_suite_debug_output ()) {
          bson_iter_t test_case_iter;
