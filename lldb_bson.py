@@ -701,13 +701,12 @@ class ObjectIDDisplay(SyntheticDisplayBase[bytes]):
     """Display type for ObjectIDs"""
 
     __typename__ = "__bson_objectid__"
-    __summary_str__ = "ObjectID(${var[0]})"
 
     @classmethod
     @override
     def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
         val = cls.__parse__(value)
-        return f"ObjectID({val.hex()})"
+        return f'ObjectID("{val.hex()}")'
 
     @classmethod
     @override
@@ -739,6 +738,13 @@ class DatetimeDisplay(SyntheticDisplayBase[int]):
 
     @classmethod
     @override
+    def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
+        dt = datetime.fromtimestamp(cls.__parse__(value) / 1000)
+        s = f"{dt:%a %b %m %Y %H:%M:%S +%fμs}"
+        return f'Date("{s}")'
+
+    @classmethod
+    @override
     def __parse__(cls, val: SBValue) -> int:
         buf = memcache.get_cached(val.load_addr)
         buf = buf[:8]
@@ -752,7 +758,7 @@ class DatetimeDisplay(SyntheticDisplayBase[int]):
         # Adjusted to the local time zone:
         adjusted = dt.astimezone()
         yield from {
-            "[datetime]": dt.isoformat(),
+            "[isoformat]": dt.isoformat(),
             "[date]": f"{dt:%B %d, %Y}",
             "[time]": dt.strftime("%H:%M:%S +%fμs"),
             "[local]": adjusted.strftime("%c"),
@@ -834,14 +840,7 @@ class DBPointerDisplay(SyntheticDisplayBase[tuple[bytes, int]]):
     """Display type for DBPointers"""
 
     __typename__ = "__bson_dbpointer__"
-
-    @classmethod
-    @override
-    def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
-        buf, oid_offset = cls.__parse__(value)
-        collname = buf[4 : oid_offset - 1].decode("utf-8", errors="replace")
-        oid_hex = buf[oid_offset:].hex()
-        return f"{oid_hex} @ {collname}"
+    __summary_str__: ClassVar[str | None] = "DBPointer(${var[0]}, ${var[1]})"
 
     @classmethod
     @override
@@ -865,20 +864,28 @@ class CodeDisplay(UTF8Display):
     """Display type for BSON code"""
 
     __typename__ = "__bson_code__"
-    __summary_str__ = "code ${var[1]}"
+    __summary_str__ = "Code(${var[1]})"
 
 
 class SymbolDisplay(UTF8Display):
     """Display type for BSON symbols"""
 
     __typename__ = "__bson_symbol__"
-    __summary_str__ = "symbol: ${var[1]}"
+
+    @classmethod
+    @override
+    def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
+        spell = cls.__parse__(value)
+        dec = spell.decode("utf-8", errors="replace").rstrip("\x00")
+        return f"Symbol({dec})"
 
 
 class CodeWithScopeDisplay(SyntheticDisplayBase[int]):
     """Display type for BSON 'Code w/ Scope'"""
 
     __typename__ = "__code_with_scope__"
+
+    __summary_str__: ClassVar[str | None] = "Code(${var[0][1]}, ${var[1]})"
 
     @classmethod
     @override
@@ -906,6 +913,11 @@ class Int32Display(PrimitiveDisplay[int]):
     __typename__ = "__bson_int32__"
     __struct_format__: ClassVar[str] = "<i"
 
+    @classmethod
+    @override
+    def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
+        return f"NumberInt({cls.__parse__(value)})"
+
 
 class Int64Display(PrimitiveDisplay[int]):
     """Display for 64-bit BSON integers"""
@@ -913,12 +925,17 @@ class Int64Display(PrimitiveDisplay[int]):
     __typename__ = "__bson_int64__"
     __struct_format__: ClassVar[str] = "<q"
 
+    @classmethod
+    @override
+    def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
+        return f"NumberLong({cls.__parse__(value)})"
+
 
 class TimestampDisplay(SyntheticDisplayBase[tuple[int, int]]):
     """Display type for BSON timestamps"""
 
     __typename__ = "__bson_timestamp__"
-    __summary_str__ = "timestamp: ${var[0]}/${var[1]}"
+    __summary_str__ = "Timestamp(${var[0]}, ${var[1]})"
 
     @classmethod
     @override
@@ -966,7 +983,7 @@ class Decimal128Display(SyntheticDisplayBase[Decimal128Value]):
     @override
     def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
         val = cls.__parse__(value)
-        return f"Decimal128: {val.spelling}"
+        return f'NumberDecimal("{val.spelling}")'
 
     @classmethod
     @override
