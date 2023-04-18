@@ -62,11 +62,13 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Dict,
     Generator,
     Generic,
     Iterable,
     NamedTuple,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -146,13 +148,13 @@ FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 "Type of functions"
 T = TypeVar("T")
 "Unbounded invariant type parameter"
-InternalDict = dict[str, Any]
+InternalDict = Dict[str, Any]
 "Type of internal dictionaries, provided by LLDB"
 
 
 ValueFactory = Callable[[], SBValue]
 ChildItem = Union[
-    tuple[str, "str | int"], ValueFactory, tuple[str, "str | int", "lldb.ValueFormatType|None", "SBType|None"]
+    Tuple[str, "str | int"], ValueFactory, Tuple[str, "str | int", "lldb.ValueFormatType|None", "SBType|None"]
 ]
 
 
@@ -779,7 +781,7 @@ class NullDisplay(UndefinedDisplay):
     __summary_str__ = "null"
 
 
-class RegexDisplay(SyntheticDisplayBase[tuple[bytes, bytes]]):
+class RegexDisplay(SyntheticDisplayBase[Tuple[bytes, bytes]]):
     """Display type for BSON regular expressions"""
 
     __typename__ = "__bson_regex_[0-9]+_[0-9]+__"
@@ -836,7 +838,7 @@ class RegexDisplay(SyntheticDisplayBase[tuple[bytes, bytes]]):
         return regex, options
 
 
-class DBPointerDisplay(SyntheticDisplayBase[tuple[bytes, int]]):
+class DBPointerDisplay(SyntheticDisplayBase[Tuple[bytes, int]]):
     """Display type for DBPointers"""
 
     __typename__ = "__bson_dbpointer__"
@@ -931,7 +933,7 @@ class Int64Display(PrimitiveDisplay[int]):
         return f"NumberLong({cls.__parse__(value)})"
 
 
-class TimestampDisplay(SyntheticDisplayBase[tuple[int, int]]):
+class TimestampDisplay(SyntheticDisplayBase[Tuple[int, int]]):
     """Display type for BSON timestamps"""
 
     __typename__ = "__bson_timestamp__"
