@@ -25,42 +25,32 @@
 /* test statistics counters excluding OP_INSERT, OP_UPDATE, and OP_DELETE since
  * those were superseded by write commands in 2.6. */
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
-/* define a count function for each counter. */
-#define COUNTER(id, category, name, description)                               \
-   int32_t prev_##id;                                                          \
-   int32_t count_##id (void)                                                   \
-   {                                                                           \
-      int32_t _sum = 0;                                                        \
-      uint32_t _i;                                                             \
-      for (_i = 0; _i < _mongoc_get_cpu_count (); _i++) {                      \
-         const int64_t *counter =                                              \
-            &BSON_CONCAT (__mongoc_counter_, id)                               \
-                .cpus[_i]                                                      \
-                .slots[BSON_CONCAT (COUNTER_, id) % SLOTS_PER_CACHELINE];      \
-         _sum += bson_atomic_int64_fetch (counter, bson_memory_order_seq_cst); \
-      }                                                                        \
-      return _sum;                                                             \
-   }
+
+/* define prev_* counters for testing convenience. */
+#define COUNTER(ident, Category, Name, Description) static int32_t prev_##ident;
 #include "mongoc/mongoc-counters.defs"
 #undef COUNTER
 
-#define RESET(id)               \
-   bson_atomic_int32_exchange ( \
-      &prev_##id, count_##id (), bson_memory_order_seq_cst)
+/* helper to reset a prev_* counter */
+#define RESET(ident)                                              \
+   bson_atomic_int32_exchange (&prev_##ident,                     \
+                               mongoc_counter_##ident##_count (), \
+                               bson_memory_order_seq_cst)
 
-#define DIFF_AND_RESET(id, cmp, expected)     \
-   do {                                       \
-      int32_t old_count = prev_##id;          \
-      int32_t new_count = count_##id ();      \
-      int32_t _diff = new_count - old_count;  \
-      ASSERT_CMPINT32 (_diff, cmp, expected); \
-      RESET (id);                             \
+/* helper to compare and reset a prev_* counter. */
+#define DIFF_AND_RESET(ident, cmp, expected)                 \
+   do {                                                      \
+      int32_t old_count = prev_##ident;                      \
+      int32_t new_count = mongoc_counter_##ident##_count (); \
+      int32_t _diff = new_count - old_count;                 \
+      ASSERT_CMPINT32 (_diff, cmp, expected);                \
+      RESET (ident);                                         \
    } while (0)
 
 static void
 reset_all_counters (void)
 {
-#define COUNTER(id, category, name, description) RESET (id);
+#define COUNTER(ident, Category, Name, Description) RESET (ident);
 #include "mongoc/mongoc-counters.defs"
 #undef COUNTER
 }
