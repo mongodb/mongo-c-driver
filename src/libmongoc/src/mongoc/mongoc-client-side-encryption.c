@@ -431,10 +431,13 @@ mongoc_client_encryption_datakey_opts_set_keymaterial (
  */
 struct _mongoc_client_encryption_encrypt_range_opts_t {
    struct {
-      bson_value_t min;
-      bson_value_t max;
+      bson_value_t value;
       bool set;
-   } minmax;
+   } min;
+   struct {
+      bson_value_t value;
+      bool set;
+   } max;
    int64_t sparsity;
    struct {
       int32_t value;
@@ -468,9 +471,11 @@ mongoc_client_encryption_encrypt_range_opts_destroy (
       return;
    }
 
-   if (range_opts->minmax.set) {
-      bson_value_destroy (&range_opts->minmax.max);
-      bson_value_destroy (&range_opts->minmax.min);
+   if (range_opts->min.set) {
+      bson_value_destroy (&range_opts->min.value);
+   }
+   if (range_opts->max.set) {
+      bson_value_destroy (&range_opts->max.value);
    }
    bson_free (range_opts);
 }
@@ -569,22 +574,33 @@ mongoc_client_encryption_encrypt_range_opts_set_sparsity (
 }
 
 void
-mongoc_client_encryption_encrypt_range_opts_set_min_max (
+mongoc_client_encryption_encrypt_range_opts_set_min (
    mongoc_client_encryption_encrypt_range_opts_t *range_opts,
-   const bson_value_t *min,
-   const bson_value_t *max)
+   const bson_value_t *min)
 {
    BSON_ASSERT_PARAM (range_opts);
    BSON_ASSERT_PARAM (min);
+
+   if (range_opts->min.set) {
+      bson_value_destroy (&range_opts->min.value);
+   }
+   range_opts->min.set = true;
+   bson_value_copy (min, &range_opts->min.value);
+}
+
+void
+mongoc_client_encryption_encrypt_range_opts_set_max (
+   mongoc_client_encryption_encrypt_range_opts_t *range_opts,
+   const bson_value_t *max)
+{
+   BSON_ASSERT_PARAM (range_opts);
    BSON_ASSERT_PARAM (max);
 
-   if (range_opts->minmax.set) {
-      bson_value_destroy (&range_opts->minmax.min);
-      bson_value_destroy (&range_opts->minmax.max);
+   if (range_opts->max.set) {
+      bson_value_destroy (&range_opts->max.value);
    }
-   range_opts->minmax.set = true;
-   bson_value_copy (min, &range_opts->minmax.min);
-   bson_value_copy (max, &range_opts->minmax.max);
+   range_opts->max.set = true;
+   bson_value_copy (max, &range_opts->max.value);
 }
 
 void
@@ -602,10 +618,13 @@ copy_range_opts (const mongoc_client_encryption_encrypt_range_opts_t *opts)
    BSON_ASSERT_PARAM (opts);
    mongoc_client_encryption_encrypt_range_opts_t *opts_new =
       mongoc_client_encryption_encrypt_range_opts_new ();
-   if (opts->minmax.set) {
-      bson_value_copy (&opts->minmax.max, &opts_new->minmax.max);
-      bson_value_copy (&opts->minmax.min, &opts_new->minmax.min);
-      opts_new->minmax.set = true;
+   if (opts->min.set) {
+      bson_value_copy (&opts->min.value, &opts_new->min.value);
+      opts_new->min.set = true;
+   }
+   if (opts->max.set) {
+      bson_value_copy (&opts->max.value, &opts_new->max.value);
+      opts_new->max.set = true;
    }
    if (opts->precision.set) {
       opts_new->precision.value = opts->precision.value;
@@ -997,11 +1016,13 @@ append_bson_range_opts (bson_t *bson_range_opts,
    BSON_ASSERT_PARAM (bson_range_opts);
    BSON_ASSERT_PARAM (opts);
 
-   if (opts->range_opts->minmax.set) {
+   if (opts->range_opts->min.set) {
       BSON_ASSERT (BSON_APPEND_VALUE (
-         bson_range_opts, "max", &opts->range_opts->minmax.max));
+         bson_range_opts, "min", &opts->range_opts->min.value));
+   }
+   if (opts->range_opts->max.set) {
       BSON_ASSERT (BSON_APPEND_VALUE (
-         bson_range_opts, "min", &opts->range_opts->minmax.min));
+         bson_range_opts, "max", &opts->range_opts->max.value));
    }
    if (opts->range_opts->precision.set) {
       BSON_ASSERT (BSON_APPEND_INT32 (

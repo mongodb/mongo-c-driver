@@ -31,7 +31,8 @@ For double and decimal128 fields, min/max/precision must all be set, or all be u
     mongoc_client_encryption_encrypt_range_opts_new
     mongoc_client_encryption_encrypt_range_opts_destroy
     mongoc_client_encryption_encrypt_range_opts_set_sparsity
-    mongoc_client_encryption_encrypt_range_opts_set_min_max
+    mongoc_client_encryption_encrypt_range_opts_set_min
+    mongoc_client_encryption_encrypt_range_opts_set_max
     mongoc_client_encryption_encrypt_range_opts_set_precision
     mongoc_client_encryption_encrypt_opts_set_range_opts
 

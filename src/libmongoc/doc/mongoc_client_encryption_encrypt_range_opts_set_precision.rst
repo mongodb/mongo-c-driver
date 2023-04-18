@@ -35,5 +35,6 @@ Parameters
 
 .. seealso::
 
-  | :symbol:`mongoc_client_encryption_encrypt_range_opts_set_min_max`
+  | :symbol:`mongoc_client_encryption_encrypt_range_opts_set_min`
+  | :symbol:`mongoc_client_encryption_encrypt_range_opts_set_max`
   | :symbol:`mongoc_client_encryption_encrypt_range_opts_t`
