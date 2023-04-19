@@ -34,4 +34,5 @@ Parameters
 .. seealso::
 
   | :symbol:`mongoc_client_encryption_encrypt_range_opts_set_precision`
+  | :symbol:`mongoc_client_encryption_encrypt_range_opts_set_max`
   | :symbol:`mongoc_client_encryption_encrypt_range_opts_t`
