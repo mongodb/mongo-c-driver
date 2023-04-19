@@ -670,13 +670,13 @@ test_mongoc_rpc_msg_checksum_gather (mongoc_rpc_t *rpc)
    ASSERT_CMPSIZE_T (array.len, ==, 7u);
 
    const size_t expected_lens[] = {
-      4u, // MsgHeader.messageLength
-      4u, // MsgHeader.requestID
-      4u, // MsgHeader.responseTo
-      4u, // MsgHeader.opCode
-      4u, // OP_MSG.flagBits
-      1u, // OP_MSG.sections[0] Kind
-      11, // OP_MSG.sections[0] Payload
+      4u,  // MsgHeader.messageLength
+      4u,  // MsgHeader.requestID
+      4u,  // MsgHeader.responseTo
+      4u,  // MsgHeader.opCode
+      4u,  // OP_MSG.flagBits
+      1u,  // OP_MSG.sections[0] Kind
+      11u, // OP_MSG.sections[0] Payload
    };
 
    for (size_t i = 0u; i < array.len; ++i) {
