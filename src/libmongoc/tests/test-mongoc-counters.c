@@ -471,6 +471,189 @@ test_counters_streams_timeout (void)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
+
+static void
+test_counters_auth_with_op_msg (bool pooled)
+{
+   // This test is sensitive to the number of members in the replica set. Assert
+   // expectations to guard against the possibility of expanding the test suite
+   // to run against replica sets with a varying number of members.
+   ASSERT_WITH_MSG (test_framework_replset_member_count () == 3u,
+                    "this test requires exactly three replset members");
+
+   // SCRAM-SHA-1 is available since MongoDB server 3.0 and forces OP_MSG
+   // requests for authentication steps that follow the initial connection
+   // handshake even with speculative authentication.
+   const char *const auth_mechanism = "SCRAM-SHA-1";
+
+   // Username is also the password.
+   char *const test_user = "auth_with_op_msg";
+
+   bson_error_t error = {0};
+
+   mongoc_client_t *const setup_client = test_framework_new_default_client ();
+   mongoc_database_t *const admin =
+      mongoc_client_get_database (setup_client, "admin");
+   (void) mongoc_database_remove_user (admin, test_user, NULL);
+   ASSERT_OR_PRINT (mongoc_database_add_user (
+                       admin,
+                       test_user,
+                       test_user,
+                       tmp_bson ("{'0': {'role': 'root', 'db': 'admin'}}"),
+                       NULL,
+                       &error),
+                    error);
+
+   char *const uri_str = test_framework_get_uri_str ();
+   mongoc_uri_t *const uri = mongoc_uri_new_with_error (uri_str, &error);
+   ASSERT_OR_PRINT (uri, error);
+   mongoc_uri_set_username (uri, test_user);
+   mongoc_uri_set_password (uri, test_user);
+
+   // Specify the authentication mechanism to ensure deterministic request
+   // behavior during testing.
+   ASSERT (mongoc_uri_set_auth_mechanism (uri, auth_mechanism));
+
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client = NULL;
+
+   if (pooled) {
+      // Note: no server API version ensures OP_QUERY for initial handshake.
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      test_framework_set_pool_ssl_opts (pool);
+      mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      // Note: no server API version ensures OP_QUERY for initial handshake.
+      client = test_framework_client_new_from_uri (uri, NULL);
+      test_framework_set_ssl_opts (client);
+      mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   }
+
+   mongoc_counter_auth_success_reset ();
+   mongoc_counter_auth_failure_reset ();
+   mongoc_counter_op_egress_query_reset ();
+   mongoc_counter_op_egress_msg_reset ();
+
+   ASSERT_OR_PRINT (
+      mongoc_client_get_server_status (client, NULL, NULL, &error), error);
+
+   const int32_t auth_success = mongoc_counter_auth_success_count ();
+   const int32_t auth_failure = mongoc_counter_auth_failure_count ();
+   const int32_t sent_queries = mongoc_counter_op_egress_query_count ();
+   const int32_t sent_msgs = mongoc_counter_op_egress_msg_count ();
+
+   // Ensure we are not testing more than we intend.
+   ASSERT_WITH_MSG (auth_success == 1 && auth_failure == 0,
+                    "expected exactly one authentication attempt to succeed, "
+                    "but observed %" PRId32 " successes and %" PRId32
+                    " failures",
+                    auth_success,
+                    auth_failure);
+
+   // MongoDB Handshake Spec: Since MongoDB server 4.4, the initial handshake
+   // supports a new argument, `speculativeAuthenticate`, provided as a BSON
+   // document. Clients specifying this argument to hello or legacy hello will
+   // speculatively include the first command of an authentication handshake.
+   const bool has_speculative_auth = test_framework_get_server_version () >=
+                                     test_framework_str_to_version ("4.4.0");
+
+   // The number of expected OP_QUERY requests depends on pooling and the
+   // presence of the RTT monitor thread.
+   if (pooled) {
+      // RTT monitoring is also a 4.4+ feature alongside speculative
+      // authentication and affects the number of OP_QUERY requests.
+      if (has_speculative_auth) {
+         // OP_QUERY requests consists of:
+         //  - initial connection handshake by server monitor thread (x3)
+         //  - initial connection handshake by RTT monitor thread (x3)
+         //  - polling hello by RTT monitor thread (x3)
+         //  - initial connection handshake by new cluster node
+         ASSERT_WITH_MSG (
+            sent_queries == 10,
+            "expected exactly ten OP_QUERY requests, but observed %" PRId32
+            " requests",
+            sent_queries);
+      } else {
+         // OP_QUERY requests consists of:
+         //  - initial connection handshake by server monitor (x3)
+         //  - initial connection handshake by new cluster node
+         ASSERT_WITH_MSG (
+            sent_queries == 4,
+            "expected exactly four OP_QUERY requests, but observed %" PRId32
+            " requests",
+            sent_queries);
+      }
+   } else {
+      // OP_QUERY requests consists of:
+      //  - initial connection handshake (x3)
+      ASSERT_WITH_MSG (
+         sent_queries == 3,
+         "expected exactly three OP_QUERY requests, but observed %" PRId32
+         " requests",
+         sent_queries);
+   }
+
+   // The number of expected OP_MSG requests depends on speculative
+   // authentication and pooling.
+   if (has_speculative_auth) {
+      // Awaitable hello is also a 4.4+ feature alongside speculative
+      // authentication and affects the number of OP_MSG requests.
+      if (pooled) {
+         // OP_MSG requests consist of:
+         //  - awaitable hello by server monitor thread (x3)
+         //  - saslContinue (step 2)
+         //  - serverStatus
+         ASSERT_WITH_MSG (sent_msgs == 5,
+                          "expected exactly five OP_MSG request during "
+                          "authentication, but observed %" PRId32 " requests",
+                          sent_msgs);
+      } else {
+         // - saslContinue (step 2)
+         // - serverStatus
+         ASSERT_WITH_MSG (sent_msgs == 2,
+                          "expected exactly two OP_MSG request during "
+                          "authentication, but observed %" PRId32 " requests",
+                          sent_msgs);
+      }
+   } else {
+      // OP_MSG requests consist of:
+      //  - saslStart (step 1)
+      //  - saslContinue (step 2)
+      //  - saslContinue (step 3)
+      //  - serverStatus
+      ASSERT_WITH_MSG (sent_msgs == 4,
+                       "expected exactly four OP_MSG request during "
+                       "authentication, but observed %" PRId32 " requests",
+                       sent_msgs);
+   }
+
+   mongoc_client_destroy (setup_client);
+   mongoc_database_destroy (admin);
+   bson_free (uri_str);
+   mongoc_uri_destroy (uri);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+static void
+test_counters_auth_with_op_msg_single (void *context)
+{
+   BSON_UNUSED (context);
+   test_counters_auth_with_op_msg (false);
+}
+
+static void
+test_counters_auth_with_op_msg_pooled (void *context)
+{
+   BSON_UNUSED (context);
+   test_counters_auth_with_op_msg (true);
+}
 #endif
 
 void
@@ -484,6 +667,20 @@ test_counters_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_auth,
                       test_framework_skip_if_compressors);
+   TestSuite_AddFull (suite,
+                      "/counters/auth_with_op_msg/single",
+                      test_counters_auth_with_op_msg_single,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_not_replset);
+   TestSuite_AddFull (suite,
+                      "/counters/auth_with_op_msg/pooled",
+                      test_counters_auth_with_op_msg_pooled,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
                       "/counters/op_compressed",
                       test_counters_op_compressed,
