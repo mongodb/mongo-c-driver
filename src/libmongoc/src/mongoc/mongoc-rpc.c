@@ -47,6 +47,7 @@
    iov.iov_len = 4;                          \
    header->msg_len += (int32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
+#define CHECKSUM_FIELD(_name) // Do not include optional checksum.
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name)                   \
    iov.iov_base = (void *) &rpc->_name;      \
@@ -176,6 +177,7 @@
 #undef SECTION_ARRAY_FIELD
 #undef RAW_BUFFER_FIELD
 #undef BSON_OPTIONAL
+#undef CHECKSUM_FIELD
 
 
 #if BSON_BYTE_ORDER == BSON_BIG_ENDIAN
@@ -188,6 +190,7 @@
    }
 #define UINT8_FIELD(_name)
 #define INT32_FIELD(_name) rpc->_name = BSON_UINT32_FROM_LE (rpc->_name);
+#define CHECKSUM_FIELD(_name) rpc->_name = BSON_UINT32_FROM_LE (rpc->_name);
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) rpc->_name = BSON_UINT64_FROM_LE (rpc->_name);
 #define CSTRING_FIELD(_name)
@@ -262,6 +265,7 @@
 #undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
+#undef CHECKSUM_FIELD
 
 #endif /* BSON_BYTE_ORDER == BSON_BIG_ENDIAN */
 
@@ -273,7 +277,9 @@
       _code                                                             \
    }
 #define UINT8_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
-#define INT32_FIELD(_name) printf ("  " #_name " : %d\n", rpc->_name);
+#define INT32_FIELD(_name) printf ("  " #_name " : %" PRId32 "\n", rpc->_name);
+#define CHECKSUM_FIELD(_name) \
+   printf ("  " #_name " : %" PRIu32 "\n", rpc->_name);
 #define ENUM_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT64_FIELD(_name) \
    printf ("  " #_name " : %" PRIi64 "\n", (int64_t) rpc->_name);
@@ -408,6 +414,7 @@
 #undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
+#undef CHECKSUM_FIELD
 
 
 #define RPC(_name, _code)                                             \
@@ -433,6 +440,12 @@
    memcpy (&rpc->_name, buf, 4); \
    buflen -= 4;                  \
    buf += 4;
+#define CHECKSUM_FIELD(_name)       \
+   if (buflen >= 4) {               \
+      memcpy (&rpc->_name, buf, 4); \
+      buflen -= 4;                  \
+      buf += 4;                     \
+   }
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name)       \
    if (buflen < 8) {             \
@@ -527,7 +540,7 @@
       buf += __l;                                                           \
       buflen -= __l;                                                        \
       rpc->n_##_name++;                                                     \
-   } while (buflen);
+   } while (buflen > 4); // Only optional checksum can come after data sections.
 #define RAW_BUFFER_FIELD(_name)         \
    rpc->_name = (void *) buf;           \
    rpc->_name##_len = (int32_t) buflen; \
@@ -561,6 +574,7 @@
 #undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
+#undef CHECKSUM_FIELD
 
 
 /*
@@ -1000,9 +1014,8 @@ _mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply)
       return _mongoc_rpc_reply_get_first_msg (&rpc->msg, reply);
    }
 
-   if (rpc->header.opcode == MONGOC_OPCODE_REPLY &&
-       _mongoc_rpc_reply_get_first (&rpc->reply, reply)) {
-      return true;
+   if (rpc->header.opcode == MONGOC_OPCODE_REPLY) {
+      return _mongoc_rpc_reply_get_first (&rpc->reply, reply);
    }
 
    return false;
@@ -1018,17 +1031,17 @@ _mongoc_rpc_reply_get_first_msg (mongoc_rpc_msg_t *reply_msg,
 
    int32_t document_len;
 
-   BSON_ASSERT (0 == reply_msg->sections[0].payload_type);
+   if (BSON_UNLIKELY (reply_msg->sections[0].payload_type != 0)) {
+      return false;
+   }
 
    /* As per the Wire Protocol documentation, each section has a 32 bit length
    field: */
    memcpy (&document_len, reply_msg->sections[0].payload.bson_document, 4);
    document_len = BSON_UINT32_FROM_LE (document_len);
 
-   bson_init_static (
+   return bson_init_static (
       bson_reply, reply_msg->sections[0].payload.bson_document, document_len);
-
-   return true;
 }
 
 bool
