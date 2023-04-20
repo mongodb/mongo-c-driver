@@ -3949,15 +3949,19 @@ range_explicit_encryption_setup (const char *typeStr)
          // DoubleNoPrecision does not need more range options.
       } else if (0 == strcmp ("DoublePrecision", typeStr) ||
                  0 == strcmp ("DecimalPrecision", typeStr)) {
-         mongoc_client_encryption_encrypt_range_opts_set_min_max (
-            reef->ro, &reef->zero, &reef->twoHundred);
+         mongoc_client_encryption_encrypt_range_opts_set_min (reef->ro,
+                                                              &reef->zero);
+         mongoc_client_encryption_encrypt_range_opts_set_max (
+            reef->ro, &reef->twoHundred);
          mongoc_client_encryption_encrypt_range_opts_set_precision (reef->ro,
                                                                     2);
       } else if (0 == strcmp ("Date", typeStr) ||
                  0 == strcmp ("Int", typeStr) ||
                  0 == strcmp ("Long", typeStr)) {
-         mongoc_client_encryption_encrypt_range_opts_set_min_max (
-            reef->ro, &reef->zero, &reef->twoHundred);
+         mongoc_client_encryption_encrypt_range_opts_set_min (reef->ro,
+                                                              &reef->zero);
+         mongoc_client_encryption_encrypt_range_opts_set_max (
+            reef->ro, &reef->twoHundred);
       } else {
          test_error ("Unexpected type string: %s\n", typeStr);
       }
