@@ -71,39 +71,28 @@ An example GDB session looks like::
 LLDB
 ----
 
-This repository also includes a script that customizes LLDB's standard ``print`` command to print a ``bson_t`` or ``bson_t *`` as JSON::
+The mongo-c-driver repository contains a script ``lldb_bson.py`` that can be
+imported into an LLDB sessions and allows rich inspection of BSON values.
 
-    (lldb) print b
-    (bson_t) $0 = {"x": 1, "y": 2}
+.. note::
 
-The custom ``bson`` command provides more options::
+  The ``lldb_bson.py`` module requires an LLDB with Python 3.8 or newer.
 
-    (lldb) bson --verbose b
-    len=19
-    flags=INLINE|STATIC
-    {
-      "x": 1,
-      "y": 2
-    }
-    (lldb) bson --raw b
-    '\x13\x00\x00\x00\x10x\x00\x01\x00\x00\x00\x10y\x00\x02\x00\x00\x00\x00'
+To activate the script, import it from the LLDB command line::
 
-Type ``help bson`` for a list of options.
+  (lldb) command script import /path/to/mongo-c-driver/lldb_bson.py
 
-The script requires a build of libbson with debug symbols, and an installation of `PyMongo`_. Install PyMongo with::
+Upon success, the message ``lldb_bson is ready`` will be printed to the LLDB
+console.
 
-  python -m pip install pymongo
-
-If you see "No module named pip" then you must `install pip`_, then run the previous command again.
-
-Create a file ``~/.lldbinit`` containing::
+The import of this script can be made automatic by adding the command to an
+``.lldbinit`` file. For example: Create a file ``~/.lldbinit`` containing::
 
   command script import /path/to/mongo-c-driver/lldb_bson.py
 
-If you see "bson command installed by lldb_bson" at the beginning of your LLDB session, you've installed the script correctly.
+The docstring at the top of the ``lldb_bson.py`` file contains more information
+on the capabilities of the module.
 
-.. _PyMongo: https://pypi.python.org/pypi/pymongo
-.. _install pip: https://pip.pypa.io/en/stable/installing/#installing-with-get-pip-py)
 
 Debug assertions
 ----------------
