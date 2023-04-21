@@ -1015,15 +1015,13 @@ _mongoc_get_encryptedField_state_collection (
 
    if (0 == strcmp (state_collection_suffix, "esc")) {
       fieldName = "escCollection";
-   } else if (0 == strcmp (state_collection_suffix, "ecc")) {
-      fieldName = "eccCollection";
    } else if (0 == strcmp (state_collection_suffix, "ecoc")) {
       fieldName = "ecocCollection";
    } else {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "expected state_collection_suffix to be 'esc', 'ecc', or "
+                      "expected state_collection_suffix to be 'esc' or "
                       "'ecoc', got: %s",
                       state_collection_suffix);
       return NULL;
@@ -1101,13 +1099,38 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
       create_encField_state_collection (
          database, encryptedFields, name, "esc", error) &&
       create_encField_state_collection (
-         database, encryptedFields, name, "ecc", error) &&
-      create_encField_state_collection (
          database, encryptedFields, name, "ecoc", error);
    if (!state_collections_ok) {
       // Failed to create one or more state collections
       goto fail;
    }
+
+   // Check the wire version to ensure server is 7.0.0 or newer.
+   {
+      mongoc_server_stream_t *stream =
+         mongoc_cluster_stream_for_writes (&database->client->cluster,
+                                           NULL /* client session */,
+                                           NULL /* reply */,
+                                           error);
+      if (!stream) {
+         goto fail;
+      }
+      if (stream->sd->max_wire_version < WIRE_VERSION_7_0) {
+         bson_set_error (
+            error,
+            MONGOC_ERROR_PROTOCOL,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "Driver support of Queryable Encryption is incompatible "
+            "with server. Upgrade server to use Queryable Encryption. "
+            "Got maxWireVersion %" PRId32 " but need maxWireVersion >= %d",
+            stream->sd->max_wire_version,
+            WIRE_VERSION_7_0);
+         mongoc_server_stream_cleanup (stream);
+         goto fail;
+      }
+      mongoc_server_stream_cleanup (stream);
+   }
+
 
    /* Create data collection. */
    cc_opts = bson_copy (opts);

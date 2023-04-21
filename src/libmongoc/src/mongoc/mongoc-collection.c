@@ -764,7 +764,7 @@ mongoc_collection_count_with_opts (
       kv ("query",
           if (query,                // If we have a query,
               then (bson (*query)), // Copy it
-              else(doc ()))),       // Otherwise, add an empty doc
+              else (doc ()))),      // Otherwise, add an empty doc
       if (limit, then (kv ("limit", int64 (limit)))),
       if (skip, then (kv ("skip", int64 (skip)))));
 
@@ -1055,10 +1055,8 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
                                      bson_error_t *error)
 {
    char *escName = NULL;
-   char *eccName = NULL;
    char *ecocName = NULL;
    mongoc_collection_t *escCollection = NULL;
-   mongoc_collection_t *eccCollection = NULL;
    mongoc_collection_t *ecocCollection = NULL;
    bool ok = false;
    const char *name = mongoc_collection_get_name (collection);
@@ -1080,23 +1078,6 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
    escCollection = mongoc_client_get_collection (
       collection->client, collection->db, escName);
    if (!drop_with_opts (escCollection, NULL /* opts */, error)) {
-      if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
-         memset (error, 0, sizeof (bson_error_t));
-      } else {
-         goto fail;
-      }
-   }
-
-   /* Drop ECC collection. */
-   eccName = _mongoc_get_encryptedField_state_collection (
-      encryptedFields, name, "ecc", error);
-   if (!eccName) {
-      goto fail;
-   }
-
-   eccCollection = mongoc_client_get_collection (
-      collection->client, collection->db, eccName);
-   if (!drop_with_opts (eccCollection, NULL /* opts */, error)) {
       if (error->code == MONGOC_SERVER_ERR_NS_NOT_FOUND) {
          memset (error, 0, sizeof (bson_error_t));
       } else {
@@ -1134,8 +1115,6 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
 fail:
    mongoc_collection_destroy (ecocCollection);
    bson_free (ecocName);
-   mongoc_collection_destroy (eccCollection);
-   bson_free (eccName);
    mongoc_collection_destroy (escCollection);
    bson_free (escName);
    return ok;

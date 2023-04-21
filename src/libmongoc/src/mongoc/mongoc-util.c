@@ -27,6 +27,7 @@
 #include "mongoc-rand-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-client.h"
+#include "mongoc-client-private.h" // WIRE_VERSION_* macros.
 #include "mongoc-client-session-private.h"
 #include "mongoc-trace-private.h"
 
@@ -288,28 +289,30 @@ _mongoc_wire_version_to_server_version (int32_t version)
       return "3.4";
    case 6:
       return "3.6";
-   case 7:
+   case WIRE_VERSION_4_0:
       return "4.0";
-   case 8:
+   case WIRE_VERSION_4_2:
       return "4.2";
-   case 9:
+   case WIRE_VERSION_4_4:
       return "4.4";
    case 10:
       return "4.7";
    case 11:
       return "4.8";
-   case 12:
+   case WIRE_VERSION_4_9:
       return "4.9";
-   case 13:
+   case WIRE_VERSION_5_0:
       return "5.0";
-   case 14:
+   case WIRE_VERSION_5_1:
       return "5.1";
    case 15:
       return "5.2";
    case 16:
       return "5.3";
-   case 17:
+   case WIRE_VERSION_6_0:
       return "6.0";
+   case WIRE_VERSION_7_0:
+      return "7.0";
    default:
       return "Unknown";
    }
