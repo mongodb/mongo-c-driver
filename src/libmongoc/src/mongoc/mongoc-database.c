@@ -1121,7 +1121,7 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
             MONGOC_ERROR_PROTOCOL,
             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
             "Driver support of Queryable Encryption is incompatible "
-            "with server. Upgrade server to use Queryable Encryption."
+            "with server. Upgrade server to use Queryable Encryption. "
             "Got maxWireVersion %" PRId32 " but need maxWireVersion >= %d",
             stream->sd->max_wire_version,
             WIRE_VERSION_7_0);
