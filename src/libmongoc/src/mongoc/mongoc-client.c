@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+#ifdef __FreeBSD__
+#ifndef __BSD_VISIBLE
+#define __BSD_VISIBLE 1
+#endif /* __BSD_VISIBLE */
+#endif /* __FreeBSD__ */
 
 #include <bson/bson.h>
 #include "mongoc-config.h"
@@ -25,6 +30,7 @@
 #else
 #if defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH)
 #include <netdb.h>
+#include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
