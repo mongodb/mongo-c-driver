@@ -1,6 +1,12 @@
 /* required on old Windows for rand_s to be defined */
 #define _CRT_RAND_S
 
+#ifdef __FreeBSD__
+#ifndef __BSD_VISIBLE
+#define __BSD_VISIBLE 1
+#endif /* __BSD_VISIBLE */
+#endif /* __FreeBSD__ */
+
 #include <bson/bson.h>
 #include <math.h>
 
@@ -2114,7 +2120,7 @@ test_bson_json_double (void)
    ASSERT_CMPDOUBLE (bson_iter_double (&iter), ==, 0.0);
 
 /* check that "x" is -0.0. signbit not available on Solaris or VS 2010 */
-#if !defined(__sun) && (!defined(_MSC_VER) || (_MSC_VER >= 1800))
+#if !defined(__sun) && !defined(__FreeBSD__) && (!defined(_MSC_VER) || (_MSC_VER >= 1800))
    BSON_ASSERT (signbit (bson_iter_double (&iter)));
 #endif
 

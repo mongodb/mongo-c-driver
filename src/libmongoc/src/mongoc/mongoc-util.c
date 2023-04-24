@@ -18,6 +18,12 @@
 #define _CRT_RAND_S
 #endif
 
+#ifdef __FreeBSD__
+#ifndef __BSD_VISIBLE
+#define __BSD_VISIBLE 1
+#endif /* __BSD_VISIBLE */
+#endif /* __FreeBSD__ */
+
 #include <string.h>
 
 #include "bson/bson.h"
