@@ -35,6 +35,10 @@ if (ENABLE_SRV STREQUAL ON OR ENABLE_SRV STREQUAL AUTO)
          #
          # Attempting to link with libresolv on FreeBSD will fail with this error:
          # ld: error: unable to find library -lresolv
+         #
+         # Since res_search has existed since 4.3 BSD (which is the predecessor
+         # of FreeBSD), it is safe to assume that this function will exist in
+         # libc on FreeBSD.
          set (MONGOC_HAVE_RES_SEARCH 1)
          set (MONGOC_HAVE_RES_NSEARCH 0)
          set (MONGOC_HAVE_RES_NDESTROY 0)
