@@ -649,6 +649,54 @@ _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array)
 
 
 void
+_mongoc_rpc_gather_no_inc (mongoc_rpc_t *rpc, mongoc_array_t *array)
+{
+   switch ((mongoc_opcode_t) rpc->header.opcode) {
+   case MONGOC_OPCODE_REPLY:
+      _mongoc_rpc_gather_reply (&rpc->reply, &rpc->header, array);
+      return;
+
+   case MONGOC_OPCODE_MSG:
+      _mongoc_rpc_gather_msg (&rpc->msg, &rpc->header, array);
+      return;
+
+   case MONGOC_OPCODE_UPDATE:
+      _mongoc_rpc_gather_update (&rpc->update, &rpc->header, array);
+      return;
+
+   case MONGOC_OPCODE_INSERT:
+      _mongoc_rpc_gather_insert (&rpc->insert, &rpc->header, array);
+      return;
+
+   case MONGOC_OPCODE_QUERY:
+      _mongoc_rpc_gather_query (&rpc->query, &rpc->header, array);
+      return;
+
+   case MONGOC_OPCODE_GET_MORE:
+      _mongoc_rpc_gather_get_more (&rpc->get_more, &rpc->header, array);
+      return;
+
+   case MONGOC_OPCODE_DELETE:
+      _mongoc_rpc_gather_delete (&rpc->delete_, &rpc->header, array);
+      return;
+
+   case MONGOC_OPCODE_KILL_CURSORS:
+      _mongoc_rpc_gather_kill_cursors (&rpc->kill_cursors, &rpc->header, array);
+      return;
+
+   case MONGOC_OPCODE_COMPRESSED:
+      _mongoc_rpc_gather_compressed (&rpc->compressed, &rpc->header, array);
+      return;
+
+   default:
+      MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
+      BSON_ASSERT (false);
+      break;
+   }
+}
+
+
+void
 _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
 {
    BSON_UNUSED (rpc);

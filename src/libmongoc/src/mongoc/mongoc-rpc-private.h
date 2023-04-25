@@ -136,6 +136,8 @@ BSON_STATIC_ASSERT2 (sizeof_reply_header,
 void
 _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array);
 void
+_mongoc_rpc_gather_no_inc (mongoc_rpc_t *rpc, mongoc_array_t *array);
+void
 _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc);
 void
 _mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc);
