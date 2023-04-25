@@ -10,7 +10,9 @@ Synopsis
 
   int32_t
   mongoc_apm_command_failed_get_server_connection_id (
-     const mongoc_apm_command_failed_t *event);
+    const mongoc_apm_command_failed_t *event)
+    BSON_GNUC_DEPRECATED_FOR (
+        "mongoc_apm_command_failed_get_server_connection_id_int64");
 
 Returns this event's context.
 
@@ -18,6 +20,12 @@ Returns the server connection ID for the command. The server connection ID is
 distinct from the server ID (:symbol:`mongoc_apm_command_failed_get_server_id`)
 and is returned by the hello or legacy hello response as "connectionId" from the
 server on 4.2+.
+
+Deprecated
+----------
+
+  This function is deprecated. Please use
+  :symbol:`mongoc_apm_command_failed_get_server_connection_id_int64` in new code.
 
 Parameters
 ----------
