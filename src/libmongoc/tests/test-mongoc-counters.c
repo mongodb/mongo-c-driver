@@ -843,6 +843,152 @@ test_counters_rpc_egress_cluster_legacy (void)
 
    ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
 }
+
+
+static void
+_test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
+{
+   const rpc_egress_counters zero = {0};
+
+   const char *const hello = tmp_str ("{'ok': 1,%s"
+                                      " 'isWritablePrimary': true,"
+                                      " 'minWireVersion': %d,"
+                                      " 'maxWireVersion': %d}",
+                                      with_op_msg ? " 'helloOk': true," : "",
+                                      WIRE_VERSION_MIN,
+                                      WIRE_VERSION_MAX);
+
+   rpc_egress_counters_reset ();
+
+   mock_server_t *const server = mock_server_new ();
+   mock_server_run (server);
+
+   bson_error_t error = {0};
+   mongoc_client_pool_t *const pool =
+      mongoc_client_pool_new_with_error (mock_server_get_uri (server), &error);
+   ASSERT_OR_PRINT (pool, error);
+
+   // Stable API for Drivers spec: If an API version was declared, drivers MUST
+   // NOT use the legacy hello command during the initial handshake or
+   // afterwards. Instead, drivers MUST use the `hello` command exclusively and
+   // use the `OP_MSG` protocol.
+   if (with_op_msg) {
+      // Force OP_MSG for handshakes.
+      mongoc_server_api_t *const api =
+         mongoc_server_api_new (MONGOC_SERVER_API_V1);
+      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
+                       error);
+      mongoc_server_api_destroy (api);
+   }
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+
+   // Trigger: _server_monitor_check_server
+   mongoc_client_t *const client = mongoc_client_pool_pop (pool);
+
+   rpc_egress_counters expected = {0};
+   int32_t *const handshake_counter =
+      with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
+
+   {
+      request_t *const request = mock_server_receives_any_hello (server);
+
+      // OP_QUERY 1 / OP_MSG 1:
+      //  - by _mongoc_rpc_gather
+      //  - by one of:
+      //    - _server_monitor_send_and_recv_opquery
+      //    - _server_monitor_send_and_recv_hello_opmsg
+      //  - by _server_monitor_send_and_recv
+      //  - by _server_monitor_setup_connection
+      //  - by _server_monitor_check_server
+      //  - by _server_monitor_thread
+      *handshake_counter += 1;
+      expected.op_egress_total += 1;
+      ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+      mock_server_replies_simple (request, hello);
+      request_destroy (request);
+   }
+
+   {
+      future_t *const ping = future_client_command_simple (
+         client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+      {
+         request_t *const request = mock_server_receives_any_hello (server);
+
+         // OP_QUERY 2 / OP_MSG 2:
+         //  - by _mongoc_rpc_gather
+         //  - by one of:
+         //    - mongoc_cluster_run_command_opquery
+         //    - mongoc_cluster_run_opmsg
+         //  - by mongoc_cluster_run_command_private
+         //  - by _stream_run_hello
+         //  - by _cluster_run_hello
+         //  - by _cluster_add_node
+         //  - by _cluster_fetch_stream_pooled
+         //  - by _try_get_server_stream
+         //  - by _mongoc_cluster_stream_for_server
+         //  - by _mongoc_cluster_stream_for_optype
+         //  - by mongoc_cluster_stream_for_reads
+         //  - by mongoc_client_command_simple
+         *handshake_counter += 1;
+         expected.op_egress_total += 1;
+         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+         mock_server_replies_simple (request, hello);
+         request_destroy (request);
+      }
+
+      {
+         request_t *const request = mock_server_receives_request (server);
+
+         // OP_MSG 1 / OP_MSG 3:
+         //  - by _mongoc_rpc_gather
+         //  - by mongoc_cluster_run_opmsg
+         //  - by mongoc_cluster_run_command_monitored
+         //  - by _mongoc_client_command_with_stream
+         //  - by mongoc_client_command_simple
+         expected.op_egress_msg += 1;
+         expected.op_egress_total += 1;
+         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+         mock_server_replies_ok_and_destroys (request);
+      }
+
+      ASSERT_OR_PRINT (future_get_bool (ping), error);
+      future_destroy (ping);
+   }
+
+   // Ensure no extra requests.
+   {
+      int responses = 0;
+
+      server_monitor_autoresponder_data data = {.hello = hello,
+                                                .responses = &responses};
+
+      mock_server_autoresponds (
+         server, test_counters_rpc_egress_autoresponder, &data, NULL);
+
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+      mock_server_destroy (server);
+   }
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+}
+
+static void
+test_counters_rpc_egress_cluster_pooled_op_query (void)
+{
+   _test_counters_rpc_egress_cluster_pooled (false);
+}
+
+static void
+test_counters_rpc_egress_cluster_pooled_op_msg (void)
+{
+   _test_counters_rpc_egress_cluster_pooled (true);
+}
 #endif
 
 void
@@ -892,5 +1038,14 @@ test_counters_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/counters/rpc/egress/cluster/legacy",
                                 test_counters_rpc_egress_cluster_legacy);
+
+   TestSuite_AddMockServerTest (
+      suite,
+      "/counters/rpc/egress/cluster/pooled/op_query",
+      test_counters_rpc_egress_cluster_pooled_op_query);
+
+   TestSuite_AddMockServerTest (suite,
+                                "/counters/rpc/egress/cluster/pooled/op_msg",
+                                test_counters_rpc_egress_cluster_pooled_op_msg);
 #endif
 }
