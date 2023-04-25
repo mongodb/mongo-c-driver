@@ -1202,6 +1202,71 @@ test_counters_rpc_egress_awaitable_hello_op_msg (void)
 {
    _test_counters_rpc_egress_awaitable_hello (true);
 }
+
+
+static void
+_test_counters_rpc_egress_mock_server (bool with_op_msg)
+{
+   const rpc_egress_counters zero = {0};
+
+   rpc_egress_counters_reset ();
+
+   mock_server_t *server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
+   mock_server_run (server);
+
+   bson_error_t error = {0};
+   mongoc_client_t *const client = mongoc_client_new_from_uri_with_error (
+      mock_server_get_uri (server), &error);
+   ASSERT_OR_PRINT (client, error);
+
+   // Stable API for Drivers spec: If an API version was declared, drivers MUST
+   // NOT use the legacy hello command during the initial handshake or
+   // afterwards. Instead, drivers MUST use the `hello` command exclusively and
+   // use the `OP_MSG` protocol.
+   if (with_op_msg) {
+      mongoc_server_api_t *const api =
+         mongoc_server_api_new (MONGOC_SERVER_API_V1);
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
+                       error);
+      mongoc_server_api_destroy (api);
+   }
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+
+   future_t *const future = future_client_command_simple (
+      client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+   mock_server_replies_ok_and_destroys (mock_server_receives_request (server));
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   // Handshake (OP_QUERY 1 / OP_MSG 1) + command (OP_MSG 1 / OP_MSG 2).
+   // Mock server replies should not contribute RPC egress counters.
+   const rpc_egress_counters expected = {
+      .op_egress_msg = with_op_msg ? 2 : 1,
+      .op_egress_query = with_op_msg ? 0 : 1,
+      .op_egress_total = 2,
+   };
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+   future_destroy (future);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+}
+
+static void
+test_counters_rpc_egress_mock_server_op_query (void)
+{
+   _test_counters_rpc_egress_mock_server (false);
+}
+
+static void
+test_counters_rpc_egress_mock_server_op_msg (void)
+{
+   _test_counters_rpc_egress_mock_server (true);
+}
 #endif
 
 void
@@ -1270,5 +1335,13 @@ test_counters_install (TestSuite *suite)
       suite,
       "/counters/rpc/egress/awaitable_hello/op_msg",
       test_counters_rpc_egress_awaitable_hello_op_msg);
+
+   TestSuite_AddMockServerTest (suite,
+                                "/counters/rpc/egress/mock_server/op_query",
+                                test_counters_rpc_egress_mock_server_op_query);
+
+   TestSuite_AddMockServerTest (suite,
+                                "/counters/rpc/egress/mock_server/op_msg",
+                                test_counters_rpc_egress_mock_server_op_msg);
 #endif
 }
