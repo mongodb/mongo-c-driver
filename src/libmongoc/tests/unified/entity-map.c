@@ -227,7 +227,7 @@ typedef struct command_callback_funcs_t {
    apm_func_int64_t get_operation_id;
    apm_func_bson_oid_t get_service_id;
    apm_func_host_list_t get_host;
-   apm_func_int32_t get_server_connection_id;
+   apm_func_int64_t get_server_connection_id;
    apm_func_serialize_t serialize;
 } command_callback_funcs_t;
 
@@ -310,10 +310,10 @@ store_event_serialize_started (bson_t *doc,
       "connectionId",
       mongoc_apm_command_started_get_host (apm_command)->host_and_port);
 
-   BSON_APPEND_INT32 (
+   BSON_APPEND_INT64 (
       doc,
       "serverConnectionId",
-      mongoc_apm_command_started_get_server_connection_id (apm_command));
+      mongoc_apm_command_started_get_server_connection_id_int64 (apm_command));
 
    {
       const bson_oid_t *const service_id =
@@ -355,10 +355,10 @@ store_event_serialize_failed (bson_t *doc,
       "connectionId",
       mongoc_apm_command_failed_get_host (apm_command)->host_and_port);
 
-   BSON_APPEND_INT32 (
+   BSON_APPEND_INT64 (
       doc,
       "serverConnectionId",
-      mongoc_apm_command_failed_get_server_connection_id (apm_command));
+      mongoc_apm_command_failed_get_server_connection_id_int64 (apm_command));
 
    {
       const bson_oid_t *const service_id =
@@ -403,10 +403,11 @@ store_event_serialize_succeeded (
       "connectionId",
       mongoc_apm_command_succeeded_get_host (apm_command)->host_and_port);
 
-   BSON_APPEND_INT32 (
+   BSON_APPEND_INT64 (
       doc,
       "serverConnectionId",
-      mongoc_apm_command_succeeded_get_server_connection_id (apm_command));
+      mongoc_apm_command_succeeded_get_server_connection_id_int64 (
+         apm_command));
 
    {
       const bson_oid_t *const service_id =
@@ -498,8 +499,8 @@ command_started (const mongoc_apm_command_started_t *started)
       .get_service_id =
          (apm_func_bson_oid_t) mongoc_apm_command_started_get_service_id,
       .get_host = (apm_func_host_list_t) mongoc_apm_command_started_get_host,
-      .get_server_connection_id =
-         (apm_func_int32_t) mongoc_apm_command_started_get_server_connection_id,
+      .get_server_connection_id = (apm_func_int64_t)
+         mongoc_apm_command_started_get_server_connection_id_int64,
       .serialize = (apm_func_serialize_t) store_event_serialize_started,
    };
 
@@ -523,8 +524,8 @@ command_failed (const mongoc_apm_command_failed_t *failed)
       .get_service_id =
          (apm_func_bson_oid_t) mongoc_apm_command_failed_get_service_id,
       .get_host = (apm_func_host_list_t) mongoc_apm_command_failed_get_host,
-      .get_server_connection_id =
-         (apm_func_int32_t) mongoc_apm_command_failed_get_server_connection_id,
+      .get_server_connection_id = (apm_func_int64_t)
+         mongoc_apm_command_failed_get_server_connection_id_int64,
       .serialize = (apm_func_serialize_t) store_event_serialize_failed,
    };
 
@@ -548,8 +549,8 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
       .get_service_id =
          (apm_func_bson_oid_t) mongoc_apm_command_succeeded_get_service_id,
       .get_host = (apm_func_host_list_t) mongoc_apm_command_succeeded_get_host,
-      .get_server_connection_id = (apm_func_int32_t)
-         mongoc_apm_command_succeeded_get_server_connection_id,
+      .get_server_connection_id = (apm_func_int64_t)
+         mongoc_apm_command_succeeded_get_server_connection_id_int64,
       .serialize = (apm_func_serialize_t) store_event_serialize_succeeded,
    };
 
