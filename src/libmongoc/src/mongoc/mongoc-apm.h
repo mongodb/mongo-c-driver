@@ -105,6 +105,9 @@ mongoc_apm_command_started_get_service_id (
 MONGOC_EXPORT (int32_t)
 mongoc_apm_command_started_get_server_connection_id (
    const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT (int64_t)
+mongoc_apm_command_started_get_server_connection_id_int64 (
+   const mongoc_apm_command_started_t *event);
 MONGOC_EXPORT (void *)
 mongoc_apm_command_started_get_context (
    const mongoc_apm_command_started_t *event);
@@ -137,6 +140,9 @@ mongoc_apm_command_succeeded_get_service_id (
    const mongoc_apm_command_succeeded_t *event);
 MONGOC_EXPORT (int32_t)
 mongoc_apm_command_succeeded_get_server_connection_id (
+   const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT (int64_t)
+mongoc_apm_command_succeeded_get_server_connection_id_int64 (
    const mongoc_apm_command_succeeded_t *event);
 MONGOC_EXPORT (void *)
 mongoc_apm_command_succeeded_get_context (
@@ -172,6 +178,9 @@ mongoc_apm_command_failed_get_service_id (
    const mongoc_apm_command_failed_t *event);
 MONGOC_EXPORT (int32_t)
 mongoc_apm_command_failed_get_server_connection_id (
+   const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT (int64_t)
+mongoc_apm_command_failed_get_server_connection_id_int64 (
    const mongoc_apm_command_failed_t *event);
 MONGOC_EXPORT (void *)
 mongoc_apm_command_failed_get_context (

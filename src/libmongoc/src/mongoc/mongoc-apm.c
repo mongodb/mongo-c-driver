@@ -399,6 +399,14 @@ mongoc_apm_command_started_get_server_connection_id (
 }
 
 
+int64_t
+mongoc_apm_command_started_get_server_connection_id_int64 (
+   const mongoc_apm_command_started_t *event)
+{
+   return event->server_connection_id;
+}
+
+
 void *
 mongoc_apm_command_started_get_context (
    const mongoc_apm_command_started_t *event)
@@ -488,6 +496,14 @@ mongoc_apm_command_succeeded_get_server_connection_id (
    }
 
    return (int32_t) event->server_connection_id;
+}
+
+
+int64_t
+mongoc_apm_command_succeeded_get_server_connection_id_int64 (
+   const mongoc_apm_command_succeeded_t *event)
+{
+   return event->server_connection_id;
 }
 
 
@@ -584,6 +600,14 @@ mongoc_apm_command_failed_get_server_connection_id (
    }
 
    return (int32_t) event->server_connection_id;
+}
+
+
+int64_t
+mongoc_apm_command_failed_get_server_connection_id_int64 (
+   const mongoc_apm_command_failed_t *event)
+{
+   return event->server_connection_id;
 }
 
 
