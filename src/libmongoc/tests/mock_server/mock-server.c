@@ -2324,7 +2324,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
       r.reply.documents_len = (uint32_t) len;
    }
 
-   _mongoc_rpc_gather (&r, &ar);
+   _mongoc_rpc_gather_no_inc (&r, &ar);
    _mongoc_rpc_swab_to_le (&r);
 
    iov = (mongoc_iovec_t *) ar.data;
