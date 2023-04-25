@@ -392,6 +392,11 @@ mongoc_apm_command_started_get_server_connection_id (
 {
    if (event->server_connection_id > INT32_MAX ||
        event->server_connection_id < INT32_MIN) {
+      MONGOC_WARNING (
+         "Server connection ID %" PRId64
+         " is outside of int32 range. Returning -1. Use "
+         "mongoc_apm_command_started_get_server_connection_id_int64.",
+         event->server_connection_id);
       return MONGOC_NO_SERVER_CONNECTION_ID;
    }
 
@@ -492,6 +497,11 @@ mongoc_apm_command_succeeded_get_server_connection_id (
 {
    if (event->server_connection_id > INT32_MAX ||
        event->server_connection_id < INT32_MIN) {
+      MONGOC_WARNING (
+         "Server connection ID %" PRId64
+         " is outside of int32 range. Returning -1. Use "
+         "mongoc_apm_command_succeeded_get_server_connection_id_int64.",
+         event->server_connection_id);
       return MONGOC_NO_SERVER_CONNECTION_ID;
    }
 
@@ -596,6 +606,11 @@ mongoc_apm_command_failed_get_server_connection_id (
 {
    if (event->server_connection_id > INT32_MAX ||
        event->server_connection_id < INT32_MIN) {
+      MONGOC_WARNING (
+         "Server connection ID %" PRId64
+         " is outside of int32 range. Returning -1. Use "
+         "mongoc_apm_command_failed_get_server_connection_id_int64.",
+         event->server_connection_id);
       return MONGOC_NO_SERVER_CONNECTION_ID;
    }
 
