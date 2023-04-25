@@ -268,8 +268,8 @@ endif ()
 # Both _BSD_SOURCE and _DEFAULT_SOURCE are defined for backwards-compatibility with glibc 2.19 and earlier.
 # _BSD_SOURCE and _DEFAULT_SOURCE are required by `getpagesize`, `h_errno`, etc.
 # _XOPEN_SOURCE=700 is required by `strnlen`, etc.
-add_definitions (-D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE)
-list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE)
+add_definitions (-D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE -D__BSD_VISIBLE=1)
+list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE -D__BSD_VISIBLE=1)
 
 # https://opensource.apple.com/source/Libc/Libc-1439.40.11/gen/compat.5.auto.html
 # Non-POSIX extensions are required by `_SC_NPROCESSORS_ONLN`.

@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-#ifdef __FreeBSD__
-#ifndef __BSD_VISIBLE
-#define __BSD_VISIBLE 1
-#endif /* __BSD_VISIBLE */
-#endif /* __FreeBSD__ */
-
 #include <bson/bson.h>
 #include <stdio.h>
 #include <stdlib.h>

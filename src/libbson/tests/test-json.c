@@ -1,12 +1,6 @@
 /* required on old Windows for rand_s to be defined */
 #define _CRT_RAND_S
 
-#ifdef __FreeBSD__
-#ifndef __BSD_VISIBLE
-#define __BSD_VISIBLE 1
-#endif /* __BSD_VISIBLE */
-#endif /* __FreeBSD__ */
-
 #include <bson/bson.h>
 #include <math.h>
 
