@@ -18,7 +18,6 @@ TAG = 'scan-build-matrix'
 # fmt: off
 MATRIX = [
     ('macos-1100',       'clang', None  ),
-    ('ubuntu1404',       'clang', None  ),
     ('ubuntu1604-arm64', 'clang', None  ),
     ('ubuntu1604',       'clang', 'i686'),
     ('ubuntu1604',       'clang', None  ),

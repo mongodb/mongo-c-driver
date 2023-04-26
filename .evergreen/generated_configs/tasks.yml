@@ -3304,14 +3304,6 @@ tasks:
         vars:
           CC: clang
       - func: upload scan artifacts
-  - name: scan-build-ubuntu1404-clang
-    run_on: ubuntu1404-large
-    tags: [scan-build-matrix, ubuntu1404, clang]
-    commands:
-      - func: scan-build
-        vars:
-          CC: clang
-      - func: upload scan artifacts
   - name: scan-build-ubuntu1604-arm64-clang
     run_on: ubuntu1604-arm64-large
     tags: [scan-build-matrix, ubuntu1604-arm64, clang]
