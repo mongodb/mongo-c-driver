@@ -3409,22 +3409,6 @@ test_sample_run_command (mongoc_database_t *db)
    bson_destroy (&reply);
    /* End runCommand Example 1 */
 
-   /* Start runCommand Example 2 */
-   run_command = BCON_NEW ("collStats", BCON_UTF8 ("restaurants"));
-
-   r = mongoc_database_write_command_with_opts (
-      db, run_command, NULL /* opts */, &reply, &error);
-   bson_destroy (run_command);
-
-   if (!r) {
-      MONGOC_ERROR ("%s\n", error.message);
-   }
-
-   /* Do something with reply here */
-
-   bson_destroy (&reply);
-   /* End runCommand Example 2 */
-
    ASSERT_NO_CAPTURED_LOGS ("sample runCommand examples");
 }
 
