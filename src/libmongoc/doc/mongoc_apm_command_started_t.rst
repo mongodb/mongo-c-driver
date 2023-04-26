@@ -33,4 +33,5 @@ An event notification sent when the driver begins executing a MongoDB command.
     mongoc_apm_command_started_get_server_id
     mongoc_apm_command_started_get_service_id
     mongoc_apm_command_started_get_server_connection_id
+    mongoc_apm_command_started_get_server_connection_id_int64
 
