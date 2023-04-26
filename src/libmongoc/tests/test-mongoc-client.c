@@ -1548,7 +1548,7 @@ test_command_with_opts_op_msg (void)
    request_t *request;
    bson_t opts = BSON_INITIALIZER;
 
-   server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
 
    mock_server_auto_endsessions (server);
 
@@ -3644,7 +3644,7 @@ test_client_reset_sessions (void)
    bson_t lsid;
    bool res;
 
-   server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

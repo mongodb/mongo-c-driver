@@ -480,7 +480,7 @@ _test_mock_end_sessions (bool pooled)
    request_t *request;
    bool r;
 
-   server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
 
    if (pooled) {
@@ -560,7 +560,7 @@ test_mock_end_sessions_server_disconnect (void)
    future_t *future;
    uint16_t i;
 
-   server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
 
    client =

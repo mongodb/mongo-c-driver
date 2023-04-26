@@ -219,9 +219,6 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
 void
 _mongoc_write_result_destroy (mongoc_write_result_t *result);
 
-void
-_append_array_from_command (mongoc_write_command_t *command, bson_t *bson);
-
 mongoc_write_err_type_t
 _mongoc_write_error_get_type (bson_t *reply);
 

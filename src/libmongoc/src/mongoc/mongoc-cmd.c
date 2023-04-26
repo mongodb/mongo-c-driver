@@ -837,7 +837,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    }
 
    if (mongoc_client_uses_server_api (parts->client) ||
-       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+       server_stream->sd->max_wire_version >= WIRE_VERSION_MIN) {
       if (!bson_has_field (parts->body, "$db")) {
          BSON_APPEND_UTF8 (&parts->extra, "$db", parts->assembled.db_name);
       }

@@ -23,7 +23,6 @@
 #include "mongoc-error-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-write-command-private.h"
-#include "mongoc-write-command-legacy-private.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-opts-private.h"
@@ -49,11 +48,6 @@ typedef void (*mongoc_write_op_t) (mongoc_write_command_t *command,
 static const char *gCommandNames[] = {"delete", "insert", "update"};
 static const char *gCommandFields[] = {"deletes", "documents", "updates"};
 static const uint32_t gCommandFieldLens[] = {7, 9, 7};
-
-static mongoc_write_op_t gLegacyWriteOps[3] = {
-   _mongoc_write_command_delete_legacy,
-   _mongoc_write_command_insert_legacy,
-   _mongoc_write_command_update_legacy};
 
 
 const char *
@@ -703,220 +697,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
 
 
 void
-_append_array_from_command (mongoc_write_command_t *command, bson_t *bson)
-{
-   bson_t ar;
-   bson_reader_t *reader;
-   char str[16];
-   uint32_t i = 0;
-   const char *key;
-   bool eof;
-   const bson_t *current;
-
-
-   reader =
-      bson_reader_new_from_data (command->payload.data, command->payload.len);
-
-   bson_append_array_begin (bson,
-                            gCommandFields[command->type],
-                            gCommandFieldLens[command->type],
-                            &ar);
-
-   while ((current = bson_reader_read (reader, &eof))) {
-      bson_uint32_to_string (i, &key, str, sizeof str);
-      BSON_APPEND_DOCUMENT (&ar, key, current);
-      i++;
-   }
-
-   bson_append_array_end (bson, &ar);
-   bson_reader_destroy (reader);
-}
-
-/* Assemble the base @cmd with all of the command options.
- * @parts is always initialized, even on error.
- * This is called twice in _mongoc_write_opquery.
- * Once with no payload documents, to determine the total size. And once with
- * payload documents, to send the final command. */
-static bool
-_assemble_cmd (bson_t *cmd,
-               mongoc_write_command_t *command,
-               mongoc_client_t *client,
-               mongoc_server_stream_t *server_stream,
-               const char *database,
-               const mongoc_write_concern_t *write_concern,
-               mongoc_cmd_parts_t *parts,
-               bson_error_t *error)
-{
-   bool ret;
-   bson_iter_t iter;
-
-   mongoc_cmd_parts_init (parts, client, database, MONGOC_QUERY_NONE, cmd);
-   parts->is_write_command = true;
-   parts->assembled.operation_id = command->operation_id;
-
-   ret = mongoc_cmd_parts_set_write_concern (parts, write_concern, error);
-   if (ret) {
-      BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
-      ret = mongoc_cmd_parts_append_opts (parts, &iter, error);
-   }
-   if (ret) {
-      ret = mongoc_cmd_parts_assemble (parts, server_stream, error);
-   }
-   return ret;
-}
-
-static void
-_mongoc_write_opquery (mongoc_write_command_t *command,
-                       mongoc_client_t *client,
-                       mongoc_server_stream_t *server_stream,
-                       const char *database,
-                       const char *collection,
-                       const mongoc_write_concern_t *write_concern,
-                       uint32_t offset,
-                       mongoc_write_result_t *result,
-                       bson_error_t *error)
-{
-   mongoc_cmd_parts_t parts;
-   const char *key;
-   uint32_t len = 0;
-   bson_t ar;
-   bson_t cmd;
-   char str[16];
-   bool has_more;
-   bool ret = false;
-   uint32_t i;
-   int32_t max_bson_obj_size;
-   int32_t max_write_batch_size;
-   uint32_t overhead;
-   uint32_t key_len;
-   int data_offset = 0;
-   bson_reader_t *reader;
-   const bson_t *bson;
-   bool eof;
-
-   ENTRY;
-
-   BSON_ASSERT (command);
-   BSON_ASSERT (client);
-   BSON_ASSERT (database);
-   BSON_ASSERT (server_stream);
-   BSON_ASSERT (collection);
-
-   bson_init (&cmd);
-   max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
-   max_write_batch_size =
-      mongoc_server_stream_max_write_batch_size (server_stream);
-
-again:
-   has_more = false;
-   i = 0;
-
-   _mongoc_write_command_init (&cmd, command, collection);
-   /* If any part of assembling failed, return with failure. */
-   if (!_assemble_cmd (&cmd,
-                       command,
-                       client,
-                       server_stream,
-                       database,
-                       write_concern,
-                       &parts,
-                       error)) {
-      result->failed = true;
-      bson_destroy (&cmd);
-      mongoc_cmd_parts_cleanup (&parts);
-      EXIT;
-   }
-
-   /* Use the assembled command to compute the overhead, since it may be a new
-    * BSON document with options applied. If no options were applied, then
-    * parts.assembled.command points to cmd. The constant 2 is due to 1 byte to
-    * specify array type and 1 byte for field name's null terminator. */
-   overhead =
-      parts.assembled.command->len + 2 + gCommandFieldLens[command->type];
-   /* Toss out the assembled command, we'll assemble again after adding all of
-    * the payload documents. */
-   mongoc_cmd_parts_cleanup (&parts);
-
-   reader = bson_reader_new_from_data (command->payload.data + data_offset,
-                                       command->payload.len - data_offset);
-
-   bson_append_array_begin (&cmd,
-                            gCommandFields[command->type],
-                            gCommandFieldLens[command->type],
-                            &ar);
-
-   while ((bson = bson_reader_read (reader, &eof))) {
-      key_len = (uint32_t) bson_uint32_to_string (i, &key, str, sizeof str);
-      len = bson->len;
-      /* 1 byte to specify document type, 1 byte for key's null terminator */
-      if (_mongoc_write_command_will_overflow (overhead,
-                                               key_len + len + 2u + ar.len,
-                                               i,
-                                               max_bson_obj_size,
-                                               max_write_batch_size)) {
-         has_more = true;
-         break;
-      }
-      BSON_APPEND_DOCUMENT (&ar, key, bson);
-      data_offset += len;
-      i++;
-   }
-
-   bson_append_array_end (&cmd, &ar);
-
-   if (!i) {
-      _mongoc_write_command_too_large_error (error, i, len, max_bson_obj_size);
-      result->failed = true;
-      result->must_stop = true;
-      ret = false;
-      if (bson) {
-         data_offset += len;
-      }
-   } else {
-      bson_t reply;
-
-      ret = _assemble_cmd (&cmd,
-                           command,
-                           client,
-                           server_stream,
-                           database,
-                           write_concern,
-                           &parts,
-                           error);
-      if (ret) {
-         ret = mongoc_cluster_run_command_monitored (
-            &client->cluster, &parts.assembled, &reply, error);
-      } else {
-         bson_init (&reply);
-      }
-
-      if (!ret) {
-         result->failed = true;
-         if (bson_empty (&reply) ||
-             !mongoc_cluster_stream_valid (&client->cluster, server_stream)) {
-            /* assembling failed, or a network error running the command */
-            result->must_stop = true;
-         }
-      }
-
-      _mongoc_write_result_merge (result, command, &reply, offset);
-      offset += i;
-      bson_destroy (&reply);
-      mongoc_cmd_parts_cleanup (&parts);
-   }
-   bson_reader_destroy (reader);
-
-   if (has_more && (ret || !command->flags.ordered) && !result->must_stop) {
-      bson_reinit (&cmd);
-      GOTO (again);
-   }
-
-   bson_destroy (&cmd);
-   EXIT;
-}
-
-
-void
 _mongoc_write_command_execute (
    mongoc_write_command_t *command,             /* IN */
    mongoc_client_t *client,                     /* IN */
@@ -1060,39 +840,16 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
       EXIT;
    }
 
-   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
-      _mongoc_write_opmsg (command,
-                           client,
-                           server_stream,
-                           database,
-                           collection,
-                           crud->writeConcern,
-                           offset,
-                           crud->client_session,
-                           result,
-                           &result->error);
-   } else {
-      if (mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
-         _mongoc_write_opquery (command,
-                                client,
-                                server_stream,
-                                database,
-                                collection,
-                                crud->writeConcern,
-                                offset,
-                                result,
-                                &result->error);
-      } else {
-         gLegacyWriteOps[command->type](command,
-                                        client,
-                                        server_stream,
-                                        database,
-                                        collection,
-                                        offset,
-                                        result,
-                                        &result->error);
-      }
-   }
+   _mongoc_write_opmsg (command,
+                        client,
+                        server_stream,
+                        database,
+                        collection,
+                        crud->writeConcern,
+                        offset,
+                        crud->client_session,
+                        result,
+                        &result->error);
 
    EXIT;
 }

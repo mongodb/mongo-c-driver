@@ -2914,7 +2914,7 @@ test_unordered_bulk_writes_with_error (void)
                            " 'setName': 'rs',"
                            " 'hosts': ['%s']}",
                            WIRE_VERSION_MIN,
-                           WIRE_VERSION_OP_MSG,
+                           WIRE_VERSION_MAX,
                            mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -3430,7 +3430,7 @@ _test_numerous (bool ordered)
                            " 'maxWireVersion': %d,"
                            " 'maxWriteBatchSize': 3}",
                            WIRE_VERSION_MIN,
-                           WIRE_VERSION_OP_MSG);
+                           WIRE_VERSION_MAX);
 
    mock_server_run (server);
 
@@ -3705,11 +3705,6 @@ test_bulk_max_msg_size (void)
 
    memset (msg, 'a', str_size);
    msg[str_size] = '\0';
-   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG)) {
-      bson_free (msg);
-      bson_destroy (&opts);
-      return;
-   }
 
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 1);
@@ -3849,11 +3844,6 @@ test_bulk_max_batch_size (void)
    int i;
    mongoc_apm_callbacks_t *callbacks;
    stats_t stats = {0};
-
-   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG)) {
-      bson_destroy (&opts);
-      return;
-   }
 
    max_batch = test_framework_max_write_batch_size ();
 

@@ -1038,9 +1038,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    is_primary =
       !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
 
-   if (strcmp (cmd_name, "getMore") != 0 &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
-       is_primary && parts.user_query_flags & MONGOC_QUERY_SECONDARY_OK) {
+   if (strcmp (cmd_name, "getMore") != 0 && is_primary &&
+       parts.user_query_flags & MONGOC_QUERY_SECONDARY_OK) {
       parts.read_prefs = prefs =
          mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
    } else {

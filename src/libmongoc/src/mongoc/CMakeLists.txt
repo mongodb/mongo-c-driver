@@ -176,7 +176,6 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-uri-private.h
    mongoc-util-private.h
    mongoc-write-command-private.h
-   mongoc-write-command-legacy-private.h
    mongoc-write-concern-private.h
    service-gcp.h
 )
@@ -266,7 +265,6 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-util.c
    mongoc-version-functions.c
    mongoc-write-command.c
-   mongoc-write-command-legacy.c
    mongoc-write-concern.c
    mongoc-crypto.c
    mongoc-scram.c

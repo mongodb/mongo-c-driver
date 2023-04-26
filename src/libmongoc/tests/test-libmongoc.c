@@ -1871,8 +1871,7 @@ test_framework_clustertime_supported (void)
    has_cluster_time = bson_has_field (&reply, "$clusterTime");
    bson_destroy (&reply);
 
-   return has_cluster_time &&
-          test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG);
+   return has_cluster_time;
 }
 
 
