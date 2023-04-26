@@ -1101,8 +1101,7 @@ retry:
                                                        reply,
                                                        &cursor->error);
 
-      if (server_stream &&
-          server_stream->sd->max_wire_version >= WIRE_VERSION_RETRY_READS) {
+      if (server_stream) {
          cursor->server_id = server_stream->sd->id;
          parts.assembled.server_stream = server_stream;
          bson_destroy (reply);

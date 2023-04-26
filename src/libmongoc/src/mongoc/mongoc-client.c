@@ -1834,8 +1834,7 @@ retry:
                                           NULL,
                                           &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_READS) {
+      if (retry_server_stream) {
          parts->assembled.server_stream = retry_server_stream;
          bson_destroy (reply);
          GOTO (retry);

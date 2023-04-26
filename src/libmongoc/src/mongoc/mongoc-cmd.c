@@ -730,10 +730,6 @@ _is_retryable_read (const mongoc_cmd_parts_t *parts,
       return false;
    }
 
-   if (server_stream->sd->max_wire_version < WIRE_VERSION_RETRY_READS) {
-      return false;
-   }
-
    if (_mongoc_client_session_in_txn (parts->assembled.session)) {
       return false;
    }
