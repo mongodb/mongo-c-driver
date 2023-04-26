@@ -480,19 +480,6 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
 
    started = bson_get_monotonic_time ();
 
-   /* When the user explicitly provides a readConcern -- but the server
-    * doesn't support readConcern, we must error:
-    * https://github.com/mongodb/specifications/blob/master/source/read-write-concern/read-write-concern.rst#errors-1
-    */
-   if (cursor->read_concern->level != NULL &&
-       server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "The selected server does not support readConcern");
-      GOTO (done);
-   }
-
    cursor->operation_id = ++cursor->client->cluster.operation_id;
 
    request_id = ++cursor->client->cluster.request_id;

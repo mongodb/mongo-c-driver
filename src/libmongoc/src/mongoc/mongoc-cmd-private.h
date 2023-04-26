@@ -113,7 +113,6 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 bool
 mongoc_cmd_parts_set_read_concern (mongoc_cmd_parts_t *parts,
                                    const mongoc_read_concern_t *rc,
-                                   int max_wire_version,
                                    bson_error_t *error);
 
 bool

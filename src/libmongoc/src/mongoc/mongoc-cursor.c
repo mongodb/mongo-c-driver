@@ -1008,10 +1008,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       mongoc_session_opts_destroy (session_opts);
    }
 
-   if (!mongoc_cmd_parts_set_read_concern (&parts,
-                                           cursor->read_concern,
-                                           server_stream->sd->max_wire_version,
-                                           &cursor->error)) {
+   if (!mongoc_cmd_parts_set_read_concern (
+          &parts, cursor->read_concern, &cursor->error)) {
       _mongoc_bson_init_if_set (reply);
       GOTO (done);
    }

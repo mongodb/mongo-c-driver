@@ -2127,8 +2127,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 
    /* use default read concern for read command, unless it's in opts */
    if ((mode & MONGOC_CMD_READ) && bson_empty (&read_write_opts.readConcern)) {
-      if (!mongoc_cmd_parts_set_read_concern (
-             &parts, default_rc, wire_version, error)) {
+      if (!mongoc_cmd_parts_set_read_concern (&parts, default_rc, error)) {
          GOTO (done);
       }
    }

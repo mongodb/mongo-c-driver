@@ -147,14 +147,6 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
          mongoc_write_concern_destroy (wc);
          continue;
       } else if (BSON_ITER_IS_KEY (iter, "readConcern")) {
-         if (max_wire_version < WIRE_VERSION_READ_CONCERN) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "The selected server does not support readConcern");
-            RETURN (false);
-         }
-
          if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
@@ -212,7 +204,6 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 bool
 mongoc_cmd_parts_set_read_concern (mongoc_cmd_parts_t *parts,
                                    const mongoc_read_concern_t *rc,
-                                   int max_wire_version,
                                    bson_error_t *error)
 {
    const char *command_name;
@@ -235,18 +226,6 @@ mongoc_cmd_parts_set_read_concern (mongoc_cmd_parts_t *parts,
 
    if (mongoc_read_concern_is_default (rc)) {
       RETURN (true);
-   }
-
-   if (max_wire_version < WIRE_VERSION_READ_CONCERN) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "\"%s\" command does not support readConcern with "
-                      "wire version %d, wire version %d is required",
-                      command_name,
-                      max_wire_version,
-                      WIRE_VERSION_READ_CONCERN);
-      RETURN (false);
    }
 
    bson_destroy (&parts->read_concern_document);
@@ -334,11 +313,6 @@ mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
 
    /* process explicit read concern */
    if (!bson_empty (&rw_opts->readConcern)) {
-      if (max_wire_version < WIRE_VERSION_READ_CONCERN) {
-         OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION,
-                   "The selected server does not support readConcern");
-      }
-
       /* save readConcern for later, once we know about causal consistency */
       bson_destroy (&parts->read_concern_document);
       bson_copy_to (&rw_opts->readConcern, &parts->read_concern_document);
