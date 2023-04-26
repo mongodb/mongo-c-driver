@@ -1019,10 +1019,8 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    }
 
    if (command->flags.has_update_hint) {
-      if (server_stream->sd->max_wire_version <
-             WIRE_VERSION_HINT_SERVER_SIDE_ERROR ||
-          (server_stream->sd->max_wire_version < WIRE_VERSION_UPDATE_HINT &&
-           !mongoc_write_concern_is_acknowledged (crud->writeConcern))) {
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_UPDATE_HINT &&
+          !mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          bson_set_error (
             &result->error,
             MONGOC_ERROR_COMMAND,
@@ -1034,10 +1032,8 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    }
 
    if (command->flags.has_delete_hint) {
-      if (server_stream->sd->max_wire_version <
-             WIRE_VERSION_HINT_SERVER_SIDE_ERROR ||
-          (server_stream->sd->max_wire_version < WIRE_VERSION_DELETE_HINT &&
-           !mongoc_write_concern_is_acknowledged (crud->writeConcern))) {
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_DELETE_HINT &&
+          !mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          bson_set_error (
             &result->error,
             MONGOC_ERROR_COMMAND,
