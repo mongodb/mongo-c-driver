@@ -73,7 +73,7 @@ test_rs_failover (void)
    bson_error_t error;
    bson_t *b = tmp_bson ("{}");
 
-   rs = mock_rs_with_auto_hello (WIRE_VERSION_OP_MSG,
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MAX,
                                  true /* has primary */,
                                  2 /* secondaries */,
                                  0 /* arbiters */);
@@ -106,8 +106,13 @@ test_rs_failover (void)
    request =
       mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
-   mock_server_replies_simple (
-      request, "{'ok': 0, 'code': 10107, 'errmsg': 'not primary'}");
+   mock_server_replies_simple (request,
+                               "{"
+                               " 'ok': 0,"
+                               " 'code': 10107,"
+                               " 'errmsg': 'not primary',"
+                               " 'errorLabels': ['RetryableWriteError']"
+                               "}");
    request_destroy (request);
 
    request =
