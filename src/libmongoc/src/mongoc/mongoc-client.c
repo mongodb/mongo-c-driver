@@ -1990,8 +1990,6 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    mongoc_client_session_t *cs;
    bson_t reply_local;
    bson_t *reply_ptr;
-   int32_t wire_version;
-   int32_t wc_wire_version;
    bool reply_initialized = false;
    bool ret = false;
 
@@ -2091,34 +2089,17 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       GOTO (done);
    }
 
-   wire_version = server_stream->sd->max_wire_version;
+   const int32_t wire_version = server_stream->sd->max_wire_version;
+
    if (!mongoc_cmd_parts_append_read_write (
           &parts, &read_write_opts, wire_version, error)) {
       GOTO (done);
    }
 
    if (mode & MONGOC_CMD_WRITE) {
-      wc_wire_version = !strcasecmp (command_name, "findandmodify")
-                           ? WIRE_VERSION_MIN
-                           : WIRE_VERSION_CMD_WRITE_CONCERN;
-
-      if (read_write_opts.write_concern_owned &&
-          wire_version < wc_wire_version) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "\"%s\" command does not support writeConcern with "
-                         "wire version %d, wire version %d is required",
-                         command_name,
-                         wire_version,
-                         wc_wire_version);
-         GOTO (done);
-      }
-
       /* use default write concern unless it's in opts */
       if (!mongoc_write_concern_is_default (default_wc) &&
-          !read_write_opts.write_concern_owned &&
-          wire_version >= wc_wire_version) {
+          !read_write_opts.write_concern_owned) {
          if (!mongoc_cmd_parts_set_write_concern (&parts, default_wc, error)) {
             GOTO (done);
          }
