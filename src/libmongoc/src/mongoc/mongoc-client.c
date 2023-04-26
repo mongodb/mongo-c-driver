@@ -2089,10 +2089,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       GOTO (done);
    }
 
-   const int32_t wire_version = server_stream->sd->max_wire_version;
-
-   if (!mongoc_cmd_parts_append_read_write (
-          &parts, &read_write_opts, wire_version, error)) {
+   if (!mongoc_cmd_parts_append_read_write (&parts, &read_write_opts, error)) {
       GOTO (done);
    }
 

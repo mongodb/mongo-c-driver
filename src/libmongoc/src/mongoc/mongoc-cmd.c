@@ -108,7 +108,6 @@ mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts,
 bool
 mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                               bson_iter_t *iter,
-                              int max_wire_version,
                               bson_error_t *error)
 {
    mongoc_client_session_t *cs = NULL;
@@ -124,16 +123,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
    BSON_ASSERT (!parts->assembled.command);
 
    while (bson_iter_next (iter)) {
-      if (BSON_ITER_IS_KEY (iter, "collation")) {
-         if (max_wire_version < WIRE_VERSION_COLLATION) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "The selected server does not support collation");
-            RETURN (false);
-         }
-
-      } else if (BSON_ITER_IS_KEY (iter, "writeConcern")) {
+      if (BSON_ITER_IS_KEY (iter, "writeConcern")) {
          wc = _mongoc_write_concern_new_from_iter (iter, error);
          if (!wc) {
             RETURN (false);
@@ -286,7 +276,6 @@ mongoc_cmd_parts_set_write_concern (mongoc_cmd_parts_t *parts,
 bool
 mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
                                     mongoc_read_write_opts_t *rw_opts,
-                                    int max_wire_version,
                                     bson_error_t *error)
 {
    ENTRY;
@@ -295,11 +284,6 @@ mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
    BSON_ASSERT (!parts->assembled.command);
 
    if (!bson_empty (&rw_opts->collation)) {
-      if (max_wire_version < WIRE_VERSION_COLLATION) {
-         OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION,
-                   "The selected server does not support collation");
-      }
-
       if (!bson_append_document (
              &parts->extra, "collation", 9, &rw_opts->collation)) {
          OPTS_ERR (COMMAND_INVALID_ARG, "'opts' with 'collation' is too large");

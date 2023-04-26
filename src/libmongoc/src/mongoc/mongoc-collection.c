@@ -1485,7 +1485,6 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    char *alloc_name = NULL;
    bool ret = false;
    bool reply_initialized = false;
-   bool has_collation = false;
    mongoc_server_stream_t *server_stream = NULL;
    mongoc_cluster_t *cluster;
 
@@ -1574,7 +1573,6 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    }
    if (opt->collation) {
       BSON_ASSERT (BSON_APPEND_DOCUMENT (&doc, "collation", opt->collation));
-      has_collation = true;
    }
    if (opt->geo_options) {
       geo_opt = opt->geo_options;
@@ -1631,15 +1629,6 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
 
    if (!mongoc_cmd_parts_set_write_concern (
           &parts, parsed.writeConcern, error)) {
-      GOTO (done);
-   }
-
-   if (has_collation &&
-       server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "The selected server does not support collation");
       GOTO (done);
    }
 
@@ -3519,9 +3508,7 @@ mongoc_collection_find_and_modify_with_opts (
    /* Append any remaining unparsed options set via
     * mongoc_find_and_modify_opts_append to the command part. */
    if (bson_iter_init (&iter, &appended_opts.extra)) {
-      bool ok = mongoc_cmd_parts_append_opts (
-         &parts, &iter, server_stream->sd->max_wire_version, error);
-      if (!ok) {
+      if (!mongoc_cmd_parts_append_opts (&parts, &iter, error)) {
          GOTO (done);
       }
    }

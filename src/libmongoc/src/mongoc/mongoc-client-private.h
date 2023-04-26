@@ -47,8 +47,6 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MIN 6  /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX 17 /* a.k.a. maxWireVersion */
 
-/* first version to support collation */
-#define WIRE_VERSION_COLLATION 5
 /* first version to support server-side errors for unsupported hint options */
 #define WIRE_VERSION_HINT_SERVER_SIDE_ERROR 5
 /* first version to support OP_MSG */

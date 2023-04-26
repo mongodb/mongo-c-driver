@@ -501,8 +501,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          : MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES;
 
    BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
-   if (!mongoc_cmd_parts_append_opts (
-          &parts, &iter, server_stream->sd->max_wire_version, error)) {
+   if (!mongoc_cmd_parts_append_opts (&parts, &iter, error)) {
       bson_destroy (&cmd);
       mongoc_cmd_parts_cleanup (&parts);
       EXIT;
@@ -760,8 +759,7 @@ _assemble_cmd (bson_t *cmd,
    ret = mongoc_cmd_parts_set_write_concern (parts, write_concern, error);
    if (ret) {
       BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
-      ret = mongoc_cmd_parts_append_opts (
-         parts, &iter, server_stream->sd->max_wire_version, error);
+      ret = mongoc_cmd_parts_append_opts (parts, &iter, error);
    }
    if (ret) {
       ret = mongoc_cmd_parts_assemble (parts, server_stream, error);
@@ -996,15 +994,6 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "Cannot set collation for unacknowledged writes");
-         EXIT;
-      }
-
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support collation");
-         result->failed = true;
          EXIT;
       }
    }

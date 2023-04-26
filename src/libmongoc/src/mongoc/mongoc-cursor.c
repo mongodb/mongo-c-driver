@@ -971,10 +971,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                          "Invalid BSON in opts document");
          GOTO (done);
       }
-      if (!mongoc_cmd_parts_append_opts (&parts,
-                                         &iter,
-                                         server_stream->sd->max_wire_version,
-                                         &cursor->error)) {
+      if (!mongoc_cmd_parts_append_opts (&parts, &iter, &cursor->error)) {
          _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
