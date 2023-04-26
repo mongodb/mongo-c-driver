@@ -119,7 +119,6 @@ mongoc_cmd_parts_set_read_concern (mongoc_cmd_parts_t *parts,
 bool
 mongoc_cmd_parts_set_write_concern (mongoc_cmd_parts_t *parts,
                                     const mongoc_write_concern_t *wc,
-                                    int max_wire_version,
                                     bson_error_t *error);
 
 bool

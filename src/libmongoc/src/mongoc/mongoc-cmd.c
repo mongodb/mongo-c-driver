@@ -139,8 +139,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
             RETURN (false);
          }
 
-         if (!mongoc_cmd_parts_set_write_concern (
-                parts, wc, max_wire_version, error)) {
+         if (!mongoc_cmd_parts_set_write_concern (parts, wc, error)) {
             mongoc_write_concern_destroy (wc);
             RETURN (false);
          }
@@ -263,40 +262,24 @@ mongoc_cmd_parts_set_read_concern (mongoc_cmd_parts_t *parts,
 bool
 mongoc_cmd_parts_set_write_concern (mongoc_cmd_parts_t *parts,
                                     const mongoc_write_concern_t *wc,
-                                    int max_wire_version,
                                     bson_error_t *error)
 {
-   const char *command_name;
-   bool is_fam;
-   bool wc_allowed;
-
    ENTRY;
 
    if (!wc) {
       RETURN (true);
    }
 
-   command_name = _mongoc_get_command_name (parts->body);
+   const char *const command_name = _mongoc_get_command_name (parts->body);
 
    if (!command_name) {
       OPTS_ERR (COMMAND_INVALID_ARG, "Empty command document");
    }
 
-   is_fam = !strcasecmp (command_name, "findandmodify");
-
-   wc_allowed =
-      parts->is_write_command ||
-      (is_fam && max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
-      (!is_fam && max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN);
-
-   if (wc_allowed) {
-      parts->assembled.is_acknowledged =
-         mongoc_write_concern_is_acknowledged (wc);
-      bson_destroy (&parts->write_concern_document);
-      bson_copy_to (
-         _mongoc_write_concern_get_bson ((mongoc_write_concern_t *) wc),
-         &parts->write_concern_document);
-   }
+   parts->assembled.is_acknowledged = mongoc_write_concern_is_acknowledged (wc);
+   bson_destroy (&parts->write_concern_document);
+   bson_copy_to (_mongoc_write_concern_get_bson ((mongoc_write_concern_t *) wc),
+                 &parts->write_concern_document);
 
    RETURN (true);
 }
@@ -345,7 +328,7 @@ mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
    }
 
    if (!mongoc_cmd_parts_set_write_concern (
-          parts, rw_opts->writeConcern, max_wire_version, error)) {
+          parts, rw_opts->writeConcern, error)) {
       RETURN (false);
    }
 

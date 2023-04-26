@@ -2099,7 +2099,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 
    if (mode & MONGOC_CMD_WRITE) {
       wc_wire_version = !strcasecmp (command_name, "findandmodify")
-                           ? WIRE_VERSION_FAM_WRITE_CONCERN
+                           ? WIRE_VERSION_MIN
                            : WIRE_VERSION_CMD_WRITE_CONCERN;
 
       if (read_write_opts.write_concern_owned &&
@@ -2119,8 +2119,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       if (!mongoc_write_concern_is_default (default_wc) &&
           !read_write_opts.write_concern_owned &&
           wire_version >= wc_wire_version) {
-         if (!mongoc_cmd_parts_set_write_concern (
-                &parts, default_wc, wire_version, error)) {
+         if (!mongoc_cmd_parts_set_write_concern (&parts, default_wc, error)) {
             GOTO (done);
          }
       }

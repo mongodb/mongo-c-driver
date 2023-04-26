@@ -1629,10 +1629,8 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
       GOTO (done);
    }
 
-   if (!mongoc_cmd_parts_set_write_concern (&parts,
-                                            parsed.writeConcern,
-                                            server_stream->sd->max_wire_version,
-                                            error)) {
+   if (!mongoc_cmd_parts_set_write_concern (
+          &parts, parsed.writeConcern, error)) {
       GOTO (done);
    }
 
@@ -3480,9 +3478,7 @@ mongoc_collection_find_and_modify_with_opts (
       write_concern = appended_opts.writeConcern;
    }
    /* inherit write concern from collection if not in transaction */
-   else if (server_stream->sd->max_wire_version >=
-               WIRE_VERSION_FAM_WRITE_CONCERN &&
-            !_mongoc_client_session_in_txn (parts.assembled.session)) {
+   else if (!_mongoc_client_session_in_txn (parts.assembled.session)) {
       if (!mongoc_write_concern_is_valid (collection->write_concern)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -3532,8 +3528,7 @@ mongoc_collection_find_and_modify_with_opts (
 
    /* An empty write concern amounts to a no-op, so there's no need to guard
     * against it. */
-   if (!mongoc_cmd_parts_set_write_concern (
-          &parts, write_concern, server_stream->sd->max_wire_version, error)) {
+   if (!mongoc_cmd_parts_set_write_concern (&parts, write_concern, error)) {
       GOTO (done);
    }
 

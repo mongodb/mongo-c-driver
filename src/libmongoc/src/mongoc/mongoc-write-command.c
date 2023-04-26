@@ -482,8 +482,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
    parts.assembled.operation_id = command->operation_id;
    parts.is_write_command = true;
-   if (!mongoc_cmd_parts_set_write_concern (
-          &parts, write_concern, server_stream->sd->max_wire_version, error)) {
+   if (!mongoc_cmd_parts_set_write_concern (&parts, write_concern, error)) {
       bson_destroy (&cmd);
       mongoc_cmd_parts_cleanup (&parts);
       EXIT;
@@ -758,8 +757,7 @@ _assemble_cmd (bson_t *cmd,
    parts->is_write_command = true;
    parts->assembled.operation_id = command->operation_id;
 
-   ret = mongoc_cmd_parts_set_write_concern (
-      parts, write_concern, server_stream->sd->max_wire_version, error);
+   ret = mongoc_cmd_parts_set_write_concern (parts, write_concern, error);
    if (ret) {
       BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
       ret = mongoc_cmd_parts_append_opts (
