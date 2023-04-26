@@ -1007,15 +1007,6 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
                          "Cannot use array filters with unacknowledged writes");
          EXIT;
       }
-
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_ARRAY_FILTERS) {
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support array filters");
-         result->failed = true;
-         EXIT;
-      }
    }
 
    if (command->flags.has_update_hint) {

@@ -2250,14 +2250,6 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
    }
 
    if (!bson_empty0 (array_filters)) {
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_ARRAY_FILTERS) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support array filters");
-         GOTO (done);
-      }
-
       if (!mongoc_write_concern_is_acknowledged (
              update_opts->crud.writeConcern)) {
          bson_set_error (error,
