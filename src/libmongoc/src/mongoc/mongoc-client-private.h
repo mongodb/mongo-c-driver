@@ -47,8 +47,6 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MIN 6  /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX 17 /* a.k.a. maxWireVersion */
 
-/* first version to support maxStalenessSeconds */
-#define WIRE_VERSION_MAX_STALENESS 5
 /* first version to support writeConcern */
 #define WIRE_VERSION_CMD_WRITE_CONCERN 5
 /* first version to support collation */
