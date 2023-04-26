@@ -1342,8 +1342,7 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
       ASSERT_OR_PRINT (sd, error);
    }
 
-   if (sd->type == MONGOC_SERVER_RS_PRIMARY &&
-       sd->max_wire_version >= WIRE_VERSION_RETRY_WRITES) {
+   if (sd->type == MONGOC_SERVER_RS_PRIMARY) {
       command =
          tmp_bson ("{'configureFailPoint': 'onPrimaryTransactionalWrite',"
                    " 'mode': 'off'}");

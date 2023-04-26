@@ -49,8 +49,6 @@ BSON_BEGIN_DECLS
 
 /* first version to support OP_MSG */
 #define WIRE_VERSION_OP_MSG 6
-/* first version to support retryable writes  */
-#define WIRE_VERSION_RETRY_WRITES 6
 /* version corresponding to server 4.0 release */
 #define WIRE_VERSION_4_0 7
 /* first version to support hint for "update" command */

@@ -1740,8 +1740,7 @@ retry:
       retry_server_stream = mongoc_cluster_stream_for_writes (
          &client->cluster, parts->assembled.session, NULL, &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream) {
          parts->assembled.server_stream = retry_server_stream;
          {
             // Store the original error and reply before retry.

@@ -652,10 +652,6 @@ _allow_txn_number (const mongoc_cmd_parts_t *parts,
       return false;
    }
 
-   if (server_stream->sd->max_wire_version < WIRE_VERSION_RETRY_WRITES) {
-      return false;
-   }
-
    if (!parts->assembled.is_acknowledged) {
       return false;
    }
@@ -686,10 +682,6 @@ _is_retryable_write (const mongoc_cmd_parts_t *parts,
    }
 
    if (server_stream->retry_attempted) {
-      return false;
-   }
-
-   if (server_stream->sd->max_wire_version < WIRE_VERSION_RETRY_WRITES) {
       return false;
    }
 

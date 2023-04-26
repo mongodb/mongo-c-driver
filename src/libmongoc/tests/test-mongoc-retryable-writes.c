@@ -218,7 +218,7 @@ test_insert_one_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -266,7 +266,7 @@ test_update_one_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -317,7 +317,7 @@ test_delete_one_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -365,7 +365,7 @@ test_bulk_operation_execute_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -414,7 +414,7 @@ test_remove_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -537,7 +537,7 @@ test_unsupported_storage_engine_error (void)
                               "retryable writes. Please add retryWrites=false "
                               "to your connection string.";
 
-   rs = mock_rs_with_auto_hello (WIRE_VERSION_RETRY_WRITES, true, 0, 0);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MAX, true, 0, 0);
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
