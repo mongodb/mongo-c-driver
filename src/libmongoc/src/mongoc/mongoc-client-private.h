@@ -47,8 +47,6 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MIN 6  /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX 17 /* a.k.a. maxWireVersion */
 
-/* first version with "killCursors" command */
-#define WIRE_VERSION_KILLCURSORS_CMD 4
 /* first version when findAndModify accepts writeConcern */
 #define WIRE_VERSION_FAM_WRITE_CONCERN 4
 /* first version to support readConcern */
