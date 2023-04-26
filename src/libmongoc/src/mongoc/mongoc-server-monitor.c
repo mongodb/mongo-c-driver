@@ -213,7 +213,7 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
 static bool
 _server_monitor_send_and_recv_hello_opmsg (
    mongoc_server_monitor_t *server_monitor,
-   bson_t *cmd,
+   const bson_t *cmd,
    bson_t *reply,
    bson_error_t *error)
 {
@@ -406,6 +406,24 @@ fail:
 }
 
 static bool
+_server_monitor_send_and_recv (mongoc_server_monitor_t *server_monitor,
+                               bson_t *cmd,
+                               bson_t *reply,
+                               bson_error_t *error)
+{
+   if (mongoc_topology_uses_server_api (server_monitor->topology)) {
+      /* OP_MSG requires a "db" parameter: */
+      bson_append_utf8 (cmd, "$db", 3, "admin", 5);
+
+      return _server_monitor_send_and_recv_hello_opmsg (
+         server_monitor, cmd, reply, error);
+   } else {
+      return _server_monitor_send_and_recv_opquery (
+         server_monitor, cmd, reply, error);
+   }
+}
+
+static bool
 _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
                                bool hello_ok,
                                bson_t *hello_response,
@@ -420,8 +438,10 @@ _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
-   ret = _server_monitor_send_and_recv_opquery (
+
+   ret = _server_monitor_send_and_recv (
       server_monitor, &cmd, hello_response, error);
+
    bson_destroy (&cmd);
    return ret;
 }
@@ -868,24 +888,9 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    bson_destroy (hello_response);
 
-   /* If the user has select a versioned API, we'll assume OPCODE_MSG;
-   otherwise, we'll use the legacy OPCODE_QUERY: */
-   if (mongoc_topology_uses_server_api (server_monitor->topology)) {
-      /* OPCODE_MSG requires a "db" parameter: */
-      bson_append_utf8 (&cmd, "$db", 3, "admin", 5);
+   ret = _server_monitor_send_and_recv (
+      server_monitor, &cmd, hello_response, error);
 
-      if (!_server_monitor_send_and_recv_hello_opmsg (
-             server_monitor, &cmd, hello_response, error)) {
-         GOTO (fail);
-      }
-   } else {
-      if (!_server_monitor_send_and_recv_opquery (
-             server_monitor, &cmd, hello_response, error)) {
-         GOTO (fail);
-      }
-   }
-
-   ret = true;
 fail:
    bson_destroy (&cmd);
    RETURN (ret);
