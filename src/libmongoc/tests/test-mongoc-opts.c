@@ -784,7 +784,7 @@ test_func_inherits_opts (void *ctx)
    bson_error_t error;
 
    /* one primary, one secondary */
-   rs = mock_rs_with_auto_hello (WIRE_VERSION_OP_MSG, true, 1, 0);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MAX, true, 1, 0);
    /* we use read pref tags like "collection": "yes" to verify where the
     * pref was inherited from; ensure all secondaries match all tags */
    mock_rs_tag_secondary (rs,
@@ -834,14 +834,8 @@ test_func_inherits_opts (void *ctx)
       capture_logs (false);
 
       if (source_matrix[i] != OPT_SOURCE_NONE) {
-         if (strstr (test->func_name, "aggregate")) {
-            if (test->opt_type != OPT_READ_PREFS) {
-               add_expected_opt (source_matrix[i], test->opt_type, &cmd);
-            }
-         } else {
-            add_expected_opt (source_matrix[i], test->opt_type, &cmd);
-            expect_secondary = test->opt_type == OPT_READ_PREFS;
-         }
+         add_expected_opt (source_matrix[i], test->opt_type, &cmd);
+         expect_secondary = test->opt_type == OPT_READ_PREFS;
       }
 
       /* write commands send two OP_MSG sections */
