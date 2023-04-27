@@ -28,6 +28,7 @@
 #include <sys/sysinfo.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || \
    defined(__OpenBSD__)
+#include <sched.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <sys/param.h>

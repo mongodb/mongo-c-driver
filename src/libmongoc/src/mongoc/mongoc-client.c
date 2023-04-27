@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include <bson/bson.h>
 #include "mongoc-config.h"
 #ifdef MONGOC_HAVE_DNSAPI
@@ -25,6 +24,7 @@
 #else
 #if defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH)
 #include <netdb.h>
+#include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
