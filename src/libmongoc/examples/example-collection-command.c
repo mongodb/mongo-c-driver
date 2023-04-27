@@ -10,6 +10,7 @@ print_collection_stats (mongoc_collection_t *collection)
    const char *name;
    bson_t *cmd;
    bson_t reply;
+   char *str;
 
    name = mongoc_collection_get_name (collection);
    cmd = BCON_NEW ("collStats", BCON_UTF8 (name));
