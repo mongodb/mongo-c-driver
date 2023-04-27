@@ -102,11 +102,6 @@ typedef enum {
 } mongoc_write_err_type_t;
 
 
-const char *
-_mongoc_command_type_to_field_name (int command_type);
-const char *
-_mongoc_command_type_to_name (int command_type);
-
 void
 _mongoc_write_command_destroy (mongoc_write_command_t *command);
 void
@@ -167,11 +162,6 @@ _mongoc_write_command_delete_append (mongoc_write_command_t *command,
                                      const bson_t *opts);
 
 void
-_mongoc_write_command_too_large_error (bson_error_t *error,
-                                       int32_t idx,
-                                       int32_t len,
-                                       int32_t max_bson_size);
-void
 _mongoc_write_command_execute (mongoc_write_command_t *command,
                                mongoc_client_t *client,
                                mongoc_server_stream_t *server_stream,
@@ -192,20 +182,6 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
                                    mongoc_write_result_t *result);
 void
 _mongoc_write_result_init (mongoc_write_result_t *result);
-void
-_mongoc_write_result_append_upsert (mongoc_write_result_t *result,
-                                    int32_t idx,
-                                    const bson_value_t *value);
-int32_t
-_mongoc_write_result_merge_arrays (uint32_t offset,
-                                   mongoc_write_result_t *result,
-                                   bson_t *dest,
-                                   bson_iter_t *iter);
-void
-_mongoc_write_result_merge (mongoc_write_result_t *result,
-                            mongoc_write_command_t *command,
-                            const bson_t *reply,
-                            uint32_t offset);
 #define MONGOC_WRITE_RESULT_COMPLETE(_result, ...) \
    _mongoc_write_result_complete (_result, __VA_ARGS__, NULL)
 bool
