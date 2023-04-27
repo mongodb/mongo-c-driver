@@ -62,7 +62,7 @@ _bson_context_set_oid_seq32 (bson_context_t *context, /* IN */
                              bson_oid_t *oid)         /* OUT */
 {
    uint32_t seq = (uint32_t) bson_atomic_int32_fetch_add (
-      (int32_t *) &context->seq32, 1, bson_memory_order_seq_cst);
+      (DECL_ATOMIC_INTEGRAL_INT32 *) &context->seq32, 1, bson_memory_order_seq_cst);
    seq = BSON_UINT32_TO_BE (seq);
    memcpy (&oid->bytes[BSON_OID_SEQ32_OFFSET],
            ((uint8_t *) &seq) + 1,
