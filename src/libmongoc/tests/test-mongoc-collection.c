@@ -3402,8 +3402,9 @@ test_rename (void)
 
 
 static void
-test_stats (void)
+test_stats (void *unused)
 {
+   BSON_UNUSED (unused);
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error;
@@ -6296,7 +6297,14 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/rename", test_rename);
-   TestSuite_AddLive (suite, "/Collection/stats", test_stats);
+   // The collStats command is deprecated in MongoDB 6.0 (maxWireVersion=17) and
+   // may be removed in a future major release.
+   TestSuite_AddFull (suite,
+                      "/Collection/stats",
+                      test_stats,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_more_than_17);
    TestSuite_AddMockServerTest (
       suite, "/Collection/stats/read_pref", test_stats_read_pref);
    TestSuite_AddMockServerTest (
