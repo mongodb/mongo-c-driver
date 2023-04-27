@@ -784,7 +784,7 @@ Executing Commands
 
 The driver provides helper functions for executing MongoDB commands on client, database and collection structures. These functions return :doc:`cursors <mongoc_cursor_t>`; the ``_simple`` variants return booleans indicating success or failure.
 
-This example executes the `collStats <https://docs.mongodb.org/manual/reference/command/collStats/>`_ command against the collection "mycoll" in database "mydb".
+This example executes the `ping <https://docs.mongodb.org/manual/reference/command/ping/>`_ command against the collection "mycoll" in database "mydb".
 
 .. literalinclude:: ../examples/tutorial/executing.c
    :caption: Example of executing a command
@@ -795,9 +795,7 @@ Compile the code and run it:
 
   $ gcc -o executing executing.c $(pkg-config --cflags --libs libmongoc-1.0)
   $ ./executing
-  { "ns" : "mydb.mycoll", "count" : 1, "size" : 48, "avgObjSize" : 48, "numExtents" : 1, "storageSize" : 8192,
-  "lastExtentSize" : 8192.000000, "paddingFactor" : 1.000000, "userFlags" : 1, "capped" : false, "nindexes" : 1,
-  "indexDetails" : {  }, "totalIndexSize" : 8176, "indexSizes" : { "_id_" : 8176 }, "ok" : 1.000000 }
+  { "ok" : { "$numberDouble" : "1.0" }, "$clusterTime" : { "clusterTime" : { "$timestamp" : { "t" : 1682609211, "i" : 1 } }, "signature" : { "hash" : { "$binary" : { "base64" : "AAAAAAAAAAAAAAAAAAAAAAAAAAA=", "subType" : "00" } }, "keyId" : { "$numberLong" : "0" } } }, "operationTime" : { "$timestamp" : { "t" : 1682609211, "i" : 1 } } }
 
 On Windows:
 
@@ -805,9 +803,7 @@ On Windows:
 
   C:\> cl.exe /IC:\mongo-c-driver\include\libbson-1.0 /IC:\mongo-c-driver\include\libmongoc-1.0 executing.c
   C:\> executing
-  { "ns" : "mydb.mycoll", "count" : 1, "size" : 48, "avgObjSize" : 48, "numExtents" : 1, "storageSize" : 8192,
-  "lastExtentSize" : 8192.000000, "paddingFactor" : 1.000000, "userFlags" : 1, "capped" : false, "nindexes" : 1,
-  "indexDetails" : {  }, "totalIndexSize" : 8176, "indexSizes" : { "_id_" : 8176 }, "ok" : 1.000000 }
+  { "ok" : { "$numberDouble" : "1.0" }, "$clusterTime" : { "clusterTime" : { "$timestamp" : { "t" : 1682609211, "i" : 1 } }, "signature" : { "hash" : { "$binary" : { "base64" : "AAAAAAAAAAAAAAAAAAAAAAAAAAA=", "subType" : "00" } }, "keyId" : { "$numberLong" : "0" } } }, "operationTime" : { "$timestamp" : { "t" : 1682609211, "i" : 1 } } }
 
 Threading
 ---------
