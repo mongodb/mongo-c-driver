@@ -17,7 +17,7 @@ Synopsis
 Deprecated
 ----------
 
-This helper function is deprecated and should not be used in new code. Run the `collStats <https://docs.mongodb.com/manual/reference/command/collStats/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
+This helper function is deprecated and should not be used in new code. Use the `$collStats aggregation pipeline stage <https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/>`_ with :symbol:`mongoc_collection_aggregate()` instead.
 
 Parameters
 ----------
