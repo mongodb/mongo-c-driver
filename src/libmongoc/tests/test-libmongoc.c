@@ -2373,7 +2373,6 @@ test_framework_skip_if_not_replset (void)
                 : 1;                                                    \
    }
 
-WIRE_VERSION_CHECKS (6)
 WIRE_VERSION_CHECKS (7)
 WIRE_VERSION_CHECKS (8)
 WIRE_VERSION_CHECKS (9)

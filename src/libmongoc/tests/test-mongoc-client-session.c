@@ -2994,7 +2994,7 @@ test_session_install (TestSuite *suite)
                         "/Session/watch",
                         test_watch,
                         true,
-                        test_framework_skip_if_not_rs_version_6);
+                        test_framework_skip_if_not_replset);
    add_session_test (suite, "/Session/aggregate", test_aggregate, true);
    add_session_test (suite, "/Session/create", test_create, false);
    add_session_test (

@@ -818,14 +818,12 @@ retryable_writes_original_error_general_command (void *ctx)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   install_json_test_suite_with_check (
-      suite,
-      JSON_DIR,
-      "retryable_writes/legacy",
-      test_retryable_writes_cb,
-      test_framework_skip_if_max_wire_version_less_than_6,
-      test_framework_skip_if_no_crypto,
-      test_framework_skip_if_slow);
+   install_json_test_suite_with_check (suite,
+                                       JSON_DIR,
+                                       "retryable_writes/legacy",
+                                       test_retryable_writes_cb,
+                                       test_framework_skip_if_no_crypto,
+                                       test_framework_skip_if_slow);
 }
 
 
@@ -933,7 +931,7 @@ test_retryable_writes_install (TestSuite *suite)
                       test_command_with_opts,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (suite,
                                 "/retryable_writes/insert_one_unacknowledged",
                                 test_insert_one_unacknowledged,
@@ -971,7 +969,7 @@ test_retryable_writes_install (TestSuite *suite)
                       test_bulk_retry_tracks_new_server,
                       NULL /* dtor */,
                       NULL /* ctx */,
-                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/prose_test_3",

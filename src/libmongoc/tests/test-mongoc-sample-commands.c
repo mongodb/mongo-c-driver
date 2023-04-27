@@ -2870,8 +2870,8 @@ test_sample_change_stream_command (sample_command_fn_t fn,
    bson_thread_t thread;
    int r;
 
-   /* change streams require a replica set running MongoDB 3.6+ */
-   if (test_framework_skip_if_not_rs_version_6 () &&
+   /* change streams require a replica set */
+   if (test_framework_skip_if_not_replset () &&
        test_framework_skip_if_slow ()) {
 
       /* separate client for the background thread */

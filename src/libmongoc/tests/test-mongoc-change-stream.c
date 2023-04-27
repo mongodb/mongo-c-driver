@@ -2634,7 +2634,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_track_resume_token,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_no_failpoint);
 
    TestSuite_AddFull (suite,
@@ -2642,21 +2642,21 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_batch_size,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/missing_resume_token",
                       test_change_stream_live_missing_resume_token,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/invalid_resume_token",
                       test_change_stream_live_invalid_resume_token,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_replset);
 
    TestSuite_AddMockServerTest (suite,
                                 "/change_stream/resumable_error",
@@ -2670,7 +2670,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_watch,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/read_prefs",
@@ -2689,14 +2689,14 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_next_after_error,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
                       "/change_stream/accepts_array",
                       test_change_stream_accepts_array,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (
       suite, "/change_stream/getmore_errors", test_getmore_errors);
    TestSuite_AddFull (suite,
@@ -2754,21 +2754,21 @@ test_change_stream_install (TestSuite *suite)
                       prose_test_11,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_12",
                       prose_test_12,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_max_wire_version_more_than_7);
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_13",
                       prose_test_13,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_not_replset,
                       _skip_if_no_start_at_optime);
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_14",
