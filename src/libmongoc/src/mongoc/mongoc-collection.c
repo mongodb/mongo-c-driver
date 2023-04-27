@@ -1485,7 +1485,6 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    char *alloc_name = NULL;
    bool ret = false;
    bool reply_initialized = false;
-   bool has_collation = false;
    mongoc_server_stream_t *server_stream = NULL;
    mongoc_cluster_t *cluster;
 
@@ -1574,7 +1573,6 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    }
    if (opt->collation) {
       BSON_ASSERT (BSON_APPEND_DOCUMENT (&doc, "collation", opt->collation));
-      has_collation = true;
    }
    if (opt->geo_options) {
       geo_opt = opt->geo_options;
@@ -1629,19 +1627,8 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
       GOTO (done);
    }
 
-   if (!mongoc_cmd_parts_set_write_concern (&parts,
-                                            parsed.writeConcern,
-                                            server_stream->sd->max_wire_version,
-                                            error)) {
-      GOTO (done);
-   }
-
-   if (has_collation &&
-       server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "The selected server does not support collation");
+   if (!mongoc_cmd_parts_set_write_concern (
+          &parts, parsed.writeConcern, error)) {
       GOTO (done);
    }
 
@@ -2263,14 +2250,6 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
    }
 
    if (!bson_empty0 (array_filters)) {
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_ARRAY_FILTERS) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support array filters");
-         GOTO (done);
-      }
-
       if (!mongoc_write_concern_is_acknowledged (
              update_opts->crud.writeConcern)) {
          bson_set_error (error,
@@ -3480,9 +3459,7 @@ mongoc_collection_find_and_modify_with_opts (
       write_concern = appended_opts.writeConcern;
    }
    /* inherit write concern from collection if not in transaction */
-   else if (server_stream->sd->max_wire_version >=
-               WIRE_VERSION_FAM_WRITE_CONCERN &&
-            !_mongoc_client_session_in_txn (parts.assembled.session)) {
+   else if (!_mongoc_client_session_in_txn (parts.assembled.session)) {
       if (!mongoc_write_concern_is_valid (collection->write_concern)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -3523,17 +3500,14 @@ mongoc_collection_find_and_modify_with_opts (
    /* Append any remaining unparsed options set via
     * mongoc_find_and_modify_opts_append to the command part. */
    if (bson_iter_init (&iter, &appended_opts.extra)) {
-      bool ok = mongoc_cmd_parts_append_opts (
-         &parts, &iter, server_stream->sd->max_wire_version, error);
-      if (!ok) {
+      if (!mongoc_cmd_parts_append_opts (&parts, &iter, error)) {
          GOTO (done);
       }
    }
 
    /* An empty write concern amounts to a no-op, so there's no need to guard
     * against it. */
-   if (!mongoc_cmd_parts_set_write_concern (
-          &parts, write_concern, server_stream->sd->max_wire_version, error)) {
+   if (!mongoc_cmd_parts_set_write_concern (&parts, write_concern, error)) {
       GOTO (done);
    }
 
@@ -3590,8 +3564,7 @@ retry:
       retry_server_stream = mongoc_cluster_stream_for_writes (
          cluster, parts.assembled.session, NULL /* reply */, &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream) {
          parts.assembled.server_stream = retry_server_stream;
          {
             // Store the original error and reply before retry.

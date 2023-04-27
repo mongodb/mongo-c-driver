@@ -313,20 +313,6 @@ _mongoc_aggregate (mongoc_client_t *client,
       GOTO (done);
    }
 
-   if (aggregate_opts.write_concern_owned && has_write_key &&
-       server_stream->sd->max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
-      bson_set_error (
-         &cursor->error,
-         MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-         "\"aggregate\" with \"$out\" or \"$merge\" does not support "
-         "writeConcern with wire version %d, wire version %d is "
-         "required",
-         server_stream->sd->max_wire_version,
-         WIRE_VERSION_CMD_WRITE_CONCERN);
-      GOTO (done);
-   }
-
    /* Only inherit WriteConcern when aggregate has $out or $merge */
    if (!aggregate_opts.write_concern_owned && has_write_key) {
       mongoc_write_concern_destroy (cursor->write_concern);

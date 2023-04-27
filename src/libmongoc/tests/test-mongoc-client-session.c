@@ -480,7 +480,7 @@ _test_mock_end_sessions (bool pooled)
    request_t *request;
    bool r;
 
-   server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
 
    if (pooled) {
@@ -560,7 +560,7 @@ test_mock_end_sessions_server_disconnect (void)
    future_t *future;
    uint16_t i;
 
-   server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
 
    client =
@@ -2994,7 +2994,7 @@ test_session_install (TestSuite *suite)
                         "/Session/watch",
                         test_watch,
                         true,
-                        test_framework_skip_if_not_rs_version_6);
+                        test_framework_skip_if_not_replset);
    add_session_test (suite, "/Session/aggregate", test_aggregate, true);
    add_session_test (suite, "/Session/create", test_create, false);
    add_session_test (

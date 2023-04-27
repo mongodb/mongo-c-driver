@@ -47,30 +47,6 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MIN 6  /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX 17 /* a.k.a. maxWireVersion */
 
-/* first version that supported "find" and "getMore" commands */
-#define WIRE_VERSION_FIND_CMD 4
-/* first version with "killCursors" command */
-#define WIRE_VERSION_KILLCURSORS_CMD 4
-/* first version when findAndModify accepts writeConcern */
-#define WIRE_VERSION_FAM_WRITE_CONCERN 4
-/* first version to support readConcern */
-#define WIRE_VERSION_READ_CONCERN 4
-/* first version to support maxStalenessSeconds */
-#define WIRE_VERSION_MAX_STALENESS 5
-/* first version to support writeConcern */
-#define WIRE_VERSION_CMD_WRITE_CONCERN 5
-/* first version to support collation */
-#define WIRE_VERSION_COLLATION 5
-/* first version to support server-side errors for unsupported hint options */
-#define WIRE_VERSION_HINT_SERVER_SIDE_ERROR 5
-/* first version to support OP_MSG */
-#define WIRE_VERSION_OP_MSG 6
-/* first version to support array filters for "update" command */
-#define WIRE_VERSION_ARRAY_FILTERS 6
-/* first version to support retryable reads  */
-#define WIRE_VERSION_RETRY_READS 6
-/* first version to support retryable writes  */
-#define WIRE_VERSION_RETRY_WRITES 6
 /* version corresponding to server 4.0 release */
 #define WIRE_VERSION_4_0 7
 /* first version to support hint for "update" command */

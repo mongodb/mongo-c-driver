@@ -451,7 +451,7 @@ _mock_server_listening_on (char *server_bind_to)
       fprintf (stderr, "bad value of server_bind_to=%s\n", server_bind_to);
       ASSERT (false);
    }
-   mock_server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG);
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_set_bind_opts (mock_server, &opts);
    mock_server_run (mock_server);
    return mock_server;

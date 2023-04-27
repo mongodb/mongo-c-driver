@@ -971,10 +971,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                          "Invalid BSON in opts document");
          GOTO (done);
       }
-      if (!mongoc_cmd_parts_append_opts (&parts,
-                                         &iter,
-                                         server_stream->sd->max_wire_version,
-                                         &cursor->error)) {
+      if (!mongoc_cmd_parts_append_opts (&parts, &iter, &cursor->error)) {
          _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
@@ -1008,10 +1005,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       mongoc_session_opts_destroy (session_opts);
    }
 
-   if (!mongoc_cmd_parts_set_read_concern (&parts,
-                                           cursor->read_concern,
-                                           server_stream->sd->max_wire_version,
-                                           &cursor->error)) {
+   if (!mongoc_cmd_parts_set_read_concern (
+          &parts, cursor->read_concern, &cursor->error)) {
       _mongoc_bson_init_if_set (reply);
       GOTO (done);
    }
@@ -1043,9 +1038,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    is_primary =
       !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
 
-   if (strcmp (cmd_name, "getMore") != 0 &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
-       is_primary && parts.user_query_flags & MONGOC_QUERY_SECONDARY_OK) {
+   if (strcmp (cmd_name, "getMore") != 0 && is_primary &&
+       parts.user_query_flags & MONGOC_QUERY_SECONDARY_OK) {
       parts.read_prefs = prefs =
          mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
    } else {
@@ -1071,8 +1065,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    }
 
    if (cursor->write_concern &&
-       !mongoc_write_concern_is_default (cursor->write_concern) &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
+       !mongoc_write_concern_is_default (cursor->write_concern)) {
       parts.assembled.is_acknowledged =
          mongoc_write_concern_is_acknowledged (cursor->write_concern);
       mongoc_write_concern_append (cursor->write_concern, &parts.extra);
@@ -1107,8 +1100,7 @@ retry:
                                                        reply,
                                                        &cursor->error);
 
-      if (server_stream &&
-          server_stream->sd->max_wire_version >= WIRE_VERSION_RETRY_READS) {
+      if (server_stream) {
          cursor->server_id = server_stream->sd->id;
          parts.assembled.server_stream = server_stream;
          bson_destroy (reply);

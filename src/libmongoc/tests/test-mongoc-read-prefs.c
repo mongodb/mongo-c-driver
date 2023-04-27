@@ -772,7 +772,7 @@ _test_op_msg_direct_connection (bool is_mongos,
    int i;
 
    if (is_mongos) {
-      server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+      server = mock_mongos_new (WIRE_VERSION_MAX);
    } else {
       char *hello = bson_strdup_printf ("{'ok': 1.0,"
                                         " 'isWritablePrimary': true,"
@@ -781,7 +781,7 @@ _test_op_msg_direct_connection (bool is_mongos,
                                         " 'minWireVersion': %d,"
                                         " 'maxWireVersion': %d}",
                                         WIRE_VERSION_MIN,
-                                        WIRE_VERSION_OP_MSG);
+                                        WIRE_VERSION_MAX);
       server = mock_server_new ();
       mock_server_auto_hello (server, hello);
       bson_free (hello);

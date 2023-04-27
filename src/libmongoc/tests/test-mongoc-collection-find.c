@@ -470,15 +470,6 @@ _test_int_modifier (const char *mod)
 
 
 static void
-test_maxscan (void *ctx)
-{
-   BSON_UNUSED (ctx);
-
-   _test_int_modifier ("maxScan");
-}
-
-
-static void
 test_maxtimems (void)
 {
    _test_int_modifier ("maxTimeMS");
@@ -1118,12 +1109,6 @@ test_collection_find_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/find/newoption", test_newoption);
    TestSuite_AddLive (suite, "/Collection/find/orderby", test_orderby);
    TestSuite_AddLive (suite, "/Collection/find/fields", test_fields);
-   TestSuite_AddFull (suite,
-                      "/Collection/find/modifiers/maxscan",
-                      test_maxscan,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_more_than_6);
    TestSuite_AddLive (
       suite, "/Collection/find/modifiers/maxtimems", test_maxtimems);
    TestSuite_AddLive (suite, "/Collection/find/comment", test_comment);

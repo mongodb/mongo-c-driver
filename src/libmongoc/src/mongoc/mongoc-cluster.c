@@ -546,7 +546,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    }
 
    if (mongoc_cluster_uses_server_api (cluster) ||
-       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+       server_stream->sd->max_wire_version >= WIRE_VERSION_MIN) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
    } else {
       retval = mongoc_cluster_run_command_opquery (
@@ -685,7 +685,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
    server_stream = cmd->server_stream;
 
    if (mongoc_cluster_uses_server_api (cluster) ||
-       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+       server_stream->sd->max_wire_version >= WIRE_VERSION_MIN) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
    } else {
       retval =

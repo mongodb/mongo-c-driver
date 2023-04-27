@@ -932,9 +932,6 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             const mongoc_read_prefs_t *read_prefs,
                             bson_error_t *error)
 {
-   int64_t max_staleness_seconds;
-   int32_t max_wire_version;
-
    if (td->compatibility_error.code) {
       if (error) {
          memcpy (error, &td->compatibility_error, sizeof (bson_error_t));
@@ -947,21 +944,10 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
       return true;
    }
 
-   max_staleness_seconds =
+   const int64_t max_staleness_seconds =
       mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
 
    if (max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
-      max_wire_version =
-         mongoc_topology_description_lowest_max_wire_version (td);
-
-      if (max_wire_version < WIRE_VERSION_MAX_STALENESS) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Not all servers support maxStalenessSeconds");
-         return false;
-      }
-
       /* shouldn't happen if we've properly enforced wire version */
       if (!mongoc_topology_description_all_sds_have_write_date (td)) {
          bson_set_error (error,

@@ -1740,8 +1740,7 @@ retry:
       retry_server_stream = mongoc_cluster_stream_for_writes (
          &client->cluster, parts->assembled.session, NULL, &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream) {
          parts->assembled.server_stream = retry_server_stream;
          {
             // Store the original error and reply before retry.
@@ -1834,8 +1833,7 @@ retry:
                                           NULL,
                                           &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_READS) {
+      if (retry_server_stream) {
          parts->assembled.server_stream = retry_server_stream;
          bson_destroy (reply);
          GOTO (retry);
@@ -1990,8 +1988,6 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    mongoc_client_session_t *cs;
    bson_t reply_local;
    bson_t *reply_ptr;
-   int32_t wire_version;
-   int32_t wc_wire_version;
    bool reply_initialized = false;
    bool ret = false;
 
@@ -2091,36 +2087,15 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       GOTO (done);
    }
 
-   wire_version = server_stream->sd->max_wire_version;
-   if (!mongoc_cmd_parts_append_read_write (
-          &parts, &read_write_opts, wire_version, error)) {
+   if (!mongoc_cmd_parts_append_read_write (&parts, &read_write_opts, error)) {
       GOTO (done);
    }
 
    if (mode & MONGOC_CMD_WRITE) {
-      wc_wire_version = !strcasecmp (command_name, "findandmodify")
-                           ? WIRE_VERSION_FAM_WRITE_CONCERN
-                           : WIRE_VERSION_CMD_WRITE_CONCERN;
-
-      if (read_write_opts.write_concern_owned &&
-          wire_version < wc_wire_version) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "\"%s\" command does not support writeConcern with "
-                         "wire version %d, wire version %d is required",
-                         command_name,
-                         wire_version,
-                         wc_wire_version);
-         GOTO (done);
-      }
-
       /* use default write concern unless it's in opts */
       if (!mongoc_write_concern_is_default (default_wc) &&
-          !read_write_opts.write_concern_owned &&
-          wire_version >= wc_wire_version) {
-         if (!mongoc_cmd_parts_set_write_concern (
-                &parts, default_wc, wire_version, error)) {
+          !read_write_opts.write_concern_owned) {
+         if (!mongoc_cmd_parts_set_write_concern (&parts, default_wc, error)) {
             GOTO (done);
          }
       }
@@ -2128,8 +2103,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 
    /* use default read concern for read command, unless it's in opts */
    if ((mode & MONGOC_CMD_READ) && bson_empty (&read_write_opts.readConcern)) {
-      if (!mongoc_cmd_parts_set_read_concern (
-             &parts, default_rc, wire_version, error)) {
+      if (!mongoc_cmd_parts_set_read_concern (&parts, default_rc, error)) {
          GOTO (done);
       }
    }
@@ -2342,8 +2316,7 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
       return;
    }
 
-   if (db && collection &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_KILLCURSORS_CMD) {
+   if (db && collection) {
       _mongoc_client_killcursors_command (
          &client->cluster, server_stream, cursor_id, db, collection, cs);
    } else {

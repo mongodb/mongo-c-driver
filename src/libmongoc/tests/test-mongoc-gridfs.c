@@ -1553,7 +1553,7 @@ test_write_failure (void)
    mongoc_gridfs_file_t *file;
    bson_error_t error;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_autoresponds (server, responder, NULL, NULL);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));

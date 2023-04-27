@@ -73,7 +73,7 @@ test_rs_failover (void)
    bson_error_t error;
    bson_t *b = tmp_bson ("{}");
 
-   rs = mock_rs_with_auto_hello (WIRE_VERSION_OP_MSG,
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MAX,
                                  true /* has primary */,
                                  2 /* secondaries */,
                                  0 /* arbiters */);
@@ -106,8 +106,13 @@ test_rs_failover (void)
    request =
       mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
-   mock_server_replies_simple (
-      request, "{'ok': 0, 'code': 10107, 'errmsg': 'not primary'}");
+   mock_server_replies_simple (request,
+                               "{"
+                               " 'ok': 0,"
+                               " 'code': 10107,"
+                               " 'errmsg': 'not primary',"
+                               " 'errorLabels': ['RetryableWriteError']"
+                               "}");
    request_destroy (request);
 
    request =
@@ -213,7 +218,7 @@ test_insert_one_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -261,7 +266,7 @@ test_update_one_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -312,7 +317,7 @@ test_delete_one_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -360,7 +365,7 @@ test_bulk_operation_execute_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -409,7 +414,7 @@ test_remove_unacknowledged (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   server = mock_mongos_new (WIRE_VERSION_MAX);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -532,7 +537,7 @@ test_unsupported_storage_engine_error (void)
                               "retryable writes. Please add retryWrites=false "
                               "to your connection string.";
 
-   rs = mock_rs_with_auto_hello (WIRE_VERSION_RETRY_WRITES, true, 0, 0);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MAX, true, 0, 0);
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
@@ -813,14 +818,13 @@ retryable_writes_original_error_general_command (void *ctx)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   install_json_test_suite_with_check (
-      suite,
-      JSON_DIR,
-      "retryable_writes/legacy",
-      test_retryable_writes_cb,
-      test_framework_skip_if_max_wire_version_less_than_6,
-      test_framework_skip_if_no_crypto,
-      test_framework_skip_if_slow);
+   install_json_test_suite_with_check (suite,
+                                       JSON_DIR,
+                                       "retryable_writes/legacy",
+                                       test_retryable_writes_cb,
+                                       TestSuite_CheckLive,
+                                       test_framework_skip_if_no_crypto,
+                                       test_framework_skip_if_slow);
 }
 
 
@@ -928,7 +932,7 @@ test_retryable_writes_install (TestSuite *suite)
                       test_command_with_opts,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (suite,
                                 "/retryable_writes/insert_one_unacknowledged",
                                 test_insert_one_unacknowledged,
@@ -966,7 +970,7 @@ test_retryable_writes_install (TestSuite *suite)
                       test_bulk_retry_tracks_new_server,
                       NULL /* dtor */,
                       NULL /* ctx */,
-                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/prose_test_3",
