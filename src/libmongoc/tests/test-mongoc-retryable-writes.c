@@ -822,6 +822,7 @@ test_all_spec_tests (TestSuite *suite)
                                        JSON_DIR,
                                        "retryable_writes/legacy",
                                        test_retryable_writes_cb,
+                                       TestSuite_CheckLive,
                                        test_framework_skip_if_no_crypto,
                                        test_framework_skip_if_slow);
 }
