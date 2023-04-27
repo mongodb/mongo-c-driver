@@ -787,7 +787,6 @@ The driver provides helper functions for executing MongoDB commands on client, d
 This example executes the `ping <https://docs.mongodb.org/manual/reference/command/ping/>`_ command against the database "mydb".
 
 .. literalinclude:: ../examples/tutorial/executing.c
-   :caption: Example of executing a command
 
 Compile the code and run it:
 

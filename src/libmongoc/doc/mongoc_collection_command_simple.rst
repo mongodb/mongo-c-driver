@@ -51,6 +51,5 @@ Example
 The following is an example of executing the ``ping`` command.
 
 .. literalinclude:: ../examples/example-collection-command.c
-   :caption: Example use of mongoc_collection_command
    :start-after: BEGIN:mongoc_collection_command
    :end-before: END:mongoc_collection_command
