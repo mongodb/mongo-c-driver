@@ -18,7 +18,6 @@ TAG = 'scan-build-matrix'
 # fmt: off
 MATRIX = [
     ('macos-1100',       'clang', None  ),
-    ('ubuntu1404',       'clang', None  ),
     ('ubuntu1604-arm64', 'clang', None  ),
     ('ubuntu1604',       'clang', 'i686'),
     ('ubuntu1604',       'clang', None  ),
@@ -83,7 +82,7 @@ def tasks():
 
     # TODO: remove once BUILD-16814 is resolved.
     for task in res:
-         if task.run_on == 'macos-1014':
+        if task.run_on == 'macos-1014':
             task.disable = True
 
     return res
