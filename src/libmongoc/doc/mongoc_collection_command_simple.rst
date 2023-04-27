@@ -48,7 +48,7 @@ This function does not check the server response for a write concern error or wr
 Example
 -------
 
-The following is an example of executing the collection stats command.
+The following is an example of executing the ``ping`` command.
 
 .. literalinclude:: ../examples/example-collection-command.c
    :caption: Example use of mongoc_collection_command

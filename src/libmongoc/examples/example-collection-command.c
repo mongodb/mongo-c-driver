@@ -4,16 +4,14 @@
 #include <stdio.h>
 
 static void
-print_collection_stats (mongoc_collection_t *collection)
+do_ping (mongoc_collection_t *collection)
 {
    bson_error_t error;
-   const char *name;
    bson_t *cmd;
    bson_t reply;
    char *str;
 
-   name = mongoc_collection_get_name (collection);
-   cmd = BCON_NEW ("collStats", BCON_UTF8 (name));
+   cmd = BCON_NEW ("ping", BCON_INT32 (1));
 
    if (mongoc_collection_command_simple (
           collection, cmd, NULL, &reply, &error)) {
@@ -63,7 +61,7 @@ main (int argc, char **argv)
    }
 
    coll = mongoc_client_get_collection (client, "db", "coll");
-   print_collection_stats (coll);
+   do_ping (coll);
    mongoc_collection_destroy (coll);
    mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
