@@ -503,7 +503,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    const mongoc_server_stream_t *server_stream;
    bson_t reply_local;
    bson_error_t error_local;
-   int32_t compressor_id;
    bson_iter_t iter;
    bson_t encrypted = BSON_INITIALIZER;
    bson_t decrypted = BSON_INITIALIZER;
@@ -512,7 +511,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
 
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
-   compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
 
    callbacks = &cluster->client->apm_callbacks;
    if (!reply) {
@@ -545,13 +543,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       mongoc_apm_command_started_cleanup (&started_event);
    }
 
-   if (mongoc_cluster_uses_server_api (cluster) ||
-       server_stream->sd->max_wire_version >= WIRE_VERSION_MIN) {
-      retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
-   } else {
-      retval = mongoc_cluster_run_command_opquery (
-         cluster, cmd, compressor_id, reply, error);
-   }
+   retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
 
    if (retval && callbacks->succeeded) {
       bson_t fake_reply = BSON_INITIALIZER;
