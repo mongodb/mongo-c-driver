@@ -697,6 +697,67 @@ _mongoc_rpc_gather_no_inc (mongoc_rpc_t *rpc, mongoc_array_t *array)
 
 
 void
+_mongoc_rpc_op_egress_inc (const mongoc_rpc_t *rpc)
+{
+   mongoc_opcode_t opcode =
+      (mongoc_opcode_t) BSON_UINT32_FROM_LE (rpc->header.opcode);
+
+   if (opcode == MONGOC_OPCODE_COMPRESSED) {
+      mongoc_counter_op_egress_compressed_inc ();
+      mongoc_counter_op_egress_total_inc ();
+
+      opcode = (mongoc_opcode_t) BSON_UINT32_FROM_LE (
+         rpc->compressed.original_opcode);
+   }
+
+   mongoc_counter_op_egress_total_inc ();
+
+   switch (opcode) {
+   case MONGOC_OPCODE_REPLY:
+      return;
+
+   case MONGOC_OPCODE_MSG:
+      mongoc_counter_op_egress_msg_inc ();
+      return;
+
+   case MONGOC_OPCODE_UPDATE:
+      mongoc_counter_op_egress_update_inc ();
+      return;
+
+   case MONGOC_OPCODE_INSERT:
+      mongoc_counter_op_egress_insert_inc ();
+      return;
+
+   case MONGOC_OPCODE_QUERY:
+      mongoc_counter_op_egress_query_inc ();
+      return;
+
+   case MONGOC_OPCODE_GET_MORE:
+      mongoc_counter_op_egress_getmore_inc ();
+      return;
+
+   case MONGOC_OPCODE_DELETE:
+      mongoc_counter_op_egress_delete_inc ();
+      return;
+
+   case MONGOC_OPCODE_KILL_CURSORS:
+      mongoc_counter_op_egress_killcursors_inc ();
+      return;
+
+   case MONGOC_OPCODE_COMPRESSED:
+      MONGOC_WARNING ("Compressed an OP_COMPRESSED message!?");
+      BSON_ASSERT (false);
+      return;
+
+   default:
+      MONGOC_WARNING ("Unknown rpc type: 0x%08x", opcode);
+      BSON_ASSERT (false);
+      break;
+   }
+}
+
+
+void
 _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
 {
    BSON_UNUSED (rpc);
