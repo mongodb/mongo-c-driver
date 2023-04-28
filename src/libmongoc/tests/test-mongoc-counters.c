@@ -653,13 +653,11 @@ _test_counters_rpc_egress_cluster_single (bool with_op_msg)
          request_t *const request = mock_server_receives_any_hello (server);
 
          // OP_QUERY 1 / OP_MSG 1:
-         //  - by _mongoc_rpc_gather
-         //  - by _mongoc_async_cmd_init_send
-         //  - by mongoc_async_cmd_new
-         //  - by _begin_hello_cmd
-         //  - by mongoc_topology_scanner_node_setup_tcp
-         //  - by mongoc_topology_scanner_node_setup
-         //  - by mongoc_topology_scanner_start
+         //  - by _mongoc_rpc_op_egress_inc
+         //  - by _mongoc_async_cmd_phase_send
+         //  - by mongoc_async_cmd_run
+         //  - by mongoc_async_run
+         //  - by mongoc_topology_scanner_work
          //  - by mongoc_topology_scan_once
          //  - by _mongoc_topology_do_blocking_scan
          //  - by mongoc_topology_select_server_id
@@ -760,13 +758,11 @@ test_counters_rpc_egress_cluster_legacy (void)
          request_t *const request = mock_server_receives_any_hello (server);
 
          // OP_QUERY 1:
-         //  - by _mongoc_rpc_gather
-         //  - by _mongoc_async_cmd_init_send
-         //  - by mongoc_async_cmd_new
-         //  - by _begin_hello_cmd
-         //  - by mongoc_topology_scanner_node_setup_tcp
-         //  - by mongoc_topology_scanner_node_setup
-         //  - by mongoc_topology_scanner_start
+         //  - by _mongoc_rpc_op_egress_inc
+         //  - by _mongoc_async_cmd_phase_send
+         //  - by mongoc_async_cmd_run
+         //  - by mongoc_async_run
+         //  - by mongoc_topology_scanner_work
          //  - by mongoc_topology_scan_once
          //  - by _mongoc_topology_do_blocking_scan
          //  - by mongoc_topology_select_server_id

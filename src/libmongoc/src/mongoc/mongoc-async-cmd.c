@@ -165,7 +165,7 @@ _mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode,
    }
 
    /* This will always be hello, which are not allowed to be compressed */
-   _mongoc_rpc_gather (&acmd->rpc, &acmd->array);
+   _mongoc_rpc_gather_no_inc (&acmd->rpc, &acmd->array);
    acmd->iovec = (mongoc_iovec_t *) acmd->array.data;
    acmd->niovec = acmd->array.len;
    _mongoc_rpc_swab_to_le (&acmd->rpc);
@@ -347,6 +347,7 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
       used_temp_iovec = true;
    }
 
+   _mongoc_rpc_op_egress_inc (&acmd->rpc);
    bytes = mongoc_stream_writev (acmd->stream, iovec, niovec, 0);
 
    if (used_temp_iovec) {
