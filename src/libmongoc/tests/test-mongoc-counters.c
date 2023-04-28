@@ -78,6 +78,11 @@ _client_new_disable_ss (bool use_compression)
    sd = mongoc_client_select_server (client, true, NULL, &err);
    ASSERT_OR_PRINT (sd, err);
    mongoc_server_description_destroy (sd);
+   // Trigger authentication handshake now to avoid interfering with ping test.
+   ASSERT_OR_PRINT (
+      mongoc_client_command_simple (
+         client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err),
+      err);
    mongoc_uri_destroy (uri);
    /* reset counters to exclude anything done in server selection. */
    reset_all_counters ();
@@ -482,15 +487,13 @@ test_counters_install (TestSuite *suite)
                       test_counters_op_msg,
                       NULL,
                       NULL,
-                      test_framework_skip_if_auth,
                       test_framework_skip_if_compressors);
    TestSuite_AddFull (suite,
                       "/counters/op_compressed",
                       test_counters_op_compressed,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_compressors,
-                      test_framework_skip_if_auth);
+                      test_framework_skip_if_no_compressors);
    TestSuite_AddLive (suite, "/counters/cursors", test_counters_cursors);
    TestSuite_AddLive (suite, "/counters/clients", test_counters_clients);
    TestSuite_AddFull (suite,
