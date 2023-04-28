@@ -476,6 +476,253 @@ test_counters_streams_timeout (void)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
+
+typedef struct _rpc_egress_counters {
+   int32_t op_egress_compressed;
+   int32_t op_egress_delete;
+   int32_t op_egress_getmore;
+   int32_t op_egress_insert;
+   int32_t op_egress_killcursors;
+   int32_t op_egress_msg;
+   int32_t op_egress_query;
+   int32_t op_egress_total;
+   int32_t op_egress_update;
+} rpc_egress_counters;
+
+static rpc_egress_counters
+rpc_egress_counters_current (void)
+{
+   return (rpc_egress_counters){
+      .op_egress_compressed = mongoc_counter_op_egress_compressed_count (),
+      .op_egress_delete = mongoc_counter_op_egress_delete_count (),
+      .op_egress_getmore = mongoc_counter_op_egress_getmore_count (),
+      .op_egress_insert = mongoc_counter_op_egress_insert_count (),
+      .op_egress_killcursors = mongoc_counter_op_egress_killcursors_count (),
+      .op_egress_msg = mongoc_counter_op_egress_msg_count (),
+      .op_egress_query = mongoc_counter_op_egress_query_count (),
+      .op_egress_total = mongoc_counter_op_egress_total_count (),
+      .op_egress_update = mongoc_counter_op_egress_update_count (),
+   };
+}
+
+static void
+rpc_egress_counters_reset (void)
+{
+   mongoc_counter_op_egress_compressed_reset ();
+   mongoc_counter_op_egress_delete_reset ();
+   mongoc_counter_op_egress_getmore_reset ();
+   mongoc_counter_op_egress_insert_reset ();
+   mongoc_counter_op_egress_killcursors_reset ();
+   mongoc_counter_op_egress_msg_reset ();
+   mongoc_counter_op_egress_query_reset ();
+   mongoc_counter_op_egress_total_reset ();
+   mongoc_counter_op_egress_update_reset ();
+}
+
+#define ASSERT_RPC_EGRESS_COUNTERS(expected, actual)                           \
+   if (1) {                                                                    \
+      const rpc_egress_counters e = (expected);                                \
+      const rpc_egress_counters a = (actual);                                  \
+      ASSERT_WITH_MSG (e.op_egress_compressed == a.op_egress_compressed,       \
+                       "op_egress_compressed: expected %" PRId32               \
+                       ", got %" PRId32,                                       \
+                       e.op_egress_compressed,                                 \
+                       a.op_egress_compressed);                                \
+      ASSERT_WITH_MSG (e.op_egress_delete == a.op_egress_delete,               \
+                       "op_egress_delete: expected %" PRId32 ", got %" PRId32, \
+                       e.op_egress_delete,                                     \
+                       a.op_egress_delete);                                    \
+      ASSERT_WITH_MSG (e.op_egress_getmore == a.op_egress_getmore,             \
+                       "op_egress_getmore: expected %" PRId32                  \
+                       ", got %" PRId32,                                       \
+                       e.op_egress_getmore,                                    \
+                       a.op_egress_getmore);                                   \
+      ASSERT_WITH_MSG (e.op_egress_insert == a.op_egress_insert,               \
+                       "op_egress_insert: expected %" PRId32 ", got %" PRId32, \
+                       e.op_egress_insert,                                     \
+                       a.op_egress_insert);                                    \
+      ASSERT_WITH_MSG (e.op_egress_killcursors == a.op_egress_killcursors,     \
+                       "op_egress_killcursors: expected %" PRId32              \
+                       ", got %" PRId32,                                       \
+                       e.op_egress_killcursors,                                \
+                       a.op_egress_killcursors);                               \
+      ASSERT_WITH_MSG (e.op_egress_msg == a.op_egress_msg,                     \
+                       "op_egress_msg: expected %" PRId32 ", got %" PRId32,    \
+                       e.op_egress_msg,                                        \
+                       a.op_egress_msg);                                       \
+      ASSERT_WITH_MSG (e.op_egress_query == a.op_egress_query,                 \
+                       "op_egress_query: expected %" PRId32 ", got %" PRId32,  \
+                       e.op_egress_query,                                      \
+                       a.op_egress_query);                                     \
+      ASSERT_WITH_MSG (e.op_egress_total == a.op_egress_total,                 \
+                       "op_egress_total: expected %" PRId32 ", got %" PRId32,  \
+                       e.op_egress_total,                                      \
+                       a.op_egress_total);                                     \
+      ASSERT_WITH_MSG (e.op_egress_update == a.op_egress_update,               \
+                       "op_egress_update: expected %" PRId32 ", got %" PRId32, \
+                       e.op_egress_update,                                     \
+                       a.op_egress_update);                                    \
+   } else                                                                      \
+      (void) 0
+
+#define ASSERT_RPC_EGRESS_COUNTERS_CURRENT(expected) \
+   ASSERT_RPC_EGRESS_COUNTERS (expected, rpc_egress_counters_current ())
+
+
+typedef struct _server_monitor_autoresponder_data {
+   const char *hello;
+   int *responses;
+} server_monitor_autoresponder_data;
+
+static bool
+test_counters_rpc_egress_autoresponder (request_t *request, void *data)
+{
+   BSON_ASSERT_PARAM (data);
+
+   server_monitor_autoresponder_data *const ar_data = data;
+
+   ASSERT (ar_data->responses);
+   ASSERT (ar_data->hello);
+
+   (*ar_data->responses) += 1;
+
+   if (strcmp (request->command_name, HANDSHAKE_CMD_HELLO) == 0 ||
+       strcmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) == 0) {
+      mock_server_replies_simple (request, ar_data->hello);
+      request_destroy (request);
+   } else {
+      ASSERT_WITH_MSG (request->is_command,
+                       "expected only handshakes and commands, but got: %s",
+                       request->as_str);
+      mock_server_replies_ok_and_destroys (request);
+   }
+
+   return true;
+}
+
+
+static void
+_test_counters_rpc_egress_cluster_single (bool with_op_msg)
+{
+   const rpc_egress_counters zero = {0};
+
+   const char *const hello = tmp_str ("{'ok': 1,%s"
+                                      " 'isWritablePrimary': true,"
+                                      " 'minWireVersion': %d,"
+                                      " 'maxWireVersion': %d}",
+                                      with_op_msg ? " 'helloOk': true," : "",
+                                      WIRE_VERSION_MIN,
+                                      WIRE_VERSION_MAX);
+
+   rpc_egress_counters_reset ();
+
+   mock_server_t *const server = mock_server_new ();
+   mock_server_run (server);
+
+   bson_error_t error = {0};
+   mongoc_client_t *const client = mongoc_client_new_from_uri_with_error (
+      mock_server_get_uri (server), &error);
+   ASSERT_OR_PRINT (client, error);
+
+   // Stable API for Drivers spec: If an API version was declared, drivers MUST
+   // NOT use the legacy hello command during the initial handshake or
+   // afterwards. Instead, drivers MUST use the `hello` command exclusively and
+   // use the `OP_MSG` protocol.
+   if (with_op_msg) {
+      mongoc_server_api_t *const api =
+         mongoc_server_api_new (MONGOC_SERVER_API_V1);
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
+                       error);
+      mongoc_server_api_destroy (api);
+   }
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+
+   rpc_egress_counters expected = {0};
+   int32_t *const handshake_counter =
+      with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
+
+   {
+      // Trigger:
+      //  - mongoc_topology_scanner_node_setup
+      //  - mongoc_cluster_run_command_monitored
+      future_t *const ping = future_client_command_simple (
+         client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+      {
+         request_t *const request = mock_server_receives_any_hello (server);
+
+         // OP_QUERY 1 / OP_MSG 1:
+         //  - by _mongoc_rpc_gather
+         //  - by _mongoc_async_cmd_init_send
+         //  - by mongoc_async_cmd_new
+         //  - by _begin_hello_cmd
+         //  - by mongoc_topology_scanner_node_setup_tcp
+         //  - by mongoc_topology_scanner_node_setup
+         //  - by mongoc_topology_scanner_start
+         //  - by mongoc_topology_scan_once
+         //  - by _mongoc_topology_do_blocking_scan
+         //  - by mongoc_topology_select_server_id
+         //  - by _mongoc_cluster_select_server_id
+         //  - by _mongoc_cluster_stream_for_optype
+         //  - by mongoc_cluster_stream_for_reads
+         //  - by mongoc_client_command_simple
+         *handshake_counter += 1;
+         expected.op_egress_total += 1;
+         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+         mock_server_replies_simple (request, hello);
+         request_destroy (request);
+      }
+
+      {
+         request_t *const request = mock_server_receives_request (server);
+
+         // OP_MSG 1 / OP_MSG 2:
+         //  - by _mongoc_rpc_gather
+         //  - by mongoc_cluster_run_opmsg
+         //  - by mongoc_cluster_run_command_monitored
+         //  - by _mongoc_client_command_with_stream
+         //  - by mongoc_client_command_simple
+         expected.op_egress_msg += 1;
+         expected.op_egress_total += 1;
+         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+         mock_server_replies_ok_and_destroys (request);
+      }
+
+      ASSERT_OR_PRINT (future_get_bool (ping), error);
+      future_destroy (ping);
+   }
+
+   // Ensure no extra requests.
+   {
+      int responses = 0;
+
+      server_monitor_autoresponder_data data = {.hello = hello,
+                                                .responses = &responses};
+
+      mock_server_autoresponds (
+         server, test_counters_rpc_egress_autoresponder, &data, NULL);
+
+      mongoc_client_destroy (client);
+      mock_server_destroy (server);
+   }
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+}
+
+static void
+test_counters_rpc_egress_cluster_single_op_query (void)
+{
+   _test_counters_rpc_egress_cluster_single (false);
+}
+
+static void
+test_counters_rpc_egress_cluster_single_op_msg (void)
+{
+   _test_counters_rpc_egress_cluster_single (true);
+}
 #endif
 
 void
@@ -512,5 +759,14 @@ test_counters_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/counters/dns", test_counters_dns);
    TestSuite_AddMockServerTest (
       suite, "/counters/streams_timeout", test_counters_streams_timeout);
+
+   TestSuite_AddMockServerTest (
+      suite,
+      "/counters/rpc/egress/cluster/single/op_query",
+      test_counters_rpc_egress_cluster_single_op_query);
+
+   TestSuite_AddMockServerTest (suite,
+                                "/counters/rpc/egress/cluster/single/op_msg",
+                                test_counters_rpc_egress_cluster_single_op_msg);
 #endif
 }
