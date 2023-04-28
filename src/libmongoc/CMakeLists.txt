@@ -1113,6 +1113,7 @@ if (ENABLE_EXAMPLES)
    mongoc_add_example (mongoc-dump ${PROJECT_SOURCE_DIR}/examples/mongoc-dump.c)
    mongoc_add_example (mongoc-ping ${PROJECT_SOURCE_DIR}/examples/mongoc-ping.c)
    mongoc_add_example (mongoc-tail ${PROJECT_SOURCE_DIR}/examples/mongoc-tail.c)
+   mongoc_add_example (example-collection-command ${PROJECT_SOURCE_DIR}/examples/example-collection-command.c)
 
    # examples/aggregation/
    mongoc_add_example (aggregation1 ${PROJECT_SOURCE_DIR}/examples/aggregation/aggregation1.c)
@@ -1142,6 +1143,9 @@ if (ENABLE_EXAMPLES)
       mongoc_add_example (client-side-encryption-auto-decryption ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
       mongoc_add_example (client-side-encryption-doc-snippets ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-doc-snippets.c)
    endif ()
+
+   # examples/tutorial
+   mongoc_add_example (executing ${PROJECT_SOURCE_DIR}/examples/tutorial/executing.c)
 endif ()
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
