@@ -38,7 +38,7 @@ tar_src_files = set()
 cmake_produced = [
     "libbson/src/bson/bson-version.h",
     "libmongoc/src/mongoc/mongoc-version.h",
-    "zlib-1.2.12/zconf.h",
+    "zlib-1.2.13/zconf.h",
 ]
 
 for root, dirs, files in os.walk(REPO_SRC_DIR):
