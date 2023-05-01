@@ -244,6 +244,9 @@ test_framework_skip_if_no_dual_ip_hostname (void);
 char *
 test_framework_get_compressors (void);
 
+bool
+test_framework_has_compressors (void);
+
 int
 test_framework_skip_if_no_compressors (void);
 
