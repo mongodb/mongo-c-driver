@@ -3263,7 +3263,7 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
    _mongoc_array_clear (&cluster->iov);
    compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
 
-   _mongoc_rpc_gather (rpc, &cluster->iov);
+   _mongoc_rpc_gather_no_inc (rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (rpc);
 
    if (compressor_id != -1) {
@@ -3288,6 +3288,7 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
       GOTO (done);
    }
 
+   _mongoc_rpc_op_egress_inc (rpc);
    if (!_mongoc_stream_writev_full (server_stream->stream,
                                     cluster->iov.data,
                                     cluster->iov.len,

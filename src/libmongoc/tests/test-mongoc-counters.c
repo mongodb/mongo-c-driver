@@ -810,7 +810,7 @@ test_counters_rpc_egress_cluster_legacy (void)
                        request->as_str);
 
       // OP_KILL_CURSORS 1:
-      //  - by _mongoc_rpc_gather
+      //  - by _mongoc_rpc_op_egress_inc
       //  - by mongoc_cluster_legacy_rpc_sendv_to_server
       //  - by _mongoc_client_op_killcursors
       //  - by _mongoc_client_kill_cursor
