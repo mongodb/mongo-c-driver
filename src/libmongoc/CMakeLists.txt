@@ -48,8 +48,8 @@ endif ()
 # Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
 # will look for zconf.h in that location.
 configure_file (
-   "${SOURCE_DIR}/src/zlib-1.2.12/zconf.h.in"
-   "${CMAKE_BINARY_DIR}/src/zlib-1.2.12/zconf.h"
+   "${SOURCE_DIR}/src/zlib-1.2.13/zconf.h.in"
+   "${CMAKE_BINARY_DIR}/src/zlib-1.2.13/zconf.h"
    COPYONLY
 )
 set (ZLIB_INCLUDE_DIRS "")
@@ -80,8 +80,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
       BEFORE PUBLIC
-      "${SOURCE_DIR}/src/zlib-1.2.12"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.12"
+      "${SOURCE_DIR}/src/zlib-1.2.13"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.2.13"
    )
    # Disable all warnings for compiling Zlib
    target_compile_options (zlib_obj PRIVATE -w)
@@ -89,8 +89,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.2.12"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.2.12"
+      "${SOURCE_DIR}/src/zlib-1.2.13"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.2.13"
    )
 endif ()
 
