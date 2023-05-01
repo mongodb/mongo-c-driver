@@ -1097,8 +1097,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
    expected.op_egress_total += 3;
 
    // OP_MSG 1 / OP_MSG 3:
-   //  - by mongoc_counter_op_egress_msg_inc
-   //  - by _mongoc_rpc_gather
+   //  - by _mongoc_rpc_op_egress_inc
    //  - by _server_monitor_awaitable_hello_send
    //  - by _server_monitor_awaitable_hello
    //  - by _server_monitor_check_server
