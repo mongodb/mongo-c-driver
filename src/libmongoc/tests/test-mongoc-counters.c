@@ -723,6 +723,126 @@ test_counters_rpc_egress_cluster_single_op_msg (void)
 {
    _test_counters_rpc_egress_cluster_single (true);
 }
+
+
+static void
+test_counters_rpc_egress_cluster_legacy (void)
+{
+   const rpc_egress_counters zero = {0};
+
+   const char *const hello = tmp_str ("{'ok': 1,"
+                                      " 'isWritablePrimary': true,"
+                                      " 'minWireVersion': %d,"
+                                      " 'maxWireVersion': %d}",
+                                      WIRE_VERSION_MIN,
+                                      WIRE_VERSION_MAX);
+
+   rpc_egress_counters_reset ();
+
+   mock_server_t *const server = mock_server_new ();
+   mock_server_run (server);
+
+   bson_error_t error = {0};
+   mongoc_client_t *const client = mongoc_client_new_from_uri_with_error (
+      mock_server_get_uri (server), &error);
+   ASSERT_OR_PRINT (client, error);
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+
+   rpc_egress_counters expected = {0};
+
+   // Client must know a writeable server to trigger OP_KILL_CURSORS.
+   {
+      future_t *const ping = future_client_command_simple (
+         client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+      {
+         request_t *const request = mock_server_receives_any_hello (server);
+
+         // OP_QUERY 1:
+         //  - by _mongoc_rpc_gather
+         //  - by _mongoc_async_cmd_init_send
+         //  - by mongoc_async_cmd_new
+         //  - by _begin_hello_cmd
+         //  - by mongoc_topology_scanner_node_setup_tcp
+         //  - by mongoc_topology_scanner_node_setup
+         //  - by mongoc_topology_scanner_start
+         //  - by mongoc_topology_scan_once
+         //  - by _mongoc_topology_do_blocking_scan
+         //  - by mongoc_topology_select_server_id
+         //  - by _mongoc_cluster_select_server_id
+         //  - by _mongoc_cluster_stream_for_optype
+         //  - by mongoc_cluster_stream_for_reads
+         //  - by mongoc_client_command_simple
+         expected.op_egress_query += 1;
+         expected.op_egress_total += 1;
+         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+         mock_server_replies_simple (request, hello);
+
+         request_destroy (request);
+      }
+
+      {
+         request_t *const request = mock_server_receives_request (server);
+
+         // OP_MSG 1:
+         //  - by _mongoc_rpc_gather
+         //  - by mongoc_cluster_run_opmsg
+         //  - by mongoc_cluster_run_command_monitored
+         //  - by _mongoc_client_command_with_stream
+         //  - by mongoc_client_command_simple
+         expected.op_egress_msg += 1;
+         expected.op_egress_total += 1;
+         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+         mock_server_replies_ok_and_destroys (request);
+      }
+
+      ASSERT_OR_PRINT (future_get_bool (ping), error);
+      future_destroy (ping);
+   }
+
+   // Trigger: mongoc_cluster_legacy_rpc_sendv_to_server
+   mongoc_client_kill_cursor (client, 123);
+
+   {
+      request_t *const request = mock_server_receives_request (server);
+
+      ASSERT_WITH_MSG (request->opcode == MONGOC_OPCODE_KILL_CURSORS,
+                       "expected OP_KILL_CURSORS request, but received: %s",
+                       request->as_str);
+
+      // OP_KILL_CURSORS 1:
+      //  - by _mongoc_rpc_gather
+      //  - by mongoc_cluster_legacy_rpc_sendv_to_server
+      //  - by _mongoc_client_op_killcursors
+      //  - by _mongoc_client_kill_cursor
+      //  - by mongoc_client_kill_cursor
+      expected.op_egress_killcursors += 1;
+      expected.op_egress_total += 1;
+      ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+      // OP_KILL_CURSORS does not require a response.
+      request_destroy (request);
+   }
+
+   // Ensure no extra requests.
+   {
+      int responses = 0;
+
+      server_monitor_autoresponder_data data = {.hello = hello,
+                                                .responses = &responses};
+
+      mock_server_autoresponds (
+         server, test_counters_rpc_egress_autoresponder, &data, NULL);
+
+      mongoc_client_destroy (client);
+      mock_server_destroy (server);
+   }
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+}
 #endif
 
 void
@@ -768,5 +888,9 @@ test_counters_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/counters/rpc/egress/cluster/single/op_msg",
                                 test_counters_rpc_egress_cluster_single_op_msg);
+
+   TestSuite_AddMockServerTest (suite,
+                                "/counters/rpc/egress/cluster/legacy",
+                                test_counters_rpc_egress_cluster_legacy);
 #endif
 }
