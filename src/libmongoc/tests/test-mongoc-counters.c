@@ -677,7 +677,7 @@ _test_counters_rpc_egress_cluster_single (bool with_op_msg)
          request_t *const request = mock_server_receives_request (server);
 
          // OP_MSG 1 / OP_MSG 2:
-         //  - by _mongoc_rpc_gather
+         //  - by _mongoc_rpc_op_egress_inc
          //  - by mongoc_cluster_run_opmsg
          //  - by mongoc_cluster_run_command_monitored
          //  - by _mongoc_client_command_with_stream
@@ -783,7 +783,7 @@ test_counters_rpc_egress_cluster_legacy (void)
          request_t *const request = mock_server_receives_request (server);
 
          // OP_MSG 1:
-         //  - by _mongoc_rpc_gather
+         //  - by _mongoc_rpc_op_egress_inc
          //  - by mongoc_cluster_run_opmsg
          //  - by mongoc_cluster_run_command_monitored
          //  - by _mongoc_client_command_with_stream
@@ -913,7 +913,7 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
          request_t *const request = mock_server_receives_any_hello (server);
 
          // OP_QUERY 2 / OP_MSG 2:
-         //  - by _mongoc_rpc_gather
+         //  - by _mongoc_rpc_op_egress_inc
          //  - by one of:
          //    - mongoc_cluster_run_command_opquery
          //    - mongoc_cluster_run_opmsg
@@ -939,7 +939,7 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
          request_t *const request = mock_server_receives_request (server);
 
          // OP_MSG 1 / OP_MSG 3:
-         //  - by _mongoc_rpc_gather
+         //  - by _mongoc_rpc_op_egress_inc
          //  - by mongoc_cluster_run_opmsg
          //  - by mongoc_cluster_run_command_monitored
          //  - by _mongoc_client_command_with_stream
@@ -1119,7 +1119,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
          request_t *const request = mock_server_receives_any_hello (server);
 
          // OP_QUERY 4 / OP_MSG 5:
-         //  - by _mongoc_rpc_gather
+         //  - by _mongoc_rpc_op_egress_inc
          //  - by one of:
          //    - mongoc_cluster_run_command_opquery
          //    - mongoc_cluster_run_opmsg
@@ -1145,7 +1145,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
          request_t *const request = mock_server_receives_request (server);
 
          // OP_MSG 2 / OP_MSG 6:
-         //  - by _mongoc_rpc_gather
+         //  - by _mongoc_rpc_op_egress_inc
          //  - by mongoc_cluster_run_opmsg
          //  - by mongoc_cluster_run_command_monitored
          //  - by _mongoc_client_command_with_stream

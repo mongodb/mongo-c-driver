@@ -1021,7 +1021,7 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
 
       _mongoc_array_destroy (&cluster->iov);
       _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
-      _mongoc_rpc_gather (rpc_le, &cluster->iov);
+      _mongoc_rpc_gather_no_inc (rpc_le, &cluster->iov);
       _mongoc_rpc_swab_to_le (rpc_le);
       return output;
    } else {
