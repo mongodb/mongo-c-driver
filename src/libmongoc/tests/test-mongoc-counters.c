@@ -889,7 +889,7 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
       request_t *const request = mock_server_receives_any_hello (server);
 
       // OP_QUERY 1 / OP_MSG 1:
-      //  - by _mongoc_rpc_gather
+      //  - by _mongoc_rpc_op_egress_inc
       //  - by one of:
       //    - _server_monitor_send_and_recv_opquery
       //    - _server_monitor_send_and_recv_hello_opmsg
@@ -1067,7 +1067,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
       with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
    // OP_QUERY 1 / OP_MSG 1:
-   //  - by _mongoc_rpc_gather
+   //  - by _mongoc_rpc_op_egress_inc
    //  - by one of:
    //    - _server_monitor_send_and_recv_opquery
    //    - _server_monitor_send_and_recv_hello_opmsg
@@ -1076,7 +1076,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
    //  - by _server_monitor_check_server
    //  - by _server_monitor_thread
    // OP_QUERY 2 / OP_MSG 2:
-   //  - by _mongoc_rpc_gather
+   //  - by _mongoc_rpc_op_egress_inc
    //  - by one of:
    //    - _server_monitor_send_and_recv_opquery
    //    - _server_monitor_send_and_recv_hello_opmsg
@@ -1085,7 +1085,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
    //  - by _server_monitor_ping_server
    //  - by _server_monitor_rtt_thread
    // OP_QUERY 3 / OP_MSG 3:
-   //  - by _mongoc_rpc_gather
+   //  - by _mongoc_rpc_op_egress_inc
    //  - by one of:
    //    - _server_monitor_send_and_recv_opquery
    //    - _server_monitor_send_and_recv_hello_opmsg
