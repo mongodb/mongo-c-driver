@@ -5,7 +5,7 @@ compile_libmongocrypt() {
   declare -r mongoc_dir="${2:?}"
   declare -r install_dir="${3:?}"
 
-  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.8.0-alpha0 || return
+  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.8.0-alpha1 || return
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
