@@ -873,7 +873,6 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
    // afterwards. Instead, drivers MUST use the `hello` command exclusively and
    // use the `OP_MSG` protocol.
    if (with_op_msg) {
-      // Force OP_MSG for handshakes.
       mongoc_server_api_t *const api =
          mongoc_server_api_new (MONGOC_SERVER_API_V1);
       ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
@@ -1267,6 +1266,273 @@ test_counters_rpc_egress_mock_server_op_msg (void)
 {
    _test_counters_rpc_egress_mock_server (true);
 }
+
+
+#if defined(MONGOC_ENABLE_SSL)
+static void
+wait_for_background_threads (rpc_egress_counters expected)
+{
+   rpc_egress_counters current = rpc_egress_counters_current ();
+
+   // Wait up to 10 seconds (default heartbeat frequency) for the server monitor
+   // and/or RTT threads to complete their initial handshake and hello requests.
+   for (int i = 0; i < 100; ++i) {
+      if (current.op_egress_total >= expected.op_egress_total) {
+         return;
+      }
+
+      _mongoc_usleep (100000); // 100 ms.
+
+      current = rpc_egress_counters_current ();
+   }
+
+   ASSERT_WITH_MSG (
+      false,
+      "expected %" PRId32
+      " total requests by background threads, but observed %" PRId32
+      " total requests",
+      expected.op_egress_total,
+      current.op_egress_total);
+}
+
+
+static void
+_test_counters_auth (bool with_op_msg, bool pooled)
+{
+   const rpc_egress_counters zero = {0};
+
+   // Number of messages sent by background threads depend on the number of
+   // members in the replica set.
+   const size_t member_count_zu = test_framework_replset_member_count ();
+   ASSERT (bson_in_range_unsigned (int32_t, member_count_zu));
+   const int32_t member_count = (int32_t) member_count_zu;
+
+   // MongoDB Handshake Spec: Since MongoDB server 4.4, the initial handshake
+   // supports a new argument, `speculativeAuthenticate`, provided as a BSON
+   // document. Clients specifying this argument to hello or legacy hello will
+   // speculatively include the first command of an authentication handshake.
+   const bool has_speculative_auth = test_framework_get_server_version () >=
+                                     test_framework_str_to_version ("4.4.0");
+
+   // Used to calculate expected values of OP_COMPRESSED RPC egress counter.
+   const int32_t has_compressors = test_framework_has_compressors ();
+
+   // Stable API for Drivers spec: If an API version was declared, drivers
+   // MUST NOT use the legacy hello command during the initial handshake or
+   // afterwards. Instead, drivers MUST use the `hello` command exclusively
+   // and use the `OP_MSG` protocol.
+   mongoc_server_api_t *const api =
+      with_op_msg ? mongoc_server_api_new (MONGOC_SERVER_API_V1) : NULL;
+
+   // SCRAM-SHA-1 is available since MongoDB server 3.0 and forces OP_MSG
+   // requests for authentication steps that follow the initial connection
+   // handshake even with speculative authentication.
+   const char *const auth_mechanism = "SCRAM-SHA-1";
+
+   char *const test_user = "user";
+   char *const test_password = "password";
+
+   bson_error_t error = {0};
+
+   {
+      mongoc_client_t *const setup_client =
+         test_framework_new_default_client ();
+      mongoc_database_t *const admin =
+         mongoc_client_get_database (setup_client, "admin");
+      (void) mongoc_database_remove_user (admin, test_user, NULL);
+      ASSERT_OR_PRINT (mongoc_database_add_user (
+                          admin,
+                          test_user,
+                          test_password,
+                          tmp_bson ("{'0': {'role': 'root', 'db': 'admin'}}"),
+                          NULL,
+                          &error),
+                       error);
+      mongoc_client_destroy (setup_client);
+      mongoc_database_destroy (admin);
+   }
+
+   // Obtain URI before resetting RPC egress counters.
+   char *const uri_str = test_framework_get_uri_str ();
+
+   // Setup complete: reset counters now.
+   rpc_egress_counters_reset ();
+
+   mongoc_uri_t *const uri = mongoc_uri_new_with_error (uri_str, &error);
+   ASSERT_OR_PRINT (uri, error);
+   mongoc_uri_set_username (uri, test_user);
+   mongoc_uri_set_password (uri, test_password);
+
+   // Specify the authentication mechanism to ensure deterministic request
+   // behavior during testing.
+   ASSERT (mongoc_uri_set_auth_mechanism (uri, auth_mechanism));
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client = NULL;
+
+   if (pooled) {
+      // Note: no server API version ensures OP_QUERY for initial handshake.
+      pool = test_framework_client_pool_new_from_uri (uri, api);
+      test_framework_set_pool_ssl_opts (pool);
+
+      ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+
+      // Trigger server monitor and/or RTT thread startup.
+      client = mongoc_client_pool_pop (pool);
+
+      // Awaitable hello is also a 4.4+ feature.
+      if (has_speculative_auth) {
+         rpc_egress_counters expected = {0};
+         int32_t *const handshake_counter =
+            with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
+
+         // OP_QUERY / OP_MSG (for each replset member):
+         //  - initial connection handshake by server monitor thread
+         //  - initial connection handshake by RTT monitor thread
+         //  - polling hello by RTT monitor thread
+         *handshake_counter += 3 * member_count;
+         expected.op_egress_total += 3 * member_count;
+
+         // OP_MSG (for each replset member):
+         //  - awaitable hello by server monitor thread
+         expected.op_egress_msg += member_count;
+         expected.op_egress_total += member_count;
+
+         wait_for_background_threads (expected);
+         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+      } else {
+         // OP_QUERY / OP_MSG (for each replset member):
+         //  - initial connection handshake by server monitor
+         const rpc_egress_counters expected = {
+            .op_egress_msg = with_op_msg ? member_count : 0,
+            .op_egress_query = with_op_msg ? 0 : member_count,
+            .op_egress_total = member_count,
+         };
+
+         wait_for_background_threads (expected);
+         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+      }
+   } else {
+      client = test_framework_client_new_from_uri (uri, api);
+      test_framework_set_ssl_opts (client);
+      ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+   }
+
+   mongoc_counter_auth_success_reset ();
+   mongoc_counter_auth_failure_reset ();
+   rpc_egress_counters_reset ();
+
+   // Trigger:
+   //  - one of (depending on `pooled`):
+   //    - _cluster_fetch_stream_single
+   //    - _cluster_fetch_stream_pooled
+   //  - _cluster_run_hello (SASL step 1 if `has_speculative_auth`)
+   //  - _mongoc_cluster_auth_node (if not `has_speculative_auth`)
+   //  - mongoc_cluster_run_command_monitored
+   ASSERT_OR_PRINT (
+      mongoc_client_command_simple (
+         client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error),
+      error);
+
+   const int32_t auth_success = mongoc_counter_auth_success_count ();
+   const int32_t auth_failure = mongoc_counter_auth_failure_count ();
+
+   // Ensure we are not testing more than we intend.
+   ASSERT_WITH_MSG (auth_success == 1 && auth_failure == 0,
+                    "expected exactly one authentication attempt to succeed, "
+                    "but observed %" PRId32 " successes and %" PRId32
+                    " failures",
+                    auth_success,
+                    auth_failure);
+
+   rpc_egress_counters expected = {0};
+   int32_t *const handshake_counter =
+      with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
+
+   // The number of expected OP_QUERY requests depends on pooling and the
+   // presence of the RTT monitor thread.
+   if (pooled) {
+      // OP_QUERY / OP_MSG:
+      //  - initial connection handshake by new cluster node
+      *handshake_counter += 1;
+      expected.op_egress_total += 1;
+   } else {
+      // OP_QUERY / OP_MSG (for each replset member):
+      //  - initial connection handshake
+      *handshake_counter += member_count;
+      expected.op_egress_total += member_count;
+   }
+
+   // The number of authentication steps depends on speculative authentication.
+   if (has_speculative_auth) {
+      // OP_MSG: _mongoc_cluster_finish_speculative_auth (SASL step 2)
+      expected.op_egress_msg += 1;
+      expected.op_egress_total += 1;
+   } else {
+      // OP_MSG: _mongoc_cluster_auth_node (SASL step 1)
+      // OP_MSG: _mongoc_cluster_auth_node (SASL step 2)
+      // OP_MSG: _mongoc_cluster_auth_node (SASL step 3)
+      expected.op_egress_msg += 3;
+      expected.op_egress_total += 3;
+   }
+
+   // OP_MSG (+ OP_COMPRESSED): mongoc_cluster_run_command_monitored (ping)
+   expected.op_egress_compressed += has_compressors;
+   expected.op_egress_msg += 1;
+   expected.op_egress_total += has_compressors + 1;
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+
+   mongoc_server_api_destroy (api);
+   bson_free (uri_str);
+   mongoc_uri_destroy (uri);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   // OP_MSG (+ OP_COMPRESSED): _mongoc_client_end_sessions (endSessions)
+   expected.op_egress_compressed += has_compressors;
+   expected.op_egress_msg += 1;
+   expected.op_egress_total += has_compressors + 1;
+
+   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+}
+
+static void
+test_counters_auth_single_op_query (void *context)
+{
+   BSON_UNUSED (context);
+   _test_counters_auth (false, false);
+}
+
+static void
+test_counters_auth_single_op_msg (void *context)
+{
+   BSON_UNUSED (context);
+   _test_counters_auth (true, false);
+}
+
+static void
+test_counters_auth_pooled_op_query (void *context)
+{
+   BSON_UNUSED (context);
+   _test_counters_auth (false, true);
+}
+
+static void
+test_counters_auth_pooled_op_msg (void *context)
+{
+   BSON_UNUSED (context);
+   _test_counters_auth (true, true);
+}
+#endif
+
 #endif
 
 void
@@ -1343,5 +1609,38 @@ test_counters_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/counters/rpc/egress/mock_server/op_msg",
                                 test_counters_rpc_egress_mock_server_op_msg);
+
+#if defined(MONGOC_ENABLE_SSL)
+   TestSuite_AddFull (suite,
+                      "/counters/rpc/egress/auth/single/op_query",
+                      test_counters_auth_single_op_query,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_not_replset);
+   TestSuite_AddFull (suite,
+                      "/counters/rpc/egress/auth/single/op_msg",
+                      test_counters_auth_single_op_msg,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_max_wire_version_less_than_13,
+                      test_framework_skip_if_not_replset);
+   TestSuite_AddFull (suite,
+                      "/counters/rpc/egress/auth/pooled/op_query",
+                      test_counters_auth_pooled_op_query,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_not_replset);
+   TestSuite_AddFull (suite,
+                      "/counters/rpc/egress/auth/pooled/op_msg",
+                      test_counters_auth_pooled_op_msg,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_max_wire_version_less_than_13,
+                      test_framework_skip_if_not_replset);
+#endif // defined(MONGOC_ENABLE_SSL)
 #endif
 }
