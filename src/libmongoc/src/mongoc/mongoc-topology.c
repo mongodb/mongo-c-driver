@@ -2024,5 +2024,13 @@ mc_tpld_modify_drop (mc_tpld_modification mod)
 bool
 mongoc_topology_uses_server_api (const mongoc_topology_t *topology)
 {
+   BSON_ASSERT_PARAM (topology);
    return mongoc_topology_scanner_uses_server_api (topology->scanner);
+}
+
+bool
+mongoc_topology_uses_loadbalanced (const mongoc_topology_t *topology)
+{
+   BSON_ASSERT_PARAM (topology);
+   return mongoc_topology_scanner_uses_loadbalanced (topology->scanner);
 }

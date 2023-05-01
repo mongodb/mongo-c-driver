@@ -1346,7 +1346,15 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
 bool
 mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster)
 {
+   BSON_ASSERT_PARAM (cluster);
    return mongoc_client_uses_server_api (cluster->client);
+}
+
+bool
+mongoc_cluster_uses_loadbalanced (const mongoc_cluster_t *cluster)
+{
+   BSON_ASSERT_PARAM (cluster);
+   return mongoc_client_uses_loadbalanced (cluster->client);
 }
 
 #ifdef MONGOC_ENABLE_CRYPTO

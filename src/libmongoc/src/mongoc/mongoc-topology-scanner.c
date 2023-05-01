@@ -1505,8 +1505,15 @@ _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
 }
 
 bool
-mongoc_topology_scanner_uses_server_api (
-   const mongoc_topology_scanner_t *topology_scanner)
+mongoc_topology_scanner_uses_server_api (const mongoc_topology_scanner_t *ts)
 {
-   return NULL != topology_scanner->api;
+   BSON_ASSERT_PARAM (ts);
+   return NULL != ts->api;
+}
+
+bool
+mongoc_topology_scanner_uses_loadbalanced (const mongoc_topology_scanner_t *ts)
+{
+   BSON_ASSERT_PARAM (ts);
+   return ts->loadbalanced;
 }

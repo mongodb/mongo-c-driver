@@ -3184,3 +3184,9 @@ mongoc_client_uses_server_api (const mongoc_client_t *client)
 {
    return mongoc_topology_uses_server_api (client->topology);
 }
+
+bool
+mongoc_client_uses_loadbalanced (const mongoc_client_t *client)
+{
+   return mongoc_topology_uses_loadbalanced (client->topology);
+}
