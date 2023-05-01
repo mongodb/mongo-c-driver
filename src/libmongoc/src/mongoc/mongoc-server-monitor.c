@@ -413,7 +413,8 @@ _server_monitor_send_and_recv (mongoc_server_monitor_t *server_monitor,
                                bson_t *reply,
                                bson_error_t *error)
 {
-   if (mongoc_topology_uses_server_api (server_monitor->topology)) {
+   if (mongoc_topology_uses_server_api (server_monitor->topology) ||
+       mongoc_topology_uses_loadbalanced (server_monitor->topology)) {
       /* OP_MSG requires a "db" parameter: */
       bson_append_utf8 (cmd, "$db", 3, "admin", 5);
 

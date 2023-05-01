@@ -636,6 +636,14 @@ fail_no_events:
 }
 
 
+static bool
+_should_use_op_msg (const mongoc_cluster_t *cluster)
+{
+   return mongoc_cluster_uses_server_api (cluster) ||
+          mongoc_cluster_uses_loadbalanced (cluster);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -677,7 +685,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
 
    server_stream = cmd->server_stream;
 
-   if (mongoc_cluster_uses_server_api (cluster) ||
+   if (_should_use_op_msg (cluster) ||
        server_stream->sd->max_wire_version >= WIRE_VERSION_MIN) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
    } else {
@@ -819,23 +827,21 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    to either an op_msg or op_query: */
    memset (&hello_cmd, 0, sizeof (hello_cmd));
 
-
-   hello_cmd.db_name = "admin";
-   hello_cmd.command = &handshake_command;
-   hello_cmd.command_name = _mongoc_get_command_name (&handshake_command);
-   hello_cmd.server_stream = server_stream;
-
-   hello_cmd.is_acknowledged = true;
-
    /* Use OP_QUERY for the handshake, unless the user has specified an
     * API version; the correct hello_cmd has already been selected: */
-   if (!mongoc_cluster_uses_server_api (cluster)) {
+   if (!_should_use_op_msg (cluster)) {
       /* Complete OPCODE_QUERY setup: */
       hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
    } else {
       /* We're using OP_MSG, and require some additional doctoring: */
       bson_append_utf8 (&handshake_command, "$db", 3, "admin", 5);
    }
+
+   hello_cmd.db_name = "admin";
+   hello_cmd.command = &handshake_command;
+   hello_cmd.command_name = _mongoc_get_command_name (&handshake_command);
+   hello_cmd.server_stream = server_stream;
+   hello_cmd.is_acknowledged = true;
 
    if (!mongoc_cluster_run_command_private (
           cluster, &hello_cmd, &reply, error)) {
