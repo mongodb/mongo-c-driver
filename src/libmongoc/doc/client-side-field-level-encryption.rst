@@ -9,47 +9,6 @@ With CSFLE, developers can encrypt fields client side without any server-side co
 
 Automatic encryption, where sensitive fields in commands are encrypted automatically, requires an Enterprise-only process to do query analysis.
 
-Installation
-------------
-
-libmongocrypt
-`````````````
-
-There is a separate library, `libmongocrypt <https://github.com/mongodb/libmongocrypt>`_, that must be installed prior to configuring libmongoc to enable CSFLE.
-
-libmongocrypt depends on libbson. To build libmongoc with CSFLE support you must:
-
-1. Install libbson
-2. Build and install libmongocrypt
-3. Build libmongoc
-
-To install libbson, follow the instructions to install with a package manager: :ref:`Install libbson with a Package Manager <installing_libbson_with_pkg_manager>` or build from source with cmake (disable building libmongoc with ``-DENABLE_MONGOC=OFF``):
-
-.. parsed-literal::
-
-  $ cd mongo-c-driver
-  $ mkdir cmake-build && cd cmake-build
-  $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_MONGOC=OFF ..
-  $ cmake --build . --target install
-
-To build and install libmongocrypt, clone `the repository <https://github.com/mongodb/libmongocrypt>`_ and configure as follows:
-
-.. parsed-literal::
-
-  $ cd libmongocrypt
-  $ mkdir cmake-build && cd cmake-build
-  $ cmake -DENABLE_SHARED_BSON=ON ..
-  $ cmake --build . --target install
-
-Then, you should be able to build libmongoc with CSFLE.
-
-.. parsed-literal::
-
-  $ cd mongo-c-driver
-  $ mkdir cmake-build && cd cmake-build
-  $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_MONGOC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ..
-  $ cmake --build . --target install
-
 mongocryptd
 ```````````
 
