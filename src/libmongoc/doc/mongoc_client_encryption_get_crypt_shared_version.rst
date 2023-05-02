@@ -30,7 +30,7 @@ loaded, the returned pointer will be ``NULL``. The pointed-to array must not be
 modified or freed. The returned pointer is only valid for the lifetime of
 ``enc``.
 
-.. _crypt_shared: https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.rst#crypt-shared
+.. _crypt_shared: https://www.mongodb.com/docs/manual/core/queryable-encryption/reference/shared-library/
 
 .. seealso::
 
