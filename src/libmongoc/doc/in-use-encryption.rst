@@ -24,6 +24,20 @@ Once libmongocrypt is installed, configure the C driver with ``-DENABLE_CLIENT_S
   $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ..
   $ cmake --build . --target install
 
+API
+---
+
+:symbol:`mongoc_client_encryption_t` is used for explicit encryption and key management.
+:symbol:`mongoc_client_enable_auto_encryption()` and :symbol:`mongoc_client_pool_enable_auto_encryption()` is used to enable automatic encryption.
+
+The Queryable Encryption and CSFLE features share much of the same API with some exceptions.
+
+- The supported algorithms documented in :symbol:`mongoc_client_encryption_encrypt_opts_set_algorithm` do not apply to both features.
+- :symbol:`mongoc_auto_encryption_opts_set_encrypted_fields_map` only applies to Queryable Encryption.
+- :symbol:`mongoc_auto_encryption_opts_set_schema_map` only applies to CSFLE.
+
+
+
 Query Analysis
 --------------
 
