@@ -287,7 +287,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    _mongoc_rpc_prep_command (&rpc, cmd_ns, cmd);
    rpc.header.request_id = request_id;
 
-   _mongoc_rpc_gather_no_inc (&rpc, &cluster->iov);
+   _mongoc_rpc_gather (&rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (&rpc);
 
    if (compressor_id != -1 && IS_NOT_COMMAND (HANDSHAKE_CMD_LEGACY_HELLO) &&
@@ -3263,7 +3263,7 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
    _mongoc_array_clear (&cluster->iov);
    compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
 
-   _mongoc_rpc_gather_no_inc (rpc, &cluster->iov);
+   _mongoc_rpc_gather (rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (rpc);
 
    if (compressor_id != -1) {
@@ -3545,7 +3545,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       rpc.msg.n_sections++;
    }
 
-   _mongoc_rpc_gather_no_inc (&rpc, &cluster->iov);
+   _mongoc_rpc_gather (&rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (&rpc);
 
    if (mongoc_cmd_is_compressible (cmd)) {

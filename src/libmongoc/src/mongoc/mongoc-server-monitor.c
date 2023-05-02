@@ -236,7 +236,7 @@ _server_monitor_send_and_recv_hello_opmsg (
    rpc.msg.sections[0].payload.bson_document = bson_get_data (cmd);
 
    _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
-   _mongoc_rpc_gather_no_inc (&rpc, &array_to_write);
+   _mongoc_rpc_gather (&rpc, &array_to_write);
 
    mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
    const size_t niovec = array_to_write.len;
@@ -340,7 +340,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
    _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
-   _mongoc_rpc_gather_no_inc (&rpc, &array_to_write);
+   _mongoc_rpc_gather (&rpc, &array_to_write);
 
    mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
    const size_t niovec = array_to_write.len;
@@ -466,7 +466,7 @@ _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
    rpc.msg.sections[0].payload.bson_document = bson_get_data (cmd);
 
    _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
-   _mongoc_rpc_gather_no_inc (&rpc, &array_to_write);
+   _mongoc_rpc_gather (&rpc, &array_to_write);
 
    mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
    const size_t niovec = array_to_write.len;
