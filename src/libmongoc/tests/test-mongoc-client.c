@@ -479,7 +479,7 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
    char *uri_str_auth;
    mongoc_collection_t *collection;
    mongoc_client_t *auth_client;
-   mongoc_client_pool_t *pool;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
