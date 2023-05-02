@@ -64,7 +64,7 @@ assert_rpc_equal (const char *filename, mongoc_rpc_t *rpc)
     * Gather our RPC into a series of iovec that can be compared
     * to the buffer from the RCP snapshot file.
     */
-   _mongoc_rpc_gather (rpc, &ar);
+   _mongoc_rpc_gather_no_inc (rpc, &ar);
 
 #if 0
    fprintf(stderr, "Before swabbing\n");
@@ -619,7 +619,7 @@ test_mongoc_rpc_buffer_iov (void)
    rpc.query.query = bson_get_data (&b);
    rpc.query.fields = bson_get_data (&b);
 
-   _mongoc_rpc_gather (&rpc, &ar);
+   _mongoc_rpc_gather_no_inc (&rpc, &ar);
 
    allocate = rpc.header.msg_len - 16;
 
@@ -663,7 +663,7 @@ test_mongoc_rpc_msg_checksum_gather (mongoc_rpc_t *rpc)
    mongoc_array_t array;
    _mongoc_array_init (&array, sizeof (mongoc_iovec_t));
 
-   _mongoc_rpc_gather (rpc, &array);
+   _mongoc_rpc_gather_no_inc (rpc, &array);
    _mongoc_rpc_swab_to_le (rpc);
 
    // OP_MSG gather should always ignore the optional checksum.
