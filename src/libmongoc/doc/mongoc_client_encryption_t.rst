@@ -11,7 +11,7 @@ Synopsis
    typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
 
 
-``mongoc_client_encryption_t`` provides utility functions for Client-Side Field Level Encryption. See the guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`.
+``mongoc_client_encryption_t`` provides utility functions for :doc:`In-Use Encryption <in-use-encryption>`.
 
 Thread Safety
 -------------

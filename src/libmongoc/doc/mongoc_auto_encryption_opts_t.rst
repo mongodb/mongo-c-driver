@@ -3,7 +3,7 @@
 mongoc_auto_encryption_opts_t
 =============================
 
-Options for enabling automatic encryption and decryption for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_.
+Options for enabling automatic encryption and decryption for :doc:`In-Use Encryption <in-use-encryption>`.
 
 Synopsis
 --------
