@@ -54,6 +54,6 @@ The key vault client, configured via :symbol:`mongoc_client_encryption_opts_set_
 
   | :symbol:`mongoc_client_pool_enable_auto_encryption()`
 
-  | The guide for :doc:`Using Client-Side Field Level Encryption <client-side-field-level-encryption>` for libmongoc
+  | :doc:`In-Use Encryption <in-use-encryption>` for libmongoc
 
   | The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_

@@ -14,7 +14,7 @@ Synopsis
 
 .. seealso::
 
-  | The guide for :doc:`Using Client-Side Field Level Encryption <client-side-field-level-encryption>`
+  | :doc:`In-Use Encryption <in-use-encryption>`
 
 .. only:: html
 

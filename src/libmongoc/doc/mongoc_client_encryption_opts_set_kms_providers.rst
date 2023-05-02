@@ -71,5 +71,5 @@ The format for "kmip" is as follows:
 
   | :symbol:`mongoc_client_encryption_new()`
 
-  | The guide for :doc:`Using Client-Side Field Level Encryption <client-side-field-level-encryption>`
+  | :doc:`In-Use Encryption <in-use-encryption>`
 

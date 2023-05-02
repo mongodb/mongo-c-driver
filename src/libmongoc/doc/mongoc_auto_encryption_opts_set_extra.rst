@@ -58,7 +58,7 @@ Parameters
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | The guide for :doc:`Using Client-Side Field Level Encryption <client-side-field-level-encryption>`
+  | :doc:`In-Use Encryption <in-use-encryption>`
 
   | MongoDB Manual documentation for ``crypt_shared``: `Automatic Encryption Shared Library <https://www.mongodb.com/docs/manual/core/queryable-encryption/reference/shared-library/>`_
 
