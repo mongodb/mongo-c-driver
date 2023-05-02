@@ -50,7 +50,7 @@ The following example shows how to set up automatic encryption using :symbol:`mo
 Explicit Encryption
 ```````````````````
 
-Explicit encryption is a MongoDB community feature and does not use the mongocryptd process. Explicit encryption is provided by the :symbol:`mongoc_client_encryption_t` class, for example:
+Explicit encryption is a MongoDB community feature and does not use :ref:`query_analysis` (``mongocryptd`` or ``crypt_shared``). Explicit encryption is provided by the :symbol:`mongoc_client_encryption_t` class, for example:
 
 .. literalinclude:: ../examples/client-side-encryption-explicit.c
    :caption: client-side-encryption-explicit.c

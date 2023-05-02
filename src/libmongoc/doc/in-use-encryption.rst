@@ -38,6 +38,8 @@ The Queryable Encryption and CSFLE features share much of the same API with some
 
 
 
+.. _query_analysis:
+
 Query Analysis
 --------------
 
