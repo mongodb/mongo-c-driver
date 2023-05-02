@@ -13,7 +13,7 @@ Synopsis
                                          mongoc_auto_encryption_opts_t* opts,
                                          bson_error_t* error);
 
-Enable automatic client side encryption on a :symbol:`mongoc_client_t`. Requires libmongoc to be built with support for Client-Side Field Level Encryption. See :doc:`In-Use Encryption <in-use-encryption>`.
+Enable automatic In-Use Encryption on a :symbol:`mongoc_client_t`. Requires libmongoc to be built with support for In-Use Encryption. See :doc:`In-Use Encryption <in-use-encryption>` for instructions to enable In-Use Encryption in libmongoc.
 
 Automatic encryption is an enterprise only feature that only applies to operations on a collection. Automatic encryption is not supported for operations on a database or view, and operations that are not bypassed will result in error. To bypass automatic encryption for all operations, bypass automatic encryption with :symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption()` in ``opts``.
 
