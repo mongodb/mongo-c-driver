@@ -7,44 +7,7 @@ New in MongoDB 4.2, Client-Side Field Level Encryption (also referred to as CSFL
 
 With CSFLE, developers can encrypt fields client side without any server-side configuration or directives. CSFLE supports workloads where applications must guarantee that unauthorized parties, including server administrators, cannot read the encrypted data.
 
-Automatic encryption, where sensitive fields in commands are encrypted automatically, requires an Enterprise-only process to do query analysis.
-
-mongocryptd
-```````````
-
-The ``mongocryptd`` binary is required for automatic CSFLE and is included as a component in the `MongoDB Enterprise Server package <https://dochub.mongodb.org/core/install-mongodb-enterprise>`_. For detailed installation instructions see the `MongoDB documentation on mongocryptd <https://dochub.mongodb.org/core/client-side-field-level-encryption-mongocryptd>`_.
-
-``mongocryptd`` performs the following:
-
-- Parses the automatic encryption rules specified to the database connection. If the JSON schema contains invalid automatic encryption syntax or any document validation syntax, ``mongocryptd`` returns an error.
-- Uses the specified automatic encryption rules to mark fields in read and write operations for encryption.
-- Rejects read/write operations that may return unexpected or incorrect results when applied to an encrypted field. For supported and unsupported operations, see `Read/Write Support with Automatic Field Level Encryption <https://dochub.mongodb.org/core/client-side-field-level-encryption-read-write-support>`_.
-
-A :symbol:`mongoc_client_t` configured with auto encryption will automatically spawn the ``mongocryptd`` process from the application's ``PATH``. Applications can control the spawning behavior as part of the automatic encryption options. For example, to set a custom path to the ``mongocryptd`` process, set the ``mongocryptdSpawnPath`` with :symbol:`mongoc_auto_encryption_opts_set_extra()`.
-
-.. code:: c
-
-   bson_t *extra = BCON_NEW ("mongocryptdSpawnPath", "/path/to/mongocryptd");
-   mongoc_auto_encryption_opts_set_extra (opts, extra);
-
-
-To control the logging output of ``mongocryptd`` pass ``mongocryptdSpawnArgs`` to :symbol:`mongoc_auto_encryption_opts_set_extra()`:
-
-.. code:: c
-
-   bson_t *extra = BCON_NEW ("mongocryptdSpawnArgs",
-      "[", "--logpath=/path/to/mongocryptd.log", "--logappend", "]");
-   mongoc_auto_encryption_opts_set_extra (opts, extra);
-
-If your application wishes to manage the ``mongocryptd`` process manually, it is possible to disable spawning ``mongocryptd``:
-
-.. code:: c
-
-   bson_t *extra = BCON_NEW ("mongocryptdBypassSpawn",
-      BCON_BOOL(true), "mongocryptdURI", "mongodb://localhost:27020");
-   mongoc_auto_encryption_opts_set_extra (opts, extra);
-
-``mongocryptd`` is only responsible for supporting automatic CSFLE in the driver and does not itself perform any encryption or decryption.
+Automatic encryption, where sensitive fields in commands are encrypted automatically, requires an Enterprise-only dependency for Query Analysis. See :doc:`In-Use Encryption </in-use-encryption>` for more information.
 
 
 Automatic Client-Side Field Level Encryption
