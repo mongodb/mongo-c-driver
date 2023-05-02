@@ -7,6 +7,10 @@ With CSFLE, developers can encrypt fields client side without any server-side co
 
 Automatic encryption, where sensitive fields in commands are encrypted automatically, requires an Enterprise-only dependency for Query Analysis. See :doc:`In-Use Encryption </in-use-encryption>` for more information.
 
+.. seealso::
+
+    | The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_
+
 
 Automatic Client-Side Field Level Encryption
 --------------------------------------------
