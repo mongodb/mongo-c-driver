@@ -15,11 +15,11 @@ Automatic encryption, where sensitive fields in commands are encrypted automatic
 Automatic Client-Side Field Level Encryption
 --------------------------------------------
 
-Automatic CSFLE is enabled by calling :symbol:`mongoc_client_enable_auto_encryption()` on a :symbol:`mongoc_client_t`. The following examples show how to set up automatic client-side field level encryption using :symbol:`mongoc_client_encryption_t` to create a new encryption data key.
+Automatic encryption is enabled by calling :symbol:`mongoc_client_enable_auto_encryption()` on a :symbol:`mongoc_client_t`. The following examples show how to set up automatic encryption using :symbol:`mongoc_client_encryption_t` to create a new encryption data key.
 
 .. note::
 
-   Automatic client-side field level encryption requires MongoDB 4.2 enterprise or a MongoDB 4.2 Atlas cluster. The community version of the server supports automatic decryption as well as :ref:`explicit-client-side-encryption`.
+   Automatic encryption requires MongoDB 4.2 enterprise or a MongoDB 4.2 Atlas cluster. The community version of the server supports automatic decryption as well as :ref:`explicit-client-side-encryption`.
 
 Providing Local Automatic Encryption Rules
 ``````````````````````````````````````````
@@ -28,7 +28,7 @@ The following example shows how to specify automatic encryption rules using a sc
 
 Supplying a schema map provides more security than relying on JSON Schemas obtained from the server. It protects against a malicious server advertising a false JSON Schema, which could trick the client into sending unencrypted data that should be encrypted.
 
-JSON Schemas supplied in the schema map only apply to configuring automatic client-side field level encryption. Other validation rules in the JSON schema will not be enforced by the driver and will result in an error:
+JSON Schemas supplied in the schema map only apply to configuring automatic encryption. Other validation rules in the JSON schema will not be enforced by the driver and will result in an error:
 
 .. literalinclude:: ../examples/client-side-encryption-schema-map.c
    :caption: client-side-encryption-schema-map.c
@@ -39,7 +39,7 @@ Server-Side Field Level Encryption Enforcement
 
 The MongoDB 4.2 server supports using schema validation to enforce encryption of specific fields in a collection. This schema validation will prevent an application from inserting unencrypted values for any fields marked with the "encrypt" JSON schema keyword.
 
-The following example shows how to set up automatic client-side field level encryption using :symbol:`mongoc_client_encryption_t` to create a new encryption data key and create a collection with the Automatic Encryption JSON Schema Syntax:
+The following example shows how to set up automatic encryption using :symbol:`mongoc_client_encryption_t` to create a new encryption data key and create a collection with the necessary JSON Schema:
 
 .. literalinclude:: ../examples/client-side-encryption-server-schema.c
    :caption: client-side-encryption-server-schema.c
