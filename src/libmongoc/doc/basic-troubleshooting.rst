@@ -17,16 +17,16 @@ The following is a short list of things to check when you have a problem.
 Performance Counters
 --------------------
 
-The MongoDB C driver comes with an optional unique feature to help developers and sysadmins troubleshoot problems in production.
-Performance counters are available for each process using the driver.
+The MongoDB C Driver comes with an optional and unique feature to help developers and sysadmins troubleshoot problems in production.
+Performance counters are available for each process using the C Driver.
 If available, the counters can be accessed outside of the application process via a shared memory segment.
-This means that you can graph statistics about your application process easily from tools like Munin or Nagios.
-Your author often uses ``watch --interval=0.5 -d mongoc-stat $PID`` to monitor an application.
+The counters may be used graph statistics about your application process easily from tools like Munin or Nagios.
+For example, the command ``watch --interval=0.5 -d mongoc-stat $PID`` may be used to monitor an application.
 
-Performance counters are only available on Linux platforms and macOS arm64 platforms supporting shared memory segments.
-On supported platforms they are enabled by default.
-Applications can be built without the counters by specifying the cmake option ``-DENABLE_SHM_COUNTERS=OFF``. Additionally, if
-performance counters are already compiled, they can be disabled at runtime by specifying the environment variable ``MONGOC_DISABLE_SHM``.
+Performance counters are only available on Linux platforms and macOS arm64 platforms that support shared memory segments.
+On supported platforms, they are enabled by default.
+Applications can be built without the counters by specifying the cmake option ``-DENABLE_SHM_COUNTERS=OFF``.
+Additionally, if performance counters are already compiled, they can be disabled at runtime by specifying the environment variable ``MONGOC_DISABLE_SHM``.
 
 Performance counters keep track of the following:
 
@@ -36,6 +36,10 @@ Performance counters keep track of the following:
 * Bytes transferred and received.
 * Authentication successes and failures.
 * Number of wire protocol errors.
+
+.. note::
+  An operation is considered "sent" when one or more bytes of the corresponding message is written to the stream, regardless of whether the entire message is successfully written or if the operation ultimately succeeds or fails.
+  This does not include bytes that may be written during the stream connection process, such as TLS handshake messages.
 
 To access counters for a given process, simply provide the process id to the ``mongoc-stat`` program installed with the MongoDB C Driver.
 
