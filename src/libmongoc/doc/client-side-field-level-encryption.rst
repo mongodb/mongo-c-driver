@@ -3,9 +3,9 @@
 Client-Side Field Level Encryption
 ==================================
 
-New in MongoDB 4.2, Client-Side Field Level Encryption (also referred to as Client-Side Encryption) allows administrators and developers to encrypt specific data fields in addition to other MongoDB encryption features.
+New in MongoDB 4.2, Client-Side Field Level Encryption (also referred to as CSFLE) allows administrators and developers to encrypt specific data fields in addition to other MongoDB encryption features.
 
-With Client-Side Encryption, developers can encrypt fields client side without any server-side configuration or directives. Client-Side Encryption supports workloads where applications must guarantee that unauthorized parties, including server administrators, cannot read the encrypted data.
+With CSFLE, developers can encrypt fields client side without any server-side configuration or directives. CSFLE supports workloads where applications must guarantee that unauthorized parties, including server administrators, cannot read the encrypted data.
 
 Automatic encryption, where sensitive fields in commands are encrypted automatically, requires an Enterprise-only process to do query analysis.
 
@@ -15,9 +15,9 @@ Installation
 libmongocrypt
 `````````````
 
-There is a separate library, `libmongocrypt <https://github.com/mongodb/libmongocrypt>`_, that must be installed prior to configuring libmongoc to enable Client-Side Encryption.
+There is a separate library, `libmongocrypt <https://github.com/mongodb/libmongocrypt>`_, that must be installed prior to configuring libmongoc to enable CSFLE.
 
-libmongocrypt depends on libbson. To build libmongoc with Client-Side Encryption support you must:
+libmongocrypt depends on libbson. To build libmongoc with CSFLE support you must:
 
 1. Install libbson
 2. Build and install libmongocrypt
@@ -41,7 +41,7 @@ To build and install libmongocrypt, clone `the repository <https://github.com/mo
   $ cmake -DENABLE_SHARED_BSON=ON ..
   $ cmake --build . --target install
 
-Then, you should be able to build libmongoc with Client-Side Encryption.
+Then, you should be able to build libmongoc with CSFLE.
 
 .. parsed-literal::
 
@@ -53,7 +53,7 @@ Then, you should be able to build libmongoc with Client-Side Encryption.
 mongocryptd
 ```````````
 
-The ``mongocryptd`` binary is required for automatic Client-Side Encryption and is included as a component in the `MongoDB Enterprise Server package <https://dochub.mongodb.org/core/install-mongodb-enterprise>`_. For detailed installation instructions see the `MongoDB documentation on mongocryptd <https://dochub.mongodb.org/core/client-side-field-level-encryption-mongocryptd>`_.
+The ``mongocryptd`` binary is required for automatic CSFLE and is included as a component in the `MongoDB Enterprise Server package <https://dochub.mongodb.org/core/install-mongodb-enterprise>`_. For detailed installation instructions see the `MongoDB documentation on mongocryptd <https://dochub.mongodb.org/core/client-side-field-level-encryption-mongocryptd>`_.
 
 ``mongocryptd`` performs the following:
 
@@ -85,13 +85,13 @@ If your application wishes to manage the ``mongocryptd`` process manually, it is
       BCON_BOOL(true), "mongocryptdURI", "mongodb://localhost:27020");
    mongoc_auto_encryption_opts_set_extra (opts, extra);
 
-``mongocryptd`` is only responsible for supporting automatic Client-Side Encryption in the driver and does not itself perform any encryption or decryption.
+``mongocryptd`` is only responsible for supporting automatic CSFLE in the driver and does not itself perform any encryption or decryption.
 
 
 Automatic Client-Side Field Level Encryption
 --------------------------------------------
 
-Automatic Client-Side Encryption is enabled by calling :symbol:`mongoc_client_enable_auto_encryption()` on a :symbol:`mongoc_client_t`. The following examples show how to set up automatic client-side field level encryption using :symbol:`mongoc_client_encryption_t` to create a new encryption data key.
+Automatic CSFLE is enabled by calling :symbol:`mongoc_client_enable_auto_encryption()` on a :symbol:`mongoc_client_t`. The following examples show how to set up automatic client-side field level encryption using :symbol:`mongoc_client_encryption_t` to create a new encryption data key.
 
 .. note::
 
