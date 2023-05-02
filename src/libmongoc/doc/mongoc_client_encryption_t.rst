@@ -57,3 +57,5 @@ The key vault client, configured via :symbol:`mongoc_client_encryption_opts_set_
   | :doc:`In-Use Encryption <in-use-encryption>` for libmongoc
 
   | The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_
+
+  | The MongoDB Manual for `Queryable Encryption <https://www.mongodb.com/docs/manual/core/queryable-encryption/>`_
