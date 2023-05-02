@@ -1,5 +1,3 @@
-:man-page: client-side-field-level-encryption
-
 Client-Side Field Level Encryption
 ==================================
 
