@@ -477,7 +477,7 @@ test_counters_streams_timeout (void)
    mock_server_destroy (server);
 }
 
-typedef struct _rpc_egress_counters {
+typedef struct _rpc_op_egress_counters {
    int32_t op_egress_compressed;
    int32_t op_egress_delete;
    int32_t op_egress_getmore;
@@ -487,12 +487,12 @@ typedef struct _rpc_egress_counters {
    int32_t op_egress_query;
    int32_t op_egress_total;
    int32_t op_egress_update;
-} rpc_egress_counters;
+} rpc_op_egress_counters;
 
-static rpc_egress_counters
-rpc_egress_counters_current (void)
+static rpc_op_egress_counters
+rpc_op_egress_counters_current (void)
 {
-   return (rpc_egress_counters){
+   return (rpc_op_egress_counters){
       .op_egress_compressed = mongoc_counter_op_egress_compressed_count (),
       .op_egress_delete = mongoc_counter_op_egress_delete_count (),
       .op_egress_getmore = mongoc_counter_op_egress_getmore_count (),
@@ -506,7 +506,7 @@ rpc_egress_counters_current (void)
 }
 
 static void
-rpc_egress_counters_reset (void)
+rpc_op_egress_counters_reset (void)
 {
    mongoc_counter_op_egress_compressed_reset ();
    mongoc_counter_op_egress_delete_reset ();
@@ -519,10 +519,10 @@ rpc_egress_counters_reset (void)
    mongoc_counter_op_egress_update_reset ();
 }
 
-#define ASSERT_RPC_EGRESS_COUNTERS(expected, actual)                           \
+#define ASSERT_RPC_OP_EGRESS_COUNTERS(expected, actual)                        \
    if (1) {                                                                    \
-      const rpc_egress_counters e = (expected);                                \
-      const rpc_egress_counters a = (actual);                                  \
+      const rpc_op_egress_counters e = (expected);                             \
+      const rpc_op_egress_counters a = (actual);                               \
       ASSERT_WITH_MSG (e.op_egress_compressed == a.op_egress_compressed,       \
                        "op_egress_compressed: expected %" PRId32               \
                        ", got %" PRId32,                                       \
@@ -565,8 +565,8 @@ rpc_egress_counters_reset (void)
    } else                                                                      \
       (void) 0
 
-#define ASSERT_RPC_EGRESS_COUNTERS_CURRENT(expected) \
-   ASSERT_RPC_EGRESS_COUNTERS (expected, rpc_egress_counters_current ())
+#define ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT(expected) \
+   ASSERT_RPC_OP_EGRESS_COUNTERS (expected, rpc_op_egress_counters_current ())
 
 
 typedef struct _server_monitor_autoresponder_data {
@@ -575,7 +575,7 @@ typedef struct _server_monitor_autoresponder_data {
 } server_monitor_autoresponder_data;
 
 static bool
-test_counters_rpc_egress_autoresponder (request_t *request, void *data)
+test_counters_rpc_op_egress_autoresponder (request_t *request, void *data)
 {
    BSON_ASSERT_PARAM (data);
 
@@ -602,9 +602,9 @@ test_counters_rpc_egress_autoresponder (request_t *request, void *data)
 
 
 static void
-_test_counters_rpc_egress_cluster_single (bool with_op_msg)
+_test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
 {
-   const rpc_egress_counters zero = {0};
+   const rpc_op_egress_counters zero = {0};
 
    const char *const hello = tmp_str ("{'ok': 1,%s"
                                       " 'isWritablePrimary': true,"
@@ -614,7 +614,7 @@ _test_counters_rpc_egress_cluster_single (bool with_op_msg)
                                       WIRE_VERSION_MIN,
                                       WIRE_VERSION_MAX);
 
-   rpc_egress_counters_reset ();
+   rpc_op_egress_counters_reset ();
 
    mock_server_t *const server = mock_server_new ();
    mock_server_run (server);
@@ -636,9 +636,9 @@ _test_counters_rpc_egress_cluster_single (bool with_op_msg)
       mongoc_server_api_destroy (api);
    }
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
 
-   rpc_egress_counters expected = {0};
+   rpc_op_egress_counters expected = {0};
    int32_t *const handshake_counter =
       with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
@@ -667,7 +667,7 @@ _test_counters_rpc_egress_cluster_single (bool with_op_msg)
          //  - by mongoc_client_command_simple
          *handshake_counter += 1;
          expected.op_egress_total += 1;
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
          mock_server_replies_simple (request, hello);
          request_destroy (request);
@@ -684,7 +684,7 @@ _test_counters_rpc_egress_cluster_single (bool with_op_msg)
          //  - by mongoc_client_command_simple
          expected.op_egress_msg += 1;
          expected.op_egress_total += 1;
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
          mock_server_replies_ok_and_destroys (request);
       }
@@ -701,32 +701,32 @@ _test_counters_rpc_egress_cluster_single (bool with_op_msg)
                                                 .responses = &responses};
 
       mock_server_autoresponds (
-         server, test_counters_rpc_egress_autoresponder, &data, NULL);
+         server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
 
       mongoc_client_destroy (client);
       mock_server_destroy (server);
    }
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 }
 
 static void
-test_counters_rpc_egress_cluster_single_op_query (void)
+test_counters_rpc_op_egress_cluster_single_op_query (void)
 {
-   _test_counters_rpc_egress_cluster_single (false);
+   _test_counters_rpc_op_egress_cluster_single (false);
 }
 
 static void
-test_counters_rpc_egress_cluster_single_op_msg (void)
+test_counters_rpc_op_egress_cluster_single_op_msg (void)
 {
-   _test_counters_rpc_egress_cluster_single (true);
+   _test_counters_rpc_op_egress_cluster_single (true);
 }
 
 
 static void
-test_counters_rpc_egress_cluster_legacy (void)
+test_counters_rpc_op_egress_cluster_legacy (void)
 {
-   const rpc_egress_counters zero = {0};
+   const rpc_op_egress_counters zero = {0};
 
    const char *const hello = tmp_str ("{'ok': 1,"
                                       " 'isWritablePrimary': true,"
@@ -735,7 +735,7 @@ test_counters_rpc_egress_cluster_legacy (void)
                                       WIRE_VERSION_MIN,
                                       WIRE_VERSION_MAX);
 
-   rpc_egress_counters_reset ();
+   rpc_op_egress_counters_reset ();
 
    mock_server_t *const server = mock_server_new ();
    mock_server_run (server);
@@ -745,9 +745,9 @@ test_counters_rpc_egress_cluster_legacy (void)
       mock_server_get_uri (server), &error);
    ASSERT_OR_PRINT (client, error);
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
 
-   rpc_egress_counters expected = {0};
+   rpc_op_egress_counters expected = {0};
 
    // Client must know a writeable server to trigger OP_KILL_CURSORS.
    {
@@ -772,7 +772,7 @@ test_counters_rpc_egress_cluster_legacy (void)
          //  - by mongoc_client_command_simple
          expected.op_egress_query += 1;
          expected.op_egress_total += 1;
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
          mock_server_replies_simple (request, hello);
 
@@ -790,7 +790,7 @@ test_counters_rpc_egress_cluster_legacy (void)
          //  - by mongoc_client_command_simple
          expected.op_egress_msg += 1;
          expected.op_egress_total += 1;
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
          mock_server_replies_ok_and_destroys (request);
       }
@@ -817,7 +817,7 @@ test_counters_rpc_egress_cluster_legacy (void)
       //  - by mongoc_client_kill_cursor
       expected.op_egress_killcursors += 1;
       expected.op_egress_total += 1;
-      ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+      ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
       // OP_KILL_CURSORS does not require a response.
       request_destroy (request);
@@ -831,20 +831,20 @@ test_counters_rpc_egress_cluster_legacy (void)
                                                 .responses = &responses};
 
       mock_server_autoresponds (
-         server, test_counters_rpc_egress_autoresponder, &data, NULL);
+         server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
 
       mongoc_client_destroy (client);
       mock_server_destroy (server);
    }
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 }
 
 
 static void
-_test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
+_test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
 {
-   const rpc_egress_counters zero = {0};
+   const rpc_op_egress_counters zero = {0};
 
    const char *const hello = tmp_str ("{'ok': 1,%s"
                                       " 'isWritablePrimary': true,"
@@ -854,7 +854,7 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
                                       WIRE_VERSION_MIN,
                                       WIRE_VERSION_MAX);
 
-   rpc_egress_counters_reset ();
+   rpc_op_egress_counters_reset ();
 
    mock_server_t *const server = mock_server_new ();
    mock_server_run (server);
@@ -876,12 +876,12 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
       mongoc_server_api_destroy (api);
    }
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
 
    // Trigger: _server_monitor_check_server
    mongoc_client_t *const client = mongoc_client_pool_pop (pool);
 
-   rpc_egress_counters expected = {0};
+   rpc_op_egress_counters expected = {0};
    int32_t *const handshake_counter =
       with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
@@ -899,7 +899,7 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
       //  - by _server_monitor_thread
       *handshake_counter += 1;
       expected.op_egress_total += 1;
-      ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+      ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
       mock_server_replies_simple (request, hello);
       request_destroy (request);
@@ -929,7 +929,7 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
          //  - by mongoc_client_command_simple
          *handshake_counter += 1;
          expected.op_egress_total += 1;
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
          mock_server_replies_simple (request, hello);
          request_destroy (request);
@@ -946,7 +946,7 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
          //  - by mongoc_client_command_simple
          expected.op_egress_msg += 1;
          expected.op_egress_total += 1;
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
          mock_server_replies_ok_and_destroys (request);
       }
@@ -963,33 +963,33 @@ _test_counters_rpc_egress_cluster_pooled (bool with_op_msg)
                                                 .responses = &responses};
 
       mock_server_autoresponds (
-         server, test_counters_rpc_egress_autoresponder, &data, NULL);
+         server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
 
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
       mock_server_destroy (server);
    }
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 }
 
 static void
-test_counters_rpc_egress_cluster_pooled_op_query (void)
+test_counters_rpc_op_egress_cluster_pooled_op_query (void)
 {
-   _test_counters_rpc_egress_cluster_pooled (false);
+   _test_counters_rpc_op_egress_cluster_pooled (false);
 }
 
 static void
-test_counters_rpc_egress_cluster_pooled_op_msg (void)
+test_counters_rpc_op_egress_cluster_pooled_op_msg (void)
 {
-   _test_counters_rpc_egress_cluster_pooled (true);
+   _test_counters_rpc_op_egress_cluster_pooled (true);
 }
 
 
 static void
-_test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
+_test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
 {
-   const rpc_egress_counters zero = {0};
+   const rpc_op_egress_counters zero = {0};
 
    const char *const hello =
       tmp_str ("{'ok': 1,%s"
@@ -1004,7 +1004,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
                WIRE_VERSION_MIN,
                WIRE_VERSION_MAX);
 
-   rpc_egress_counters_reset ();
+   rpc_op_egress_counters_reset ();
 
    mock_server_t *const server = mock_server_new ();
    mock_server_run (server);
@@ -1028,7 +1028,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
       mongoc_server_api_destroy (api);
    }
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
 
    // Trigger:
    //  - _server_monitor_setup_connection
@@ -1062,7 +1062,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
       }
    }
 
-   rpc_egress_counters expected = {0};
+   rpc_op_egress_counters expected = {0};
    int32_t *const handshake_counter =
       with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
@@ -1105,7 +1105,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
    expected.op_egress_msg += 1;
    expected.op_egress_total += 1;
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
    {
       // Trigger:
@@ -1134,7 +1134,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
          //  - by mongoc_client_command_simple
          *handshake_counter += 1;
          expected.op_egress_total += 1;
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
          mock_server_replies_simple (request, hello);
          request_destroy (request);
@@ -1151,7 +1151,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
          //  - by mongoc_client_command_simple
          expected.op_egress_msg += 1;
          expected.op_egress_total += 1;
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
          mock_server_replies_ok_and_destroys (request);
       }
@@ -1168,7 +1168,7 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
                                                 .responses = &responses};
 
       mock_server_autoresponds (
-         server, test_counters_rpc_egress_autoresponder, &data, NULL);
+         server, test_counters_rpc_op_egress_autoresponder, &data, NULL);
 
       mongoc_uri_destroy (uri);
       mongoc_client_pool_push (pool, client);
@@ -1182,28 +1182,28 @@ _test_counters_rpc_egress_awaitable_hello (bool with_op_msg)
       mock_server_destroy (server);
    }
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 }
 
 static void
-test_counters_rpc_egress_awaitable_hello_op_query (void)
+test_counters_rpc_op_egress_awaitable_hello_op_query (void)
 {
-   _test_counters_rpc_egress_awaitable_hello (false);
+   _test_counters_rpc_op_egress_awaitable_hello (false);
 }
 
 static void
-test_counters_rpc_egress_awaitable_hello_op_msg (void)
+test_counters_rpc_op_egress_awaitable_hello_op_msg (void)
 {
-   _test_counters_rpc_egress_awaitable_hello (true);
+   _test_counters_rpc_op_egress_awaitable_hello (true);
 }
 
 
 static void
-_test_counters_rpc_egress_mock_server (bool with_op_msg)
+_test_counters_rpc_op_egress_mock_server (bool with_op_msg)
 {
-   const rpc_egress_counters zero = {0};
+   const rpc_op_egress_counters zero = {0};
 
-   rpc_egress_counters_reset ();
+   rpc_op_egress_counters_reset ();
 
    mock_server_t *server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
@@ -1225,7 +1225,7 @@ _test_counters_rpc_egress_mock_server (bool with_op_msg)
       mongoc_server_api_destroy (api);
    }
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
 
    future_t *const future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
@@ -1235,39 +1235,39 @@ _test_counters_rpc_egress_mock_server (bool with_op_msg)
 
    // Handshake (OP_QUERY 1 / OP_MSG 1) + command (OP_MSG 1 / OP_MSG 2).
    // Mock server replies should not contribute RPC egress counters.
-   const rpc_egress_counters expected = {
+   const rpc_op_egress_counters expected = {
       .op_egress_msg = with_op_msg ? 2 : 1,
       .op_egress_query = with_op_msg ? 0 : 1,
       .op_egress_total = 2,
    };
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
    future_destroy (future);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 }
 
 static void
-test_counters_rpc_egress_mock_server_op_query (void)
+test_counters_rpc_op_egress_mock_server_op_query (void)
 {
-   _test_counters_rpc_egress_mock_server (false);
+   _test_counters_rpc_op_egress_mock_server (false);
 }
 
 static void
-test_counters_rpc_egress_mock_server_op_msg (void)
+test_counters_rpc_op_egress_mock_server_op_msg (void)
 {
-   _test_counters_rpc_egress_mock_server (true);
+   _test_counters_rpc_op_egress_mock_server (true);
 }
 
 
 #if defined(MONGOC_ENABLE_SSL)
 static void
-wait_for_background_threads (rpc_egress_counters expected)
+wait_for_background_threads (rpc_op_egress_counters expected)
 {
-   rpc_egress_counters current = rpc_egress_counters_current ();
+   rpc_op_egress_counters current = rpc_op_egress_counters_current ();
 
    // Wait up to 10 seconds (default heartbeat frequency) for the server monitor
    // and/or RTT threads to complete their initial handshake and hello requests.
@@ -1278,7 +1278,7 @@ wait_for_background_threads (rpc_egress_counters expected)
 
       _mongoc_usleep (100000); // 100 ms.
 
-      current = rpc_egress_counters_current ();
+      current = rpc_op_egress_counters_current ();
    }
 
    ASSERT_WITH_MSG (
@@ -1294,7 +1294,7 @@ wait_for_background_threads (rpc_egress_counters expected)
 static void
 _test_counters_auth (bool with_op_msg, bool pooled)
 {
-   const rpc_egress_counters zero = {0};
+   const rpc_op_egress_counters zero = {0};
 
    // Number of messages sent by background threads depend on the number of
    // members in the replica set.
@@ -1351,7 +1351,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    char *const uri_str = test_framework_get_uri_str ();
 
    // Setup complete: reset counters now.
-   rpc_egress_counters_reset ();
+   rpc_op_egress_counters_reset ();
 
    mongoc_uri_t *const uri = mongoc_uri_new_with_error (uri_str, &error);
    ASSERT_OR_PRINT (uri, error);
@@ -1362,7 +1362,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    // behavior during testing.
    ASSERT (mongoc_uri_set_auth_mechanism (uri, auth_mechanism));
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
 
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client = NULL;
@@ -1372,14 +1372,14 @@ _test_counters_auth (bool with_op_msg, bool pooled)
       pool = test_framework_client_pool_new_from_uri (uri, api);
       test_framework_set_pool_ssl_opts (pool);
 
-      ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+      ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
 
       // Trigger server monitor and/or RTT thread startup.
       client = mongoc_client_pool_pop (pool);
 
       // Awaitable hello is also a 4.4+ feature.
       if (has_speculative_auth) {
-         rpc_egress_counters expected = {0};
+         rpc_op_egress_counters expected = {0};
          int32_t *const handshake_counter =
             with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
@@ -1396,28 +1396,28 @@ _test_counters_auth (bool with_op_msg, bool pooled)
          expected.op_egress_total += member_count;
 
          wait_for_background_threads (expected);
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
       } else {
          // OP_QUERY / OP_MSG (for each replset member):
          //  - initial connection handshake by server monitor
-         const rpc_egress_counters expected = {
+         const rpc_op_egress_counters expected = {
             .op_egress_msg = with_op_msg ? member_count : 0,
             .op_egress_query = with_op_msg ? 0 : member_count,
             .op_egress_total = member_count,
          };
 
          wait_for_background_threads (expected);
-         ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+         ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
       }
    } else {
       client = test_framework_client_new_from_uri (uri, api);
       test_framework_set_ssl_opts (client);
-      ASSERT_RPC_EGRESS_COUNTERS_CURRENT (zero);
+      ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
    }
 
    mongoc_counter_auth_success_reset ();
    mongoc_counter_auth_failure_reset ();
-   rpc_egress_counters_reset ();
+   rpc_op_egress_counters_reset ();
 
    // Trigger:
    //  - one of (depending on `pooled`):
@@ -1442,7 +1442,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
                     auth_success,
                     auth_failure);
 
-   rpc_egress_counters expected = {0};
+   rpc_op_egress_counters expected = {0};
    int32_t *const handshake_counter =
       with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
@@ -1478,7 +1478,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    expected.op_egress_msg += 1;
    expected.op_egress_total += has_compressors + 1;
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
    mongoc_server_api_destroy (api);
    bson_free (uri_str);
@@ -1496,7 +1496,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    expected.op_egress_msg += 1;
    expected.op_egress_total += has_compressors + 1;
 
-   ASSERT_RPC_EGRESS_COUNTERS_CURRENT (expected);
+   ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 }
 
 static void
@@ -1567,54 +1567,57 @@ test_counters_install (TestSuite *suite)
 
    TestSuite_AddMockServerTest (
       suite,
-      "/counters/rpc/egress/cluster/single/op_query",
-      test_counters_rpc_egress_cluster_single_op_query);
-
-   TestSuite_AddMockServerTest (suite,
-                                "/counters/rpc/egress/cluster/single/op_msg",
-                                test_counters_rpc_egress_cluster_single_op_msg);
-
-   TestSuite_AddMockServerTest (suite,
-                                "/counters/rpc/egress/cluster/legacy",
-                                test_counters_rpc_egress_cluster_legacy);
+      "/counters/rpc/op_egress/cluster/single/op_query",
+      test_counters_rpc_op_egress_cluster_single_op_query);
 
    TestSuite_AddMockServerTest (
       suite,
-      "/counters/rpc/egress/cluster/pooled/op_query",
-      test_counters_rpc_egress_cluster_pooled_op_query);
+      "/counters/rpc/op_egress/cluster/single/op_msg",
+      test_counters_rpc_op_egress_cluster_single_op_msg);
 
    TestSuite_AddMockServerTest (suite,
-                                "/counters/rpc/egress/cluster/pooled/op_msg",
-                                test_counters_rpc_egress_cluster_pooled_op_msg);
+                                "/counters/rpc/op_egress/cluster/legacy",
+                                test_counters_rpc_op_egress_cluster_legacy);
 
    TestSuite_AddMockServerTest (
       suite,
-      "/counters/rpc/egress/awaitable_hello/op_query",
-      test_counters_rpc_egress_awaitable_hello_op_query);
+      "/counters/rpc/op_egress/cluster/pooled/op_query",
+      test_counters_rpc_op_egress_cluster_pooled_op_query);
 
    TestSuite_AddMockServerTest (
       suite,
-      "/counters/rpc/egress/awaitable_hello/op_msg",
-      test_counters_rpc_egress_awaitable_hello_op_msg);
+      "/counters/rpc/op_egress/cluster/pooled/op_msg",
+      test_counters_rpc_op_egress_cluster_pooled_op_msg);
+
+   TestSuite_AddMockServerTest (
+      suite,
+      "/counters/rpc/op_egress/awaitable_hello/op_query",
+      test_counters_rpc_op_egress_awaitable_hello_op_query);
+
+   TestSuite_AddMockServerTest (
+      suite,
+      "/counters/rpc/op_egress/awaitable_hello/op_msg",
+      test_counters_rpc_op_egress_awaitable_hello_op_msg);
+
+   TestSuite_AddMockServerTest (
+      suite,
+      "/counters/rpc/op_egress/mock_server/op_query",
+      test_counters_rpc_op_egress_mock_server_op_query);
 
    TestSuite_AddMockServerTest (suite,
-                                "/counters/rpc/egress/mock_server/op_query",
-                                test_counters_rpc_egress_mock_server_op_query);
-
-   TestSuite_AddMockServerTest (suite,
-                                "/counters/rpc/egress/mock_server/op_msg",
-                                test_counters_rpc_egress_mock_server_op_msg);
+                                "/counters/rpc/op_egress/mock_server/op_msg",
+                                test_counters_rpc_op_egress_mock_server_op_msg);
 
 #if defined(MONGOC_ENABLE_SSL)
    TestSuite_AddFull (suite,
-                      "/counters/rpc/egress/auth/single/op_query",
+                      "/counters/rpc/op_egress/auth/single/op_query",
                       test_counters_auth_single_op_query,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth,
                       test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
-                      "/counters/rpc/egress/auth/single/op_msg",
+                      "/counters/rpc/op_egress/auth/single/op_msg",
                       test_counters_auth_single_op_msg,
                       NULL,
                       NULL,
@@ -1622,14 +1625,14 @@ test_counters_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_13,
                       test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
-                      "/counters/rpc/egress/auth/pooled/op_query",
+                      "/counters/rpc/op_egress/auth/pooled/op_query",
                       test_counters_auth_pooled_op_query,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth,
                       test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
-                      "/counters/rpc/egress/auth/pooled/op_msg",
+                      "/counters/rpc/op_egress/auth/pooled/op_msg",
                       test_counters_auth_pooled_op_msg,
                       NULL,
                       NULL,
