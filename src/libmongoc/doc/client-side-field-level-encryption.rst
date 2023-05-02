@@ -1,7 +1,7 @@
-:man-page: using_client_side_encryption
+:man-page: client-side-field-level-encryption
 
-Using Client-Side Field Level Encryption
-========================================
+Client-Side Field Level Encryption
+==================================
 
 New in MongoDB 4.2, Client-Side Field Level Encryption (also referred to as Client-Side Encryption) allows administrators and developers to encrypt specific data fields in addition to other MongoDB encryption features.
 

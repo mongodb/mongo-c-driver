@@ -7,7 +7,7 @@ In-Use Encryption consists of two features:
    :titlesonly:
    :maxdepth: 1
 
-   using_client_side_encryption
+   client-side-field-level-encryption
    queryable-encryption
 
 Installation

@@ -13,7 +13,7 @@ Synopsis
                                          mongoc_auto_encryption_opts_t* opts,
                                          bson_error_t* error);
 
-Enable automatic client side encryption on a :symbol:`mongoc_client_t`. Requires libmongoc to be built with support for Client-Side Field Level Encryption. See the guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`.
+Enable automatic client side encryption on a :symbol:`mongoc_client_t`. Requires libmongoc to be built with support for Client-Side Field Level Encryption. See the guide for :doc:`Using Client-Side Field Level Encryption <client-side-field-level-encryption>`.
 
 Automatic encryption is an enterprise only feature that only applies to operations on a collection. Automatic encryption is not supported for operations on a database or view, and operations that are not bypassed will result in error. To bypass automatic encryption for all operations, bypass automatic encryption with :symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption()` in ``opts``.
 
@@ -41,7 +41,7 @@ True on success. False on error. On error, ``error`` is set.
 
   | :symbol:`mongoc_client_pool_enable_auto_encryption()`
 
-  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>` for libmongoc
+  | The guide for :doc:`Using Client-Side Field Level Encryption <client-side-field-level-encryption>` for libmongoc
 
   | The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_
 
