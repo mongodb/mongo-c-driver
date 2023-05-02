@@ -134,8 +134,6 @@ BSON_STATIC_ASSERT2 (sizeof_reply_header,
 
 
 void
-_mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array);
-void
 _mongoc_rpc_gather_no_inc (mongoc_rpc_t *rpc, mongoc_array_t *array);
 void
 _mongoc_rpc_op_egress_inc (const mongoc_rpc_t *rpc);
