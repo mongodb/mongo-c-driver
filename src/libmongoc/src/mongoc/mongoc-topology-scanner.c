@@ -1099,6 +1099,16 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
    BSON_ASSERT (!node->retired);
 
+   // If a new stream is needed, reset state authentication state.
+   // Authentication state is tied to a stream.
+   {
+      node->has_auth = false;
+      bson_reinit (&node->speculative_auth_response);
+      memset (
+         &node->sasl_supported_mechs, 0, sizeof (node->sasl_supported_mechs));
+      node->negotiated_sasl_supported_mechs = false;
+   }
+
    if (node->ts->initiator) {
       stream = node->ts->initiator (
          node->ts->uri, &node->host, node->ts->initiator_context, error);
@@ -1129,8 +1139,6 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
       node->ts->setup_err_cb (node->id, node->ts->cb_data, error);
       return;
    }
-
-   node->has_auth = false;
 }
 
 /*
