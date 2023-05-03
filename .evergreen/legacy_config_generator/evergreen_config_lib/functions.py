@@ -138,7 +138,7 @@ all_functions = OD([
         # -g: Run with gcov support.
         # -t: Codecov upload token.
         # perl: filter verbose "Found" list and "Processing" messages.
-        ./codecov -Zgt "${codecov_token}"
+        ./codecov -Zgt "${codecov_token}" | perl -lne 'print if not m|^.*\.gcov(\.\.\.)?$|'
         ''', test=False),
     )),
     ('compile coverage', Function(
