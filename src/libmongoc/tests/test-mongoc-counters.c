@@ -643,14 +643,18 @@ _test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
       with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
    {
+      const bson_t *const command = tmp_bson ("{'ping': 1}");
+
       // Trigger:
       //  - mongoc_topology_scanner_node_setup
       //  - mongoc_cluster_run_command_monitored
       future_t *const ping = future_client_command_simple (
-         client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         client, "db", command, NULL, NULL, &error);
 
       {
-         request_t *const request = mock_server_receives_any_hello (server);
+         request_t *const request =
+            with_op_msg ? mock_server_receives_hello_op_msg (server)
+                        : mock_server_receives_legacy_hello (server, NULL);
 
          // OP_QUERY 1 / OP_MSG 1:
          //  - by _mongoc_rpc_op_egress_inc
@@ -674,7 +678,8 @@ _test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
       }
 
       {
-         request_t *const request = mock_server_receives_request (server);
+         request_t *const request =
+            mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
 
          // OP_MSG 1 / OP_MSG 2:
          //  - by _mongoc_rpc_op_egress_inc
@@ -751,11 +756,14 @@ test_counters_rpc_op_egress_cluster_legacy (void)
 
    // Client must know a writeable server to trigger OP_KILL_CURSORS.
    {
+      const bson_t *const command = tmp_bson ("{'ping': 1}");
+
       future_t *const ping = future_client_command_simple (
-         client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         client, "db", command, NULL, NULL, &error);
 
       {
-         request_t *const request = mock_server_receives_any_hello (server);
+         request_t *const request =
+            mock_server_receives_legacy_hello (server, NULL);
 
          // OP_QUERY 1:
          //  - by _mongoc_rpc_op_egress_inc
@@ -780,7 +788,8 @@ test_counters_rpc_op_egress_cluster_legacy (void)
       }
 
       {
-         request_t *const request = mock_server_receives_request (server);
+         request_t *const request =
+            mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
 
          // OP_MSG 1:
          //  - by _mongoc_rpc_op_egress_inc
@@ -803,7 +812,8 @@ test_counters_rpc_op_egress_cluster_legacy (void)
    mongoc_client_kill_cursor (client, 123);
 
    {
-      request_t *const request = mock_server_receives_request (server);
+      request_t *const request =
+         mock_server_receives_kill_cursors (server, 123);
 
       ASSERT_WITH_MSG (request->opcode == MONGOC_OPCODE_KILL_CURSORS,
                        "expected OP_KILL_CURSORS request, but received: %s",
@@ -886,7 +896,9 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
       with_op_msg ? &expected.op_egress_msg : &expected.op_egress_query;
 
    {
-      request_t *const request = mock_server_receives_any_hello (server);
+      request_t *const request =
+         with_op_msg ? mock_server_receives_hello_op_msg (server)
+                     : mock_server_receives_legacy_hello (server, NULL);
 
       // OP_QUERY 1 / OP_MSG 1:
       //  - by _mongoc_rpc_op_egress_inc
@@ -906,11 +918,15 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
    }
 
    {
+      const bson_t *const command = tmp_bson ("{'ping': 1}");
+
       future_t *const ping = future_client_command_simple (
-         client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         client, "db", command, NULL, NULL, &error);
 
       {
-         request_t *const request = mock_server_receives_any_hello (server);
+         request_t *const request =
+            with_op_msg ? mock_server_receives_hello_op_msg (server)
+                        : mock_server_receives_legacy_hello (server, NULL);
 
          // OP_QUERY 2 / OP_MSG 2:
          //  - by _mongoc_rpc_op_egress_inc
@@ -936,7 +952,8 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
       }
 
       {
-         request_t *const request = mock_server_receives_request (server);
+         request_t *const request =
+            mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
 
          // OP_MSG 1 / OP_MSG 3:
          //  - by _mongoc_rpc_op_egress_inc
@@ -1050,12 +1067,19 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
          awaitable_hello = request;
       } else {
          const bool is_hello =
-            strcmp (request->command_name, HANDSHAKE_CMD_HELLO) ||
-            strcmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO);
+            strcmp (request->command_name, HANDSHAKE_CMD_HELLO) == 0;
+         const bool is_legacy_hello =
+            strcmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) == 0;
 
-         ASSERT_WITH_MSG (is_hello,
-                          "expected only hello requests, but got: %s",
-                          request->as_str);
+         if (with_op_msg) {
+            ASSERT_WITH_MSG (is_hello,
+                             "expected only OP_MSG hello requests, but got: %s",
+                             request->as_str);
+         } else {
+            ASSERT_WITH_MSG (is_hello || is_legacy_hello,
+                             "expected only hello requests, but got: %s",
+                             request->as_str);
+         }
 
          mock_server_replies_simple (request, hello);
          request_destroy (request);
@@ -1108,14 +1132,18 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
    ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
    {
+      const bson_t *const command = tmp_bson ("{'ping': 1}");
+
       // Trigger:
       //  - mongoc_cluster_run_command_private
       //  - mongoc_cluster_run_command_monitored
       future_t *const ping = future_client_command_simple (
-         client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         client, "db", command, NULL, NULL, &error);
 
       {
-         request_t *const request = mock_server_receives_any_hello (server);
+         request_t *const request =
+            with_op_msg ? mock_server_receives_hello_op_msg (server)
+                        : mock_server_receives_legacy_hello (server, NULL);
 
          // OP_QUERY 4 / OP_MSG 5:
          //  - by _mongoc_rpc_op_egress_inc
@@ -1141,7 +1169,8 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
       }
 
       {
-         request_t *const request = mock_server_receives_request (server);
+         request_t *const request =
+            mock_server_receives_msg (server, MONGOC_MSG_NONE, command);
 
          // OP_MSG 2 / OP_MSG 6:
          //  - by _mongoc_rpc_op_egress_inc
@@ -1227,11 +1256,15 @@ _test_counters_rpc_op_egress_mock_server (bool with_op_msg)
 
    ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (zero);
 
-   future_t *const future = future_client_command_simple (
-      client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-
-   mock_server_replies_ok_and_destroys (mock_server_receives_request (server));
-   ASSERT_OR_PRINT (future_get_bool (future), error);
+   {
+      const bson_t *const command = tmp_bson ("{'ping': 1}");
+      future_t *const future = future_client_command_simple (
+         client, "db", command, NULL, NULL, &error);
+      mock_server_replies_ok_and_destroys (
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, command));
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+   }
 
    // Handshake (OP_QUERY 1 / OP_MSG 1) + command (OP_MSG 1 / OP_MSG 2).
    // Mock server replies should not contribute RPC egress counters.
@@ -1243,7 +1276,6 @@ _test_counters_rpc_op_egress_mock_server (bool with_op_msg)
 
    ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-   future_destroy (future);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 
