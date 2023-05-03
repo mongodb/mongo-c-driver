@@ -71,5 +71,5 @@ The format for "kmip" is as follows:
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | :doc:`In-Use Encryption <in-use-encryption>`
+  | :doc:`in-use-encryption`
 

@@ -51,5 +51,5 @@ See :doc:`configuring_tls` for a description of the behavior of these options.
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | :doc:`In-Use Encryption <in-use-encryption>`
+  | :doc:`in-use-encryption`
 

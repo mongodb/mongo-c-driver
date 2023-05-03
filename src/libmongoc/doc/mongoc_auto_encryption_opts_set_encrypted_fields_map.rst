@@ -29,5 +29,5 @@ The schema map does not apply to collections encrypted with: :doc:`Client-Side F
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | :doc:`In-Use Encryption <in-use-encryption>`
+  | :doc:`in-use-encryption`
 

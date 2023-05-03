@@ -58,7 +58,7 @@ Parameters
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | :doc:`In-Use Encryption <in-use-encryption>`
+  | :doc:`in-use-encryption`
 
   | MongoDB Manual documentation for ``crypt_shared``: `Automatic Encryption Shared Library <https://www.mongodb.com/docs/manual/core/queryable-encryption/reference/shared-library/>`_
 

@@ -26,5 +26,5 @@ Parameters
 
   | :symbol:`mongoc_auto_encryption_opts_set_keyvault_client_pool()`
 
-  | :doc:`In-Use Encryption <in-use-encryption>`
+  | :doc:`in-use-encryption`
 
