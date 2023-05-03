@@ -1052,7 +1052,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-openssl-static-cse
   tags:
@@ -1070,7 +1070,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-darwinssl-cse
   tags:
@@ -1088,7 +1088,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-winssl-cse
   tags:
@@ -1106,7 +1106,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-asan-openssl-cse
   tags:
@@ -1122,7 +1122,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-openssl-1.0.1
   commands:

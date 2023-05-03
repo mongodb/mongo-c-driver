@@ -96,7 +96,7 @@ class CompileWithClientSideEncryption(CompileTask):
         # Compiling with ClientSideEncryption support requires linking against the library libmongocrypt.
         super(CompileWithClientSideEncryption, self).__init__(*args,
                                                               COMPILE_LIBMONGOCRYPT="ON",
-                                                              EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON",
+                                                              EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON",
                                                               **kwargs)
         self.add_tags('client-side-encryption', 'special')
 
@@ -109,7 +109,7 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
                                                                   CHECK_LOG="ON",
                                                                   sanitize=[
                                                                       'address'],
-                                                                  EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF",
+                                                                  EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                                                                   PATH='/usr/lib/llvm-3.8/bin:$PATH',
                                                                   **kwargs)
         self.add_tags('client-side-encryption')

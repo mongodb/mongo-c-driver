@@ -87,7 +87,7 @@ functions:
           COMPILE_LIBMONGOCRYPT: "ON"
         args:
           - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
+          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
   cse-sasl-cyrus-openssl-compile:
     - command: expansions.update
       params:
@@ -104,7 +104,7 @@ functions:
           COMPILE_LIBMONGOCRYPT: "ON"
         args:
           - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
+          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
   cse-sasl-cyrus-winssl-compile:
     - command: expansions.update
       params:
@@ -121,7 +121,7 @@ functions:
           COMPILE_LIBMONGOCRYPT: "ON"
         args:
           - -c
-          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
+          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
   early-termination:
     - command: subprocess.exec
       params:
