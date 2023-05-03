@@ -27,7 +27,7 @@ class CompileCommon(Function):
             expansions_update(updates=updates),
             bash_exec(
                 command_type=EvgCommandType.TEST,
-                script='EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh',
+                script='EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh',
                 working_dir='mongoc',
                 add_expansions_to_env=True,
                 env={

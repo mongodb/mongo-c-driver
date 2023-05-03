@@ -285,14 +285,16 @@ if [[ "${COVERAGE}" == "ON" ]]; then
     "--no-external"
   )
 
-  case "${CC}" in
-  clang)
-    lcov --gcov-tool "$(pwd)/.evergreen/scripts/llvm-gcov.sh" "${coverage_args[@]}"
-    ;;
-  *)
-    lcov --gcov-tool gcov "${coverage_args[@]}"
-    ;;
-  esac
+  {
+    case "${CC}" in
+    clang)
+      lcov --gcov-tool "$(pwd)/.evergreen/scripts/llvm-gcov.sh" "${coverage_args[@]}"
+      ;;
+    *)
+      lcov --gcov-tool gcov "${coverage_args[@]}"
+      ;;
+    esac
 
-  genhtml .coverage.lcov --legend --title "mongoc code coverage" --output-directory coverage
+    genhtml .coverage.lcov --legend --title "mongoc code coverage" --output-directory coverage
+  } | perl -lne 'print if not m|Processing |'
 fi

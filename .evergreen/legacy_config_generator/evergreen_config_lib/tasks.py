@@ -96,7 +96,7 @@ class CompileWithClientSideEncryption(CompileTask):
         # Compiling with ClientSideEncryption support requires linking against the library libmongocrypt.
         super(CompileWithClientSideEncryption, self).__init__(*args,
                                                               COMPILE_LIBMONGOCRYPT="ON",
-                                                              EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON",
+                                                              EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON",
                                                               **kwargs)
         self.add_tags('client-side-encryption', 'special')
 
@@ -109,7 +109,7 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
                                                                   CHECK_LOG="ON",
                                                                   sanitize=[
                                                                       'address'],
-                                                                  EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF",
+                                                                  EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                                                                   PATH='/usr/lib/llvm-3.8/bin:$PATH',
                                                                   **kwargs)
         self.add_tags('client-side-encryption')
@@ -389,7 +389,7 @@ class CoverageTask(MatrixTask):
                ('auth', [True]),
                ('sasl', ['sasl']),
                ('ssl', ['openssl']),
-               ('cse', [True])])
+               ('cse', [False, True])])
 
     def __init__(self, *args, **kwargs):
         super(CoverageTask, self).__init__(*args, **kwargs)
@@ -419,13 +419,17 @@ class CoverageTask(MatrixTask):
     def to_dict(self):
         task = super(CoverageTask, self).to_dict()
         commands = task['commands']
-        if self.depends_on:
-            commands.append(
-                func('fetch-build', BUILD_NAME=self.depends_on['name']))
 
-        # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
-        commands.append(
-            func('compile coverage', SASL='AUTO', SSL='OPENSSL'))
+        if self.cse:
+            commands.append(func('compile coverage',
+                                 SASL='AUTO',
+                                 SSL='OPENSSL',
+                                 COMPILE_LIBMONGOCRYPT='ON',
+                                 EXTRA_CONFIGURE_FLAGS='EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON"'))
+        else:
+            commands.append(func('compile coverage',
+                                 SASL='AUTO',
+                                 SSL='OPENSSL'))
 
         commands.append(func('fetch-det'))
         commands.append(func('bootstrap-mongo-orchestration',
@@ -433,14 +437,14 @@ class CoverageTask(MatrixTask):
                              TOPOLOGY=self.topology,
                              AUTH='auth' if self.auth else 'noauth',
                              SSL=self.display('ssl')))
-        extra = {}
+        extra = {
+            'COVERAGE': 'ON'
+        }
 
         commands.append(func('run-simple-http-server'))
         if self.cse:
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
-            commands.append(func('fetch-det'))
             commands.append(func('run-mock-kms-servers'))
-        extra["COVERAGE"] = 'ON'
         commands.append(func('run-tests',
                              AUTH=self.display('auth'),
                              SSL=self.display('ssl'),
@@ -451,12 +455,11 @@ class CoverageTask(MatrixTask):
         return task
 
     def _check_allowed(self):
-        # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl-cse.
+        # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl (+ cse).
         require(self.topology == 'replica_set')
         require(self.auth)
         require(self.sasl == 'sasl')
         require(self.ssl == 'openssl')
-        require(self.cse)
         require(self.version == 'latest')
 
         # Address sanitizer only with auth+SSL or no auth + no SSL.

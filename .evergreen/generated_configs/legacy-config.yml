@@ -182,8 +182,16 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        export CODECOV_TOKEN=${codecov_token}
-        curl -s https://codecov.io/bash | bash
+        # Note: coverage is currently only enabled on the ubuntu1804 distro.
+        # This script does not support MacOS, Windows, or non-x86_64 distros.
+        # Update accordingly if code coverage is expanded to other distros.
+        curl -Os https://uploader.codecov.io/latest/linux/codecov
+        chmod +x codecov
+        # -Z: Exit with a non-zero value if error.
+        # -g: Run with gcov support.
+        # -t: Codecov upload token.
+        # perl: filter verbose "Found" list and "Processing" messages.
+        ./codecov -Zgt "${codecov_token}" | perl -lne 'print if not m|^.*\.gcov(\.\.\.)?$|'
   compile coverage:
   - command: shell.exec
     type: test
@@ -1044,7 +1052,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-openssl-static-cse
   tags:
@@ -1062,7 +1070,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-darwinssl-cse
   tags:
@@ -1080,7 +1088,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-winssl-cse
   tags:
@@ -1098,7 +1106,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-asan-openssl-cse
   tags:
@@ -1114,7 +1122,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-openssl-1.0.1
   commands:
@@ -1148,9 +1156,8 @@ tasks:
       script: |-
         set -o errexit
         bash ./.evergreen/scripts/build-and-test-with-toolchain.sh
-- name: test-coverage-latest-replica-set-auth-sasl-openssl-cse
+- name: test-coverage-latest-replica-set-auth-sasl-openssl
   tags:
-  - client-side-encryption
   - latest
   - test-coverage
   commands:
@@ -1166,7 +1173,33 @@ tasks:
       SSL: openssl
       TOPOLOGY: replica_set
   - func: run-simple-http-server
+  - func: run-tests
+    vars:
+      AUTH: auth
+      COVERAGE: 'ON'
+      SSL: openssl
+  - func: upload coverage
+  - func: update codecov.io
+- name: test-coverage-latest-replica-set-auth-sasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - test-coverage
+  commands:
+  - func: compile coverage
+    vars:
+      COMPILE_LIBMONGOCRYPT: 'ON'
+      EXTRA_CONFIGURE_FLAGS: EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON"
+      SASL: AUTO
+      SSL: OPENSSL
   - func: fetch-det
+  - func: bootstrap-mongo-orchestration
+    vars:
+      AUTH: auth
+      MONGODB_VERSION: latest
+      SSL: openssl
+      TOPOLOGY: replica_set
+  - func: run-simple-http-server
   - func: run-mock-kms-servers
   - func: run-tests
     vars:

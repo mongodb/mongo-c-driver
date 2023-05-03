@@ -1,3 +1,4 @@
 ignore:
-  - "src/libmongoc/tests/mock_server"
-  - "src/zlib-1.2.13"
+  - "src/kms-message"
+  - "src/zlib-*"
+  - "src/*/tests"
