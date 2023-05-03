@@ -182,8 +182,16 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        export CODECOV_TOKEN=${codecov_token}
-        curl -s https://codecov.io/bash | bash
+        # Note: coverage is currently only enabled on the ubuntu1804 distro.
+        # This script does not support MacOS, Windows, or non-x86_64 distros.
+        # Update accordingly if code coverage is expanded to other distros.
+        curl -Os https://uploader.codecov.io/latest/linux/codecov
+        chmod +x codecov
+        # -Z: Exit with a non-zero value if error.
+        # -g: Run with gcov support.
+        # -t: Codecov upload token.
+        # perl: filter verbose "Found" list and "Processing" messages.
+        ./codecov -Zgt "${codecov_token}"
   compile coverage:
   - command: shell.exec
     type: test
