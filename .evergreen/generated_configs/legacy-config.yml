@@ -1156,9 +1156,8 @@ tasks:
       script: |-
         set -o errexit
         bash ./.evergreen/scripts/build-and-test-with-toolchain.sh
-- name: test-coverage-latest-replica-set-auth-sasl-openssl-cse
+- name: test-coverage-latest-replica-set-auth-sasl-openssl
   tags:
-  - client-side-encryption
   - latest
   - test-coverage
   commands:
@@ -1174,7 +1173,33 @@ tasks:
       SSL: openssl
       TOPOLOGY: replica_set
   - func: run-simple-http-server
+  - func: run-tests
+    vars:
+      AUTH: auth
+      COVERAGE: 'ON'
+      SSL: openssl
+  - func: upload coverage
+  - func: update codecov.io
+- name: test-coverage-latest-replica-set-auth-sasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - test-coverage
+  commands:
+  - func: compile coverage
+    vars:
+      COMPILE_LIBMONGOCRYPT: 'ON'
+      EXTRA_CONFIGURE_FLAGS: EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON"
+      SASL: AUTO
+      SSL: OPENSSL
   - func: fetch-det
+  - func: bootstrap-mongo-orchestration
+    vars:
+      AUTH: auth
+      MONGODB_VERSION: latest
+      SSL: openssl
+      TOPOLOGY: replica_set
+  - func: run-simple-http-server
   - func: run-mock-kms-servers
   - func: run-tests
     vars:
