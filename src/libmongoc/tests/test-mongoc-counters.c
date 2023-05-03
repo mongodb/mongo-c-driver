@@ -1324,28 +1324,10 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    // handshake even with speculative authentication.
    const char *const auth_mechanism = "SCRAM-SHA-1";
 
-   char *const test_user = "user";
-   char *const test_password = "password";
+   char *const test_user = test_framework_get_admin_user ();
+   char *const test_password = test_framework_get_admin_password ();
 
    bson_error_t error = {0};
-
-   {
-      mongoc_client_t *const setup_client =
-         test_framework_new_default_client ();
-      mongoc_database_t *const admin =
-         mongoc_client_get_database (setup_client, "admin");
-      (void) mongoc_database_remove_user (admin, test_user, NULL);
-      ASSERT_OR_PRINT (mongoc_database_add_user (
-                          admin,
-                          test_user,
-                          test_password,
-                          tmp_bson ("{'0': {'role': 'root', 'db': 'admin'}}"),
-                          NULL,
-                          &error),
-                       error);
-      mongoc_client_destroy (setup_client);
-      mongoc_database_destroy (admin);
-   }
 
    // Obtain URI before resetting RPC egress counters.
    char *const uri_str = test_framework_get_uri_str ();
@@ -1483,6 +1465,8 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    mongoc_server_api_destroy (api);
    bson_free (uri_str);
    mongoc_uri_destroy (uri);
+   bson_free (test_password);
+   bson_free (test_user);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
