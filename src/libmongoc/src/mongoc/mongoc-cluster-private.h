@@ -234,10 +234,15 @@ _mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri,
                                    bson_t *cmd /* OUT */,
                                    bson_error_t *error /* OUT */);
 
-/* Returns true if a versioned server API has been selected,
- * otherwise returns false. */
+/* Returns true if a versioned server API has been selected, otherwise returns
+ * false. */
 bool
 mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster);
+
+/* Returns true if load balancing mode has been selected, otherwise returns
+ * false. */
+bool
+mongoc_cluster_uses_loadbalanced (const mongoc_cluster_t *cluster);
 
 #ifdef MONGOC_ENABLE_CRYPTO
 void

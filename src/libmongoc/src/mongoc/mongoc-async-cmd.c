@@ -347,6 +347,7 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
       used_temp_iovec = true;
    }
 
+   _mongoc_rpc_op_egress_inc (&acmd->rpc);
    bytes = mongoc_stream_writev (acmd->stream, iovec, niovec, 0);
 
    if (used_temp_iovec) {
