@@ -225,6 +225,135 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_rpc_prep_command --
+ *
+ *       Prepare an RPC for mongoc_cluster_run_command_rpc. @cmd_ns and
+ *       @cmd must not be freed or modified while the RPC is in use.
+ *
+ * Side effects:
+ *       Fills out the RPC, including pointers into @cmd_ns and @command.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
+                          const char *cmd_ns,
+                          mongoc_cmd_t *cmd)
+
+{
+   rpc->header.msg_len = 0;
+   rpc->header.request_id = 0;
+   rpc->header.response_to = 0;
+   rpc->header.opcode = MONGOC_OPCODE_QUERY;
+   rpc->query.collection = cmd_ns;
+   rpc->query.skip = 0;
+   rpc->query.n_return = -1;
+   rpc->query.fields = NULL;
+   rpc->query.query = bson_get_data (cmd->command);
+
+   /* Find, getMore And killCursors Commands Spec: "When sending a find command
+    * rather than a legacy OP_QUERY find, only the secondaryOk flag is honored."
+    * For other cursor-typed commands like aggregate, only secondaryOk can be
+    * set. Clear bits except secondaryOk; leave secondaryOk set only if it is
+    * already.
+    */
+   rpc->query.flags = cmd->query_flags & MONGOC_QUERY_SECONDARY_OK;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_compress --
+ *
+ *       Takes a (little endian) rpc struct and creates a OP_COMPRESSED
+ *       compressed opcode based on the provided compressor_id.
+ *       The in-place updated rpc struct remains little endian.
+ *
+ * Side effects:
+ *       Overwrites the RPC, and clears and overwrites the cluster buffer
+ *       with the compressed results.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static char *
+_mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
+                      int32_t compressor_id,
+                      mongoc_rpc_t *rpc_le,
+                      bson_error_t *error)
+{
+   const size_t allocate = BSON_UINT32_FROM_LE (rpc_le->header.msg_len) - 16u;
+   BSON_ASSERT (allocate > 0u);
+
+   char *const data = bson_malloc0 (allocate);
+   const size_t size = _mongoc_cluster_buffer_iovec (
+      cluster->iov.data, cluster->iov.len, 16, data);
+   size_t output_length =
+      mongoc_compressor_max_compressed_length (compressor_id, size);
+
+   if (!output_length) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Could not determine compression bounds for %s",
+                      mongoc_compressor_id_to_name (compressor_id));
+      bson_free (data);
+      return NULL;
+   }
+
+   int32_t compression_level = -1;
+
+   if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
+      compression_level = mongoc_uri_get_option_as_int32 (
+         cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
+   }
+
+   BSON_ASSERT (size > 0u);
+
+   char *const output = (char *) bson_malloc0 (output_length);
+   if (mongoc_compress (compressor_id,
+                        compression_level,
+                        data,
+                        size,
+                        output,
+                        &output_length)) {
+      rpc_le->header.msg_len = 0;
+      rpc_le->compressed.original_opcode =
+         BSON_UINT32_FROM_LE (rpc_le->header.opcode);
+      rpc_le->header.opcode = MONGOC_OPCODE_COMPRESSED;
+      rpc_le->header.request_id =
+         BSON_UINT32_FROM_LE (rpc_le->header.request_id);
+      rpc_le->header.response_to =
+         BSON_UINT32_FROM_LE (rpc_le->header.response_to);
+
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, size));
+      BSON_ASSERT (bson_in_range_unsigned (int32_t, output_length));
+
+      rpc_le->compressed.uncompressed_size = (int32_t) size;
+      rpc_le->compressed.compressor_id = compressor_id;
+      rpc_le->compressed.compressed_message = (const uint8_t *) output;
+      rpc_le->compressed.compressed_message_len = (int32_t) output_length;
+      bson_free (data);
+
+
+      _mongoc_array_destroy (&cluster->iov);
+      _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
+      _mongoc_rpc_gather (rpc_le, &cluster->iov);
+      _mongoc_rpc_swab_to_le (rpc_le);
+      return output;
+   } else {
+      MONGOC_WARNING ("Could not compress data with %s",
+                      mongoc_compressor_id_to_name (compressor_id));
+   }
+   bson_free (data);
+   bson_free (output);
+   return NULL;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cluster_run_command_opquery --
  *
  *       Internal function to run a command on a given stream. @error and

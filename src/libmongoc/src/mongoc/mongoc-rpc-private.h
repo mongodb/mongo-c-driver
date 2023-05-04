@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
-
 #ifndef MONGOC_RPC_PRIVATE_H
 #define MONGOC_RPC_PRIVATE_H
 
-#include <bson/bson.h>
-#include <stddef.h>
+#include "mongoc-prelude.h"
 
 #include "mongoc-array-private.h"
-#include "mongoc-cmd-private.h"
 #include "mongoc-iovec.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-flags.h"
-/* forward declaration */
-struct _mongoc_cluster_t;
+
+#include <bson/bson.h>
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 BSON_BEGIN_DECLS
 
@@ -156,11 +154,6 @@ bool
 _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply, bson_t *bson);
 bool
 _mongoc_rpc_reply_get_first_msg (mongoc_rpc_msg_t *reply, bson_t *bson);
-
-void
-_mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
-                          const char *cmd_ns,
-                          mongoc_cmd_t *cmd);
 bool
 _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
                       int32_t error_api_version,
@@ -178,17 +171,6 @@ _mongoc_cmd_check_ok_no_wce (const bson_t *doc,
 
 bool
 _mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen);
-
-char *
-_mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
-                      int32_t compressor_id,
-                      mongoc_rpc_t *rpc_le,
-                      bson_error_t *error);
-
-bool
-_mongoc_rpc_decompress_if_necessary (mongoc_rpc_t *rpc,
-                                     mongoc_buffer_t *buffer,
-                                     bson_error_t *error);
 
 BSON_END_DECLS
 
