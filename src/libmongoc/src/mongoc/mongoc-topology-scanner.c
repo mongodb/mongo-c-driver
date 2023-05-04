@@ -421,6 +421,10 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
       ssl_opts = ts->ssl_opts;
 #endif
 
+      // _mongoc_topology_scanner_add_speculative_authentication is called with
+      // NULL for the scram_cache argument. The scram cache is not used for
+      // speculative authentication in the topology scanner. This is planned to
+      // be improved in CDRIVER-3642.
       _mongoc_topology_scanner_add_speculative_authentication (
          &cmd, ts->uri, ssl_opts, NULL, &node->scram);
    }
