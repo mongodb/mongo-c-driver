@@ -257,6 +257,19 @@ _mongoc_cluster_get_auth_cmd_scram (mongoc_crypto_hash_algorithm_t algo,
                                     bson_error_t *error /* OUT */);
 #endif /* MONGOC_ENABLE_CRYPTO */
 
+char *
+_mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
+                      int32_t compressor_id,
+                      mongoc_rpc_t *rpc_le,
+                      bson_error_t *error);
+bool
+_mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen);
+
+bool
+_mongoc_rpc_decompress_if_necessary (mongoc_rpc_t *rpc,
+                                     mongoc_buffer_t *buffer /* IN/OUT */,
+                                     bson_error_t *error /* OUT */);
+
 BSON_END_DECLS
 
 

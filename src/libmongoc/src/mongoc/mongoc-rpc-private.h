@@ -169,9 +169,6 @@ _mongoc_cmd_check_ok_no_wce (const bson_t *doc,
                              int32_t error_api_version,
                              bson_error_t *error);
 
-bool
-_mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen);
-
 BSON_END_DECLS
 
 

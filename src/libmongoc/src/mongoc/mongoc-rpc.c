@@ -17,7 +17,6 @@
 
 #include "mongoc-rpc-private.h"
 
-#include "mongoc-compression-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-trace-private.h"
 
@@ -820,52 +819,6 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
       break;
    }
    printf ("\n");
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_rpc_decompress --
- *
- *       Takes a (little endian) rpc struct assumed to be OP_COMPRESSED
- *       and decompresses the opcode into its original opcode.
- *       The in-place updated rpc struct remains little endian.
- *
- * Side effects:
- *       Overwrites the RPC, along with the provided buf with the
- *       compressed results.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-_mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen)
-{
-   size_t uncompressed_size =
-      BSON_UINT32_FROM_LE (rpc_le->compressed.uncompressed_size);
-   bool ok;
-   size_t msg_len = BSON_UINT32_TO_LE (buflen);
-   const size_t original_uncompressed_size = uncompressed_size;
-
-   BSON_ASSERT (uncompressed_size <= buflen);
-   memcpy (buf, (void *) (&msg_len), 4);
-   memcpy (buf + 4, (void *) (&rpc_le->header.request_id), 4);
-   memcpy (buf + 8, (void *) (&rpc_le->header.response_to), 4);
-   memcpy (buf + 12, (void *) (&rpc_le->compressed.original_opcode), 4);
-
-   ok = mongoc_uncompress (rpc_le->compressed.compressor_id,
-                           rpc_le->compressed.compressed_message,
-                           rpc_le->compressed.compressed_message_len,
-                           buf + 16,
-                           &uncompressed_size);
-
-   BSON_ASSERT (original_uncompressed_size == uncompressed_size);
-
-   if (ok) {
-      return _mongoc_rpc_scatter (rpc_le, buf, buflen);
-   }
-
-   return false;
 }
 
 /*
