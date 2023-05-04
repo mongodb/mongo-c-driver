@@ -12,7 +12,7 @@ Synopsis
    mongoc_auto_encryption_opts_set_keyvault_namespace (
       mongoc_auto_encryption_opts_t *opts, const char *db, const char *coll);
 
-Set the database and collection name of the key vault. The key vault is the specially designated collection containing encrypted data keys for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_.
+Set the database and collection name of the key vault. The key vault is the specially designated collection containing encrypted data keys for :doc:`in-use-encryption`.
 
 Parameters
 ----------
@@ -25,5 +25,5 @@ Parameters
 
   | :symbol:`mongoc_client_enable_auto_encryption()`
 
-  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+  | :doc:`in-use-encryption`
 

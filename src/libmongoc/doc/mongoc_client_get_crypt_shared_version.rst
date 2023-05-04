@@ -31,7 +31,7 @@ crypt_shared_ library is loaded, or auto-encryption is not loaded for the given
 be modified or freed. The returned pointer is only valid for the lifetime of
 ``client``.
 
-.. _crypt_shared: https://github.com/mongodb/specifications/blob/master/source/client-side-encryption/client-side-encryption.rst#crypt-shared
+.. _crypt_shared: https://www.mongodb.com/docs/manual/core/queryable-encryption/reference/shared-library/
 
 .. seealso::
 

@@ -25,5 +25,5 @@ Parameters
 
   | :symbol:`mongoc_client_encryption_new()`
 
-  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+  | :doc:`in-use-encryption`
 

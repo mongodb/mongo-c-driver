@@ -420,7 +420,7 @@ if (NOT ENABLE_ICU STREQUAL OFF)
    endif()
 endif()
 
-# Configure client side encryption.
+# Configure In-Use Encryption
 set (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION 0)
 if (NOT ENABLE_CLIENT_SIDE_ENCRYPTION MATCHES "AUTO|ON|OFF")
    message (FATAL_ERROR, "ENABLE_CLIENT_SIDE_ENCRYPTION option must be AUTO, ON, or OFF")
