@@ -606,10 +606,6 @@ mongoc_topology_scanner_node_disconnect (mongoc_topology_scanner_node_t *node,
       }
 
       node->stream = NULL;
-      memset (
-         &node->sasl_supported_mechs, 0, sizeof (node->sasl_supported_mechs));
-      node->negotiated_sasl_supported_mechs = false;
-      bson_reinit (&node->speculative_auth_response);
    }
    mongoc_server_description_destroy (node->handshake_sd);
    node->handshake_sd = NULL;
