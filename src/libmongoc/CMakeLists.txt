@@ -495,6 +495,7 @@ endif ()
 
 set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-array.c
@@ -758,6 +759,17 @@ if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    endif()
 endif ()
 
+if (MONGOC_ENABLE_STATIC_BUILD)
+   add_library (mcd_rpc STATIC EXCLUDE_FROM_ALL ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c)
+   target_include_directories (mcd_rpc PUBLIC ${PROJECT_SOURCE_DIR}/src)
+   target_link_libraries (mcd_rpc PUBLIC ${BSON_STATIC_LIBRARIES})
+   if (NOT WIN32 AND ENABLE_PIC)
+      target_compile_options (mcd_rpc PUBLIC -fPIC)
+   endif ()
+   target_compile_definitions (mcd_rpc PUBLIC ${BSON_STATIC_PUBLIC_DEFINITIONS})
+   set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
+endif ()
+
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
@@ -982,6 +994,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
    ${PROJECT_SOURCE_DIR}/tests/test-service-gcp.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-integer.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
    ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
    ${PROJECT_SOURCE_DIR}/tests/unified/entity-map.c
@@ -1259,6 +1272,15 @@ export (EXPORT mongoc-targets
    NAMESPACE mongo::
    FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-targets.cmake"
 )
+
+if (TARGET mcd_rpc)
+   # Note: the (mongo::)bson_static target must be included separately via find_package or include.
+   export (
+      TARGETS mcd_rpc
+      NAMESPACE mongo::
+      FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mcd-rpc-targets.cmake"
+   )
+endif ()
 
 configure_file (src/mongoc-config.cmake
    "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"
