@@ -4265,7 +4265,11 @@ test_client_install (TestSuite *suite)
                       test_mongoc_client_authenticate_cached_single,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_auth);
+                      test_framework_skip_if_no_auth,
+                      // speculativeAuthentication in single-threaded clients
+                      // does not use the scram cache. speculativeAuthentication
+                      // was introduced in server 4.4 (maxWireVersion=9)
+                      test_framework_skip_if_max_wire_version_more_than_8);
    TestSuite_AddFull (suite,
                       "/Client/authenticate_failure",
                       test_mongoc_client_authenticate_failure,

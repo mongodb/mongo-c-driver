@@ -421,6 +421,10 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
       ssl_opts = ts->ssl_opts;
 #endif
 
+      // _mongoc_topology_scanner_add_speculative_authentication is called with
+      // NULL for the scram_cache argument. The scram cache is not used for
+      // speculative authentication in the topology scanner. This is planned to
+      // be improved in CDRIVER-3642.
       _mongoc_topology_scanner_add_speculative_authentication (
          &cmd, ts->uri, ssl_opts, NULL, &node->scram);
    }
@@ -606,10 +610,6 @@ mongoc_topology_scanner_node_disconnect (mongoc_topology_scanner_node_t *node,
       }
 
       node->stream = NULL;
-      memset (
-         &node->sasl_supported_mechs, 0, sizeof (node->sasl_supported_mechs));
-      node->negotiated_sasl_supported_mechs = false;
-      bson_reinit (&node->speculative_auth_response);
    }
    mongoc_server_description_destroy (node->handshake_sd);
    node->handshake_sd = NULL;
@@ -1099,6 +1099,17 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
    BSON_ASSERT (!node->retired);
 
+   // If a new stream is needed, reset state authentication state.
+   // Authentication state is tied to a stream.
+   {
+      node->has_auth = false;
+      bson_reinit (&node->speculative_auth_response);
+      node->scram.step = 0;
+      memset (
+         &node->sasl_supported_mechs, 0, sizeof (node->sasl_supported_mechs));
+      node->negotiated_sasl_supported_mechs = false;
+   }
+
    if (node->ts->initiator) {
       stream = node->ts->initiator (
          node->ts->uri, &node->host, node->ts->initiator_context, error);
@@ -1129,8 +1140,6 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
       node->ts->setup_err_cb (node->id, node->ts->cb_data, error);
       return;
    }
-
-   node->has_auth = false;
 }
 
 /*
