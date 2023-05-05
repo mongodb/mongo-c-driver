@@ -383,6 +383,169 @@ test_mongoc_speculative_auth_request_x509_pool (void)
    bson_destroy (response);
 }
 
+// test_mongoc_speculative_auth_request_x509_network_error is a regression test
+// for CDRIVER-4635.
+static void
+test_mongoc_speculative_auth_request_x509_network_error (void)
+{
+   // Start mock server.
+   mock_server_t *server;
+   {
+      mongoc_ssl_opt_t server_ssl_opts = {0};
+      server_ssl_opts.ca_file = CERT_CA;
+      server_ssl_opts.pem_file = CERT_SERVER;
+      server = mock_server_new ();
+      mock_server_set_ssl_opts (server, &server_ssl_opts);
+      mock_server_run (server);
+   }
+
+   // Create URI configured for X509 authentication.
+   mongoc_uri_t *uri;
+   {
+      uri = mongoc_uri_copy (mock_server_get_uri (server));
+      mongoc_uri_set_option_as_int32 (
+         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 15000);
+      _setup_speculative_auth_x_509 (uri);
+   }
+
+   // Create single threaded client.
+   mongoc_client_t *client;
+   {
+      mongoc_ssl_opt_t client_ssl_opts = {0};
+      client_ssl_opts.ca_file = CERT_CA;
+      client_ssl_opts.pem_file = CERT_CLIENT;
+      client = test_framework_client_new_from_uri (uri, NULL);
+      ASSERT (client);
+      mongoc_client_set_ssl_opts (client, &client_ssl_opts);
+   }
+
+   // Send a ping, and receive a network error.
+   {
+      bson_error_t error;
+
+      // Send ping.
+      future_t *future = future_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+      // Expect a hello including speculativeAuthenticate field.
+      {
+         request_t *request = mock_server_receives_any_hello (server);
+         ASSERT (request);
+         const bson_t *request_doc = request_get_doc (request, 0);
+         ASSERT (request_doc);
+         char *request_str =
+            bson_as_canonical_extended_json (request_doc, NULL);
+         ASSERT_WITH_MSG (
+            bson_has_field (request_doc, "speculativeAuthenticate"),
+            "expected hello to contain 'speculativeAuthenticate', got: %s",
+            request_str);
+         // Respond with a non-empty document "speculativeAuthenticate" field.
+         // The C driver will interpret this as a successful X509
+         // authentication.
+         bson_t *response = BCON_NEW ("ok",
+                                      BCON_INT32 (1),
+                                      "isWritablePrimary",
+                                      BCON_BOOL (true),
+                                      "minWireVersion",
+                                      BCON_INT32 (WIRE_VERSION_MIN),
+                                      "maxWireVersion",
+                                      BCON_INT32 (WIRE_VERSION_MAX),
+                                      "speculativeAuthenticate",
+                                      "{",
+                                      "foo",
+                                      "bar",
+                                      "}");
+
+         char *response_str = bson_as_canonical_extended_json (response, NULL);
+         mock_server_replies_simple (request, response_str);
+         bson_free (response_str);
+         bson_destroy (response);
+         bson_free (request_str);
+         request_destroy (request);
+      }
+
+      // Expect a ping command. Respond with a network error.
+      {
+         request_t *request = mock_server_receives_msg (
+            server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
+         ASSERT (request);
+         // Cause a network error.
+         mock_server_hangs_up (request);
+         request_destroy (request);
+      }
+
+      // Expect error.
+      ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "socket error");
+      future_destroy (future);
+   }
+
+   // Send another ping, expect another "speculativeAuthenticate" attempt.
+   {
+      bson_error_t error;
+
+      // Send ping.
+      future_t *future = future_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+      // Expect a hello including speculativeAuthenticate field.
+      {
+         request_t *request = mock_server_receives_any_hello (server);
+         ASSERT (request);
+         const bson_t *request_doc = request_get_doc (request, 0);
+         ASSERT (request_doc);
+         char *request_str =
+            bson_as_canonical_extended_json (request_doc, NULL);
+         ASSERT_WITH_MSG (
+            bson_has_field (request_doc, "speculativeAuthenticate"),
+            "expected hello to contain 'speculativeAuthenticate', got: %s",
+            request_str);
+         // Respond with a non-empty document "speculativeAuthenticate" field.
+         // The C driver will interpret this as a successful X509
+         // authentication.
+         bson_t *response = BCON_NEW ("ok",
+                                      BCON_INT32 (1),
+                                      "isWritablePrimary",
+                                      BCON_BOOL (true),
+                                      "minWireVersion",
+                                      BCON_INT32 (WIRE_VERSION_MIN),
+                                      "maxWireVersion",
+                                      BCON_INT32 (WIRE_VERSION_MAX),
+                                      "speculativeAuthenticate",
+                                      "{",
+                                      "foo",
+                                      "bar",
+                                      "}");
+
+         char *response_str = bson_as_canonical_extended_json (response, NULL);
+         mock_server_replies_simple (request, response_str);
+         bson_free (response_str);
+         bson_destroy (response);
+         request_destroy (request);
+         bson_free (request_str);
+      }
+
+      // Expect a ping command. Respond with {"ok": 1}.
+      {
+         request_t *request = mock_server_receives_msg (
+            server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
+         ASSERT (request);
+         mock_server_replies_ok_and_destroys (request);
+      }
+
+      // Expect success.
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+   }
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
 static void
 test_mongoc_speculative_auth_request_scram (void)
 {
@@ -450,6 +613,10 @@ test_speculative_auth_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/speculative_auth_pool/request_x509",
                                 test_mongoc_speculative_auth_request_x509_pool);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/speculative_auth/request_x509/network_error",
+      test_mongoc_speculative_auth_request_x509_network_error);
 #endif /* MONGOC_ENABLE_SSL_* */
    TestSuite_AddMockServerTest (
       suite,
