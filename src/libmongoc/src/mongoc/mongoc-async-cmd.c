@@ -20,6 +20,7 @@
 #include "mongoc-client.h"
 #include "mongoc-async-cmd-private.h"
 #include "mongoc-async-private.h"
+#include "mongoc-cluster-private.h"
 #include "mongoc-error.h"
 #include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"

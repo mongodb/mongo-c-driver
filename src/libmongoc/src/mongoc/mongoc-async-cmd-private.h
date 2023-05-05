@@ -25,6 +25,7 @@
 #include "mongoc-async-private.h"
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
+#include "mongoc-cmd-private.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
 
