@@ -590,7 +590,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       /*
        * Unacknowledged writes must provide a CommandSucceededEvent with an
        * {ok: 1} reply.
-       * https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst#unacknowledged-acknowledged-writes
+       * https://github.com/mongodb/specifications/blob/master/source/command-logging-and-monitoring/command-logging-and-monitoring.rst#unacknowledged-acknowledged-writes
        */
       if (!cmd->is_acknowledged) {
          bson_append_int32 (&fake_reply, "ok", 2, 1);
@@ -887,7 +887,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       if (negotiate_sasl_supported_mechs) {
          bsonParse (reply,
                     find (allOf (key ("ok"), isFalse), //
-                          do({
+                          do ({
                              /* hello response returned ok: 0. According to
                               * auth spec: "If the hello of the MongoDB
                               * Handshake fails with an error, drivers MUST

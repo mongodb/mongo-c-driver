@@ -23,9 +23,9 @@ static bson_oid_t kObjectIdZero = {{0}};
 
 /*
  * An Application Performance Management (APM) implementation, complying with
- * MongoDB's Command Monitoring Spec:
+ * MongoDB's Command Logging and Monitoring Spec:
  *
- * https://github.com/mongodb/specifications/tree/master/source/command-monitoring
+ * https://github.com/mongodb/specifications/tree/master/source/command-logging-and-monitoring
  */
 
 static void
