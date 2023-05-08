@@ -1,3 +1,18 @@
+libmongoc 1.23.4
+================
+
+Fixes:
+
+  * Fix possible failure to authenticate with MONGODB-X509 after network error.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+  * Kevin Albertson
+  * Kyle Kloberdanz
+
+
+
 libmongoc 1.23.3
 ================
 
