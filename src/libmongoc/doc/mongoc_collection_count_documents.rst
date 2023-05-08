@@ -96,10 +96,10 @@ When migrating to :symbol:`mongoc_collection_count_documents` from the deprecate
 
 $expr requires MongoDB 3.6+
 
-.. _$expr: https://docs.mongodb.com/manual/reference/operator/query/expr/
-.. _$geoWithin: https://docs.mongodb.com/manual/reference/operator/query/geoWithin/
-.. _$center: https://docs.mongodb.com/manual/reference/operator/query/center/#op._S_center
-.. _$centerSphere: https://docs.mongodb.com/manual/reference/operator/query/centerSphere/#op._S_centerSphere
+.. _$expr: https://www.mongodb.com/docs/manual/reference/operator/query/expr/
+.. _$geoWithin: https://www.mongodb.com/docs/manual/reference/operator/query/geoWithin/
+.. _$center: https://www.mongodb.com/docs/manual/reference/operator/query/center/#op._S_center
+.. _$centerSphere: https://www.mongodb.com/docs/manual/reference/operator/query/centerSphere/#op._S_centerSphere
 
 .. seealso::
 

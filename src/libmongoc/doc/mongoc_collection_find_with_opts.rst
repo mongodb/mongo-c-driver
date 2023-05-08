@@ -159,7 +159,7 @@ The ``snapshot`` boolean option is removed in MongoDB 4.0. The ``maxScan`` optio
 
   | `The "find" command`_ in the MongoDB Manual. All options listed there are supported by the C Driver.  For MongoDB servers before 3.2, the driver transparently converts the query to a legacy OP_QUERY message.
 
-.. _the "find" command: https://docs.mongodb.org/master/reference/command/find/
+.. _the "find" command: https://www.mongodb.com/docs/master/reference/command/find/
 
 The "explain" command
 ---------------------
@@ -178,5 +178,5 @@ With MongoDB before 3.2, a query with option ``$explain: true`` returns informat
 
 .. seealso::
 
-  | `The "explain" command <https://docs.mongodb.org/master/reference/command/explain/>`_ in the MongoDB Manual.
+  | `The "explain" command <https://www.mongodb.com/docs/master/reference/command/explain/>`_ in the MongoDB Manual.
 

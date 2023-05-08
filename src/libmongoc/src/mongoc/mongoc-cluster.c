@@ -1035,7 +1035,7 @@ _mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster,
     * with a MongoDB server. More information on the format can be found
     * at the following location:
     *
-    * http://docs.mongodb.org/meta-driver/latest/legacy/
+    * https://www.mongodb.com/docs/meta-driver/latest/legacy/
     *   implement-authentication-in-driver/
     */
 

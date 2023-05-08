@@ -21,7 +21,7 @@ Parameters
 Description
 -----------
 
-The maximum amount of time for the server to wait on new documents to satisfy a tailable cursor query. Only applies if the cursor is created from :symbol:`mongoc_collection_find_with_opts` with "tailable" and "awaitData" options, and the server is MongoDB 3.2 or later. See `the documentation for maxTimeMS and the "getMore" command <https://docs.mongodb.org/master/reference/command/getMore/>`_.
+The maximum amount of time for the server to wait on new documents to satisfy a tailable cursor query. Only applies if the cursor is created from :symbol:`mongoc_collection_find_with_opts` with "tailable" and "awaitData" options, and the server is MongoDB 3.2 or later. See `the documentation for maxTimeMS and the "getMore" command <https://www.mongodb.com/docs/master/reference/command/getMore/>`_.
 
 The ``max_await_time_ms`` cannot be changed after the first call to :symbol:`mongoc_cursor_next`.
 

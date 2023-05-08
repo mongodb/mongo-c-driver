@@ -3172,7 +3172,7 @@ mongo-c-driver 0.96.0
 It's that time again, time for another mongo-c-driver release!
 
 This release includes much new documentation, which can be found at
-http://docs.mongodb.org/ecosystem/drivers/c/.
+https://www.mongodb.com/docs/ecosystem/drivers/c/.
 
 Additionally, this release improves support for various exotic systems.
 Solaris 10 is supported much better on SPARC and x86_64 based systems.

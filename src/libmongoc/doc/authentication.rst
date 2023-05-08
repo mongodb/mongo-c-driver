@@ -3,7 +3,7 @@
 Authentication
 ==============
 
-This guide covers the use of authentication options with the MongoDB C Driver. Ensure that the MongoDB server is also properly configured for authentication before making a connection. For more information, see the `MongoDB security documentation <https://docs.mongodb.org/manual/administration/security/>`_.
+This guide covers the use of authentication options with the MongoDB C Driver. Ensure that the MongoDB server is also properly configured for authentication before making a connection. For more information, see the `MongoDB security documentation <https://www.mongodb.com/docs/manual/administration/security/>`_.
 
 The MongoDB C driver supports several authentication mechanisms through the use of MongoDB connection URIs.
 
@@ -198,7 +198,7 @@ The ``MONGODB-X509`` mechanism authenticates a username derived from the disting
   client = mongoc_client_new ("mongodb://x509_derived_username@localhost/?authMechanism=MONGODB-X509");
   mongoc_client_set_ssl_opts (client, &ssl_opts);
 
-``MONGODB-X509`` authenticates against the ``$external`` database, so specifying the authSource database is not required. For more information on the x509_derived_username, see the MongoDB server `x.509 tutorial <https://docs.mongodb.com/manual/tutorial/configure-x509-client-authentication/#add-x-509-certificate-subject-as-a-user>`_.
+``MONGODB-X509`` authenticates against the ``$external`` database, so specifying the authSource database is not required. For more information on the x509_derived_username, see the MongoDB server `x.509 tutorial <https://www.mongodb.com/docs/manual/tutorial/configure-x509-client-authentication/#add-x-509-certificate-subject-as-a-user>`_.
 
 .. note::
 

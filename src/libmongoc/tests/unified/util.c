@@ -55,7 +55,7 @@ typedef struct {
    bson_type_t type;
 } bson_string_and_type_t;
 
-/* List of aliases: https://docs.mongodb.com/manual/reference/bson-types/ */
+/* List of aliases: https://www.mongodb.com/docs/manual/reference/bson-types/ */
 bson_string_and_type_t bson_type_map[] = {
    {"double", BSON_TYPE_DOUBLE},
    {"string", BSON_TYPE_UTF8},

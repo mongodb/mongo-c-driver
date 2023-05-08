@@ -39,7 +39,7 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode,
  *
  *       See the following link for more information.
  *
- *          http://docs.mongodb.org/manual/reference/operator/query/
+ *          https://www.mongodb.com/docs/manual/reference/operator/query/
  *
  * Returns:
  *       A newly allocated mongoc_matcher_op_t if successful; otherwise
@@ -201,7 +201,7 @@ _mongoc_matcher_parse (bson_iter_t *iter,   /* IN */
  *
  *       See the following link for more information.
  *
- *       http://docs.mongodb.org/manual/reference/operator/query/
+ *       https://www.mongodb.com/docs/manual/reference/operator/query/
  *
  * Returns:
  *       A newly allocated mongoc_matcher_op_t if successful; otherwise

@@ -494,9 +494,9 @@ _mongoc_cursor_flags_to_opts (mongoc_query_flags_t qflags,
 
 /* Checks if the passed query was wrapped in a $query, and if so, parses the
  * query modifiers:
- * https://docs.mongodb.com/manual/reference/operator/query-modifier/
+ * https://www.mongodb.com/docs/manual/reference/operator/query-modifier/
  * and translates them to find command options:
- * https://docs.mongodb.com/manual/reference/command/find/
+ * https://www.mongodb.com/docs/manual/reference/command/find/
  * opts must be initialized, and may already have options set.
  * unwrapped must be uninitialized, and will be initialized at return.
  * Returns true if query was unwrapped. */

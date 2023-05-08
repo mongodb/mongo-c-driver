@@ -3333,7 +3333,7 @@ mongoc_collection_create_bulk_operation_with_opts (
  *       If @reply is not NULL, then the result document will be placed
  *       in reply and should be released with bson_destroy().
  *
- *       See http://docs.mongodb.org/manual/reference/command/findAndModify/
+ *       See https://www.mongodb.com/docs/manual/reference/command/findAndModify/
  *       for more information.
  *
  * Returns:
@@ -3652,7 +3652,7 @@ done:
  *       If @_new is true, then the new version of the document is returned
  *       instead of the old document.
  *
- *       See http://docs.mongodb.org/manual/reference/command/findAndModify/
+ *       See https://www.mongodb.com/docs/manual/reference/command/findAndModify/
  *       for more information.
  *
  * Returns:

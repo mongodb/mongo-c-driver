@@ -12,7 +12,7 @@ Synopsis
   mongoc_session_opts_set_snapshot (mongoc_session_opt_t *opts,
                                     bool snapshot);
 
-Configure snapshot reads for a session. If true (false by default), each read operation in the session will be sent with a "snapshot" level read concern. After the first read operation ("find", "aggregate" or "distinct"), subsequent read operations will read from the same point in time as the first read operation. Set to true to enable snapshot reads. See `the official documentation for Read Concern "snapshot" <https://docs.mongodb.com/manual/reference/read-concern-snapshot/>`_.
+Configure snapshot reads for a session. If true (false by default), each read operation in the session will be sent with a "snapshot" level read concern. After the first read operation ("find", "aggregate" or "distinct"), subsequent read operations will read from the same point in time as the first read operation. Set to true to enable snapshot reads. See `the official documentation for Read Concern "snapshot" <https://www.mongodb.com/docs/manual/reference/read-concern-snapshot/>`_.
 
 Snapshot reads and causal consistency are mutually exclusive. Attempting to set both to true will result in an error. See :symbol:`mongoc_session_opts_set_causal_consistency()`.
 

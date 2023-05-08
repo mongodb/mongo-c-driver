@@ -14,7 +14,7 @@ The ``mongoc_read_concern_t`` allows clients to choose a level of isolation for 
 
 You can specify a read concern on connection objects, database objects, or collection objects.
 
-See `readConcern <https://docs.mongodb.org/master/reference/readConcern/>`_ on the MongoDB website for more information.
+See `readConcern <https://www.mongodb.com/docs/master/reference/readConcern/>`_ on the MongoDB website for more information.
 
 Read Concern is only sent to MongoDB when it has explicitly been set by :symbol:`mongoc_read_concern_set_level` to anything other than NULL.
 
@@ -35,7 +35,7 @@ MONGOC_READ_CONCERN_LEVEL_SNAPSHOT      Level "snapshot".           4.0
 
 For the sake of compatibility with future versions of MongoDB, :symbol:`mongoc_read_concern_set_level` allows any string, not just this list of known read concern levels.
 
-See `Read Concern Levels <https://docs.mongodb.com/manual/reference/read-concern/#read-concern-levels>`_ in the MongoDB manual for more information about the individual read concern levels.
+See `Read Concern Levels <https://www.mongodb.com/docs/manual/reference/read-concern/#read-concern-levels>`_ in the MongoDB manual for more information about the individual read concern levels.
 
 .. only:: html
 

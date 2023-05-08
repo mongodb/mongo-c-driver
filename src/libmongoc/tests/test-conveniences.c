@@ -1188,7 +1188,7 @@ get_type_operator (const bson_value_t *value, bson_type_t *out)
    const char *value_string;
 
    /* See list of aliases on this page:
-    * https://docs.mongodb.com/manual/reference/bson-types/ */
+    * https://www.mongodb.com/docs/manual/reference/bson-types/ */
    if (value->value_type == BSON_TYPE_DOCUMENT &&
        bson_init_from_value (&bson, value) &&
        bson_iter_init_find (&iter, &bson, "$$type")) {
