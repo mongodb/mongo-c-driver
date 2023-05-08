@@ -80,7 +80,7 @@ rst_prolog = '''
 
 def add_canonical_link(app, pagename, templatename, context, doctree):
     link = ('<link rel="canonical"'
-            ' href="https://www.mongoc.org/libbson/current/%s.html"/>' % pagename)
+            ' href="https://www.mongoc.org/libmongoc/current/%s.html"/>' % pagename)
 
     context['metatags'] = context.get('metatags', '') + link
 
