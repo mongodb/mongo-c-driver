@@ -102,7 +102,7 @@ Example
 The "find" command
 ------------------
 
-Queries have historically been sent as OP_QUERY wire protocol messages, but beginning in MongoDB 3.2 queries use `the "find" command <https://docs.mongodb.org/master/reference/command/find/>`_ instead.
+Queries have historically been sent as OP_QUERY wire protocol messages, but beginning in MongoDB 3.2 queries use `the "find" command <https://www.mongodb.com/docs/master/reference/command/find/>`_ instead.
 
 The driver automatically converts queries to the new "find" command syntax if needed, so this change is typically invisible to C Driver users. However, an application written exclusively for MongoDB 3.2 and later can choose to use the new syntax directly instead of relying on the driver to convert from the old syntax:
 
@@ -135,7 +135,7 @@ Most applications should use the OP_QUERY syntax, with "$query", "$orderby", and
 
 .. seealso::
 
-  | `The "find" command <https://docs.mongodb.org/master/reference/command/find/>`_ in the MongoDB Manual.
+  | `The "find" command <https://www.mongodb.com/docs/master/reference/command/find/>`_ in the MongoDB Manual.
 
 The "explain" command
 ---------------------
@@ -159,5 +159,5 @@ With MongoDB before 3.2, a query with option ``$explain: true`` returns informat
 
 .. seealso::
 
-  | `The "explain" command <https://docs.mongodb.org/master/reference/command/explain/>`_ in the MongoDB Manual.
+  | `The "explain" command <https://www.mongodb.com/docs/master/reference/command/explain/>`_ in the MongoDB Manual.
 

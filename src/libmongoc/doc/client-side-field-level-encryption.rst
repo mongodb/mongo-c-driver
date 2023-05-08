@@ -9,7 +9,7 @@ Automatic encryption, where sensitive fields in commands are encrypted automatic
 
 .. seealso::
 
-    | The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_
+    | The MongoDB Manual for `Client-Side Field Level Encryption <https://www.mongodb.com/docs/manual/core/security-client-side-encryption/>`_
 
 
 Automatic Client-Side Field Level Encryption

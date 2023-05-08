@@ -21,7 +21,7 @@ Queries the server for the current server status. The result is stored in ``repl
 Deprecated
 ----------
 
-This helper function is deprecated and should not be used in new code. Run the `serverStatus <https://docs.mongodb.com/manual/reference/command/serverStatus/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
+This helper function is deprecated and should not be used in new code. Run the `serverStatus <https://www.mongodb.com/docs/manual/reference/command/serverStatus/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
 
 Parameters
 ----------

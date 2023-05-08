@@ -21,7 +21,7 @@ Parameters
 Description
 -----------
 
-Adds arbitrary options to a `findAndModify <https://docs.mongodb.org/manual/reference/command/findAndModify/>`_ command.
+Adds arbitrary options to a `findAndModify <https://www.mongodb.com/docs/manual/reference/command/findAndModify/>`_ command.
 
 ``extra`` does not have to remain valid after calling this function.
 

@@ -3,7 +3,7 @@
 JSON
 ====
 
-Libbson provides routines for converting to and from the JSON format. In particular, it supports the `MongoDB extended JSON <https://docs.mongodb.com/manual/reference/mongodb-extended-json/>`_ format.
+Libbson provides routines for converting to and from the JSON format. In particular, it supports the `MongoDB extended JSON <https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/>`_ format.
 
 Converting BSON to JSON
 -----------------------
@@ -71,7 +71,7 @@ The following example creates a new :symbol:`bson_t` from the JSON string ``{"a"
 Streaming JSON Parsing
 ----------------------
 
-Libbson provides :symbol:`bson_json_reader_t` to allow for parsing a sequence of JSON documents into BSON. The interface is similar to :symbol:`bson_reader_t` but expects the input to be in the `MongoDB extended JSON <https://docs.mongodb.com/manual/reference/mongodb-extended-json/>`_ format.
+Libbson provides :symbol:`bson_json_reader_t` to allow for parsing a sequence of JSON documents into BSON. The interface is similar to :symbol:`bson_reader_t` but expects the input to be in the `MongoDB extended JSON <https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/>`_ format.
 
 .. code-block:: c
 

@@ -784,7 +784,7 @@ Executing Commands
 
 The driver provides helper functions for executing MongoDB commands on client, database and collection structures. The ``_simple`` variants return booleans indicating success or failure.
 
-This example executes the `ping <https://docs.mongodb.org/manual/reference/command/ping/>`_ command against the database "mydb".
+This example executes the `ping <https://www.mongodb.com/docs/manual/reference/command/ping/>`_ command against the database "mydb".
 
 .. literalinclude:: ../examples/tutorial/executing.c
 
@@ -818,7 +818,7 @@ However, :symbol:`mongoc_client_pool_t` is thread-safe and is used to fetch a ``
 Next Steps
 ----------
 
-To find information on advanced topics, browse the rest of the :doc:`C driver guide <index>` or the `official MongoDB documentation <https://docs.mongodb.org>`_.
+To find information on advanced topics, browse the rest of the :doc:`C driver guide <index>` or the `official MongoDB documentation <https://www.mongodb.com/docs>`_.
 
 For help with common issues, consult the :doc:`Troubleshooting <basic-troubleshooting>` page. To report a bug or request a new feature, follow :ref:`these instructions <basic-troubleshooting_file_bug>`.
 

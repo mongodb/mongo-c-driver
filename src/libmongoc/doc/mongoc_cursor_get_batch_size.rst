@@ -21,5 +21,5 @@ Description
 
 Retrieve the cursor's batch size, the maximum number of documents returned per round trip to the server. A batch size of zero means the cursor accepts the server's maximum batch size.
 
-See `Cursor Batches <https://docs.mongodb.org/manual/core/cursors/#cursor-batches>`_ in the MongoDB Manual.
+See `Cursor Batches <https://www.mongodb.com/docs/manual/core/cursors/#cursor-batches>`_ in the MongoDB Manual.
 

@@ -63,7 +63,7 @@ Here's how to run the example code
    :language: c
    :caption: basic-aggregation.c
 
-If you want to try the advanced map reduce example with a secondary, start a replica set (instructions for how to do this can be found `here <https://docs.mongodb.com/manual/tutorial/deploy-replica-set-for-testing/>`_).
+If you want to try the advanced map reduce example with a secondary, start a replica set (instructions for how to do this can be found `here <https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set-for-testing/>`_).
 
 Otherwise, just start an instance of MongoDB:
 

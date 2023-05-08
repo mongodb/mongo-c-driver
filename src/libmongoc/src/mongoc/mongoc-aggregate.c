@@ -184,7 +184,7 @@ fail:
  *       The cursor may fail once iterated upon, so check
  *       mongoc_cursor_error() if mongoc_cursor_next() returns false.
  *
- *       See http://docs.mongodb.org/manual/aggregation/ for more
+ *       See https://www.mongodb.com/docs/manual/aggregation/ for more
  *       information on how to build aggregation pipelines.
  *
  * Parameters:

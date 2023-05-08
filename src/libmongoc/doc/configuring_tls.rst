@@ -23,7 +23,7 @@ The following URI options may be used to further configure TLS:
 Configuration with mongoc_ssl_opt_t
 -----------------------------------
 
-Alternatively, the :symbol:`mongoc_ssl_opt_t` struct may be used to configure TLS with :symbol:`mongoc_client_set_ssl_opts()` or :symbol:`mongoc_client_pool_set_ssl_opts()`. Most of the configurable options can be set using the `Connection String URI <https://docs.mongodb.org/manual/reference/connection-string/>`_.
+Alternatively, the :symbol:`mongoc_ssl_opt_t` struct may be used to configure TLS with :symbol:`mongoc_client_set_ssl_opts()` or :symbol:`mongoc_client_pool_set_ssl_opts()`. Most of the configurable options can be set using the `Connection String URI <https://www.mongodb.com/docs/manual/reference/connection-string/>`_.
 
 ===============================  ===============================
 **mongoc_ssl_opt_t key**         **URI key**

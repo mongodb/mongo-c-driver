@@ -120,7 +120,7 @@ validate_option = ('validate', {
 
 collation_option = ('collation', {
     'type': 'document',
-    'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.'
+    'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://www.mongodb.com/docs/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.'
 })
 
 array_filters_option = ('arrayFilters', {
@@ -342,7 +342,7 @@ opts_structs = OrderedDict([
     ], generate_code=False)),
 
     ('mongoc_gridfs_bucket_opts_t', Struct([
-        ('bucketName', {'type': 'utf8', 'help': 'A UTF-8 string used as the prefix to the GridFS "chunks" and "files" collections. Defaults to "fs". The bucket name, together with the database and suffix collections must not exceed 120 characters. See the manual for `the max namespace length <https://docs.mongodb.com/manual/reference/limits/#Namespace-Length>`_.'}),
+        ('bucketName', {'type': 'utf8', 'help': 'A UTF-8 string used as the prefix to the GridFS "chunks" and "files" collections. Defaults to "fs". The bucket name, together with the database and suffix collections must not exceed 120 characters. See the manual for `the max namespace length <https://www.mongodb.com/docs/manual/reference/limits/#Namespace-Length>`_.'}),
         ('chunkSizeBytes', {'type': 'int32_t', 'convert': '_mongoc_convert_int32_positive', 'help': 'An ``int32`` representing the chunk size. Defaults to 255KB.'}),
         write_concern_option,
         read_concern_option

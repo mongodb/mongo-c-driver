@@ -29,7 +29,7 @@ This can often be useful if you want to perform bulk operations that are defined
 
 .. tip::
 
-  :symbol:`bson_json_reader_t` works upon JSON documents formatted in `MongoDB extended JSON <https://docs.mongodb.com/manual/reference/mongodb-extended-json/>`_ format.
+  :symbol:`bson_json_reader_t` works upon JSON documents formatted in `MongoDB extended JSON <https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/>`_ format.
 
 .. only:: html
 

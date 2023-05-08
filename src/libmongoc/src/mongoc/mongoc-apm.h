@@ -30,9 +30,9 @@ BSON_BEGIN_DECLS
 
 /*
  * Application Performance Management (APM) interface, complies with two specs.
- * MongoDB's Command Monitoring Spec:
+ * MongoDB's Command Logging and Monitoring Spec:
  *
- * https://github.com/mongodb/specifications/tree/master/source/command-monitoring
+ * https://github.com/mongodb/specifications/tree/master/source/command-logging-and-monitoring
  *
  * MongoDB's Spec for Monitoring Server Discovery and Monitoring (SDAM) events:
  *

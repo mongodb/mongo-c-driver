@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-``mongoc_gridfs_bucket_t`` provides a spec-compliant MongoDB GridFS implementation, superseding :symbol:`mongoc_gridfs_t`. See the `GridFS MongoDB documentation <https://docs.mongodb.com/manual/core/gridfs/>`_.
+``mongoc_gridfs_bucket_t`` provides a spec-compliant MongoDB GridFS implementation, superseding :symbol:`mongoc_gridfs_t`. See the `GridFS MongoDB documentation <https://www.mongodb.com/docs/manual/core/gridfs/>`_.
 
 Thread Safety
 -------------

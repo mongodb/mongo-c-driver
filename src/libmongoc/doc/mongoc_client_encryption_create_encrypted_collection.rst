@@ -70,7 +70,7 @@ Creation Options
 The ``in_options`` parameter behaves similarly to the ``opts`` parameter for
 :symbol:`mongoc_database_create_collection`, which accepts the options for the
 ``create`` MongoDB command
-(`Documented here <https://docs.mongodb.org/manual/reference/command/create>`_).
+(`Documented here <https://www.mongodb.com/docs/manual/reference/command/create>`_).
 The ``in_options`` document accepted here is different in one important way:
 
 The ``$.encryptedFields.fields`` array is *required* by this function, and,

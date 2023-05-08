@@ -39,7 +39,7 @@ Description
 
 This structure contains the options that may be used for tuning a specific index.
 
-See the `createIndexes documentations <https://docs.mongodb.org/manual/reference/command/createIndexes/>`_ in the MongoDB manual for descriptions of individual options.
+See the `createIndexes documentations <https://www.mongodb.com/docs/manual/reference/command/createIndexes/>`_ in the MongoDB manual for descriptions of individual options.
 
 .. note::
 

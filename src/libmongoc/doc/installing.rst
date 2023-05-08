@@ -72,7 +72,7 @@ On Fedora, a libbson package is available in the default repositories and can be
 
 On recent Red Hat systems, such as CentOS and RHEL 7, a libbson package
 is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check
-which version is available, see `https://apps.fedoraproject.org/packages/libbson <https://apps.fedoraproject.org/packages/libbson>`_.
+which version is available, see `https://packages.fedoraproject.org/pkgs/mongo-c-driver/libbson/ <https://packages.fedoraproject.org/pkgs/mongo-c-driver/libbson/>`_.
 The package can be installed with:
 
 .. code-block:: none
