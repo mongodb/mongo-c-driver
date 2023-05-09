@@ -34,6 +34,8 @@ Update and return an object.
 
 If an unacknowledged write concern is set (through :symbol:`mongoc_find_and_modify_opts_append`), the output ``reply`` is always an empty document.
 
+On success, the output ``reply`` contains the full server reply to the ``findAndModify`` command. See the `MongoDB Manual page for findAndModify <https://www.mongodb.com/docs/manual/reference/command/findAndModify/#output>`_ for the expected server reply.
+
 Errors
 ------
 

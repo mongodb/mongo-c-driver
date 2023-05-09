@@ -45,6 +45,8 @@ As of MongoDB 3.2, the :symbol:`mongoc_write_concern_t` specified on the :symbol
 
 ``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
 
+On success, the output ``reply`` contains the full server reply to the ``findAndModify`` command. See the `MongoDB Manual page for findAndModify <https://www.mongodb.com/docs/manual/reference/command/findAndModify/#output>`_ for the expected server reply.
+
 Errors
 ------
 
