@@ -55,7 +55,7 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-Returns either the document before or after modification based on the ``_new`` parameter.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 A write concern timeout or write concern error is considered a failure.
 
