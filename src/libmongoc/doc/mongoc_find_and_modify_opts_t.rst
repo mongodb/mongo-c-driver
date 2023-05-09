@@ -10,7 +10,7 @@ Synopsis
 
 ``mongoc_find_and_modify_opts_t`` is a builder interface to construct a `find_and_modify <https://www.mongodb.com/docs/manual/reference/command/findAndModify/>`_ command.
 
-It was created to be able to accommodate new arguments to the MongoDB find_and_modify command.
+It was created to be able to accommodate new arguments to the `MongoDB findAndModify command <https://www.mongodb.com/docs/manual/reference/command/findAndModify/>`_.
 
 The :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any.
 
