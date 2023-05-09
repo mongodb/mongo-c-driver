@@ -4,6 +4,20 @@ libmongoc 1.24.0 (Unreleased)
   * Support for macOS 10.14 will be dropped in an upcoming release.
 
 
+libmongoc 1.23.4
+================
+
+Fixes:
+
+  * Fix possible failure to authenticate with MONGODB-X509 after network error.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+  * Kevin Albertson
+  * Kyle Kloberdanz
+
+
 libmongoc 1.23.3
 ================
 
