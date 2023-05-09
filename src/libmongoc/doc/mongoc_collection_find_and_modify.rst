@@ -41,7 +41,7 @@ Update and return an object.
 
 This is a thin wrapper around the ``findAndModify`` command. Either ``update`` or ``_remove`` arguments are required.
 
-As of MongoDB 3.2, the :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any.
+The :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any.
 
 ``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
 
