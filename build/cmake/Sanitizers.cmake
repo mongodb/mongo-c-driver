@@ -1,8 +1,15 @@
 include (CheckCSourceCompiles)
 include (CMakePushCheckState)
+include (MongoSettings)
 
-## Directly control the options passed to -fsanitize
-set (MONGO_SANITIZE "" CACHE STRING "Semicolon/comma-separated list of sanitizers to apply when building")
+mongo_setting (
+   MONGO_SANITIZE "Semicolon/comma-separated list of sanitizers to apply when building"
+   DEFAULT
+      AUDIT EVAL [[
+         if(NOT MSVC)
+            set(DEFAULT "address,undefined")
+         endif()
+      ]])
 
 # Replace commas with semicolons for the genex
 string(REPLACE ";" "," _sanitize "${MONGO_SANITIZE}")

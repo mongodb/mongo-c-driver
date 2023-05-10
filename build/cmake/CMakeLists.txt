@@ -9,6 +9,7 @@ set (build_cmake_MODULES
    LoadVersion.cmake
    MaintainerFlags.cmake
    MongoCPackage.cmake
+   MongoSettings.cmake
    MongoC-Warnings.cmake
    ParseVersion.cmake
    SphinxBuild.cmake
