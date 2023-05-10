@@ -140,6 +140,12 @@ function(mongo_setting setting_NAME setting_DOC)
         endif()
     endif()
 
+    # Detect the previous value
+    unset(prev_val)
+    if(DEFINED "CACHE{${setting_NAME}}")
+        set(prev_val "$CACHE{${setting_NAME}-PREV}")
+    endif()
+
     # Actually define it now:
     set("${setting_NAME}" "${DEFAULT}" CACHE "${setting_TYPE}" "${doc}")
     # Variable properties:
@@ -151,7 +157,14 @@ function(mongo_setting setting_NAME setting_DOC)
     endif()
 
     # Report what we set:
-    message(DEBUG "Build setting ${setting_NAME} := “${${setting_NAME}}”")
+    if(NOT DEFINED prev_val)
+        message(STATUS "Setting: ${setting_NAME} := “${${setting_NAME}}”")
+    elseif("${${setting_NAME}}" STREQUAL prev_val)
+        message(DEBUG "Setting: ${setting_NAME} := “${${setting_NAME}}” (Unchanged)")
+    else()
+        message(STATUS "Setting: ${setting_NAME} := “${${setting_NAME}}” (Old value was “${prev_val}”)")
+    endif()
+    set("${setting_NAME}-PREV" "${${setting_NAME}}" CACHE INTERNAL "Prior value of ${setting_NAME}")
 
     # Validation of options:
     if(NOT setting_ALLOW_OTHER_VALUES AND (DEFINED setting_OPTIONS) AND (NOT ("${${setting_NAME}}" IN_LIST setting_OPTIONS)))
