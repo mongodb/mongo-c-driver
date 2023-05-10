@@ -8,8 +8,9 @@ grep "á" NEWS > /dev/null || (echo "NEWS file appears to have lost its UTF-8 en
 type sphinx-build
 sphinx-build --version
 
-DIR=$(dirname $0)
-. $DIR/find-cmake.sh
+DIR=$(dirname "$0")
+. "$DIR/find-cmake-latest.sh"
+CMAKE=$(find_cmake_latest)
 
 python build/calc_release_version.py >VERSION_CURRENT
 python build/calc_release_version.py -p >VERSION_RELEASED

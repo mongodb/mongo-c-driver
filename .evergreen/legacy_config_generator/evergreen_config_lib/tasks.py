@@ -899,11 +899,14 @@ aws_compile_task = NamedTask(
         shell_mongoc(
             """
             # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
-            . .evergreen/scripts/find-cmake.sh
+            set -euo pipefail
+            distro_id="${distro_id}"  # Needed by find-cmake-latest.sh
+            . .evergreen/scripts/find-cmake-latest.sh
+            cmake=$(find_cmake_latest)
             export CC='${CC}'
-            $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
-            $CMAKE --build . --target test-awsauth
-            """
+            "$cmake" -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+            "$cmake" --build . --target test-awsauth
+            """,
         ),
         func("upload-build"),
     ],
