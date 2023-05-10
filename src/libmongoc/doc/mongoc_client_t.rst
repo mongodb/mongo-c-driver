@@ -63,8 +63,6 @@ Example
     mongoc_client_get_default_database
     mongoc_client_get_gridfs
     mongoc_client_get_handshake_description
-    mongoc_client_get_max_bson_size
-    mongoc_client_get_max_message_size
     mongoc_client_get_read_concern
     mongoc_client_get_read_prefs
     mongoc_client_get_server_description
