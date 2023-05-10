@@ -142,7 +142,7 @@ function(mongo_setting setting_NAME setting_DOC)
 
     # Detect the previous value
     unset(prev_val)
-    if(DEFINED "CACHE{${setting_NAME}}")
+    if(DEFINED "CACHE{${setting_NAME}}-PREV")
         set(prev_val "$CACHE{${setting_NAME}-PREV}")
     endif()
 
