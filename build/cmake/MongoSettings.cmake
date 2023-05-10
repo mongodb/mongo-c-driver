@@ -142,8 +142,13 @@ function(mongo_setting setting_NAME setting_DOC)
 
     # Detect the previous value
     unset(prev_val)
-    if(DEFINED "CACHE{${setting_NAME}}-PREV")
+    if(DEFINED "CACHE{${setting_NAME}-PREV}")
         set(prev_val "$CACHE{${setting_NAME}-PREV}")
+        message(DEBUG "Detected previous value was “${prev_val}”")
+    elseif(DEFINED "CACHE{${setting_NAME}}")
+        message(DEBUG "Externally defined to be “${${setting_NAME}}”")
+    else()
+        message(DEBUG "No previous value detected")
     endif()
 
     # Actually define it now:
@@ -158,11 +163,11 @@ function(mongo_setting setting_NAME setting_DOC)
 
     # Report what we set:
     if(NOT DEFINED prev_val)
-        message(STATUS "Setting: ${setting_NAME} := “${${setting_NAME}}”")
+        message(VERBOSE "Setting: ${setting_NAME} := “${${setting_NAME}}”")
     elseif("${${setting_NAME}}" STREQUAL prev_val)
         message(DEBUG "Setting: ${setting_NAME} := “${${setting_NAME}}” (Unchanged)")
     else()
-        message(STATUS "Setting: ${setting_NAME} := “${${setting_NAME}}” (Old value was “${prev_val}”)")
+        message(VERBOSE "Setting: ${setting_NAME} := “${${setting_NAME}}” (Old value was “${prev_val}”)")
     endif()
     set("${setting_NAME}-PREV" "${${setting_NAME}}" CACHE INTERNAL "Prior value of ${setting_NAME}")
 
@@ -190,6 +195,7 @@ endfunction()
 
 #[[ Implements DEFAULT setting value logic ]]
 function(_mongo_compute_default outvar arglist)
+    list(APPEND CMAKE_MESSAGE_CONTEXT default)
     # Clear the value in the caller:
     unset("${outvar}" PARENT_SCOPE)
 
@@ -198,12 +204,14 @@ function(_mongo_compute_default outvar arglist)
 
     # Developer-mode options:
     if(DEFINED dflt_DEVEL AND MONGODB_DEVELOPER)
+        list(APPEND CMAKE_MESSAGE_CONTEXT "devel")
         _mongo_compute_default(tmp "${dflt_DEVEL}")
         message(DEBUG "Detected MONGODB_DEVELOPER: Default of ${setting_NAME} is “${tmp}”")
         set("${outvar}" "${tmp}" PARENT_SCOPE)
         return()
     # Audit-mode options:
     elseif(DEFINED dflt_AUDIT AND (MONGODB_DEVELOPER OR MONGODB_BUILD_AUDIT))
+        list(APPEND CMAKE_MESSAGE_CONTEXT "audit")
         _mongo_compute_default(tmp "${dflt_AUDIT}")
         message(DEBUG "Detected MONGODB_BUILD_AUDIT: Default of ${setting_NAME} is “${tmp}”")
         set("${outvar}" "${tmp}" PARENT_SCOPE)

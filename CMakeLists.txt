@@ -124,7 +124,18 @@ mongo_bool_setting(
 
 mongo_bool_setting(ENABLE_ICU "Enable ICU support, needed for non-ASCII usernames and passwords")
 mongo_bool_setting(ENABLE_CLIENT_SIDE_ENCRYPTION "Enable In-Use Encryption support. Requires additional support libraries.")
-mongo_bool_setting(ENABLE_MONGODB_AWS_AUTH "Enable support for the MONGODB-AWS authentication mechanism")
+if(ENABLE_SSL)
+   # Only define this as a setting if we have an SSL enabled, otherwise we should implicitly disable it:
+   mongo_bool_setting(ENABLE_MONGODB_AWS_AUTH "Enable support for the MONGODB-AWS authentication mechanism")
+elseif(ENABLE_MONGODB_AWS_AUTH)
+   # The user requested AWS auth (or it is still enabled in the cache), but we don't have ENABLE_SSL
+   message(SEND_ERROR "ENABLE_MONGODB_AWS_AUTH requires ENABLE_SSL")
+else()
+   # ENABLE_SSL is disabled, and ENABLE_MONGODB_AWS_AUTH is unset, so we set it off for this configure
+   # run
+   set(ENABLE_MONGODB_AWS_AUTH OFF)
+   message(DEBUG "ENABLE_MONGODB_AWS_AUTH is implicitly disabled because ENABLE_SSL is “${ENABLE_SSL}”")
+endif()
 
 # Optional features that are DISABLED by default:
 mongo_bool_setting(ENABLE_RDTSCP "Enable fast performance counters using the Intel RDTSCP instruction"
