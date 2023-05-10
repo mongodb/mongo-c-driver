@@ -3,6 +3,13 @@
 mongoc_uri_get_ssl()
 ====================
 
+Deprecated
+----------
+
+This function is deprecated and should not be used in new code.
+
+Please use :doc:`mongoc_uri_get_tls() <mongoc_uri_get_tls>` in new code.
+
 Synopsis
 --------
 
@@ -11,15 +18,6 @@ Synopsis
   bool
   mongoc_uri_get_ssl (const mongoc_uri_t *uri)
      BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_tls);
-
-Deprecated
-----------
-
-.. warning::
-
-  This function is deprecated and should not be used in new code.
-
-Please use :doc:`mongoc_uri_get_tls() <mongoc_uri_get_tls>` instead.
 
 Parameters
 ----------

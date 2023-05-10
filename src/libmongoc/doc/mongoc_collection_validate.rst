@@ -3,6 +3,11 @@
 mongoc_collection_validate()
 ============================
 
+Deprecated
+----------
+
+This helper function is deprecated and should not be used in new code. Run the `validate <https://www.mongodb.com/docs/manual/reference/command/validate/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
+
 Synopsis
 --------
 
@@ -13,11 +18,6 @@ Synopsis
                               const bson_t *options,
                               bson_t *reply,
                               bson_error_t *error);
-
-Deprecated
-----------
-
-This helper function is deprecated and should not be used in new code. Run the `validate <https://www.mongodb.com/docs/manual/reference/command/validate/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
 
 Parameters
 ----------

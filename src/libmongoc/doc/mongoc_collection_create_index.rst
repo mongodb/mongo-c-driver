@@ -3,6 +3,11 @@
 mongoc_collection_create_index()
 ================================
 
+Deprecated
+----------
+
+This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
+
 Synopsis
 --------
 
@@ -13,11 +18,6 @@ Synopsis
                                   const bson_t *keys,
                                   const mongoc_index_opt_t *opt,
                                   bson_error_t *error);
-
-Deprecated
-----------
-
-This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
 
 Parameters
 ----------

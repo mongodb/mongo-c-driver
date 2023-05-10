@@ -3,6 +3,11 @@
 mongoc_collection_create_index_with_opts()
 ==========================================
 
+Deprecated
+----------
+
+This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
+
 Synopsis
 --------
 

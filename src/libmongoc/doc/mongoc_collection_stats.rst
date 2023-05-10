@@ -3,6 +3,11 @@
 mongoc_collection_stats()
 =========================
 
+Deprecated
+----------
+
+This helper function is deprecated and should not be used in new code. Use the `$collStats aggregation pipeline stage <https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/>`_ with :symbol:`mongoc_collection_aggregate()` instead.
+
 Synopsis
 --------
 
@@ -13,11 +18,6 @@ Synopsis
                            const bson_t *options,
                            bson_t *reply,
                            bson_error_t *error) BSON_GNUC_DEPRECATED;
-
-Deprecated
-----------
-
-This helper function is deprecated and should not be used in new code. Use the `$collStats aggregation pipeline stage <https://www.mongodb.com/docs/manual/reference/operator/aggregation/collStats/>`_ with :symbol:`mongoc_collection_aggregate()` instead.
 
 Parameters
 ----------
