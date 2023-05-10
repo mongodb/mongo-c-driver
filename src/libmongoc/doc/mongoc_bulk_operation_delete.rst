@@ -17,7 +17,8 @@ Synopsis
 
   void
   mongoc_bulk_operation_delete (mongoc_bulk_operation_t *bulk,
-                                const bson_t *selector);
+                                const bson_t *selector)
+    BSON_GNUC_DEPRECATED_FOR (mongoc_bulk_operation_remove);
 
 Deletes documents as part of a bulk operation. This only queues the operation. To execute it, call :symbol:`mongoc_bulk_operation_execute()`.
 

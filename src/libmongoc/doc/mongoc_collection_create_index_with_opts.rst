@@ -19,7 +19,8 @@ Synopsis
                                             const mongoc_index_opt_t *index_opts,
                                             const bson_t *command_opts,
                                             bson_t *reply,
-                                            bson_error_t *error);
+                                            bson_error_t *error)
+     BSON_GNUC_DEPRECATED; 
 
 Deprecated
 ----------
