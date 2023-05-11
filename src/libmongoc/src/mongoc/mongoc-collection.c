@@ -946,6 +946,17 @@ mongoc_collection_count_documents (mongoc_collection_t *coll,
    BSON_ASSERT_PARAM (coll);
    BSON_ASSERT_PARAM (filter);
 
+   // Validate "hint" option.
+   if (bson_iter_init_find (&iter, opts, "hint")) 
+   {
+      bson_value_t hint_val;
+      if (!_mongoc_convert_hint (coll->client, &iter, &hint_val, error)) {
+         bson_value_destroy (&hint_val);
+         GOTO (done);
+      }
+      bson_value_destroy (&hint_val);
+   }
+
    _make_aggregate_for_count (coll, filter, opts, &aggregate_cmd);
    bson_init (&aggregate_opts);
    if (opts) {
