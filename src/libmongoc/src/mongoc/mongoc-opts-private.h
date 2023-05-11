@@ -195,6 +195,7 @@ typedef struct _mongoc_aggregate_opts_t {
    bool batchSize_is_set;
    bson_t let;
    bson_value_t comment;
+   bson_value_t hint;
    bson_t extra;
 } mongoc_aggregate_opts_t;
 

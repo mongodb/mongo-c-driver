@@ -14,3 +14,4 @@
 * ``batchSize``: An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`
 * ``let``: A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language.
 * ``comment``: A :symbol:`bson_value_t` specifying the comment to attach to this command. The comment will appear in log messages, profiler output, and currentOp output. Only string values are supported prior to MongoDB 4.4.
+* ``hint``: A document or string that specifies the index to use to support the query predicate.

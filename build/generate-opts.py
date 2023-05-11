@@ -363,6 +363,7 @@ opts_structs = OrderedDict([
         ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`', 'check_set': True}),
         let_option,
         comment_option_string_pre_4_4,
+        hint_option,
     ])),
 
     ('mongoc_find_and_modify_appended_opts_t', Struct([

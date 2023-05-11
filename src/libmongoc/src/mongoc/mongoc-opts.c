@@ -2072,6 +2072,7 @@ _mongoc_aggregate_opts_parse (
    mongoc_aggregate_opts->batchSize_is_set = false;
    bson_init (&mongoc_aggregate_opts->let);
    memset (&mongoc_aggregate_opts->comment, 0, sizeof (bson_value_t));
+   memset (&mongoc_aggregate_opts->hint, 0, sizeof (bson_value_t));
    bson_init (&mongoc_aggregate_opts->extra);
 
    if (!opts) {
@@ -2172,6 +2173,15 @@ _mongoc_aggregate_opts_parse (
             return false;
          }
       }
+      else if (!strcmp (bson_iter_key (&iter), "hint")) {
+         if (!_mongoc_convert_hint (
+               client,
+               &iter,
+               &mongoc_aggregate_opts->hint,
+               error)) {
+            return false;
+         }
+      }
       else {
          /* unrecognized values are copied to "extra" */
          if (!BSON_APPEND_VALUE (
@@ -2200,6 +2210,7 @@ _mongoc_aggregate_opts_cleanup (mongoc_aggregate_opts_t *mongoc_aggregate_opts)
    bson_destroy (&mongoc_aggregate_opts->collation);
    bson_destroy (&mongoc_aggregate_opts->let);
    bson_value_destroy (&mongoc_aggregate_opts->comment);
+   bson_value_destroy (&mongoc_aggregate_opts->hint);
    bson_destroy (&mongoc_aggregate_opts->extra);
 }
 
