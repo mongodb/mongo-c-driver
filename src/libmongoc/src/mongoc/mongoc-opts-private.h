@@ -209,6 +209,18 @@ typedef struct _mongoc_find_and_modify_appended_opts_t {
    bson_t extra;
 } mongoc_find_and_modify_appended_opts_t;
 
+typedef struct _mongoc_count_document_opts_t {
+   bson_t readConcern;
+   mongoc_client_session_t *client_session;
+   bson_t collation;
+   uint32_t serverId;
+   bson_value_t skip;
+   bson_value_t limit;
+   bson_value_t comment;
+   bson_value_t hint;
+   bson_t extra;
+} mongoc_count_document_opts_t;
+
 bool
 _mongoc_insert_one_opts_parse (
    mongoc_client_t *client,
@@ -418,5 +430,15 @@ _mongoc_find_and_modify_appended_opts_parse (
 
 void
 _mongoc_find_and_modify_appended_opts_cleanup (mongoc_find_and_modify_appended_opts_t *mongoc_find_and_modify_appended_opts);
+
+bool
+_mongoc_count_document_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_count_document_opts_t *mongoc_count_document_opts,
+   bson_error_t *error);
+
+void
+_mongoc_count_document_opts_cleanup (mongoc_count_document_opts_t *mongoc_count_document_opts);
 
 #endif /* MONGOC_OPTS_H */

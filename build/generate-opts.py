@@ -372,7 +372,19 @@ opts_structs = OrderedDict([
         hint_option,
         let_option,
         comment_option_since_4_4,
-    ], opts_name='extra'))
+    ], opts_name='extra')),
+
+    ('mongoc_count_document_opts_t', Struct([
+        read_concern_document_option,
+        session_option,
+        collation_option,
+        server_option,
+        ('skip', {'type': 'bson_value_t', 'help': 'An int specifying how many documents matching the ``query`` should be skipped before counting.'}),
+        ('limit', {'type': 'bson_value_t', 'help': 'An int specifying the maximum number of documents to count.'}),
+        comment_option_string_pre_4_4,
+        hint_option
+    ])),
+
 ])
 
 header_comment = """/**************************************************
