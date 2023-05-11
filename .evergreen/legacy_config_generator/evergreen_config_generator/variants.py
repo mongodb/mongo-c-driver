@@ -12,12 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Iterable, Mapping
 from evergreen_config_generator import ConfigObject
+
+from . import ValueMapping
 
 
 class Variant(ConfigObject):
-    def __init__(self, name, display_name, run_on, tasks, expansions=None,
-                 batchtime=None):
+    def __init__(
+        self,
+        name: str,
+        display_name: str,
+        run_on: list[str] | str,
+        tasks: Iterable[str | ValueMapping],
+        expansions: Mapping[str, str] | None = None,
+        batchtime: int | None = None,
+    ):
         super(Variant, self).__init__()
         self._variant_name = name
         self.display_name = display_name
@@ -32,7 +42,7 @@ class Variant(ConfigObject):
 
     def to_dict(self):
         v = super(Variant, self).to_dict()
-        for i in 'display_name', 'expansions', 'run_on', 'tasks', 'batchtime':
+        for i in "display_name", "expansions", "run_on", "tasks", "batchtime":
             if getattr(self, i):
                 v[i] = getattr(self, i)
         return v
