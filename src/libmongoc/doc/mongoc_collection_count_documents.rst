@@ -34,6 +34,8 @@ Parameters
 * ``comment``: A :symbol:`bson_value_t` specifying the comment to attach to this command. The comment will appear in log messages, profiler output, and currentOp output. Specifying a non-string value requires MongoDB 4.4 or later.
 * ``hint``: A document or string that specifies the index to use to support the query predicate.
 
+Other options are included in the sent ``aggregate`` command. For a list of all options, see `the MongoDB Manual entry on the aggregate command <https://www.mongodb.com/docs/manual/reference/command/aggregate/>`_.
+
 Description
 -----------
 
