@@ -78,6 +78,7 @@ configure_flags_append_if_not_null SNAPPY "-DENABLE_SNAPPY=${SNAPPY}"
 configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV}"
 configure_flags_append_if_not_null TRACING "-DENABLE_TRACING=${TRACING}"
 configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB}"
+configure_flags_append_if_not_null ZSTD "-DENABLE_ZSTD=${ZSTD}"
 
 if [[ "${DEBUG}" == "ON" ]]; then
   configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
