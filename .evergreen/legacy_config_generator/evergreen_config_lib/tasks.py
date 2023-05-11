@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections import OrderedDict as OD
+from copy import copy
 from itertools import chain
 from typing import ClassVar, Iterable, Literal, Mapping, MutableMapping, MutableSequence, Optional, Sequence
 
@@ -49,13 +50,13 @@ class CompileTask(NamedTask):
         self,
         task_name: str,
         tags: Iterable[str] = (),
+        *,
         config: str = "debug",
-        compression: None | Sequence[Literal["snappy", "zlib", "zstd"]] | Literal["all"] = None,
+        compression: None | Sequence[Literal["snappy", "zlib", "zstd"]] | Literal["all"],
         suffix_commands: Iterable[Value] = (),
         depends_on: Iterable[DependencySpec] = (),
         prefix_commands: Iterable[Value] = (),
         sanitize: Iterable[Literal["undefined", "address", "thread"]] = (),
-        *,
         CFLAGS: str | None = None,
         LDFLAGS: str | None = None,
         EXTRA_CONFIGURE_FLAGS: str | None = None,
@@ -202,10 +203,12 @@ all_tasks = [
         compression=["zlib"],
         EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
     ),
-    CompileTask("debug-compile-nosasl-nossl", tags=["debug-compile", "nosasl", "nossl"], SSL="OFF"),
-    CompileTask("debug-compile-lto", CFLAGS="-flto"),
-    CompileTask("debug-compile-lto-thin", CFLAGS="-flto=thin"),
-    CompileTask("debug-compile-no-counters", tags=["debug-compile", "no-counters"], ENABLE_SHM_COUNTERS="OFF"),
+    CompileTask("debug-compile-nosasl-nossl", tags=["debug-compile", "nosasl", "nossl"], SSL="OFF", compression=[]),
+    CompileTask("debug-compile-lto", CFLAGS="-flto", compression=[]),
+    CompileTask("debug-compile-lto-thin", CFLAGS="-flto=thin", compression=[]),
+    CompileTask(
+        "debug-compile-no-counters", tags=["debug-compile", "no-counters"], ENABLE_SHM_COUNTERS="OFF", compression=[]
+    ),
     SpecialTask(
         "debug-compile-asan-clang",
         tags=["debug-compile", "asan-clang"],
@@ -225,43 +228,102 @@ all_tasks = [
         EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
         SSL="OPENSSL",
     ),
-    CompileTask("compile-tracing", TRACING="ON", CFLAGS="-Werror -Wno-cast-align"),
+    CompileTask("compile-tracing", TRACING="ON", CFLAGS="-Werror -Wno-cast-align", compression=[]),
     CompileTask(
-        "release-compile", config="release", depends_on=[OD([("name", "make-release-archive"), ("variant", "releng")])]
+        "release-compile",
+        config="release",
+        depends_on=[OD([("name", "make-release-archive"), ("variant", "releng")])],
+        compression="all",
     ),
-    CompileTask("debug-compile-nosasl-openssl", tags=["debug-compile", "nosasl", "openssl"], SSL="OPENSSL"),
     CompileTask(
-        "debug-compile-nosasl-openssl-static", tags=["debug-compile", "nosasl", "openssl-static"], SSL="OPENSSL_STATIC"
+        "debug-compile-nosasl-openssl",
+        tags=["debug-compile", "nosasl", "openssl"],
+        SSL="OPENSSL",
+        compression=[],
     ),
-    CompileTask("debug-compile-nosasl-darwinssl", tags=["debug-compile", "nosasl", "darwinssl"], SSL="DARWIN"),
-    CompileTask("debug-compile-nosasl-winssl", tags=["debug-compile", "nosasl", "winssl"], SSL="WINDOWS"),
-    CompileTask("debug-compile-sasl-nossl", tags=["debug-compile", "sasl", "nossl"], SASL="AUTO", SSL="OFF"),
-    CompileTask("debug-compile-sasl-openssl", tags=["debug-compile", "sasl", "openssl"], SASL="AUTO", SSL="OPENSSL"),
+    CompileTask(
+        "debug-compile-nosasl-openssl-static",
+        tags=["debug-compile", "nosasl", "openssl-static"],
+        SSL="OPENSSL_STATIC",
+        compression=[],
+    ),
+    CompileTask(
+        "debug-compile-nosasl-darwinssl", tags=["debug-compile", "nosasl", "darwinssl"], SSL="DARWIN", compression=[]
+    ),
+    CompileTask(
+        "debug-compile-nosasl-winssl", tags=["debug-compile", "nosasl", "winssl"], SSL="WINDOWS", compression=[]
+    ),
+    CompileTask(
+        "debug-compile-sasl-nossl", tags=["debug-compile", "sasl", "nossl"], SASL="AUTO", SSL="OFF", compression=[]
+    ),
+    CompileTask(
+        "debug-compile-sasl-openssl",
+        tags=["debug-compile", "sasl", "openssl"],
+        SASL="AUTO",
+        SSL="OPENSSL",
+        compression=[],
+    ),
     CompileTask(
         "debug-compile-sasl-openssl-static",
         tags=["debug-compile", "sasl", "openssl-static"],
         SASL="AUTO",
         SSL="OPENSSL_STATIC",
+        compression=[],
     ),
-    CompileTask("debug-compile-sasl-darwinssl", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"),
+    CompileTask(
+        "debug-compile-sasl-darwinssl",
+        tags=["debug-compile", "sasl", "darwinssl"],
+        SASL="AUTO",
+        SSL="DARWIN",
+        compression=[],
+    ),
     CompileTask(
         "debug-compile-sasl-winssl",
         tags=["debug-compile", "sasl", "winssl"],
         # Explicitly use CYRUS.
         SASL="CYRUS",
         SSL="WINDOWS",
+        compression=[],
     ),
-    CompileTask("debug-compile-sspi-nossl", tags=["debug-compile", "sspi", "nossl"], SASL="SSPI", SSL="OFF"),
-    CompileTask("debug-compile-sspi-openssl", tags=["debug-compile", "sspi", "openssl"], SASL="SSPI", SSL="OPENSSL"),
+    CompileTask(
+        "debug-compile-sspi-nossl",
+        tags=["debug-compile", "sspi", "nossl"],
+        SASL="SSPI",
+        SSL="OFF",
+        compression=[],
+    ),
+    CompileTask(
+        "debug-compile-sspi-openssl",
+        tags=["debug-compile", "sspi", "openssl"],
+        SASL="SSPI",
+        SSL="OPENSSL",
+        compression=[],
+    ),
     CompileTask(
         "debug-compile-sspi-openssl-static",
         tags=["debug-compile", "sspi", "openssl-static"],
         SASL="SSPI",
         SSL="OPENSSL_STATIC",
+        compression=[],
     ),
-    CompileTask("debug-compile-rdtscp", ENABLE_RDTSCP="ON"),
-    CompileTask("debug-compile-sspi-winssl", tags=["debug-compile", "sspi", "winssl"], SASL="SSPI", SSL="WINDOWS"),
-    CompileTask("debug-compile-nosrv", tags=["debug-compile"], SRV="OFF"),
+    CompileTask(
+        "debug-compile-rdtscp",
+        ENABLE_RDTSCP="ON",
+        compression=[],
+    ),
+    CompileTask(
+        "debug-compile-sspi-winssl",
+        tags=["debug-compile", "sspi", "winssl"],
+        SASL="SSPI",
+        SSL="WINDOWS",
+        compression=[],
+    ),
+    CompileTask(
+        "debug-compile-nosrv",
+        tags=["debug-compile"],
+        SRV="OFF",
+        compression=[],
+    ),
     LinkTask("link-with-cmake", suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1)]),
     LinkTask(
         "link-with-cmake-ssl",
@@ -385,24 +447,45 @@ all_tasks = [
             )
         ],
     ),
-    CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
+    CompileTask(
+        "debug-compile-with-warnings",
+        CFLAGS="-Werror -Wno-cast-align",
+        compression=[],
+    ),
     CompileWithClientSideEncryption(
-        "debug-compile-sasl-openssl-cse", tags=["debug-compile", "sasl", "openssl"], SASL="AUTO", SSL="OPENSSL"
+        "debug-compile-sasl-openssl-cse",
+        tags=["debug-compile", "sasl", "openssl"],
+        SASL="AUTO",
+        SSL="OPENSSL",
+        compression=[],
     ),
     CompileWithClientSideEncryption(
         "debug-compile-sasl-openssl-static-cse",
         tags=["debug-compile", "sasl", "openssl-static"],
         SASL="AUTO",
         SSL="OPENSSL_STATIC",
+        compression=[],
     ),
     CompileWithClientSideEncryption(
-        "debug-compile-sasl-darwinssl-cse", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"
+        "debug-compile-sasl-darwinssl-cse",
+        tags=["debug-compile", "sasl", "darwinssl"],
+        SASL="AUTO",
+        SSL="DARWIN",
+        compression=[],
     ),
     CompileWithClientSideEncryption(
-        "debug-compile-sasl-winssl-cse", tags=["debug-compile", "sasl", "winssl"], SASL="AUTO", SSL="WINDOWS"
+        "debug-compile-sasl-winssl-cse",
+        tags=["debug-compile", "sasl", "winssl"],
+        SASL="AUTO",
+        SSL="WINDOWS",
+        compression=[],
     ),
     CompileWithClientSideEncryptionAsan(
-        "debug-compile-asan-openssl-cse", tags=["debug-compile", "asan-clang"], SSL="OPENSSL", sanitize=["address"]
+        "debug-compile-asan-openssl-cse",
+        tags=["debug-compile", "asan-clang"],
+        SSL="OPENSSL",
+        sanitize=["address"],
+        compression=[],
     ),
     CompileTask(
         "debug-compile-nosasl-openssl-1.0.1",
@@ -410,6 +493,7 @@ all_tasks = [
         CFLAGS="-Wno-redundant-decls",
         SSL="OPENSSL",
         SASL="OFF",
+        compression=[],
     ),
     NamedTask(
         "build-and-test-with-toolchain",
@@ -938,7 +1022,8 @@ aws_compile_task = NamedTask(
             export CC='${CC}'
             "$cmake" -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
             "$cmake" --build . --target test-awsauth
-            """
+            """,
+            add_expansions_to_env=True,
         ),
         func("upload-build"),
     ],
