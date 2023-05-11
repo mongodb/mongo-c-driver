@@ -12,4 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all_task_groups = []
+from typing import Sequence
+from evergreen_config_generator.taskgroups import TaskGroup
+
+all_task_groups: Sequence[TaskGroup] = []
