@@ -36,6 +36,10 @@ OptToggleStr = Optional[ToggleStr]
 TopologyStr = Literal["server"]
 
 
+def onoff(b: bool) -> ToggleStr:
+    return "ON" if b else "OFF"
+
+
 class CompileTask(NamedTask):
     cls_compile_sh_env: ClassVar[Mapping[str, str]] = {}
     cls_tags: ClassVar[Sequence[str]] = ()
@@ -46,7 +50,7 @@ class CompileTask(NamedTask):
         task_name: str,
         tags: Iterable[str] = (),
         config: str = "debug",
-        compression: str | None = "default",
+        compression: None | Sequence[Literal["snappy", "zlib", "zstd"]] | Literal["all"] = None,
         suffix_commands: Iterable[Value] = (),
         depends_on: Iterable[DependencySpec] = (),
         prefix_commands: Iterable[Value] = (),
@@ -100,10 +104,11 @@ class CompileTask(NamedTask):
         if TOPOLOGY:
             self.compile_sh_opt["TOPOLOGY"] = TOPOLOGY
 
-        if compression != "default":
-            self.compile_sh_opt["SNAPPY"] = "ON" if compression in ("all", "snappy") else "OFF"
-            self.compile_sh_opt["ZLIB"] = "BUNDLED" if compression in ("all", "zlib") else "OFF"
-            self.compile_sh_opt["ZSTD"] = "ON" if compression in ("all", "zstd") else "OFF"
+        if compression is not None:
+            all_compression = compression == "all"
+            self.compile_sh_opt["SNAPPY"] = onoff(all_compression or "snappy" in compression)
+            self.compile_sh_opt["ZLIB"] = "BUNDLED" if (all_compression or "zlib" in compression) else "OFF"
+            self.compile_sh_opt["ZSTD"] = onoff(all_compression or "zstd" in compression)
 
         if sanitize:
             self.compile_sh_opt["SANITIZE"] = ",".join(sanitize)
@@ -183,18 +188,18 @@ all_tasks = [
     CompileTask(
         "hardened-compile",
         tags=["hardened"],
-        compression=None,
+        compression=[],
         CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O",
         LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now",
     ),
-    CompileTask("debug-compile-compression-zlib", tags=["zlib", "compression"], compression="zlib"),
-    CompileTask("debug-compile-compression-snappy", tags=["snappy", "compression"], compression="snappy"),
-    CompileTask("debug-compile-compression-zstd", tags=["zstd", "compression"], compression="zstd"),
+    CompileTask("debug-compile-compression-zlib", tags=["zlib", "compression"], compression=["zlib"]),
+    CompileTask("debug-compile-compression-snappy", tags=["snappy", "compression"], compression=["snappy"]),
+    CompileTask("debug-compile-compression-zstd", tags=["zstd", "compression"], compression=["zstd"]),
     CompileTask("debug-compile-compression", tags=["zlib", "snappy", "zstd", "compression"], compression="all"),
     CompileTask(
         "debug-compile-no-align",
         tags=["debug-compile"],
-        compression="zlib",
+        compression=["zlib"],
         EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
     ),
     CompileTask("debug-compile-nosasl-nossl", tags=["debug-compile", "nosasl", "nossl"], SSL="OFF"),
@@ -204,7 +209,7 @@ all_tasks = [
     SpecialTask(
         "debug-compile-asan-clang",
         tags=["debug-compile", "asan-clang"],
-        compression="zlib",
+        compression=["zlib"],
         CFLAGS="-fno-omit-frame-pointer",
         CHECK_LOG="ON",
         sanitize=["address"],
@@ -213,7 +218,7 @@ all_tasks = [
     SpecialTask(
         "debug-compile-asan-clang-openssl",
         tags=["debug-compile", "asan-clang"],
-        compression="zlib",
+        compression=["zlib"],
         CFLAGS="-fno-omit-frame-pointer",
         CHECK_LOG="ON",
         sanitize=["address"],
