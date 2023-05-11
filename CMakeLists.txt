@@ -126,7 +126,15 @@ mongo_bool_setting(ENABLE_ICU "Enable ICU support, needed for non-ASCII username
 mongo_bool_setting(ENABLE_CLIENT_SIDE_ENCRYPTION "Enable In-Use Encryption support. Requires additional support libraries.")
 if(ENABLE_SSL)
    # Only define this as a setting if we have an SSL enabled, otherwise we should implicitly disable it:
-   mongo_bool_setting(ENABLE_MONGODB_AWS_AUTH "Enable support for the MONGODB-AWS authentication mechanism")
+   mongo_bool_setting(
+      ENABLE_MONGODB_AWS_AUTH "Enable support for the MONGODB-AWS authentication mechanism"
+      DEFAULT EVAL [[
+         set(DEFAULT ON)
+         if(MSVC AND MSVC_VERSION LESS 1900)
+            set(DEFAULT OFF)
+            message(DEBUG "ENABLE_MONGODB_AWS_AUTH is “OFF” by default on for MSVC older than 19.0 (VS 2015)")
+         endif()
+      ]])
 elseif(ENABLE_MONGODB_AWS_AUTH)
    # The user requested AWS auth (or it is still enabled in the cache), but we don't have ENABLE_SSL
    message(SEND_ERROR "ENABLE_MONGODB_AWS_AUTH requires ENABLE_SSL")
