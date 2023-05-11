@@ -1,7 +1,7 @@
 # remirepo/fedora spec file for mongo-c-driver
 #
-# Copyright (c) 2015-2022 Remi Collet
-# License: CC-BY-SA
+# Copyright (c) 2015-2023 Remi Collet
+# License: CC-BY-SA-4.0
 # http://creativecommons.org/licenses/by-sa/4.0/
 #
 # Please, preserve the changelog entries
@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.23.1
+%global up_version   1.23.4
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -21,9 +21,9 @@
 Name:      mongo-c-driver
 Summary:   Client library written in C for MongoDB
 Version:   %{up_version}%{?up_prever:~%{up_prever}}
-Release:   2%{?dist}
+Release:   1%{?dist}
 # See THIRD_PARTY_NOTICES
-License:   ASL 2.0 and ISC and MIT and zlib
+License:   Apache-2.0 AND ISC AND MIT AND Zlib
 URL:       https://github.com/%{gh_owner}/%{gh_project}
 
 Source0:   https://github.com/%{gh_owner}/%{gh_project}/releases/download/%{up_version}%{?up_prever:-%{up_prever}}/%{gh_project}-%{up_version}%{?up_prever:-%{up_prever}}.tar.gz
@@ -83,7 +83,7 @@ Requires:   cmake(mongocrypt)
 This package contains the header files and development libraries
 for %{name}.
 
-Documentation: https://www.mongoc.org/libmongoc/%{version}/
+Documentation: http://mongoc.org/libmongoc/%{version}/
 
 
 %package -n libbson
@@ -109,7 +109,7 @@ Requires:   cmake-filesystem
 This package contains libraries and header files needed for developing
 applications that use %{name}.
 
-Documentation: https://www.mongoc.org/libbson/%{version}/
+Documentation: http://mongoc.org/libbson/%{version}/
 
 
 %prep
@@ -236,6 +236,22 @@ exit $ret
 
 
 %changelog
+* Tue May  9 2023 Remi Collet <remi@remirepo.net> - 1.23.4-1
+- update to 1.23.4
+
+* Wed Apr  5 2023 Remi Collet <remi@remirepo.net> - 1.23.3-1
+- update to 1.23.3
+
+* Thu Jan 19 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.23.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
+
+* Wed Jan  4 2023 Remi Collet <remi@remirepo.net> - 1.23.2-1
+- update to 1.23.2
+- use SPDX license ID
+
+* Sat Dec 31 2022 Pete Walter <pwalter@fedoraproject.org> - 1.23.1-3
+- Rebuild for ICU 72
+
 * Thu Oct 20 2022 Remi Collet <remi@remirepo.net> - 1.23.1-2
 - update to 1.23.1
 
