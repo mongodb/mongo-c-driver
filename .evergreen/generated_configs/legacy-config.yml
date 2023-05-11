@@ -320,7 +320,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O" DEBUG="ON" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O" DEBUG="ON" ICU="OFF" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-compression-zlib
   tags:
@@ -335,7 +335,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-compression-snappy
   tags:
@@ -350,7 +350,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="ON" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="ON" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-compression-zstd
   tags:
@@ -365,7 +365,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" ZLIB="OFF" ZSTD="ON" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="OFF" ZLIB="OFF" ZSTD="ON" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-compression
   tags:
@@ -382,7 +382,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="ON" ZLIB="BUNDLED" ZSTD="ON" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="ON" ZLIB="BUNDLED" ZSTD="ON" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-no-align
   tags:
@@ -396,7 +396,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" ICU="OFF" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-nossl
   tags:
@@ -412,7 +412,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" SSL="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="OFF" SSL="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-lto
   commands:
@@ -424,7 +424,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-flto" DEBUG="ON" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-flto" DEBUG="ON" ICU="OFF" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-lto-thin
   commands:
@@ -436,7 +436,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-flto=thin" DEBUG="ON" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-flto=thin" DEBUG="ON" ICU="OFF" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-no-counters
   tags:
@@ -451,7 +451,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" ENABLE_SHM_COUNTERS="OFF" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ENABLE_SHM_COUNTERS="OFF" ICU="OFF" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-asan-clang
   tags:
@@ -467,7 +467,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" ICU="OFF" SANITIZE="address" SNAPPY="OFF" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-asan-clang-openssl
   tags:
@@ -483,7 +483,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" ICU="OFF" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="BUNDLED" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: compile-tracing
   commands:
@@ -495,7 +495,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" SNAPPY="OFF" TRACING="ON" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" ICU="OFF" SNAPPY="OFF" TRACING="ON" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: release-compile
   depends_on:
@@ -510,7 +510,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env RELEASE="ON" SNAPPY="ON" ZLIB="BUNDLED" ZSTD="ON" bash .evergreen/scripts/compile.sh
+        env ICU="OFF" RELEASE="ON" SNAPPY="ON" ZLIB="BUNDLED" ZSTD="ON" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-openssl
   tags:
@@ -526,7 +526,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-openssl-static
   tags:
@@ -542,7 +542,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" SSL="OPENSSL_STATIC" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="OFF" SSL="OPENSSL_STATIC" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-darwinssl
   tags:
@@ -558,7 +558,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" SSL="DARWIN" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="OFF" SSL="DARWIN" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-winssl
   tags:
@@ -574,7 +574,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" SSL="WINDOWS" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="OFF" SSL="WINDOWS" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-nossl
   tags:
@@ -590,7 +590,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="AUTO" SNAPPY="OFF" SSL="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SASL="AUTO" SNAPPY="OFF" SSL="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-openssl
   tags:
@@ -606,7 +606,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="AUTO" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SASL="AUTO" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-openssl-static
   tags:
@@ -622,7 +622,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="AUTO" SNAPPY="OFF" SSL="OPENSSL_STATIC" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SASL="AUTO" SNAPPY="OFF" SSL="OPENSSL_STATIC" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-darwinssl
   tags:
@@ -638,7 +638,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="AUTO" SNAPPY="OFF" SSL="DARWIN" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SASL="AUTO" SNAPPY="OFF" SSL="DARWIN" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-winssl
   tags:
@@ -654,7 +654,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="CYRUS" SNAPPY="OFF" SSL="WINDOWS" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SASL="CYRUS" SNAPPY="OFF" SSL="WINDOWS" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sspi-nossl
   tags:
@@ -670,7 +670,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="SSPI" SNAPPY="OFF" SSL="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SASL="SSPI" SNAPPY="OFF" SSL="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sspi-openssl
   tags:
@@ -686,7 +686,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="SSPI" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SASL="SSPI" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sspi-openssl-static
   tags:
@@ -702,7 +702,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="SSPI" SNAPPY="OFF" SSL="OPENSSL_STATIC" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SASL="SSPI" SNAPPY="OFF" SSL="OPENSSL_STATIC" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-rdtscp
   commands:
@@ -714,7 +714,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" ENABLE_RDTSCP="ON" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ENABLE_RDTSCP="ON" ICU="OFF" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sspi-winssl
   tags:
@@ -730,7 +730,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SASL="SSPI" SNAPPY="OFF" SSL="WINDOWS" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SASL="SSPI" SNAPPY="OFF" SSL="WINDOWS" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosrv
   tags:
@@ -744,7 +744,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env DEBUG="ON" SNAPPY="OFF" SRV="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env DEBUG="ON" ICU="OFF" SNAPPY="OFF" SRV="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: link-with-cmake
   depends_on:
@@ -1034,7 +1034,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" ICU="OFF" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-openssl-cse
   tags:
@@ -1052,7 +1052,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" ICU="OFF" SASL="AUTO" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-openssl-static-cse
   tags:
@@ -1070,7 +1070,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SNAPPY="OFF" SSL="OPENSSL_STATIC" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" ICU="OFF" SASL="AUTO" SNAPPY="OFF" SSL="OPENSSL_STATIC" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-darwinssl-cse
   tags:
@@ -1088,7 +1088,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SNAPPY="OFF" SSL="DARWIN" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" ICU="OFF" SASL="AUTO" SNAPPY="OFF" SSL="DARWIN" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-sasl-winssl-cse
   tags:
@@ -1106,7 +1106,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SNAPPY="OFF" SSL="WINDOWS" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" ICU="OFF" SASL="AUTO" SNAPPY="OFF" SSL="WINDOWS" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-asan-openssl-cse
   tags:
@@ -1122,7 +1122,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" ICU="OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-openssl-1.0.1
   commands:
@@ -1137,7 +1137,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-Wno-redundant-decls" DEBUG="ON" SASL="OFF" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
+        env CFLAGS="-Wno-redundant-decls" DEBUG="ON" ICU="OFF" SASL="OFF" SNAPPY="OFF" SSL="OPENSSL" ZLIB="OFF" ZSTD="OFF" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: build-and-test-with-toolchain
   commands:

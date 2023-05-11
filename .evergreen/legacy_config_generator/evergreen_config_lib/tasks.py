@@ -68,6 +68,7 @@ class CompileTask(NamedTask):
         ENABLE_RDTSCP: OptToggleStr = None,
         SRV: OptToggleStr = None,
         TOPOLOGY: TopologyStr | None = None,
+        icu: bool = False,
     ):
         super(CompileTask, self).__init__(task_name=task_name, depends_on=depends_on, tags=tags)
 
@@ -76,45 +77,48 @@ class CompileTask(NamedTask):
 
         # Environment variables for .evergreen/scripts/compile.sh.
         self.compile_sh_opt: dict[str, str] = {}
+        opts = self.compile_sh_opt
         if config == "debug":
-            self.compile_sh_opt["DEBUG"] = "ON"
+            opts["DEBUG"] = "ON"
         else:
             assert config == "release"
-            self.compile_sh_opt["RELEASE"] = "ON"
+            opts["RELEASE"] = "ON"
 
         if CFLAGS:
-            self.compile_sh_opt["CFLAGS"] = CFLAGS
+            opts["CFLAGS"] = CFLAGS
         if LDFLAGS:
-            self.compile_sh_opt["LDFLAGS"] = LDFLAGS
+            opts["LDFLAGS"] = LDFLAGS
         if EXTRA_CONFIGURE_FLAGS:
-            self.compile_sh_opt["EXTRA_CONFIGURE_FLAGS"] = EXTRA_CONFIGURE_FLAGS
+            opts["EXTRA_CONFIGURE_FLAGS"] = EXTRA_CONFIGURE_FLAGS
         if SSL:
-            self.compile_sh_opt["SSL"] = SSL
+            opts["SSL"] = SSL
         if ENABLE_SHM_COUNTERS:
-            self.compile_sh_opt["ENABLE_SHM_COUNTERS"] = ENABLE_SHM_COUNTERS
+            opts["ENABLE_SHM_COUNTERS"] = ENABLE_SHM_COUNTERS
         if CHECK_LOG:
-            self.compile_sh_opt["CHECK_LOG"] = CHECK_LOG
+            opts["CHECK_LOG"] = CHECK_LOG
         if TRACING:
-            self.compile_sh_opt["TRACING"] = TRACING
+            opts["TRACING"] = TRACING
         if SASL:
-            self.compile_sh_opt["SASL"] = SASL
+            opts["SASL"] = SASL
         if ENABLE_RDTSCP:
-            self.compile_sh_opt["ENABLE_RDTSCP"] = ENABLE_RDTSCP
+            opts["ENABLE_RDTSCP"] = ENABLE_RDTSCP
         if SRV:
-            self.compile_sh_opt["SRV"] = SRV
+            opts["SRV"] = SRV
         if TOPOLOGY:
-            self.compile_sh_opt["TOPOLOGY"] = TOPOLOGY
+            opts["TOPOLOGY"] = TOPOLOGY
+
+        opts["ICU"] = onoff(icu)
 
         if compression is not None:
             all_compression = compression == "all"
-            self.compile_sh_opt["SNAPPY"] = onoff(all_compression or "snappy" in compression)
-            self.compile_sh_opt["ZLIB"] = "BUNDLED" if (all_compression or "zlib" in compression) else "OFF"
-            self.compile_sh_opt["ZSTD"] = onoff(all_compression or "zstd" in compression)
+            opts["SNAPPY"] = onoff(all_compression or "snappy" in compression)
+            opts["ZLIB"] = "BUNDLED" if (all_compression or "zlib" in compression) else "OFF"
+            opts["ZSTD"] = onoff(all_compression or "zstd" in compression)
 
         if sanitize:
-            self.compile_sh_opt["SANITIZE"] = ",".join(sanitize)
+            opts["SANITIZE"] = ",".join(sanitize)
 
-        self.compile_sh_opt.update(type(self).cls_compile_sh_env)
+        opts.update(type(self).cls_compile_sh_env)
 
     def additional_script_env(self) -> Mapping[str, str]:
         return {}
