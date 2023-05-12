@@ -3,6 +3,13 @@
 mongoc_bulk_operation_delete()
 ==============================
 
+.. warning::
+   .. deprecated:: 0.96.0
+
+   This function is deprecated and should not be used in new code.
+
+   Please use :symbol:`mongoc_bulk_operation_remove()` in new code.
+
 Synopsis
 --------
 
@@ -10,18 +17,10 @@ Synopsis
 
   void
   mongoc_bulk_operation_delete (mongoc_bulk_operation_t *bulk,
-                                const bson_t *selector);
+                                const bson_t *selector)
+    BSON_GNUC_DEPRECATED_FOR (mongoc_bulk_operation_remove);
 
 Deletes documents as part of a bulk operation. This only queues the operation. To execute it, call :symbol:`mongoc_bulk_operation_execute()`.
-
-Deprecated
-----------
-
-.. warning::
-
-  This function is deprecated and should not be used in new code.
-
-Please use :symbol:`mongoc_bulk_operation_remove()` instead.
 
 Parameters
 ----------

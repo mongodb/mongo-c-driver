@@ -11,7 +11,6 @@ API Reference
   bson_error_t
   bson_iter_t
   bson_json_reader_t
-  bson_md5_t
   bson_oid_t
   bson_reader_t
   character_and_string_routines

@@ -3,6 +3,13 @@
 bson_copy_to_excluding()
 ========================
 
+.. warning::
+   .. deprecated:: 1.1.0
+
+      This function is deprecated and should not be used in new code.
+
+      Please use :symbol:`bson_copy_to_excluding_noinit()` in new code.
+
 Synopsis
 --------
 
@@ -28,12 +35,6 @@ Description
 The :symbol:`bson_copy_to_excluding()` function shall copy all fields from
 ``src`` to ``dst`` except those specified by the variadic, NULL terminated list
 of keys starting from ``first_exclude``.
-
-Deprecated
-----------
-
-  This function is deprecated. Please use
-  :symbol:`bson_copy_to_excluding_noinit` in new code.
 
 .. warning::
 

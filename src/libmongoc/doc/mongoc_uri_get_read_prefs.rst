@@ -3,6 +3,13 @@
 mongoc_uri_get_read_prefs()
 ===========================
 
+.. warning::
+   .. deprecated:: 1.2.0
+
+      This function is deprecated and should not be used in new code.
+
+      Please use :doc:`mongoc_uri_get_read_prefs_t() <mongoc_uri_get_read_prefs_t>` in new code.
+
 Synopsis
 --------
 
@@ -10,15 +17,6 @@ Synopsis
 
   const bson_t *
   mongoc_uri_get_read_prefs (const mongoc_uri_t *uri);
-
-Deprecated
-----------
-
-.. warning::
-
-  This function is deprecated and should not be used in new code.
-
-Please use :doc:`mongoc_uri_get_read_prefs_t() <mongoc_uri_get_read_prefs_t>` instead.
 
 Parameters
 ----------

@@ -3,6 +3,13 @@
 mongoc_client_pool_min_size()
 =============================
 
+.. warning::
+   .. deprecated:: 1.9.0
+
+      This function is deprecated because its behavior does not match what developers expect from a "minimum pool size", and its actual behavior is likely to hurt performance.
+
+      Applications should not call this function, they should instead accept the default behavior, which is to keep all idle clients that are pushed into the pool.
+
 Synopsis
 --------
 
@@ -13,9 +20,7 @@ Synopsis
                                uint32_t min_pool_size)
      BSON_GNUC_DEPRECATED;
 
-This function sets the *maximum* number of idle clients to be kept in the pool. Any idle clients in excess of the maximum are destroyed. This function is deprecated because its behavior does not match what developers expect from a "minimum pool size", and its actual behavior is likely to hurt performance.
-
-Applications should not call this function, they should instead accept the default behavior, which is to keep all idle clients that are pushed into the pool.
+This function sets the *maximum* number of idle clients to be kept in the pool. Any idle clients in excess of the maximum are destroyed.
 
 Parameters
 ----------

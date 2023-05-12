@@ -3,6 +3,11 @@
 mongoc_collection_ensure_index()
 ================================
 
+.. warning::
+   .. deprecated:: 1.8.0
+
+      This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
+
 Synopsis
 --------
 
@@ -14,11 +19,6 @@ Synopsis
                                   const mongoc_index_opt_t *opt,
                                   bson_error_t *error)
      BSON_GNUC_DEPRECATED;
-
-Deprecated
-----------
-
-This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
 
 Parameters
 ----------

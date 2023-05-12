@@ -3,6 +3,13 @@
 mongoc_collection_insert_bulk()
 ===============================
 
+.. warning::
+   .. deprecated:: 1.9.0
+
+     This function is deprecated and should not be used in new code.
+
+     Please use :symbol:`mongoc_collection_insert_many()` in new code.
+
 Synopsis
 --------
 
@@ -16,13 +23,6 @@ Synopsis
                                  const mongoc_write_concern_t *write_concern,
                                  bson_error_t *error)
      BSON_GNUC_DEPRECATED_FOR (mongoc_collection_insert_many);
-
-Deprecated
-----------
-
-This function is deprecated and should not be used in new code.
-
-Please use :symbol:`mongoc_collection_insert_many()` instead.
 
 Parameters
 ----------

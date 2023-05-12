@@ -3,6 +3,13 @@
 mongoc_apm_command_succeeded_get_server_connection_id()
 =======================================================
 
+.. warning::
+   .. deprecated:: 1.24.0
+
+      This function is deprecated and should not be used in new code.
+
+      Please use :symbol:`mongoc_apm_command_succeeded_get_server_connection_id_int64()` in new code.
+
 Synopsis
 --------
 
@@ -18,12 +25,6 @@ Returns the server connection ID for the command. The server connection ID is
 distinct from the server ID
 (:symbol:`mongoc_apm_command_succeeded_get_server_id`) and is returned by the
 hello or legacy hello response as "connectionId" from the server on 4.2+.
-
-Deprecated
-----------
-
-  This function is deprecated. Please use
-  :symbol:`mongoc_apm_command_succeeded_get_server_connection_id_int64` in new code.
 
 Parameters
 ----------

@@ -3,6 +3,13 @@
 mongoc_uri_get_service()
 ========================
 
+.. warning::
+   .. deprecated:: 1.21.0
+
+      This function is deprecated and should not be used in new code.
+
+      Please use :symbol:`mongoc_uri_get_srv_hostname()` in new code.
+
 Synopsis
 --------
 
@@ -16,13 +23,6 @@ Parameters
 ----------
 
 * ``uri``: A :symbol:`mongoc_uri_t`.
-
-Deprecated
-----------
-
-This function is deprecated and should not be used in new code.
-
-Please use :symbol:`mongoc_uri_get_srv_hostname()` instead.
 
 Returns the SRV host and domain name of a MongoDB URI.
 

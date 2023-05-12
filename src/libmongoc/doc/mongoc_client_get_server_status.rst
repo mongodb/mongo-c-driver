@@ -3,6 +3,13 @@
 mongoc_client_get_server_status()
 =================================
 
+.. warning::
+   .. deprecated:: 1.10.0
+
+      This function is deprecated and should not be used in new code.
+
+      Run the `serverStatus <https://www.mongodb.com/docs/manual/reference/command/serverStatus/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
+
 Synopsis
 --------
 
@@ -17,11 +24,6 @@ Synopsis
 Queries the server for the current server status. The result is stored in ``reply``.
 
 ``reply`` is always initialized, even in the case of failure. Always call :symbol:`bson:bson_destroy()` to release it.
-
-Deprecated
-----------
-
-This helper function is deprecated and should not be used in new code. Run the `serverStatus <https://www.mongodb.com/docs/manual/reference/command/serverStatus/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
 
 Parameters
 ----------

@@ -3,6 +3,13 @@
 mongoc_write_concern_get_fsync()
 ================================
 
+.. warning::
+   .. deprecated:: 1.4.0
+
+      This function is deprecated and should not be used in new code.
+
+      Please use :symbol:`mongoc_write_concern_get_journal()` in new code.
+
 Synopsis
 --------
 
@@ -25,11 +32,4 @@ Returns
 -------
 
 Returns true if ``fsync`` is set as part of the write concern.
-
-Deprecated
-----------
-
-.. warning::
-
-  The ``fsync`` write concern is deprecated; use ``journal`` instead.
 

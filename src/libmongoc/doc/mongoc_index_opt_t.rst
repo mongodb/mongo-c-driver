@@ -3,6 +3,11 @@
 mongoc_index_opt_t
 ==================
 
+.. warning::
+   .. deprecated:: 1.8.0
+
+      This structure is deprecated and should not be used in new code. See :doc:`create-indexes`.
+
 Synopsis
 --------
 
@@ -28,11 +33,6 @@ Synopsis
      const bson_t *collation;
      void *padding[4];
   } mongoc_index_opt_t;
-
-Deprecated
-----------
-
-This structure is deprecated and should not be used in new code. See :doc:`create-indexes`.
 
 Description
 -----------

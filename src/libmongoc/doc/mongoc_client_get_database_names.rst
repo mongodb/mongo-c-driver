@@ -3,6 +3,13 @@
 mongoc_client_get_database_names()
 ==================================
 
+.. warning::
+   .. deprecated:: 1.9.0
+
+      This function is deprecated and should not be used in new code.
+
+      Please use :symbol:`mongoc_client_get_database_names_with_opts()` in new code.
+
 Synopsis
 --------
 
@@ -12,13 +19,6 @@ Synopsis
   mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
      BSON_GNUC_WARN_UNUSED_RESULT
      BSON_GNUC_DEPRECATED_FOR (mongoc_client_get_database_names_with_opts);
-
-Deprecated
-----------
-
-This function is deprecated and should not be used in new code.
-
-Please use :symbol:`mongoc_client_get_database_names_with_opts()` instead.
 
 Description
 -----------
