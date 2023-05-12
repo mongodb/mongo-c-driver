@@ -69,6 +69,7 @@ class CompileTask(NamedTask):
         SRV: OptToggleStr = None,
         TOPOLOGY: TopologyStr | None = None,
         icu: bool = False,
+        client_side_encryption: bool = False,
     ):
         super(CompileTask, self).__init__(task_name=task_name, depends_on=depends_on, tags=tags)
 
@@ -108,6 +109,7 @@ class CompileTask(NamedTask):
             opts["TOPOLOGY"] = TOPOLOGY
 
         opts["ICU"] = onoff(icu)
+        opts["CLIENT_SIDE_ENCRYPTION"] = onoff(client_side_encryption)
 
         if compression is not None:
             all_compression = compression == "all"
@@ -1024,7 +1026,7 @@ aws_compile_task = NamedTask(
             . .evergreen/scripts/find-cmake-latest.sh
             cmake=$(find_cmake_latest)
             export CC='${CC}'
-            "$cmake" -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+            "$cmake" -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ICU=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
             "$cmake" --build . --target test-awsauth
             """,
             add_expansions_to_env=True,
