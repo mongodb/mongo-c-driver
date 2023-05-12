@@ -25,11 +25,11 @@ class TaskGroup(ConfigObject):
         self.teardown_group: ValueSequence | None = None
         self.setup_task: str | None = None
         self.teardown_task: str | None = None
-        self.max_hosts: str | None = None
-        self.timeout: str | None = None
+        self.max_hosts: int | None = None
+        self.timeout: int | None = None
         self.setup_group_can_fail_task: bool | None = None
         self.setup_group_timeout_secs: int | None = None
-        self.share_processes: str | None = None
+        self.share_processes: bool | None = None
         self.tasks: ValueSequence | None = None
 
     @property

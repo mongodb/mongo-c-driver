@@ -62,7 +62,6 @@ class CompileTask(NamedTask):
         SASL: Literal[None, "OFF", "AUTO", "CYRUS", "SSPI"] = None,
         ENABLE_RDTSCP: OptToggleStr = None,
         SRV: OptToggleStr = None,
-        TOPOLOGY: TopologyStr | None = None,
     ):
         super(CompileTask, self).__init__(task_name=task_name, depends_on=depends_on, tags=tags)
 
