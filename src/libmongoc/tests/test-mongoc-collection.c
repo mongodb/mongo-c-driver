@@ -2486,6 +2486,26 @@ test_count_documents (void)
    request_destroy (request);
    future_destroy (future);
 
+   // Test appending maxTimeMS.
+   future = future_collection_count_documents (collection,
+                                               tmp_bson ("{}"),
+                                               tmp_bson ("{'maxTimeMS': 123}"),
+                                               NULL,
+                                               &reply,
+                                               &error);
+
+   request = mock_server_receives_msg (
+      server,
+      0,
+      tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': {}}, {'$group': "
+                "{'n': {'$sum': 1}}}], 'maxTimeMS': 123}"));
+   mock_server_replies_simple (request, server_reply);
+   ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
+   ASSERT_MATCH (&reply, server_reply);
+   bson_destroy (&reply);
+   request_destroy (request);
+   future_destroy (future);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -6157,6 +6177,54 @@ test_fam_no_error_on_retry (void *unused)
    mongoc_find_and_modify_opts_destroy (opts);
 }
 
+static void
+test_hint_is_validated_aggregate (void)
+{
+   bson_error_t error;
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   mongoc_collection_t *collection =
+      get_test_collection (client, "test_hint_is_validated_aggregate");
+   mongoc_cursor_t *cursor =
+      mongoc_collection_aggregate (collection,
+                                   MONGOC_QUERY_NONE,
+                                   tmp_bson ("{}"),
+                                   tmp_bson ("{'hint': 1}"),
+                                   NULL /* read prefs */);
+   bool has_error = mongoc_cursor_error (cursor, &error);
+   ASSERT (has_error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "The hint option must be a string or document");
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_hint_is_validated_countDocuments (void)
+{
+   bson_error_t error;
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   mongoc_collection_t *collection =
+      get_test_collection (client, "test_hint_is_validated_countDocuments");
+   int64_t got = mongoc_collection_count_documents (collection,
+                                                    tmp_bson ("{}"),
+                                                    tmp_bson ("{'hint': 1}"),
+                                                    NULL /* read prefs */,
+                                                    NULL /* reply */,
+                                                    &error);
+   ASSERT_CMPINT64 (got, ==, -1);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "The hint option must be a string or document");
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -6394,4 +6462,10 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_failpoint,
                       test_framework_skip_if_max_wire_version_more_than_9);
+   TestSuite_AddLive (suite,
+                      "/Collection/hint_is_validated/aggregate",
+                      test_hint_is_validated_aggregate);
+   TestSuite_AddLive (suite,
+                      "/Collection/hint_is_validated/countDocuments",
+                      test_hint_is_validated_countDocuments);
 }

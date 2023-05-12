@@ -875,10 +875,9 @@ done:
 static void
 _make_aggregate_for_count (const mongoc_collection_t *coll,
                            const bson_t *filter,
-                           const bson_t *opts,
+                           mongoc_count_document_opts_t *opts,
                            bson_t *out)
 {
-   bson_iter_t iter;
    bson_t pipeline;
    bson_t match_stage;
    bson_t group_stage;
@@ -898,18 +897,18 @@ _make_aggregate_for_count (const mongoc_collection_t *coll,
    bson_append_document_begin (&pipeline, keys[key++], 1, &match_stage);
    bson_append_document (&match_stage, "$match", 6, filter);
    bson_append_document_end (&pipeline, &match_stage);
-   /* if @opts includes "skip", or "count", append $skip and $count stages to
+   /* if @opts includes "skip", or "limit", append $skip and $limit stages to
     * the aggregate pipeline. */
-   if (opts && bson_iter_init_find (&iter, opts, "skip")) {
+   if (opts->skip.value_type != BSON_TYPE_EOD) {
       bson_t skip_stage;
       bson_append_document_begin (&pipeline, keys[key++], 1, &skip_stage);
-      bson_append_value (&skip_stage, "$skip", 5, bson_iter_value (&iter));
+      bson_append_value (&skip_stage, "$skip", 5, &opts->skip);
       bson_append_document_end (&pipeline, &skip_stage);
    }
-   if (opts && bson_iter_init_find (&iter, opts, "limit")) {
+   if (opts->limit.value_type != BSON_TYPE_EOD) {
       bson_t limit_stage;
       bson_append_document_begin (&pipeline, keys[key++], 1, &limit_stage);
-      bson_append_value (&limit_stage, "$limit", 6, bson_iter_value (&iter));
+      bson_append_value (&limit_stage, "$limit", 6, &opts->limit);
       bson_append_document_end (&pipeline, &limit_stage);
    }
    bson_append_document_begin (&pipeline, keys[key], 1, &group_stage);
@@ -946,7 +945,13 @@ mongoc_collection_count_documents (mongoc_collection_t *coll,
    BSON_ASSERT_PARAM (coll);
    BSON_ASSERT_PARAM (filter);
 
-   _make_aggregate_for_count (coll, filter, opts, &aggregate_cmd);
+   // Parse options to validate.
+   mongoc_count_document_opts_t cd_opts;
+   if (!_mongoc_count_document_opts_parse (coll->client, opts, &cd_opts, error)) {
+      GOTO(done);
+   }
+
+   _make_aggregate_for_count (coll, filter, &cd_opts, &aggregate_cmd);
    bson_init (&aggregate_opts);
    if (opts) {
       bsonBuildAppend (aggregate_opts,
@@ -986,6 +991,7 @@ mongoc_collection_count_documents (mongoc_collection_t *coll,
    }
 
 done:
+   _mongoc_count_document_opts_cleanup (&cd_opts);
    if (cursor) {
       mongoc_cursor_destroy (cursor);
    }
