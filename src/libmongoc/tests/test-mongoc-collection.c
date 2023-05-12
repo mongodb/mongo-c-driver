@@ -2486,6 +2486,26 @@ test_count_documents (void)
    request_destroy (request);
    future_destroy (future);
 
+   // Test appending maxTimeMS.
+   future = future_collection_count_documents (collection,
+                                               tmp_bson ("{}"),
+                                               tmp_bson ("{'maxTimeMS': 123}"),
+                                               NULL,
+                                               &reply,
+                                               &error);
+
+   request = mock_server_receives_msg (
+      server,
+      0,
+      tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': {}}, {'$group': "
+                "{'n': {'$sum': 1}}}], 'maxTimeMS': 123}"));
+   mock_server_replies_simple (request, server_reply);
+   ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
+   ASSERT_MATCH (&reply, server_reply);
+   bson_destroy (&reply);
+   request_destroy (request);
+   future_destroy (future);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
