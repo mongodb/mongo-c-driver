@@ -15,7 +15,7 @@
 from collections import OrderedDict as OD
 
 from evergreen_config_generator.functions import (
-    Function, func, s3_put, shell_exec, targz_pack)
+    Function, s3_put, shell_exec)
 from evergreen_config_lib import shell_mongoc
 
 build_path = '${build_variant}/${revision}/${version_id}/${build_id}'

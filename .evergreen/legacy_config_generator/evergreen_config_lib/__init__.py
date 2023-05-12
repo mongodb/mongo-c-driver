@@ -15,5 +15,26 @@
 from evergreen_config_generator.functions import shell_exec
 
 
-def shell_mongoc(script, *args, **kwargs):
-    return shell_exec(script, *args, working_dir='mongoc', **kwargs)
+def shell_mongoc(
+    script: str,
+    test: bool = True,
+    errexit: bool = True,
+    xtrace: bool = False,
+    silent: bool = False,
+    continue_on_err: bool = False,
+    background: bool = False,
+    add_expansions_to_env: bool = False,
+    redirect_standard_error_to_output: bool = False,
+):
+    return shell_exec(
+        script,
+        working_dir="mongoc",
+        test=test,
+        errexit=errexit,
+        xtrace=xtrace,
+        silent=silent,
+        continue_on_err=continue_on_err,
+        background=background,
+        add_expansions_to_env=add_expansions_to_env,
+        redirect_standard_error_to_output=redirect_standard_error_to_output,
+    )
