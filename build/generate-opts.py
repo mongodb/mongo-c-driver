@@ -379,6 +379,7 @@ opts_structs = OrderedDict([
         session_option,
         collation_option,
         server_option,
+        # The CRUD spec specifies `skip` and `limit` as int64_t. The server appears to accept int32 and double. The C driver accepts any bson_value_t and relies on the server to return an error for an invalid type.
         ('skip', {'type': 'bson_value_t', 'help': 'An int specifying how many documents matching the ``query`` should be skipped before counting.'}),
         ('limit', {'type': 'bson_value_t', 'help': 'An int specifying the maximum number of documents to count.'}),
         comment_option_string_pre_4_4,
