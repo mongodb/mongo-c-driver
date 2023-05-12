@@ -12,7 +12,7 @@ Synopsis
 
 It was created to be able to accommodate new arguments to the `MongoDB findAndModify command <https://www.mongodb.com/docs/manual/reference/command/findAndModify/>`_.
 
-The :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any.
+As of MongoDB 3.2, the :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any.
 
 .. _mongoc_collection_find_and_modify_with_opts_example:
 

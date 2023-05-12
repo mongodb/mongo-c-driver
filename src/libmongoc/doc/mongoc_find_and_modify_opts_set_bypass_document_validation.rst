@@ -12,6 +12,8 @@ Synopsis
   mongoc_find_and_modify_opts_set_bypass_document_validation (
      mongoc_find_and_modify_opts_t *opts, bool bypass);
 
+This option is only available when talking to MongoDB 3.2 and later.
+
 Parameters
 ----------
 
