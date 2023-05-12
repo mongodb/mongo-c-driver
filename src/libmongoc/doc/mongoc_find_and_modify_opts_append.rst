@@ -16,12 +16,12 @@ Parameters
 ----------
 
 * ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
-* ``extra``: A :symbol:`bson:bson_t` with fields and values to append directly to the findAndModify command sent to the server.
+* ``extra``: A :symbol:`bson:bson_t` with fields and values to append directly to `the findAndModify command`_ sent to the server.
 
 Description
 -----------
 
-Adds arbitrary options to a `findAndModify <https://www.mongodb.com/docs/manual/reference/command/findAndModify/>`_ command.
+Adds arbitrary options to `the findAndModify command`_.
 
 ``extra`` does not have to remain valid after calling this function.
 

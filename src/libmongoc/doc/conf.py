@@ -75,6 +75,9 @@ rst_prolog = '''
 
     Range algorithm is experimental only and not intended for public use. It is subject to breaking changes.
 
+.. _the findAndModify command:
+    https://www.mongodb.com/docs/manual/reference/command/findAndModify/
+
 '''
 
 

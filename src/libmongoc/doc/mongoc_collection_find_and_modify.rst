@@ -45,6 +45,8 @@ As of MongoDB 3.2, the :symbol:`mongoc_write_concern_t` specified on the :symbol
 
 ``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
 
+On success, the output ``reply`` contains the full server reply to the ``findAndModify`` command. See the `MongoDB Manual page for findAndModify <https://www.mongodb.com/docs/manual/reference/command/findAndModify/#output>`_ for the expected server reply.
+
 Errors
 ------
 
@@ -53,8 +55,7 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-Returns either the document before or after modification based on the ``_new`` parameter.
-
+If given invalid arguments or a server/network error occurs, returns ``false`` and sets ``error``. Otherwise, succeeds and returns ``true``.
 A write concern timeout or write concern error is considered a failure.
 
 .. seealso::
