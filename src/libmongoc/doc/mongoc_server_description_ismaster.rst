@@ -3,12 +3,12 @@
 mongoc_server_description_ismaster()
 ====================================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.18.0
 
-This function is deprecated and should not be used in new code.
+      This function is deprecated and should not be used in new code.
 
-Please use :doc:`mongoc_server_description_hello_response() <mongoc_server_description_hello_response>` in new code.
+      Please use :doc:`mongoc_server_description_hello_response() <mongoc_server_description_hello_response>` in new code.
 
 Synopsis
 --------

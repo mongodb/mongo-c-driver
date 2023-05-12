@@ -3,10 +3,10 @@
 mongoc_index_opt_t
 ==================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.8.0
 
-This structure is deprecated and should not be used in new code. See :doc:`create-indexes`.
+      This structure is deprecated and should not be used in new code. See :doc:`create-indexes`.
 
 Synopsis
 --------

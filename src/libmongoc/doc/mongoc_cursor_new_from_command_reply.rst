@@ -3,15 +3,15 @@
 mongoc_cursor_new_from_command_reply()
 ======================================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.11.0
 
-This function is deprecated and should not be used in new code.
+      This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_cursor_new_from_command_reply_with_opts()` in new code.
+      Please use :symbol:`mongoc_cursor_new_from_command_reply_with_opts()` in new code.
 
-When migrating from the deprecated :symbol:`mongoc_cursor_new_from_command_reply()` to :symbol:`mongoc_cursor_new_from_command_reply_with_opts()`,
-note that options previously passed to the ``reply`` argument (e.g. "batchSize") must instead be provided in the ``opts`` argument.
+      When migrating from the deprecated :symbol:`mongoc_cursor_new_from_command_reply()` to :symbol:`mongoc_cursor_new_from_command_reply_with_opts()`,
+      note that options previously passed to the ``reply`` argument (e.g. "batchSize") must instead be provided in the ``opts`` argument.
 
 Synopsis
 --------

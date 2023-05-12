@@ -3,12 +3,12 @@
 mongoc_apm_command_failed_get_server_connection_id()
 ====================================================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.24.0
 
-This function is deprecated and should not be used in new code.
+      This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_apm_command_failed_get_server_connection_id_int64()` in new code.
+      Please use :symbol:`mongoc_apm_command_failed_get_server_connection_id_int64()` in new code.
 
 Synopsis
 --------

@@ -3,8 +3,11 @@
 mongoc_uri_get_ssl()
 ====================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.15.0
+
+      This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
+
 
 This function is deprecated and should not be used in new code.
 

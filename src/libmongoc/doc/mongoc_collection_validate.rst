@@ -3,10 +3,10 @@
 mongoc_collection_validate()
 ============================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.10.0
 
-This helper function is deprecated and should not be used in new code. Run the `validate <https://www.mongodb.com/docs/manual/reference/command/validate/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
+      This helper function is deprecated and should not be used in new code. Run the `validate <https://www.mongodb.com/docs/manual/reference/command/validate/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
 
 Synopsis
 --------

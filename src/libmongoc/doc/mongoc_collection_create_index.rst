@@ -3,10 +3,10 @@
 mongoc_collection_create_index()
 ================================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.8.0
 
-This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
+      This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
 
 Synopsis
 --------

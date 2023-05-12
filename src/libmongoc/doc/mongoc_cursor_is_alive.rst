@@ -3,6 +3,14 @@
 mongoc_cursor_is_alive()
 ========================
 
+.. warning::
+   .. deprecated:: 1.10.0
+
+      This function is deprecated and should not be used in new code.
+
+      Please use :symbol:`mongoc_cursor_more()` in new code.
+
+
 Synopsis
 --------
 
@@ -17,10 +25,6 @@ Parameters
 
 * ``cursor``: A :symbol:`mongoc_cursor_t`.
 
-Deprecated
-----------
-
-This function is superseded by :symbol:`mongoc_cursor_more()`, which has equivalent behavior.
 
 Returns
 -------

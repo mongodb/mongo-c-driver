@@ -3,10 +3,10 @@
 mongoc_gridfs_find()
 ====================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.5.0
 
-This function is deprecated, use :symbol:`mongoc_gridfs_find_with_opts` instead.
+      This function is deprecated, use :symbol:`mongoc_gridfs_find_with_opts` instead.
 
 Synopsis
 --------

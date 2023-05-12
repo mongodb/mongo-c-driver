@@ -3,12 +3,12 @@
 mongoc_uri_get_service()
 ========================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.21.0
 
-This function is deprecated and should not be used in new code.
+      This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_uri_get_srv_hostname()` in new code.
+      Please use :symbol:`mongoc_uri_get_srv_hostname()` in new code.
 
 Synopsis
 --------

@@ -3,12 +3,12 @@
 bson_oid_init_sequence()
 ========================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.14.0
 
-This function is deprecated and should not be used in new code.
+      This function is deprecated and should not be used in new code.
 
-Please use :symbol:`bson_oid_init()` in new code.
+      Please use :symbol:`bson_oid_init()` in new code.
 
 Synopsis
 --------

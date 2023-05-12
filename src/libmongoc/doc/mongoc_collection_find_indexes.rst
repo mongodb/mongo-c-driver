@@ -3,12 +3,12 @@
 mongoc_collection_find_indexes()
 ================================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.9.0
 
-This function is deprecated and should not be used in new code.
+      This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_collection_find_indexes_with_opts()` in new code.
+      Please use :symbol:`mongoc_collection_find_indexes_with_opts()` in new code.
 
 Synopsis
 --------

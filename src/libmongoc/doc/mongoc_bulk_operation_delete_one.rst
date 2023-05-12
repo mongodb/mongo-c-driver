@@ -3,12 +3,12 @@
 mongoc_bulk_operation_delete_one()
 ==================================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 0.96.0
 
-This function is deprecated and should not be used in new code.
+      This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_bulk_operation_remove_one()` in new code.
+      Please use :symbol:`mongoc_bulk_operation_remove_one()` in new code.
 
 Synopsis
 --------

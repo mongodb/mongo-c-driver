@@ -3,12 +3,12 @@
 mongoc_client_get_server_status()
 =================================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.10.0
 
-This function is deprecated and should not be used in new code.
+      This function is deprecated and should not be used in new code.
 
-Run the `serverStatus <https://www.mongodb.com/docs/manual/reference/command/serverStatus/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
+      Run the `serverStatus <https://www.mongodb.com/docs/manual/reference/command/serverStatus/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
 
 Synopsis
 --------

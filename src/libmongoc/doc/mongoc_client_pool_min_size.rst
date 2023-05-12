@@ -3,12 +3,12 @@
 mongoc_client_pool_min_size()
 =============================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.9.0
 
-This function is deprecated because its behavior does not match what developers expect from a "minimum pool size", and its actual behavior is likely to hurt performance.
+      This function is deprecated because its behavior does not match what developers expect from a "minimum pool size", and its actual behavior is likely to hurt performance.
 
-Applications should not call this function, they should instead accept the default behavior, which is to keep all idle clients that are pushed into the pool.
+      Applications should not call this function, they should instead accept the default behavior, which is to keep all idle clients that are pushed into the pool.
 
 Synopsis
 --------

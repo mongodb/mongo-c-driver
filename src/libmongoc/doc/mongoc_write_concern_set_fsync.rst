@@ -3,12 +3,12 @@
 mongoc_write_concern_set_fsync()
 ================================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.4.0
 
-This function is deprecated and should not be used in new code.
+      This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_write_concern_set_journal()` in new code.
+      Please use :symbol:`mongoc_write_concern_set_journal()` in new code.
 
 Synopsis
 --------

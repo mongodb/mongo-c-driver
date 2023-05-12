@@ -3,12 +3,12 @@
 mongoc_delete_flags_t
 =====================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.9.0
 
-These flags are deprecated and should not be used in new code.
+      These flags are deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_collection_delete_one()` or :symbol:`mongoc_collection_delete_many()` in new code.
+      Please use :symbol:`mongoc_collection_delete_one()` or :symbol:`mongoc_collection_delete_many()` in new code.
 
 Synopsis
 --------

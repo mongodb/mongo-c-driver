@@ -3,10 +3,10 @@
 mongoc_collection_create_index_with_opts()
 ==========================================
 
-Deprecated
-----------
+.. warning::
+   .. deprecated:: 1.8.0
 
-This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
+      This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
 
 Synopsis
 --------
@@ -21,11 +21,6 @@ Synopsis
                                             bson_t *reply,
                                             bson_error_t *error)
      BSON_GNUC_DEPRECATED; 
-
-Deprecated
-----------
-
-This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
 
 Parameters
 ----------
