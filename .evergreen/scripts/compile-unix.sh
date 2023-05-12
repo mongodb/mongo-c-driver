@@ -30,6 +30,7 @@ check_var_opt TRACING        # CMake default: OFF.
 check_var_opt ZLIB "BUNDLED" # CMake default: AUTO.
 check_var_opt ZSTD ON        # CMake default: AUTO.
 check_var_opt ICU ON         # CMake default: AUTO.
+check_var_opt CLIENT_SIDE_ENCRYPTION ON
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
@@ -81,6 +82,7 @@ configure_flags_append_if_not_null TRACING "-DENABLE_TRACING=${TRACING}"
 configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB}"
 configure_flags_append_if_not_null ZSTD "-DENABLE_ZSTD=${ZSTD}"
 configure_flags_append_if_not_null ICU "-DENABLE_ICU=${ICU}"
+configure_flags_append_if_not_null CLIENT_SIDE_ENCRYPTION "-DENABLE_CLIENT_SIDE_ENCRYPTION=${CLIENT_SIDE_ENCRYPTION}"
 
 if [[ "${DEBUG}" == "ON" ]]; then
   configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
@@ -206,13 +208,6 @@ if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
   # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
   "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" >/dev/null
   echo "Installing libmongocrypt... done."
-
-  # Fail if the C driver is unable to find the installed libmongocrypt.
-  configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
-else
-  # Avoid symbol collisions with libmongocrypt installed via apt/yum.
-  # Note: may be overwritten by ${EXTRA_CONFIGURE_FLAGS}.
-  configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
 "${cmake_binary}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .

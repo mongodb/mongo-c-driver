@@ -565,7 +565,7 @@ class CoverageTask(MatrixTask):
                 SASL="AUTO",
                 SSL="OPENSSL",
                 COMPILE_LIBMONGOCRYPT="ON",
-                EXTRA_CONFIGURE_FLAGS='EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON"',
+                EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON",
             )
         else:
             yield func("compile coverage", SASL="AUTO", SSL="OPENSSL")
