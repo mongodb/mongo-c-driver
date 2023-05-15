@@ -13,149 +13,218 @@
 # limitations under the License.
 
 from collections import OrderedDict as OD
-from itertools import product
-
-try:
-    # Python 3 abstract base classes.
-    import collections.abc as abc
-except ImportError:
-    import collections as abc
+import copy
+from itertools import chain, product
+import itertools
+from typing import ClassVar, Iterable, Literal, Mapping, MutableMapping, Sequence, Union
 
 from evergreen_config_generator import ConfigObject
 from evergreen_config_generator.functions import func
 
+from . import Value, MutableValueMapping, ValueSequence
+
+
+DependencySpec = Union[str, Mapping[str, Value]]
+
 
 class Task(ConfigObject):
-    def __init__(self, *args, **kwargs):
-        super(Task, self).__init__(*args, **kwargs)
-        self.tags = set()
-        self.options = OD()
-        self.depends_on = None
-        self.commands = kwargs.pop('commands', None) or []
-        tags = kwargs.pop('tags', None)
-        if tags:
-            self.add_tags(*tags)
-        depends_on = kwargs.pop('depends_on', None)
-        if depends_on:
-            self.add_dependency(depends_on)
+    def __init__(
+        self,
+        task_name: str | None = None,
+        commands: Iterable[Value] = (),
+        tags: Iterable[str] = (),
+        depends_on: Iterable[DependencySpec] = (),
+        exec_timeout_secs: int | None = None,
+    ):
+        self._name = task_name
+        self._tags = list(tags)
+        self.options: MutableValueMapping = OD()
+        self.commands: ValueSequence = list(commands)
+        self.exec_timeout_secs = exec_timeout_secs
+        self._depends_on = list(map(self._normal_dep, depends_on))
 
-        if 'exec_timeout_secs' in kwargs:
-            self.options['exec_timeout_secs'] = kwargs.pop('exec_timeout_secs')
+        if exec_timeout_secs is not None:
+            self.options["exec_timeout_secs"] = exec_timeout_secs
 
-    name_prefix = 'test'
+    @property
+    def dependencies(self) -> Sequence[Mapping[str, Value]]:
+        main = list(self._depends_on)
+        main.extend(map(self._normal_dep, self.additional_dependencies()))
+        return tuple(main)
 
-    def add_tags(self, *args):
-        self.tags.update(args)
+    def _normal_dep(self, spec: DependencySpec) -> Mapping[str, Value]:
+        if isinstance(spec, str):
+            return OD([("name", spec)])
+        return spec
 
-    def has_tags(self, *args):
-        return bool(self.tags.intersection(args))
+    @property
+    def tags(self) -> Sequence[str]:
+        return tuple(sorted(chain(self.additional_tags(), self._tags)))
 
-    def add_dependency(self, dependency):
-        if not isinstance(dependency, abc.Mapping):
-            dependency = OD([('name', dependency)])
+    def pre_commands(self) -> Iterable[Value]:
+        return ()
 
-        if self.depends_on is None:
-            self.depends_on = dependency
-        elif isinstance(self.depends_on, abc.Mapping):
-            self.depends_on = [self.depends_on, dependency]
-        else:
-            self.depends_on.append(dependency)
+    def main_commands(self) -> Iterable[Value]:
+        return ()
 
-    def display(self, axis_name):
-        value = getattr(self, axis_name)
-        # E.g., if self.auth is False, return 'noauth'.
-        if value is False:
-            return 'no' + axis_name
+    def post_commands(self) -> Iterable[Value]:
+        return ()
 
-        if value is True:
-            return axis_name
+    def additional_dependencies(self) -> Iterable[DependencySpec]:
+        return ()
 
-        return value
+    @property
+    def name(self) -> str:
+        assert self._name is not None, f'Task {self} did not set a name, and did not override the "name" property'
+        return self._name
 
-    def on_off(self, *args, **kwargs):
-        assert not (args and kwargs)
-        if args:
-            axis_name, = args
-            return 'on' if getattr(self, axis_name) else 'off'
+    def additional_tags(self) -> Iterable[str]:
+        return ()
 
-        (axis_name, value), = kwargs.items()
-        return 'on' if getattr(self, axis_name) == value else 'off'
+    def add_dependency(self, dependency: DependencySpec):
+        if isinstance(dependency, str):
+            dependency = OD([("name", dependency)])
+
+        self._depends_on.append(dependency)
 
     def to_dict(self):
-        task = super(Task, self).to_dict()
+        task: MutableValueMapping = super().to_dict()  # type: ignore
+        assert isinstance(task, MutableMapping)
         if self.tags:
-            task['tags'] = self.tags
+            task["tags"] = list(self.tags)
         task.update(self.options)
-        if self.depends_on:
-            task['depends_on'] = self.depends_on
-        task['commands'] = self.commands
+        deps: Sequence[MutableValueMapping] = list(self.dependencies)  # type: ignore
+        if deps:
+            if len(deps) == 1:
+                task["depends_on"] = OD(deps[0])
+            else:
+                task["depends_on"] = copy.deepcopy(deps)
+        task["commands"] = list(
+            itertools.chain(
+                self.pre_commands(),
+                self.main_commands(),
+                self.commands,
+                self.post_commands(),
+            )
+        )
         return task
 
 
-class NamedTask(Task):
-    def __init__(self, task_name, commands=None, **kwargs):
-        super(NamedTask, self).__init__(commands=commands, **kwargs)
-        self._task_name = task_name
-
-    @property
-    def name(self):
-        return self._task_name
+NamedTask = Task
 
 
 class FuncTask(NamedTask):
-    def __init__(self, task_name, *args, **kwargs):
-        commands = [func(func_name) for func_name in args]
-        super(FuncTask, self).__init__(task_name, commands=commands, **kwargs)
+    def __init__(
+        self,
+        task_name: str,
+        functions: Iterable[str],
+        tags: Iterable[str] = (),
+        depends_on: Iterable[DependencySpec] = (),
+        exec_timeout_secs: int | None = None,
+    ):
+        commands = [func(func_name) for func_name in functions]
+        super().__init__(task_name, commands, tags=tags, depends_on=depends_on, exec_timeout_secs=exec_timeout_secs)
+        super(FuncTask, self).__init__(task_name, commands=commands)
 
 
 class Prohibited(Exception):
     pass
 
 
-def require(rule):
+def require(rule: bool) -> None:
     if not rule:
         raise Prohibited()
 
 
-def prohibit(rule):
+def prohibit(rule: bool) -> None:
     if rule:
         raise Prohibited()
 
 
-def both_or_neither(rule0, rule1):
+def both_or_neither(rule0: bool, rule1: bool) -> None:
     if rule0:
         require(rule1)
     else:
         prohibit(rule1)
 
 
+class SettingsAccess:
+    def __init__(self, inst: "MatrixTask") -> None:
+        self._task = inst
+
+    def __getattr__(self, __setting: str) -> str | bool:
+        return self._task.setting_value(__setting)
+
+
 class MatrixTask(Task):
-    axes = OD()
+    axes: ClassVar[Mapping[str, Sequence[str | bool]]] = OD()
 
-    def __init__(self, *args, **kwargs):
-        axis_dict = OD()
-        for name, values in self.axes.items():
-            # First value for each axis is the default value.
-            axis_dict[name] = kwargs.pop(name, values[0])
+    def __init__(self, settings: Mapping[str, str | bool]):
+        super().__init__()
+        self._settings = {k: v for k, v in settings.items()}
+        for axis, options in type(self).axes.items():
+            if axis not in self._settings:
+                self._settings[axis] = options[0]
 
-        super(MatrixTask, self).__init__(*args, **kwargs)
-        self.__dict__.update(axis_dict)
+    def display(self, axis_name: str) -> str:
+        value = self.setting_value(axis_name)
+        if value is False:
+            # E.g., if self.auth is False, return 'noauth'.
+            return f"no{axis_name}"
+        elif value is True:
+            return axis_name
+        else:
+            return value
+
+    def on_off(self, key: str, val: str) -> Literal["on", "off"]:
+        return "on" if self.setting_value(key) == val else "off"
+
+    @property
+    def name(self) -> str:
+        return "-".join(self.name_parts())
+
+    def name_parts(self) -> Iterable[str]:
+        raise NotImplementedError
+
+    @property
+    def settings(self) -> SettingsAccess:
+        return SettingsAccess(self)
+
+    def setting_value(self, axis: str) -> str | bool:
+        assert (
+            axis in type(self).axes.keys()
+        ), f'Attempted to inspect setting "{axis}", which is not defined for this task type'
+        return self._settings[axis]
+
+    def setting_eq(self, axis: str, val: str | bool) -> bool:
+        current = self.setting_value(axis)
+        options = type(self).axes[axis]
+        assert (
+            val in options
+        ), f'Looking for value "{val}" on setting "{axis}", but that is not a supported option (Expects one of {options})'
+        return current == val
+
+    def is_valid_combination(self) -> bool:
+        try:
+            return self.do_is_valid_combination()
+        except Prohibited:
+            print(f"Ignoring invalid combination {self.name!r}")
+            return False
+
+    def do_is_valid_combination(self) -> bool:
+        return True
 
     @classmethod
     def matrix(cls):
         for cell in product(*cls.axes.values()):
             axis_values = dict(zip(cls.axes, cell))
-            task = cls(**axis_values)
+            task = cls(settings=axis_values)
             if task.allowed:
                 yield task
 
     @property
     def allowed(self):
         try:
-            self._check_allowed()
-            return True
+            return self.do_is_valid_combination()
         except Prohibited:
             return False
-
-    def _check_allowed(self):
-        pass
