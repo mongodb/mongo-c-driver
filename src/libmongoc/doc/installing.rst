@@ -34,7 +34,7 @@ The libmongoc package is available on recent versions of Debian and Ubuntu.
 
   $ apt-get install libmongoc-dev
 
-The ``libmongoc-dev`` package includes headers required to build applications using libmongoc. To check which version is available, see `https://packages.debian.org/stable/libmongoc-dev <https://packages.debian.org/stable/libmongoc-dev>`_. To only install the libraries without headers, install the ``libmongoc-1.0-0`` package.
+The ``libmongoc-dev`` package includes headers required to build applications using libmongoc. To check which version is available, see https://packages.debian.org/stable/libmongoc-dev. To only install the libraries without headers, install the ``libmongoc-1.0-0`` package.
 
 On Fedora, a mongo-c-driver package is available in the default repositories and can be installed with:
 
@@ -42,7 +42,7 @@ On Fedora, a mongo-c-driver package is available in the default repositories and
 
   $ dnf install mongo-c-driver-devel
 
-The ``mongo-c-driver-devel`` package includes headers required to build applications using libmongoc. To check which version is available, see `https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver-devel/ <https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver-devel/>`_. To only install the libraries without headers, install the ``mongo-c-driver`` package.
+The ``mongo-c-driver-devel`` package includes headers required to build applications using libmongoc. To check which version is available, see https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver-devel. To only install the libraries without headers, install the ``mongo-c-driver`` package.
 
 On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver-devel package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. The package can be installed with:
 
@@ -68,7 +68,7 @@ The libbson package is available on recent versions of Debian and Ubuntu. If you
 
   $ apt-get install libbson-dev
 
-The ``libbson-dev`` package includes headers required to build applications using libbson. To check which version is available, see `https://packages.debian.org/stable/libbson-dev <https://packages.debian.org/stable/libbson-dev>`_. To only install the libraries without headers, install the ``libbson-1.0-0`` package.
+The ``libbson-dev`` package includes headers required to build applications using libbson. To check which version is available, see https://packages.debian.org/stable/libbson-dev. To only install the libraries without headers, install the ``libbson-1.0-0`` package.
 
 On Fedora, a libbson package is available in the default repositories and can be installed with:
 
@@ -77,7 +77,7 @@ On Fedora, a libbson package is available in the default repositories and can be
   $ dnf install libbson-devel
 
 The ``libbson-devel`` package includes headers required to build applications using libbson. To check
-which version is available, see `https://packages.fedoraproject.org/pkgs/mongo-c-driver/libbson-devel/ <https://packages.fedoraproject.org/pkgs/mongo-c-driver/libbson-devel/>`_. To only install the libraries without headers, install the ``libbson`` package.
+which version is available, see https://packages.fedoraproject.org/pkgs/mongo-c-driver/libbson-devel. To only install the libraries without headers, install the ``libbson`` package.
 
 On recent Red Hat systems, such as CentOS and RHEL 7, a libbson package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository.
 The package can be installed with:
