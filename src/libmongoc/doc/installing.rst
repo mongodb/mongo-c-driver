@@ -32,7 +32,9 @@ The libmongoc package is available on recent versions of Debian and Ubuntu.
 
 .. code-block:: none
 
-  $ apt-get install libmongoc-1.0-0
+  $ apt-get install libmongoc-dev
+
+The ``libmongoc-dev`` package includes headers required to build applications using libmongoc. To check which version is available, see `https://packages.debian.org/stable/libmongoc-dev <https://packages.debian.org/stable/libmongoc-dev>`_. To only install the libraries without headers, install the ``libmongoc-1.0-0`` package.
 
 On Fedora, a mongo-c-driver package is available in the default repositories and can be installed with:
 
@@ -62,7 +64,9 @@ The libbson package is available on recent versions of Debian and Ubuntu. If you
 
 .. code-block:: none
 
-  $ apt-get install libbson-1.0-0
+  $ apt-get install libbson-dev
+
+The ``libbson-dev`` package includes headers required to build applications using libbson. To check which version is available, see `https://packages.debian.org/stable/libbson-dev <https://packages.debian.org/stable/libbson-dev>`_. To only install the libraries without headers, install the ``libbson-1.0-0`` package.
 
 On Fedora, a libbson package is available in the default repositories and can be installed with:
 
