@@ -40,13 +40,15 @@ On Fedora, a mongo-c-driver package is available in the default repositories and
 
 .. code-block:: none
 
-  $ dnf install mongo-c-driver
+  $ dnf install mongo-c-driver-devel
 
-On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check which version is available, see `https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver/ <https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver/>`_. The package can be installed with:
+The ``mongo-c-driver-devel`` package includes headers required to build applications using libmongoc. To check which version is available, see `https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver-devel/ <https://packages.fedoraproject.org/pkgs/mongo-c-driver/mongo-c-driver-devel/>`_. To only install the libraries without headers, install the ``mongo-c-driver`` package.
+
+On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver-devel package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. The package can be installed with:
 
 .. code-block:: none
 
-  $ yum install mongo-c-driver
+  $ yum install mongo-c-driver-devel
 
 On macOS systems with Homebrew, the mongo-c-driver package can be installed with:
 
@@ -72,16 +74,17 @@ On Fedora, a libbson package is available in the default repositories and can be
 
 .. code-block:: none
 
-  $ dnf install libbson
+  $ dnf install libbson-devel
 
-On recent Red Hat systems, such as CentOS and RHEL 7, a libbson package
-is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check
-which version is available, see `https://packages.fedoraproject.org/pkgs/mongo-c-driver/libbson/ <https://packages.fedoraproject.org/pkgs/mongo-c-driver/libbson/>`_.
+The ``libbson-devel`` package includes headers required to build applications using libbson. To check
+which version is available, see `https://packages.fedoraproject.org/pkgs/mongo-c-driver/libbson-devel/ <https://packages.fedoraproject.org/pkgs/mongo-c-driver/libbson-devel/>`_. To only install the libraries without headers, install the ``libbson`` package.
+
+On recent Red Hat systems, such as CentOS and RHEL 7, a libbson package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository.
 The package can be installed with:
 
 .. code-block:: none
 
-  $ yum install libbson
+  $ yum install libbson-devel
 
 Build environment
 -----------------
