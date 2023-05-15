@@ -52,13 +52,13 @@ fi
 
 declare -a flags
 
-case "${MARCH}" in
+case "${MARCH:-}" in
 i686)
   flags+=("-m32" "-march=i386")
   ;;
 esac
 
-case "${HOSTTYPE}" in
+case "${HOSTTYPE:-}" in
 s390x)
   flags+=("-march=z196" "-mtune=zEC12")
   ;;
@@ -76,8 +76,8 @@ export CXX
 export CFLAGS
 export CXXFLAGS
 
-CFLAGS+=" ${flags[*]}"
-CXXFLAGS+=" ${flags[*]}"
+CFLAGS+=" ${flags+${flags[*]}}"
+CXXFLAGS+=" ${flags+${flags[*]}}"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
   CFLAGS+=" -Wno-unknown-pragmas"

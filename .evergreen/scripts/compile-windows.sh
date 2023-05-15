@@ -20,6 +20,7 @@ check_var_opt SNAPPY        # CMake default: AUTO.
 check_var_opt SRV           # CMake default: AUTO.
 check_var_opt SSL "WINDOWS" # CMake default: OFF.
 check_var_opt ZSTD          # CMake default: AUTO.
+check_var_opt ZLIB          # CMake default: AUTO.
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
@@ -49,18 +50,18 @@ configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
 configure_flags_append "-DENABLE_BSON=ON"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 
-if [[ "${RELEASE}" == "ON" ]]; then
+if [[ "${RELEASE:-}" == "ON" ]]; then
   # Build from the release tarball.
   mkdir build-dir
   tar xf ../mongoc.tar.gz -C build-dir --strip-components=1
   cd build-dir
 fi
 
-configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
-configure_flags_append_if_not_null SASL "-DENABLE_SASL=${SASL}"
-configure_flags_append_if_not_null SNAPPY "-DENABLE_SNAPPY=${SNAPPY}"
-configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV}"
-configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB}"
+configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION:-}"
+configure_flags_append_if_not_null SASL "-DENABLE_SASL=${SASL:-}"
+configure_flags_append_if_not_null SNAPPY "-DENABLE_SNAPPY=${SNAPPY:-}"
+configure_flags_append_if_not_null SRV "-DENABLE_SRV=${SRV:-}"
+configure_flags_append_if_not_null ZLIB "-DENABLE_ZLIB=${ZLIB:-}"
 
 if [[ "${DEBUG}" == "ON" ]]; then
   configure_flags_append "-DCMAKE_BUILD_TYPE=Debug"
@@ -99,7 +100,7 @@ else
 fi
 
 declare cmake_binary
-if [[ "${BYPASS_FIND_CMAKE}" == "OFF" ]]; then
+if [[ "${BYPASS_FIND_CMAKE:-}" == "OFF" ]]; then
   # shellcheck source=.evergreen/scripts/find-cmake-version.sh
   . "${script_dir}/find-cmake-latest.sh"
 

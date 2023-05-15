@@ -147,7 +147,7 @@ if [[ "${sasl}" != "OFF" ]]; then
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout}"
 
   declare ld_preload="${LD_PRELOAD:-}"
-  if [[ "${ASAN}" == "on" ]]; then
+  if [[ "${ASAN:-}" == "on" ]]; then
     ld_preload="$(bypass_dlclose):${ld_preload}"
   fi
 

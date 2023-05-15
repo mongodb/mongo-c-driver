@@ -68,8 +68,8 @@ export CXX
 export CFLAGS
 export CXXFLAGS
 
-CFLAGS+=" ${flags[*]}"
-CXXFLAGS+=" ${flags[*]}"
+CFLAGS+=" ${flags+${flags[*]}}"
+CXXFLAGS+=" ${flags+${flags[*]}}"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
   CFLAGS+=" -Wno-unknown-pragmas"
