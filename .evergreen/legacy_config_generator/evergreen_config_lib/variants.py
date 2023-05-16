@@ -34,7 +34,7 @@ all_variants = [
     Variant(
         "releng",
         "**Release Archive Creator",
-        "ubuntu1804-test",
+        "ubuntu2204-small",
         [
             "make-release-archive",
             "release-compile",

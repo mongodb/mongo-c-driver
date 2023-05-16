@@ -9306,7 +9306,7 @@ task_groups:
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'
-  run_on: ubuntu1804-test
+  run_on: ubuntu2204-small
   tasks:
   - make-release-archive
   - release-compile
