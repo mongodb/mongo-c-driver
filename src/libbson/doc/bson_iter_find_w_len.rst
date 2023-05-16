@@ -21,7 +21,7 @@ Parameters
 Description
 -----------
 
-The ``bson_iter_find_w_len()`` function shall advance ``iter`` to the element named ``key`` or exhaust all elements of ``iter``. If ``iter`` is exhausted, false is returned and ``iter`` should be considered invalid.
+The ``bson_iter_find_w_len()`` function shall advance ``iter`` to the first element named ``key`` or exhaust all elements of ``iter``. If ``iter`` is exhausted, false is returned and ``iter`` should be considered invalid.
 
 ``key`` is case-sensitive. For a case-folded version, see :symbol:`bson_iter_find_case()`.
 

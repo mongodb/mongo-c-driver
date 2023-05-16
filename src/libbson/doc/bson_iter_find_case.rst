@@ -20,7 +20,7 @@ Parameters
 Description
 -----------
 
-Advances ``iter`` until it is observing an element matching the name of ``key`` or exhausting all elements.
+Advances ``iter`` to the first element matching the name of ``key`` or exhausting all elements.
 
 ``key`` is not case-sensitive. The keys will be case-folded to determine a match using the current locale.
 

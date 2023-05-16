@@ -141,6 +141,15 @@ Performance Notes
 
 The :symbol:`bson_t` structure attempts to use an inline allocation within the structure to speed up performance of small documents. When this internal buffer has been exhausted, a heap allocated buffer will be dynamically allocated. Therefore, it is essential to call :symbol:`bson_destroy()` on allocated documents.
 
+Duplicate Keys
+--------------
+
+The `BSON specification <https://bsonspec.org>`_ allows BSON documents to have
+duplicate keys. Documents are stored as an ordered list of key-value pairs. A
+:symbol:`bson_t` may contain duplicate keys. Applications should refrain from
+generating such documents, because MongoDB server behavior is undefined when a
+BSON document contains duplicate keys.
+
 .. only:: html
 
   Functions
