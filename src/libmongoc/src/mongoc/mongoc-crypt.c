@@ -2001,11 +2001,8 @@ _mongoc_crypt_rewrap_many_datakey (_mongoc_crypt_t *crypt,
    mongocrypt_binary_t *filter_bin = NULL;
    bool ret = false;
 
-   if (master_key) {
-      // Caller must verify that `provider` is not-NULL when `master_key` is
-      // not-NULL.
-      BSON_ASSERT_PARAM (provider);
-   }
+   // Caller must ensure `provider` is provided alongside `master_key`.
+   BSON_ASSERT (!master_key || provider);
 
    bson_init (doc_out);
    state_machine = _state_machine_new (crypt);
