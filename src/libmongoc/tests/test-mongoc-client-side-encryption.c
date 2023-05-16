@@ -5777,7 +5777,7 @@ test_rewrap_without_provider (void *unused)
                                                        &error);
       // Assert an error is returned from the driver suggesting that the
       // ``provider`` option is required.
-      ASSERT (!ok && "expected error, but got success");
+      ASSERT_WITH_MSG (!ok, "expected error, but got success");
       ASSERT_ERROR_CONTAINS (
          error,
          MONGOC_ERROR_CLIENT,
