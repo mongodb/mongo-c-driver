@@ -9,8 +9,6 @@ case "$news_type" in
 *ASCII*) exit 1 ;;
 esac
 
-# Use modern sphinx-build from venv.
-. venv/bin/activate
 which sphinx-build
 sphinx-build --version
 
