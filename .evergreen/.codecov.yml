@@ -1,4 +1,5 @@
 ignore:
   - "src/kms-message"
   - "src/zlib-*"
-  - "src/*/tests"
+  - "src/libbson/tests"
+  - "src/libmongoc/tests"
