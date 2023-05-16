@@ -2810,6 +2810,71 @@ test_bson_dsl_build (void)
    bson_destroy (&doc);
 }
 
+static void
+test_bson_with_duplicate_keys (void)
+{
+   bson_t with_dups = BSON_INITIALIZER;
+
+   // Assert bson_t can be constructed with duplicate keys.
+   {
+      BSON_ASSERT (BSON_APPEND_INT32 (&with_dups, "duplicate", 1));
+      BSON_ASSERT (BSON_APPEND_INT32 (&with_dups, "duplicate", 2));
+   }
+
+   // Assert bson_iter_find locates the first duplicate.
+   {
+      bson_iter_t iter;
+      BSON_ASSERT (bson_iter_init (&iter, &with_dups));
+      BSON_ASSERT (bson_iter_find (&iter, "duplicate"));
+      ASSERT_CMPINT32 (bson_iter_int32 (&iter), ==, 1);
+   }
+
+   // Assert bson_iter_find_case locates the first duplicate.
+   {
+      bson_iter_t iter;
+      BSON_ASSERT (bson_iter_init (&iter, &with_dups));
+      BSON_ASSERT (bson_iter_find_case (&iter, "dUpLiCaTe"));
+      ASSERT_CMPINT32 (bson_iter_int32 (&iter), ==, 1);
+   }
+
+   // Assert bson_iter_find_w_len locates the first duplicate.
+   {
+      bson_iter_t iter;
+      BSON_ASSERT (bson_iter_init (&iter, &with_dups));
+      BSON_ASSERT (bson_iter_find_w_len (&iter, "duplicate", 9));
+      ASSERT_CMPINT32 (bson_iter_int32 (&iter), ==, 1);
+   }
+
+   // Assert bson_iter_find_descendant locates the first duplicate.
+   {
+      bson_iter_t iter;
+      BSON_ASSERT (bson_iter_init (&iter, &with_dups));
+      BSON_ASSERT (bson_iter_find_descendant (&iter, "duplicate", &iter));
+      ASSERT_CMPINT32 (bson_iter_int32 (&iter), ==, 1);
+   }
+
+   // Assert that bson_as_relaxed_extended_json preserves duplicate keys.
+   {
+      char *json_str =
+         bson_as_relaxed_extended_json (&with_dups, NULL /* length */);
+      ASSERT_CMPSTR (json_str, "{ \"duplicate\" : 1, \"duplicate\" : 2 }");
+      bson_free (json_str);
+   }
+
+   // Assert that bson_init_from_json preserves duplicate keys.
+   {
+      bson_t from_json;
+      bson_error_t error;
+      ASSERT_OR_PRINT (
+         bson_init_from_json (
+            &from_json, "{ \"duplicate\" : 1, \"duplicate\" : 2 }", -1, &error),
+         error);
+      BSON_ASSERT_BSON_EQUAL (&with_dups, &from_json);
+   }
+
+   bson_destroy (&with_dups);
+}
+
 void
 test_bson_install (TestSuite *suite)
 {
@@ -2913,4 +2978,6 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/dsl/parse", test_bson_dsl_parse);
    TestSuite_Add (suite, "/bson/dsl/visit", test_bson_dsl_visit);
    TestSuite_Add (suite, "/bson/dsl/build", test_bson_dsl_build);
+   TestSuite_Add (
+      suite, "/bson/with_duplicate_keys", test_bson_with_duplicate_keys);
 }
