@@ -5768,13 +5768,13 @@ test_rewrap_without_provider (void *unused)
    // 2. Call ``clientEncryption.rewrapManyDataKey`` with an empty ``filter``
    // and these options: (see below).
    {
-      bool ok = mongoc_client_encryption_rewrap_many_datakey (
-         clientEncryption,
-         NULL /* filter */,
-         NULL /* kms_provider */,
-         tmp_bson ("{'foo': 'bar'}"),
-         NULL /* result */,
-         &error);
+      bool ok =
+         mongoc_client_encryption_rewrap_many_datakey (clientEncryption,
+                                                       NULL /* filter */,
+                                                       NULL /* kms_provider */,
+                                                       tmp_bson ("{}"),
+                                                       NULL /* result */,
+                                                       &error);
       // Assert an error is returned from the driver suggesting that the
       // ``provider`` option is required.
       ASSERT (!ok && "expected error, but got success");
