@@ -5717,8 +5717,7 @@ test_rewrap_with_separate_client_encryption (void *unused)
    }
 }
 
-/* Prose Test 16: Case 2: Rewrap returns error if masterKey is set, but provider
- * is not set */
+/* Prose Test 16: Case 2: RewrapManyDataKeyOpts.provider is not optional. */
 static void
 test_rewrap_without_provider (void *unused)
 {
