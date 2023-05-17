@@ -24,7 +24,7 @@ A ``NULL`` argument for ``filter`` is equivalent to being given an empty
 document (match all).
 
 If ``provider`` is ``NULL``, rewraps matching data keys with their current KMS
-provider.
+provider and master key.
 
 If ``provider`` is not ``NULL``, rewraps matching data keys with the new KMS
 provider as described by ``master_key``. The ``master_key`` document must
