@@ -2283,6 +2283,15 @@ mongoc_client_encryption_rewrap_many_datakey (
 
    bson_reinit (bulk_write_result);
 
+   if (master_key && !provider) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_CLIENT,
+         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+         "expected 'provider' to be set to identify type of 'master_key'");
+      GOTO (fail);
+   }
+
    if (!_mongoc_crypt_rewrap_many_datakey (client_encryption->crypt,
                                            client_encryption->keyvault_coll,
                                            filter,

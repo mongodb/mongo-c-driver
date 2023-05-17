@@ -5693,7 +5693,7 @@ _test_rewrap_with_separate_client_encryption (const char *src_provider,
    mongoc_client_destroy (src_client);
 }
 
-/* Prose Test 16: Rewrap with separate ClientEncryption */
+/* Prose Test 16: Case 1: Rewrap with separate ClientEncryption */
 static void
 test_rewrap_with_separate_client_encryption (void *unused)
 {
@@ -5715,6 +5715,80 @@ test_rewrap_with_separate_client_encryption (void *unused)
          _test_rewrap_with_separate_client_encryption (src, dst);
       }
    }
+}
+
+/* Prose Test 16: Case 2: RewrapManyDataKeyOpts.provider is not optional. */
+static void
+test_rewrap_without_provider (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   mongoc_uri_t *const uri = test_framework_get_uri ();
+   mongoc_client_encryption_opts_t *const ce_opts =
+      mongoc_client_encryption_opts_new ();
+   mongoc_client_t *const key_vault_client =
+      test_framework_client_new_from_uri (uri, NULL);
+
+   bson_error_t error = {0};
+
+   BSON_ASSERT (uri);
+   BSON_ASSERT (ce_opts);
+   BSON_ASSERT (key_vault_client);
+
+   test_framework_set_ssl_opts (key_vault_client);
+
+   {
+      mongoc_client_encryption_opts_set_keyvault_client (ce_opts,
+                                                         key_vault_client);
+      mongoc_client_encryption_opts_set_keyvault_namespace (
+         ce_opts, "keyvault", "datakeys");
+
+      {
+         bson_t *const kms_providers = _make_kms_providers (true, true);
+         BSON_ASSERT (kms_providers);
+         mongoc_client_encryption_opts_set_kms_providers (ce_opts,
+                                                          kms_providers);
+         bson_destroy (kms_providers);
+      }
+
+      {
+         bson_t *const tls_opts = _make_tls_opts ();
+         BSON_ASSERT (tls_opts);
+         mongoc_client_encryption_opts_set_tls_opts (ce_opts, tls_opts);
+         bson_destroy (tls_opts);
+      }
+   }
+
+   // 1. Create a ClientEncryption object named clientEncryption with these
+   // options: (see ce_opts).
+   mongoc_client_encryption_t *clientEncryption =
+      mongoc_client_encryption_new (ce_opts, &error);
+   ASSERT_OR_PRINT (clientEncryption, error);
+
+   // 2. Call ``clientEncryption.rewrapManyDataKey`` with an empty ``filter``
+   // and these options: (see below).
+   {
+      bool ok =
+         mongoc_client_encryption_rewrap_many_datakey (clientEncryption,
+                                                       NULL /* filter */,
+                                                       NULL /* kms_provider */,
+                                                       tmp_bson ("{}"),
+                                                       NULL /* result */,
+                                                       &error);
+      // Assert an error is returned from the driver suggesting that the
+      // ``provider`` option is required.
+      ASSERT_WITH_MSG (!ok, "expected error, but got success");
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_CLIENT,
+         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+         "expected 'provider' to be set to identify type of 'master_key'");
+   }
+
+   mongoc_client_encryption_destroy (clientEncryption);
+   mongoc_client_encryption_opts_destroy (ce_opts);
+   mongoc_uri_destroy (uri);
+   mongoc_client_destroy (key_vault_client);
 }
 
 /* test_qe_docs_example tests the documentation example requested in
@@ -6921,13 +6995,20 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
-                      "/client_side_encryption/prose_test_16",
+                      "/client_side_encryption/prose_test_16/case1",
                       test_rewrap_with_separate_client_encryption,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_slow);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/prose_test_16/case2",
+                      test_rewrap_without_provider,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
 
    /* Other, C driver specific, tests. */
    TestSuite_AddFull (suite,

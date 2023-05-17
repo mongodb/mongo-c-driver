@@ -2001,6 +2001,9 @@ _mongoc_crypt_rewrap_many_datakey (_mongoc_crypt_t *crypt,
    mongocrypt_binary_t *filter_bin = NULL;
    bool ret = false;
 
+   // Caller must ensure `provider` is provided alongside `master_key`.
+   BSON_ASSERT (!master_key || provider);
+
    bson_init (doc_out);
    state_machine = _state_machine_new (crypt);
    state_machine->keyvault_coll = keyvault_coll;
