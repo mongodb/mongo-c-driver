@@ -2,11 +2,9 @@
 Experimental: Queryable Encryption
 ##################################
 
-MongoDB 6.0 introduces *Queryable Encryption* as a Public Technical Preview.
-This API is still experimental and subject to breaking changes!
+Using Queryable Encryption requires MongoDB Server 7.0 or higher.
 
-APIs that are part of Queryable Encryption will be marked as experimental, and
-one should not rely on their stability.
+API related to the "rangePreview" algorithm is still experimental and subject to breaking changes!
 
 .. seealso::
 
