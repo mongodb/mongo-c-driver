@@ -22,7 +22,7 @@ class ReleaseArchive(Function):
             },
             script='''\
                 set -o errexit
-                bash tools/poetry.sh install
+                bash tools/poetry.sh install --with=docs
                 bash tools/poetry.sh run \
                     bash .evergreen/scripts/check-release-archive.sh
             '''
