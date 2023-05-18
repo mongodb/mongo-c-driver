@@ -673,7 +673,7 @@ all_tasks = chain(
 
 
 class AuthTask(MatrixTask):
-    axes = OD([("sasl", ["sasl", "sspi", False]), ("ssl", ["openssl", "openssl-static", "darwinssl", "winssl"])])
+    axes = OD([("sasl", ["sasl", "sspi", False]), ("ssl", ["openssl", "darwinssl", "winssl"])])
 
     name_prefix = "authentication-tests"
 
