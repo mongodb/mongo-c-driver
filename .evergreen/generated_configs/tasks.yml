@@ -1,5 +1,9 @@
 tasks:
   - name: abi-compliance-check
+    run_on:
+      - ubuntu1804-small
+      - ubuntu1804-large
+      - ubuntu1804-medium
     commands:
       - func: abi-compliance-check
   - name: asan-cse-sasl-cyrus-openssl-ubuntu1804-clang-compile

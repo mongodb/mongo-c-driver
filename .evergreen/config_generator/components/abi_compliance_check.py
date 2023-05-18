@@ -1,3 +1,4 @@
+from typing import Optional, Sequence, Union
 from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_command import s3_put
 from shrub.v3.evg_task import EvgTask
@@ -44,14 +45,24 @@ class CheckABICompliance(Function):
         return cls.default_call(**kwargs)
 
 
+class TaskWithRunOn(EvgTask):
+    """
+    An evergreen task model that also includes a run_on property.
+
+    (The shrub.py model is missing this property)
+    """
+    run_on: Optional[Union[str, Sequence[str]]] = None
+
+
 def functions():
     return CheckABICompliance.defn()
 
 
 def tasks():
     return [
-        EvgTask(
+        TaskWithRunOn(
             name=CheckABICompliance.name,
             commands=[CheckABICompliance.call()],
+            run_on=['ubuntu1804-small', 'ubuntu1804-large', 'ubuntu1804-medium']
         )
     ]
