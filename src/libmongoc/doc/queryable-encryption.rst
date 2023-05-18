@@ -4,6 +4,10 @@ Queryable Encryption
 
 Using Queryable Encryption requires MongoDB Server 7.0 or higher.
 
+See the MongoDB Manual for `Queryable Encryption
+<https://www.mongodb.com/docs/manual/core/queryable-encryption/>`_ for more
+information about the feature.
+
 API related to the "rangePreview" algorithm is still experimental and subject to breaking changes!
 
 Queryable Encryption in older MongoDB Server versions
