@@ -12,7 +12,6 @@ Synopsis
    mongoc_auto_encryption_opts_set_encrypted_fields_map (
       mongoc_auto_encryption_opts_t *opts, const bson_t *encrypted_fields_map);
 
-.. important:: |qenc:api-is-experimental|
 .. versionadded:: 1.22.0
 
 Parameters

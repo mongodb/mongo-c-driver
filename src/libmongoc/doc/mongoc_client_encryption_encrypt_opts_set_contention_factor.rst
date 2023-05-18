@@ -12,7 +12,6 @@ Synopsis
     mongoc_client_encryption_encrypt_opts_set_contention_factor (
         mongoc_client_encryption_encrypt_opts_t *opts, int64_t contention_factor);
 
-.. important:: |qenc:api-is-experimental|
 .. versionadded:: 1.22.0
 
 Sets a contention factor for explicit encryption.

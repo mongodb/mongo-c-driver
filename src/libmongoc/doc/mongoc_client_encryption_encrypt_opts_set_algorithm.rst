@@ -35,13 +35,9 @@ Identifies the algorithm to use for encryption. Valid values of ``algorithm`` ar
 
    for indexed encryption. Specific to the :doc:`queryable-encryption` feature.
 
-   .. note:: |qenc:opt-is-experimental|
-
 ``"Unindexed"``
 
    for unindexed encryption. Specific to the :doc:`queryable-encryption` feature.
-
-   .. note:: |qenc:opt-is-experimental|
 
 ``"RangePreview"``
 
