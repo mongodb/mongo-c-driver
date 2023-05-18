@@ -96,8 +96,6 @@ class CompileTask(NamedTask):
             self.compile_sh_opt["ENABLE_RDTSCP"] = ENABLE_RDTSCP
         if SRV:
             self.compile_sh_opt["SRV"] = SRV
-        if TOPOLOGY:
-            self.compile_sh_opt["TOPOLOGY"] = TOPOLOGY
 
         if compression != "default":
             self.compile_sh_opt["SNAPPY"] = "ON" if compression in ("all", "snappy") else "OFF"
