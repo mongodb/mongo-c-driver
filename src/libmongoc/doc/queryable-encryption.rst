@@ -1,6 +1,6 @@
-##################################
-Experimental: Queryable Encryption
-##################################
+####################
+Queryable Encryption
+####################
 
 Using Queryable Encryption requires MongoDB Server 7.0 or higher.
 
