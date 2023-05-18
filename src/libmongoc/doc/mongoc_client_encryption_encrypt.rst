@@ -28,7 +28,7 @@ analysis with :symbol:`mongoc_auto_encryption_opts_set_bypass_query_analysis`.
 The :symbol:`mongoc_auto_encryption_opts_t` must not be configured to bypass
 automatic encryption with
 :symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption`. **Note** that
-the ``"Indexed"`` and ``"RangePreview"`` payload type |qenc:is-experimental|. The |qenc:range-is-experimental| 
+the ``"RangePreview"`` payload type |qenc:is-experimental|. The |qenc:range-is-experimental| 
 
 To insert with a ``RangePreview`` payload 
 :symbol:`mongoc_client_encryption_encrypt_range_opts_t` must be set in ``opts``.

@@ -24,7 +24,6 @@ Create a new collection with :doc:`Queryable Encryption </queryable-encryption>`
 enabled. Requires a valid :symbol:`mongoc_client_encryption_t` object to
 operate.
 
-.. important:: |qenc:api-is-experimental|
 .. versionadded:: 1.24.0
 
 .. seealso::

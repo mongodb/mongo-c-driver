@@ -15,7 +15,6 @@ Synopsis
     mongoc_client_encryption_encrypt_opts_set_query_type (
         mongoc_client_encryption_encrypt_opts_t *opts, const char* query_type);
 
-.. important:: |qenc:api-is-experimental|
 .. versionadded:: 1.22.0
 
 Sets a query type for explicit encryption. Currently, the supported values

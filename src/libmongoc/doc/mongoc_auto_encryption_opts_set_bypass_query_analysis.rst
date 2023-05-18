@@ -12,7 +12,6 @@ Synopsis
    mongoc_auto_encryption_opts_set_bypass_query_analysis (
       mongoc_auto_encryption_opts_t *opts, bool bypass_query_analysis);
 
-.. important:: |qenc:api-is-experimental|
 .. versionadded:: 1.22.0
 
 Parameters
