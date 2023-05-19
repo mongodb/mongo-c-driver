@@ -377,9 +377,6 @@ all_tasks = [
         SASL="AUTO",
         SSL="OPENSSL_STATIC",
     ),
-    CompileWithClientSideEncryption(
-        "debug-compile-sasl-winssl-cse", tags=["debug-compile", "sasl", "winssl"], SASL="AUTO", SSL="WINDOWS"
-    ),
     CompileTask(
         "debug-compile-nosasl-openssl-1.0.1",
         prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
