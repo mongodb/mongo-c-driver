@@ -1555,13 +1555,15 @@ test_counters_install (TestSuite *suite)
                       test_counters_op_msg,
                       NULL,
                       NULL,
-                      test_framework_skip_if_compressors);
+                      test_framework_skip_if_compressors,
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/counters/op_compressed",
                       test_counters_op_compressed,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_compressors);
+                      test_framework_skip_if_no_compressors,
+                      TestSuite_CheckLive);
    TestSuite_AddLive (suite, "/counters/cursors", test_counters_cursors);
    TestSuite_AddLive (suite, "/counters/clients", test_counters_clients);
    TestSuite_AddFull (suite,
