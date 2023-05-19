@@ -388,9 +388,6 @@ all_tasks = [
         SSL="OPENSSL_STATIC",
     ),
     CompileWithClientSideEncryption(
-        "debug-compile-sasl-darwinssl-cse", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"
-    ),
-    CompileWithClientSideEncryption(
         "debug-compile-sasl-winssl-cse", tags=["debug-compile", "sasl", "winssl"], SASL="AUTO", SSL="WINDOWS"
     ),
     CompileTask(
