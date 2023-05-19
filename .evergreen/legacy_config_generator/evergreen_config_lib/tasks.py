@@ -236,13 +236,6 @@ all_tasks = [
         SSL="OPENSSL_STATIC",
     ),
     CompileTask("debug-compile-sasl-darwinssl", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"),
-    CompileTask(
-        "debug-compile-sasl-winssl",
-        tags=["debug-compile", "sasl", "winssl"],
-        # Explicitly use CYRUS.
-        SASL="CYRUS",
-        SSL="WINDOWS",
-    ),
     CompileTask("debug-compile-sspi-nossl", tags=["debug-compile", "sspi", "nossl"], SASL="SSPI", SSL="OFF"),
     CompileTask("debug-compile-sspi-openssl", tags=["debug-compile", "sspi", "openssl"], SASL="SSPI", SSL="OPENSSL"),
     CompileTask(

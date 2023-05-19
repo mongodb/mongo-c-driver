@@ -640,22 +640,6 @@ tasks:
         set -o errexit
         env DEBUG="ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-sasl-winssl
-  tags:
-  - debug-compile
-  - sasl
-  - winssl
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env DEBUG="ON" SASL="CYRUS" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: debug-compile-sspi-nossl
   tags:
   - debug-compile
