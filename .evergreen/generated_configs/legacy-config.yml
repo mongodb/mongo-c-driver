@@ -1036,24 +1036,6 @@ tasks:
         set -o errexit
         env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" bash .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-sasl-openssl-cse
-  tags:
-  - client-side-encryption
-  - debug-compile
-  - openssl
-  - sasl
-  - special
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: debug-compile-sasl-openssl-static-cse
   tags:
   - client-side-encryption

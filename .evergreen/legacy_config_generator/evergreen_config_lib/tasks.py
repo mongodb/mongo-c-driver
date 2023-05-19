@@ -379,9 +379,6 @@ all_tasks = [
     ),
     CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
     CompileWithClientSideEncryption(
-        "debug-compile-sasl-openssl-cse", tags=["debug-compile", "sasl", "openssl"], SASL="AUTO", SSL="OPENSSL"
-    ),
-    CompileWithClientSideEncryption(
         "debug-compile-sasl-openssl-static-cse",
         tags=["debug-compile", "sasl", "openssl-static"],
         SASL="AUTO",
