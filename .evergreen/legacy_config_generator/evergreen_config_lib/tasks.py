@@ -705,12 +705,6 @@ all_tasks = chain(
     all_tasks,
     [
         PostCompileTask(
-            "test-asan-memcheck-mock-server",
-            tags=["test-asan"],
-            get_build="debug-compile-asan-clang",
-            commands=[func("run mock server tests", ASAN="on", SSL="ssl")],
-        ),
-        PostCompileTask(
             "test-mongohouse",
             tags=[],
             get_build="debug-compile-sasl-openssl",

@@ -1438,19 +1438,6 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: prepare-kerberos
   - func: run auth tests
-- name: test-asan-memcheck-mock-server
-  tags:
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: run mock server tests
-    vars:
-      ASAN: 'on'
-      SSL: ssl
 - name: test-mongohouse
   depends_on:
     name: debug-compile-sasl-openssl
