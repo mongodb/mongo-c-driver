@@ -20,6 +20,16 @@ buildvariants:
       DEBUG: "ON"
     tasks:
       - name: .cse-matrix-winssl
+  - name: mock-server-test
+    display_name: Mock Server Test
+    expansions:
+      ASAN: "on"
+      CC: gcc
+      CFLAGS: -fno-omit-frame-pointer
+      EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF
+      SANITIZE: address,undefined
+    tasks:
+      - name: mock-server-test
   - name: openssl-static-matrix
     display_name: openssl-static-matrix
     tasks:
