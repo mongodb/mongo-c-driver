@@ -565,7 +565,9 @@ done:
 
       memcpy (&tmp_error, error, sizeof (bson_error_t));
       test_set_error (error,
-                      "BSON match failed: %s\nExpected: %s\nActual: %s",
+                      "BSON match failed: %s\n"
+                      "Expected: %s\n"
+                      "Actual:   %s",
                       tmp_error.message,
                       bson_val_to_json (expected),
                       bson_val_to_json (actual));
