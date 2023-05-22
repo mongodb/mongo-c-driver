@@ -4,7 +4,7 @@ from shrub.v3.evg_command import s3_put
 from shrub.v3.evg_task import EvgTask
 
 from config_generator.etc.function import Function
-from config_generator.etc.utils import bash_exec
+from config_generator.etc.utils import bash_exec, Task
 
 
 class CheckABICompliance(Function):
@@ -45,22 +45,13 @@ class CheckABICompliance(Function):
         return cls.default_call(**kwargs)
 
 
-class TaskWithRunOn(EvgTask):
-    """
-    An evergreen task model that also includes a run_on property.
-
-    (The shrub.py model is missing this property)
-    """
-    run_on: Optional[Union[str, Sequence[str]]] = None
-
-
 def functions():
     return CheckABICompliance.defn()
 
 
 def tasks():
     return [
-        TaskWithRunOn(
+        Task(
             name=CheckABICompliance.name,
             commands=[CheckABICompliance.call()],
             run_on=['ubuntu1804-small', 'ubuntu1804-large', 'ubuntu1804-medium']
