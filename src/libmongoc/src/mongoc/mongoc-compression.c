@@ -15,7 +15,7 @@
  */
 
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #include "mongoc-compression-private.h"
 #include "mongoc-trace-private.h"

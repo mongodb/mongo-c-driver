@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #include "mongoc-handshake.h"
 #include "mongoc-handshake-private.h"

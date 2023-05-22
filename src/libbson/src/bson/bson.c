@@ -16,7 +16,7 @@
 
 
 #include "bson.h"
-#include "bson-config.h"
+#include <bson/bson-config.h>
 #include "bson-private.h"
 #include "bson-json-private.h"
 #include "bson-string.h"

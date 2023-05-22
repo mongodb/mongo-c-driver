@@ -27,7 +27,7 @@
 #include "mongoc-handshake-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
-#include "mongoc-version.h"
+#include <mongoc/mongoc-version.h>
 
 #define LINE_BUFFER_SIZE 1024
 

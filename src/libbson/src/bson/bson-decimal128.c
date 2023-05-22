@@ -22,7 +22,7 @@
 #include "bson-cmp.h"
 #include "bson-decimal128.h"
 #include "bson-types.h"
-#include "bson-macros.h"
+#include <bson/bson-macros.h>
 #include "bson-string.h"
 
 

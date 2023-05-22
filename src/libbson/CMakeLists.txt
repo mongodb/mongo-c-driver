@@ -316,6 +316,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/libbson/src>
    )
    set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
    set_target_properties (bson_static PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")

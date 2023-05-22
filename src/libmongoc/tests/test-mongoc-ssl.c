@@ -15,7 +15,7 @@
  */
 
 #include "TestSuite.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "test-conveniences.h"
 
 #ifdef MONGOC_ENABLE_SSL

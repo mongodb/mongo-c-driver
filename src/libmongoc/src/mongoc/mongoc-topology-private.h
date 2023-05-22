@@ -19,7 +19,7 @@
 #ifndef MONGOC_TOPOLOGY_PRIVATE_H
 #define MONGOC_TOPOLOGY_PRIVATE_H
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-topology-scanner-private.h"
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"

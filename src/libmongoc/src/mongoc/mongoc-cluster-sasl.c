@@ -16,7 +16,7 @@
 
 /* for size_t */
 #include <bson/bson.h>
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #include "mongoc-cluster-private.h"
 #include "mongoc-log.h"

@@ -21,7 +21,7 @@
 #include <errno.h>
 
 #include "bson-atomic.h"
-#include "bson-config.h"
+#include <bson/bson-config.h>
 #include "bson-memory.h"
 
 

@@ -18,7 +18,7 @@
 #ifndef MONGOC_OCSP_CACHE_PRIVATE_H
 #define MONGOC_OCSP_CACHE_PRIVATE_H
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include "mongoc-openssl-private.h"

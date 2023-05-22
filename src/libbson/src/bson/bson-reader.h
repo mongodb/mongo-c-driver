@@ -21,7 +21,7 @@
 #define BSON_READER_H
 
 
-#include "bson-compat.h"
+#include <bson/bson-compat.h>
 #include "bson-oid.h"
 #include "bson-types.h"
 

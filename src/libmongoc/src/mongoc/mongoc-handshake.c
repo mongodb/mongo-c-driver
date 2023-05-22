@@ -33,7 +33,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-error.h"
 #include "mongoc-log.h"
-#include "mongoc-version.h"
+#include <mongoc/mongoc-version.h>
 #include "mongoc-util-private.h"
 
 #include <bson/bson-dsl.h>

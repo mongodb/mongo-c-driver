@@ -23,7 +23,7 @@
 
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-client.h"
 #include "mongoc-list-private.h"
 #include "mongoc-opcode.h"

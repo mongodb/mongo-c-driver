@@ -21,8 +21,8 @@
 #define BSON_ISO8601_PRIVATE_H
 
 
-#include "bson-compat.h"
-#include "bson-macros.h"
+#include <bson/bson-compat.h>
+#include <bson/bson-macros.h>
 #include "bson-string.h"
 
 

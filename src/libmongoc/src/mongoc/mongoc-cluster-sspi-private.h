@@ -19,7 +19,7 @@
 #ifndef MONGOC_CLUSTER_SSPI_PRIVATE_H
 #define MONGOC_CLUSTER_SSPI_PRIVATE_H
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-cluster-private.h"
 #include <bson/bson.h>
 

@@ -31,8 +31,8 @@
 #endif
 #endif
 
-#include "bson-config.h"
-#include "bson-macros.h"
+#include <bson/bson-config.h>
+#include <bson/bson-macros.h>
 
 
 #ifdef BSON_OS_WIN32
@@ -64,7 +64,7 @@
 #endif
 
 
-#include "bson-macros.h"
+#include <bson/bson-macros.h>
 
 
 #include <errno.h>

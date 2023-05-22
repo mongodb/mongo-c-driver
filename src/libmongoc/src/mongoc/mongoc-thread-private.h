@@ -22,7 +22,7 @@
 #include <bson/bson.h>
 
 #include "common-thread-private.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-log.h"
 
 #if defined(BSON_OS_UNIX)

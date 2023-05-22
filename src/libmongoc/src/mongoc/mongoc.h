@@ -30,7 +30,7 @@
 #include "mongoc-client-pool.h"
 #include "mongoc-client-side-encryption.h"
 #include "mongoc-collection.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-cursor.h"
 #include "mongoc-database.h"
 #include "mongoc-index.h"
@@ -56,7 +56,7 @@
 #include "mongoc-stream-socket.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
-#include "mongoc-version.h"
+#include <mongoc/mongoc-version.h>
 #include "mongoc-version-functions.h"
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-rand.h"

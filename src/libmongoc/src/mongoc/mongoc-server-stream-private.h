@@ -19,7 +19,7 @@
 #ifndef MONGOC_SERVER_STREAM_H
 #define MONGOC_SERVER_STREAM_H
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #include <bson/bson.h>
 

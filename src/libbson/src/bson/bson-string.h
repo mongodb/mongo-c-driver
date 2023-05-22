@@ -23,7 +23,7 @@
 
 #include <stdarg.h>
 
-#include "bson-macros.h"
+#include <bson/bson-macros.h>
 #include "bson-types.h"
 
 

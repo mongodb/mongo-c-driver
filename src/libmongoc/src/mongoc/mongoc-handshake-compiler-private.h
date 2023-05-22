@@ -18,7 +18,7 @@
 #ifndef MONGOC_HANDSHAKE_COMPILER_PRIVATE_H
 #define MONGOC_HANDSHAKE_COMPILER_PRIVATE_H
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-util-private.h"
 
 /*

@@ -22,7 +22,7 @@
 #include <bson/bson.h>
 
 #include "mongoc-macros.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 BSON_BEGIN_DECLS
 

@@ -17,7 +17,7 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-counters-private.h"
 #include "mongoc-init.h"
 

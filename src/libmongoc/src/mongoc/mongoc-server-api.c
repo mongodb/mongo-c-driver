@@ -15,7 +15,7 @@
  */
 
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-server-api-private.h"
 
 const char *

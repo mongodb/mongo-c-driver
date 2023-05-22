@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "bson-compat.h"
+#include <bson/bson-compat.h>
 
 #include <limits.h>
 #include <stdarg.h>

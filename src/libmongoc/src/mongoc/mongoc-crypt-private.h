@@ -19,7 +19,7 @@
 #ifndef MONGOC_CRYPT_PRIVATE_H
 #define MONGOC_CRYPT_PRIVATE_H
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #include "mongoc.h"
 

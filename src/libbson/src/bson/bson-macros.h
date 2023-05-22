@@ -27,7 +27,7 @@
 #include <algorithm>
 #endif
 
-#include "bson-config.h"
+#include <bson/bson-config.h>
 
 
 #if BSON_OS == 1

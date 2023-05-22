@@ -15,7 +15,7 @@
  */
 
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #include <string.h>
 
@@ -23,7 +23,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-client-side-encryption-private.h"
 #include "mongoc-counters-private.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-error.h"
 #include "mongoc-flags-private.h"
 #include "mongoc-host-list-private.h"

@@ -21,7 +21,7 @@
 #include <math.h>
 
 #include "bson.h"
-#include "bson-config.h"
+#include <bson/bson-config.h>
 #include "bson-json.h"
 #include "bson-json-private.h"
 #include "bson-iso8601-private.h"

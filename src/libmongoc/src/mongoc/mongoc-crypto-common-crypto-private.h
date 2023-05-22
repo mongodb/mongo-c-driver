@@ -22,7 +22,7 @@
 #define MONGOC_CRYPTO_COMMON_CRYPTO_PRIVATE_H
 
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 
 BSON_BEGIN_DECLS

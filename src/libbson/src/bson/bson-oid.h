@@ -24,7 +24,7 @@
 #include <time.h>
 
 #include "bson-context.h"
-#include "bson-macros.h"
+#include <bson/bson-macros.h>
 #include "bson-types.h"
 #include "bson-endian.h"
 

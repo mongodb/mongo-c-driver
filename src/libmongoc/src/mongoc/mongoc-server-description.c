@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-read-prefs.h"

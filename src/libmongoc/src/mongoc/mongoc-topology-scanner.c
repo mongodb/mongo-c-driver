@@ -16,7 +16,7 @@
 
 #include <bson/bson.h>
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-error.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-topology-scanner-private.h"

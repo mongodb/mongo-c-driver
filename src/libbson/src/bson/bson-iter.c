@@ -16,7 +16,7 @@
 
 
 #include "bson-iter.h"
-#include "bson-config.h"
+#include <bson/bson-config.h>
 #include "bson-decimal128.h"
 #include "bson-types.h"
 

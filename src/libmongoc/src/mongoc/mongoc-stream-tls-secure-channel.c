@@ -49,7 +49,7 @@
  * Thanks for code and inspiration!
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 

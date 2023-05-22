@@ -24,7 +24,7 @@
 #include "mongoc-macros.h"
 #include "mongoc-apm.h"
 #include "mongoc-client.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #endif

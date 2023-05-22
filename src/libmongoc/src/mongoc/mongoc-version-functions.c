@@ -15,7 +15,7 @@
  */
 
 
-#include "mongoc-version.h"
+#include <mongoc/mongoc-version.h>
 #include "mongoc-version-functions.h"
 
 /**

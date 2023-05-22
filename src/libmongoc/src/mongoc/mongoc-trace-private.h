@@ -26,7 +26,7 @@
 
 #include "mongoc-log.h"
 #include "mongoc-log-private.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 
 BSON_BEGIN_DECLS

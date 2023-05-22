@@ -18,8 +18,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "bson-compat.h"
-#include "bson-config.h"
+#include <bson/bson-compat.h>
+#include <bson/bson-config.h>
 #include "bson-error.h"
 #include "bson-memory.h"
 #include "bson-string.h"

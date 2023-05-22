@@ -16,7 +16,7 @@
  * This file originates from https://github.com/mongodb-labs/winkerberos
  */
 
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_SASL_SSPI
 

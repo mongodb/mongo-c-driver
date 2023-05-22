@@ -26,7 +26,7 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 
 #ifndef MONGOC_DEFAULT_PORT

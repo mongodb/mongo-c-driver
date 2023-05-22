@@ -25,7 +25,7 @@
 #include "mongoc-buffer-private.h"
 #include "mongoc-client.h"
 #include "mongoc-cluster-private.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 #include "mongoc-host-list.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"

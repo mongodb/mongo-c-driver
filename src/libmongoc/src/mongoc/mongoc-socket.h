@@ -21,7 +21,7 @@
 
 #include <bson/bson.h>
 #include "mongoc-macros.h"
-#include "mongoc-config.h"
+#include <mongoc/mongoc-config.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
