@@ -21,6 +21,7 @@
 
 #include <bson/bson.h>
 
+#include "mcd-rpc.h"
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-config.h"
@@ -266,9 +267,27 @@ bool
 _mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen);
 
 bool
+mcd_rpc_message_compress (mcd_rpc_message *rpc,
+                          int32_t compressor_id,
+                          int32_t compression_level,
+                          void **compressed_data,
+                          size_t *compressed_data_len,
+                          bson_error_t *error);
+
+bool
+mcd_rpc_message_decompress (mcd_rpc_message *rpc,
+                            void **data,
+                            size_t *data_len);
+
+bool
 _mongoc_rpc_decompress_if_necessary (mongoc_rpc_t *rpc,
                                      mongoc_buffer_t *buffer /* IN/OUT */,
                                      bson_error_t *error /* OUT */);
+
+bool
+mcd_rpc_message_decompress_if_necessary (mcd_rpc_message *rpc,
+                                         void **data,
+                                         size_t *data_len);
 
 BSON_END_DECLS
 

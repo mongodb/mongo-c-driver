@@ -3878,6 +3878,187 @@ _mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen)
    return false;
 }
 
+bool
+mcd_rpc_message_compress (mcd_rpc_message *rpc,
+                          int32_t compressor_id,
+                          int32_t compression_level,
+                          void **data,
+                          size_t *data_len,
+                          bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (rpc);
+   BSON_ASSERT_PARAM (data);
+   BSON_ASSERT_PARAM (data_len);
+
+   bool ret = false;
+
+   char *uncompressed_message = NULL;
+   char *compressed_message = NULL;
+   mongoc_iovec_t *iovecs = NULL;
+
+   const int32_t original_message_length =
+      mcd_rpc_header_get_message_length (rpc);
+
+   // msgHeader consists of four int32 fields.
+   const int32_t message_header_length = 4u * sizeof (int32_t);
+
+   // compressedMessage does not include msgHeader fields.
+   BSON_ASSERT (original_message_length >= message_header_length);
+   const size_t uncompressed_size =
+      (size_t) (original_message_length - message_header_length);
+   BSON_ASSERT (bson_in_range_unsigned (int32_t, uncompressed_size));
+
+   const size_t estimated_compressed_size =
+      mongoc_compressor_max_compressed_length (compressor_id,
+                                               uncompressed_size);
+
+   if (estimated_compressed_size == 0u) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Could not determine compression bounds for %s",
+                      mongoc_compressor_id_to_name (compressor_id));
+      goto fail;
+   }
+
+   // Store values before they are converted to little endian.
+   const int32_t request_id = mcd_rpc_header_get_request_id (rpc);
+   const int32_t response_to = mcd_rpc_header_get_response_to (rpc);
+   const int32_t op_code = mcd_rpc_header_get_op_code (rpc);
+
+   size_t num_iovecs;
+   iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
+   BSON_ASSERT (iovecs);
+
+   uncompressed_message = bson_malloc (uncompressed_size);
+   BSON_ASSERT (
+      _mongoc_cluster_buffer_iovec (
+         iovecs, num_iovecs, message_header_length, uncompressed_message) ==
+      uncompressed_size);
+
+   compressed_message = bson_malloc (estimated_compressed_size);
+
+   // This value may be passed as an argument to an in-out parameter depending
+   // on the compressor, not just an out-parameter.
+   size_t compressed_size = estimated_compressed_size;
+
+   if (!mongoc_compress (compressor_id,
+                         compression_level,
+                         uncompressed_message,
+                         uncompressed_size,
+                         compressed_message,
+                         &compressed_size)) {
+      MONGOC_WARNING ("Could not compress data with %s",
+                      mongoc_compressor_id_to_name (compressor_id));
+      goto fail;
+   }
+
+   mcd_rpc_message_reset (rpc);
+
+   {
+      int32_t message_len = 0;
+
+      message_len += mcd_rpc_header_set_message_length (rpc, 0);
+      message_len += mcd_rpc_header_set_request_id (rpc, request_id);
+      message_len += mcd_rpc_header_set_response_to (rpc, response_to);
+      message_len +=
+         mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_COMPRESSED);
+      message_len += mcd_rpc_op_compressed_set_original_opcode (rpc, op_code);
+      message_len += mcd_rpc_op_compressed_set_uncompressed_size (
+         rpc, (int32_t) uncompressed_size);
+      message_len +=
+         mcd_rpc_op_compressed_set_compressor_id (rpc, (uint8_t) compressor_id);
+      message_len += mcd_rpc_op_compressed_set_compressed_message (
+         rpc, compressed_message, compressed_size);
+
+      mcd_rpc_message_set_length (rpc, message_len);
+   }
+
+   *data = compressed_message;
+   *data_len = compressed_size;
+   compressed_message = NULL;
+
+   ret = true;
+
+fail:
+   bson_free (compressed_message);
+   bson_free (uncompressed_message);
+   bson_free (iovecs);
+
+   return ret;
+}
+
+bool
+mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
+{
+   BSON_ASSERT_PARAM (rpc);
+   BSON_ASSERT_PARAM (data);
+   BSON_ASSERT_PARAM (data_len);
+
+   BSON_ASSERT (mcd_rpc_header_get_op_code (rpc) == MONGOC_OP_CODE_COMPRESSED);
+
+   // msgHeader consists of four int32 fields.
+   const size_t message_header_length = 4u * sizeof (int32_t);
+
+   const size_t uncompressed_size =
+      (size_t) mcd_rpc_op_compressed_get_uncompressed_size (rpc);
+
+   // uncompressedSize does not include msgHeader fields.
+   const size_t original_message_length =
+      message_header_length + uncompressed_size;
+   uint8_t *const ptr = bson_malloc (original_message_length);
+
+   const int32_t message_length = original_message_length;
+   const int32_t request_id = mcd_rpc_header_get_request_id (rpc);
+   const int32_t response_to = mcd_rpc_header_get_response_to (rpc);
+   const int32_t op_code = mcd_rpc_op_compressed_get_original_opcode (rpc);
+
+   // Populate the msgHeader fields.
+   {
+      uint32_t storage;
+
+      memcpy (&storage, &message_length, sizeof (storage));
+      storage = BSON_UINT32_TO_LE (storage);
+      memcpy (ptr + 0, &storage, sizeof (storage));
+
+      memcpy (&storage, &request_id, sizeof (storage));
+      storage = BSON_UINT32_TO_LE (storage);
+      memcpy (ptr + 4, &storage, sizeof (storage));
+
+      memcpy (&storage, &response_to, sizeof (storage));
+      storage = BSON_UINT32_TO_LE (storage);
+      memcpy (ptr + 8, &storage, sizeof (storage));
+
+      memcpy (&storage, &op_code, sizeof (storage));
+      storage = BSON_UINT32_TO_LE (storage);
+      memcpy (ptr + 12, &storage, sizeof (storage));
+   }
+
+   // This value may be passed as an argument to an in-out parameter depending
+   // on the compressor, not just an out-parameter.
+   size_t actual_uncompressed_size = uncompressed_size;
+
+   // Populate the rest of the uncompressed message.
+   if (!mongoc_uncompress (
+          mcd_rpc_op_compressed_get_compressor_id (rpc),
+          mcd_rpc_op_compressed_get_compressed_message (rpc),
+          mcd_rpc_op_compressed_get_compressed_message_length (rpc),
+          ptr + message_header_length,
+          &actual_uncompressed_size)) {
+      return false;
+   }
+
+   BSON_ASSERT (uncompressed_size == actual_uncompressed_size);
+
+   *data_len = original_message_length;
+   *data = ptr;
+
+   mcd_rpc_message_reset (rpc);
+
+   return mcd_rpc_message_from_data_in_place (rpc, *data, *data_len, NULL);
+}
+
+
 /* If rpc is OP_COMPRESSED, decompress it into buffer.
  *
  * Assumes rpc is still in network little-endian representation (i.e.
@@ -3915,4 +4096,23 @@ _mongoc_rpc_decompress_if_necessary (mongoc_rpc_t *rpc,
    _mongoc_buffer_init (buffer, buf, len, NULL, NULL);
 
    return true;
+}
+
+bool
+mcd_rpc_message_decompress_if_necessary (mcd_rpc_message *rpc,
+                                         void **data,
+                                         size_t *data_len)
+{
+   BSON_ASSERT_PARAM (rpc);
+   BSON_ASSERT_PARAM (data);
+   BSON_ASSERT_PARAM (data_len);
+
+   if (mcd_rpc_header_get_op_code (rpc) != MONGOC_OP_CODE_COMPRESSED) {
+      // Nothing to do.
+      *data = NULL;
+      *data_len = 0u;
+      return true;
+   }
+
+   return mcd_rpc_message_decompress (rpc, data, data_len);
 }
