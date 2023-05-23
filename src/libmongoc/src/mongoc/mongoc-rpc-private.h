@@ -151,6 +151,9 @@ _mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t *rpc,
                                        size_t buflen);
 
 bool
+mcd_rpc_message_get_body (const mcd_rpc_message *rpc, bson_t *reply);
+
+bool
 _mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply);
 bool
 _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply, bson_t *bson);

@@ -959,6 +959,58 @@ _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply, bson_t *bson)
    return bson_init_static (bson, reply->documents, len);
 }
 
+bool
+mcd_rpc_message_get_body (const mcd_rpc_message *rpc, bson_t *reply)
+{
+   switch (mcd_rpc_header_get_op_code (rpc)) {
+   case MONGOC_OP_CODE_MSG: {
+      const size_t sections_count = mcd_rpc_op_msg_get_sections_count (rpc);
+
+      // Look for section kind 0.
+      for (size_t index = 0u; index < sections_count; ++index) {
+         switch (mcd_rpc_op_msg_section_get_kind (rpc, index)) {
+         case 0: { // Body.
+            const uint8_t *const body =
+               mcd_rpc_op_msg_section_get_body (rpc, index);
+
+            const int32_t body_len =
+               bson_iter_int32_unsafe (&(bson_iter_t){.raw = body});
+
+            return bson_init_static (reply, body, (size_t) body_len);
+         }
+
+         case 1: // Document Sequence.
+            continue;
+
+         default:
+            // Validated by `mcd_rpc_message_from_data`.
+            BSON_UNREACHABLE ("invalid OP_MSG section kind");
+         }
+      }
+      break;
+   }
+
+   case MONGOC_OP_CODE_REPLY: {
+      if (mcd_rpc_op_reply_get_documents_len (rpc) < 1) {
+         return false;
+      }
+
+      // Assume the first document in OP_REPLY is the body.
+      const uint8_t *const body = mcd_rpc_op_reply_get_documents (rpc);
+
+      return bson_init_static (
+         reply,
+         body,
+         (size_t) bson_iter_int32_unsafe (&(bson_iter_t){.raw = body}));
+   }
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
 
 /* returns true if an error was found. */
 static bool
