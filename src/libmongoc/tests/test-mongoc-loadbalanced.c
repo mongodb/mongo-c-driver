@@ -578,8 +578,9 @@ test_pre_handshake_error_does_not_clear_pool (void)
    /* A new connection is opened. */
    request = mock_server_receives_hello_op_msg (server);
    const bson_t *match_loadBalanced = tmp_bson ("{'loadBalanced': true}");
-   ASSERT (request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
-   
+   ASSERT (
+      request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
+
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO);
    request_destroy (request);
@@ -600,7 +601,8 @@ test_pre_handshake_error_does_not_clear_pool (void)
                                           &error);
    /* A new connection is opened. */
    request = mock_server_receives_hello_op_msg (server);
-   ASSERT (request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
+   ASSERT (
+      request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
    capture_logs (true); /* hide Failed to buffer logs. */
    mock_server_hangs_up (request);
@@ -688,7 +690,8 @@ test_post_handshake_error_clears_pool (void)
    /* A new connection is opened. */
    request = mock_server_receives_hello_op_msg (server);
    const bson_t *match_loadBalanced = tmp_bson ("{'loadBalanced': true}");
-   ASSERT (request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
+   ASSERT (
+      request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_A);
    request_destroy (request);
@@ -709,7 +712,8 @@ test_post_handshake_error_clears_pool (void)
                                           &error);
    /* A new connection is opened. */
    request = mock_server_receives_hello_op_msg (server);
-   ASSERT (request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
+   ASSERT (
+      request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_A);
    request_destroy (request);
@@ -730,7 +734,8 @@ test_post_handshake_error_clears_pool (void)
                                           &error);
    /* A new connection is opened. */
    request = mock_server_receives_hello_op_msg (server);
-   ASSERT (request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
+   ASSERT (
+      request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_B);
    request_destroy (request);
@@ -773,7 +778,8 @@ test_post_handshake_error_clears_pool (void)
                                           &error);
    /* A new connection is opened. */
    request = mock_server_receives_hello_op_msg (server);
-   ASSERT (request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
+   ASSERT (
+      request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_A);
    request_destroy (request);
