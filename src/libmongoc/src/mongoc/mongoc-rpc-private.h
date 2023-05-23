@@ -22,6 +22,8 @@
 #include "mongoc-array-private.h"
 #include "mongoc-iovec.h"
 
+#include "mcd-rpc.h"
+
 #include <bson/bson.h>
 
 #include <stdbool.h>
@@ -168,6 +170,11 @@ bool
 _mongoc_cmd_check_ok_no_wce (const bson_t *doc,
                              int32_t error_api_version,
                              bson_error_t *error);
+
+void
+mcd_rpc_message_egress (const mcd_rpc_message *rpc);
+void
+mcd_rpc_message_ingress (const mcd_rpc_message *rpc);
 
 BSON_END_DECLS
 

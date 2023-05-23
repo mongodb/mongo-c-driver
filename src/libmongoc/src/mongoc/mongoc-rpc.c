@@ -1239,3 +1239,130 @@ _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
 
    RETURN (true);
 }
+
+void
+mcd_rpc_message_egress (const mcd_rpc_message *rpc)
+{
+   // `mcd_rpc_message_egress` is expected to be called after
+   // `mcd_rpc_message_to_iovecs`, which converts the opCode field to
+   // little endian.
+   int32_t op_code = mcd_rpc_header_get_op_code (rpc);
+   op_code = bson_iter_int32_unsafe (
+      &(bson_iter_t){.raw = (const uint8_t *) &op_code});
+
+   if (op_code == MONGOC_OP_CODE_COMPRESSED) {
+      mongoc_counter_op_egress_compressed_inc ();
+      mongoc_counter_op_egress_total_inc ();
+
+      op_code = mcd_rpc_op_compressed_get_original_opcode (rpc);
+      op_code = bson_iter_int32_unsafe (
+         &(bson_iter_t){.raw = (const uint8_t *) &op_code});
+   }
+
+   switch (op_code) {
+   case MONGOC_OP_CODE_COMPRESSED:
+      BSON_UNREACHABLE ("invalid opcode (double compression?!)");
+      break;
+
+   case MONGOC_OP_CODE_MSG:
+      mongoc_counter_op_egress_msg_inc ();
+      mongoc_counter_op_egress_total_inc ();
+      break;
+
+   case MONGOC_OP_CODE_REPLY:
+      BSON_UNREACHABLE ("unexpected OP_REPLY egress");
+      break;
+
+   case MONGOC_OP_CODE_UPDATE:
+      mongoc_counter_op_egress_update_inc ();
+      mongoc_counter_op_egress_total_inc ();
+      break;
+
+   case MONGOC_OP_CODE_INSERT:
+      mongoc_counter_op_egress_insert_inc ();
+      mongoc_counter_op_egress_total_inc ();
+      break;
+
+   case MONGOC_OP_CODE_QUERY:
+      mongoc_counter_op_egress_query_inc ();
+      mongoc_counter_op_egress_total_inc ();
+      break;
+
+   case MONGOC_OP_CODE_GET_MORE:
+      mongoc_counter_op_egress_getmore_inc ();
+      mongoc_counter_op_egress_total_inc ();
+      break;
+
+   case MONGOC_OP_CODE_DELETE:
+      mongoc_counter_op_egress_delete_inc ();
+      mongoc_counter_op_egress_total_inc ();
+      break;
+
+   case MONGOC_OP_CODE_KILL_CURSORS:
+      mongoc_counter_op_egress_killcursors_inc ();
+      mongoc_counter_op_egress_total_inc ();
+      break;
+
+   default:
+      BSON_UNREACHABLE ("invalid opcode");
+   }
+}
+
+void
+mcd_rpc_message_ingress (const mcd_rpc_message *rpc)
+{
+   // `mcd_rpc_message_ingress` is expected be called after
+   // `mcd_rpc_message_from_data`, which converts the opCode field to native
+   // endian.
+   int32_t op_code = mcd_rpc_header_get_op_code (rpc);
+
+   if (op_code == MONGOC_OP_CODE_COMPRESSED) {
+      mongoc_counter_op_ingress_compressed_inc ();
+      mongoc_counter_op_ingress_total_inc ();
+
+      op_code = mcd_rpc_op_compressed_get_original_opcode (rpc);
+   }
+
+   switch (op_code) {
+   case MONGOC_OP_CODE_COMPRESSED:
+      BSON_UNREACHABLE ("invalid opcode (double compression?!)");
+      break;
+
+   case MONGOC_OP_CODE_MSG:
+      mongoc_counter_op_ingress_msg_inc ();
+      mongoc_counter_op_ingress_total_inc ();
+      break;
+
+   case MONGOC_OP_CODE_REPLY:
+      mongoc_counter_op_ingress_reply_inc ();
+      mongoc_counter_op_ingress_total_inc ();
+      break;
+
+   case MONGOC_OP_CODE_UPDATE:
+      BSON_UNREACHABLE ("unexpected MONGOC_OP_UPDATE ingress");
+      break;
+
+   case MONGOC_OP_CODE_INSERT:
+      BSON_UNREACHABLE ("unexpected MONGOC_OP_INSERT ingress");
+      break;
+
+   case MONGOC_OP_CODE_QUERY:
+      BSON_UNREACHABLE ("unexpected MONGOC_OP_QUERY ingress");
+      break;
+
+   case MONGOC_OP_CODE_GET_MORE:
+      BSON_UNREACHABLE ("unexpected MONGOC_OP_GET_MORE ingress");
+      break;
+
+   case MONGOC_OP_CODE_DELETE:
+      BSON_UNREACHABLE ("unexpected MONGOC_OP_DELETE ingress");
+      break;
+
+   case MONGOC_OP_CODE_KILL_CURSORS:
+      BSON_UNREACHABLE ("unexpected MONGOC_OP_CODE_CURSORS ingress");
+      break;
+
+   default:
+      BSON_UNREACHABLE ("invalid opcode");
+   }
+}
