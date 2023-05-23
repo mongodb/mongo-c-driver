@@ -81,16 +81,6 @@ functions:
       script: |-
         set -o errexit
         bash .evergreen/scripts/run-auth-tests.sh
-  run mock server tests:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        bash .evergreen/scripts/run-mock-server-tests.sh
   link sample program:
   - command: shell.exec
     type: test
