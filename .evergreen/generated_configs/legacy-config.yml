@@ -81,16 +81,6 @@ functions:
       script: |-
         set -o errexit
         bash .evergreen/scripts/run-auth-tests.sh
-  run mock server tests:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        bash .evergreen/scripts/run-mock-server-tests.sh
   link sample program:
   - command: shell.exec
     type: test
@@ -640,22 +630,6 @@ tasks:
         set -o errexit
         env DEBUG="ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-sasl-winssl
-  tags:
-  - debug-compile
-  - sasl
-  - winssl
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env DEBUG="ON" SASL="CYRUS" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: debug-compile-sspi-nossl
   tags:
   - debug-compile
@@ -1036,24 +1010,6 @@ tasks:
         set -o errexit
         env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" bash .evergreen/scripts/compile.sh
   - func: upload-build
-- name: debug-compile-sasl-openssl-cse
-  tags:
-  - client-side-encryption
-  - debug-compile
-  - openssl
-  - sasl
-  - special
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
-  - func: upload-build
 - name: debug-compile-sasl-openssl-static-cse
   tags:
   - client-side-encryption
@@ -1071,58 +1027,6 @@ tasks:
       script: |-
         set -o errexit
         env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="OPENSSL_STATIC" bash .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-sasl-darwinssl-cse
-  tags:
-  - client-side-encryption
-  - darwinssl
-  - debug-compile
-  - sasl
-  - special
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="DARWIN" bash .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-sasl-winssl-cse
-  tags:
-  - client-side-encryption
-  - debug-compile
-  - sasl
-  - special
-  - winssl
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON" SASL="AUTO" SSL="WINDOWS" bash .evergreen/scripts/compile.sh
-  - func: upload-build
-- name: debug-compile-asan-openssl-cse
-  tags:
-  - asan-clang
-  - client-side-encryption
-  - debug-compile
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      add_expansions_to_env: true
-      shell: bash
-      script: |-
-        set -o errexit
-        env CFLAGS="-fno-omit-frame-pointer" CHECK_LOG="ON" COMPILE_LIBMONGOCRYPT="ON" DEBUG="ON" EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF" PATH="/usr/lib/llvm-3.8/bin:$PATH" SANITIZE="address" SSL="OPENSSL" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-nosasl-openssl-1.0.1
   commands:
@@ -1485,19 +1389,6 @@ tasks:
       BUILD_NAME: debug-compile-sasl-openssl
   - func: prepare-kerberos
   - func: run auth tests
-- name: authentication-tests-openssl-static
-  tags:
-  - authentication-tests
-  - openssl-static
-  - sasl
-  depends_on:
-    name: debug-compile-sasl-openssl-static
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl-static
-  - func: prepare-kerberos
-  - func: run auth tests
 - name: authentication-tests-darwinssl
   tags:
   - authentication-tests
@@ -1537,19 +1428,6 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: prepare-kerberos
   - func: run auth tests
-- name: test-asan-memcheck-mock-server
-  tags:
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang
-  - func: run mock server tests
-    vars:
-      ASAN: 'on'
-      SSL: ssl
 - name: test-mongohouse
   depends_on:
     name: debug-compile-sasl-openssl

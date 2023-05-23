@@ -96,8 +96,6 @@ class CompileTask(NamedTask):
             self.compile_sh_opt["ENABLE_RDTSCP"] = ENABLE_RDTSCP
         if SRV:
             self.compile_sh_opt["SRV"] = SRV
-        if TOPOLOGY:
-            self.compile_sh_opt["TOPOLOGY"] = TOPOLOGY
 
         if compression != "default":
             self.compile_sh_opt["SNAPPY"] = "ON" if compression in ("all", "snappy") else "OFF"
@@ -238,13 +236,6 @@ all_tasks = [
         SSL="OPENSSL_STATIC",
     ),
     CompileTask("debug-compile-sasl-darwinssl", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"),
-    CompileTask(
-        "debug-compile-sasl-winssl",
-        tags=["debug-compile", "sasl", "winssl"],
-        # Explicitly use CYRUS.
-        SASL="CYRUS",
-        SSL="WINDOWS",
-    ),
     CompileTask("debug-compile-sspi-nossl", tags=["debug-compile", "sspi", "nossl"], SASL="SSPI", SSL="OFF"),
     CompileTask("debug-compile-sspi-openssl", tags=["debug-compile", "sspi", "openssl"], SASL="SSPI", SSL="OPENSSL"),
     CompileTask(
@@ -381,22 +372,10 @@ all_tasks = [
     ),
     CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
     CompileWithClientSideEncryption(
-        "debug-compile-sasl-openssl-cse", tags=["debug-compile", "sasl", "openssl"], SASL="AUTO", SSL="OPENSSL"
-    ),
-    CompileWithClientSideEncryption(
         "debug-compile-sasl-openssl-static-cse",
         tags=["debug-compile", "sasl", "openssl-static"],
         SASL="AUTO",
         SSL="OPENSSL_STATIC",
-    ),
-    CompileWithClientSideEncryption(
-        "debug-compile-sasl-darwinssl-cse", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"
-    ),
-    CompileWithClientSideEncryption(
-        "debug-compile-sasl-winssl-cse", tags=["debug-compile", "sasl", "winssl"], SASL="AUTO", SSL="WINDOWS"
-    ),
-    CompileWithClientSideEncryptionAsan(
-        "debug-compile-asan-openssl-cse", tags=["debug-compile", "asan-clang"], SSL="OPENSSL", sanitize=["address"]
     ),
     CompileTask(
         "debug-compile-nosasl-openssl-1.0.1",
@@ -675,7 +654,7 @@ all_tasks = chain(
 
 
 class AuthTask(MatrixTask):
-    axes = OD([("sasl", ["sasl", "sspi", False]), ("ssl", ["openssl", "openssl-static", "darwinssl", "winssl"])])
+    axes = OD([("sasl", ["sasl", "sspi", False]), ("ssl", ["openssl", "darwinssl", "winssl"])])
 
     name_prefix = "authentication-tests"
 
@@ -725,12 +704,6 @@ class PostCompileTask(NamedTask):
 all_tasks = chain(
     all_tasks,
     [
-        PostCompileTask(
-            "test-asan-memcheck-mock-server",
-            tags=["test-asan"],
-            get_build="debug-compile-asan-clang",
-            commands=[func("run mock server tests", ASAN="on", SSL="ssl")],
-        ),
         PostCompileTask(
             "test-mongohouse",
             tags=[],

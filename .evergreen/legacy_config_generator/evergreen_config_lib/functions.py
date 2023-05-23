@@ -62,11 +62,6 @@ all_functions = OD([
         bash .evergreen/scripts/run-auth-tests.sh
         ''', add_expansions_to_env=True),
     )),
-    ('run mock server tests', Function(
-        shell_mongoc(r'''
-        bash .evergreen/scripts/run-mock-server-tests.sh
-        ''', add_expansions_to_env=True),
-    )),
     ('link sample program', Function(
         shell_mongoc(r'''
         # Compile a program that links dynamically or statically to libmongoc,
