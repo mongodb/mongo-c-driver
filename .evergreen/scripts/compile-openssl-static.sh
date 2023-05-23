@@ -19,7 +19,7 @@ declare install_dir="${mongoc_dir}/install-dir"
 declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 
 declare cmake_prefix_path="${install_dir}"
-if [[ -n "${EXTRA_CMAKE_PREFIX_PATH-}" ]]; then
+if [[ -n "${EXTRA_CMAKE_PREFIX_PATH:-}" ]]; then
   cmake_prefix_path+=";${EXTRA_CMAKE_PREFIX_PATH}"
 fi
 

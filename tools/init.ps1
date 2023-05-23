@@ -1,6 +1,5 @@
 $ErrorActionPreference = "Stop"
 
-
 $is_windows = $PSVersionTable.Platform -eq "Win32NT" -or $PSVersionTable.PSEdition -eq "Desktop"
 
 if (-not $is_windows) {
@@ -37,7 +36,7 @@ function Find-Python {
         $found = "py"
     }
     else {
-        foreach ($n in 50..6) {
+        foreach ($n in 20..8) {
             $cand = "python3.$n"
             Write-Debug "Try Python: [$cand]"
             if (!(Test-Command $cand -CommandType Application)) {

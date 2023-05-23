@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-. "$(dirname "${BASH_SOURCE[0]}")/../../tools/init.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/../../tools/use.sh" paths
 
 # Usage:
 #   to_windows_path "./some/unix/style/path"

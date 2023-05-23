@@ -12,7 +12,7 @@
 
     Print help messages from Poetry itself
 .EXAMPLE
-    > poetry.ps1 install
+    > poetry.ps1 install --with=docs --with=env
 
     Installs the project dependencies in the active virtualenv. This operation
     is idempotent
@@ -34,7 +34,7 @@
 #>
 [CmdletBinding(PositionalBinding = $false)]
 param(
-    # The version of Poetry that we want to install. By defalut, installs 1.4.2
+    # The version of Poetry that we want to install. By default, installs 1.4.2
     [string]
     $PoetryVersion = "1.4.2",
     # Force the directory in which Poetry will be installed
