@@ -91,7 +91,7 @@ test_rs_failover (void)
    future = future_collection_insert_one (collection, b, &opts, NULL, &error);
    request =
       mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    BSON_ASSERT (future_get_bool (future));
    future_destroy (future);
 
@@ -106,19 +106,19 @@ test_rs_failover (void)
    request =
       mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
-   mock_server_replies_simple (request,
-                               "{"
-                               " 'ok': 0,"
-                               " 'code': 10107,"
-                               " 'errmsg': 'not primary',"
-                               " 'errorLabels': ['RetryableWriteError']"
-                               "}");
+   reply_to_request_simple (request,
+                            "{"
+                            " 'ok': 0,"
+                            " 'code': 10107,"
+                            " 'errmsg': 'not primary',"
+                            " 'errorLabels': ['RetryableWriteError']"
+                            "}");
    request_destroy (request);
 
    request =
       mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    BSON_ASSERT (future_get_bool (future));
    future_destroy (future);
 
@@ -559,7 +559,7 @@ test_unsupported_storage_engine_error (void)
       &reply,
       &error);
    request = mock_rs_receives_request (rs);
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'ok': 0, 'code': 20, 'errmsg': 'Transaction numbers are great'}");
    request_destroy (request);

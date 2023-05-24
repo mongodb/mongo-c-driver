@@ -467,11 +467,11 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
                                           &error);
    request = mock_server_receives_any_hello_with_match (
       server, "{'loadBalanced': true}", "{'loadBalanced': true}");
-   mock_server_replies_simple (request, LB_HELLO);
+   reply_to_request_simple (request, LB_HELLO);
    request_destroy (request);
 
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
@@ -529,7 +529,7 @@ test_loadbalanced_handshake_rejects_non_loadbalanced (void)
                                           &error);
    request = mock_server_receives_any_hello_with_match (
       server, "{'loadBalanced': true}", "{'loadBalanced': true}");
-   mock_server_replies_simple (request, NON_LB_HELLO);
+   reply_to_request_simple (request, NON_LB_HELLO);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
    future_destroy (future);
@@ -582,12 +582,12 @@ test_pre_handshake_error_does_not_clear_pool (void)
       request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
 
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, LB_HELLO);
+   reply_to_request_simple (request, LB_HELLO);
    request_destroy (request);
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -605,7 +605,7 @@ test_pre_handshake_error_does_not_clear_pool (void)
       request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
    capture_logs (true); /* hide Failed to buffer logs. */
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (
@@ -624,7 +624,7 @@ test_pre_handshake_error_does_not_clear_pool (void)
     * connection. The next command is the "ping". */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -693,12 +693,12 @@ test_post_handshake_error_clears_pool (void)
    ASSERT (
       request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, LB_HELLO_A);
+   reply_to_request_simple (request, LB_HELLO_A);
    request_destroy (request);
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -715,12 +715,12 @@ test_post_handshake_error_clears_pool (void)
    ASSERT (
       request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, LB_HELLO_A);
+   reply_to_request_simple (request, LB_HELLO_A);
    request_destroy (request);
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -737,12 +737,12 @@ test_post_handshake_error_clears_pool (void)
    ASSERT (
       request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, LB_HELLO_B);
+   reply_to_request_simple (request, LB_HELLO_B);
    request_destroy (request);
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -757,7 +757,7 @@ test_post_handshake_error_clears_pool (void)
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
    capture_logs (true); /* hide Failed to buffer logs. */
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (
@@ -781,12 +781,12 @@ test_post_handshake_error_clears_pool (void)
    ASSERT (
       request_matches_msg (request, MONGOC_MSG_NONE, &match_loadBalanced, 1));
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, LB_HELLO_A);
+   reply_to_request_simple (request, LB_HELLO_A);
    request_destroy (request);
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -800,7 +800,7 @@ test_post_handshake_error_clears_pool (void)
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 

@@ -88,33 +88,6 @@ _mock_rs_receives_msg (mock_rs_t *rs, uint32_t flags, ...);
 #define mock_rs_receives_msg(_rs, _flags, ...) \
    _mock_rs_receives_msg (_rs, _flags, __VA_ARGS__, NULL)
 
-void
-mock_rs_replies (request_t *request,
-                 uint32_t flags,
-                 int64_t cursor_id,
-                 int32_t starting_from,
-                 int32_t number_returned,
-                 const char *docs_json);
-
-void
-mock_rs_replies_opmsg (request_t *request, uint32_t flags, const bson_t *doc);
-
-void
-mock_rs_replies_simple (request_t *request, const char *docs_json);
-
-void
-mock_rs_replies_to_find (request_t *request,
-                         mongoc_query_flags_t flags,
-                         int64_t cursor_id,
-                         int32_t number_returned,
-                         const char *ns,
-                         const char *reply_json,
-                         bool is_command);
-
-void
-mock_rs_hangs_up (request_t *request);
-
-
 bool
 mock_rs_request_is_to_primary (mock_rs_t *rs, request_t *request);
 

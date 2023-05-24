@@ -413,7 +413,7 @@ test_disconnect_mid_batch (void)
    /* Mock server recieves first insert. */
    request = mock_server_receives_request (server);
    BSON_ASSERT (request);
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
 
    BSON_ASSERT (!future_get_bool (future));

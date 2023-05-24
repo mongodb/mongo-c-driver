@@ -503,7 +503,7 @@ _test_mock_end_sessions (bool pooled)
 
    request = mock_server_receives_msg (
       server, 0, tmp_bson ("{'ping': 1, 'lsid': {'$exists': true}}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    BSON_ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -526,7 +526,7 @@ _test_mock_end_sessions (bool pooled)
 
    /* check that we got the expected endSessions cmd */
    request = mock_server_receives_msg (server, 0, expected_cmd);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    future_wait (future);
    future_destroy (future);
 

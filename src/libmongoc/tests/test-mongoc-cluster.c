@@ -187,19 +187,19 @@ _test_cluster_node_disconnect (bool pooled)
    /* query 0 fails. set client_port_0 to the port used by the query. */
    START_QUERY (client_port_0);
 
-   mock_server_resets (request);
+   reply_to_request_with_reset (request);
    ASSERT_CURSOR_ERR ();
    CLEANUP_QUERY ();
 
    /* query 1 opens a new socket. set client_port_1 to the new port. */
    START_QUERY (client_port_1);
    ASSERT_CMPINT (client_port_1, !=, client_port_0);
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "   'id': 0,"
-                               "   'ns': 'db.collection',"
-                               "   'firstBatch': [{'a': 1}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "   'id': 0,"
+                            "   'ns': 'db.collection',"
+                            "   'firstBatch': [{'a': 1}]}}");
 
    /* success! */
    BSON_ASSERT (future_get_bool (future));
@@ -285,7 +285,7 @@ _test_cluster_command_timeout (bool pooled)
    BSON_ASSERT (sd->type != MONGOC_SERVER_UNKNOWN);
 
    /* late response */
-   mock_server_replies_simple (request, "{'ok': 1, 'bar': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'bar': 1}");
    request_destroy (request);
    future_destroy (future);
 
@@ -296,7 +296,7 @@ _test_cluster_command_timeout (bool pooled)
    ASSERT (request);
    /* new socket */
    ASSERT_CMPUINT16 (client_port, !=, request_get_client_port (request));
-   mock_server_replies_simple (request, "{'ok': 1, 'quux': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'quux': 1}");
    ASSERT (future_get_bool (future));
 
    /* got the proper response */
@@ -366,18 +366,18 @@ _test_write_disconnect (void)
                                WIRE_VERSION_MIN,
                                WIRE_VERSION_MAX);
 
-   mock_server_replies_simple (request, hello);
+   reply_to_request_simple (request, hello);
    request_destroy (request);
 
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'ping': 1}"));
-   mock_server_replies_simple (request, "{'ok': 1}");
+   reply_to_request_simple (request, "{'ok': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    /*
     * close the socket
     */
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
 
    /*
     * next operation detects the hangup
@@ -778,7 +778,7 @@ replies_with_cluster_time (request_t *request,
                 t,
                 i));
 
-   mock_server_reply_multi (
+   reply_to_request_with_mutiple_docs (
       request, MONGOC_REPLY_NONE, &doc, 1, 0 /* cursor id */);
 
    bson_destroy (&doc);
@@ -897,7 +897,7 @@ _test_cluster_time_comparison (bool pooled)
 
    /* client doesn't update cluster time, since new value is less than old */
    request = receives_with_cluster_time (server, 2, 2, ping);
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    assert_ok (future, &error);
 
    if (pooled) {
@@ -932,7 +932,7 @@ _test_cluster_time_comparison (bool pooled)
 
       replies_with_cluster_time (request, 2, 1, hello);
       request = receives_with_cluster_time (server, 2, 2, ping);
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
       assert_ok (future, &error);
 
       mongoc_client_destroy (client);
@@ -1018,7 +1018,7 @@ _test_not_primary (bool pooled,
          client, "test", tmp_bson (cmd), NULL, NULL, &error);
 
       request = mock_server_receives_request (server);
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
 
@@ -1036,7 +1036,7 @@ _test_not_primary (bool pooled,
 
       reply = bson_strdup_printf ("{'ok': 0, 'errmsg': '%s'}",
                                   test_error_msg->errmsg);
-      mock_server_replies_simple (request, reply);
+      reply_to_request_simple (request, reply);
       BSON_ASSERT (!future_get_bool (future));
 
       /* Topology should be invalidated by run_command */
@@ -1222,13 +1222,13 @@ _test_dollar_query (void *ctx)
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server, 0, tmp_bson (test->e));
-   mock_server_replies_opmsg (request,
-                              MONGOC_MSG_NONE,
-                              tmp_bson ("{'ok': 1,"
-                                        " 'cursor': {"
-                                        "    'id': {'$numberLong': '0'},"
-                                        "    'ns': 'db.collection',"
-                                        "    'firstBatch': []}}"));
+   reply_to_op_msg (request,
+                    MONGOC_MSG_NONE,
+                    tmp_bson ("{'ok': 1,"
+                              " 'cursor': {"
+                              "    'id': {'$numberLong': '0'},"
+                              "    'ns': 'db.collection',"
+                              "    'firstBatch': []}}"));
 
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -1394,12 +1394,12 @@ _test_cluster_hello_fails (bool hangup)
 
    if (hangup) {
       capture_logs (true); /* suppress "failed to buffer" warning */
-      mock_server_hangs_up (request);
+      reply_to_request_with_hang_up (request);
       BSON_ASSERT (!future_get_bool (future));
       ASSERT_ERROR_CONTAINS (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket err");
    } else {
-      mock_server_replies_simple (request, "{'ok': 0, 'code': 123}");
+      reply_to_request_simple (request, "{'ok': 0, 'code': 123}");
       BSON_ASSERT (!future_get_bool (future));
       ASSERT_ERROR_CONTAINS (
          error, MONGOC_ERROR_SERVER, 123, "Unknown command error");
@@ -1446,7 +1446,7 @@ test_cluster_command_error (void)
                                           &err);
    request = mock_server_receives_msg (
       server, MONGOC_QUERY_NONE, tmp_bson ("{'$db': 'db', 'ping': 1}"));
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    BSON_ASSERT (!future_get_bool (future));
    future_destroy (future);
    request_destroy (request);
@@ -1509,13 +1509,13 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
                 "   'find': 'collection', 'filter': {},"
                 "   '$clusterTime': {'$exists': false}"
                 "}"));
-   mock_server_replies_opmsg (request,
-                              MONGOC_MSG_NONE,
-                              tmp_bson ("{'ok': 1,"
-                                        " 'cursor': {"
-                                        "    'id': {'$numberLong': '0'},"
-                                        "    'ns': 'db.collection',"
-                                        "    'firstBatch': []}}"));
+   reply_to_op_msg (request,
+                    MONGOC_MSG_NONE,
+                    tmp_bson ("{'ok': 1,"
+                              " 'cursor': {"
+                              "    'id': {'$numberLong': '0'},"
+                              "    'ns': 'db.collection',"
+                              "    'firstBatch': []}}"));
 
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -1540,17 +1540,17 @@ _responder (request_t *req, void *data)
    hello = (char *) data;
    if (0 == strcasecmp (req->command_name, HANDSHAKE_CMD_LEGACY_HELLO) ||
        0 == strcasecmp (req->command_name, "hello")) {
-      mock_server_replies_simple (req, hello);
+      reply_to_request_simple (req, hello);
       request_destroy (req);
       return true;
    } else if (0 == strcmp (req->command_name, "serverStatus")) {
-      mock_server_hangs_up (req);
+      reply_to_request_with_hang_up (req);
       request_destroy (req);
       return true;
    }
 
    /* Otherwise, reply {ok:1} */
-   mock_server_replies_ok_and_destroys (req);
+   reply_to_request_with_ok_and_destroy (req);
    return true;
 }
 

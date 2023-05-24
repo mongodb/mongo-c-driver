@@ -852,19 +852,19 @@ test_func_inherits_opts (void *ctx)
       }
 
       if (func_ctx.cursor) {
-         mock_server_replies_simple (request,
-                                     "{'ok': 1,"
-                                     " 'cursor': {"
-                                     "    'id': 0,"
-                                     "    'ns': 'db.collection',"
-                                     "    'firstBatch': []}}");
+         reply_to_request_simple (request,
+                                  "{'ok': 1,"
+                                  " 'cursor': {"
+                                  "    'id': 0,"
+                                  "    'ns': 'db.collection',"
+                                  "    'firstBatch': []}}");
 
          BSON_ASSERT (!future_get_bool (future));
          future_destroy (future);
          ASSERT_OR_PRINT (!mongoc_cursor_error (func_ctx.cursor, &error),
                           error);
       } else {
-         mock_server_replies_simple (request, "{'ok': 1}");
+         reply_to_request_simple (request, "{'ok': 1}");
          cleanup_future (future);
       }
 

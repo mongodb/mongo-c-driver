@@ -158,8 +158,8 @@ _test_read_concern_wire_version (bool explicit)
       server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
-   mock_server_replies_simple (
-      request, "{'ok': 1, 'cursor': {'id': 0, 'firstBatch': []}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1, 'cursor': {'id': 0, 'firstBatch': []}}");
    request_destroy (request);
    BSON_ASSERT (future_wait (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -175,7 +175,7 @@ _test_read_concern_wire_version (bool explicit)
       server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -195,7 +195,7 @@ _test_read_concern_wire_version (bool explicit)
       server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'readConcern': {'level': 'foo'}}"));
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    request_destroy (request);
    ASSERT_CMPINT64 (future_get_int64_t (future), ==, (int64_t) 1);
 

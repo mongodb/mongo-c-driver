@@ -242,7 +242,7 @@ hangup (request_t *request, void *ctx)
 {
    BSON_UNUSED (ctx);
 
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
 
    return true;
@@ -573,7 +573,7 @@ auto_hello (request_t *request, void *data)
       _mongoc_usleep ((int64_t) (rand () % 10) * 1000);
    }
 
-   mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, response_json);
+   reply_to_request (request, MONGOC_REPLY_NONE, 0, 0, 1, response_json);
 
    bson_destroy (&response);
    bson_free (response_json);
@@ -654,7 +654,7 @@ auto_endsessions (request_t *request, void *data)
       return false;
    }
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    return true;
 }
 
@@ -1578,7 +1578,7 @@ mock_server_receives_kill_cursors (mock_server_t *server, int64_t cursor_id)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_hangs_up --
+ * reply_to_request_with_hang_up --
  *
  *       Hang up on a client request.
  *
@@ -1592,7 +1592,7 @@ mock_server_receives_kill_cursors (mock_server_t *server, int64_t cursor_id)
  */
 
 void
-mock_server_hangs_up (request_t *request)
+reply_to_request_with_hang_up (request_t *request)
 {
    reply_t *reply;
    test_suite_mock_server_log ("%5.2f  %hu <- %hu \thang up!",
@@ -1607,7 +1607,7 @@ mock_server_hangs_up (request_t *request)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_resets --
+ * reply_to_request_with_reset --
  *
  *       Forcefully reset a connection from the client.
  *
@@ -1621,7 +1621,7 @@ mock_server_hangs_up (request_t *request)
  */
 
 void
-mock_server_resets (request_t *request)
+reply_to_request_with_reset (request_t *request)
 {
    reply_t *reply;
    test_suite_mock_server_log ("%5.2f  %hu <- %hu \treset!",
@@ -1637,7 +1637,7 @@ mock_server_resets (request_t *request)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_replies --
+ * reply_to_request --
  *
  *       Respond to a client request.
  *
@@ -1651,12 +1651,12 @@ mock_server_resets (request_t *request)
  */
 
 void
-mock_server_replies (request_t *request,
-                     mongoc_reply_flags_t flags,
-                     int64_t cursor_id,
-                     int32_t starting_from,
-                     int32_t number_returned,
-                     const char *docs_json)
+reply_to_request (request_t *request,
+                  mongoc_reply_flags_t flags,
+                  int64_t cursor_id,
+                  int32_t starting_from,
+                  int32_t number_returned,
+                  const char *docs_json)
 {
    char *quotes_replaced;
    bson_t doc;
@@ -1681,14 +1681,14 @@ mock_server_replies (request_t *request,
       return;
    }
 
-   mock_server_reply_multi (request, flags, &doc, 1, cursor_id);
+   reply_to_request_with_mutiple_docs (request, flags, &doc, 1, cursor_id);
    bson_destroy (&doc);
 }
 
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_replies_simple --
+ * reply_to_request_simple --
  *
  *       Respond to a client request.
  *
@@ -1702,16 +1702,16 @@ mock_server_replies (request_t *request,
  */
 
 void
-mock_server_replies_simple (request_t *request, const char *docs_json)
+reply_to_request_simple (request_t *request, const char *docs_json)
 {
-   mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, docs_json);
+   reply_to_request (request, MONGOC_REPLY_NONE, 0, 0, 1, docs_json);
 }
 
 /* To specify additional flags for OP_MSG replies. */
 void
-mock_server_replies_opmsg (request_t *request,
-                           mongoc_op_msg_flags_t flags,
-                           const bson_t *doc)
+reply_to_op_msg (request_t *request,
+                 mongoc_op_msg_flags_t flags,
+                 const bson_t *doc)
 {
    reply_t *reply;
 
@@ -1735,7 +1735,7 @@ mock_server_replies_opmsg (request_t *request,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_replies_ok_and_destroys --
+ * reply_to_request_with_ok_and_destroy --
  *
  *       Respond to a client request.
  *
@@ -1749,16 +1749,16 @@ mock_server_replies_opmsg (request_t *request,
  */
 
 void
-mock_server_replies_ok_and_destroys (request_t *request)
+reply_to_request_with_ok_and_destroy (request_t *request)
 {
-   mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, "{'ok': 1}");
+   reply_to_request (request, MONGOC_REPLY_NONE, 0, 0, 1, "{'ok': 1}");
    request_destroy (request);
 }
 
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_replies_to_find --
+ * reply_to_find_request --
  *
  *       Receive an OP_QUERY or "find" command and reply appropriately.
  *
@@ -1774,13 +1774,13 @@ mock_server_replies_ok_and_destroys (request_t *request)
  */
 
 void
-mock_server_replies_to_find (request_t *request,
-                             mongoc_query_flags_t flags,
-                             int64_t cursor_id,
-                             int32_t number_returned,
-                             const char *ns,
-                             const char *reply_json,
-                             bool is_command)
+reply_to_find_request (request_t *request,
+                       mongoc_query_flags_t flags,
+                       int64_t cursor_id,
+                       int32_t number_returned,
+                       const char *ns,
+                       const char *reply_json,
+                       bool is_command)
 {
    char *find_reply;
    char *db;
@@ -1811,10 +1811,10 @@ mock_server_replies_to_find (request_t *request,
                              ns,
                              reply_json);
 
-      mock_server_replies_simple (request, find_reply);
+      reply_to_request_simple (request, find_reply);
       bson_free (find_reply);
    } else {
-      mock_server_replies (
+      reply_to_request (
          request, MONGOC_REPLY_NONE, cursor_id, 0, number_returned, reply_json);
    }
    bson_free (db);
@@ -2189,11 +2189,11 @@ failure:
 
 /* enqueue server reply for this connection's worker thread to send to client */
 void
-mock_server_reply_multi (request_t *request,
-                         mongoc_reply_flags_t flags,
-                         const bson_t *docs,
-                         int n_docs,
-                         int64_t cursor_id)
+reply_to_request_with_mutiple_docs (request_t *request,
+                                    mongoc_reply_flags_t flags,
+                                    const bson_t *docs,
+                                    int n_docs,
+                                    int64_t cursor_id)
 {
    reply_t *reply;
    int i;

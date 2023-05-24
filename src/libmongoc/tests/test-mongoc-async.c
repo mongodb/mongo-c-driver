@@ -176,7 +176,7 @@ test_hello_impl (bool with_ssl)
                              WIRE_VERSION_MAX,
                              server_id);
 
-      mock_server_replies_simple (request, reply);
+      reply_to_request_simple (request, reply);
       bson_free (reply);
       request_destroy (request);
    }

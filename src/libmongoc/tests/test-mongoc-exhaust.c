@@ -450,14 +450,14 @@ static void
 _request_error (request_t *request, exhaust_error_type_t error_type)
 {
    if (error_type == NETWORK_ERROR) {
-      mock_server_resets (request);
+      reply_to_request_with_reset (request);
    } else {
-      mock_server_replies (request,
-                           MONGOC_REPLY_QUERY_FAILURE,
-                           123,
-                           0,
-                           0,
-                           "{'$err': 'uh oh', 'code': 4321}");
+      reply_to_request (request,
+                        MONGOC_REPLY_QUERY_FAILURE,
+                        123,
+                        0,
+                        0,
+                        "{'$err': 'uh oh', 'code': 4321}");
    }
 }
 
@@ -544,7 +544,7 @@ _mock_test_exhaust (bool pooled,
 
    if (error_when == SECOND_BATCH) {
       /* initial query succeeds, gets a doc and cursor id of 123 */
-      mock_server_replies (request, MONGOC_REPLY_NONE, 123, 1, 1, "{'a': 1}");
+      reply_to_request (request, MONGOC_REPLY_NONE, 123, 1, 1, "{'a': 1}");
       ASSERT (future_get_bool (future));
       assert_match_bson (doc, tmp_bson ("{'a': 1}"), false);
       ASSERT_CMPINT64 ((int64_t) 123, ==, mongoc_cursor_get_id (cursor));

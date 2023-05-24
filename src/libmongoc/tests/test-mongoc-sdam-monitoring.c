@@ -662,7 +662,7 @@ responder (request_t *request, void *data)
    BSON_UNUSED (data);
 
    if (!strcmp (request->command_name, "foo")) {
-      mock_server_replies_simple (request, "{'ok': 1}");
+      reply_to_request_simple (request, "{'ok': 1}");
       request_destroy (request);
       return true;
    }
@@ -717,7 +717,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    request = mock_server_receives_any_hello (server);
 
    if (succeeded) {
-      mock_server_replies (
+      reply_to_request (
          request,
          MONGOC_REPLY_NONE,
          0,
@@ -728,14 +728,14 @@ _test_heartbeat_events (bool pooled, bool succeeded)
                   WIRE_VERSION_MAX));
       request_destroy (request);
    } else {
-      mock_server_hangs_up (request);
+      reply_to_request_with_hang_up (request);
       request_destroy (request);
    }
 
    /* pooled client opens new socket, handshakes it by calling hello again */
    if (pooled && succeeded) {
       request = mock_server_receives_any_hello (server);
-      mock_server_replies (
+      reply_to_request (
          request,
          MONGOC_REPLY_NONE,
          0,
@@ -955,13 +955,13 @@ test_no_duplicates (void)
 
    /* Topology scanning thread starts, and sends a hello. */
    request = mock_server_receives_any_hello (server);
-   mock_server_replies_simple (request,
-                               tmp_str ("{'ok': 1.0,"
-                                        " 'isWritablePrimary': true, "
-                                        " 'minWireVersion': %d,"
-                                        " 'maxWireVersion': %d}",
-                                        WIRE_VERSION_MIN,
-                                        WIRE_VERSION_4_4));
+   reply_to_request_simple (request,
+                            tmp_str ("{'ok': 1.0,"
+                                     " 'isWritablePrimary': true, "
+                                     " 'minWireVersion': %d,"
+                                     " 'maxWireVersion': %d}",
+                                     WIRE_VERSION_MIN,
+                                     WIRE_VERSION_4_4));
    request_destroy (request);
 
    /* Perform a ping, which creates a new connection, which performs the
@@ -973,7 +973,7 @@ test_no_duplicates (void)
                                           NULL /* reply */,
                                           &error);
    request = mock_server_receives_any_hello (server);
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       tmp_str (
          "{'ok': 1.0,"
@@ -987,7 +987,7 @@ test_no_duplicates (void)
    request_destroy (request);
    request = mock_server_receives_msg (
       server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 

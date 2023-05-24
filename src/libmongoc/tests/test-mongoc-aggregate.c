@@ -39,12 +39,12 @@ _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
                                           " 'pipeline': [ ],"
                                           " 'tailable': {'$exists': false}}"));
    ASSERT (request);
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': {'$numberLong': '123'},"
-                               "    'ns': 'db.collection',"
-                               "    'nextBatch': [{}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': {'$numberLong': '123'},"
+                            "    'ns': 'db.collection',"
+                            "    'nextBatch': [{}]}}");
    ASSERT (future_get_bool (future));
    request_destroy (request);
    future_destroy (future);
@@ -58,12 +58,12 @@ _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
                                           " 'collection': 'collection',"
                                           " 'tailable': {'$exists': false}}"));
    ASSERT (request);
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': {'$numberLong': '0'},"
-                               "    'ns': 'db.collection',"
-                               "    'nextBatch': [{}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': {'$numberLong': '0'},"
+                            "    'ns': 'db.collection',"
+                            "    'nextBatch': [{}]}}");
 
    ASSERT (future_get_bool (future));
 
