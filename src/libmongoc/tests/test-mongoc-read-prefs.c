@@ -730,13 +730,13 @@ test_mongos_read_concern (void)
                 " '$readPreference': {'mode': 'secondary'},"
                 " 'readConcern': {'level': 'foo'}}"));
 
-   reply_to_op_msg (request,
-                    MONGOC_MSG_NONE,
-                    tmp_bson ("{'ok': 1,"
-                              " 'cursor': {"
-                              "    'id': {'$numberLong': '0'},"
-                              "    'ns': 'db.collection',"
-                              "    'firstBatch': [{}]}}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'ok': 1,"
+                                      " 'cursor': {"
+                                      "    'id': {'$numberLong': '0'},"
+                                      "    'ns': 'db.collection',"
+                                      "    'firstBatch': [{}]}}"));
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));

@@ -1709,9 +1709,9 @@ reply_to_request_simple (request_t *request, const char *docs_json)
 
 /* To specify additional flags for OP_MSG replies. */
 void
-reply_to_op_msg (request_t *request,
-                 mongoc_op_msg_flags_t flags,
-                 const bson_t *doc)
+reply_to_op_msg_request (request_t *request,
+                         mongoc_op_msg_flags_t flags,
+                         const bson_t *doc)
 {
    reply_t *reply;
 

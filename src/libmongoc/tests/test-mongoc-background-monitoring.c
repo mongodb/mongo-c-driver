@@ -898,9 +898,9 @@ test_moretocome_succeeds (void)
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
-   reply_to_op_msg (request,
-                    MONGOC_MSG_MORE_TO_COME,
-                    tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_MORE_TO_COME,
+                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -909,15 +909,15 @@ test_moretocome_succeeds (void)
    OBSERVE (tf, tf->observations->awaited);
 
    /* Server monitor is still streaming replies. */
-   reply_to_op_msg (request,
-                    MONGOC_MSG_MORE_TO_COME,
-                    tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_MORE_TO_COME,
+                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 3);
    OBSERVE (tf, tf->observations->awaited);
    /* Reply with no moretocome flag. */
-   reply_to_op_msg (request,
-                    MONGOC_MSG_NONE,
-                    tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 4);
    OBSERVE (tf, tf->observations->awaited);
    request_destroy (request);
@@ -951,9 +951,9 @@ test_moretocome_hangup (void)
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
-   reply_to_op_msg (request,
-                    MONGOC_MSG_MORE_TO_COME,
-                    tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_MORE_TO_COME,
+                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -988,9 +988,9 @@ test_moretocome_badreply (void)
       tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
-   reply_to_op_msg (request,
-                    MONGOC_MSG_MORE_TO_COME,
-                    tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_MORE_TO_COME,
+                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -1027,9 +1027,9 @@ test_moretocome_shutdown (void)
       tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
-   reply_to_op_msg (request,
-                    MONGOC_MSG_MORE_TO_COME,
-                    tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_MORE_TO_COME,
+                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -1061,9 +1061,9 @@ test_moretocome_cancel (void)
       tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
-   reply_to_op_msg (request,
-                    MONGOC_MSG_MORE_TO_COME,
-                    tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_MORE_TO_COME,
+                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
 
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -1099,9 +1099,9 @@ test_moretocome_cancel (void)
       tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 5);
-   reply_to_op_msg (request,
-                    MONGOC_MSG_NONE,
-                    tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 4);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
@@ -1116,9 +1116,9 @@ test_moretocome_cancel (void)
       tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 6);
-   reply_to_op_msg (request,
-                    MONGOC_MSG_NONE,
-                    tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 5);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);

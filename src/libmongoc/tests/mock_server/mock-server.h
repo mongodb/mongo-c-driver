@@ -237,9 +237,9 @@ reply_to_find_request (request_t *request,
                        bool is_command);
 
 void
-reply_to_op_msg (request_t *request,
-                 mongoc_op_msg_flags_t flags,
-                 const bson_t *doc);
+reply_to_op_msg_request (request_t *request,
+                         mongoc_op_msg_flags_t flags,
+                         const bson_t *doc);
 
 void
 reply_to_request_with_mutiple_docs (request_t *request,

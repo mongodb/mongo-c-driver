@@ -683,13 +683,13 @@ _test_query_operation_id (bool pooled)
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
-   reply_to_op_msg (request,
-                    MONGOC_MSG_NONE,
-                    tmp_bson ("{'ok': 1,"
-                              " 'cursor': {"
-                              "    'id': {'$numberLong': '123'},"
-                              "    'ns': 'db.collection',"
-                              "    'firstBatch': [{}]}}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'ok': 1,"
+                                      " 'cursor': {"
+                                      "    'id': {'$numberLong': '123'},"
+                                      "    'ns': 'db.collection',"
+                                      "    'firstBatch': [{}]}}"));
 
    ASSERT (future_get_bool (future));
    future_destroy (future);

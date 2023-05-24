@@ -1222,13 +1222,13 @@ _test_dollar_query (void *ctx)
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_msg (server, 0, tmp_bson (test->e));
-   reply_to_op_msg (request,
-                    MONGOC_MSG_NONE,
-                    tmp_bson ("{'ok': 1,"
-                              " 'cursor': {"
-                              "    'id': {'$numberLong': '0'},"
-                              "    'ns': 'db.collection',"
-                              "    'firstBatch': []}}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'ok': 1,"
+                                      " 'cursor': {"
+                                      "    'id': {'$numberLong': '0'},"
+                                      "    'ns': 'db.collection',"
+                                      "    'firstBatch': []}}"));
 
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -1509,13 +1509,13 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
                 "   'find': 'collection', 'filter': {},"
                 "   '$clusterTime': {'$exists': false}"
                 "}"));
-   reply_to_op_msg (request,
-                    MONGOC_MSG_NONE,
-                    tmp_bson ("{'ok': 1,"
-                              " 'cursor': {"
-                              "    'id': {'$numberLong': '0'},"
-                              "    'ns': 'db.collection',"
-                              "    'firstBatch': []}}"));
+   reply_to_op_msg_request (request,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'ok': 1,"
+                                      " 'cursor': {"
+                                      "    'id': {'$numberLong': '0'},"
+                                      "    'ns': 'db.collection',"
+                                      "    'firstBatch': []}}"));
 
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);

@@ -444,7 +444,7 @@ test_find_one_with_opts_limit (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'find': 'fs.files', 'filter': {}, 'limit': 1}"));
 
-   reply_to_op_msg (
+   reply_to_op_msg_request (
       request,
       MONGOC_MSG_NONE,
       tmp_bson (
@@ -469,7 +469,7 @@ test_find_one_with_opts_limit (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'find': 'fs.files', 'filter': {}, 'limit': 1}"));
 
-   reply_to_op_msg (
+   reply_to_op_msg_request (
       request,
       MONGOC_MSG_NONE,
       tmp_bson (
