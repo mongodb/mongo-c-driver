@@ -1495,7 +1495,7 @@ _test_cursor_hint (bool pooled, bool use_primary)
                           tmp_bson ("{'ok': 1,"
                                     " 'cursor': {"
                                     "    'id': {'$numberLong': '0'},"
-                                    "    'ns': 'db.collection',"
+                                    "    'ns': 'test.test',"
                                     "    'firstBatch': [{'b': 1}]}}"));
    BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'b': 1}");
