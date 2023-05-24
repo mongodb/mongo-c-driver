@@ -188,7 +188,7 @@ test_topology_scanner_discovery (void)
 
    /* a single scan discovers *and* checks the secondary */
    request = mock_server_receives_any_hello (primary);
-   mock_server_replies_simple (request, primary_response);
+   reply_to_request_simple (request, primary_response);
    request_destroy (request);
 
    /* let client process that response */
@@ -196,7 +196,7 @@ test_topology_scanner_discovery (void)
 
    /* a check of the secondary is scheduled in this scan */
    request = mock_server_receives_any_hello (secondary);
-   mock_server_replies_simple (request, secondary_response);
+   reply_to_request_simple (request, secondary_response);
 
    /* scan completes */
    ASSERT_OR_PRINT ((sd = future_get_mongoc_server_description_ptr (future)),
@@ -268,14 +268,14 @@ test_topology_scanner_oscillate (void)
 
    /* a single scan discovers servers 0 and 1 */
    request = mock_server_receives_any_hello (server0);
-   mock_server_replies_simple (request, server0_response);
+   reply_to_request_simple (request, server0_response);
    request_destroy (request);
 
    /* let client process that response */
    _mongoc_usleep (250 * 1000);
 
    request = mock_server_receives_any_hello (server1);
-   mock_server_replies_simple (request, server1_response);
+   reply_to_request_simple (request, server1_response);
 
    /* we don't schedule another check of server0 */
    _mongoc_usleep (250 * 1000);

@@ -257,7 +257,7 @@ test_mongoc_handshake_data_append_success (void)
       ASSERT (strstr (val, platform) != NULL);
    }
 
-   mock_server_replies_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
+   reply_to_request_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
    request_destroy (request);
 
    /* Cleanup */
@@ -367,7 +367,7 @@ test_mongoc_handshake_data_append_null_args (void)
       ASSERT (strstr (val, "null") == NULL);
    }
 
-   mock_server_replies_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
+   reply_to_request_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
    request_destroy (request);
 
    /* Cleanup */
@@ -525,7 +525,7 @@ test_mongoc_handshake_too_big (void)
    /* Should have truncated the platform field so it fits exactly */
    ASSERT (len == HANDSHAKE_MAX_SIZE);
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       tmp_str ("{'ok': 1, 'minWireVersion': %d, 'maxWireVersion': %d}",
                WIRE_VERSION_MIN,
@@ -535,7 +535,7 @@ test_mongoc_handshake_too_big (void)
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   reply_to_request_simple (request, "{'ok': 1}");
    ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -685,13 +685,13 @@ test_mongoc_handshake_cannot_send (void)
    ASSERT (request_doc);
    ASSERT (!bson_has_field (request_doc, HANDSHAKE_FIELD));
 
-   mock_server_replies_simple (request, server_reply);
+   reply_to_request_simple (request, server_reply);
    request_destroy (request);
 
    /* Cause failure on client side */
    request = mock_server_receives_any_hello (server);
    ASSERT (request);
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
 
    /* Make sure the hello request still DOESN'T have a handshake field
@@ -702,7 +702,7 @@ test_mongoc_handshake_cannot_send (void)
    ASSERT (request_doc);
    ASSERT (!bson_has_field (request_doc, HANDSHAKE_FIELD));
 
-   mock_server_replies_simple (request, server_reply);
+   reply_to_request_simple (request, server_reply);
    request_destroy (request);
 
    /* cleanup */

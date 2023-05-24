@@ -256,7 +256,7 @@ _check_mechanism (bool pooled,
    used_mech = bson_lookup_utf8 (sasl_doc, "mechanism");
    ASSERT_CMPSTR (used_mech, expected_used_mech);
    /* we're not actually going to auth, just hang up. */
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    future_wait (future);
    future_destroy (future);
    request_destroy (request);

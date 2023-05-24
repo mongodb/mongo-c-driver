@@ -135,7 +135,7 @@ test_aggregate_inherit_collection (void)
                 " 'readConcern': {'level': 'majority'},"
                 " 'writeConcern': {'w': 2}}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    ASSERT (!future_get_bool (future));
 
@@ -165,7 +165,7 @@ test_aggregate_inherit_collection (void)
                 " 'readConcern': {'level': 'local'},"
                 " 'writeConcern': {'w': 3}}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    ASSERT (!future_get_bool (future));
 
@@ -187,7 +187,7 @@ test_aggregate_inherit_collection (void)
                 " 'readConcern': {'level': 'majority'},"
                 " 'writeConcern': {'w': 2}}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    ASSERT (!future_get_bool (future));
 
@@ -213,7 +213,7 @@ test_aggregate_inherit_collection (void)
                 " 'readConcern': {'level': 'local'},"
                 " 'writeConcern': {'$exists': false}}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT (!future_get_bool (future));
 
    future_destroy (future);
@@ -267,7 +267,7 @@ _batch_size_test (bson_t *pipeline,
          tmp_bson ("{ 'cursor' : { 'batchSize' : { '$exists': false } } }"));
    }
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   reply_to_request_simple (request, "{'ok': 1}");
 
    request_destroy (request);
    future_wait (future);
@@ -953,7 +953,7 @@ test_insert_command_keys (void)
                                 tmp_bson ("{'_id': 1}"),
                                 tmp_bson ("{'_id': 2}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    ASSERT_OR_PRINT (future_get_uint32_t (future), error);
 
@@ -2051,7 +2051,7 @@ test_count_read_pref (void)
                 " 'count': 'collection',"
                 " '$readPreference': {'mode': 'secondary'}}"));
 
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
 
    request_destroy (request);
@@ -2094,7 +2094,7 @@ test_count_read_concern (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'test', 'count': 'test', 'query': {}}"));
 
-   mock_server_replies_simple (request, "{ 'n' : 42, 'ok' : 1 } ");
+   reply_to_request_simple (request, "{ 'n' : 42, 'ok' : 1 } ");
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 42, error);
    request_destroy (request);
@@ -2117,7 +2117,7 @@ test_count_read_concern (void)
                 " 'query': {},"
                 " 'readConcern': {'level': 'majority'}}"));
 
-   mock_server_replies_simple (request, "{ 'n' : 43, 'ok' : 1 } ");
+   reply_to_request_simple (request, "{ 'n' : 43, 'ok' : 1 } ");
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 43, error);
    mongoc_read_concern_destroy (rc);
@@ -2141,7 +2141,7 @@ test_count_read_concern (void)
                 " 'query': {},"
                 " 'readConcern': {'level': 'local'}}"));
 
-   mock_server_replies_simple (request, "{ 'n' : 44, 'ok' : 1 } ");
+   reply_to_request_simple (request, "{ 'n' : 44, 'ok' : 1 } ");
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 44, error);
    mongoc_read_concern_destroy (rc);
@@ -2165,7 +2165,7 @@ test_count_read_concern (void)
                 " 'query': {},"
                 " 'readConcern': {'level': 'futureCompatible'}}"));
 
-   mock_server_replies_simple (request, "{ 'n' : 45, 'ok' : 1 } ");
+   reply_to_request_simple (request, "{ 'n' : 45, 'ok' : 1 } ");
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 45, error);
    mongoc_read_concern_destroy (rc);
@@ -2189,7 +2189,7 @@ test_count_read_concern (void)
                 " 'query': {},"
                 " 'readConcern': { '$exists': false }}"));
 
-   mock_server_replies_simple (request, "{ 'n' : 46, 'ok' : 1 } ");
+   reply_to_request_simple (request, "{ 'n' : 46, 'ok' : 1 } ");
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 46, error);
    mongoc_read_concern_destroy (rc);
@@ -2212,7 +2212,7 @@ test_count_read_concern (void)
                 " 'query': {},"
                 " 'readConcern': { '$exists': false }}"));
 
-   mock_server_replies_simple (request, "{ 'n' : 47, 'ok' : 1 } ");
+   reply_to_request_simple (request, "{ 'n' : 47, 'ok' : 1 } ");
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 47, error);
 
@@ -2367,7 +2367,7 @@ test_count_with_opts (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'count': 'collection', 'opt': 1}"));
 
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
 
    request_destroy (request);
@@ -2411,7 +2411,7 @@ test_count_with_collation (void)
                                 tmp_bson ("{'$db': 'db',"
                                           " 'count': 'collection',"
                                           " 'collation': {'locale': 'en'}}"));
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
    request_destroy (request);
 
@@ -2456,7 +2456,7 @@ test_count_documents (void)
       tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': "
                 "{'x': 1}}, {'$skip': 1}, {'$limit': 2}, {'$group': "
                 "{'n': {'$sum': 1}}}]}"));
-   mock_server_replies_simple (request, server_reply);
+   reply_to_request_simple (request, server_reply);
    ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
    ASSERT_MATCH (&reply, server_reply);
 
@@ -2479,7 +2479,7 @@ test_count_documents (void)
       tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': {}}, {'$skip': "
                 "1}, {'$limit': 2}, {'$group': "
                 "{'n': {'$sum': 1}}}]}"));
-   mock_server_replies_simple (request, server_reply);
+   reply_to_request_simple (request, server_reply);
    ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
    ASSERT_MATCH (&reply, server_reply);
    bson_destroy (&reply);
@@ -2499,7 +2499,7 @@ test_count_documents (void)
       0,
       tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': {}}, {'$group': "
                 "{'n': {'$sum': 1}}}], 'maxTimeMS': 123}"));
-   mock_server_replies_simple (request, server_reply);
+   reply_to_request_simple (request, server_reply);
    ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
    ASSERT_MATCH (&reply, server_reply);
    bson_destroy (&reply);
@@ -2559,7 +2559,7 @@ test_estimated_document_count (void)
 
    request = mock_server_receives_msg (
       server, 0, tmp_bson ("{'count': 'coll', 'limit': 2, 'skip': 1}"));
-   mock_server_replies_simple (request, server_reply);
+   reply_to_request_simple (request, server_reply);
    ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
    ASSERT_MATCH (&reply, server_reply);
 
@@ -3047,13 +3047,13 @@ test_aggregate_modern (void *data)
                                          : "{'$empty': true}",
                 context->with_options ? ", 'foo': 1" : ""));
 
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 42,"
-                               "    'ns': 'db.collection',"
-                               "    'firstBatch': [{'_id': 123}]"
-                               "}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': 42,"
+                            "    'ns': 'db.collection',"
+                            "    'firstBatch': [{'_id': 123}]"
+                            "}}");
 
    ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
@@ -3073,12 +3073,12 @@ test_aggregate_modern (void *data)
                 context->with_batch_size ? "{'$numberLong': '11'}"
                                          : "{'$exists': false}"));
 
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "   'id': 0,"
-                               "   'ns': 'db.collection',"
-                               "   'nextBatch': [{'_id': 123}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "   'id': 0,"
+                            "   'ns': 'db.collection',"
+                            "   'nextBatch': [{'_id': 123}]}}");
 
    ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
@@ -3131,11 +3131,11 @@ test_aggregate_w_server_id (void)
                                       " 'serverId': {'$exists': false}}"));
 
    ASSERT (mock_rs_request_is_to_secondary (rs, request));
-   mock_rs_replies_simple (request,
-                           "{'ok': 1,"
-                           " 'cursor': {"
-                           "    'ns': 'db.collection',"
-                           "    'firstBatch': [{}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'ns': 'db.collection',"
+                            "    'firstBatch': [{}]}}");
    ASSERT_OR_PRINT (future_get_bool (future), cursor->error);
 
    future_destroy (future);
@@ -3179,11 +3179,11 @@ test_aggregate_w_server_id_sharded (void)
                                           " 'aggregate': 'collection',"
                                           " 'serverId': {'$exists': false}}"));
 
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'ns': 'db.collection',"
-                               "    'firstBatch': [{}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'ns': 'db.collection',"
+                            "    'firstBatch': [{}]}}");
 
    ASSERT_OR_PRINT (future_get_bool (future), cursor->error);
 
@@ -3490,7 +3490,7 @@ test_stats_read_pref (void)
                 " 'collStats': 'collection',"
                 " '$readPreference': {'mode': 'secondary'}}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    future_destroy (future);
@@ -3559,7 +3559,7 @@ test_find_and_modify_write_concern (void)
                 " 'new' : true,"
                 " 'writeConcern': {'w': 42}}"));
 
-   mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
+   reply_to_request_simple (request, "{ 'value' : null, 'ok' : 1 }");
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    future_destroy (future);
@@ -3975,7 +3975,7 @@ test_find_limit (void)
                                           " 'filter': {},"
                                           " 'limit': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
@@ -3999,7 +3999,7 @@ test_find_limit (void)
                                           " 'filter': {},"
                                           " 'limit': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
@@ -4051,7 +4051,7 @@ test_find_batch_size (void)
                 " 'filter': {},"
                 " 'batchSize': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
@@ -4075,7 +4075,7 @@ test_find_batch_size (void)
                 " 'filter': {},"
                 " 'batchSize': {'$numberLong': '2'}}"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'ok': 1, 'cursor': {'id': 0, 'ns': 'test.test', 'firstBatch': [{}]}}");
    BSON_ASSERT (future_get_bool (future));
@@ -4327,8 +4327,8 @@ test_find_indexes_err (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'listIndexes': 'collection'}"));
 
-   mock_server_replies_simple (request,
-                               "{'ok': 0, 'code': 1234567, 'errmsg': 'foo'}");
+   reply_to_request_simple (request,
+                            "{'ok': 0, 'code': 1234567, 'errmsg': 'foo'}");
    cursor = future_get_mongoc_cursor_ptr (future);
    BSON_ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 1234567, "foo");
@@ -4405,12 +4405,12 @@ test_find_read_concern (void)
       server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'test', 'find': 'test', 'filter': {}}"));
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 0,"
-                               "    'ns': 'test.test',"
-                               "    'firstBatch': [{'_id': 123}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': 0,"
+                            "    'ns': 'test.test',"
+                            "    'firstBatch': [{'_id': 123}]}}");
    ASSERT (future_get_bool (future));
    future_destroy (future);
    request_destroy (request);
@@ -4437,12 +4437,12 @@ test_find_read_concern (void)
                 " 'find': 'test',"
                 " 'filter': {},"
                 " 'readConcern': {'level': 'local'}}"));
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 0,"
-                               "    'ns': 'test.test',"
-                               "    'firstBatch': [{'_id': 123}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': 0,"
+                            "    'ns': 'test.test',"
+                            "    'firstBatch': [{'_id': 123}]}}");
    ASSERT (future_get_bool (future));
    future_destroy (future);
    request_destroy (request);
@@ -4470,12 +4470,12 @@ test_find_read_concern (void)
                 " 'find': 'test',"
                 " 'filter': {},"
                 " 'readConcern': {'level': 'random'}}"));
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 0,"
-                               "    'ns': 'test.test',"
-                               "    'firstBatch': [{'_id': 123}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': 0,"
+                            "    'ns': 'test.test',"
+                            "    'firstBatch': [{'_id': 123}]}}");
    ASSERT (future_get_bool (future));
    future_destroy (future);
    request_destroy (request);
@@ -4502,12 +4502,12 @@ test_find_read_concern (void)
                 " 'find': 'test',"
                 " 'filter': {},"
                 " 'readConcern': {'$exists': false}}"));
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 0,"
-                               "    'ns': 'test.test',"
-                               "    'firstBatch': [{'_id': 123}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': 0,"
+                            "    'ns': 'test.test',"
+                            "    'firstBatch': [{'_id': 123}]}}");
    ASSERT (future_get_bool (future));
    future_destroy (future);
    request_destroy (request);
@@ -4535,12 +4535,12 @@ test_find_read_concern (void)
                 " 'find': 'test',"
                 " 'filter': {},"
                 " 'readConcern': {'$exists': false}}"));
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 0,"
-                               "    'ns': 'test.test',"
-                               "    'firstBatch': [{'_id': 123}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': 0,"
+                            "    'ns': 'test.test',"
+                            "    'firstBatch': [{'_id': 123}]}}");
    ASSERT (future_get_bool (future));
 
    future_destroy (future);
@@ -4673,12 +4673,12 @@ test_aggregate_secondary_sharded (void)
                 " 'pipeline': [],"
                 " '$readPreference': {'mode': 'secondary'}}"));
 
-   mock_server_replies_simple (request,
-                               "{ 'ok':1,"
-                               "  'cursor': {"
-                               "     'id': 0,"
-                               "     'ns': 'db.collection',"
-                               "     'firstBatch': []}}");
+   reply_to_request_simple (request,
+                            "{ 'ok':1,"
+                            "  'cursor': {"
+                            "     'id': 0,"
+                            "     'ns': 'db.collection',"
+                            "     'firstBatch': []}}");
 
    ASSERT (!future_get_bool (future)); /* cursor_next returns false */
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -4727,13 +4727,13 @@ test_aggregate_read_concern (void)
                 " 'cursor': {},"
                 " 'readConcern': {'$exists': false}}"));
 
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 0,"
-                               "    'ns': 'db.collection',"
-                               "    'firstBatch': [{'_id': 123}]"
-                               "}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': 0,"
+                            "    'ns': 'db.collection',"
+                            "    'firstBatch': [{'_id': 123}]"
+                            "}}");
 
    ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
@@ -4763,13 +4763,13 @@ test_aggregate_read_concern (void)
                 " 'cursor': {},"
                 " 'readConcern': {'level': 'majority'}}"));
 
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 0,"
-                               "    'ns': 'db.collection',"
-                               "    'firstBatch': [{'_id': 123}]"
-                               "}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': 0,"
+                            "    'ns': 'db.collection',"
+                            "    'firstBatch': [{'_id': 123}]"
+                            "}}");
 
    ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
@@ -4821,13 +4821,13 @@ test_aggregate_with_collation (void)
                                           " 'pipeline': [{'a': 1}],"
                                           " 'collation': {'locale': 'en'}}"));
 
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 0,"
-                               "    'ns': 'db.collection',"
-                               "    'firstBatch': [{'_id': 123}]"
-                               "}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': 0,"
+                            "    'ns': 'db.collection',"
+                            "    'firstBatch': [{'_id': 123}]"
+                            "}}");
    ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
    /* cursor is completed */
@@ -4882,7 +4882,7 @@ test_index_with_collation (void)
                 "   'name': 'hello_1',"
                 "   'collation': {'locale': 'en', 'strength': 2}}]}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT (future_get_bool (future));
 
    bson_destroy (&reply);
@@ -5799,7 +5799,7 @@ _test_delete_collation (bool is_multi)
                 " 'delete': 'collection'}"),
       tmp_bson ("{'q': {}, 'limit': %d, 'collation': {'locale': 'en'}}",
                 is_multi ? 0 : 1));
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
    request_destroy (request);
 
@@ -5867,7 +5867,7 @@ _test_update_or_replace_with_collation (bool is_replace, bool is_multi)
       tmp_bson ("{'$db': 'db', 'update': 'collection'}"),
       tmp_bson ("{'q': {}, 'u': {}, 'collation': {'locale': 'en'}%s}",
                 is_multi ? ", 'multi': true" : ""));
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
    request_destroy (request);
 
@@ -5926,7 +5926,7 @@ _test_update_hint (bool is_replace, bool is_multi, const char *hint)
                 hint,
                 is_multi ? ", 'multi': true" : ""));
 
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
    request_destroy (request);
 

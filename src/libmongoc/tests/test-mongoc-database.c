@@ -73,7 +73,7 @@ test_aggregate_inherit_database (void)
                 "  'readConcern' : { 'level' : 'majority' },"
                 "  'writeConcern' : { 'w' : 2 } }"));
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   reply_to_request_simple (request, "{'ok': 1}");
 
    ASSERT (!future_get_bool (future));
 
@@ -104,7 +104,7 @@ test_aggregate_inherit_database (void)
                 "  'readConcern' : { 'level' : 'local' },"
                 "  'writeConcern' : { 'w' : 3 } }"));
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   reply_to_request_simple (request, "{'ok': 1}");
 
    ASSERT (!future_get_bool (future));
 
@@ -127,7 +127,7 @@ test_aggregate_inherit_database (void)
                 "  'readConcern' : { 'level' : 'majority' },"
                 "  'writeConcern' : { 'w' : 2 } }"));
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   reply_to_request_simple (request, "{'ok': 1}");
 
    ASSERT (!future_get_bool (future));
 
@@ -153,7 +153,7 @@ test_aggregate_inherit_database (void)
                 "  'readConcern' : { 'level' : 'local' },"
                 "  'writeConcern' : { '$exists' : false } }"));
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   reply_to_request_simple (request, "{'ok': 1}");
    ASSERT (!future_get_bool (future));
 
    request_destroy (request);
@@ -415,7 +415,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_msg (
          server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
 
-      mock_server_replies_simple (request, "{'ok': 1}");
+      reply_to_request_simple (request, "{'ok': 1}");
       ASSERT_OR_PRINT (future_get_bool (future), error);
       future_destroy (future);
       request_destroy (request);
@@ -430,7 +430,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
          tmp_bson ("{'$db': 'db',"
                    " 'foo': 1,"
                    " '$readPreference': {'mode': 'secondary'}}"));
-      mock_server_replies_simple (request, "{'ok': 1}");
+      reply_to_request_simple (request, "{'ok': 1}");
       ASSERT_OR_PRINT (future_get_bool (future), error);
       future_destroy (future);
       request_destroy (request);
@@ -442,7 +442,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_msg (
          server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'foo': 1}"));
 
-      mock_server_replies_simple (request, "{'ok': 1}");
+      reply_to_request_simple (request, "{'ok': 1}");
       ASSERT (future_get_bool (future));
       future_destroy (future);
       request_destroy (request);
@@ -459,7 +459,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
                    " 'foo': 1,"
                    " '$readPreference': {'mode': 'secondary'}}"));
 
-      mock_server_replies_simple (request, "{'ok': 1}");
+      reply_to_request_simple (request, "{'ok': 1}");
       ASSERT (future_get_bool (future));
       future_destroy (future);
       request_destroy (request);
@@ -870,12 +870,12 @@ _test_get_collection_info_getmore (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'listCollections': 1, 'nameOnly': true}"));
 
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "   'id': {'$numberLong': '123'},"
-                               "   'ns': 'db.$cmd.listCollections',"
-                               "   'firstBatch': [{'name': 'a'}]}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "   'id': {'$numberLong': '123'},"
+                            "   'ns': 'db.$cmd.listCollections',"
+                            "   'firstBatch': [{'name': 'a'}]}}");
    request_destroy (request);
    request = mock_server_receives_msg (
       server,
@@ -884,12 +884,12 @@ _test_get_collection_info_getmore (void)
                 " 'getMore': {'$numberLong': '123'},"
                 " 'collection': '$cmd.listCollections'}"));
 
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': {'$numberLong': '0'},"
-                               "    'ns': 'db.$cmd.listCollections',"
-                               "    'nextBatch': []}}");
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': {'$numberLong': '0'},"
+                            "    'ns': 'db.$cmd.listCollections',"
+                            "    'nextBatch': []}}");
    request_destroy (request);
    names = future_get_char_ptr_ptr (future);
    BSON_ASSERT (names);
@@ -1098,7 +1098,7 @@ test_get_collection_names_error (void)
       server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'test', 'listCollections': 1, 'nameOnly': true}"));
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    names = future_get_char_ptr_ptr (future);
    BSON_ASSERT (!names);
    ASSERT_CMPINT (MONGOC_ERROR_STREAM, ==, error.domain);

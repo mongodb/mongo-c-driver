@@ -588,13 +588,13 @@ test_counters_rpc_op_egress_autoresponder (request_t *request, void *data)
 
    if (strcmp (request->command_name, HANDSHAKE_CMD_HELLO) == 0 ||
        strcmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) == 0) {
-      mock_server_replies_simple (request, ar_data->hello);
+      reply_to_request_simple (request, ar_data->hello);
       request_destroy (request);
    } else {
       ASSERT_WITH_MSG (request->is_command,
                        "expected only handshakes and commands, but got: %s",
                        request->as_str);
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
    }
 
    return true;
@@ -673,7 +673,7 @@ _test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
          expected.op_egress_total += 1;
          ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-         mock_server_replies_simple (request, hello);
+         reply_to_request_simple (request, hello);
          request_destroy (request);
       }
 
@@ -691,7 +691,7 @@ _test_counters_rpc_op_egress_cluster_single (bool with_op_msg)
          expected.op_egress_total += 1;
          ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-         mock_server_replies_ok_and_destroys (request);
+         reply_to_request_with_ok_and_destroy (request);
       }
 
       ASSERT_OR_PRINT (future_get_bool (ping), error);
@@ -782,7 +782,7 @@ test_counters_rpc_op_egress_cluster_legacy (void)
          expected.op_egress_total += 1;
          ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-         mock_server_replies_simple (request, hello);
+         reply_to_request_simple (request, hello);
 
          request_destroy (request);
       }
@@ -801,7 +801,7 @@ test_counters_rpc_op_egress_cluster_legacy (void)
          expected.op_egress_total += 1;
          ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-         mock_server_replies_ok_and_destroys (request);
+         reply_to_request_with_ok_and_destroy (request);
       }
 
       ASSERT_OR_PRINT (future_get_bool (ping), error);
@@ -913,7 +913,7 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
       expected.op_egress_total += 1;
       ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-      mock_server_replies_simple (request, hello);
+      reply_to_request_simple (request, hello);
       request_destroy (request);
    }
 
@@ -947,7 +947,7 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
          expected.op_egress_total += 1;
          ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-         mock_server_replies_simple (request, hello);
+         reply_to_request_simple (request, hello);
          request_destroy (request);
       }
 
@@ -965,7 +965,7 @@ _test_counters_rpc_op_egress_cluster_pooled (bool with_op_msg)
          expected.op_egress_total += 1;
          ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-         mock_server_replies_ok_and_destroys (request);
+         reply_to_request_with_ok_and_destroy (request);
       }
 
       ASSERT_OR_PRINT (future_get_bool (ping), error);
@@ -1081,7 +1081,7 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
                              request->as_str);
          }
 
-         mock_server_replies_simple (request, hello);
+         reply_to_request_simple (request, hello);
          request_destroy (request);
       }
    }
@@ -1164,7 +1164,7 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
          expected.op_egress_total += 1;
          ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-         mock_server_replies_simple (request, hello);
+         reply_to_request_simple (request, hello);
          request_destroy (request);
       }
 
@@ -1182,7 +1182,7 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
          expected.op_egress_total += 1;
          ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
 
-         mock_server_replies_ok_and_destroys (request);
+         reply_to_request_with_ok_and_destroy (request);
       }
 
       ASSERT_OR_PRINT (future_get_bool (ping), error);
@@ -1205,7 +1205,7 @@ _test_counters_rpc_op_egress_awaitable_hello (bool with_op_msg)
 
       // Reply to awaitable hello after destroying the client pool to avoid
       // triggering additional awaitable hello requests.
-      mock_server_replies_simple (awaitable_hello, hello);
+      reply_to_request_simple (awaitable_hello, hello);
       request_destroy (awaitable_hello);
 
       mock_server_destroy (server);
@@ -1260,7 +1260,7 @@ _test_counters_rpc_op_egress_mock_server (bool with_op_msg)
       const bson_t *const command = tmp_bson ("{'ping': 1}");
       future_t *const future = future_client_command_simple (
          client, "db", command, NULL, NULL, &error);
-      mock_server_replies_ok_and_destroys (
+      reply_to_request_with_ok_and_destroy (
          mock_server_receives_msg (server, MONGOC_MSG_NONE, command));
       ASSERT_OR_PRINT (future_get_bool (future), error);
       future_destroy (future);

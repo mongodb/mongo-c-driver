@@ -249,14 +249,14 @@ _test_topology_reconcile_sharded (bool pooled)
 
    /* mongos */
    request = mock_server_receives_any_hello (mongos);
-   mock_server_replies_simple (request,
-                               tmp_str ("{'ok': 1,"
-                                        " 'isWritablePrimary': true,"
-                                        " 'minWireVersion': %d,"
-                                        " 'maxWireVersion': %d,"
-                                        " 'msg': 'isdbgrid'}",
-                                        WIRE_VERSION_MIN,
-                                        WIRE_VERSION_MAX));
+   reply_to_request_simple (request,
+                            tmp_str ("{'ok': 1,"
+                                     " 'isWritablePrimary': true,"
+                                     " 'minWireVersion': %d,"
+                                     " 'maxWireVersion': %d,"
+                                     " 'msg': 'isdbgrid'}",
+                                     WIRE_VERSION_MIN,
+                                     WIRE_VERSION_MAX));
 
    request_destroy (request);
 
@@ -278,7 +278,7 @@ _test_topology_reconcile_sharded (bool pooled)
                           mock_server_get_host_and_port (mongos),
                           mock_server_get_host_and_port (secondary));
 
-   mock_server_replies_simple (request, secondary_response);
+   reply_to_request_simple (request, secondary_response);
 
    request_destroy (request);
 
@@ -533,7 +533,7 @@ test_topology_reconcile_retire_single (void)
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error);
    request = mock_server_receives_msg (
       primary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    BSON_ASSERT (!has_server_description (
@@ -648,7 +648,7 @@ test_topology_reconcile_add_single (void)
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error);
    request = mock_server_receives_msg (
       primary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    /* added server description */

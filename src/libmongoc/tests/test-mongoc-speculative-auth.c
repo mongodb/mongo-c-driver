@@ -72,7 +72,7 @@ _respond_to_ping (future_t *future, mock_server_t *server, bool expect_ping)
 
    ASSERT (request);
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   reply_to_request_simple (request, "{'ok': 1}");
 
    ASSERT (future_get_bool (future));
    request_destroy (request);
@@ -105,7 +105,7 @@ _auto_hello_without_speculative_auth (request_t *request, void *data)
       _mongoc_usleep ((int64_t) (rand () % 10) * 1000);
    }
 
-   mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, response_json);
+   reply_to_request (request, MONGOC_REPLY_NONE, 0, 0, 1, response_json);
 
    bson_free (quotes_replaced);
    request_destroy (request);
@@ -222,7 +222,7 @@ _test_mongoc_speculative_auth (bool pooled,
       }
 
       str = bson_as_canonical_extended_json (response, NULL);
-      mock_server_replies_simple (request, str);
+      reply_to_request_simple (request, str);
 
       bson_free (str);
       bson_destroy (response);
@@ -285,7 +285,7 @@ _post_hello_scram_invalid_auth_response (mock_server_t *srv)
 
    /* Let authentication fail directly since we won't be able to continue the
     * scram conversation. */
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request, "{ 'ok': 1, 'errmsg': 'Cannot mock scram auth conversation' }");
 
    request_destroy (request);
@@ -460,7 +460,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
                                       "}");
 
          char *response_str = bson_as_canonical_extended_json (response, NULL);
-         mock_server_replies_simple (request, response_str);
+         reply_to_request_simple (request, response_str);
          bson_free (response_str);
          bson_destroy (response);
          bson_free (request_str);
@@ -473,7 +473,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
             server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
          ASSERT (request);
          // Cause a network error.
-         mock_server_hangs_up (request);
+         reply_to_request_with_hang_up (request);
          request_destroy (request);
       }
 
@@ -524,7 +524,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
                                       "}");
 
          char *response_str = bson_as_canonical_extended_json (response, NULL);
-         mock_server_replies_simple (request, response_str);
+         reply_to_request_simple (request, response_str);
          bson_free (response_str);
          bson_destroy (response);
          request_destroy (request);
@@ -536,7 +536,7 @@ test_mongoc_speculative_auth_request_x509_network_error (void)
          request_t *request = mock_server_receives_msg (
             server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
          ASSERT (request);
-         mock_server_replies_ok_and_destroys (request);
+         reply_to_request_with_ok_and_destroy (request);
       }
 
       // Expect success.

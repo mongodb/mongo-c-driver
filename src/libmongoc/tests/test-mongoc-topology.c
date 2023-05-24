@@ -370,7 +370,7 @@ _test_server_selection (bool try_once)
       client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, secondary_response);
+   reply_to_request_simple (request, secondary_response);
    request_destroy (request);
 
    /* the selection timeout is 100 ms, and we can't rescan until a half second
@@ -403,7 +403,7 @@ _test_server_selection (bool try_once)
    BSON_ASSERT (request);
 
    /* the secondary is now primary, selection succeeds */
-   mock_server_replies_simple (request, primary_response);
+   reply_to_request_simple (request, primary_response);
    sd = future_get_mongoc_server_description_ptr (future);
    BSON_ASSERT (sd);
    BSON_ASSERT (!client->topology->stale);
@@ -723,7 +723,7 @@ test_cooldown_standalone (void)
       client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
    request_destroy (request);
    future_destroy (future);
@@ -764,13 +764,13 @@ test_cooldown_standalone (void)
       client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    request = mock_server_receives_any_hello (server); /* not in cooldown now */
    BSON_ASSERT (request);
-   mock_server_replies_simple (request,
-                               tmp_str ("{'ok': 1,"
-                                        " 'isWritablePrimary': true,"
-                                        " 'minWireVersion': %d,"
-                                        " 'maxWireVersion': %d}",
-                                        WIRE_VERSION_MIN,
-                                        WIRE_VERSION_MAX));
+   reply_to_request_simple (request,
+                            tmp_str ("{'ok': 1,"
+                                     " 'isWritablePrimary': true,"
+                                     " 'minWireVersion': %d,"
+                                     " 'maxWireVersion': %d}",
+                                     WIRE_VERSION_MIN,
+                                     WIRE_VERSION_MAX));
    sd = future_get_mongoc_server_description_ptr (future);
    BSON_ASSERT (sd);
    request_destroy (request);
@@ -852,13 +852,13 @@ test_cooldown_rs (void)
 
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, secondary_response);
+   reply_to_request_simple (request, secondary_response);
    request_destroy (request);
 
    /* server 0 told us about server 1. we check it immediately but it's down. */
    request = mock_server_receives_any_hello (servers[1]);
    BSON_ASSERT (request);
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
 
    /* selection fails. */
@@ -873,7 +873,7 @@ test_cooldown_rs (void)
 
    request = mock_server_receives_any_hello (servers[0]);
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, secondary_response);
+   reply_to_request_simple (request, secondary_response);
    request_destroy (request);
 
    mock_server_set_request_timeout_msec (servers[1], 100);
@@ -892,7 +892,7 @@ test_cooldown_rs (void)
 
    request = mock_server_receives_any_hello (servers[1]);
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, primary_response);
+   reply_to_request_simple (request, primary_response);
    request_destroy (request);
 
    /* server 0 doesn't need to respond */
@@ -939,7 +939,7 @@ test_cooldown_retry (void)
    /* first hello fails */
    request = mock_server_receives_any_hello (server);
    BSON_ASSERT (request);
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
 
    /* after cooldown passes, driver sends another hello */
@@ -951,13 +951,13 @@ test_cooldown_retry (void)
    ASSERT_CMPINT64 (duration, >, (int64_t) 5 * 1000 * 1000);
    ASSERT_CMPINT64 (duration, <, (int64_t) 10 * 1000 * 1000);
 
-   mock_server_replies_simple (request,
-                               tmp_str ("{'ok': 1,"
-                                        " 'isWritablePrimary': true,"
-                                        " 'minWireVersion': %d,"
-                                        " 'maxWireVersion': %d}",
-                                        WIRE_VERSION_MIN,
-                                        WIRE_VERSION_MAX));
+   reply_to_request_simple (request,
+                            tmp_str ("{'ok': 1,"
+                                     " 'isWritablePrimary': true,"
+                                     " 'minWireVersion': %d,"
+                                     " 'maxWireVersion': %d}",
+                                     WIRE_VERSION_MIN,
+                                     WIRE_VERSION_MAX));
    sd = future_get_mongoc_server_description_ptr (future);
    ASSERT_OR_PRINT (sd, error);
    request_destroy (request);
@@ -1126,7 +1126,7 @@ auto_ping (request_t *request, void *data)
       return false;
    }
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    return true;
 }
@@ -1289,7 +1289,7 @@ test_rtt (void *ctx)
 
    request = mock_server_receives_any_hello (server);
    _mongoc_usleep (1000 * 1000); /* one second */
-   mock_server_replies (
+   reply_to_request (
       request,
       MONGOC_REPLY_NONE,
       0,
@@ -1301,7 +1301,7 @@ test_rtt (void *ctx)
    request_destroy (request);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'ping': 1}"));
-   mock_server_replies (
+   reply_to_request (
       request,
       MONGOC_REPLY_NONE,
       0,
@@ -1367,7 +1367,7 @@ test_add_and_scan_failure (void)
 
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'ping': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    {
@@ -1412,7 +1412,7 @@ receives_command (mock_server_t *server, future_t *future)
 
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'foo': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 }
@@ -1473,7 +1473,7 @@ _test_hello_retry_single (bool hangup, size_t n_failures)
    /* start a {foo: 1} command, handshake normally */
    future = future_command (client, &error);
    request = mock_server_receives_any_hello (server);
-   mock_server_replies_simple (request, hello);
+   reply_to_request_simple (request, hello);
    request_destroy (request);
    receives_command (server, future);
 
@@ -1485,7 +1485,7 @@ _test_hello_retry_single (bool hangup, size_t n_failures)
    request = mock_server_receives_any_hello (server);
    t = bson_get_monotonic_time ();
    if (hangup) {
-      mock_server_hangs_up (request);
+      reply_to_request_with_hang_up (request);
    }
 
    request_destroy (request);
@@ -1496,13 +1496,13 @@ _test_hello_retry_single (bool hangup, size_t n_failures)
 
    if (n_failures == 2u) {
       if (hangup) {
-         mock_server_hangs_up (request);
+         reply_to_request_with_hang_up (request);
       }
 
       BSON_ASSERT (!future_get_bool (future));
       future_destroy (future);
    } else {
-      mock_server_replies_simple (request, hello);
+      reply_to_request_simple (request, hello);
       /* the {foo: 1} command finishes */
       receives_command (server, future);
    }
@@ -1570,7 +1570,7 @@ _test_hello_retry_pooled (bool hangup, size_t n_failures)
 
    /* As soon as the client is popped, background monitoring starts. */
    request = mock_server_receives_legacy_hello (server, NULL);
-   mock_server_replies_simple (request, hello);
+   reply_to_request_simple (request, hello);
    request_destroy (request);
 
    /* start a {foo: 1} command, handshake normally */
@@ -1578,7 +1578,7 @@ _test_hello_retry_pooled (bool hangup, size_t n_failures)
 
    /* Another hello to handshake the connection */
    request = mock_server_receives_legacy_hello (server, NULL);
-   mock_server_replies_simple (request, hello);
+   reply_to_request_simple (request, hello);
    request_destroy (request);
 
    /* the {foo: 1} command finishes */
@@ -1588,7 +1588,7 @@ _test_hello_retry_pooled (bool hangup, size_t n_failures)
    request = mock_server_receives_legacy_hello (server, NULL);
    t = bson_get_monotonic_time ();
    if (hangup) {
-      mock_server_hangs_up (request);
+      reply_to_request_with_hang_up (request);
    }
 
    request_destroy (request);
@@ -1606,10 +1606,10 @@ _test_hello_retry_pooled (bool hangup, size_t n_failures)
    BSON_ASSERT (!has_known_server (client));
    if (n_failures == 2u) {
       if (hangup) {
-         mock_server_hangs_up (request);
+         reply_to_request_with_hang_up (request);
       }
    } else {
-      mock_server_replies_simple (request, hello);
+      reply_to_request_simple (request, hello);
       WAIT_UNTIL (has_known_server (client));
    }
 
@@ -2003,7 +2003,7 @@ _test_request_scan_on_error (bool pooled,
    /* Capture logs to swallow warnings about endSessions */
    capture_logs (true);
 
-   mock_server_replies_simple (request, err_response);
+   reply_to_request_simple (request, err_response);
    request_destroy (request);
    /* don't check the return value of future. write concern errors are still
     * considered successful results. */
@@ -2062,7 +2062,7 @@ _test_request_scan_on_error (bool pooled,
          request = mock_server_receives_msg (
             secondary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
       }
-      mock_server_replies_simple (request, "{'ok': 1}");
+      reply_to_request_simple (request, "{'ok': 1}");
       request_destroy (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
@@ -2309,7 +2309,7 @@ test_slow_server_pooled (void)
     * blocked for connectTimeoutMS. */
    mock_server_auto_hello (secondary, hello_secondary);
    /* Respond to the first hello. */
-   mock_server_replies_simple (request, hello_secondary);
+   reply_to_request_simple (request, hello_secondary);
    request_destroy (request);
 
    /* Now a command to the secondary succeeds. */
@@ -2382,7 +2382,7 @@ _test_hello_versioned_api (bool pooled)
    BSON_ASSERT (bson_has_field (request_get_doc (request, 0), "apiVersion"));
    BSON_ASSERT (bson_has_field (request_get_doc (request, 0), "helloOk"));
 
-   mock_server_replies_simple (request, hello_reply);
+   reply_to_request_simple (request, hello_reply);
 
    request_destroy (request);
 
@@ -2390,7 +2390,7 @@ _test_hello_versioned_api (bool pooled)
       request = mock_server_receives_msg (
          server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
 
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
    }
@@ -2477,14 +2477,14 @@ _test_hello_ok (bool pooled)
       server, NULL, "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
 
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, hello);
+   reply_to_request_simple (request, hello);
    request_destroy (request);
 
    /* For non-pooled clients, handle the ping */
    if (!pooled) {
       request = mock_server_receives_msg (
          server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
 
@@ -2498,7 +2498,7 @@ _test_hello_ok (bool pooled)
    /* Hang up to ensure that the next check runs legacy hello again */
    request = mock_server_receives_any_hello_with_match (server, "{}", "{}");
    BSON_ASSERT (request);
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
 
    /* The previous failure will trigger another handshake using legacy hello */
@@ -2508,14 +2508,14 @@ _test_hello_ok (bool pooled)
       "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
 
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, hello_not_ok);
+   reply_to_request_simple (request, hello_not_ok);
    request_destroy (request);
 
    /* Once again, handle the ping */
    if (!pooled) {
       request = mock_server_receives_msg (
          server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
 
@@ -2534,14 +2534,14 @@ _test_hello_ok (bool pooled)
       "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
 
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, hello_not_ok);
+   reply_to_request_simple (request, hello_not_ok);
    request_destroy (request);
 
    /* Once again, handle the ping */
    if (!pooled) {
       request = mock_server_receives_msg (
          server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
    }

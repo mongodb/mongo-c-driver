@@ -327,7 +327,7 @@ test_bulk_error_unordered (void)
                 " 'upsert': false,"
                 " 'multi': true}"),
       1001);
-   mock_server_replies_simple (request, "{ 'ok' : 1, 'n' : 5 }");
+   reply_to_request_simple (request, "{ 'ok' : 1, 'n' : 5 }");
 
    request_destroy (request);
    request = mock_server_receives_bulk_msg (
@@ -2781,7 +2781,7 @@ _test_write_concern (bool ordered, bool multi_err)
       tmp_bson ("{'_id': 1}"));
 
    BSON_ASSERT (request);
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'ok': 1.0, 'n': 1, "
       " 'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
@@ -2798,12 +2798,12 @@ _test_write_concern (bool ordered, bool multi_err)
       tmp_bson ("{'q': {'_id': 2}, 'limit': 0}"));
 
    if (multi_err) {
-      mock_server_replies_simple (
+      reply_to_request_simple (
          request,
          "{'ok': 1.0, 'n': 1, "
          " 'writeConcernError': {'code': 42, 'errmsg': 'bar'}}");
    } else {
-      mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+      reply_to_request_simple (request, "{'ok': 1.0, 'n': 1}");
    }
 
    request_destroy (request);
@@ -2933,16 +2933,14 @@ test_unordered_bulk_writes_with_error (void)
 
    request = mock_server_receives_request (server);
    BSON_ASSERT (request);
-   mock_server_replies_simple (request,
-                               "{ 'errmsg': 'random error', 'ok': 0 }");
+   reply_to_request_simple (request, "{ 'errmsg': 'random error', 'ok': 0 }");
    request_destroy (request);
    /* should receive a second request */
    request = mock_server_receives_request (server);
    /* a failure of this assertion means that the client did not continue with
     * the next write operation; it stopped permaturely */
    BSON_ASSERT (request);
-   mock_server_replies_simple (request,
-                               "{ 'errmsg': 'random error', 'ok': 0 }");
+   reply_to_request_simple (request, "{ 'errmsg': 'random error', 'ok': 0 }");
    request_destroy (request);
    ASSERT (future_wait (future));
 
@@ -2986,7 +2984,7 @@ _test_write_concern_err_api (int32_t error_api_version)
                                 tmp_bson ("{'$db': 'test', 'insert': 'test'}"),
                                 tmp_bson ("{'_id': 1}"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'ok': 1.0, 'n': 1, "
       " 'writeConcernError': {'code': 42, 'errmsg': 'foo'}}");
@@ -3130,7 +3128,7 @@ _test_wtimeout_plus_duplicate_key_err (void)
                                 tmp_bson ("{'_id': 2}"));
 
    BSON_ASSERT (request);
-   mock_server_replies (
+   reply_to_request (
       request,
       0,
       0,
@@ -3151,13 +3149,13 @@ _test_wtimeout_plus_duplicate_key_err (void)
                                 tmp_bson ("{'q': {'_id': 3}, 'limit': 0}"));
 
    BSON_ASSERT (request);
-   mock_server_replies (request,
-                        0,
-                        0,
-                        0,
-                        1,
-                        "{'ok': 1.0, 'n': 1,"
-                        " 'writeConcernError': {'code': 42, 'errmsg': 'bar'}}");
+   reply_to_request (request,
+                     0,
+                     0,
+                     0,
+                     1,
+                     "{'ok': 1.0, 'n': 1,"
+                     " 'writeConcernError': {'code': 42, 'errmsg': 'bar'}}");
    request_destroy (request);
 
    /* mongoc_bulk_operation_execute () returned 0 */
@@ -3402,7 +3400,7 @@ execute_numerous_bulk_op (mock_server_t *server,
 
       request = mock_server_receives_request (server);
       BSON_ASSERT (request_matches_msg (request, 0, &docs[0], j + 1));
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
    }
 
    ASSERT_OR_PRINT (future_get_uint32_t (future), error);
@@ -4146,7 +4144,7 @@ _test_bulk_hint (bool pooled, bool use_primary)
                             tmp_bson ("{'_id': 1}"));
 
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1.0, 'n': 1}");
 
    if (use_primary) {
       BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
@@ -4417,7 +4415,7 @@ _test_bulk_collation (bool w, bulkop op)
                                           tmp_bson (expect_msg, w ? 1 : 0),
                                           tmp_bson (expect_doc));
 
-      mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+      reply_to_request_simple (request, "{'ok': 1.0, 'n': 1}");
       request_destroy (request);
       ASSERT (future_get_uint32_t (future));
       future_destroy (future);
@@ -4482,7 +4480,7 @@ _test_bulk_collation_multi (bool w)
          tmp_bson ("{'q': {'_id': 1}}"),
          tmp_bson ("{'q': {'_id': 2},"
                    " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'}}"));
-      mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+      reply_to_request_simple (request, "{'ok': 1.0, 'n': 1}");
       request_destroy (request);
       ASSERT (future_get_uint32_t (future));
       future_destroy (future);
@@ -4809,7 +4807,7 @@ _test_bulk_let (bulkop op)
                                        tmp_bson (expect_msg),
                                        tmp_bson (expect_doc));
 
-   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1.0, 'n': 1}");
    request_destroy (request);
    ASSERT (future_get_uint32_t (future));
    future_destroy (future);
@@ -4894,7 +4892,7 @@ test_bulk_let_multi (void)
                                                  " 'let': {'$exists': false},"
                                                  " 'ordered': true}"),
                                        tmp_bson ("{'_id': 1}"));
-   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1.0, 'n': 1}");
    request_destroy (request);
 
    request = mock_server_receives_msg (
@@ -4906,7 +4904,7 @@ test_bulk_let_multi (void)
                 " 'ordered': true}"),
       tmp_bson ("{'q': {'$expr': {'$eq': ['$_id', '$$id']}}, 'limit': 0}"),
       tmp_bson ("{'q': {'_id': 2}, 'limit': 0}"));
-   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1.0, 'n': 1}");
    request_destroy (request);
 
    request = mock_server_receives_msg (
@@ -4925,7 +4923,7 @@ test_bulk_let_multi (void)
       tmp_bson ("{'q': {'$expr': {'$eq': ['$_id', '$$id']}},"
                 " 'u': {'$set': {'x': 'foo'}},"
                 " 'multi': false}"));
-   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1.0, 'n': 1}");
    request_destroy (request);
 
    ASSERT (future_get_uint32_t (future));

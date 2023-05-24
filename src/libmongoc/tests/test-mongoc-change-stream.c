@@ -27,20 +27,20 @@
 #include "json-test.h"
 #include "json-test-operations.h"
 
-#define DESTROY_CHANGE_STREAM(cursor_id)                                      \
-   do {                                                                       \
-      future_t *_future = future_change_stream_destroy (stream);              \
-      request_t *_request = mock_server_receives_msg (                        \
-         server,                                                              \
-         MONGOC_MSG_NONE,                                                     \
-         tmp_bson ("{'$db': 'db',"                                            \
-                   " 'killCursors': 'coll',"                                  \
-                   " 'cursors': [{'$numberLong': '" #cursor_id "'}]}"));      \
-      mock_server_replies_simple (_request,                                   \
-                                  "{ 'cursorsKilled': [ " #cursor_id " ] }"); \
-      future_wait (_future);                                                  \
-      future_destroy (_future);                                               \
-      request_destroy (_request);                                             \
+#define DESTROY_CHANGE_STREAM(cursor_id)                                   \
+   do {                                                                    \
+      future_t *_future = future_change_stream_destroy (stream);           \
+      request_t *_request = mock_server_receives_msg (                     \
+         server,                                                           \
+         MONGOC_MSG_NONE,                                                  \
+         tmp_bson ("{'$db': 'db',"                                         \
+                   " 'killCursors': 'coll',"                               \
+                   " 'cursors': [{'$numberLong': '" #cursor_id "'}]}"));   \
+      reply_to_request_simple (_request,                                   \
+                               "{ 'cursorsKilled': [ " #cursor_id " ] }"); \
+      future_wait (_future);                                               \
+      future_destroy (_future);                                            \
+      request_destroy (_request);                                          \
    } while (0);
 
 
@@ -133,7 +133,7 @@ test_change_stream_pipeline (void)
                 " 'pipeline': [{'$changeStream': {}}],"
                 " 'cursor': {}}"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor' : {'id': 123, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
 
@@ -151,8 +151,8 @@ test_change_stream_pipeline (void)
                                 tmp_bson ("{'$db': 'db',"
                                           " 'getMore': {'$numberLong': '123'},"
                                           " 'collection': 'coll'}"));
-   mock_server_replies_simple (request,
-                               "{'cursor' : { 'nextBatch' : [] }, 'ok': 1}");
+   reply_to_request_simple (request,
+                            "{'cursor' : { 'nextBatch' : [] }, 'ok': 1}");
    ASSERT (!future_get_bool (future));
    ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
    ASSERT (next_doc == NULL);
@@ -167,8 +167,8 @@ test_change_stream_pipeline (void)
                                 tmp_bson ("{'$db': 'db',"
                                           " 'getMore': {'$numberLong': '123'},"
                                           " 'collection': 'coll'}"));
-   mock_server_replies_simple (request,
-                               "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
+   reply_to_request_simple (request,
+                            "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
    ASSERT (!future_get_bool (future));
    ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
    ASSERT (next_doc == NULL);
@@ -189,7 +189,7 @@ test_change_stream_pipeline (void)
                                           "   {'$changeStream': {}},"
                                           "   {'$project': {'ns': false}}],"
                                           " 'cursor': {}}"));
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor': {'id': 123, 'ns': 'db.coll','firstBatch': []},'ok': 1}");
 
@@ -207,8 +207,8 @@ test_change_stream_pipeline (void)
                                 tmp_bson ("{'$db': 'db',"
                                           " 'getMore': {'$numberLong': '123'},"
                                           " 'collection': 'coll'}"));
-   mock_server_replies_simple (request,
-                               "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
+   reply_to_request_simple (request,
+                            "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
    ASSERT (!future_get_bool (future));
    ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
    ASSERT (next_doc == NULL);
@@ -627,7 +627,7 @@ _test_getmore_error (const char *server_reply,
    future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', 'aggregate': 'coll'}"));
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor': {'id': 123, 'ns': 'db.coll','firstBatch': []},'ok': 1 }");
    stream = future_get_mongoc_change_stream_ptr (future);
@@ -643,7 +643,7 @@ _test_getmore_error (const char *server_reply,
                                 tmp_bson ("{'$db': 'db',"
                                           " 'getMore': {'$numberLong': '123'},"
                                           " 'collection': 'coll'}"));
-   mock_server_replies_simple (request, server_reply);
+   reply_to_request_simple (request, server_reply);
    request_destroy (request);
    if (should_resume) {
       /* client should retry the aggregate. */
@@ -655,20 +655,20 @@ _test_getmore_error (const char *server_reply,
             server,
             MONGOC_MSG_NONE,
             tmp_bson ("{'$db': 'db', 'killCursors': 'coll'}"));
-         mock_server_replies_simple (request, "{'cursorsKilled': [123]}");
+         reply_to_request_simple (request, "{'cursorsKilled': [123]}");
          request_destroy (request);
       }
       request = mock_server_receives_msg (
          server,
          MONGOC_MSG_NONE,
          tmp_bson ("{'$db': 'db', 'aggregate': 'coll'}"));
-      mock_server_replies_simple (request,
-                                  "{'cursor':"
-                                  "  {'id': 124,"
-                                  "   'ns': 'db.coll',"
-                                  "   'firstBatch':"
-                                  "    [{'_id': {'resume': 'doc'}}]},"
-                                  "'ok': 1}");
+      reply_to_request_simple (request,
+                               "{'cursor':"
+                               "  {'id': 124,"
+                               "   'ns': 'db.coll',"
+                               "   'firstBatch':"
+                               "    [{'_id': {'resume': 'doc'}}]},"
+                               "'ok': 1}");
       request_destroy (request);
       BSON_ASSERT (future_get_bool (future));
       BSON_ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
@@ -769,10 +769,10 @@ test_change_stream_resumable_error (void)
 
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
 
-   mock_server_replies_simple (request,
-                               "{'cursor': {'id': 123, 'ns': "
-                               "'db.coll','firstBatch': []},'ok': 1 "
-                               "}");
+   reply_to_request_simple (request,
+                            "{'cursor': {'id': 123, 'ns': "
+                            "'db.coll','firstBatch': []},'ok': 1 "
+                            "}");
 
    stream = future_get_mongoc_change_stream_ptr (future);
    ASSERT (stream);
@@ -785,20 +785,20 @@ test_change_stream_resumable_error (void)
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 123));
    BSON_ASSERT (request);
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
    BSON_ASSERT (request);
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor': {'id': 124,'ns': 'db.coll','firstBatch': []},'ok': 1 }");
    request_destroy (request);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 124));
-   mock_server_replies_simple (request,
-                               "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
+   reply_to_request_simple (request,
+                            "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
    request_destroy (request);
    ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
@@ -810,32 +810,32 @@ test_change_stream_resumable_error (void)
    future = future_change_stream_next (stream, &next_doc);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 124));
-   mock_server_replies_simple (request, not_primary_err);
+   reply_to_request_simple (request, not_primary_err);
    request_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor': {'id': 125, 'ns': 'db.coll','firstBatch': []},'ok': 1}");
    request_destroy (request);
 
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 125));
-   mock_server_replies_simple (request, not_primary_err);
+   reply_to_request_simple (request, not_primary_err);
    request_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
-   mock_server_replies_simple (request,
-                               "{'cursor': {'id': 126, 'ns': "
-                               "'db.coll','firstBatch': []},'ok': 1 "
-                               "}");
+   reply_to_request_simple (request,
+                            "{'cursor': {'id': 126, 'ns': "
+                            "'db.coll','firstBatch': []},'ok': 1 "
+                            "}");
    request_destroy (request);
 
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 126));
-   mock_server_replies_simple (request, interrupted_err);
+   reply_to_request_simple (request, interrupted_err);
    request_destroy (request);
 
    /* Check that error is returned */
@@ -850,10 +850,10 @@ test_change_stream_resumable_error (void)
    /* Test an error on the initial aggregate when resuming. */
    future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
-   mock_server_replies_simple (request,
-                               "{'cursor': {'id': 123, 'ns': "
-                               "'db.coll','firstBatch': []},'ok': 1 "
-                               "}");
+   reply_to_request_simple (request,
+                            "{'cursor': {'id': 123, 'ns': "
+                            "'db.coll','firstBatch': []},'ok': 1 "
+                            "}");
    stream = future_get_mongoc_change_stream_ptr (future);
    ASSERT (stream);
    request_destroy (request);
@@ -862,14 +862,14 @@ test_change_stream_resumable_error (void)
    future = future_change_stream_next (stream, &next_doc);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 123));
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request, "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }");
    request_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
-   mock_server_replies_simple (request,
-                               "{'code': 123, 'errmsg': 'bad cmd', 'ok': 0}");
+   reply_to_request_simple (request,
+                            "{'code': 123, 'errmsg': 'bad cmd', 'ok': 0}");
    request_destroy (request);
 
    /* Check that error is returned */
@@ -948,7 +948,7 @@ test_change_stream_options (void)
          " 'cursor': {'batchSize': 5},"
          " 'collation': {'locale': 'en'}}"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor': {'id': 123,'ns': 'db.coll','firstBatch': []},'ok': 1 }");
 
@@ -966,8 +966,8 @@ test_change_stream_options (void)
                 " 'collection': 'coll',"
                 " 'maxTimeMS': {'$numberLong': '5000'},"
                 " 'batchSize': {'$numberLong': '5'}}"));
-   mock_server_replies_simple (request,
-                               "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
+   reply_to_request_simple (request,
+                            "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
    request_destroy (request);
    ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
@@ -1859,7 +1859,7 @@ _test_resume (const char *opts,
                              "{ '$timestamp': {'t': 1, 'i': 2} }, 'ok': 1 }",
                              first_doc,
                              cursor_pbr);
-   mock_server_replies_simple (request, msg);
+   reply_to_request_simple (request, msg);
    bson_free (msg);
    stream = future_get_mongoc_change_stream_ptr (future);
    BSON_ASSERT (stream);
@@ -1875,7 +1875,7 @@ _test_resume (const char *opts,
       server,
       MONGOC_QUERY_NONE,
       tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
    /* since the server closed the connection, a resume is attempted. */
    request = mock_server_receives_msg (
@@ -1884,7 +1884,7 @@ _test_resume (const char *opts,
       tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { %s "
                 " 'fullDocument': null }} ], 'cursor': {  } }",
                 expected_resume_change_stream_opts));
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor': {'id': 0,'ns': 'db.coll','firstBatch': []},'ok': 1 }");
    request_destroy (request);
@@ -2474,7 +2474,7 @@ prose_test_17 (void)
                 "'startAfter': {'x': 1} , 'resumeAfter': { '$exists': false }, "
                 "'startAtOperationTime': { '$exists': false } } } ]}"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor': {'id': 123, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
 
@@ -2491,7 +2491,7 @@ prose_test_17 (void)
       MONGOC_QUERY_NONE,
       tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{ 'code': 10107, 'errmsg': 'not primary', 'errorLabels': "
       "['ResumableChangeStreamError'], 'ok': 0 }");
@@ -2504,7 +2504,7 @@ prose_test_17 (void)
       MONGOC_QUERY_NONE,
       tmp_bson (
          "{ 'killCursors': 'coll', 'cursors': [{ '$numberLong': '123'}]}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    request = mock_server_receives_msg (
       server,
@@ -2516,7 +2516,7 @@ prose_test_17 (void)
                 "}]}"));
 
    /* Reply with a 0 cursor ID to prevent a killCursors command. */
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor': {'id': 0, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
    request_destroy (request);
@@ -2558,10 +2558,10 @@ prose_test_18 (void)
                 "'startAfter': {'x': 1}, 'resumeAfter': { '$exists': false }, "
                 "'startAtOperationTime': { '$exists': false } } } ]}"));
 
-   mock_server_replies_simple (request,
-                               "{'cursor': {'id': 123, 'ns': "
-                               "'db.coll', 'firstBatch': [{'_id': "
-                               "{'y': 1}}]}, 'ok': 1 }");
+   reply_to_request_simple (request,
+                            "{'cursor': {'id': 123, 'ns': "
+                            "'db.coll', 'firstBatch': [{'_id': "
+                            "{'y': 1}}]}, 'ok': 1 }");
 
    request_destroy (request);
    stream = future_get_mongoc_change_stream_ptr (future);
@@ -2579,7 +2579,7 @@ prose_test_18 (void)
       MONGOC_QUERY_NONE,
       tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{ 'code': 10107, 'errmsg': 'not primary', 'errorLabels': "
       "['ResumableChangeStreamError'], 'ok': 0 }");
@@ -2591,7 +2591,7 @@ prose_test_18 (void)
       MONGOC_QUERY_NONE,
       tmp_bson (
          "{ 'killCursors': 'coll', 'cursors': [{ '$numberLong': '123'}]}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    request = mock_server_receives_msg (
       server,
@@ -2602,7 +2602,7 @@ prose_test_18 (void)
                 "false } } "
                 "}]}"));
    /* Reply with a 0 cursor ID to prevent a killCursors command. */
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'cursor': {'id': 0, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
    request_destroy (request);

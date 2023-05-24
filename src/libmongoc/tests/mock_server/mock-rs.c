@@ -492,42 +492,6 @@ mock_rs_receives_query (mock_rs_t *rs,
    return request;
 }
 
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_reply_to_find --
- *
- *       Receive an OP_QUERY or a find command and reply to it.
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Side effects:
- *       Logs and aborts if the current request is not a query or find command
- *       matching "flags".
- *
- *--------------------------------------------------------------------------
- */
-/*
-
-void
-mock_rs_reply_to_find (mock_rs_t           *rs,
-                       mongoc_query_flags_t flags,
-                       int64_t              cursor_id,
-                       int32_t              number_returned,
-                       const char          *reply_json,
-                       bool                 is_command)
-{
-   request_t *request;
-
-   request = mock_rs_receives_request (rs);
-   BSON_ASSERT (request);
-
-   mock_server_reply_to_find (request, flags, cursor_id, number_returned,
-                              reply_json, is_command);
-}
-*/
-
 /*--------------------------------------------------------------------------
  *
  * mock_rs_receives_command --
@@ -703,28 +667,6 @@ _mock_rs_receives_msg (mock_rs_t *rs, uint32_t flags, ...)
 
 /*--------------------------------------------------------------------------
  *
- * mock_rs_hangs_up --
- *
- *       Hang up on a client request.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Causes a network error on the client side.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-mock_rs_hangs_up (request_t *request)
-{
-   mock_server_hangs_up (request);
-}
-
-
-/*--------------------------------------------------------------------------
- *
  * mock_rs_receives_kill_cursors --
  *
  *       Pop a client request if one is enqueued, or wait up to
@@ -760,34 +702,6 @@ mock_rs_receives_kill_cursors (mock_rs_t *rs, int64_t cursor_id)
 }
 
 
-/*--------------------------------------------------------------------------
- *
- * mock_rs_replies --
- *
- *       Respond to a client request.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Sends an OP_REPLY to the client.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-mock_rs_replies (request_t *request,
-                 uint32_t flags,
-                 int64_t cursor_id,
-                 int32_t starting_from,
-                 int32_t number_returned,
-                 const char *docs_json)
-{
-   mock_server_replies (
-      request, flags, cursor_id, starting_from, number_returned, docs_json);
-}
-
-
 static mongoc_server_description_type_t
 _mock_rs_server_type (mock_rs_t *rs, uint16_t port)
 {
@@ -808,59 +722,6 @@ _mock_rs_server_type (mock_rs_t *rs, uint16_t port)
    }
 
    return MONGOC_SERVER_UNKNOWN;
-}
-
-
-/*--------------------------------------------------------------------------
- *
- * mock_rs_replies_simple --
- *
- *       Respond to a client request.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Sends an OP_REPLY to the client.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-mock_rs_replies_simple (request_t *request, const char *docs_json)
-{
-   mock_rs_replies (request, 0, 0, 0, 1, docs_json);
-}
-
-
-/*--------------------------------------------------------------------------
- *
- * mock_rs_replies_to_find --
- *
- *       Receive an OP_QUERY or "find" command and reply appropriately.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Very roughly validates the query or "find" command or aborts.
- *       The intent is not to test the driver's query or find command
- *       implementation here, see _test_kill_cursors for example use.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-mock_rs_replies_to_find (request_t *request,
-                         mongoc_query_flags_t flags,
-                         int64_t cursor_id,
-                         int32_t number_returned,
-                         const char *ns,
-                         const char *reply_json,
-                         bool is_command)
-{
-   mock_server_replies_to_find (
-      request, flags, cursor_id, number_returned, ns, reply_json, is_command);
 }
 
 

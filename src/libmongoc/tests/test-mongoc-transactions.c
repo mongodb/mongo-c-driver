@@ -443,7 +443,7 @@ hangup_except_hello (request_t *request, void *data)
       return false;
    }
 
-   mock_server_hangs_up (request);
+   reply_to_request_with_hang_up (request);
    request_destroy (request);
    return true;
 }
@@ -663,7 +663,7 @@ test_unknown_commit_result (void)
       collection, tmp_bson ("{}"), &opts, NULL, &error);
    request = mock_server_receives_msg (
       server, 0, tmp_bson ("{'insert': 'collection'}"), tmp_bson ("{}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 

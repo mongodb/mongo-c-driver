@@ -96,7 +96,7 @@ _get_gridfs (mock_server_t *server,
       server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'listIndexes': 'fs.chunks'}"));
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{ 'ok' : 0, 'errmsg' : 'ns does not exist: db.fs.chunks', 'code' : 26, "
       "'codeName' : 'NamespaceNotFound' }");
@@ -107,13 +107,13 @@ _get_gridfs (mock_server_t *server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'createIndexes': 'fs.chunks'}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    request = mock_server_receives_msg (
       server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'listIndexes': 'fs.files'}"));
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{ 'ok' : 0, 'errmsg' : 'ns does not exist: db.fs.files', 'code' : 26, "
       "'codeName' : 'NamespaceNotFound' }");
@@ -124,7 +124,7 @@ _get_gridfs (mock_server_t *server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'createIndexes': 'fs.files'}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    gridfs = future_get_mongoc_gridfs_ptr (future);
    ASSERT (gridfs);
@@ -444,13 +444,15 @@ test_find_one_with_opts_limit (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'find': 'fs.files', 'filter': {}, 'limit': 1}"));
 
-   mock_server_replies_to_find (request,
-                                MONGOC_QUERY_NONE,
-                                0 /* cursor_id */,
-                                1 /* num returned */,
-                                "db.fs.files",
-                                "{'_id': 1, 'length': 1, 'chunkSize': 1}",
-                                true /* is_command */);
+   reply_to_op_msg_request (
+      request,
+      MONGOC_MSG_NONE,
+      tmp_bson (
+         "{'ok': 1,"
+         " 'cursor': {"
+         "    'id': {'$numberLong': '0'},"
+         "    'ns': 'db.fs.files',"
+         "    'firstBatch': [{'_id': 1, 'length': 1, 'chunkSize': 1}]}}"));
 
    file = future_get_mongoc_gridfs_file_ptr (future);
    ASSERT (file);
@@ -467,13 +469,15 @@ test_find_one_with_opts_limit (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'find': 'fs.files', 'filter': {}, 'limit': 1}"));
 
-   mock_server_replies_to_find (request,
-                                MONGOC_QUERY_NONE,
-                                0 /* cursor_id */,
-                                1 /* num returned */,
-                                "db.fs.files",
-                                "{'_id': 1, 'length': 1, 'chunkSize': 1}",
-                                true /* is_command */);
+   reply_to_op_msg_request (
+      request,
+      MONGOC_MSG_NONE,
+      tmp_bson (
+         "{'ok': 1,"
+         " 'cursor': {"
+         "    'id': {'$numberLong': '0'},"
+         "    'ns': 'db.fs.files',"
+         "    'firstBatch': [{'_id': 1, 'length': 1, 'chunkSize': 1}]}}"));
 
    file = future_get_mongoc_gridfs_file_ptr (future);
    ASSERT (file);
@@ -1453,7 +1457,7 @@ test_inherit_client_config (void)
                 " 'readConcern': {'level': 'majority'},"
                 " '$readPreference': {'mode': 'secondary'}}"));
 
-   mock_server_replies_simple (
+   reply_to_request_simple (
       request,
       "{'ok': 1, 'cursor': {'ns': 'fs.files', 'firstBatch': [{'_id': 1}]}}");
 
@@ -1473,7 +1477,7 @@ test_inherit_client_config (void)
          "{'$db': 'db', 'delete': 'fs.files', 'writeConcern': {'w': 2}}"),
       tmp_bson ("{'q': {'_id': 1}, 'limit': 1}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
 
    request = mock_server_receives_msg (
       server,
@@ -1482,7 +1486,7 @@ test_inherit_client_config (void)
          "{'$db': 'db', 'delete': 'fs.chunks', 'writeConcern': {'w': 2}}"),
       tmp_bson ("{'q': {'files_id': 1}, 'limit': 0}"));
 
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT (future_get_bool (future));
    future_destroy (future);
 
@@ -1524,15 +1528,15 @@ responder (request_t *request, void *data)
    BSON_UNUSED (data);
 
    if (!strcasecmp (request->command_name, "createIndexes")) {
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
       return true;
    }
 
    if (!strcasecmp (request->command_name, "listIndexes")) {
-      mock_server_replies_simple (request,
-                                  "{ 'ok' : 0, 'errmsg' : 'ns does not exist: "
-                                  "db.fs.chunks', 'code' : 26, "
-                                  "'codeName' : 'NamespaceNotFound' }");
+      reply_to_request_simple (request,
+                               "{ 'ok' : 0, 'errmsg' : 'ns does not exist: "
+                               "db.fs.chunks', 'code' : 26, "
+                               "'codeName' : 'NamespaceNotFound' }");
       request_destroy (request);
       return true;
    }

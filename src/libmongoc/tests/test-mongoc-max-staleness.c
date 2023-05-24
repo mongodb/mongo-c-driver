@@ -149,7 +149,7 @@ test_mongos_max_staleness_read_pref (void)
                 "   'mode': 'secondary',"
                 "   'maxStalenessSeconds': {'$exists': false}}}"));
 
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
 
    request_destroy (request);
@@ -171,7 +171,7 @@ test_mongos_max_staleness_read_pref (void)
                 "   'mode': 'secondary',"
                 "   'maxStalenessSeconds': {'$numberLong': '1'}}}"));
 
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
 
    request_destroy (request);
@@ -191,7 +191,7 @@ test_mongos_max_staleness_read_pref (void)
       tmp_bson (
          "{'$db': 'db', '$readPreference': {'mode': 'secondaryPreferred'}}"));
 
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
 
    request_destroy (request);
@@ -212,7 +212,7 @@ test_mongos_max_staleness_read_pref (void)
                 "   'mode': 'secondaryPreferred',"
                 "   'maxStalenessSeconds': {'$numberLong': '1'}}}"));
 
-   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   reply_to_request_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
 
    request_destroy (request);

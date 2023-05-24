@@ -85,7 +85,7 @@ run_delete_with_hint_and_wc0 (bool expect_error,
                                           MONGOC_MSG_MORE_TO_COME,
                                           tmp_bson ("{ 'delete': 'coll' }"),
                                           tmp_bson ("{'q': {}, 'hint': {}}"));
-      mock_server_replies_ok_and_destroys (request);
+      reply_to_request_with_ok_and_destroy (request);
       r = future_get_bool (future);
       ASSERT (r);
    }
@@ -124,7 +124,7 @@ test_server_stream_ties_server_description_pooled (void *unused)
 
    /* Respond to the monitoring hello with server one hello. */
    request = mock_server_receives_any_hello (server);
-   mock_server_replies_simple (request, HELLO_SERVER_ONE);
+   reply_to_request_simple (request, HELLO_SERVER_ONE);
    request_destroy (request);
 
    /* Create a connection on client_one. */
@@ -136,11 +136,11 @@ test_server_stream_ties_server_description_pooled (void *unused)
                                           &error);
    /* The first command on a pooled client creates a new connection. */
    request = mock_server_receives_any_hello (server);
-   mock_server_replies_simple (request, HELLO_SERVER_ONE);
+   reply_to_request_simple (request, HELLO_SERVER_ONE);
    request_destroy (request);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -153,11 +153,11 @@ test_server_stream_ties_server_description_pooled (void *unused)
                                           &error);
    /* The first command on a pooled client creates a new connection. */
    request = mock_server_receives_any_hello (server);
-   mock_server_replies_simple (request, HELLO_SERVER_TWO);
+   reply_to_request_simple (request, HELLO_SERVER_TWO);
    request_destroy (request);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -216,11 +216,11 @@ test_server_stream_ties_server_description_single (void *unused)
                                           &error);
    /* The first command on a client creates a new connection. */
    request = mock_server_receives_any_hello (server);
-   mock_server_replies_simple (request, HELLO_SERVER_TWO);
+   reply_to_request_simple (request, HELLO_SERVER_TWO);
    request_destroy (request);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -240,7 +240,7 @@ test_server_stream_ties_server_description_single (void *unused)
                                           &error);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 

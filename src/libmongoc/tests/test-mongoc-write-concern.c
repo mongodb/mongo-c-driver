@@ -437,7 +437,7 @@ _test_wc_request (future_t *future, mock_server_t *server, bson_error_t *error)
       server,
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'writeConcern': {'w': 2}}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);

@@ -208,45 +208,45 @@ mock_server_receives_bulk_msg (mock_server_t *server,
                                size_t n_docs);
 
 void
-mock_server_hangs_up (request_t *request);
+reply_to_request_with_hang_up (request_t *request);
 
 void
-mock_server_resets (request_t *request);
+reply_to_request_with_reset (request_t *request);
 
 void
-mock_server_replies (request_t *request,
-                     mongoc_reply_flags_t flags,
-                     int64_t cursor_id,
-                     int32_t starting_from,
-                     int32_t number_returned,
-                     const char *docs_json);
+reply_to_request (request_t *request,
+                  mongoc_reply_flags_t flags,
+                  int64_t cursor_id,
+                  int32_t starting_from,
+                  int32_t number_returned,
+                  const char *docs_json);
 
 void
-mock_server_replies_simple (request_t *request, const char *docs_json);
+reply_to_request_simple (request_t *request, const char *docs_json);
 
 void
-mock_server_replies_ok_and_destroys (request_t *request);
+reply_to_request_with_ok_and_destroy (request_t *request);
 
 void
-mock_server_replies_to_find (request_t *request,
-                             mongoc_query_flags_t flags,
-                             int64_t cursor_id,
-                             int32_t number_returned,
-                             const char *ns,
-                             const char *reply_json,
-                             bool is_command);
+reply_to_find_request (request_t *request,
+                       mongoc_query_flags_t flags,
+                       int64_t cursor_id,
+                       int32_t number_returned,
+                       const char *ns,
+                       const char *reply_json,
+                       bool is_command);
 
 void
-mock_server_replies_opmsg (request_t *request,
-                           mongoc_op_msg_flags_t flags,
-                           const bson_t *doc);
+reply_to_op_msg_request (request_t *request,
+                         mongoc_op_msg_flags_t flags,
+                         const bson_t *doc);
 
 void
-mock_server_reply_multi (request_t *request,
-                         mongoc_reply_flags_t flags,
-                         const bson_t *docs,
-                         int n_docs,
-                         int64_t cursor_id);
+reply_to_request_with_multiple_docs (request_t *request,
+                                     mongoc_reply_flags_t flags,
+                                     const bson_t *docs,
+                                     int n_docs,
+                                     int64_t cursor_id);
 
 void
 mock_server_destroy (mock_server_t *server);

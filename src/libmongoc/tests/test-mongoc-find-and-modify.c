@@ -102,7 +102,7 @@ test_find_and_modify_bypass (bool bypass)
                    "'new': true }"));
    }
 
-   mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
+   reply_to_request_simple (request, "{ 'value' : null, 'ok' : 1 }");
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    future_destroy (future);
@@ -186,7 +186,7 @@ test_find_and_modify_write_concern (void)
                 " 'new': true,"
                 " 'writeConcern': {'w': 42}}"));
 
-   mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
+   reply_to_request_simple (request, "{ 'value' : null, 'ok' : 1 }");
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    future_destroy (future);
@@ -376,7 +376,7 @@ test_find_and_modify_opts (void)
                                           " 'findAndModify': 'collection',"
                                           " 'maxTimeMS': 42,"
                                           " 'foo': 1}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    future_destroy (future);
@@ -426,7 +426,7 @@ test_find_and_modify_opts_write_concern (void)
                                 tmp_bson ("{'$db': 'db',"
                                           " 'findAndModify': 'collection',"
                                           " 'writeConcern': {'w': 2}}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -442,7 +442,7 @@ test_find_and_modify_opts_write_concern (void)
                                 tmp_bson ("{'$db': 'db',"
                                           " 'findAndModify': 'collection',"
                                           " 'writeConcern': {'w': 2}}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
@@ -494,7 +494,7 @@ test_find_and_modify_collation (void)
       tmp_bson ("{'$db': 'db',"
                 " 'findAndModify': 'collection',"
                 " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'}}"));
-   mock_server_replies_ok_and_destroys (request);
+   reply_to_request_with_ok_and_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
