@@ -299,7 +299,11 @@ def previous(rel_ver):
             version_new['minor'] = int(previous_tag_match.group('vermin'))
             version_new['patch'] = int(previous_tag_match.group('verpatch'))
             version_new['prerelease'] = previous_tag_match.group('verpre')
-            new_version_str = tag
+            new_version_str = str(version_new['major']) + '.' + \
+                              str(version_new['minor']) + '.' + \
+                              str(version_new['patch'])
+            if version_new['prerelease'] is not None:
+                new_version_str += '-' + version_new['prerelease']
             new_version_parsed = parse_version(new_version_str)
             if new_version_parsed < rel_ver_parsed and new_version_parsed > version_parsed:
                 version_str = new_version_str
