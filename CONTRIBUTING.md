@@ -111,6 +111,22 @@ a block comment like the following:
 Public functions do not need these comment blocks, since they are documented in
 the .rst files.
 
+To build the documentation, it is recommended to use the Poetry-managed Python
+project to ensure that the exact tooling versions match. If you do not have
+Poetry installed, you can use the `poetry.sh` or `poetry.ps1` scripts in the
+`tools/` directory. First, install dependencies:
+
+```sh
+./tools/poetry.sh install --with=docs
+```
+
+Then, execute `sphinx-build` in the Python environment, using the paths to the
+documentation to be generated:
+
+```sh
+./tools/poetry.sh run sphinx-build -WEn -bhtml src/libmongoc/doc/ src/libmongoc/doc/html
+```
+
 
 ### Testing
 
