@@ -26,34 +26,34 @@ static bool
 is_command_ns (const char *ns);
 
 static void
-request_from_query (request_t *request, const mongoc_rpc_t *rpc);
+request_from_query (request_t *request);
 
 static void
-request_from_insert (request_t *request, const mongoc_rpc_t *rpc);
+request_from_insert (request_t *request);
 
 static void
-request_from_update (request_t *request, const mongoc_rpc_t *rpc);
+request_from_update (request_t *request);
 
 static void
-request_from_delete (request_t *request, const mongoc_rpc_t *rpc);
+request_from_delete (request_t *request);
 
 static void
-request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc);
+request_from_killcursors (request_t *request);
 
 static void
-request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
+request_from_getmore (request_t *request);
 
 static void
-request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc);
+request_from_op_msg (request_t *request);
 
 static char *
-query_flags_str (uint32_t flags);
+query_flags_str (int32_t flags);
 static char *
-insert_flags_str (uint32_t flags);
+insert_flags_str (int32_t flags);
 static char *
-update_flags_str (uint32_t flags);
+update_flags_str (int32_t flags);
 static char *
-delete_flags_str (uint32_t flags);
+delete_flags_str (int32_t flags);
 
 request_t *
 request_new (const mongoc_buffer_t *buffer,
@@ -63,25 +63,32 @@ request_new (const mongoc_buffer_t *buffer,
              uint16_t client_port,
              sync_queue_t *replies)
 {
-   request_t *request = (request_t *) bson_malloc0 (sizeof *request);
-   uint8_t *data;
+   BSON_ASSERT_PARAM (buffer);
+   BSON_ASSERT_PARAM (server);
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (replies);
 
-   data = (uint8_t *) bson_malloc ((size_t) msg_len);
-   memcpy (data, buffer->data, (size_t) msg_len);
-   request->data = data;
+   BSON_ASSERT (bson_in_range_signed (size_t, msg_len));
+
+   request_t *const request = (request_t *) bson_malloc0 (sizeof *request);
+
+   request->data = bson_malloc ((size_t) msg_len);
    request->data_len = (size_t) msg_len;
    request->replies = replies;
 
-   if (!_mongoc_rpc_scatter (&request->request_rpc, data, (size_t) msg_len)) {
-      MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__, "Failed to scatter");
-      bson_free (data);
-      bson_free (request);
-      return NULL;
+   memcpy (request->data, buffer->data, request->data_len);
+
+   const void *data_end = NULL;
+   request->rpc =
+      mcd_rpc_message_from_data (request->data, request->data_len, &data_end);
+
+   if (!request->rpc) {
+      test_error ("failed to parse incoming message due to byte %zu of %zu",
+                  (size_t) ((const uint8_t *) data_end - request->data),
+                  request->data_len);
    }
 
-   _mongoc_rpc_swab_from_le (&request->request_rpc);
-
-   request->opcode = (mongoc_opcode_t) request->request_rpc.header.opcode;
+   request->opcode = mcd_rpc_header_get_op_code (request->rpc);
    request->server = server;
    request->client = client;
    request->client_port = client_port;
@@ -91,31 +98,31 @@ request_new (const mongoc_buffer_t *buffer,
    case MONGOC_OPCODE_COMPRESSED:
       break;
    case MONGOC_OPCODE_QUERY:
-      request_from_query (request, &request->request_rpc);
+      request_from_query (request);
       break;
 
    case MONGOC_OPCODE_INSERT:
-      request_from_insert (request, &request->request_rpc);
+      request_from_insert (request);
       break;
 
    case MONGOC_OPCODE_UPDATE:
-      request_from_update (request, &request->request_rpc);
+      request_from_update (request);
       break;
 
    case MONGOC_OPCODE_KILL_CURSORS:
-      request_from_killcursors (request, &request->request_rpc);
+      request_from_killcursors (request);
       break;
 
    case MONGOC_OPCODE_GET_MORE:
-      request_from_getmore (request, &request->request_rpc);
+      request_from_getmore (request);
       break;
 
    case MONGOC_OPCODE_DELETE:
-      request_from_delete (request, &request->request_rpc);
+      request_from_delete (request);
       break;
 
    case MONGOC_OPCODE_MSG:
-      request_from_op_msg (request, &request->request_rpc);
+      request_from_op_msg (request);
       break;
 
    case MONGOC_OPCODE_REPLY:
@@ -134,18 +141,15 @@ request_get_doc (const request_t *request, size_t n)
 }
 
 void
-assert_request_matches_flags (const request_t *request,
-                              mongoc_query_flags_t flags)
+assert_request_matches_flags (const request_t *request, uint32_t flags)
 {
-   const mongoc_rpc_t *rpc;
-
    BSON_ASSERT (request);
-   rpc = &request->request_rpc;
 
-   if (rpc->query.flags != flags) {
+   const int32_t request_flags = mcd_rpc_op_query_get_flags (request->rpc);
+   if (bson_cmp_not_equal_su (request_flags, flags)) {
       test_error ("request's query flags are %s, expected %s",
-                  query_flags_str (rpc->query.flags),
-                  query_flags_str (flags));
+                  query_flags_str (request_flags),
+                  query_flags_str ((int32_t) flags));
    }
 }
 
@@ -153,23 +157,19 @@ assert_request_matches_flags (const request_t *request,
 bool
 request_matches_query (const request_t *request,
                        const char *ns,
-                       mongoc_query_flags_t flags,
+                       uint32_t flags,
                        uint32_t skip,
                        int32_t n_return,
                        const char *query_json,
                        const char *fields_json,
                        bool is_command)
 {
-   const mongoc_rpc_t *rpc;
    const bson_t *doc;
    const bson_t *doc2;
    char *doc_as_json;
-   bool n_return_equal;
    bool ret = false;
 
    BSON_ASSERT (request);
-   rpc = &request->request_rpc;
-
    BSON_ASSERT (request->docs.len <= 2);
 
    if (request->docs.len) {
@@ -212,9 +212,11 @@ request_matches_query (const request_t *request,
       goto done;
    }
 
-   if (0 != strcmp (rpc->query.collection, ns)) {
+   const char *const request_ns =
+      mcd_rpc_op_query_get_full_collection_name (request->rpc);
+   if (0 != strcmp (request_ns, ns)) {
       test_error ("request's namespace is '%s', expected '%s': %s",
-                  request->request_rpc.query.collection,
+                  request_ns,
                   ns,
                   doc_as_json);
       goto done;
@@ -222,26 +224,31 @@ request_matches_query (const request_t *request,
 
    assert_request_matches_flags (request, flags);
 
-   if (rpc->query.skip != skip) {
-      test_error ("requests's skip = %d, expected %d: %s",
-                  rpc->query.skip,
+   const int32_t request_skip =
+      mcd_rpc_op_query_get_number_to_skip (request->rpc);
+   if (bson_cmp_not_equal_su (request_skip, skip)) {
+      test_error ("requests's skip = %" PRId32 ", expected %" PRIu32 ": %s",
+                  request_skip,
                   skip,
                   doc_as_json);
       goto done;
    }
 
-   n_return_equal = (rpc->query.n_return == n_return);
 
-   if (!n_return_equal && abs (rpc->query.n_return) == 1) {
+   const int32_t request_n_return =
+      mcd_rpc_op_query_get_number_to_return (request->rpc);
+   bool n_return_equal = (request_n_return == n_return);
+
+   if (!n_return_equal && abs (request_n_return) == 1) {
       /* quirk: commands from mongoc_client_command_simple have n_return 1,
        * from mongoc_topology_scanner_t have n_return -1
        */
-      n_return_equal = abs (rpc->query.n_return) == n_return;
+      n_return_equal = abs (request_n_return) == n_return;
    }
 
    if (!n_return_equal) {
-      test_error ("requests's n_return = %d, expected %d: %s",
-                  rpc->query.n_return,
+      test_error ("requests's n_return = %" PRId32 ", expected %" PRId32 ": %s",
+                  request_n_return,
                   n_return,
                   doc_as_json);
       goto done;
@@ -262,11 +269,7 @@ request_matches_insert (const request_t *request,
                         mongoc_insert_flags_t flags,
                         const char *doc_json)
 {
-   const mongoc_rpc_t *rpc;
-   const bson_t *doc;
-
    BSON_ASSERT (request);
-   rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
       test_error ("request's opcode does not match INSERT, got: %d",
@@ -274,22 +277,24 @@ request_matches_insert (const request_t *request,
       return false;
    }
 
-   if (strcmp (rpc->insert.collection, ns)) {
-      test_error ("insert's namespace is '%s', expected '%s'",
-                  request->request_rpc.get_more.collection,
-                  ns);
+   const char *const request_ns =
+      mcd_rpc_op_insert_get_full_collection_name (request->rpc);
+   if (strcmp (request_ns, ns)) {
+      test_error ("insert's namespace is '%s', expected '%s'", request_ns, ns);
       return false;
    }
 
-   if (rpc->insert.flags != flags) {
+   const int32_t request_flags = mcd_rpc_op_insert_get_flags (request->rpc);
+   if (bson_cmp_not_equal_su (request_flags, flags)) {
       test_error ("request's insert flags are %s, expected %s",
-                  insert_flags_str (rpc->insert.flags),
-                  insert_flags_str (flags));
+                  insert_flags_str (request_flags),
+                  insert_flags_str ((int32_t) flags));
       return false;
    }
 
-   ASSERT_CMPINT ((int) request->docs.len, ==, 1);
-   doc = request_get_doc (request, 0);
+   ASSERT_CMPSIZE_T (
+      mcd_rpc_op_insert_get_documents_len (request->rpc), ==, 1u);
+   const bson_t *const doc = request_get_doc (request, 0);
    if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, doc_json)) {
       return false;
    }
@@ -305,10 +310,7 @@ request_matches_bulk_insert (const request_t *request,
                              mongoc_insert_flags_t flags,
                              int n)
 {
-   const mongoc_rpc_t *rpc;
-
    BSON_ASSERT (request);
-   rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
       test_error ("request's opcode does not match INSERT, got: %d",
@@ -316,23 +318,23 @@ request_matches_bulk_insert (const request_t *request,
       return false;
    }
 
-   if (strcmp (rpc->insert.collection, ns)) {
-      test_error ("insert's namespace is '%s', expected '%s'",
-                  request->request_rpc.get_more.collection,
-                  ns);
+   const char *const request_ns =
+      mcd_rpc_op_insert_get_full_collection_name (request->rpc);
+   if (strcmp (request_ns, ns)) {
+      test_error ("insert's namespace is '%s', expected '%s'", request_ns, ns);
       return false;
    }
 
-   if (rpc->insert.flags != flags) {
+   const int32_t request_flags = mcd_rpc_op_insert_get_flags (request->rpc);
+   if (bson_cmp_not_equal_su (request_flags, flags)) {
       test_error ("request's insert flags are %s, expected %s",
-                  insert_flags_str (rpc->insert.flags),
-                  insert_flags_str (flags));
+                  insert_flags_str (request_flags),
+                  insert_flags_str ((int32_t) flags));
       return false;
    }
 
-   if ((int) request->docs.len != n) {
-      test_error (
-         "expected %d docs inserted, got %d", n, (int) request->docs.len);
+   if (bson_cmp_not_equal_us (request->docs.len, n)) {
+      test_error ("expected %d docs inserted, got %zu", n, request->docs.len);
       return false;
    }
 
@@ -348,11 +350,7 @@ request_matches_update (const request_t *request,
                         const char *selector_json,
                         const char *update_json)
 {
-   const mongoc_rpc_t *rpc;
-   const bson_t *doc;
-
    BSON_ASSERT (request);
-   rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_UPDATE) {
       test_error ("request's opcode does not match UPDATE, got: %d",
@@ -360,29 +358,35 @@ request_matches_update (const request_t *request,
       return false;
    }
 
-   if (strcmp (rpc->update.collection, ns)) {
-      test_error ("update's namespace is '%s', expected '%s'",
-                  request->request_rpc.update.collection,
-                  ns);
+   const char *const request_ns =
+      mcd_rpc_op_update_get_full_collection_name (request->rpc);
+   if (strcmp (request_ns, ns)) {
+      test_error ("update's namespace is '%s', expected '%s'", request_ns, ns);
       return false;
    }
 
-   if (rpc->update.flags != flags) {
+   const int32_t request_flags = mcd_rpc_op_update_get_flags (request->rpc);
+   if (bson_cmp_not_equal_su (request_flags, flags)) {
       test_error ("request's update flags are %s, expected %s",
-                  update_flags_str (rpc->update.flags),
-                  update_flags_str (flags));
+                  update_flags_str (request_flags),
+                  update_flags_str ((int32_t) flags));
       return false;
    }
 
    ASSERT_CMPINT ((int) request->docs.len, ==, 2);
-   doc = request_get_doc (request, 0);
-   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
-      return false;
+   {
+      const bson_t *const doc = request_get_doc (request, 0);
+      if (!match_json (
+             doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
+         return false;
+      }
    }
-
-   doc = request_get_doc (request, 1);
-   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, update_json)) {
-      return false;
+   {
+      const bson_t *const doc = request_get_doc (request, 1);
+      if (!match_json (
+             doc, false, __FILE__, __LINE__, BSON_FUNC, update_json)) {
+         return false;
+      }
    }
 
    return true;
@@ -396,11 +400,7 @@ request_matches_delete (const request_t *request,
                         mongoc_remove_flags_t flags,
                         const char *selector_json)
 {
-   const mongoc_rpc_t *rpc;
-   const bson_t *doc;
-
    BSON_ASSERT (request);
-   rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_DELETE) {
       test_error ("request's opcode does not match DELETE, got: %d",
@@ -408,22 +408,23 @@ request_matches_delete (const request_t *request,
       return false;
    }
 
-   if (strcmp (rpc->delete_.collection, ns)) {
-      test_error ("delete's namespace is '%s', expected '%s'",
-                  request->request_rpc.delete_.collection,
-                  ns);
+   const char *const request_ns =
+      mcd_rpc_op_delete_get_full_collection_name (request->rpc);
+   if (strcmp (request_ns, ns)) {
+      test_error ("delete's namespace is '%s', expected '%s'", request_ns, ns);
       return false;
    }
 
-   if (rpc->delete_.flags != flags) {
+   const int32_t request_flags = mcd_rpc_op_delete_get_flags (request->rpc);
+   if (bson_cmp_not_equal_su (request_flags, flags)) {
       test_error ("request's delete flags are %s, expected %s",
-                  delete_flags_str (rpc->delete_.flags),
-                  delete_flags_str (flags));
+                  delete_flags_str (request_flags),
+                  delete_flags_str ((int32_t) flags));
       return false;
    }
 
    ASSERT_CMPINT ((int) request->docs.len, ==, 1);
-   doc = request_get_doc (request, 0);
+   const bson_t *const doc = request_get_doc (request, 0);
    if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
       return false;
    }
@@ -439,10 +440,7 @@ request_matches_getmore (const request_t *request,
                          int32_t n_return,
                          int64_t cursor_id)
 {
-   const mongoc_rpc_t *rpc;
-
    BSON_ASSERT (request);
-   rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_GET_MORE) {
       test_error ("request's opcode does not match GET_MORE, got: %d",
@@ -450,23 +448,27 @@ request_matches_getmore (const request_t *request,
       return false;
    }
 
-   if (strcmp (rpc->get_more.collection, ns)) {
-      test_error ("request's namespace is '%s', expected '%s'",
-                  request->request_rpc.get_more.collection,
-                  ns);
+   const char *const request_ns =
+      mcd_rpc_op_get_more_get_full_collection_name (request->rpc);
+   if (strcmp (request_ns, ns)) {
+      test_error ("request's namespace is '%s', expected '%s'", request_ns, ns);
       return false;
    }
 
-   if (rpc->get_more.n_return != n_return) {
-      test_error ("requests's n_return = %d, expected %d",
-                  rpc->get_more.n_return,
+   const int32_t request_n_return =
+      mcd_rpc_op_get_more_get_number_to_return (request->rpc);
+   if (request_n_return != n_return) {
+      test_error ("requests's n_return = %" PRId32 ", expected %" PRId32,
+                  request_n_return,
                   n_return);
       return false;
    }
 
-   if (rpc->get_more.cursor_id != cursor_id) {
+   const int64_t request_cursor_id =
+      mcd_rpc_op_get_more_get_cursor_id (request->rpc);
+   if (request_cursor_id != cursor_id) {
       test_error ("requests's cursor_id = %" PRId64 ", expected %" PRId64,
-                  rpc->get_more.cursor_id,
+                  request_cursor_id,
                   cursor_id);
       return false;
    }
@@ -479,10 +481,7 @@ request_matches_getmore (const request_t *request,
 bool
 request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
 {
-   const mongoc_rpc_t *rpc;
-
    BSON_ASSERT (request);
-   rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_KILL_CURSORS) {
       test_error ("request's opcode does not match KILL_CURSORS, got: %d",
@@ -490,15 +489,19 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
       return false;
    }
 
-   if (rpc->kill_cursors.n_cursors != 1) {
-      test_error ("request's n_cursors is %d, expected 1",
-                  rpc->kill_cursors.n_cursors);
+   const int32_t request_n_cursors =
+      mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (request->rpc);
+   if (request_n_cursors != 1) {
+      test_error ("request's n_cursors is %" PRId32 ", expected 1",
+                  request_n_cursors);
       return false;
    }
 
-   if (rpc->kill_cursors.cursors[0] != cursor_id) {
+   const int64_t request_cursor_id =
+      mcd_rpc_op_kill_cursors_get_cursor_ids (request->rpc)[0];
+   if (request_cursor_id != cursor_id) {
       test_error ("request's cursor_id %" PRId64 ", expected %" PRId64,
-                  rpc->kill_cursors.cursors[0],
+                  request_cursor_id,
                   cursor_id);
       return false;
    }
@@ -583,12 +586,12 @@ request_matches_msg (const request_t *request,
       return false;
    }
 
-
-   if (flags != request->request_rpc.msg.flags) {
+   const uint32_t request_flags = mcd_rpc_op_msg_get_flag_bits (request->rpc);
+   if (request_flags != flags) {
       fprintf (stderr,
-               "Expected OP_MSG flags %u, got %u\n",
+               "Expected OP_MSG flags %" PRIu32 ", got %" PRIu32 "\n",
                flags,
-               request->request_rpc.msg.flags);
+               request_flags);
       return false;
    }
 
@@ -710,6 +713,7 @@ request_destroy (request_t *request)
    _mongoc_array_destroy (&request->docs);
    bson_free (request->command_name);
    bson_free (request->as_str);
+   mcd_rpc_message_destroy (request->rpc);
    bson_free (request->data);
    bson_free (request);
 }
@@ -727,16 +731,16 @@ is_command_ns (const char *ns)
 
 
 static char *
-query_flags_str (uint32_t flags)
+query_flags_str (int32_t flags)
 {
    int flag = 1;
    bson_string_t *str = bson_string_new ("");
    bool begun = false;
 
-   if (flags == MONGOC_QUERY_NONE) {
+   if (flags == MONGOC_OP_QUERY_FLAG_NONE) {
       bson_string_append (str, "0");
    } else {
-      while (flag <= MONGOC_QUERY_PARTIAL) {
+      while (flag <= MONGOC_OP_QUERY_FLAG_PARTIAL) {
          flag <<= 1;
 
          if (flags & flag) {
@@ -747,28 +751,28 @@ query_flags_str (uint32_t flags)
             begun = true;
 
             switch (flag) {
-            case MONGOC_QUERY_TAILABLE_CURSOR:
+            case MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR:
                bson_string_append (str, "TAILABLE");
                break;
-            case MONGOC_QUERY_SECONDARY_OK:
+            case MONGOC_OP_QUERY_FLAG_SECONDARY_OK:
                bson_string_append (str, "SECONDARY_OK");
                break;
-            case MONGOC_QUERY_OPLOG_REPLAY:
+            case MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY:
                bson_string_append (str, "OPLOG_REPLAY");
                break;
-            case MONGOC_QUERY_NO_CURSOR_TIMEOUT:
+            case MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT:
                bson_string_append (str, "NO_TIMEOUT");
                break;
-            case MONGOC_QUERY_AWAIT_DATA:
+            case MONGOC_OP_QUERY_FLAG_AWAIT_DATA:
                bson_string_append (str, "AWAIT_DATA");
                break;
-            case MONGOC_QUERY_EXHAUST:
+            case MONGOC_OP_QUERY_FLAG_EXHAUST:
                bson_string_append (str, "EXHAUST");
                break;
-            case MONGOC_QUERY_PARTIAL:
+            case MONGOC_OP_QUERY_FLAG_PARTIAL:
                bson_string_append (str, "PARTIAL");
                break;
-            case MONGOC_QUERY_NONE:
+            case MONGOC_OP_QUERY_FLAG_NONE:
             default:
                BSON_ASSERT (false);
             }
@@ -780,44 +784,62 @@ query_flags_str (uint32_t flags)
 }
 
 
-static void
-request_from_query (request_t *request, const mongoc_rpc_t *rpc)
+static int32_t
+length_prefix (const uint8_t *data)
 {
-   int32_t len;
-   bson_t *query;
-   bson_t *fields;
+   uint32_t storage;
+   memcpy (&storage, data, sizeof (storage));
+   storage = BSON_UINT32_FROM_LE (storage);
+   int32_t res;
+   memcpy (&res, &storage, sizeof (storage));
+   return res;
+}
+
+
+static void
+request_from_query (request_t *request)
+{
    bson_iter_t iter;
    bson_string_t *query_as_str = bson_string_new ("OP_QUERY ");
    char *str;
 
-   memcpy (&len, rpc->query.query, 4);
-   len = BSON_UINT32_FROM_LE (len);
-   query = bson_new_from_data (rpc->query.query, (size_t) len);
-   BSON_ASSERT (query);
-   _mongoc_array_append_val (&request->docs, query);
+   const int32_t request_flags = mcd_rpc_op_query_get_flags (request->rpc);
+   const char *const request_coll =
+      mcd_rpc_op_query_get_full_collection_name (request->rpc);
+   const int32_t request_skip =
+      mcd_rpc_op_query_get_number_to_skip (request->rpc);
+   const int32_t request_return =
+      mcd_rpc_op_query_get_number_to_return (request->rpc);
+   const void *const request_query = mcd_rpc_op_query_get_query (request->rpc);
+   const void *const request_fields =
+      mcd_rpc_op_query_get_return_fields_selector (request->rpc);
 
-   bson_string_append_printf (query_as_str, "%s ", rpc->query.collection);
+   {
+      const int32_t len = length_prefix (request_query);
+      bson_t *const query = bson_new_from_data (request_query, (size_t) len);
+      BSON_ASSERT (query);
+      _mongoc_array_append_val (&request->docs, query);
 
-   if (is_command_ns (request->request_rpc.query.collection)) {
-      request->is_command = true;
+      bson_string_append_printf (query_as_str, "%s ", request_coll);
 
-      if (bson_iter_init (&iter, query) && bson_iter_next (&iter)) {
-         request->command_name = bson_strdup (bson_iter_key (&iter));
-      } else {
-         fprintf (stderr,
-                  "WARNING: no command name for %s\n",
-                  request->request_rpc.query.collection);
+      if (is_command_ns (request_coll)) {
+         request->is_command = true;
+
+         if (bson_iter_init (&iter, query) && bson_iter_next (&iter)) {
+            request->command_name = bson_strdup (bson_iter_key (&iter));
+         } else {
+            fprintf (stderr, "WARNING: no command name for %s\n", request_coll);
+         }
       }
+
+      str = bson_as_json (query, NULL);
+      bson_string_append (query_as_str, str);
+      bson_free (str);
    }
 
-   str = bson_as_json (query, NULL);
-   bson_string_append (query_as_str, str);
-   bson_free (str);
-
-   if (rpc->query.fields) {
-      memcpy (&len, rpc->query.fields, 4);
-      len = BSON_UINT32_FROM_LE (len);
-      fields = bson_new_from_data (rpc->query.fields, (size_t) len);
+   if (request_fields) {
+      const int32_t len = length_prefix (request_fields);
+      bson_t *const fields = bson_new_from_data (request_fields, (size_t) len);
       BSON_ASSERT (fields);
       _mongoc_array_append_val (&request->docs, fields);
 
@@ -829,18 +851,17 @@ request_from_query (request_t *request, const mongoc_rpc_t *rpc)
 
    bson_string_append (query_as_str, " flags=");
 
-   str = query_flags_str (rpc->query.flags);
+   str = query_flags_str (request_flags);
    bson_string_append (query_as_str, str);
    bson_free (str);
 
-   if (rpc->query.skip) {
-      bson_string_append_printf (
-         query_as_str, " skip=%d", (int) rpc->query.skip);
+   if (request_skip) {
+      bson_string_append_printf (query_as_str, " skip=%" PRId32, request_skip);
    }
 
-   if (rpc->query.n_return) {
+   if (request_return) {
       bson_string_append_printf (
-         query_as_str, " n_return=%d", (int) rpc->query.n_return);
+         query_as_str, " n_return=%" PRId32, request_return);
    }
 
    request->as_str = bson_string_free (query_as_str, false);
@@ -848,9 +869,9 @@ request_from_query (request_t *request, const mongoc_rpc_t *rpc)
 
 
 static char *
-insert_flags_str (uint32_t flags)
+insert_flags_str (int32_t flags)
 {
-   if (flags == MONGOC_INSERT_NONE) {
+   if (flags == MONGOC_OP_QUERY_FLAG_NONE) {
       return bson_strdup ("0");
    } else {
       return bson_strdup ("CONTINUE_ON_ERROR");
@@ -858,30 +879,18 @@ insert_flags_str (uint32_t flags)
 }
 
 
-static uint32_t
-length_prefix (const uint8_t *data)
-{
-   uint32_t len_le;
-
-   memcpy (&len_le, data, sizeof (len_le));
-
-   return BSON_UINT32_FROM_LE (len_le);
-}
-
-
 static void
-request_from_insert (request_t *request, const mongoc_rpc_t *rpc)
+request_from_insert (request_t *request)
 {
-   uint8_t *pos = (uint8_t *) request->request_rpc.insert.documents->iov_base;
+   const uint8_t *pos = mcd_rpc_op_insert_get_documents (request->rpc);
    uint8_t *end = request->data + request->data_len;
    bson_string_t *insert_as_str = bson_string_new ("OP_INSERT");
-   bson_t *doc;
    size_t n_documents;
    char *str;
 
    while (pos < end) {
-      uint32_t len = length_prefix (pos);
-      doc = bson_new_from_data (pos, len);
+      const int32_t len = length_prefix (pos);
+      bson_t *const doc = bson_new_from_data (pos, (size_t) len);
       BSON_ASSERT (doc);
       _mongoc_array_append_val (&request->docs, doc);
       pos += len;
@@ -904,7 +913,7 @@ request_from_insert (request_t *request, const mongoc_rpc_t *rpc)
 
    bson_string_append (insert_as_str, " flags=");
 
-   str = insert_flags_str (rpc->insert.flags);
+   str = insert_flags_str (mcd_rpc_op_insert_get_flags (request->rpc));
    bson_string_append (insert_as_str, str);
    bson_free (str);
 
@@ -913,16 +922,16 @@ request_from_insert (request_t *request, const mongoc_rpc_t *rpc)
 
 
 static char *
-update_flags_str (uint32_t flags)
+update_flags_str (int32_t flags)
 {
    int flag = 1;
    bson_string_t *str = bson_string_new ("");
    bool begun = false;
 
-   if (flags == MONGOC_UPDATE_NONE) {
+   if (flags == MONGOC_OP_UPDATE_FLAG_NONE) {
       bson_string_append (str, "0");
    } else {
-      while (flag <= MONGOC_UPDATE_MULTI_UPDATE) {
+      while (flag <= MONGOC_OP_UPDATE_FLAG_MULTI_UPDATE) {
          flag <<= 1;
 
          if (flags & flag) {
@@ -933,13 +942,13 @@ update_flags_str (uint32_t flags)
             begun = true;
 
             switch (flag) {
-            case MONGOC_UPDATE_UPSERT:
+            case MONGOC_OP_UPDATE_FLAG_UPSERT:
                bson_string_append (str, "UPSERT");
                break;
-            case MONGOC_UPDATE_MULTI_UPDATE:
+            case MONGOC_OP_UPDATE_FLAG_MULTI_UPDATE:
                bson_string_append (str, "MULTI");
                break;
-            case MONGOC_UPDATE_NONE:
+            case MONGOC_OP_UPDATE_FLAG_NONE:
             default:
                BSON_ASSERT (false);
             }
@@ -952,38 +961,42 @@ update_flags_str (uint32_t flags)
 
 
 static void
-request_from_update (request_t *request, const mongoc_rpc_t *rpc)
+request_from_update (request_t *request)
 {
-   int32_t len;
-   bson_t *doc;
    bson_string_t *update_as_str = bson_string_new ("OP_UPDATE ");
    char *str;
 
-   memcpy (&len, rpc->update.selector, 4);
-   len = BSON_UINT32_FROM_LE (len);
-   doc = bson_new_from_data (rpc->update.selector, (size_t) len);
-   BSON_ASSERT (doc);
-   _mongoc_array_append_val (&request->docs, doc);
+   const void *const update = mcd_rpc_op_update_get_update (request->rpc);
+   const void *const selector = mcd_rpc_op_update_get_selector (request->rpc);
+   const int32_t flags = mcd_rpc_op_update_get_flags (request->rpc);
 
-   str = bson_as_json (doc, NULL);
-   bson_string_append (update_as_str, str);
-   bson_free (str);
+   {
+      const int32_t len = length_prefix (selector);
+      bson_t *const doc = bson_new_from_data (selector, (size_t) len);
+      BSON_ASSERT (doc);
+      _mongoc_array_append_val (&request->docs, doc);
+
+      str = bson_as_json (doc, NULL);
+      bson_string_append (update_as_str, str);
+      bson_free (str);
+   }
 
    bson_string_append (update_as_str, ", ");
 
-   memcpy (&len, rpc->update.update, 4);
-   len = BSON_UINT32_FROM_LE (len);
-   doc = bson_new_from_data (rpc->update.update, (size_t) len);
-   BSON_ASSERT (doc);
-   _mongoc_array_append_val (&request->docs, doc);
+   {
+      const int32_t len = length_prefix (update);
+      bson_t *const doc = bson_new_from_data (update, (size_t) len);
+      BSON_ASSERT (doc);
+      _mongoc_array_append_val (&request->docs, doc);
 
-   str = bson_as_json (doc, NULL);
-   bson_string_append (update_as_str, str);
-   bson_free (str);
+      str = bson_as_json (doc, NULL);
+      bson_string_append (update_as_str, str);
+      bson_free (str);
+   }
 
    bson_string_append (update_as_str, " flags=");
 
-   str = update_flags_str (rpc->update.flags);
+   str = update_flags_str (flags);
    bson_string_append (update_as_str, str);
    bson_free (str);
 
@@ -992,9 +1005,9 @@ request_from_update (request_t *request, const mongoc_rpc_t *rpc)
 
 
 static char *
-delete_flags_str (uint32_t flags)
+delete_flags_str (int32_t flags)
 {
-   if (flags == MONGOC_DELETE_NONE) {
+   if (flags == MONGOC_OP_DELETE_FLAG_NONE) {
       return bson_strdup ("0");
    } else {
       return bson_strdup ("SINGLE_REMOVE");
@@ -1003,16 +1016,14 @@ delete_flags_str (uint32_t flags)
 
 
 static void
-request_from_delete (request_t *request, const mongoc_rpc_t *rpc)
+request_from_delete (request_t *request)
 {
-   int32_t len;
-   bson_t *doc;
    bson_string_t *delete_as_str = bson_string_new ("OP_DELETE ");
    char *str;
 
-   memcpy (&len, rpc->delete_.selector, 4);
-   len = BSON_UINT32_FROM_LE (len);
-   doc = bson_new_from_data (rpc->delete_.selector, (size_t) len);
+   const void *const selector = mcd_rpc_op_delete_get_selector (request->rpc);
+   const int32_t len = length_prefix (selector);
+   bson_t *const doc = bson_new_from_data (selector, (size_t) len);
    BSON_ASSERT (doc);
    _mongoc_array_append_val (&request->docs, doc);
 
@@ -1022,7 +1033,7 @@ request_from_delete (request_t *request, const mongoc_rpc_t *rpc)
 
    bson_string_append (delete_as_str, " flags=");
 
-   str = delete_flags_str (rpc->delete_.flags);
+   str = delete_flags_str (mcd_rpc_op_delete_get_flags (request->rpc));
    bson_string_append (delete_as_str, str);
    bson_free (str);
 
@@ -1031,56 +1042,46 @@ request_from_delete (request_t *request, const mongoc_rpc_t *rpc)
 
 
 static void
-request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc)
+request_from_killcursors (request_t *request)
 {
    /* protocol allows multiple cursor ids but we only implement one */
-   BSON_ASSERT (rpc->kill_cursors.n_cursors == 1);
-   request->as_str = bson_strdup_printf ("OP_KILLCURSORS %" PRId64,
-                                         rpc->kill_cursors.cursors[0]);
+   BSON_ASSERT (
+      mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (request->rpc) == 1);
+   request->as_str = bson_strdup_printf (
+      "OP_KILLCURSORS %" PRId64,
+      mcd_rpc_op_kill_cursors_get_cursor_ids (request->rpc)[0]);
 }
 
 
 static void
-request_from_getmore (request_t *request, const mongoc_rpc_t *rpc)
+request_from_getmore (request_t *request)
 {
-   request->as_str =
-      bson_strdup_printf ("OP_GETMORE %s %" PRId64 " n_return=%d",
-                          rpc->get_more.collection,
-                          rpc->get_more.cursor_id,
-                          rpc->get_more.n_return);
+   request->as_str = bson_strdup_printf (
+      "OP_GETMORE %s %" PRId64 " n_return=%d",
+      mcd_rpc_op_get_more_get_full_collection_name (request->rpc),
+      mcd_rpc_op_get_more_get_cursor_id (request->rpc),
+      mcd_rpc_op_get_more_get_number_to_return (request->rpc));
 }
 
 
 static void
 parse_op_msg_doc (request_t *request,
                   const uint8_t *data,
-                  int32_t len,
+                  size_t data_len,
                   bson_string_t *msg_as_str)
 {
-   int32_t data_len;
-   int32_t doc_len;
-   bson_t *doc;
-   const uint8_t *pos;
-   char *str;
-
-   if (len == -1) {
-      data_len = length_prefix (data);
-   } else {
-      data_len = len;
-   }
-
-   pos = data;
+   const uint8_t *pos = data;
    while (pos < data + data_len) {
       if (pos > data) {
          bson_string_append (msg_as_str, ", ");
       }
 
-      doc_len = length_prefix (pos);
-      doc = bson_new_from_data (pos, (size_t) doc_len);
+      const int32_t doc_len = length_prefix (pos);
+      const bson_t *const doc = bson_new_from_data (pos, (size_t) doc_len);
       BSON_ASSERT (doc);
       _mongoc_array_append_val (&request->docs, doc);
 
-      str = bson_as_json (doc, NULL);
+      char *const str = bson_as_json (doc, NULL);
       bson_string_append (msg_as_str, str);
       bson_free (str);
 
@@ -1090,42 +1091,45 @@ parse_op_msg_doc (request_t *request,
 
 
 static void
-request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc)
+request_from_op_msg (request_t *request)
 {
-   const mongoc_rpc_section_t *section;
-   int32_t section_no;
-   const char *identifier;
-   int32_t id_len;
-   const bson_t *doc;
-   bson_iter_t iter;
    bson_string_t *msg_as_str = bson_string_new ("OP_MSG");
 
-   BSON_ASSERT (rpc->msg.n_sections <= 2);
-   for (section_no = 0; section_no < rpc->msg.n_sections; section_no++) {
-      bson_string_append (msg_as_str, (section_no > 0 ? ", " : " "));
-      section = &rpc->msg.sections[section_no];
-      switch (section->payload_type) {
-      case 0:
-         /* a single BSON document */
+   const size_t sections_count =
+      mcd_rpc_op_msg_get_sections_count (request->rpc);
+
+   BSON_ASSERT (sections_count <= 2u);
+   for (size_t index = 0; index < sections_count; ++index) {
+      bson_string_append (msg_as_str, (index > 0 ? ", " : " "));
+      const uint8_t kind =
+         mcd_rpc_op_msg_section_get_kind (request->rpc, index);
+      switch (kind) {
+      case 0: { /* a single BSON document */
+         const void *const body =
+            mcd_rpc_op_msg_section_get_body (request->rpc, index);
          parse_op_msg_doc (
-            request, section->payload.bson_document, -1, msg_as_str);
+            request, body, (size_t) length_prefix (body), msg_as_str);
          break;
-      case 1:
-         /* a sequence of BSON documents */
-         identifier = section->payload.sequence.identifier;
-         id_len = (int32_t) strlen (identifier);
-         bson_string_append (msg_as_str, identifier);
+      }
+
+      case 1: { /* a sequence of BSON documents */
+         bson_string_append (
+            msg_as_str,
+            mcd_rpc_op_msg_section_get_identifier (request->rpc, index));
          bson_string_append (msg_as_str, ": [");
-         /* a sequence has 4-byte length prefix, a string with NIL, then docs */
-         parse_op_msg_doc (request,
-                           section->payload.sequence.bson_documents,
-                           section->payload.sequence.size - id_len - 1 - 4,
-                           msg_as_str);
+         parse_op_msg_doc (
+            request,
+            mcd_rpc_op_msg_section_get_document_sequence (request->rpc, index),
+            mcd_rpc_op_msg_section_get_document_sequence_length (request->rpc,
+                                                                 index),
+            msg_as_str);
 
          bson_string_append (msg_as_str, "]");
          break;
+      }
+
       default:
-         test_error ("Unimplemented payload type %d\n", section->payload_type);
+         test_error ("Unimplemented payload type %d\n", kind);
       }
    }
 
@@ -1133,7 +1137,8 @@ request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc)
    request->is_command = true; /* true for all OP_MSG requests */
 
    if (request->docs.len) {
-      doc = request_get_doc (request, 0);
+      const bson_t *doc = request_get_doc (request, 0);
+      bson_iter_t iter;
       if (bson_iter_init (&iter, doc) && bson_iter_next (&iter)) {
          request->command_name = bson_strdup (bson_iter_key (&iter));
       }
