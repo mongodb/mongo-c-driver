@@ -25,7 +25,7 @@
 int32_t
 bson_atomic_int_add (volatile int32_t *p, int32_t n)
 {
-   return n + bson_atomic_int32_fetch_add (p, n, bson_memory_order_seq_cst);
+   return n + bson_atomic_int32_fetch_add ((DECL_ATOMIC_INTEGRAL_INT32 *) p, n, bson_memory_order_seq_cst);
 }
 
 int64_t

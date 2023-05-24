@@ -380,6 +380,10 @@ DECL_ATOMIC_INTEGRAL (int, int, )
 #endif
 #endif
 
+#ifndef DECL_ATOMIC_INTEGRAL_INT32
+#define DECL_ATOMIC_INTEGRAL_INT32 int32_t
+#endif
+   
 BSON_EXPORT (int64_t)
 _bson_emul_atomic_int64_fetch_add (int64_t volatile *val,
                                    int64_t v,
