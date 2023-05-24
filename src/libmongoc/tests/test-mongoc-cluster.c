@@ -778,7 +778,7 @@ replies_with_cluster_time (request_t *request,
                 t,
                 i));
 
-   reply_to_request_with_mutiple_docs (
+   reply_to_request_with_multiple_docs (
       request, MONGOC_REPLY_NONE, &doc, 1, 0 /* cursor id */);
 
    bson_destroy (&doc);

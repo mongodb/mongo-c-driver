@@ -1681,7 +1681,7 @@ reply_to_request (request_t *request,
       return;
    }
 
-   reply_to_request_with_mutiple_docs (request, flags, &doc, 1, cursor_id);
+   reply_to_request_with_multiple_docs (request, flags, &doc, 1, cursor_id);
    bson_destroy (&doc);
 }
 
@@ -2189,11 +2189,11 @@ failure:
 
 /* enqueue server reply for this connection's worker thread to send to client */
 void
-reply_to_request_with_mutiple_docs (request_t *request,
-                                    mongoc_reply_flags_t flags,
-                                    const bson_t *docs,
-                                    int n_docs,
-                                    int64_t cursor_id)
+reply_to_request_with_multiple_docs (request_t *request,
+                                     mongoc_reply_flags_t flags,
+                                     const bson_t *docs,
+                                     int n_docs,
+                                     int64_t cursor_id)
 {
    reply_t *reply;
    int i;

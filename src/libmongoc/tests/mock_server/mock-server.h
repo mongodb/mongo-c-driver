@@ -242,11 +242,11 @@ reply_to_op_msg_request (request_t *request,
                          const bson_t *doc);
 
 void
-reply_to_request_with_mutiple_docs (request_t *request,
-                                    mongoc_reply_flags_t flags,
-                                    const bson_t *docs,
-                                    int n_docs,
-                                    int64_t cursor_id);
+reply_to_request_with_multiple_docs (request_t *request,
+                                     mongoc_reply_flags_t flags,
+                                     const bson_t *docs,
+                                     int n_docs,
+                                     int64_t cursor_id);
 
 void
 mock_server_destroy (mock_server_t *server);
