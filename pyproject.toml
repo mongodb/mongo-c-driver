@@ -3,14 +3,15 @@ name = "mongo-c-driver"
 version = "0.0.0"
 description = "A Python project for mongo-c-driver codebase development"
 authors = []
-#readme = "README.MD"
-# We do not install any Python packages for the codebase
 packages = [
     { include = "config_generator", from = ".evergreen/" }
 ]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+
+[tool.poetry.scripts]
+"mc-evg-generate" = "config_generator.generate:main"
 
 [tool.poetry.group.docs]
 optional = true
