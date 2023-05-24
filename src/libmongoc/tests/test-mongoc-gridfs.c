@@ -444,13 +444,15 @@ test_find_one_with_opts_limit (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'find': 'fs.files', 'filter': {}, 'limit': 1}"));
 
-   mock_server_replies_to_find (request,
-                                MONGOC_QUERY_NONE,
-                                0 /* cursor_id */,
-                                1 /* num returned */,
-                                "db.fs.files",
-                                "{'_id': 1, 'length': 1, 'chunkSize': 1}",
-                                true /* is_command */);
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_NONE,
+      tmp_bson (
+         "{'ok': 1,"
+         " 'cursor': {"
+         "    'id': {'$numberLong': '0'},"
+         "    'ns': 'db.fs.files',"
+         "    'firstBatch': [{'_id': 1, 'length': 1, 'chunkSize': 1}]}}"));
 
    file = future_get_mongoc_gridfs_file_ptr (future);
    ASSERT (file);
@@ -467,13 +469,15 @@ test_find_one_with_opts_limit (void)
       MONGOC_MSG_NONE,
       tmp_bson ("{'$db': 'db', 'find': 'fs.files', 'filter': {}, 'limit': 1}"));
 
-   mock_server_replies_to_find (request,
-                                MONGOC_QUERY_NONE,
-                                0 /* cursor_id */,
-                                1 /* num returned */,
-                                "db.fs.files",
-                                "{'_id': 1, 'length': 1, 'chunkSize': 1}",
-                                true /* is_command */);
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_NONE,
+      tmp_bson (
+         "{'ok': 1,"
+         " 'cursor': {"
+         "    'id': {'$numberLong': '0'},"
+         "    'ns': 'db.fs.files',"
+         "    'firstBatch': [{'_id': 1, 'length': 1, 'chunkSize': 1}]}}"));
 
    file = future_get_mongoc_gridfs_file_ptr (future);
    ASSERT (file);

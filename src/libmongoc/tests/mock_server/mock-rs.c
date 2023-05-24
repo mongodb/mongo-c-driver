@@ -787,6 +787,12 @@ mock_rs_replies (request_t *request,
       request, flags, cursor_id, starting_from, number_returned, docs_json);
 }
 
+void
+mock_rs_replies_opmsg (request_t *request, uint32_t flags, const bson_t *doc)
+{
+   mock_server_replies_opmsg (request, flags, doc);
+}
+
 
 static mongoc_server_description_type_t
 _mock_rs_server_type (mock_rs_t *rs, uint16_t port)

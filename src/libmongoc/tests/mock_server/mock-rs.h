@@ -25,9 +25,9 @@ typedef struct _mock_rs_t mock_rs_t;
 
 mock_rs_t *
 mock_rs_with_auto_hello (int32_t max_wire_version,
-                           bool has_primary,
-                           int n_secondaries,
-                           int n_arbiters);
+                         bool has_primary,
+                         int n_secondaries,
+                         int n_arbiters);
 
 
 void
@@ -95,6 +95,9 @@ mock_rs_replies (request_t *request,
                  int32_t starting_from,
                  int32_t number_returned,
                  const char *docs_json);
+
+void
+mock_rs_replies_opmsg (request_t *request, uint32_t flags, const bson_t *doc);
 
 void
 mock_rs_replies_simple (request_t *request, const char *docs_json);

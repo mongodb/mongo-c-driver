@@ -773,9 +773,13 @@ _test_kill_cursors (bool pooled)
 
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_request (rs);
-
-   mock_rs_replies_to_find (
-      request, MONGOC_QUERY_NONE, 123, 1, "db.collection", "{'b': 1}", true);
+   mock_rs_replies_opmsg (request,
+                          MONGOC_MSG_NONE,
+                          tmp_bson ("{'ok': 1,"
+                                    " 'cursor': {"
+                                    "    'id': {'$numberLong': '123'},"
+                                    "    'ns': 'db.collection',"
+                                    "    'firstBatch': [{'b': 1}]}}"));
 
    if (!future_get_bool (future)) {
       mongoc_cursor_error (cursor, &error);
@@ -1129,13 +1133,14 @@ test_cursor_new_tailable_await (void)
                 " 'getMore': {'$numberLong': '123'},"
                 " 'collection': 'collection',"
                 " 'maxTimeMS': {'$numberLong': '100'}}"));
-   mock_server_replies_to_find (request,
-                                MONGOC_QUERY_NONE,
-                                0 /* cursor id */,
-                                1 /* number returned */,
-                                "db.collection",
-                                "{'_id': 1}",
-                                true);
+
+   mock_server_replies_opmsg (request,
+                              MONGOC_MSG_NONE,
+                              tmp_bson ("{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'id': {'$numberLong': '0'},"
+                                        "    'ns': 'db.collection',"
+                                        "    'firstBatch': [{'_id': 1}]}}"));
 
    BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 1}");
@@ -1197,13 +1202,15 @@ test_cursor_int64_t_maxtimems (void)
                 " 'collection': 'collection',"
                 " 'maxTimeMS': {'$numberLong': '%" PRIu64 "'}}",
                 ms_int64));
-   mock_server_replies_to_find (request,
-                                MONGOC_QUERY_NONE,
-                                0 /* cursor id */,
-                                1 /* number returned */,
-                                "db.collection",
-                                "{'_id': 1}",
-                                true);
+
+
+   mock_server_replies_opmsg (request,
+                              MONGOC_MSG_NONE,
+                              tmp_bson ("{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'id': {'$numberLong': '0'},"
+                                        "    'ns': 'db.collection',"
+                                        "    'firstBatch': [{'_id': 1}]}}"));
 
    BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 1}");
@@ -1483,8 +1490,13 @@ _test_cursor_hint (bool pooled, bool use_primary)
       BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
    }
 
-   mock_rs_replies_to_find (
-      request, MONGOC_QUERY_NONE, 0, 1, "test.test", "{'b': 1}", true);
+   mock_rs_replies_opmsg (request,
+                          MONGOC_MSG_NONE,
+                          tmp_bson ("{'ok': 1,"
+                                    " 'cursor': {"
+                                    "    'id': {'$numberLong': '0'},"
+                                    "    'ns': 'db.collection',"
+                                    "    'firstBatch': [{'b': 1}]}}"));
    BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'b': 1}");
 
@@ -2122,8 +2134,13 @@ test_empty_final_batch (void)
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db'}"));
 
-   mock_server_replies_to_find (
-      request, MONGOC_QUERY_NONE, 1234, 0, "db.coll", "{}", true);
+   mock_server_replies_opmsg (request,
+                              MONGOC_MSG_NONE,
+                              tmp_bson ("{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'id': {'$numberLong': '1234'},"
+                                        "    'ns': 'db.coll',"
+                                        "    'firstBatch': [{}]}}"));
 
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -2136,8 +2153,13 @@ test_empty_final_batch (void)
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db'}"));
 
-   mock_server_replies_to_find (
-      request, MONGOC_QUERY_NONE, 1234, 0, "db.coll", "" /* empty */, true);
+   mock_server_replies_opmsg (request,
+                              MONGOC_MSG_NONE,
+                              tmp_bson ("{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'id': {'$numberLong': '1234'},"
+                                        "    'ns': 'db.coll',"
+                                        "    'firstBatch': []}}"));
 
    ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -2156,13 +2178,13 @@ test_empty_final_batch (void)
       ==,
       (int64_t) 1);
 
-   mock_server_replies_to_find (request,
-                                MONGOC_QUERY_NONE,
-                                0 /* cursor id */,
-                                0,
-                                "db.coll",
-                                "" /* empty */,
-                                true);
+   mock_server_replies_opmsg (request,
+                              MONGOC_MSG_NONE,
+                              tmp_bson ("{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'id': {'$numberLong': '0'},"
+                                        "    'ns': 'db.coll',"
+                                        "    'firstBatch': []}}"));
 
    ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);

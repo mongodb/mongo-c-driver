@@ -732,8 +732,13 @@ test_mongos_read_concern (void)
                 " '$readPreference': {'mode': 'secondary'},"
                 " 'readConcern': {'level': 'foo'}}"));
 
-   mock_server_replies_to_find (
-      request, MONGOC_QUERY_NONE, 0, 1, "db.collection", "{}", true);
+   mock_server_replies_opmsg (request,
+                              MONGOC_MSG_NONE,
+                              tmp_bson ("{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'id': {'$numberLong': '0'},"
+                                        "    'ns': 'db.collection',"
+                                        "    'firstBatch': [{}]}}"));
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));
