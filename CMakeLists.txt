@@ -16,7 +16,7 @@ set (ENABLE_SASL AUTO CACHE STRING
 set_property(CACHE ENABLE_SASL PROPERTY STRINGS "CYRUS|SSPI|AUTO|OFF")
 
 set (ENABLE_STATIC AUTO CACHE STRING "Build and install static libbson/libmongoc. Set to ON/AUTO/OFF/BUILD_ONLY/DONT_INSTALL, default AUTO.")
-option (ENABLE_TESTS "Build MongoDB C Driver tests." ON)
+option (ENABLE_TESTS "Build MongoDB C Driver tests." OFF)
 option (ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 set (ENABLE_SRV AUTO CACHE STRING "Support mongodb+srv URIs. Set to ON/AUTO/OFF, default AUTO.")
 option (ENABLE_MAINTAINER_FLAGS "Use strict compiler checks" OFF)
