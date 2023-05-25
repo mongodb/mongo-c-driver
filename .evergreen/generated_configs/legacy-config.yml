@@ -827,7 +827,7 @@ tasks:
       SSL: openssl
   - func: link sample program MSVC
     vars:
-      ENABLE_SSL: AUTO
+      ENABLE_SSL: 1
 - name: link-with-cmake-windows-snappy
   depends_on:
     name: make-release-archive

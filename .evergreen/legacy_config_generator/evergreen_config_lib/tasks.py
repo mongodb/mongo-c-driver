@@ -290,7 +290,7 @@ all_tasks = [
     LinkTask("link-with-cmake-windows", suffix_commands=[func("link sample program MSVC")]),
     LinkTask(
         "link-with-cmake-windows-ssl",
-        suffix_commands=[func("link sample program MSVC", ENABLE_SSL="AUTO")],
+        suffix_commands=[func("link sample program MSVC", ENABLE_SSL="1")],
         orchestration="ssl",
     ),
     LinkTask("link-with-cmake-windows-snappy", suffix_commands=[func("link sample program MSVC", ENABLE_SNAPPY="ON")]),
