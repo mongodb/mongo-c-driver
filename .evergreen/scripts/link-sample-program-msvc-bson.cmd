@@ -21,7 +21,7 @@ mkdir %INSTALL_DIR%
 
 set PATH=%PATH%;%INSTALL_DIR%\bin
 rem Set path to dumpbin.exe and other VS tools.
-"C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build\vcvars64.bat"
+call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build\vcvars64.bat"
 
 cd %BUILD_DIR%
 %TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
