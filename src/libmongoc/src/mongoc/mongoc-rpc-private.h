@@ -164,6 +164,12 @@ _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
                       int32_t error_api_version,
                       bson_error_t *error /* OUT */,
                       bson_t *error_doc /* OUT */);
+
+bool
+mcd_rpc_message_check_ok (mcd_rpc_message *rpc,
+                          int32_t error_api_version,
+                          bson_error_t *error /* OUT */,
+                          bson_t *error_doc /* OUT */);
 bool
 _mongoc_cmd_check_ok (const bson_t *doc,
                       int32_t error_api_version,

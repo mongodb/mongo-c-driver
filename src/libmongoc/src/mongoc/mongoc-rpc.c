@@ -1292,6 +1292,61 @@ _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
    RETURN (true);
 }
 
+bool
+mcd_rpc_message_check_ok (mcd_rpc_message *rpc,
+                          int32_t error_api_version,
+                          bson_error_t *error /* OUT */,
+                          bson_t *error_doc /* OUT */)
+{
+   BSON_ASSERT (rpc);
+
+   ENTRY;
+
+   if (mcd_rpc_header_get_op_code (rpc) != MONGOC_OP_CODE_REPLY) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Received rpc other than OP_REPLY.");
+      RETURN (false);
+   }
+
+   const int32_t flags = mcd_rpc_op_reply_get_response_flags (rpc);
+
+   if (flags & MONGOC_OP_REPLY_RESPONSE_FLAG_QUERY_FAILURE) {
+      bson_t body;
+
+      if (mcd_rpc_message_get_body (rpc, &body)) {
+         _mongoc_populate_query_error (&body, error_api_version, error);
+
+         if (error_doc) {
+            bson_destroy (error_doc);
+            bson_copy_to (&body, error_doc);
+         }
+
+         bson_destroy (&body);
+      } else {
+         bson_set_error (error,
+                         MONGOC_ERROR_QUERY,
+                         MONGOC_ERROR_QUERY_FAILURE,
+                         "Unknown query failure.");
+      }
+
+      RETURN (false);
+   }
+
+   if (flags & MONGOC_OP_REPLY_RESPONSE_FLAG_CURSOR_NOT_FOUND) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "The cursor is invalid or has expired.");
+
+      RETURN (false);
+   }
+
+
+   RETURN (true);
+}
+
 void
 mcd_rpc_message_egress (const mcd_rpc_message *rpc)
 {
