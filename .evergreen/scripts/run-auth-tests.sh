@@ -7,6 +7,7 @@ set +o xtrace # Don't echo commands
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"

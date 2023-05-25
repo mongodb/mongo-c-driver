@@ -5,6 +5,7 @@ set -o pipefail
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 check_var_opt C_STD_VERSION
 check_var_opt CC

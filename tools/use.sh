@@ -62,7 +62,8 @@ for item in "$@"; do
     if [[ $_err -eq 1 ]]; then
         printf " • [%s] loaded by:\n" "${BASH_SOURCE[@]}" 1>&2
         echo " • (user)" 1>&2
-        fail "Bailing out"
+        echo "Bailing out" 1>&2
+        return 1
     fi
     # shellcheck disable=1090
     . "$file"
