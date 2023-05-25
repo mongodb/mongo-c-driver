@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 : <<EOF
-
 Source this script to import components into other scripts. Usage:
 
     source <path-to-use.sh> <name> [<name> [...]]
@@ -13,8 +12,8 @@ name of "foo.sh" is "foo").
 Commands defined by importing this file:
 
   is-main
-    • This command takes no arguments, and returns zero if the invoked in a
-      while imports are not being resolved (i.e. the script is being executed
+    • This command takes no arguments, and returns zero if the invoked in context
+      where imports are not being resolved (i.e. the script is being executed
       directly rather than being imported)
 
 EOF
@@ -23,49 +22,46 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# A utility that exits true if invoked outside of an importing context:
+is-main() { $_IS_MAIN; }
+
 # Grab the absolute path to the directory of this script:
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 _this_dir=$(pwd)
 popd >/dev/null
 
-# We use base components, so implicitly import that:
-. "$_this_dir/base.sh"
-_IMPORTED_base=1
-
-# A utility that exits true if invoked outside of an importing context:
-is-main() { [[ $_IS_IMPORTING = 0 ]]; }
-
-# Keep a stack, of scripts being imported,:
+# Keep a stack, of scripts being imported:
 declare -a _USE_IMPORTING
 
 # Inform scripts that they are being imported, not executed directly:
-_IS_IMPORTING=1
+_IS_MAIN=false
 
 for item in "$@"; do
     # Don't double-import items:
-    if is-set "_IMPORTED_$item"; then
+    _varname="_IMPORTED_$item"
+    if [[ -n "${!_varname+n}" ]]; then
         continue
     fi
     # Push this item:
     _USE_IMPORTING+=("$item")
     # The file to be imported:
     file=$_this_dir/$item.sh
-    debug "Import: [$item]"
+    ! [[ ${PRINT_DEBUG_LOGS:-} = 1 ]] || echo "Import: [$item]" 1>&2
     _err=0
     # Detect self-import:
     if printf '%s\0' "${BASH_SOURCE[@]}" | grep -qFxZ -- "$file"; then
-        log "File '$file' imports itself transitively"
+        echo "File '$file' imports itself transitively" 1>&2
         _err=1
     fi
     # Detect non-existing imports:
-    if ! is-file "$file"; then
-        log "No script '$file' exists to import."
+    if ! [[ -f $file ]]; then
+        echo "No script '$file' exists to import." 1>&2
         _err=1
     fi
     # Print the stacktrace of imports upon error:
     if [[ $_err -eq 1 ]]; then
         printf " • [%s] loaded by:\n" "${BASH_SOURCE[@]}" 1>&2
-        log " • (user)"
+        echo " • (user)" 1>&2
         fail "Bailing out"
     fi
     # shellcheck disable=1090
@@ -76,10 +72,10 @@ for item in "$@"; do
     unset "_USE_IMPORTING[${#_USE_IMPORTING[@]}-1]"
     # Declare that the item has been imported, for future reference:
     declare "_IMPORTED_$item=1"
-    debug "Import: [$item] - done"
+    ! [[ ${PRINT_DEBUG_LOGS:-} = 1 ]] || echo "Import: [$item] - done" 1>&2
 done
 
-# Set _IS_IMPORTING to zero if the import stack is empty
+# Set _IS_MAIN to zero if the import stack is empty
 if [[ "${_USE_IMPORTING+${_USE_IMPORTING[*]}}" = "" ]]; then
-    _IS_IMPORTING=0
+    _IS_MAIN=true
 fi

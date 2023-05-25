@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
 
-. "$(dirname "${BASH_SOURCE[0]}")/../../tools/use.sh" paths
-
-# Usage:
-#   to_windows_path "./some/unix/style/path"
-#   to_windows_path "/some/unix/style/path"
-to_windows_path() {
-  native_path "${1:?"to_windows_path requires a path to convert"}"
-}
-
 # Usage:
 #   print_var X
 print_var() {

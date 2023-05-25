@@ -5,7 +5,7 @@
 # * log [...]
 #     • Print the given messages to stderr
 # * debug [...]
-#     • Print the given messages to stderr only if PRINT_dEBUG_LOGS is truthy
+#     • Print the given messages to stderr only if PRINT_DEBUG_LOGS is truthy
 # * fail [...]
 #     • Print the given messages to stderr and return non-zero
 # * is-set <var>

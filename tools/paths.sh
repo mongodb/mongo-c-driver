@@ -26,17 +26,17 @@
 . "$(dirname "${BASH_SOURCE[0]}")/use.sh" platform base
 
 # Check for Cygpath, used by various commands. Better to check once than check every time.
-_HAVE_CYGPATH=0
+_HAVE_CYGPATH=false
 if have-command cygpath; then
-    _HAVE_CYGPATH=1
+    _HAVE_CYGPATH=true
 fi
 
 # Usage: native-path <path>
 native-path() {
     [[ "$#" -eq 1 ]] || fail "native_path expects exactly one argument"
     local arg=$1
-    if [[ "$OS_NAME" = "windows" ]]; then
-        [[ $_HAVE_CYGPATH = 1 ]] || fail "No 'cygpath' command is available, but we require it to normalize file paths on Windows."
+    if $IS_WINDOWS; then
+        $_HAVE_CYGPATH || fail "No 'cygpath' command is available, but we require it to normalize file paths on Windows."
         local ret
         ret="$(cygpath -w "$arg")"
         debug "Convert path [$arg] → [$ret]"
@@ -54,7 +54,7 @@ to_absolute() {
     debug "Resolve path [$arg]"
 
     # Cygpath can resolve the path in a single subprocess:
-    if [[ $_HAVE_CYGPATH = 1 ]]; then
+    if $_HAVE_CYGPATH; then
         # Ask Cygpath to resolve the path. It knows how to do it reliably and quickly:
         ret=$(cygpath --absolute --mixed --long-name -- "$arg")
         debug "Cygpath resolved: [$arg]"
@@ -118,33 +118,33 @@ to_absolute() {
 _this_file=$(to_absolute "${BASH_SOURCE[0]}")
 _this_dir=$(dirname "$_this_file")
 TOOLS_DIR=$(native-path "$_this_dir")
+declare -r TOOLS_DIR=$TOOLS_DIR
 
 MONGOC_DIR=$(dirname "$TOOLS_DIR")
+declare -r MONGOC_DIR=$MONGOC_DIR
 
 EXE_SUFFIX=""
-if [[ "$OS_NAME" = "windows" ]]; then
+if $IS_WINDOWS; then
     EXE_SUFFIX=".exe"
 fi
+declare -r EXE_SUFFIX=$EXE_SUFFIX
 
 if [[ "${USER_CACHES_DIR:=${XDG_CACHE_HOME:-}}" = "" ]]; then
-    case "$OS_NAME" in
-    linux)
-        USER_CACHES_DIR=$HOME/.cache
-        ;;
-    macos)
+    if $IS_DARWIN; then
         USER_CACHES_DIR=$HOME/Library/Caches
-        ;;
-    windows)
+    elif $IS_UNIX_LIKE; then
+        USER_CACHES_DIR=$HOME/.cache
+    elif $IS_WINDOWS; then
         USER_CACHES_DIR=${LOCALAPPDATA:-$USERPROFILE/.cache}
-        ;;
-    *)
+    else
         log "Using ~/.cache as fallback user caching directory"
         USER_CACHES_DIR="$(to_absolute ~/.cache)"
-    esac
+    fi
 fi
 
 # Ensure we are dealing with a complete path
 USER_CACHES_DIR="$(to_absolute "$USER_CACHES_DIR")"
+declare -r USER_CACHES_DIR=$USER_CACHES_DIR
 
 : "${BUILD_CACHE_BUST:=1}"
 : "${BUILD_CACHE_DIR:="$USER_CACHES_DIR/mongoc/build.$BUILD_CACHE_BUST"}"
