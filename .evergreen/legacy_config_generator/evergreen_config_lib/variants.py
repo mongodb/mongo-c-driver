@@ -32,6 +32,12 @@ def days(n: int) -> int:
 
 all_variants = [
     Variant(
+        "abi-compliance-check",
+        "ABI Compliance Check",
+        ["ubuntu1804-small", "ubuntu1804-medium", "ubuntu1804-large"],
+        ["abi-compliance-check"],
+    ),
+    Variant(
         "releng",
         "**Release Archive Creator",
         "ubuntu2204-small",
@@ -42,7 +48,6 @@ all_variants = [
             "compile-tracing",
             "link-with-cmake",
             "link-with-cmake-deprecated",
-            "abi-compliance-check",
             "link-with-cmake-ssl",
             "link-with-cmake-ssl-deprecated",
             "link-with-cmake-snappy",

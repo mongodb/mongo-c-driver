@@ -1,10 +1,9 @@
-from typing import Optional, Sequence, Union
 from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_command import s3_put
 from shrub.v3.evg_task import EvgTask
 
 from config_generator.etc.function import Function
-from config_generator.etc.utils import bash_exec, Task
+from config_generator.etc.utils import bash_exec
 
 
 class CheckABICompliance(Function):
@@ -51,9 +50,8 @@ def functions():
 
 def tasks():
     return [
-        Task(
+        EvgTask(
             name=CheckABICompliance.name,
             commands=[CheckABICompliance.call()],
-            run_on=['ubuntu1804-small', 'ubuntu1804-large', 'ubuntu1804-medium']
         )
     ]
