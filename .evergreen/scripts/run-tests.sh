@@ -5,6 +5,7 @@ set -o pipefail
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 check_var_opt ASAN "OFF"
 check_var_opt AUTH "noauth"
@@ -162,7 +163,7 @@ if [[ "${CC}" =~ mingw ]]; then
   echo "Waiting for simple HTTP server to start... done."
 
   chmod -f +x ./src/libmongoc/test-libmongoc.exe
-  cmd.exe /c "$(to_windows_path "${script_dir}/run-tests-mingw.bat")"
+  cmd.exe /c "$(native-path "${script_dir}/run-tests-mingw.bat")"
   exit
 fi
 

@@ -1,6 +1,7 @@
 from importlib import import_module
 from pathlib import Path
 from textwrap import dedent
+from typing import Sequence
 
 import yaml
 
@@ -11,8 +12,14 @@ from shrub.v3.evg_command import subprocess_exec
 
 # Equivalent to EvgTask but defines additional properties.
 class Task(EvgTask):
+    """
+    An evergreen task model that also includes additional properties.
+
+    (The shrub.py model is missing some properties)
+    """
+
     disable: bool = False
-    run_on: str
+    run_on: str | Sequence[str] | None = None
 
 
 # Automatically formats the provided script and invokes it in Bash.

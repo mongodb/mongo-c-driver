@@ -22,11 +22,9 @@ class ReleaseArchive(Function):
             },
             script='''\
                 set -o errexit
-                # Need modern Sphinx for :caption: in literal includes.
-                python -m virtualenv venv
-                . venv/bin/activate
-                python -m pip install sphinx docutils==0.17.1
-                .evergreen/scripts/check-release-archive.sh
+                bash tools/poetry.sh install --with=docs
+                bash tools/poetry.sh run \
+                    bash .evergreen/scripts/check-release-archive.sh
             '''
         ),
     ]

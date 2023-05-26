@@ -12,15 +12,14 @@
 import sys
 
 from importlib import import_module
-from pathlib import Path
 
 
 GENERATOR_NAMES = [
-    'functions',
-    'tasks',
-    'task_groups',
-    'variants',
-    'legacy_config',
+    "functions",
+    "tasks",
+    "task_groups",
+    "variants",
+    "legacy_config",
 ]
 
 
@@ -29,16 +28,12 @@ def main():
     assert sys.version_info.major >= 3
     assert sys.version_info.minor >= 10
 
-    # Append .evergreen to PYTHONPATH to allow import of config_generator.
-    # .evergreen/config_generator/generate-config.py -> .evergreen
-    sys.path.append(str(Path(__file__).parent.parent))
-
     for name in GENERATOR_NAMES:
-        m = import_module(f'config_generator.generators.{name}')
+        m = import_module(f"config_generator.generators.{name}")
         print(f"Running {name}.generate()...")
         m.generate()
         print(f"Running {name}.generate()... done.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

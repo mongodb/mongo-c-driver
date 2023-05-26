@@ -5,6 +5,7 @@ set -o pipefail
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
@@ -40,7 +41,7 @@ declare install_dir="${mongoc_dir}/install-dir"
 declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 
 declare cmake_prefix_path="${install_dir}"
-if [[ -n "${EXTRA_CMAKE_PREFIX_PATH}" ]]; then
+if [[ -n "${EXTRA_CMAKE_PREFIX_PATH:-}" ]]; then
   cmake_prefix_path+=";${EXTRA_CMAKE_PREFIX_PATH}"
 fi
 
@@ -139,8 +140,8 @@ export CXX
 export CFLAGS
 export CXXFLAGS
 
-CFLAGS+=" ${flags[*]}"
-CXXFLAGS+=" ${flags[*]}"
+CFLAGS+=" ${flags+${flags[*]}}"
+CXXFLAGS+=" ${flags+${flags[*]}}"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
   CFLAGS+=" -Wno-unknown-pragmas"
@@ -210,6 +211,6 @@ else
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
-"${cmake_binary}" "${configure_flags[@]}" "${extra_configure_flags[@]}" .
+"${cmake_binary}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
 make -j "$(nproc)" all
 make install

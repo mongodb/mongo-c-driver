@@ -26,6 +26,7 @@ set -o pipefail
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 check_var_req TEST_COLUMN
 check_var_req CERT_TYPE

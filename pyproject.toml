@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "mongo-c-driver"
+version = "0.0.0"
+description = "A Python project for mongo-c-driver codebase development"
+authors = []
+packages = [
+    { include = "config_generator", from = ".evergreen/" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.scripts]
+"mc-evg-generate" = "config_generator.generate:main"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "1.8"
+jinja2 = "<3"
+markupsafe = "<2.1"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+clang-format = "16"
+sphinx-autobuild = "^2021.3.14"
+shrub-py = "3.0.4"
+yamlordereddictloader = "^0.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

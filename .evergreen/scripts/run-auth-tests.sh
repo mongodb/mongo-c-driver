@@ -7,6 +7,7 @@ set +o xtrace # Don't echo commands
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
@@ -147,7 +148,7 @@ if [[ "${sasl}" != "OFF" ]]; then
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout}"
 
   declare ld_preload="${LD_PRELOAD:-}"
-  if [[ "${ASAN}" == "on" ]]; then
+  if [[ "${ASAN:-}" == "on" ]]; then
     ld_preload="$(bypass_dlclose):${ld_preload}"
   fi
 

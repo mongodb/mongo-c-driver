@@ -3,15 +3,9 @@
 set -o errexit # Exit the script with error if any of the commands fail
 
 # Check that a CLion user didn't accidentally convert NEWS from UTF-8 to ASCII
-news_type=$(file NEWS)
-echo "NEWS file type is $news_type"
-case "$news_type" in
-*ASCII*) exit 1 ;;
-esac
+grep "á" NEWS > /dev/null || (echo "NEWS file appears to have lost its UTF-8 encoding?" || exit 1)
 
-# Use modern sphinx-build from venv.
-. venv/bin/activate
-which sphinx-build
+type sphinx-build
 sphinx-build --version
 
 DIR=$(dirname $0)

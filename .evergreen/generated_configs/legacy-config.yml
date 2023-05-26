@@ -9182,9 +9182,17 @@ task_groups:
   tasks:
   - testgcpkms-task
 buildvariants:
+- name: abi-compliance-check
+  display_name: ABI Compliance Check
+  run_on:
+  - ubuntu1804-small
+  - ubuntu1804-medium
+  - ubuntu1804-large
+  tasks:
+  - abi-compliance-check
 - name: releng
   display_name: '**Release Archive Creator'
-  run_on: ubuntu1804-test
+  run_on: ubuntu2204-small
   tasks:
   - make-release-archive
   - release-compile
@@ -9192,7 +9200,6 @@ buildvariants:
   - compile-tracing
   - link-with-cmake
   - link-with-cmake-deprecated
-  - abi-compliance-check
   - link-with-cmake-ssl
   - link-with-cmake-ssl-deprecated
   - link-with-cmake-snappy
