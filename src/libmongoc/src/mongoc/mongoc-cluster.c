@@ -150,6 +150,26 @@ _handle_network_error (mongoc_cluster_t *cluster,
 }
 
 
+static int32_t
+_int32_from_le (const void *data)
+{
+   BSON_ASSERT_PARAM (data);
+   return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
+}
+
+
+static int32_t
+_compression_level_from_uri (int32_t compressor_id, const mongoc_uri_t *uri)
+{
+   if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
+      return mongoc_uri_get_option_as_int32 (
+         uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
+   }
+
+   return -1;
+}
+
+
 size_t
 _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
                               size_t iovcnt,
@@ -222,63 +242,206 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
       RUN_CMD_ERR_DECORATE;                                \
    } while (0)
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_rpc_prep_command --
- *
- *       Prepare an RPC for mongoc_cluster_run_command_rpc. @cmd_ns and
- *       @cmd must not be freed or modified while the RPC is in use.
- *
- * Side effects:
- *       Fills out the RPC, including pointers into @cmd_ns and @command.
- *
- *--------------------------------------------------------------------------
- */
 
-static void
-_mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
-                          const char *cmd_ns,
-                          mongoc_cmd_t *cmd)
+// msgHeader consists of four int32 fields.
+static const int32_t message_header_length = 4u * sizeof (int32_t);
 
+
+static bool
+_mongoc_cluster_run_command_opquery_send (mongoc_cluster_t *cluster,
+                                          mongoc_cmd_t *cmd,
+                                          int32_t compressor_id,
+                                          mcd_rpc_message *rpc,
+                                          bson_error_t *error)
 {
-   rpc->header.msg_len = 0;
-   rpc->header.request_id = 0;
-   rpc->header.response_to = 0;
-   rpc->header.opcode = MONGOC_OPCODE_QUERY;
-   rpc->query.collection = cmd_ns;
-   rpc->query.skip = 0;
-   rpc->query.n_return = -1;
-   rpc->query.fields = NULL;
-   rpc->query.query = bson_get_data (cmd->command);
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT_PARAM (cmd);
+   BSON_ASSERT_PARAM (rpc);
+   BSON_ASSERT_PARAM (error);
 
-   /* Find, getMore And killCursors Commands Spec: "When sending a find command
-    * rather than a legacy OP_QUERY find, only the secondaryOk flag is honored."
-    * For other cursor-typed commands like aggregate, only secondaryOk can be
-    * set. Clear bits except secondaryOk; leave secondaryOk set only if it is
-    * already.
-    */
-   rpc->query.flags = cmd->query_flags & MONGOC_QUERY_SECONDARY_OK;
+   bool ret = false;
+
+   mongoc_stream_t *const stream = cmd->server_stream->stream;
+
+   char *const ns = bson_strdup_printf ("%s.$cmd", cmd->db_name);
+   const int32_t request_id = ++cluster->request_id;
+
+   // Find, getMore And killCursors Commands Spec: "When sending a find command
+   // rather than a legacy OP_QUERY find, only the secondaryOk flag is honored."
+   // For other cursor-typed commands like aggregate, only secondaryOk can be
+   // set. Clear bits except secondaryOk; leave secondaryOk set only if it is
+   // already.
+   const int32_t flags =
+      (int32_t) cmd->query_flags & MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
+
+   {
+      int32_t message_length = 0;
+
+      message_length += mcd_rpc_header_set_message_length (rpc, 0);
+      message_length += mcd_rpc_header_set_request_id (rpc, request_id);
+      message_length += mcd_rpc_header_set_response_to (rpc, 0);
+      message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_QUERY);
+
+      message_length += mcd_rpc_op_query_set_flags (rpc, flags);
+      message_length += mcd_rpc_op_query_set_full_collection_name (rpc, ns);
+      message_length += mcd_rpc_op_query_set_number_to_skip (rpc, 0);
+      message_length += mcd_rpc_op_query_set_number_to_return (rpc, -1);
+      message_length +=
+         mcd_rpc_op_query_set_query (rpc, bson_get_data (cmd->command));
+
+      mcd_rpc_message_set_length (rpc, message_length);
+   }
+
+   size_t num_iovecs = 0u;
+   mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
+   BSON_ASSERT (iovecs);
+
+   const bool is_compressible =
+      compressor_id != -1 && IS_NOT_COMMAND (HANDSHAKE_CMD_LEGACY_HELLO) &&
+      IS_NOT_COMMAND ("hello") && IS_NOT_COMMAND ("saslstart") &&
+      IS_NOT_COMMAND ("saslcontinue") && IS_NOT_COMMAND ("getnonce") &&
+      IS_NOT_COMMAND ("authenticate") && IS_NOT_COMMAND ("createuser") &&
+      IS_NOT_COMMAND ("updateuser");
+
+   void *compressed_data = NULL;
+   size_t compressed_data_len = 0u;
+
+   if (is_compressible &&
+       !mcd_rpc_message_compress (
+          rpc,
+          compressor_id,
+          _compression_level_from_uri (compressor_id, cluster->uri),
+          &compressed_data,
+          &compressed_data_len,
+          error)) {
+      goto done;
+   }
+
+   if (cluster->client->in_exhaust) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_IN_EXHAUST,
+                      "a cursor derived from this client is in exhaust");
+      goto done;
+   }
+
+   mcd_rpc_message_egress (rpc);
+   if (!_mongoc_stream_writev_full (
+          stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
+      RUN_CMD_ERR_DECORATE;
+      _handle_network_error (cluster, cmd->server_stream, error);
+      goto done;
+   }
+
+   ret = true;
+
+done:
+   bson_free (compressed_data);
+   bson_free (iovecs);
+   bson_free (ns);
+
+   return ret;
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_run_command_opquery --
- *
- *       Internal function to run a command on a given stream. @error and
- *       @reply are optional out-pointers.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @reply is set and should ALWAYS be released with bson_destroy().
- *       On failure, @error is filled out. If this was a network error
- *       and server_id is nonzero, the cluster disconnects from the server.
- *
- *--------------------------------------------------------------------------
- */
+static bool
+_mongoc_cluster_run_command_opquery_recv (mongoc_cluster_t *cluster,
+                                          mongoc_cmd_t *cmd,
+                                          mcd_rpc_message *rpc,
+                                          bson_t *reply,
+                                          bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT_PARAM (cmd);
+   BSON_ASSERT_PARAM (rpc);
+   BSON_ASSERT_PARAM (reply);
+   BSON_ASSERT_PARAM (error);
+
+   bool ret = false;
+
+   mongoc_stream_t *const stream = cmd->server_stream->stream;
+
+   mongoc_buffer_t buffer;
+   _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
+
+   void *decompressed_data = NULL;
+   size_t decompressed_data_len = 0u;
+
+   if (!_mongoc_buffer_append_from_stream (
+          &buffer, stream, sizeof (int32_t), cluster->sockettimeoutms, error)) {
+      RUN_CMD_ERR (MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_SOCKET,
+                   "socket error or timeout");
+      _handle_network_error (cluster, cmd->server_stream, error);
+      goto done;
+   }
+
+   const int32_t message_length = _int32_from_le (buffer.data);
+
+   if (message_length < message_header_length ||
+       message_length > MONGOC_DEFAULT_MAX_MSG_SIZE) {
+      RUN_CMD_ERR (MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_SOCKET,
+                   "invalid message length");
+      _handle_network_error (cluster, cmd->server_stream, error);
+      goto done;
+   }
+
+   const size_t remaining_bytes = (size_t) message_length - sizeof (int32_t);
+
+   if (!_mongoc_buffer_append_from_stream (
+          &buffer, stream, remaining_bytes, cluster->sockettimeoutms, error)) {
+      RUN_CMD_ERR (MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_SOCKET,
+                   "socket error or timeout");
+      _handle_network_error (cluster, cmd->server_stream, error);
+      goto done;
+   }
+
+   if (!mcd_rpc_message_from_data_in_place (
+          rpc, buffer.data, buffer.len, NULL)) {
+      RUN_CMD_ERR (MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_SOCKET,
+                   "malformed reply from server");
+      goto done;
+   }
+
+   mcd_rpc_message_ingress (rpc);
+
+   if (!mcd_rpc_message_decompress_if_necessary (
+          rpc, &decompressed_data, &decompressed_data_len)) {
+      RUN_CMD_ERR (MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_SOCKET,
+                   "could not decompress server reply");
+      goto done;
+   }
+
+   {
+      bson_t body;
+
+      if (!mcd_rpc_message_get_body (rpc, &body)) {
+         RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "malformed reply from server");
+         goto done;
+      }
+
+      bson_copy_to (&body, reply);
+      bson_destroy (&body);
+   }
+
+   if (!_mongoc_cmd_check_ok (
+          reply, cluster->client->error_api_version, error)) {
+      goto done;
+   }
+
+   ret = true;
+
+done:
+   bson_free (decompressed_data);
+   _mongoc_buffer_destroy (&buffer);
+
+   return ret;
+}
 
 static bool
 mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
@@ -287,201 +450,44 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
                                     bson_t *reply,
                                     bson_error_t *error)
 {
-   const size_t reply_header_size = sizeof (mongoc_rpc_reply_header_t);
-   uint8_t reply_header_buf[sizeof (mongoc_rpc_reply_header_t)];
-   uint8_t *reply_buf; /* reply body */
-   mongoc_rpc_t rpc;   /* sent to server */
-   bson_t reply_local;
-   bson_t *reply_ptr;
-   char *cmd_ns;
-   uint32_t request_id;
-   size_t doc_len;
-   bool ret = false;
-   char *output = NULL;
-   mongoc_stream_t *stream;
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT_PARAM (cmd);
+   BSON_ASSERT_PARAM (cmd->server_stream);
+   BSON_ASSERT_PARAM (reply);
+   BSON_ASSERT_PARAM (error);
 
    ENTRY;
 
-   BSON_ASSERT (cluster);
-   BSON_ASSERT (cmd);
-   BSON_ASSERT (cmd->server_stream);
+   bool ret = false;
 
-   stream = cmd->server_stream->stream;
-   /*
-    * setup
-    */
-   reply_ptr = reply ? reply : &reply_local;
-   bson_init (reply_ptr);
-
+   bson_init (reply);
    error->code = 0;
 
-   /*
-    * prepare the request
-    */
+   mcd_rpc_message *const rpc = mcd_rpc_message_new ();
 
-   _mongoc_array_clear (&cluster->iov);
-
-   cmd_ns = bson_strdup_printf ("%s.$cmd", cmd->db_name);
-   request_id = ++cluster->request_id;
-   _mongoc_rpc_prep_command (&rpc, cmd_ns, cmd);
-   rpc.header.request_id = request_id;
-
-   _mongoc_rpc_gather (&rpc, &cluster->iov);
-   _mongoc_rpc_swab_to_le (&rpc);
-
-   if (compressor_id != -1 && IS_NOT_COMMAND (HANDSHAKE_CMD_LEGACY_HELLO) &&
-       IS_NOT_COMMAND ("hello") && IS_NOT_COMMAND ("saslstart") &&
-       IS_NOT_COMMAND ("saslcontinue") && IS_NOT_COMMAND ("getnonce") &&
-       IS_NOT_COMMAND ("authenticate") && IS_NOT_COMMAND ("createuser") &&
-       IS_NOT_COMMAND ("updateuser")) {
-      output = _mongoc_rpc_compress (cluster, compressor_id, &rpc, error);
-      if (output == NULL) {
-         GOTO (done);
-      }
-   }
-
-   if (cluster->client->in_exhaust) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_IN_EXHAUST,
-                      "A cursor derived from this client is in exhaust.");
+   if (!_mongoc_cluster_run_command_opquery_send (
+          cluster, cmd, compressor_id, rpc, error)) {
       GOTO (done);
    }
 
-   /*
-    * send and receive
-    */
-   _mongoc_rpc_op_egress_inc (&rpc);
-   if (!_mongoc_stream_writev_full (stream,
-                                    cluster->iov.data,
-                                    cluster->iov.len,
-                                    cluster->sockettimeoutms,
-                                    error)) {
-      _handle_network_error (cluster, cmd->server_stream, error);
+   mcd_rpc_message_reset (rpc);
 
-      /* add info about the command to writev_full's error message */
-      RUN_CMD_ERR_DECORATE;
-      GOTO (done);
-   }
-
-   if (reply_header_size != mongoc_stream_read (stream,
-                                                &reply_header_buf,
-                                                reply_header_size,
-                                                reply_header_size,
-                                                cluster->sockettimeoutms)) {
-      RUN_CMD_ERR (MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_SOCKET,
-                   "socket error or timeout");
-
-      _handle_network_error (cluster, cmd->server_stream, error);
-      GOTO (done);
-   }
-
-   uint32_t msg_len;
-   memcpy (&msg_len, reply_header_buf, 4);
-   msg_len = BSON_UINT32_FROM_LE (msg_len);
-   if ((msg_len < reply_header_size) ||
-       (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
-      _handle_network_error (cluster, cmd->server_stream, error);
-      GOTO (done);
-   }
-
-   if (!_mongoc_rpc_scatter_reply_header_only (
-          &rpc, reply_header_buf, reply_header_size)) {
-      _handle_network_error (cluster, cmd->server_stream, error);
-      GOTO (done);
-   }
-   doc_len = msg_len - reply_header_size;
-
-   if (BSON_UINT32_FROM_LE (rpc.header.opcode) == MONGOC_OPCODE_COMPRESSED) {
-      bson_t tmp = BSON_INITIALIZER;
-      uint8_t *buf = NULL;
-      size_t len = BSON_UINT32_FROM_LE (rpc.compressed.uncompressed_size) +
-                   sizeof (mongoc_rpc_header_t);
-
-      reply_buf = bson_malloc0 (msg_len);
-      memcpy (reply_buf, reply_header_buf, reply_header_size);
-
-      if (doc_len != mongoc_stream_read (stream,
-                                         reply_buf + reply_header_size,
-                                         doc_len,
-                                         doc_len,
-                                         cluster->sockettimeoutms)) {
-         RUN_CMD_ERR (MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "socket error or timeout");
-         _handle_network_error (cluster, cmd->server_stream, error);
-         GOTO (done);
-      }
-      if (!_mongoc_rpc_scatter (&rpc, reply_buf, msg_len)) {
-         GOTO (done);
-      }
-
-      buf = bson_malloc0 (len);
-      if (!_mongoc_rpc_decompress (&rpc, buf, len)) {
-         RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Could not decompress server reply");
-         bson_free (reply_buf);
-         bson_free (buf);
-         GOTO (done);
-      }
-
-      _mongoc_rpc_swab_from_le (&rpc);
-
-      if (!_mongoc_rpc_get_first_document (&rpc, &tmp)) {
-         RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Corrupt compressed OP_QUERY reply from server");
-         bson_free (reply_buf);
-         bson_free (buf);
-         GOTO (done);
-      }
-      bson_copy_to (&tmp, reply_ptr);
-      bson_free (reply_buf);
-      bson_free (buf);
-   } else if (BSON_UINT32_FROM_LE (rpc.header.opcode) == MONGOC_OPCODE_REPLY &&
-              BSON_UINT32_FROM_LE (rpc.reply_header.n_returned) == 1) {
-      reply_buf = bson_reserve_buffer (reply_ptr, (uint32_t) doc_len);
-      BSON_ASSERT (reply_buf);
-
-      if (doc_len != mongoc_stream_read (stream,
-                                         (void *) reply_buf,
-                                         doc_len,
-                                         doc_len,
-                                         cluster->sockettimeoutms)) {
-         RUN_CMD_ERR (MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "socket error or timeout");
-         _handle_network_error (cluster, cmd->server_stream, error);
-         GOTO (done);
-      }
-      _mongoc_rpc_swab_from_le (&rpc);
-   } else {
-      GOTO (done);
-   }
-
-   if (!_mongoc_cmd_check_ok (
-          reply_ptr, cluster->client->error_api_version, error)) {
+   if (!_mongoc_cluster_run_command_opquery_recv (
+          cluster, cmd, rpc, reply, error)) {
       GOTO (done);
    }
 
    ret = true;
 
 done:
-
    if (!ret && error->code == 0) {
       /* generic error */
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
                    MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                   "Invalid reply from server.");
+                   "invalid reply from server");
    }
 
-   if (reply_ptr == &reply_local) {
-      bson_destroy (reply_ptr);
-   }
-   bson_free (output);
-   bson_free (cmd_ns);
+   mcd_rpc_message_destroy (rpc);
 
    RETURN (ret);
 }
