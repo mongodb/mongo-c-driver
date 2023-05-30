@@ -54,7 +54,7 @@ esac
 
 on_exit() {
   echo "Cleaning up"
-  if [[ -n "${responder_required}" ]]; then
+  if [[ -n "${responder_required:-}" ]]; then
     echo "Responder logs:"
     cat "${mongoc_dir}/responder.log"
     pkill -f "ocsp_mock" || true
