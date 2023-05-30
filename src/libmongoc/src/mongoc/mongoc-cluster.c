@@ -533,7 +533,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       bson_error_t *error)
 {
    bool retval;
-   uint32_t request_id = ++cluster->request_id;
+   const int32_t request_id = ++cluster->request_id;
    uint32_t server_id;
    mongoc_apm_callbacks_t *callbacks;
    mongoc_apm_command_started_t started_event;
