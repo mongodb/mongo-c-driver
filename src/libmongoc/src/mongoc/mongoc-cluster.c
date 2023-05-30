@@ -3269,88 +3269,73 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_legacy_rpc_sendv_to_server --
- *
- *       Sends the given RPCs to the given server. Used for OP_QUERY cursors,
- *       OP_KILLCURSORS, and legacy writes with OP_INSERT, OP_UPDATE, and
- *       OP_DELETE. This function is *not* in the OP_QUERY command path.
- *
- * Returns:
- *       True if successful.
- *
- * Side effects:
- *       @rpc may be mutated and should be considered invalid after calling
- *       this method.
- *
- *       @error may be set.
- *
- *--------------------------------------------------------------------------
- */
-
 bool
 mongoc_cluster_legacy_rpc_sendv_to_server (
    mongoc_cluster_t *cluster,
-   mongoc_rpc_t *rpc,
+   mcd_rpc_message *rpc,
    mongoc_server_stream_t *server_stream,
    bson_error_t *error)
 {
-   uint32_t server_id;
-   int32_t max_msg_size;
-   bool ret = false;
-   int32_t compressor_id = 0;
-   char *output = NULL;
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT_PARAM (rpc);
+   BSON_ASSERT_PARAM (server_stream);
+   BSON_ASSERT_PARAM (error);
 
    ENTRY;
 
-   BSON_ASSERT (cluster);
-   BSON_ASSERT (rpc);
-   BSON_ASSERT (server_stream);
+   bool ret = false;
 
-   server_id = server_stream->sd->id;
+   void *compressed_data = NULL;
+   size_t compressed_data_len = 0u;
+   mongoc_iovec_t *iovecs = NULL;
+   size_t num_iovecs = 0u;
 
    if (cluster->client->in_exhaust) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_IN_EXHAUST,
-                      "A cursor derived from this client is in exhaust.");
+                      "a cursor derived from this client is in exhaust");
       GOTO (done);
    }
 
-   _mongoc_array_clear (&cluster->iov);
-   compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
+   const int32_t compressor_id =
+      mongoc_server_description_compressor_id (server_stream->sd);
 
-   _mongoc_rpc_gather (rpc, &cluster->iov);
-   _mongoc_rpc_swab_to_le (rpc);
-
-   if (compressor_id != -1) {
-      output = _mongoc_rpc_compress (cluster, compressor_id, rpc, error);
-      if (output == NULL) {
-         GOTO (done);
-      }
+   if (compressor_id != -1 &&
+       !mcd_rpc_message_compress (
+          rpc,
+          compressor_id,
+          _compression_level_from_uri (compressor_id, cluster->uri),
+          &compressed_data,
+          &compressed_data_len,
+          error)) {
+      GOTO (done);
    }
 
-   max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
+   const uint32_t server_id = server_stream->sd->id;
+   const int32_t max_msg_size =
+      mongoc_server_stream_max_msg_size (server_stream);
 
-   if (bson_cmp_greater_us (BSON_UINT32_FROM_LE (rpc->header.msg_len),
-                            max_msg_size)) {
+   const int32_t message_length = mcd_rpc_header_get_message_length (rpc);
+
+   if (message_length > max_msg_size) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_TOO_BIG,
-                      "Attempted to send an RPC larger than the "
-                      "max allowed message size. Was %" PRIu32
-                      ", allowed %" PRId32 ".",
-                      BSON_UINT32_FROM_LE (rpc->header.msg_len),
+                      "attempted to send an RPC message with length %" PRId32
+                      " which exceeds the maximum allowed length %" PRId32,
+                      message_length,
                       max_msg_size);
       GOTO (done);
    }
 
-   _mongoc_rpc_op_egress_inc (rpc);
+   iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
+   BSON_ASSERT (iovecs);
+
+   mcd_rpc_message_egress (rpc);
    if (!_mongoc_stream_writev_full (server_stream->stream,
-                                    cluster->iov.data,
-                                    cluster->iov.len,
+                                    iovecs,
+                                    num_iovecs,
                                     cluster->sockettimeoutms,
                                     error)) {
       GOTO (done);
@@ -3361,139 +3346,112 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
    ret = true;
 
 done:
-
-   if (compressor_id) {
-      bson_free (output);
-   }
+   bson_free (iovecs);
+   bson_free (compressed_data);
 
    RETURN (ret);
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_try_recv --
- *
- *       Tries to receive the next event from the MongoDB server.
- *       The contents are loaded into @buffer and then
- *       scattered into the @rpc structure. @rpc is valid as long as
- *       @buffer contains the contents read into it.
- *
- *       Callers that can optimize a reuse of @buffer should do so. It
- *       can save many memory allocations.
- *
- * Returns:
- *       True if successful.
- *
- * Side effects:
- *       @rpc is set on success, @error on failure.
- *       @buffer will be filled with the input data.
- *
- *--------------------------------------------------------------------------
- */
-
 bool
 mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
-                         mongoc_rpc_t *rpc,
+                         mcd_rpc_message *rpc,
                          mongoc_buffer_t *buffer,
                          mongoc_server_stream_t *server_stream,
                          bson_error_t *error)
 {
-   bson_error_t err_local;
-   int32_t msg_len;
-   int32_t max_msg_size;
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT_PARAM (rpc);
+   BSON_ASSERT_PARAM (server_stream);
+   BSON_ASSERT_PARAM (error);
 
    ENTRY;
 
-   BSON_ASSERT (cluster);
-   BSON_ASSERT (rpc);
-   BSON_ASSERT (buffer);
-   BSON_ASSERT (server_stream);
-
+   bool ret = false;
 
    TRACE ("Waiting for reply from server_id \"%u\"", server_stream->sd->id);
 
-   if (!error) {
-      error = &err_local;
-   }
+   const size_t offset = buffer->len;
 
-   /*
-    * Buffer the message length to determine how much more to read.
-    */
-   const size_t pos = buffer->len;
-   if (!_mongoc_buffer_append_from_stream (
-          buffer, server_stream->stream, 4, cluster->sockettimeoutms, error)) {
+   if (!_mongoc_buffer_append_from_stream (buffer,
+                                           server_stream->stream,
+                                           sizeof (int32_t),
+                                           cluster->sockettimeoutms,
+                                           error)) {
       MONGOC_DEBUG (
-         "Could not read 4 bytes, stream probably closed or timed out");
+         "could not read message length, stream probably closed or timed out");
       mongoc_counter_protocol_ingress_error_inc ();
       _handle_network_error (cluster, server_stream, error);
-      RETURN (false);
+      GOTO (done);
    }
 
-   /*
-    * Read the msg length from the buffer.
-    */
-   memcpy (&msg_len, &buffer->data[pos], 4);
-   msg_len = BSON_UINT32_FROM_LE (msg_len);
-   max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
-   if ((msg_len < 16) || (msg_len > max_msg_size)) {
+   const int32_t message_length = _int32_from_le (buffer->data + offset);
+
+   const int32_t max_msg_size =
+      mongoc_server_stream_max_msg_size (server_stream);
+
+   if (message_length < message_header_length ||
+       message_length > max_msg_size) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Corrupt or malicious reply received.");
+                      "message length %" PRId32
+                      " is not within valid range of 16-%" PRId32 " bytes",
+                      message_length,
+                      server_stream->sd->max_msg_size);
       _handle_network_error (cluster, server_stream, error);
       mongoc_counter_protocol_ingress_error_inc ();
-      RETURN (false);
+      GOTO (done);
    }
 
-   /*
-    * Read the rest of the message from the stream.
-    */
+   const size_t remaining_bytes = (size_t) message_length - sizeof (int32_t);
+
    if (!_mongoc_buffer_append_from_stream (buffer,
                                            server_stream->stream,
-                                           msg_len - 4,
+                                           remaining_bytes,
                                            cluster->sockettimeoutms,
                                            error)) {
       _handle_network_error (cluster, server_stream, error);
       mongoc_counter_protocol_ingress_error_inc ();
-      RETURN (false);
+      GOTO (done);
    }
 
-   /*
-    * Scatter the buffer into the rpc structure.
-    */
-   if (!_mongoc_rpc_scatter (rpc, &buffer->data[pos], msg_len)) {
+   if (!mcd_rpc_message_from_data_in_place (
+          rpc, buffer->data + offset, (size_t) message_length, NULL)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Failed to decode reply from server.");
+                      "failed to decode reply from server");
       _handle_network_error (cluster, server_stream, error);
       mongoc_counter_protocol_ingress_error_inc ();
-      RETURN (false);
+      GOTO (done);
    }
 
-   if (BSON_UINT32_FROM_LE (rpc->header.opcode) == MONGOC_OPCODE_COMPRESSED) {
-      uint8_t *buf = NULL;
-      size_t len = BSON_UINT32_FROM_LE (rpc->compressed.uncompressed_size) +
-                   sizeof (mongoc_rpc_header_t);
+   mcd_rpc_message_ingress (rpc);
 
-      buf = bson_malloc0 (len);
-      if (!_mongoc_rpc_decompress (rpc, buf, len)) {
-         bson_free (buf);
-         bson_set_error (error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Could not decompress server reply");
-         RETURN (false);
-      }
+   void *decompressed_data = NULL;
+   size_t decompressed_data_len = 0u;
 
+   if (!mcd_rpc_message_decompress_if_necessary (
+          rpc, &decompressed_data, &decompressed_data_len)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "could not decompress server reply");
+      GOTO (done);
+   }
+
+   if (decompressed_data) {
       _mongoc_buffer_destroy (buffer);
-      _mongoc_buffer_init (buffer, buf, len, NULL, NULL);
+      _mongoc_buffer_init (
+         buffer, decompressed_data, decompressed_data_len, NULL, NULL);
    }
-   _mongoc_rpc_swab_from_le (rpc);
 
-   RETURN (true);
+   ret = true;
+
+done:
+
+   return ret;
 }
 
 

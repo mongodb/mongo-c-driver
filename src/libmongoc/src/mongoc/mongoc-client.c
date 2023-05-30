@@ -951,25 +951,9 @@ _mongoc_client_create_stream (mongoc_client_t *client,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_client_recv --
- *
- *       Receives a RPC from a remote MongoDB cluster node.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @error is set if return value is false.
- *
- *--------------------------------------------------------------------------
- */
-
 bool
 _mongoc_client_recv (mongoc_client_t *client,
-                     mongoc_rpc_t *rpc,
+                     mcd_rpc_message *rpc,
                      mongoc_buffer_t *buffer,
                      mongoc_server_stream_t *server_stream,
                      bson_error_t *error)
@@ -978,6 +962,7 @@ _mongoc_client_recv (mongoc_client_t *client,
    BSON_ASSERT (rpc);
    BSON_ASSERT (buffer);
    BSON_ASSERT (server_stream);
+   BSON_ASSERT_PARAM (error);
 
    return mongoc_cluster_try_recv (
       &client->cluster, rpc, buffer, server_stream, error);
@@ -2478,36 +2463,44 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
                                const char *db,
                                const char *collection)
 {
-   int64_t started;
-   mongoc_rpc_t rpc = {{0}};
-   bson_error_t error;
-   bool has_ns;
-   bool r;
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT_PARAM (server_stream);
+   BSON_ASSERT (db || true);
+   BSON_ASSERT (collection || true);
 
-   /* called by old mongoc_client_kill_cursor without db/collection? */
-   has_ns = (db && collection);
-   started = bson_get_monotonic_time ();
+   const bool has_ns = db && collection;
+   const int64_t started = bson_get_monotonic_time ();
 
-   ++cluster->request_id;
+   mcd_rpc_message *const rpc = mcd_rpc_message_new ();
 
-   rpc.header.msg_len = 0;
-   rpc.header.request_id = cluster->request_id;
-   rpc.header.response_to = 0;
-   rpc.header.opcode = MONGOC_OPCODE_KILL_CURSORS;
-   rpc.kill_cursors.zero = 0;
-   rpc.kill_cursors.cursors = &cursor_id;
-   rpc.kill_cursors.n_cursors = 1;
+   {
+      int32_t message_length = 0;
+
+      message_length += mcd_rpc_header_set_message_length (rpc, 0);
+      message_length +=
+         mcd_rpc_header_set_request_id (rpc, ++cluster->request_id);
+      message_length += mcd_rpc_header_set_response_to (rpc, 0);
+      message_length +=
+         mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_KILL_CURSORS);
+
+      message_length += sizeof (int32_t); // ZERO
+      message_length +=
+         mcd_rpc_op_kill_cursors_set_cursor_ids (rpc, &cursor_id, 1);
+
+      mcd_rpc_message_set_length (rpc, message_length);
+   }
 
    if (has_ns) {
       _mongoc_client_monitor_op_killcursors (
          cluster, server_stream, cursor_id, operation_id, db, collection);
    }
 
-   r = mongoc_cluster_legacy_rpc_sendv_to_server (
-      cluster, &rpc, server_stream, &error);
+   bson_error_t error;
+   const bool res = mongoc_cluster_legacy_rpc_sendv_to_server (
+      cluster, rpc, server_stream, &error);
 
    if (has_ns) {
-      if (r) {
+      if (res) {
          _mongoc_client_monitor_op_killcursors_succeeded (
             cluster,
             bson_get_monotonic_time () - started,
@@ -2523,6 +2516,8 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
             operation_id);
       }
    }
+
+   mcd_rpc_message_destroy (rpc);
 }
 
 

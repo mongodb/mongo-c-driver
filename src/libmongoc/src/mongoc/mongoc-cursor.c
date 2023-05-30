@@ -885,12 +885,12 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
                               mongoc_server_stream_t *stream,
-                              mongoc_query_flags_t *flags /* OUT */)
+                              int32_t *flags /* OUT */)
 {
    bson_iter_t iter;
    const char *key;
 
-   *flags = MONGOC_QUERY_NONE;
+   *flags = MONGOC_OP_QUERY_FLAG_NONE;
 
    if (!bson_iter_init (&iter, &cursor->opts)) {
       bson_set_error (&cursor->error,
@@ -904,27 +904,27 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
       key = bson_iter_key (&iter);
 
       if (!strcmp (key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
-         ADD_FLAG (flags, MONGOC_QUERY_PARTIAL);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_PARTIAL);
       } else if (!strcmp (key, MONGOC_CURSOR_AWAIT_DATA)) {
-         ADD_FLAG (flags, MONGOC_QUERY_AWAIT_DATA);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_AWAIT_DATA);
       } else if (!strcmp (key, MONGOC_CURSOR_EXHAUST)) {
-         ADD_FLAG (flags, MONGOC_QUERY_EXHAUST);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_EXHAUST);
       } else if (!strcmp (key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT)) {
-         ADD_FLAG (flags, MONGOC_QUERY_NO_CURSOR_TIMEOUT);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT);
       } else if (!strcmp (key, MONGOC_CURSOR_OPLOG_REPLAY)) {
-         ADD_FLAG (flags, MONGOC_QUERY_OPLOG_REPLAY);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY);
       } else if (!strcmp (key, MONGOC_CURSOR_TAILABLE)) {
-         ADD_FLAG (flags, MONGOC_QUERY_TAILABLE_CURSOR);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
       }
    }
 
    if (cursor->secondary_ok) {
-      *flags |= MONGOC_QUERY_SECONDARY_OK;
+      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
    } else if (cursor->server_id &&
               (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
                stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
               stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
-      *flags |= MONGOC_QUERY_SECONDARY_OK;
+      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
    }
 
    return true;
@@ -1014,10 +1014,13 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    db = bson_strndup (cursor->ns, cursor->dblen);
    parts.assembled.db_name = db;
 
-   if (!_mongoc_cursor_opts_to_flags (
-          cursor, server_stream, &parts.user_query_flags)) {
-      _mongoc_bson_init_if_set (reply);
-      GOTO (done);
+   {
+      int32_t flags;
+      if (!_mongoc_cursor_opts_to_flags (cursor, server_stream, &flags)) {
+         _mongoc_bson_init_if_set (reply);
+         GOTO (done);
+      }
+      parts.user_query_flags = (mongoc_query_flags_t) flags;
    }
 
    /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.

@@ -96,13 +96,13 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id);
 bool
 mongoc_cluster_legacy_rpc_sendv_to_server (
    mongoc_cluster_t *cluster,
-   mongoc_rpc_t *rpcs,
+   mcd_rpc_message *rpc,
    mongoc_server_stream_t *server_stream,
    bson_error_t *error);
 
 bool
 mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
-                         mongoc_rpc_t *rpc,
+                         mcd_rpc_message *rpc,
                          mongoc_buffer_t *buffer,
                          mongoc_server_stream_t *server_stream,
                          bson_error_t *error);

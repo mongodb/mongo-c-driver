@@ -21,7 +21,7 @@
  * Internal struct to represent a command we will send to the server - command
  * parameters are collected in a mongoc_cmd_parts_t until we know the server's
  * wire version and whether it is mongos, then we collect the parts into a
- * mongoc_cmd_t, and gather that into a mongoc_rpc_t.
+ * mongoc_cmd_t, and gather that into an RPC message.
  */
 
 #ifndef MONGOC_CMD_PRIVATE_H

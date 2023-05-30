@@ -104,7 +104,7 @@ struct _mongoc_cursor_impl_t {
 
 /* pre-3.2 and exhaust cursor responses -- read documents from stream. */
 typedef struct _mongoc_cursor_response_legacy {
-   mongoc_rpc_t rpc;
+   mcd_rpc_message *rpc;
    mongoc_buffer_t buffer;
    bson_reader_t *reader;
 } mongoc_cursor_response_legacy_t;
@@ -217,7 +217,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor);
 bool
 _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
                               mongoc_server_stream_t *stream,
-                              mongoc_query_flags_t *flags /* OUT */);
+                              int32_t *flags /* OUT */);
 void
 _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                                   mongoc_cursor_response_legacy_t *response,
