@@ -250,7 +250,7 @@ all_tasks = [
     LinkTask("link-with-cmake", suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1)]),
     LinkTask(
         "link-with-cmake-ssl",
-        suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, ENABLE_SSL="AUTO")],
+        suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, ENABLE_SSL=1)],
     ),
     LinkTask(
         "link-with-cmake-snappy",
@@ -268,7 +268,7 @@ all_tasks = [
                 "link sample program",
                 BUILD_SAMPLE_WITH_CMAKE=1,
                 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
-                ENABLE_SSL="AUTO",
+                ENABLE_SSL=1,
             )
         ],
     ),
@@ -290,14 +290,14 @@ all_tasks = [
     LinkTask("link-with-cmake-windows", suffix_commands=[func("link sample program MSVC")]),
     LinkTask(
         "link-with-cmake-windows-ssl",
-        suffix_commands=[func("link sample program MSVC", ENABLE_SSL="AUTO")],
+        suffix_commands=[func("link sample program MSVC", ENABLE_SSL=1)],
         orchestration="ssl",
     ),
     LinkTask("link-with-cmake-windows-snappy", suffix_commands=[func("link sample program MSVC", ENABLE_SNAPPY="ON")]),
     LinkTask("link-with-cmake-mingw", suffix_commands=[func("link sample program mingw")]),
     LinkTask("link-with-pkg-config", suffix_commands=[func("link sample program")]),
     LinkTask("link-with-pkg-config-mac", suffix_commands=[func("link sample program")]),
-    LinkTask("link-with-pkg-config-ssl", suffix_commands=[func("link sample program", ENABLE_SSL="AUTO")]),
+    LinkTask("link-with-pkg-config-ssl", suffix_commands=[func("link sample program", ENABLE_SSL=1)]),
     LinkTask("link-with-bson", suffix_commands=[func("link sample program bson")], orchestration=False),
     LinkTask("link-with-bson-mac", suffix_commands=[func("link sample program bson")], orchestration=False),
     LinkTask("link-with-bson-windows", suffix_commands=[func("link sample program MSVC bson")], orchestration=False),

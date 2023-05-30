@@ -740,7 +740,7 @@ tasks:
   - func: link sample program
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
-      ENABLE_SSL: AUTO
+      ENABLE_SSL: 1
 - name: link-with-cmake-snappy
   depends_on:
     name: make-release-archive
@@ -784,7 +784,7 @@ tasks:
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED: 1
-      ENABLE_SSL: AUTO
+      ENABLE_SSL: 1
 - name: link-with-cmake-snappy-deprecated
   depends_on:
     name: make-release-archive
@@ -827,7 +827,7 @@ tasks:
       SSL: openssl
   - func: link sample program MSVC
     vars:
-      ENABLE_SSL: AUTO
+      ENABLE_SSL: 1
 - name: link-with-cmake-windows-snappy
   depends_on:
     name: make-release-archive
@@ -871,7 +871,7 @@ tasks:
   - func: bootstrap-mongo-orchestration
   - func: link sample program
     vars:
-      ENABLE_SSL: AUTO
+      ENABLE_SSL: 1
 - name: link-with-bson
   depends_on:
     name: make-release-archive
