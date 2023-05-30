@@ -213,6 +213,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-cursor-cmd-deprecated.c
    mongoc-database.c
    mongoc-error.c
+   mongoc-flags.c
    mongoc-find-and-modify.c
    mongoc-generation-map.c
    mongoc-host-list.c
@@ -235,6 +236,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-memcmp.c
    mongoc-cmd.c
    mongoc-ocsp-cache.c
+   mongoc-opcode.c
    mongoc-optional.c
    mongoc-opts.c
    mongoc-opts-helpers.c

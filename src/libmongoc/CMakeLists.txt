@@ -526,6 +526,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-flags.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-generation-map.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
@@ -549,6 +550,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cmd.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-optional.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opts-helpers.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opts.c
