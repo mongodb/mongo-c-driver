@@ -24,7 +24,7 @@ case "$OSTYPE" in
     linux-*)
         if have-command cmd.exe; then
             _is_wsl=true
-            _is_windows=true
+            _is_unix_like=true
             _os_family=windows
         else
             _is_linux=true
