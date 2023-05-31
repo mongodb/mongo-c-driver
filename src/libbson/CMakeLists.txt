@@ -487,7 +487,6 @@ endif ()
 add_subdirectory (build)
 # sub-directory 'doc' was already included above
 add_subdirectory (examples)
-add_subdirectory (fuzz)
 add_subdirectory (src)
 add_subdirectory (tests)
 
@@ -495,14 +494,30 @@ set_local_dist (src_libbson_DIST_local
    CMakeLists.txt
    NEWS
    THIRD_PARTY_NOTICES
+   fuzz/bson.fuzz.c
+   fuzz/json.fuzz.c
 )
+
+mongoc_add_fuzzer (json-fuzz fuzz/json.fuzz.c)
+target_link_libraries(json-fuzz PRIVATE bson_static)
+
+mongoc_add_fuzzer (bson-fuzz fuzz/bson.fuzz.c)
+target_link_libraries(bson-fuzz PRIVATE bson_static)
+set_property(TARGET bson-fuzz PROPERTY FUZZER_MAX_LEN 65536)
+
+add_executable (bson2json tools/bson2json.main.c)
+add_executable (json2bson tools/json2bson.main.c)
+target_link_libraries(bson2json PRIVATE bson_static)
+target_link_libraries(json2bson PRIVATE bson_static)
+set_target_properties(bson2json json2bson PROPERTIES
+   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+   )
 
 set (src_libbson_DIST
    ${src_libbson_DIST_local}
    ${src_libbson_build_DIST}
    ${src_libbson_doc_DIST}
    ${src_libbson_examples_DIST}
-   ${src_libbson_fuzz_DIST}
    ${src_libbson_src_DIST}
    ${src_libbson_tests_DIST}
    PARENT_SCOPE
