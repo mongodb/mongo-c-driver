@@ -193,7 +193,7 @@ find_cmake_version() {
     tmp_cmake_dir="$(make_tmpdir_in "${cache_dir}")" || return
   } 1>&2
 
-  if [[ -n "${platform}" ]]; then
+  if [[ -n "${platform:-}" ]]; then
     cmake_download_binary() (
       declare -r cmake_url="https://cmake.org/files/v${major}.${minor}/cmake-${version}-${platform}.${extension}"
 
