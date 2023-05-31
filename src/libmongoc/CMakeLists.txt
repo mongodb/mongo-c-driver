@@ -372,25 +372,7 @@ endif ()
 
 set (MONGOC_ENABLE_SHM_COUNTERS 0)
 
-if (NOT ENABLE_SHM_COUNTERS MATCHES "ON|OFF|AUTO")
-   message (FATAL_ERROR "ENABLE_SHM_COUNTERS option must be ON, OFF, or AUTO")
-endif ()
-
-if (ENABLE_SHM_COUNTERS STREQUAL "AUTO")
-   if (UNIX AND NOT APPLE)
-      set (ENABLE_SHM_COUNTERS ON)
-   endif ()
-   if (APPLE AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
-      set (ENABLE_SHM_COUNTERS ON)
-   endif ()
-endif ()
-
-if (ENABLE_SHM_COUNTERS STREQUAL "ON")
-   if (( NOT ${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64" AND APPLE ) OR NOT UNIX)
-      message (
-         FATAL_ERROR
-	 "Shared memory performance counters only supported on arm64 Mac and Linux")
-   endif ()
+if (ENABLE_SHM_COUNTERS)
    set (MONGOC_ENABLE_SHM_COUNTERS 1)
    find_library(RT_LIBRARY rt HINTS /usr/lib32)
    if (RT_LIBRARY)
@@ -848,7 +830,7 @@ add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
 target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
 
 # mongoc-stat works if shared memory performance counters are enabled.
-if (ENABLE_SHM_COUNTERS STREQUAL "ON")
+if (ENABLE_SHM_COUNTERS)
    install (TARGETS mongoc-stat
             EXPORT mongoc_targets
             RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
