@@ -1302,6 +1302,16 @@ match_bson_arrays (const bson_t *array, const bson_t *pattern, match_ctx_t *ctx)
 
       derive (ctx, &derived, bson_iter_key (&array_iter));
 
+      if (ctx->visitor_fn) {
+         match_action_t action =
+            ctx->visitor_fn (ctx, &pattern_iter, &array_iter);
+         if (action == MATCH_ACTION_ABORT) {
+            return false;
+         } else if (action == MATCH_ACTION_SKIP) {
+            continue;
+         }
+      }
+
       if (!match_bson_value (array_value, pattern_value, &derived)) {
          return false;
       }

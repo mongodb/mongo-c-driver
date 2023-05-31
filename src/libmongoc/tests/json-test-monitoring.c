@@ -691,6 +691,29 @@ test_apm_matching_extra_fields (void)
       ASSERT_CONTAINS (match_ctx.errmsg, "unexpected extra field 'b'");
       apm_match_visitor_ctx_reset (&match_visitor_ctx);
    }
+
+   // A subdocument in a subarray in `command` does not permit extra values.
+   {
+      apm_match_visitor_ctx_t match_visitor_ctx = {0};
+      match_ctx_t match_ctx = {{0}};
+
+      const char *event = BSON_STR ({
+         "command_started_event" :
+            {"command" : {"subarray" : [ {"a" : 1, "b" : 2} ]}}
+      });
+      const char *pattern = BSON_STR ({
+         "command_started_event" : {"command" : {"subarray" : [ {"a" : 1} ]}}
+      });
+
+      match_ctx.visitor_fn = apm_match_visitor;
+      match_ctx.visitor_ctx = (void *) &match_visitor_ctx;
+
+      bool matched =
+         match_bson_with_ctx (tmp_bson (event), tmp_bson (pattern), &match_ctx);
+      ASSERT (!matched);
+      ASSERT_CONTAINS (match_ctx.errmsg, "unexpected extra field 'b'");
+      apm_match_visitor_ctx_reset (&match_visitor_ctx);
+   }
 }
 
 
