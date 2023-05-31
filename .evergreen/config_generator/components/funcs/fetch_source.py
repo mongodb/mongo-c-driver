@@ -19,7 +19,7 @@ class FetchSource(Function):
                 set -o pipefail
                 if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
                     # This is a GitHub PR or patch build, probably branched from master
-                    if command -v python3 2>/dev/null; then
+                    if command -v python3 &>/dev/null; then
                         # Prefer python3 if it is available
                         echo $(python3 ./build/calc_release_version.py --next-minor) > VERSION_CURRENT
                     else
