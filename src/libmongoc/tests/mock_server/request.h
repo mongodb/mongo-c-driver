@@ -23,6 +23,7 @@
 
 #include "mongoc/mongoc.h"
 
+#include "mongoc/mongoc-array-private.h"
 #include "mongoc/mongoc-rpc-private.h"
 #include "sync-queue.h"
 
