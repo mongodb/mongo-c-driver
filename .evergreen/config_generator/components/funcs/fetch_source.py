@@ -16,6 +16,7 @@ class FetchSource(Function):
             working_dir='mongoc',
             script='''\
                 set -o errexit
+                set -o pipefail
                 if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
                     # This is a GitHub PR or patch build, probably branched from master
                     if command -v python3 2>/dev/null; then
