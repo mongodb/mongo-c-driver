@@ -4,7 +4,7 @@
 #
 # * IS_DARWIN, IS_WINDOWS, IS_LINUX, IS_BSD, IS_WSL, IS_UNIX_LIKE
 #   • Set to either "true" or "false" depending on the host operating system.
-#     More than one value may be true (i.e. $IS_WSL and $IS_WINDOWS). Because
+#     More than one value may be true (i.e. $IS_WSL and $IS_UNIX_LIKE). Because
 #     "true" and "false" are Bash built-ins, these can be used in conditionals
 #     directly, as in "if $IS_WINDOWS || $IS_DARWIN; then …"
 # * OS_FAMILY
