@@ -25,8 +25,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 : "${LOAD_BALANCER:="off"}"
 
 DIR=$(dirname $0)
-# Functions to fetch MongoDB binaries
-. $DIR/download-mongodb.sh
+# mongoc/.evergreen/scripts -> drivers-evergreen-tools/.evergreen/download-mongodb.sh
+. $DIR/../../../drivers-evergreen-tools/.evergreen/download-mongodb.sh
 
 get_distro
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
