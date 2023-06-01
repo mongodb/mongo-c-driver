@@ -3474,6 +3474,14 @@ tasks:
         vars:
           CC: gcc
           C_STD_VERSION: 11
+  - name: std-c11-windows-2019-vs2017-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c11]
+    commands:
+      - func: std-compile
+        vars:
+          CC: Visual Studio 15 2017 Win64
+          C_STD_VERSION: 11
   - name: std-c17-debian10-gcc-compile
     run_on: debian10-large
     tags: [std-matrix, debian10, gcc, compile, std-c17]
@@ -3481,7 +3489,7 @@ tasks:
       - func: std-compile
         vars:
           CC: gcc
-          CFLAGS: -std=c17
+          C_STD_VERSION: 17
   - name: std-c17-debian11-gcc-compile
     run_on: debian11-large
     tags: [std-matrix, debian11, gcc, compile, std-c17]
@@ -3489,7 +3497,15 @@ tasks:
       - func: std-compile
         vars:
           CC: gcc
-          CFLAGS: -std=c17
+          C_STD_VERSION: 17
+  - name: std-c17-windows-2019-vs2017-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c17]
+    commands:
+      - func: std-compile
+        vars:
+          CC: Visual Studio 15 2017 Win64
+          C_STD_VERSION: 17
   - name: tsan-sasl-cyrus-openssl-ubuntu1804-clang-compile
     run_on: ubuntu1804-large
     tags: [sanitizers-matrix-tsan, compile, ubuntu1804, clang, tsan, sasl-cyrus]

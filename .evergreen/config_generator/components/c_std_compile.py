@@ -16,19 +16,20 @@ TAG = 'std-matrix'
 # pylint: disable=line-too-long
 # fmt: off
 MATRIX = [
-    ('archlinux',  'clang', None,   [11,   ]),
-    ('debian81',   'clang', None,   [11,   ]),
-    ('debian92',   'clang', None,   [11,   ]),
-    ('ubuntu1604', 'clang', 'i686', [11,   ]),
-    ('ubuntu1604', 'clang', None,   [11,   ]),
-    ('ubuntu1804', 'clang', 'i686', [11,   ]),
-    ('ubuntu1804', 'gcc',   None,   [11,   ]),
-    ('debian10',   'clang', None,   [11,   ]),
-    ('debian10',   'gcc',   None,   [11, 17]),
-    ('debian11',   'clang', None,   [11,   ]),
-    ('debian11',   'gcc',   None,   [11, 17]),
-    ('ubuntu2004', 'clang', None,   [11,   ]),
-    ('ubuntu2004', 'gcc',   None,   [11,   ]),
+    ('archlinux',         'clang',     None,   [11,   ]),
+    ('debian81',          'clang',     None,   [11,   ]),
+    ('debian92',          'clang',     None,   [11,   ]),
+    ('ubuntu1604',        'clang',     'i686', [11,   ]),
+    ('ubuntu1604',        'clang',     None,   [11,   ]),
+    ('ubuntu1804',        'clang',     'i686', [11,   ]),
+    ('ubuntu1804',        'gcc',       None,   [11,   ]),
+    ('debian10',          'clang',     None,   [11,   ]),
+    ('debian10',          'gcc',       None,   [11, 17]),
+    ('debian11',          'clang',     None,   [11,   ]),
+    ('debian11',          'gcc',       None,   [11, 17]),
+    ('ubuntu2004',        'clang',     None,   [11,   ]),
+    ('ubuntu2004',        'gcc',       None,   [11,   ]),
+    ('windows-vsCurrent', 'vs2017x64', None,   [11, 17]),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -72,14 +73,7 @@ def tasks():
         distro_str = make_distro_str(distro_name, compiler, arch)
 
         for std in stds:
-            with_std = {}
-
-            if std >= 17:
-                # CMake 3.21 or newer is required to use CMAKE_C_STANDARD to
-                # specify C17 or newer.
-                with_std = {'CFLAGS': f'-std=c{std}'}
-            else:
-                with_std = {'C_STD_VERSION': std}
+            with_std = {'C_STD_VERSION': std}
 
             task_name = f'std-c{std}-{distro_str}-compile'
 
