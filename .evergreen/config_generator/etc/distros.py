@@ -72,8 +72,6 @@ MACOS_ARM64_DISTROS = [
 ]
 
 RHEL_DISTROS = [
-    Distro(name='rhel62-large', os='rhel', os_type='linux', os_ver='6.2', size='large'),
-    Distro(name='rhel62-small', os='rhel', os_type='linux', os_ver='6.2', size='small'),
     Distro(name='rhel70-large', os='rhel', os_type='linux', os_ver='7.0', size='large'),
     Distro(name='rhel70-small', os='rhel', os_type='linux', os_ver='7.0', size='small'),
     Distro(name='rhel76-large', os='rhel', os_type='linux', os_ver='7.6', size='large'),
