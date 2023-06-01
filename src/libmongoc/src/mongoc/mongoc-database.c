@@ -1095,15 +1095,6 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
    mongoc_collection_t *dataCollection = NULL;
    bool ok = false;
    bson_t *cc_opts = NULL;
-   bool state_collections_ok =
-      create_encField_state_collection (
-         database, encryptedFields, name, "esc", error) &&
-      create_encField_state_collection (
-         database, encryptedFields, name, "ecoc", error);
-   if (!state_collections_ok) {
-      // Failed to create one or more state collections
-      goto fail;
-   }
 
    // Check the wire version to ensure server is 7.0.0 or newer.
    {
@@ -1131,6 +1122,15 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
       mongoc_server_stream_cleanup (stream);
    }
 
+   bool state_collections_ok =
+      create_encField_state_collection (
+         database, encryptedFields, name, "esc", error) &&
+      create_encField_state_collection (
+         database, encryptedFields, name, "ecoc", error);
+   if (!state_collections_ok) {
+      // Failed to create one or more state collections
+      goto fail;
+   }
 
    /* Create data collection. */
    cc_opts = bson_copy (opts);
