@@ -947,8 +947,9 @@ mongoc_collection_count_documents (mongoc_collection_t *coll,
 
    // Parse options to validate.
    mongoc_count_document_opts_t cd_opts;
-   if (!_mongoc_count_document_opts_parse (coll->client, opts, &cd_opts, error)) {
-      GOTO(done);
+   if (!_mongoc_count_document_opts_parse (
+          coll->client, opts, &cd_opts, error)) {
+      GOTO (done);
    }
 
    _make_aggregate_for_count (coll, filter, &cd_opts, &aggregate_cmd);
@@ -3339,8 +3340,8 @@ mongoc_collection_create_bulk_operation_with_opts (
  *       If @reply is not NULL, then the result document will be placed
  *       in reply and should be released with bson_destroy().
  *
- *       See https://www.mongodb.com/docs/manual/reference/command/findAndModify/
- *       for more information.
+ *       See for more information:
+ *       https://www.mongodb.com/docs/manual/reference/command/findAndModify/
  *
  * Returns:
  *       true on success; false on failure.
@@ -3658,8 +3659,8 @@ done:
  *       If @_new is true, then the new version of the document is returned
  *       instead of the old document.
  *
- *       See https://www.mongodb.com/docs/manual/reference/command/findAndModify/
- *       for more information.
+ *       See for more information:
+ *       https://www.mongodb.com/docs/manual/reference/command/findAndModify/
  *
  * Returns:
  *       true on success; false on failure.
