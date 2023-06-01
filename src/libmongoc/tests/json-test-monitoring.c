@@ -351,8 +351,19 @@ apm_match_visitor (match_ctx_t *ctx,
             bson_iter_bson (pattern_iter, &pattern_subdoc);
             bson_iter_t pattern_subdoc_iter;
 
-            if (!bson_iter_init_find (
-                   &pattern_subdoc_iter, &pattern_subdoc, subdoc_key)) {
+            bool skip = false;
+            if (ends_with (ctx->path, "updates") &&
+                (0 == strcmp ("multi", subdoc_key) ||
+                 0 == strcmp ("upsert", subdoc_key))) {
+               // libmongoc includes `multi: false` and `upsert: false`.
+               // Some tests do not include `multi: false` and `upsert: false`
+               // in expectations. See DRIVERS-2271 and DRIVERS-976.
+               skip = true;
+            }
+
+            if (!skip && !bson_iter_init_find (&pattern_subdoc_iter,
+                                               &pattern_subdoc,
+                                               subdoc_key)) {
                match_err (
                   ctx,
                   "unexpected extra field '%s' in captured event "
