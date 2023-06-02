@@ -4,11 +4,13 @@ version = "0.0.0"
 description = "A Python project for mongo-c-driver codebase development"
 authors = []
 packages = [
-    { include = "config_generator", from = ".evergreen/" }
+    { include = "config_generator", from = ".evergreen/" },
+    { include = "mongoc_ci", from = "tools" },
 ]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+dagon = {extras = ["http"], version = "^0.10.1"}
 
 [tool.poetry.scripts]
 "mc-evg-generate" = "config_generator.generate:main"
