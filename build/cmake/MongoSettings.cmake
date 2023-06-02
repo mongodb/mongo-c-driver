@@ -256,14 +256,13 @@ Define a new boolean build setting::
 
 This is a shorthand for defining a boolean setting. See mongo_setting() for more
 option information. The TYPE of the setting will be BOOL, and the implicit
-default value for the setting will be ON if neither DEFAULT nor DEFAULT_EVAL are
-specified.
+default value for the setting will be ON if no DEFAULT is provided.
 
 ]==]
 function(mongo_bool_setting name doc)
     set(args ${ARGN})
     # Inject "ON" as a default:
-    if(NOT "DEFAULT" IN_LIST args AND NOT "DEFAULT_EVAL" IN_LIST args)
+    if(NOT "DEFAULT" IN_LIST args)
         list(APPEND args DEFAULT VALUE ON)
     endif()
     mongo_setting("${name}" "${doc}" TYPE BOOL ${args})

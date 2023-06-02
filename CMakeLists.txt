@@ -12,6 +12,9 @@ include (MongoSettings)
 # Subcomponents:
 mongo_bool_setting(ENABLE_MONGOC "Enable the build of the mongo-c-driver libraries")
 mongo_bool_setting(ENABLE_BSON "Enable the build of the C BSON handling libraries")
+if(ENABLE_BSON STREQUAL "SYSTEM")
+   message(SEND_ERROR "ENABLE_BSON=SYSTEM is no longer supported. Use USE_SYSTEM_LIBBSON=ON instead.")
+endif()
 
 # Static libraries:
 mongo_setting(
@@ -50,7 +53,7 @@ mongo_bool_setting(ENABLE_MAN_PAGES "Build the manual pages" DEFAULT VALUE OFF)
 mongo_bool_setting(ENABLE_HTML_DOCS "Build the HTML documentation" DEFAULT VALUE OFF)
 mongo_bool_setting(ENABLE_UNINSTALL "Generate an 'uninstall' script and an 'uninstall' build target")
 
-# Optional features that are ENABLED by default:
+# Optional features that are ENABLED when necessary dependencies are found:
 mongo_setting(ENABLE_SRV "Toggle support for mongodb+srv URIs."
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)
@@ -64,9 +67,8 @@ mongo_setting(ENABLE_ZLIB "Enable zlib compression support"
               OPTIONS BUNDLED SYSTEM OFF
               DEFAULT VALUE BUNDLED)
 mongo_setting(
-   ENABLE_SSL [[Enable TLS connection and SCRAM-SHA-1 authentication.
-                Note that SCRAM-SHA1 is required for authenticating to
-                MongoDB 3.0 or later.]]
+   ENABLE_SSL [[Enable TLS connection and SCRAM authentication. Note that SCRAM
+                is required for authenticating to MongoDB 3.0 or later.]]
    OPTIONS WINDOWS DARWIN OPENSSL LIBRESSL OFF AUTO
    DEFAULT VALUE AUTO
    VALIDATE CODE [[
@@ -147,7 +149,7 @@ mongo_bool_setting(
    DEFAULT VALUE OFF
    VALIDATE CODE [[
       if(ENABLE_CRYPTO_SYSTEM_PROFILE AND NOT ENABLE_SSL STREQUAL "OPENSSL")
-         message(WARNING "ENABLE_CRYPTO_SYSTEM_PROFILE=TRUE is only aplicable when ENABLE_SSL=OPENSSL")
+         message(WARNING "ENABLE_CRYPTO_SYSTEM_PROFILE=TRUE is only applicable when ENABLE_SSL=OPENSSL")
       endif()
    ]]
 )
@@ -161,7 +163,7 @@ mongo_bool_setting(
    VALIDATE CODE [[
       if(ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
          if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU")
-            message(WARNING "Automatic init-and-cleanup is only supported on GCC")
+            message(WARNING "ENABLE_AUTOMATIC_INIT_AND_CLEANUP is only supported on GCC.")
          endif()
          message(DEPRECATION
                   "Enabling ENABLE_AUTOMATIC_INIT_AND_CLEANUP is deprecated and "
