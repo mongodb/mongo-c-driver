@@ -64,6 +64,7 @@ async def _build_from_source(version: str, cache_dir: Path) -> Path:
         on_output=ninja_progress,
     )
     await fs.copy_file(build_dir / f"ninja{EXE_SUFFIX}", ninja_exe)
+    os.chmod(ninja_exe, 0o755)
     return ninja_exe
 
 
@@ -74,7 +75,9 @@ async def _get_prebuilt(version: str, cache_dir: Path, plat: str) -> Path:
     async with http.download_tmp(url, suffix="ninja.zip") as zf:
         await ar.expand(zf, destination=cache_dir, if_exists="merge")
     ui.print(f"Downloaded pre-built Ninja executable from [{url}]")
-    return cache_dir / f"ninja{EXE_SUFFIX}"
+    ninja_exe = cache_dir / f"ninja{EXE_SUFFIX}"
+    os.chmod(ninja_exe, 0o755)
+    return ninja_exe
 
 
 async def auto_get_ninja(version: str, *, cache_root: Path | None = None) -> Path:
