@@ -104,7 +104,10 @@ PKG_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 
 echo "Installing libmongocrypt..."
 # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" >/dev/null
+"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" &>output.txt || {
+  cat output.txt 1>&2
+  exit 1
+}
 echo "Installing libmongocrypt... done."
 
 # scan-build binary is available in different locations depending on the distro.
