@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-import platform
 import re
 import sys
-from typing import Literal
 
-from dagon import option, http, fs, ar, ui, task, proc
+from dagon import http, fs, ar, ui, task, proc
 
-from .paths import EXE_SUFFIX, OPT_CACHES_DIR
+from .paths import EXE_SUFFIX, OPT_CACHE_DIR
 from .platform import OperatingSystem, Architecture
 
 
@@ -17,11 +15,16 @@ def ninja_progress(message: proc.ProcessOutputItem) -> None:
     line = message.out.decode()
     ui.status(line)
     mat = re.search(r"\b(\d+)/(\d+)\b", line)
-    if not mat:
+    if mat:
+        num, den = mat.groups()
+        prog = int(num) / int(den)
+        ui.progress(prog)
         return
-    num, den = mat.groups()
-    prog = int(num) / int(den)
-    ui.progress(prog)
+    mat = re.search(r"(\d+)%", line)
+    if mat:
+        prog = int(mat.group(1)) / 100
+        ui.progress(prog)
+        return
 
 
 async def _build_from_source(version: str, cache_dir: Path) -> Path:
@@ -82,7 +85,7 @@ async def _get_prebuilt(version: str, cache_dir: Path, plat: str) -> Path:
 
 async def auto_get_ninja(version: str, *, cache_root: Path | None = None) -> Path:
     """Obtain a cached version of Ninja for the current host and platform"""
-    cache_root = cache_root or OPT_CACHES_DIR.get()
+    cache_root = cache_root or OPT_CACHE_DIR.get()
     ninja_cache_dir = cache_root / f"ninja-{version}"
     expect_exe = ninja_cache_dir / f"ninja{EXE_SUFFIX}"
     if expect_exe.is_file():
@@ -96,6 +99,5 @@ async def auto_get_ninja(version: str, *, cache_root: Path | None = None) -> Pat
     elif osys.is_linux and Architecture.current() is Architecture.x86_64 and not Path("/etc/alpine-release").is_file():
         get = _get_prebuilt(version, ninja_cache_dir, "linux")
     else:
-        ui.print(f"OS is {osys=}")
         get = _build_from_source(version, ninja_cache_dir)
     return await get

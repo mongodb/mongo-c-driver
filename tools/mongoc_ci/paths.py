@@ -1,7 +1,6 @@
 from dagon import option
 from pathlib import Path
 import os
-import sys
 
 from .platform import OperatingSystem as OS
 
@@ -19,7 +18,7 @@ def _get_default_cache_dir() -> Path:
         return Path("~/.cache").expanduser()
 
 
-OPT_CACHES_DIR = option.add(
+OPT_CACHE_DIR = option.add(
     "cache.dir",
     type=Path,
     doc="Directory in which to store caches",
@@ -29,3 +28,7 @@ OPT_CACHES_DIR = option.add(
 
 EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 "The default suffix of executable files on this platform"
+
+_THIS_FILE = Path(__file__).resolve()
+MONGOC_DIR = _THIS_FILE.parent.parent.parent
+"The root source directory of the mongo-c-driver repository"
