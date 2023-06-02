@@ -215,5 +215,5 @@ else
 fi
 
 "${cmake_binary}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
-make -j "$(nproc)" all
-make install
+"${cmake_binary}" --build . -- -j "$(nproc)"
+"${cmake_binary}" --build . --target install

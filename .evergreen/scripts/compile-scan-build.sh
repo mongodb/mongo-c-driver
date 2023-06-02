@@ -160,5 +160,5 @@ fi
 declare -r continue_command='{"status":"failed", "type":"test", "should_continue":true, "desc":"scan-build emitted one or more warnings or errors"}'
 
 # Put clang static analyzer results in scan/ and fail build if warnings found.
-"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" -o scan --status-bugs make -j "$(nproc)" all ||
+"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" -o scan --status-bugs "${cmake_binary}" --build . -- -j "$(nproc)" ||
   curl -sS -d "${continue_command}" -H "Content-Type: application/json" -X POST localhost:2285/task_status

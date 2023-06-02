@@ -135,4 +135,4 @@ echo "CFLAGS: ${CFLAGS}"
 echo "configure_flags: ${configure_flags[*]}"
 
 "${cmake_binary}" "${configure_flags[@]}" .
-make -j "$(nproc)" all
+"${cmake_binary}" --build .
