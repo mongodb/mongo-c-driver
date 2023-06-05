@@ -104,7 +104,10 @@ PKG_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 
 echo "Installing libmongocrypt..."
 # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" >/dev/null
+"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" &>output.txt || {
+  cat output.txt 1>&2
+  exit 1
+}
 echo "Installing libmongocrypt... done."
 
 # scan-build binary is available in different locations depending on the distro.
@@ -157,5 +160,5 @@ fi
 declare -r continue_command='{"status":"failed", "type":"test", "should_continue":true, "desc":"scan-build emitted one or more warnings or errors"}'
 
 # Put clang static analyzer results in scan/ and fail build if warnings found.
-"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" -o scan --status-bugs make -j "$(nproc)" all ||
+"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" -o scan --status-bugs "${cmake_binary}" --build . -- -j "$(nproc)" ||
   curl -sS -d "${continue_command}" -H "Content-Type: application/json" -X POST localhost:2285/task_status

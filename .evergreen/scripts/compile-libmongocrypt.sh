@@ -7,6 +7,13 @@ compile_libmongocrypt() {
 
   git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.8.0 || return
 
+  # Remove this workaround once fcf2b5b5 is included in the minimum libmongocrypt commit.
+  {
+    git -C libmongocrypt fetch -q origin master || return
+    git -C libmongocrypt cherry-pick --no-commit fcf2b5b5 || return
+    git -C libmongocrypt diff HEAD
+  }
+
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
     "-DBUILD_TESTING=OFF"

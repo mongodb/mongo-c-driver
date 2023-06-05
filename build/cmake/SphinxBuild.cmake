@@ -33,11 +33,6 @@ function (sphinx_build_html target_name doc_dir)
       list (APPEND doc_htmls ${html})
    endforeach ()
 
-   # Speed things up with parallel Sphinx builders:
-   include (ProcessorCount)
-   ProcessorCount (jobs)
-   math (EXPR jobs "${jobs} + 2")
-
    # Set PYTHONDONTWRITEBYTECODE to prevent .pyc clutter in the source directory
    add_custom_command (OUTPUT ${doc_htmls}
       ${SPHINX_HTML_DIR}/.nojekyll ${SPHINX_HTML_DIR}/objects.inv
@@ -45,7 +40,7 @@ function (sphinx_build_html target_name doc_dir)
       ${CMAKE_COMMAND} -E env
          "PYTHONDONTWRITEBYTECODE=1"
       ${SPHINX_EXECUTABLE}
-         -qEnW -j "${jobs}" -b html
+         -qEnW -b html
          -c "${CMAKE_CURRENT_SOURCE_DIR}"
          "${CMAKE_CURRENT_SOURCE_DIR}"
          "${SPHINX_HTML_DIR}"
@@ -137,8 +132,6 @@ function (sphinx_build_man target_name)
       COMMAND
       ${CMAKE_COMMAND} -E env
          "PYTHONDONTWRITEBYTECODE=1"
-      # No parallelism for Sphinx here, as the Man builder has trouble with it
-      # in our Sphinx version.
       ${SPHINX_EXECUTABLE}
          -qEW -b man
          -c "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -166,4 +159,3 @@ function (sphinx_build_man target_name)
    set (doc_DIST_rsts ${doc_rsts} PARENT_SCOPE)
    set (doc_DIST_mans ${doc_mans} PARENT_SCOPE)
 endfunction ()
-

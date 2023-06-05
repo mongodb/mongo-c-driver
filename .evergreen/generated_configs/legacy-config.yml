@@ -1718,14 +1718,13 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
-        set -euo pipefail
-        distro_id="${distro_id}"  # Needed by find-cmake-latest.sh
+        export distro_id='${distro_id}' # Required by find_cmake_latest.
         . .evergreen/scripts/find-cmake-latest.sh
-        cmake=$(find_cmake_latest)
+        cmake_binary="$(find_cmake_latest)"
+        # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         export CC='${CC}'
-        "$cmake" -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
-        "$cmake" --build . --target test-awsauth
+        "$cmake_binary" -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+        "$cmake_binary" --build . --target test-awsauth
   - func: upload-build
 - name: test-aws-openssl-regular-latest
   depends_on:
@@ -9215,16 +9214,16 @@ buildvariants:
     - macos-1014
   - name: link-with-cmake-windows
     distros:
-    - windows-64-vs2017-test
+    - windows-vsCurrent-large
   - name: link-with-cmake-windows-ssl
     distros:
-    - windows-64-vs2017-test
+    - windows-vsCurrent-large
   - name: link-with-cmake-windows-snappy
     distros:
-    - windows-64-vs2017-test
+    - windows-vsCurrent-large
   - name: link-with-cmake-mingw
     distros:
-    - windows-64-vs2017-test
+    - windows-vsCurrent-large
   - name: link-with-pkg-config
     distros:
     - ubuntu1804-test
@@ -9235,21 +9234,21 @@ buildvariants:
   - link-with-bson
   - name: link-with-bson-windows
     distros:
-    - windows-64-vs2017-test
+    - windows-vsCurrent-large
   - name: link-with-bson-mac
     distros:
     - macos-1014
   - name: link-with-bson-mingw
     distros:
-    - windows-64-vs2013-compile
+    - windows-vsCurrent-large
   - check-headers
   - install-uninstall-check
   - name: install-uninstall-check-mingw
     distros:
-    - windows-64-vs2017-test
+    - windows-vsCurrent-large
   - name: install-uninstall-check-msvc
     distros:
-    - windows-64-vs2017-test
+    - windows-vsCurrent-large
   - debug-compile-with-warnings
   - name: build-and-test-with-toolchain
     distros:
@@ -9485,7 +9484,7 @@ buildvariants:
   display_name: Windows (i686) (VS 2017)
   expansions:
     CC: Visual Studio 15 2017
-  run_on: windows-64-vs2017-test
+  run_on: windows-vsCurrent-large
   tasks:
   - debug-compile-nosasl-nossl
   - .latest .nossl .nosasl
@@ -9493,7 +9492,7 @@ buildvariants:
   display_name: Windows (VS 2017)
   expansions:
     CC: Visual Studio 15 2017 Win64
-  run_on: windows-64-vs2017-test
+  run_on: windows-vsCurrent-large
   tasks:
   - debug-compile-nosasl-nossl
   - debug-compile-nosasl-openssl
@@ -9554,7 +9553,7 @@ buildvariants:
   display_name: MinGW-W64 (Windows Server 2016)
   expansions:
     CC: mingw
-  run_on: windows-64-vs2017-test
+  run_on: windows-vsCurrent-large
   tasks:
   - debug-compile-nosasl-nossl
   - .latest .nossl .nosasl .server
@@ -9562,7 +9561,7 @@ buildvariants:
   display_name: MinGW-W64
   expansions:
     CC: mingw
-  run_on: windows-64-vs2013-compile
+  run_on: windows-vsCurrent-large
   tasks:
   - debug-compile-no-align
 - name: power8-rhel81
@@ -9656,14 +9655,14 @@ buildvariants:
     - macos-1014
   - name: debug-compile-nosasl-winssl
     distros:
-    - windows-64-vs2017-test
+    - windows-vsCurrent-large
   - name: .ocsp-openssl
   - name: .ocsp-darwinssl
     distros:
     - macos-1014
   - name: .ocsp-winssl
     distros:
-    - windows-64-vs2017-test
+    - windows-vsCurrent-large
   - name: debug-compile-nosasl-openssl-1.0.1
   - name: .ocsp-openssl-1.0.1
   batchtime: 10080

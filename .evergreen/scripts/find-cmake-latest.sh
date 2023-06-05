@@ -13,5 +13,3 @@ find_cmake_latest() {
 
   find_cmake_version 3 25 2
 }
-
-find_cmake_latest
