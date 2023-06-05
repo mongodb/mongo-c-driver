@@ -2,8 +2,6 @@ include_guard(DIRECTORY)
 
 #[[ Bool: Set to TRUE if the environment variable MONGODB_DEVELOPER is a true value ]]
 set(MONGODB_DEVELOPER FALSE)
-#[[ Bool: Set to TRUE if the environment variable MONGODB_BUILD_AUDIT is a true value ]]
-set(MONGODB_BUILD_AUDIT FALSE)
 
 # Detect developer mode:
 set(_is_dev "$ENV{MONGODB_DEVELOPER}")
@@ -12,19 +10,12 @@ if(_is_dev)
     set(MONGODB_DEVELOPER TRUE)
 endif()
 
-# Detect audit mode:
-set(_is_audit "$ENV{MONGODB_BUILD_AUDIT}")
-if(_is_audit)
-    message(STATUS "MONGODB_BUILD_AUDIT is enabled")
-    set(MONGODB_BUILD_AUDIT TRUE)
-endif()
-
 #[==[
 Define a new configure-time build setting::
     mongo_setting(
         <name> <doc>
         [TYPE <BOOL|PATH|FILEPATH|STRING>]
-        [DEFAULT [[DEVEL|AUDIT] [VALUE <value> | EVAL <code>]] ...]
+        [DEFAULT [[DEVEL] [VALUE <value> | EVAL <code>]] ...]
         [OPTIONS [<opts> ...]]
         [VALIDATE [CODE <code>]]
         [ADVANCED] [ALLOW_OTHER_VALUES]
@@ -45,26 +36,27 @@ TYPE <BOOL|PATH|FILEPATH|STRING>
     ALLOW_OTHER_VALUES is not specified, this call will validate that the
     setting is a valid boolean value.
 
-OPTIONS [<opts> ...]
+OPTIONS [<opts> [...]]
     Specify the valid set of values available for this setting. This will set
     the STRINGS property on the cache variable and add an information message to
     the doc string. Unless ALLOW_OTHER_VALUES is specified, this call will also
     validate that the setting's value is one of these options, failing with an
     error if it is not.
 
-DEFAULT [[DEVEL|AUDIT] [VALUE <value> | EVAL <code>]] ...
-    Specify the default value of the generated variable. If given VALUE, then
+DEFAULT [[DEVEL] [VALUE <value> | EVAL <code>]]
+        [...]
+    Specify the default value(s) of the generated variable. If given VALUE, then
     `<value>` will be used as the default, otherwise if given EVAL, `<code>`
     will be executed and is expected to define a variable DEFAULT that will
-    contain the default value.
+    contain the default value. An optional DEVEL qualifier may be given before
+    a default value specifier. If both qualified and unqualified defaults are
+    given, the unqualified default must appear first in the argument list.
 
-    - If neither MONGODB_DEVELOPER nor MONGODB_BUILD_AUDIT are true, then the
-      non-qualified defaults will be used. (If no non-qualified defaults are
-      provided, then the default value is an empty string.)
-    - Otherwise, If DEVEL defaults are provided, and MONGODB_DEVELOPER is true,
+    - If MONGODB_DEVELOPER is not true, then the non-qualified default will be
+      used. (If no non-qualified defaults are provided, then the default value
+      is an empty string.)
+    - Otherwise, If DEVEL defaults are provided and MONGODB_DEVELOPER is true,
       then the DEVEL defaults will be used.
-    - Otherwise, if AUDIT defaults are provided, and either MONGODB_DEVELOPER or
-      MONGODB_BUILD_AUDIT is true, then the AUDIT defaults will be used.
 
 VALIDATE [CODE <code>]
     If specified, then `<code>` will be evaluated after the setting value is
@@ -200,20 +192,13 @@ function(_mongo_compute_default outvar arglist)
     unset("${outvar}" PARENT_SCOPE)
 
     # Parse arguments:
-    cmake_parse_arguments(dflt "" "" "DEVEL;AUDIT" ${arglist})
+    cmake_parse_arguments(dflt "" "" "DEVEL" ${arglist})
 
     # Developer-mode options:
     if(DEFINED dflt_DEVEL AND MONGODB_DEVELOPER)
         list(APPEND CMAKE_MESSAGE_CONTEXT "devel")
         _mongo_compute_default(tmp "${dflt_DEVEL}")
         message(DEBUG "Detected MONGODB_DEVELOPER: Default of ${setting_NAME} is “${tmp}”")
-        set("${outvar}" "${tmp}" PARENT_SCOPE)
-        return()
-    # Audit-mode options:
-    elseif(DEFINED dflt_AUDIT AND (MONGODB_DEVELOPER OR MONGODB_BUILD_AUDIT))
-        list(APPEND CMAKE_MESSAGE_CONTEXT "audit")
-        _mongo_compute_default(tmp "${dflt_AUDIT}")
-        message(DEBUG "Detected MONGODB_BUILD_AUDIT: Default of ${setting_NAME} is “${tmp}”")
         set("${outvar}" "${tmp}" PARENT_SCOPE)
         return()
     endif()
@@ -249,7 +234,7 @@ Define a new boolean build setting::
 
     mongo_bool_setting(
         <name> <doc>
-        [DEFAULT [[DEVEL|AUDIT] [VALUE <value> | EVAL <code>]] ...]
+        [DEFAULT [[DEVEL] [VALUE <value> | EVAL <code>]] ...]
         [VALIDATE [CODE <code>]]
         [ADVANCED] [ALLOW_OTHER_VALUES]
     )

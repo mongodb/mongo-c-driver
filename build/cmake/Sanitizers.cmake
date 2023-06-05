@@ -5,7 +5,7 @@ include (MongoSettings)
 mongo_setting (
    MONGO_SANITIZE "Semicolon/comma-separated list of sanitizers to apply when building"
    DEFAULT
-      AUDIT EVAL [[
+      DEVEL EVAL [[
          if(NOT MSVC)
             set(DEFAULT "address,undefined")
          endif()

@@ -28,7 +28,7 @@ mongo_bool_setting(ENABLE_PIC "Enable position-independent-code in built static 
 mongo_bool_setting(
    ENABLE_MAINTAINER_FLAGS "Enable stricter build-time checks"
    DEFAULT VALUE OFF
-      AUDIT EVAL [[
+      DEVEL EVAL [[
          if(MSVC)
             set(DEFAULT OFF)
          else()
@@ -40,9 +40,9 @@ mongo_bool_setting(
 mongo_bool_setting(ENABLE_TRACING "Enable verbose debug output in the build driver"
                    DEFAULT VALUE OFF AUDIT VALUE ON)
 mongo_bool_setting(ENABLE_COVERAGE "Instrument built code for use with lcov"
-                   DEFAULT VALUE OFF AUDIT VALUE ON)
+                   DEFAULT VALUE OFF DEVEL VALUE ON)
 mongo_bool_setting(ENABLE_DEBUG_ASSERTIONS "Build with runtime debug assertions enabled"
-                   DEFAULT VALUE OFF AUDIT VALUE ON)
+                   DEFAULT VALUE OFF DEVEL VALUE ON)
 # for MONGO_SANITIZE:
 include(Sanitizers)
 
@@ -114,7 +114,7 @@ mongo_bool_setting(
         option can often produce false positives with
         UndefinedBehaviorSanitizer.]]
    DEFAULT VALUE ON
-      AUDIT VALUE OFF
+      DEVEL VALUE OFF
 )
 
 mongo_setting(ENABLE_ICU "Enable ICU support, needed for non-ASCII usernames and passwords"
@@ -159,7 +159,7 @@ mongo_bool_setting(
    ENABLE_AUTOMATIC_INIT_AND_CLEANUP
       "[Deprecated] Enable automatic initialization of the C driver library"
    DEFAULT VALUE ON
-      AUDIT VALUE OFF
+      DEVEL VALUE OFF
    VALIDATE CODE [[
       if(ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
          if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU")
