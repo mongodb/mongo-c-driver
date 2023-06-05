@@ -73,9 +73,7 @@ mongo_bool_setting(ENABLE_HTML_DOCS "Build the HTML documentation" DEFAULT VALUE
 mongo_bool_setting(ENABLE_UNINSTALL "Generate an 'uninstall' script and an 'uninstall' build target")
 
 # Optional features that are ENABLED when necessary dependencies are found:
-mongo_setting(ENABLE_SRV "Enable support for mongodb+srv URIs."
-              OPTIONS ON OFF AUTO
-              DEFAULT VALUE AUTO)
+mongo_bool_setting(ENABLE_SRV "Enable support for mongodb+srv URIs.")
 mongo_setting(ENABLE_SNAPPY "Enable Snappy compression support"
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)

@@ -288,7 +288,9 @@ else ()
    set (MONGOC_SOCKET_ARG3 "int")
 endif ()
 
-include (FindResSearch)
+# Find name resolution libaries. Also sets definitions used in configure_file():
+include(ResSearch)
+
 include (CheckSchedGetCPU)
 
 function (mongoc_get_accept_args ARG2 ARG3)
@@ -701,13 +703,26 @@ if (CMAKE_USE_PTHREADS_INIT)
 endif ()
 
 set (LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
+
+add_library(_mongoc-dependencies INTERFACE)
+add_library(mongo::c::dependencies ALIAS _mongoc-dependencies)
+install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
+set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME dependencies)
+
+if(ENABLE_SRV)
+   # Interface target defined by ResSearch.cmake:
+   if(NOT TARGET mongo::c::detail::resolve)
+      message(SEND_ERROR "ENABLE_SRV is “${ENABLE_SRV}”, but we were unable to find a name resolution library")
+   endif()
+   target_link_libraries(_mongoc-dependencies INTERFACE mongo::c::detail::resolve)
+endif()
 
 if (WIN32)
    set (LIBRARIES ${LIBRARIES} ws2_32)
@@ -733,7 +748,7 @@ endif ()
 
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
-target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
+target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::c::dependencies)
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
 if(ENABLE_COVERAGE)
@@ -778,7 +793,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       target_compile_options(mongoc_static PRIVATE --coverage)
       target_link_options(mongoc_static PUBLIC --coverage)
    endif()
-   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
+   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::c::dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
       message (STATUS "Adding -fPIC to compilation of mongoc_static components")
@@ -1178,7 +1193,7 @@ set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 
 foreach (
       FLAG
-      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
+      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
       ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
       ${LIBMONGOCRYPT_LIBRARY})
 
