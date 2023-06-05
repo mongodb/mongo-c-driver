@@ -167,9 +167,10 @@ function(mongo_setting setting_NAME setting_DOC)
     if(NOT setting_ALLOW_OTHER_VALUES AND (DEFINED setting_OPTIONS) AND (NOT ("${${setting_NAME}}" IN_LIST setting_OPTIONS)))
         message(FATAL_ERROR "The value of “${setting_NAME}” must be one of [${opts}] (Got ${setting_NAME}=“${${setting_NAME}}”)")
     endif()
+    string(TOUPPER "${${setting_NAME}}" curval)
     if(setting_TYPE STREQUAL "BOOL"
         AND NOT setting_ALLOW_OTHER_VALUES
-        AND NOT "${${setting_NAME}}" MATCHES "^(TRUE|FALSE|ON|OFF|YES|NO|0|1)$")
+        AND NOT curval MATCHES "^(1|0|ON|OFF|YES|NO|TRUE|FALSE|Y|N|IGNORE)$")
         message(WARNING "The value of ${setting_NAME}=“${${setting_NAME}}” is not a regular boolean value")
     endif()
 
