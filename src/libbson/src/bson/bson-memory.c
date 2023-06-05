@@ -33,7 +33,8 @@ BSON_STATIC_ASSERT2 (bson_mem_vtable_t,
 // For compatibility with C standards prior to C11.
 static void *
 _aligned_alloc_impl (size_t alignment, size_t num_bytes)
-#if __STDC_VERSION__ >= 201112L && !defined(_WIN32)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L && \
+   !defined(_WIN32) && !defined(__ANDROID__)
 {
    return aligned_alloc (alignment, num_bytes);
 }
