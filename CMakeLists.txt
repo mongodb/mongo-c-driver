@@ -158,7 +158,14 @@ mongo_bool_setting(
 mongo_bool_setting(
    ENABLE_AUTOMATIC_INIT_AND_CLEANUP
       "[Deprecated] Enable automatic initialization of the C driver library"
-   DEFAULT VALUE ON
+   DEFAULT EVAL [[
+         set(DEFAULT OFF)
+         if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+            message(VERBOSE "For backwards compatibility, when using GCC the default of "
+                            "ENABLE_AUTOMATIC_INIT_AND_CLEANUP is ON")
+            set(DEFAULT ON)
+         endif()
+      ]]
       DEVEL VALUE OFF
    VALIDATE CODE [[
       if(ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
