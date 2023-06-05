@@ -18,7 +18,7 @@ COMPILE_MATRIX = [
     ('macos-1014',        'clang',       None,   ['off']),
     ('ubuntu1604',        'gcc',         None,   ['off']),
     ('ubuntu1804',        'gcc',         None,   ['off']),
-    ('windows-64-vs2017', 'vs2017x64',   None,   ['off']),
+    ('windows-vsCurrent', 'vs2017x64',   None,   ['off']),
 ]
 
 TEST_MATRIX = [

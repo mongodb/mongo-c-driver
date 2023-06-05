@@ -109,4 +109,4 @@ if [[ "${OSTYPE}" == darwin* ]]; then
 fi
 
 "${CMAKE}" "${configure_flags[@]}" .
-make -j "$(nproc)" all
+"${CMAKE}" --build . -- -j "$(nproc)"

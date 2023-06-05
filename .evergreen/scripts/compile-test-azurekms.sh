@@ -10,7 +10,10 @@ INSTALL_DIR=$ROOT/install
 declare cmake_binary
 cmake_binary="$(find_cmake_latest)"
 echo "Installing libmongocrypt ... begin"
-.evergreen/scripts/compile-libmongocrypt.sh "${cmake_binary}" "$ROOT" "$INSTALL_DIR" >/dev/null
+.evergreen/scripts/compile-libmongocrypt.sh "${cmake_binary}" "$ROOT" "$INSTALL_DIR" &>output.txt || {
+  cat output.txt 1>&2
+  exit 1
+}
 echo "Installing libmongocrypt ... end"
 
 echo "Compile test-azurekms ... begin"

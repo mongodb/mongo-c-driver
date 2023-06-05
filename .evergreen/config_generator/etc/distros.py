@@ -72,8 +72,6 @@ MACOS_ARM64_DISTROS = [
 ]
 
 RHEL_DISTROS = [
-    Distro(name='rhel62-large', os='rhel', os_type='linux', os_ver='6.2', size='large'),
-    Distro(name='rhel62-small', os='rhel', os_type='linux', os_ver='6.2', size='small'),
     Distro(name='rhel70-large', os='rhel', os_type='linux', os_ver='7.0', size='large'),
     Distro(name='rhel70-small', os='rhel', os_type='linux', os_ver='7.0', size='small'),
     Distro(name='rhel76-large', os='rhel', os_type='linux', os_ver='7.6', size='large'),
@@ -167,8 +165,8 @@ WINDOWS_DISTROS = [
     Distro(name='windows-vsCurrent-2022-large', os='windows', os_type='windows', os_ver='2022', vs_ver='vsCurrent', size='large'),
     Distro(name='windows-vsCurrent-2022-small', os='windows', os_type='windows', os_ver='2022', vs_ver='vsCurrent', size='small'),
 
-    Distro(name='windows-vsCurrent-large', os='windows', os_type='windows', vs_ver='vsCurrent', size='large'),
-    Distro(name='windows-vsCurrent-small', os='windows', os_type='windows', vs_ver='vsCurrent', size='small'),
+    Distro(name='windows-vsCurrent-large', os='windows', os_type='windows', vs_ver='vsCurrent', size='large'), # Windows Server 2019
+    Distro(name='windows-vsCurrent-small', os='windows', os_type='windows', vs_ver='vsCurrent', size='small'), # Windows Server 2019
 
     Distro(name='windows-vsCurrent2-large', os='windows', os_type='windows', vs_ver='vsCurrent2', size='large'),
     Distro(name='windows-vsCurrent2-small', os='windows', os_type='windows', vs_ver='vsCurrent2', size='small'),
@@ -221,7 +219,24 @@ def find_small_distro(name):
 
 
 def make_distro_str(distro_name, compiler, arch):
-    if distro_name.startswith('windows-64-vs'):
+    if distro_name.startswith('windows-vsCurrent'):
+        # Rename `windows-vsCurrent-*` distros to `windows-<year>` where`<year>`
+        # is the Windows Server version used by the distro, e.g.:
+        #     ('windows-vsCurrent-2022', 'vs2017x64', None) -> windows-2022-vs2017-x64
+        #     ('windows-vsCurrent-2022', 'mingw',     None) -> windows-2022-mingw
+        #     ('windows-vsCurrent',      'vs2017x64', None) -> windows-2019-vs2017-x64
+        #     ('windows-vsCurrent',      'mingw',     None) -> windows-2019-mingw
+        maybe_arch = compiler[len('vs20XY'):]
+        if maybe_arch in ('x86', 'x64'):
+            compiler_str = compiler[:-len(maybe_arch)] + '-' + maybe_arch
+        else:
+            compiler_str = compiler
+        if distro_name.startswith('windows-vsCurrent-'):
+            distro_str = 'windows-' + \
+                distro_name[len('windows-vsCurrent-'):] + f'-{compiler_str}'
+        else:
+            distro_str = 'windows-2019' + f'-{compiler_str}'
+    elif distro_name.startswith('windows-64-vs'):
         # Abbreviate 'windows-64-vs<type>' as 'vs<type>' and append '-<arch>' if
         # given in compiler string as 'vs<type><arch>', e.g.:
         #     ('windows-64-vs2017', 'vs2017x64', None) -> vs2017-x64

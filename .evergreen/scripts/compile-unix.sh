@@ -200,7 +200,10 @@ IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
 if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
   echo "Installing libmongocrypt..."
   # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-  "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" >/dev/null
+  "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" &>output.txt || {
+    cat output.txt 1>&2
+    exit 1
+  }
   echo "Installing libmongocrypt... done."
 
   # Fail if the C driver is unable to find the installed libmongocrypt.
@@ -212,5 +215,5 @@ else
 fi
 
 "${cmake_binary}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
-make -j "$(nproc)" all
-make install
+"${cmake_binary}" --build . -- -j "$(nproc)"
+"${cmake_binary}" --build . --target install
