@@ -38,7 +38,7 @@ mongo_bool_setting(
 
 # Toggle instrumentation:
 mongo_bool_setting(ENABLE_TRACING "Enable verbose debug output in the build driver"
-                   DEFAULT VALUE OFF AUDIT VALUE ON)
+                   DEFAULT VALUE OFF)
 mongo_bool_setting(ENABLE_COVERAGE "Instrument built code for use with lcov"
                    DEFAULT VALUE OFF DEVEL VALUE ON)
 mongo_bool_setting(ENABLE_DEBUG_ASSERTIONS "Build with runtime debug assertions enabled"
