@@ -9240,7 +9240,7 @@ buildvariants:
     - macos-1014
   - name: link-with-bson-mingw
     distros:
-    - windows-64-vs2013-compile
+    - windows-vsCurrent-large
   - check-headers
   - install-uninstall-check
   - name: install-uninstall-check-mingw
@@ -9561,7 +9561,7 @@ buildvariants:
   display_name: MinGW-W64
   expansions:
     CC: mingw
-  run_on: windows-64-vs2013-compile
+  run_on: windows-vsCurrent-large
   tasks:
   - debug-compile-no-align
 - name: power8-rhel81
