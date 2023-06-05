@@ -196,6 +196,10 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH);
 #endif
 
+   if (MONGOC_SRV_ENABLED) {
+      _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SRV);
+   }
+
    bson_string_t *const str = bson_string_new ("0x");
    for (uint32_t i = 0u; i < byte_count; i++) {
       bson_string_append_printf (str, "%02x", bf[i]);

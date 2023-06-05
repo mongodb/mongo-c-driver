@@ -372,16 +372,6 @@
  */
 #define MONGOC_TRACE @MONGOC_TRACE@
 
-enum {
-   /**
-    * @brief Compile-time constant determining whether the mongoc library was
-    * compiled with tracing enabled.
-    *
-    * Can be controlled with the 'ENABLE_TRACING" configure-time boolean option
-    */
-   MONGOC_TRACE_ENABLED = MONGOC_TRACE
-};
-
 /*
  * Set if we have ICU support.
  */
@@ -390,7 +380,6 @@ enum {
 #if MONGOC_ENABLE_ICU != 1
 #  undef MONGOC_ENABLE_ICU
 #endif
-
 
 /*
  * Set if we have Client Side Encryption support.
@@ -421,6 +410,23 @@ enum {
 #if MONGOC_ENABLE_MONGODB_AWS_AUTH != 1
 #  undef MONGOC_ENABLE_MONGODB_AWS_AUTH
 #endif
+
+enum {
+   /**
+    * @brief Compile-time constant determining whether the mongoc library was
+    * compiled with tracing enabled.
+    *
+    * Can be controlled with the “ENABLE_TRACING” configure-time boolean option
+    */
+   MONGOC_TRACE_ENABLED = MONGOC_TRACE,
+   /**
+    * @brief Compile-time constant indicating whether the mongoc library was
+    * compiled with SRV server discovery support.
+    *
+    * Can be controled with the “ENABLE_SRV” configure-time boolean option.
+    */
+   MONGOC_SRV_ENABLED = MONGOC_ENABLE_SRV,
+};
 
 /* clang-format on */
 
