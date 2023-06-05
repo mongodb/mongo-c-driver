@@ -101,7 +101,11 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
    } while (0)
 
 
-#ifdef MONGOC_HAVE_DNSAPI
+#if MONGOC_ENABLE_SRV == 0 // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ ENABLE_SRV disabled
+
+/* SRV support is disabled */
+
+#elif defined(MONGOC_HAVE_DNSAPI) // ↑↑↑ ENABLE_SRV disabled / Win32 Dnsapi ↓↓↓↓
 
 typedef bool (*mongoc_rr_callback_t) (const char *hostname,
                                       PDNS_RECORD pdns,
@@ -291,7 +295,9 @@ done:
    RETURN (dns_success && callback_success);
 }
 
-#elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
+#elif (                                \
+   defined(MONGOC_HAVE_RES_NSEARCH) || \
+   defined(MONGOC_HAVE_RES_SEARCH)) // ↑↑↑↑↑↑↑ Win32 Dnsapi / resolv ↓↓↓↓↓↓↓↓
 
 typedef bool (*mongoc_rr_callback_t) (const char *hostname,
                                       ns_msg *ns_answer,
@@ -569,7 +575,7 @@ done:
 #endif
    RETURN (dns_success && callback_success);
 }
-#endif
+#endif // ↑↑↑↑↑↑↑↑↑↑↑↑↑ resolv
 
 /*
  *--------------------------------------------------------------------------
@@ -605,17 +611,20 @@ _mongoc_client_get_rr (const char *hostname,
 {
    BSON_ASSERT (rr_data);
 
-#ifdef MONGOC_HAVE_DNSAPI
-   return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, error);
-#elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
-   return _mongoc_get_rr_search (
-      hostname, rr_type, rr_data, initial_buffer_size, error);
-#else
+#if MONGOC_ENABLE_SRV == 0
+   // Disabled
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_NAME_RESOLUTION,
                    "libresolv unavailable, cannot use mongodb+srv URI");
    return false;
+#elif defined(MONGOC_HAVE_DNSAPI)
+   return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, error);
+#elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
+   return _mongoc_get_rr_search (
+      hostname, rr_type, rr_data, initial_buffer_size, error);
+#else
+#error No SRV library is available, but ENABLE_SRV is true!
 #endif
 }
 

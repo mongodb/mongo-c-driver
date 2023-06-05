@@ -290,6 +290,8 @@ endif ()
 
 # Find name resolution libaries. Also sets definitions used in configure_file():
 include(ResSearch)
+# Definition for mongoc-config.h:
+_mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
 
 include (CheckSchedGetCPU)
 

@@ -226,6 +226,10 @@
 #  undef MONGOC_HAVE_SOCKLEN
 #endif
 
+/**
+ * @brief Defined to 0/1 for whether we were configured with ENABLE_SRV
+ */
+#define MONGOC_ENABLE_SRV @MONGOC_ENABLE_SRV@
 
 /*
  * MONGOC_HAVE_DNSAPI is set from configure to determine if we should use the
