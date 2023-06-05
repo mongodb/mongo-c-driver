@@ -64,7 +64,7 @@ all_variants = [
             "link-with-bson",
             OD([("name", "link-with-bson-windows"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", "link-with-bson-mac"), ("distros", ["macos-1014"])]),
-            OD([("name", "link-with-bson-mingw"), ("distros", ["windows-64-vs2013-compile"])]),
+            OD([("name", "link-with-bson-mingw"), ("distros", ["windows-vsCurrent-large"])]),
             "check-headers",
             "install-uninstall-check",
             OD([("name", "install-uninstall-check-mingw"), ("distros", ["windows-vsCurrent-large"])]),
@@ -380,7 +380,7 @@ all_variants = [
         ["debug-compile-nosasl-nossl", ".latest .nossl .nosasl .server"],
         {"CC": "mingw"},
     ),
-    Variant("mingw", "MinGW-W64", "windows-64-vs2013-compile", ["debug-compile-no-align"], {"CC": "mingw"}),
+    Variant("mingw", "MinGW-W64", "windows-vsCurrent-large", ["debug-compile-no-align"], {"CC": "mingw"}),
     Variant(
         "power8-rhel81",
         "Power8 (ppc64le) (RHEL 8.1)",
