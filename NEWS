@@ -1,3 +1,19 @@
+libmongoc 1.23.5
+================
+
+Fixes:
+
+  * Fix potential crash due to insufficient memory when allocating performance counters.
+  * Fix compilation error on Android platforms due to missing `aligned_alloc`.
+  * Return an error if `RewrapManyDataKey` is invoked without a `provider` when a `masterKey` is given.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Romain Geissler @ Amadeus
+
+
+
 libmongoc 1.23.4
 ================
 
