@@ -1,13 +1,13 @@
 from importlib import import_module
 from pathlib import Path
 from textwrap import dedent
-from typing import Sequence
+from typing import Sequence, Iterable, Mapping
 
 import yaml
 
 from shrub.v3.evg_project import EvgProject
 from shrub.v3.evg_task import EvgTask
-from shrub.v3.evg_command import subprocess_exec
+from shrub.v3.evg_command import subprocess_exec, EvgCommandType
 
 
 # Equivalent to EvgTask but defines additional properties.
@@ -23,11 +23,23 @@ class Task(EvgTask):
 
 
 # Automatically formats the provided script and invokes it in Bash.
-def bash_exec(script, **kwargs):
+def bash_exec(
+    script,
+    *,
+    include_expansions_in_env: Iterable[str] | None = None,
+    working_dir: str | None = None,
+    command_type: EvgCommandType | None = None,
+    env: Mapping[str, str] | None = None,
+    **kwargs,
+):
     return subprocess_exec(
-        binary='bash',
-        args=['-c', dedent(script)],
-        **kwargs
+        binary="bash",
+        args=["-c", dedent(script)],
+        include_expansions_in_env=list(include_expansions_in_env) if include_expansions_in_env else None,
+        working_dir=working_dir,
+        command_type=command_type,
+        env=dict(env) if env else None,
+        **kwargs,
     )
 
 

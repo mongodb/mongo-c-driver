@@ -20,10 +20,10 @@ class ReleaseArchive(Function):
                 'MONGOC_TEST_SKIP_LIVE': 'on',
                 'MONGOC_TEST_SKIP_SLOW': 'on',
             },
+            include_expansions_in_env=['distro_id'],
             script='''\
                 set -o errexit
                 bash tools/poetry.sh install --with=docs
-                export distro_id=${distro_id}  # Needed by find-cmake-latest.sh
                 bash tools/poetry.sh run \
                     bash .evergreen/scripts/check-release-archive.sh
             '''
