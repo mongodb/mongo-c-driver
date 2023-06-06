@@ -43,25 +43,6 @@ async def cache__clean():
     task.cleanup(lambda: removal, when="now")
 
 
-@task.define()
-async def clean():
-    """
-    Removes prior build result directory (based on build.dir).
-
-    This task resolves immediately, even though the deletion may take time. The
-    files are first moved out-of-the-way, and then deletion begins in the
-    background.
-    """
-    build_dir = OPT_BUILD_DIR.get()
-    if build_dir == paths.MONGOC_DIR:
-        raise RuntimeError(f"build.dir and source.dir are the same value. Refusing to delete")
-    # Begin the removal. This call will move files out of the way, but suspends
-    # before performing the slower delete operations:
-    removal = fs.remove(build_dir, recurse=True, absent_ok=True)
-    # Launch the deletion in the background:
-    task.cleanup(lambda: removal, when="now")
-
-
 @task.define(order_only_depends=[cache__clean])
 async def ninja__get() -> Path:
     """Obtain a managed Ninja executable"""
@@ -75,6 +56,25 @@ async def cmake__get() -> cmake.Installation:
 
 
 CACHE_WARMUP = task.gather("cache.warmup", [cmake__get, ninja__get], doc="Warm up the tools cache")
+
+
+@task.define()
+async def clean():
+    """
+    Removes prior build result directory (based on build.dir).
+
+    This task resolves immediately, even though the deletion may take time. The
+    files are first moved out-of-the-way, and then deletion begins in the
+    background.
+    """
+    build_dir = OPT_BUILD_DIR.get()
+    if build_dir == OPT_SOURCE_DIR.get():
+        raise RuntimeError(f"build.dir and source.dir are the same value. Refusing to delete")
+    # Begin the removal. This call will move files out of the way, but suspends
+    # before performing the slower delete operations:
+    removal = fs.remove(build_dir, recurse=True, absent_ok=True)
+    # Launch the deletion in the background:
+    task.cleanup(lambda: removal, when="now")
 
 
 @task.define(order_only_depends=[clean], depends=[ninja__get, cmake__get])

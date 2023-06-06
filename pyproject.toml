@@ -31,7 +31,14 @@ clang-format = "16"
 sphinx-autobuild = "^2021.3.14"
 shrub-py = "3.0.4"
 yamlordereddictloader = "^0.4.0"
+black = "^23.3.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+strict = "**"
+
+[tool.black]
+line-length = 120

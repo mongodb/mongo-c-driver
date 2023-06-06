@@ -12,14 +12,17 @@ from .platform import OperatingSystem, Architecture
 
 
 def ninja_progress(message: proc.ProcessOutputItem) -> None:
+    """Generates a progress and status output from Ninja output"""
     line = message.out.decode()
     ui.status(line)
+    # Look for "N/M" in the string
     mat = re.search(r"\b(\d+)/(\d+)\b", line)
     if mat:
         num, den = mat.groups()
         prog = int(num) / int(den)
         ui.progress(prog)
         return
+    # Look for a percentage value:
     mat = re.search(r"(\d+)%", line)
     if mat:
         prog = int(mat.group(1)) / 100
@@ -28,11 +31,8 @@ def ninja_progress(message: proc.ProcessOutputItem) -> None:
 
 
 async def _build_from_source(version: str, cache_dir: Path) -> Path:
-    ninja_exe = cache_dir / f"ninja{EXE_SUFFIX}"
-    if ninja_exe.is_file():
-        return ninja_exe
-    cache_dir.mkdir(exist_ok=True, parents=True)
-    # Begin async removal:
+    """Build Ninja from source and place the result in `cache_dir`"""
+    # Begin async removal of prior build content:
     build_dir = cache_dir / "build"
     removal = fs.remove(build_dir, absent_ok=True, recurse=True)
     task.cleanup(lambda: removal, when="now")
@@ -66,6 +66,8 @@ async def _build_from_source(version: str, cache_dir: Path) -> Path:
         cwd=build_dir,
         on_output=ninja_progress,
     )
+    # Copy the output:
+    ninja_exe = cache_dir / f"ninja{EXE_SUFFIX}"
     await fs.copy_file(build_dir / f"ninja{EXE_SUFFIX}", ninja_exe)
     os.chmod(ninja_exe, 0o755)
     return ninja_exe
