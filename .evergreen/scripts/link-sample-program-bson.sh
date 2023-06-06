@@ -48,11 +48,11 @@ $TAR xf ../../mongoc.tar.gz -C . --strip-components=1
 
 if [ "$LINK_STATIC" ]; then
   # Our CMake system builds shared and static by default.
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_BSON=ON .
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF .
   $CMAKE --build .
   $CMAKE --build . --target install
 else
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_BSON=ON -DENABLE_STATIC=OFF .
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .
   $CMAKE --build .
   $CMAKE --build . --target install
 

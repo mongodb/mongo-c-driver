@@ -11,9 +11,21 @@ include (MongoSettings)
 
 # Subcomponents:
 mongo_bool_setting(ENABLE_MONGOC "Enable the build of the mongo-c-driver libraries")
-mongo_bool_setting(ENABLE_BSON "Enable the build of the C BSON handling libraries")
-if(ENABLE_BSON STREQUAL "SYSTEM")
-   message(SEND_ERROR "ENABLE_BSON=SYSTEM is no longer supported. Use USE_SYSTEM_LIBBSON=ON instead.")
+mongo_bool_setting(
+   USE_SYSTEM_LIBBSON [[Do not build libbson, and instead use an existing one via find_package()]]
+   DEFAULT VALUE OFF
+   ADVANCED
+)
+
+# Deprecated option "ENABLE_BSON" is gone, but old caches may rely on SYSTEM to
+# disable the libbson build. Allow ENABLE_BSON=SYSTEM only if USE_SYSTEM_LIBBSON
+# is also true, to allow both ENABLE_BSON=SYSTEM and USE_SYSTEM_LIBBSON=TRUE to
+# simplify downstream build scripts
+if(ENABLE_BSON STREQUAL "SYSTEM" AND NOT USE_SYSTEM_LIBBSON)
+   # User set ENABLE_BSON=SYSTEM, so they intend for us to build against an external
+   # libbson, but they didn't set USE_SYSTEM_LIBBSON=ON, so they are probably
+   # unaware of this change. Rather than miscompile, stop what we're doing:
+   message(FATAL_ERROR "ENABLE_BSON=SYSTEM is no longer supported. Use USE_SYSTEM_LIBBSON=ON for the same effect.")
 endif()
 
 # Static libraries:
@@ -274,11 +286,6 @@ _mongo_pick(MONGOC_ENABLE_RDTSCP 1 0 ENABLE_RDTSCP)
 _mongo_pick(MONGOC_ENABLE_STATIC_BUILD 1 0 ENABLE_STATIC)
 _mongo_pick(MONGOC_ENABLE_STATIC_INSTALL 1 0
             [[ENABLE_STATIC AND NOT ENABLE_STATIC STREQUAL "BUILD_ONLY"]])
-mongo_bool_setting(
-   USE_SYSTEM_LIBBSON "Build libmongoc against the system-wide libbson installation"
-   DEFAULT VALUE OFF
-   ADVANCED
-)
 
 if (USE_SYSTEM_LIBBSON)
    # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
@@ -494,8 +501,8 @@ if (ENABLE_MONGOC)
       add_custom_target (doc
          ALL
          DEPENDS
-            $<$<STREQUAL:"${ENABLE_BSON}","ON">:bson-doc>
-            $<$<STREQUAL:"${ENABLE_MONGOC}","ON">:mongoc-doc>
+            $<$<NOT:$<BOOL:"${USE_SYSTEM_LIBBSON}">>:bson-doc>
+            $<$<BOOL:"${ENABLE_MONGOC}">:mongoc-doc>
       )
    endif ()
 
@@ -557,7 +564,7 @@ if (ENABLE_MONGOC)
          ${ALL_DIST} ${dist_generated_depends}
    )
 
-   if (ENABLE_BSON MATCHES "ON|AUTO" AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
+   if (NOT USE_SYSTEM_LIBBSON AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
       # Since our 'dist' implementation does not add top-level targets for every
       # file to be included, we declare a dependency on the 'mongo-doc' target so
       # that documentation is built before the distribution tarball is generated.
@@ -574,7 +581,7 @@ if (ENABLE_MONGOC)
       )
    else ()
       string (CONCAT DISTERRMSG
-         "The dist and distcheck targets are disabled. Set ENABLE_BSON=ON, "
+         "The dist and distcheck targets are disabled. Set USE_SYSTEM_LIBBSON=OFF, "
          "ENABLE_MAN_PAGES=ON, ENABLE_HTML_DOCS=ON, and generate VERSION_CURRENT "
          "to enable."
       )

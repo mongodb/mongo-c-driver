@@ -48,7 +48,6 @@ declare install_dir="${mongoc_dir}/install-dir"
 configure_flags_append "-DCMAKE_INSTALL_PREFIX=$(native-path "${install_dir}")"
 configure_flags_append "-DCMAKE_PREFIX_PATH=$(native-path "${install_dir}")"
 configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
-configure_flags_append "-DENABLE_BSON=ON"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 
 if [[ "${RELEASE:-}" == "ON" ]]; then
