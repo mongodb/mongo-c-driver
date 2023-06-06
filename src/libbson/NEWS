@@ -4,6 +4,11 @@ libbson 1.23.5
 No changes since 1.23.3. Version incremented to match the libmongoc version.
 
 
+libbson 1.24.0 (Unreleased)
+===========================
+
+  * Support for macOS 10.14 will be dropped in an upcoming release.
+
 
 libbson 1.23.4
 ==============
@@ -30,6 +35,21 @@ libbson 1.23.2
 No changes since 1.23.1. Version incremented to match the libmongoc version.
 
 -- Kevin Albertson
+
+
+libbson 1.22.2
+==============
+
+Bug fixes:
+
+- Fix link errors related to atomic operations on RISC-V
+- Fix compile-time errors due to type conflicts on some platforms.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Roberto C. Sánchez
+
 
 libbson 1.23.1
 ==============
