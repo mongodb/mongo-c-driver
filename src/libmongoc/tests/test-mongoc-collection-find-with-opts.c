@@ -840,6 +840,88 @@ test_server_id_option (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_find_batchSize (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_new_default_client ();
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   // Test a cursor with an int32 batchSize.
+   {
+      cursor = mongoc_collection_find_with_opts (
+         collection,
+         tmp_bson ("{}"),
+         tmp_bson ("{'batchSize': { '$numberInt': '1' }}"),
+         NULL);
+
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+      // Exhaust the cursor.
+      {
+         // Note: Cursors are lazy. The `find` command is sent on the first call
+         // to `mongoc_cursor_next`.
+         const bson_t *got;
+         while (mongoc_cursor_next (cursor, &got))
+            ;
+      }
+
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   // Test a cursor with an int64 batchSize.
+   {
+      cursor = mongoc_collection_find_with_opts (
+         collection,
+         tmp_bson ("{}"),
+         tmp_bson ("{'batchSize': { '$numberLong': '1' }}"),
+         NULL);
+
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+      // Exhaust the cursor.
+      {
+         // Note: Cursors are lazy. The `find` command is sent on the first call
+         // to `mongoc_cursor_next`.
+         const bson_t *got;
+         while (mongoc_cursor_next (cursor, &got))
+            ;
+      }
+
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   // Test a cursor with a string batchSize.
+   {
+      cursor = mongoc_collection_find_with_opts (
+         collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 'foo'}"), NULL);
+
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+      // Attempt to exhaust the cursor.
+      {
+         // Note: Cursors are lazy. The `find` command is sent on the first call
+         // to `mongoc_cursor_next`.
+         const bson_t *got;
+         while (mongoc_cursor_next (cursor, &got))
+            ;
+      }
+
+      // Expect an error from the server.
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      mongoc_cursor_destroy (cursor);
+   }
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 void
 test_collection_find_with_opts_install (TestSuite *suite)
 {
@@ -920,4 +1002,5 @@ test_collection_find_with_opts_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Collection/find_with_opts/server_id/option",
                       test_server_id_option);
+   TestSuite_AddLive (suite, "/Collection/find/batchSize", test_find_batchSize);
 }

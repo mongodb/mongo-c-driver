@@ -45,6 +45,26 @@ _translate_query_opt (const char *query_field,
 
 
 bool
+_mongoc_cursor_set_opt_int32 (mongoc_cursor_t *cursor,
+                              const char *option,
+                              int32_t value)
+{
+   bson_iter_t iter;
+
+   if (bson_iter_init_find (&iter, &cursor->opts, option)) {
+      if (!BSON_ITER_HOLDS_INT32 (&iter)) {
+         return false;
+      }
+
+      bson_iter_overwrite_int32 (&iter, value);
+      return true;
+   }
+
+   return BSON_APPEND_INT32 (&cursor->opts, option, value);
+}
+
+
+bool
 _mongoc_cursor_set_opt_int64 (mongoc_cursor_t *cursor,
                               const char *option,
                               int64_t value)
@@ -1449,9 +1469,16 @@ void
 mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor, uint32_t batch_size)
 {
    BSON_ASSERT (cursor);
+   bson_iter_t iter;
 
-   _mongoc_cursor_set_opt_int64 (
-      cursor, MONGOC_CURSOR_BATCH_SIZE, (int64_t) batch_size);
+   if (bson_iter_init_find (&iter, &cursor->opts, MONGOC_CURSOR_BATCH_SIZE) &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      _mongoc_cursor_set_opt_int32 (
+         cursor, MONGOC_CURSOR_BATCH_SIZE, (int32_t) batch_size);
+   } else {
+      _mongoc_cursor_set_opt_int64 (
+         cursor, MONGOC_CURSOR_BATCH_SIZE, (int64_t) batch_size);
+   }
 }
 
 

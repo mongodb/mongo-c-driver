@@ -2350,6 +2350,117 @@ test_find_error_is_alive (void)
    mongoc_client_destroy (client);
 }
 
+typedef struct _started_event_t {
+   char *command_name;
+   bson_t *command;
+   struct _started_event_t *next;
+} started_event_t;
+
+static void
+command_started (const mongoc_apm_command_started_t *event)
+{
+   mongoc_array_t *events =
+      (mongoc_array_t *) mongoc_apm_command_started_get_context (event);
+   started_event_t *started_event = bson_malloc0 (sizeof (started_event_t));
+
+   started_event->command =
+      bson_copy (mongoc_apm_command_started_get_command (event));
+   started_event->command_name =
+      bson_strdup (mongoc_apm_command_started_get_command_name (event));
+   _mongoc_array_append_val (events, started_event);
+
+   MONGOC_DEBUG ("Command %s started",
+                 mongoc_apm_command_started_get_command_name (event));
+}
+
+static void
+clear_started_events (mongoc_array_t *events)
+{
+   size_t i;
+   for (i = 0; i < events->len; i++) {
+      started_event_t *started_event =
+         _mongoc_array_index (events, started_event_t *, i);
+      bson_destroy (started_event->command);
+      bson_free (started_event->command_name);
+      bson_free (started_event);
+   }
+   _mongoc_array_clear (events);
+}
+
+/* Test that mongoc_cursor_set_batch_size overrides a previously set int32
+ * batchSize. */
+void
+test_cursor_batchsize_override_int32 (void)
+{
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *cbs;
+   mongoc_collection_t *coll;
+   bson_error_t error;
+   mongoc_array_t started_events;
+
+   client = test_framework_new_default_client ();
+   cbs = mongoc_apm_callbacks_new ();
+   _mongoc_array_init (&started_events, sizeof (started_event_t *));
+   mongoc_apm_set_command_started_cb (cbs, command_started);
+   mongoc_client_set_apm_callbacks (client, cbs, &started_events);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   /* Drop and insert two documents into the collection */
+   {
+      bson_t *to_insert = BCON_NEW ("x", "y");
+
+      ASSERT_OR_PRINT (mongoc_collection_drop (coll, &error), error);
+      ASSERT_OR_PRINT (
+         mongoc_collection_insert_one (
+            coll, to_insert, NULL /* opts */, NULL /* reply */, &error),
+         error);
+      ASSERT_OR_PRINT (
+         mongoc_collection_insert_one (
+            coll, to_insert, NULL /* opts */, NULL /* reply */, &error),
+         error);
+      bson_destroy (to_insert);
+   }
+
+   clear_started_events (&started_events);
+
+   /* Create a cursor and iterate once. */
+   {
+      const bson_t *got;
+      bson_t *filter = bson_new ();
+      bson_t *findopts = BCON_NEW ("batchSize", BCON_INT32 (1));
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         coll, filter, findopts, NULL /* read_prefs */);
+      /* Attempt to overwrite the 'batchSize' with 2. */
+      mongoc_cursor_set_batch_size (cursor, 2);
+      /* Assert no command started events. The cursor does not send 'find' until
+       * the first call to mongoc_cursor_next. */
+      ASSERT_CMPSIZE_T (started_events.len, ==, 0);
+      /* Iterate once. */
+      ASSERT (mongoc_cursor_next (cursor, &got));
+
+      mongoc_cursor_destroy (cursor);
+      bson_destroy (findopts);
+      bson_destroy (filter);
+   }
+
+   /* Check events. */
+   {
+      started_event_t *started_event;
+      bson_iter_t iter;
+      /* Expect first event is find. */
+      started_event =
+         _mongoc_array_index (&started_events, started_event_t *, 0);
+      ASSERT_CMPSTR (started_event->command_name, "find");
+      /* Expect the batchSize sent to be 2. */
+      ASSERT (bson_iter_init_find (&iter, started_event->command, "batchSize"));
+      ASSERT_CMPINT64 (bson_iter_as_int64 (&iter), ==, 2);
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_apm_callbacks_destroy (cbs);
+   mongoc_client_destroy (client);
+}
+
 
 void
 test_cursor_install (TestSuite *suite)
@@ -2436,4 +2547,7 @@ test_cursor_install (TestSuite *suite)
       suite, "/Cursor/error_document/command", test_error_document_command);
    TestSuite_AddLive (
       suite, "/Cursor/find_error/is_alive", test_find_error_is_alive);
+   TestSuite_AddLive (suite,
+                      "/Cursor/overwrite_int64_batch_size",
+                      test_cursor_batchsize_override_int32);
 }
