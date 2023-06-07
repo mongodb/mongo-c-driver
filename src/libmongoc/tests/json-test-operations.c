@@ -2005,7 +2005,6 @@ create_index (mongoc_database_t *db,
    bson_t keys;
    const char *name;
    bson_t opts = BSON_INITIALIZER;
-   bson_t *create_indexes;
    bson_error_t error;
    bool r;
 
@@ -2021,23 +2020,13 @@ create_index (mongoc_database_t *db,
    name = bson_lookup_utf8 (&args, "name");
    COPY_EXCEPT ("keys", "name");
 
-   create_indexes = BCON_NEW ("createIndexes",
-                              BCON_UTF8 (collection->collection),
-                              "indexes",
-                              "[",
-                              "{",
-                              "key",
-                              BCON_DOCUMENT (&keys),
-                              "name",
-                              BCON_UTF8 (name),
-                              "}",
-                              "]");
-
-   r = mongoc_database_write_command_with_opts (
-      db, create_indexes, &opts, NULL, &error);
+   mongoc_index_model_t *im =
+      mongoc_index_model_new (&keys, tmp_bson ("{'name': '%s'}", name));
+   r = mongoc_collection_create_indexes_with_opts (
+      collection, &im, 1, &opts, NULL /* reply */, &error);
+   mongoc_index_model_destroy (im);
 
    bson_destroy (&opts);
-   bson_destroy (create_indexes);
 
    check_result (test, operation, r, NULL, &error);
 
