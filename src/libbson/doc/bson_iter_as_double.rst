@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  bool
+  double
   bson_iter_as_double (const bson_iter_t *iter);
 
 Parameters
