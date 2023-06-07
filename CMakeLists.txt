@@ -10,9 +10,9 @@ list (APPEND CMAKE_MODULE_PATH
 include (MongoSettings)
 
 # Subcomponents:
-mongo_bool_setting(ENABLE_MONGOC "Enable the build of the mongo-c-driver libraries")
+mongo_bool_setting(ENABLE_MONGOC "Enable the build of libmongoc libraries (The MongoDB C database driver)")
 mongo_bool_setting(
-   USE_SYSTEM_LIBBSON [[Do not build libbson, and instead use an existing one via find_package()]]
+   USE_SYSTEM_LIBBSON [[Use an existing libbson library (via find_package()) instead of building one from source]]
    DEFAULT VALUE OFF
    ADVANCED
 )
@@ -30,11 +30,18 @@ endif()
 
 # Static libraries:
 mongo_setting(
-   ENABLE_STATIC "Whether we should build (and maybe install) static library archives"
+   ENABLE_STATIC "Enable building and installing static library archive artifacts"
    OPTIONS ON OFF BUILD_ONLY
    DEFAULT VALUE "ON"
 )
-mongo_bool_setting(ENABLE_PIC "Enable position-independent-code in built static library components")
+if(NOT WIN32)
+   mongo_bool_setting(ENABLE_PIC "Enable position-independent code when building static libraries (Not applicable on Windows)")
+elseif(DEFINED ENABLE_PIC)
+   # We are on Windows, and ENABLE_PIC is defined.
+   message(STATUS "ENABLE_PIC=“${ENABLE_PIC}” has no effect on Windows (All Windows code is position-independent)")
+else()
+   # We are on Windows, and ENABLE_PIC is not defined, which is normal
+endif()
 
 # Dev mode checks:
 mongo_bool_setting(
@@ -49,11 +56,11 @@ mongo_bool_setting(
       ]])
 
 # Toggle instrumentation:
-mongo_bool_setting(ENABLE_TRACING "Enable verbose debug output in the build driver"
+mongo_bool_setting(ENABLE_TRACING "Enable runtime tracing output in the built libmongoc (Very noisy!)"
                    DEFAULT VALUE OFF)
-mongo_bool_setting(ENABLE_COVERAGE "Instrument built code for use with lcov"
+mongo_bool_setting(ENABLE_COVERAGE "Build code with coverage instrumentation"
                    DEFAULT VALUE OFF DEVEL VALUE ON)
-mongo_bool_setting(ENABLE_DEBUG_ASSERTIONS "Build with runtime debug assertions enabled"
+mongo_bool_setting(ENABLE_DEBUG_ASSERTIONS "Build library with runtime debug assertions enabled"
                    DEFAULT VALUE OFF DEVEL VALUE ON)
 # for MONGO_SANITIZE:
 include(Sanitizers)
@@ -66,7 +73,7 @@ mongo_bool_setting(ENABLE_HTML_DOCS "Build the HTML documentation" DEFAULT VALUE
 mongo_bool_setting(ENABLE_UNINSTALL "Generate an 'uninstall' script and an 'uninstall' build target")
 
 # Optional features that are ENABLED when necessary dependencies are found:
-mongo_setting(ENABLE_SRV "Toggle support for mongodb+srv URIs."
+mongo_setting(ENABLE_SRV "Enable support for mongodb+srv URIs."
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)
 mongo_setting(ENABLE_SNAPPY "Enable Snappy compression support"
@@ -79,8 +86,7 @@ mongo_setting(ENABLE_ZLIB "Enable zlib compression support"
               OPTIONS BUNDLED SYSTEM OFF
               DEFAULT VALUE BUNDLED)
 mongo_setting(
-   ENABLE_SSL [[Enable TLS connection and SCRAM authentication. Note that SCRAM
-                is required for authenticating to MongoDB 3.0 or later.]]
+   ENABLE_SSL [[Enable TLS connection and SCRAM authentication.]]
    OPTIONS WINDOWS DARWIN OPENSSL LIBRESSL OFF AUTO
    DEFAULT VALUE AUTO
    VALIDATE CODE [[
@@ -121,12 +127,14 @@ mongo_setting(
 
 mongo_bool_setting(
    ENABLE_EXTRA_ALIGNMENT
-      [[Enable extra alignment on libbson types. Default is ON for ABI
-        compatibility, but it is better to disable, if possible. Enabling this
-        option can often produce false positives with
-        UndefinedBehaviorSanitizer.]]
+      "[Deprecated] Enable extra alignment on libbson types"
    DEFAULT VALUE ON
       DEVEL VALUE OFF
+   VALIDATE CODE [[
+      if(ENABLE_EXTRA_ALIGNMENT AND MONGO_SANITIZE MATCHES "undefined")
+         message(WARNING "ENABLE_EXTRA_ALIGNMENT=“${ENABLE_EXTRA_ALIGNMENT}” will create conflicts with UndefinedBehaviorSanitizer")
+      endif()
+   ]]
 )
 
 mongo_setting(ENABLE_ICU "Enable ICU support, needed for non-ASCII usernames and passwords"
@@ -146,8 +154,6 @@ mongo_setting(ENABLE_MONGODB_AWS_AUTH "Enable support for the MONGODB-AWS authen
                      message(FATAL_ERROR "Visual Studio 2015 or newer is required for ENABLE_MONGODB_AWS_AUTH=ON")
                   elseif(ENABLE_SSL STREQUAL "OFF")
                      message(FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH=ON requires that ENABLE_SSL not be 'OFF'")
-                  else()
-                     # All okay
                   endif()
               ]])
 

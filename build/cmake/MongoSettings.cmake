@@ -6,7 +6,7 @@ set(MONGODB_DEVELOPER FALSE)
 # Detect developer mode:
 set(_is_dev "$ENV{MONGODB_DEVELOPER}")
 if(_is_dev)
-    message(STATUS "MONGODB_DEVELOPER is detected")
+    message(STATUS "Enabling MONGODB_DEVELOPER 🍃")
     set(MONGODB_DEVELOPER TRUE)
 endif()
 
@@ -18,7 +18,7 @@ Define a new configure-time build setting::
         [DEFAULT [[DEVEL] [VALUE <value> | EVAL <code>]] ...]
         [OPTIONS [<opts> ...]]
         [VALIDATE [CODE <code>]]
-        [ADVANCED] [ALLOW_OTHER_VALUES]
+        [ADVANCED]
     )
 
 The `<name>` will be the name of the setting, while `<doc>` will be the
@@ -32,26 +32,24 @@ Package maintainers Note: Setting a variable `<name>-FORCE` to TRUE will make
 this function a no-op.
 
 TYPE <BOOL|PATH|FILEPATH|STRING>
-    Sets the type for the generated cache variable. If the type is BOOL and
-    ALLOW_OTHER_VALUES is not specified, this call will validate that the
-    setting is a valid boolean value.
+    - Sets the type for the generated cache variable. If the type is BOOL, this
+      call will validate that the setting is a valid boolean value.
 
 OPTIONS [<opts> [...]]
-    Specify the valid set of values available for this setting. This will set
-    the STRINGS property on the cache variable and add an information message to
-    the doc string. Unless ALLOW_OTHER_VALUES is specified, this call will also
-    validate that the setting's value is one of these options, failing with an
-    error if it is not.
+    - Specify the valid set of values available for this setting. This will set
+      the STRINGS property on the cache variable and add an information message
+      to the doc string. This call will also validate that the setting's value
+      is one of these options, failing with an error if it is not.
 
 DEFAULT [[DEVEL] [VALUE <value> | EVAL <code>]]
         [...]
-    Specify the default value(s) of the generated variable. If given VALUE, then
-    `<value>` will be used as the default, otherwise if given EVAL, `<code>`
-    will be executed and is expected to define a variable DEFAULT that will
-    contain the default value. An optional DEVEL qualifier may be given before
-    a default value specifier. If both qualified and unqualified defaults are
-    given, the unqualified default must appear first in the argument list.
-
+    - Specify the default value(s) of the generated variable. If given VALUE,
+      then `<value>` will be used as the default, otherwise if given EVAL,
+      `<code>` will be executed and is expected to define a variable DEFAULT
+      that will contain the default value. An optional DEVEL qualifier may be
+      given before a default value specifier. If both qualified and unqualified
+      defaults are given, the unqualified default must appear first in the
+      argument list.
     - If MONGODB_DEVELOPER is not true, then the non-qualified default will be
       used. (If no non-qualified defaults are provided, then the default value
       is an empty string.)
@@ -59,16 +57,12 @@ DEFAULT [[DEVEL] [VALUE <value> | EVAL <code>]]
       then the DEVEL defaults will be used.
 
 VALIDATE [CODE <code>]
-    If specified, then `<code>` will be evaluated after the setting value is
-    defined. `<code>` may issue warnings and errors about the value of the
-    setting.
+    - If specified, then `<code>` will be evaluated after the setting value is
+      defined. `<code>` may issue warnings and errors about the value of the
+      setting.
 
 ADVANCED
-    If specified, the cache variable will be marked as an advanced setting
-
-ALLOW_OTHER_VALUES
-    If *not* specified, this call will validate that the setting's value is
-    valid according to TYPE and OPTIONS.
+    - If specified, the cache variable will be marked as an advanced setting
 
 ]==]
 function(mongo_setting setting_NAME setting_DOC)
@@ -81,13 +75,16 @@ function(mongo_setting setting_NAME setting_DOC)
 
     cmake_parse_arguments(
         PARSE_ARGV 2 setting
-        "ALLOW_OTHER_VALUES;ADVANCED"
+        "ADVANCED"
         "TYPE"
         "OPTIONS;DEFAULT;VALIDATE")
     # Check for unknown arguments:
     foreach(arg IN LISTS setting_UNPARSED_ARGUMENTS)
         message(SEND_ERROR "Unrecognized argument: “${arg}”")
     endforeach()
+    if(setting_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unrecognized arguments (see above)")
+    endif()
 
     # By default, settings are strings:
     if(NOT DEFINED setting_TYPE)
@@ -119,15 +116,13 @@ function(mongo_setting setting_NAME setting_DOC)
         # Add that to the doc message:
         string(APPEND doc " (Default is “${DEFAULT}”)")
         # Check that the default is actually a valid option:
-        if(DEFINED setting_OPTIONS
-            AND NOT DEFAULT IN_LIST setting_OPTIONS
-            AND NOT setting_ALLOW_OTHER_VALUES)
+        if(DEFINED setting_OPTIONS AND NOT DEFAULT IN_LIST setting_OPTIONS)
             message(AUTHOR_WARNING "${setting_NAME}: Setting's default value is “${DEFAULT}”, which is not one of the provided setting options (${opts})")
         endif()
 
         # Reset "AUTO" values to the default
         if(NOT "AUTO" IN_LIST setting_OPTIONS AND "$CACHE{${setting_NAME}}" STREQUAL "AUTO")
-            message(WARNING "Replacing ${setting_NAME}=“AUTO” with default value ${setting_NAME}=“${DEFAULT}”")
+            message(WARNING "Replacing old ${setting_NAME}=“AUTO” with the new default value ${setting_NAME}=“${DEFAULT}”")
             unset("${setting_NAME}" CACHE)
         endif()
     endif()
@@ -164,12 +159,11 @@ function(mongo_setting setting_NAME setting_DOC)
     set("${setting_NAME}-PREV" "${${setting_NAME}}" CACHE INTERNAL "Prior value of ${setting_NAME}")
 
     # Validation of options:
-    if(NOT setting_ALLOW_OTHER_VALUES AND (DEFINED setting_OPTIONS) AND (NOT ("${${setting_NAME}}" IN_LIST setting_OPTIONS)))
+    if((DEFINED setting_OPTIONS) AND (NOT ("${${setting_NAME}}" IN_LIST setting_OPTIONS)))
         message(FATAL_ERROR "The value of “${setting_NAME}” must be one of [${opts}] (Got ${setting_NAME}=“${${setting_NAME}}”)")
     endif()
     string(TOUPPER "${${setting_NAME}}" curval)
     if(setting_TYPE STREQUAL "BOOL"
-        AND NOT setting_ALLOW_OTHER_VALUES
         AND NOT curval MATCHES "^(1|0|ON|OFF|YES|NO|TRUE|FALSE|Y|N|IGNORE)$")
         message(WARNING "The value of ${setting_NAME}=“${${setting_NAME}}” is not a regular boolean value")
     endif()
@@ -237,7 +231,7 @@ Define a new boolean build setting::
         <name> <doc>
         [DEFAULT [[DEVEL] [VALUE <value> | EVAL <code>]] ...]
         [VALIDATE [CODE <code>]]
-        [ADVANCED] [ALLOW_OTHER_VALUES]
+        [ADVANCED]
     )
 
 This is a shorthand for defining a boolean setting. See mongo_setting() for more
