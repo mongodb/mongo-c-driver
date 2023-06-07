@@ -1386,8 +1386,8 @@ operation_create_index (test_t *test,
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
    bson_t *opts = bson_new ();
-   bson_t arguments;
-   bson_t array;
+   bson_t *index_opts = bson_new ();
+   mongoc_index_model_t *im = NULL;
 
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
@@ -1403,26 +1403,12 @@ operation_create_index (test_t *test,
       goto done;
    }
 
-   if (!name) {
-      name = mongoc_collection_keys_to_index_string (keys);
+   if (name) {
+      BSON_APPEND_UTF8 (index_opts, "name", name);
    }
-
-   /* libmongoc has no create index helper. Use runCommand. */
-   /* Building the command */
-   BSON_APPEND_UTF8 (
-      create_indexes, "createIndexes", mongoc_collection_get_name (coll));
-   BSON_APPEND_ARRAY_BEGIN (create_indexes, "indexes", &array);
-   BSON_APPEND_DOCUMENT_BEGIN (&array, "0", &arguments);
-   BSON_APPEND_DOCUMENT (&arguments, "key", keys);
-   BSON_APPEND_UTF8 (&arguments, "name", name);
    if (unique) {
-      BSON_APPEND_BOOL (&arguments, "unique", unique);
+      BSON_APPEND_BOOL (index_opts, "unique", *unique);
    }
-   bson_append_document_end (&array, &arguments);
-   bson_append_array_end (create_indexes, &array);
-
-   bson_destroy (&array);
-   bson_destroy (&arguments);
 
    if (op->session) {
       if (!mongoc_client_session_append (op->session, opts, error)) {
@@ -1430,16 +1416,20 @@ operation_create_index (test_t *test,
       }
    }
 
+   im = mongoc_index_model_new (keys, index_opts);
+   mongoc_collection_create_indexes_with_opts (
+      coll, &im, 1, opts, &op_reply, &op_error);
+
    MONGOC_DEBUG ("running createIndexes: %s", tmp_json (create_indexes));
 
-   bson_destroy (&op_reply);
-   mongoc_collection_command_with_opts (
-      coll, create_indexes, NULL /* read prefs */, opts, &op_reply, &op_error);
+   printf ("got reply: %s\n", tmp_json (&op_reply));
 
    result_from_val_and_reply (result, NULL, &op_reply, &op_error);
 
    ret = true;
 done:
+   mongoc_index_model_destroy (im);
+   bson_destroy (index_opts);
    bson_parser_destroy_with_parsed_fields (bp);
    bson_destroy (&op_reply);
    bson_destroy (opts);
