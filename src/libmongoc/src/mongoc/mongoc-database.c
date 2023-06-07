@@ -1149,26 +1149,10 @@ create_collection_with_encryptedFields (mongoc_database_t *database,
    /* Create index on __safeContent__. */
    {
       bson_t *keys = BCON_NEW ("__safeContent__", BCON_INT32 (1));
-      char *index_name;
-      bson_t *create_indexes;
-
-      index_name = mongoc_collection_keys_to_index_string (keys);
-      create_indexes = BCON_NEW ("createIndexes",
-                                 BCON_UTF8 (name),
-                                 "indexes",
-                                 "[",
-                                 "{",
-                                 "key",
-                                 BCON_DOCUMENT (keys),
-                                 "name",
-                                 BCON_UTF8 (index_name),
-                                 "}",
-                                 "]");
-
-      ok = mongoc_database_write_command_with_opts (
-         database, create_indexes, NULL /* opts */, NULL /* reply */, error);
-      bson_destroy (create_indexes);
-      bson_free (index_name);
+      mongoc_index_model_t *im = mongoc_index_model_new (keys, NULL /* opts */);
+      ok = mongoc_collection_create_indexes_with_opts (
+         dataCollection, &im, 1, NULL /* opts */, NULL /* reply */, error);
+      mongoc_index_model_destroy (im);
       bson_destroy (keys);
       if (!ok) {
          goto fail;
