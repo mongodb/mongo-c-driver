@@ -166,9 +166,6 @@ main (void)
       goto fail;
    }
 
-   const size_t len = strlen (to_encrypt.value.v_utf8.str);
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len));
-
    /* Explicitly encrypt a field. */
    encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_algorithm (
@@ -177,6 +174,8 @@ main (void)
       encrypt_opts, "mongoc_encryption_example_4");
    to_encrypt.value_type = BSON_TYPE_UTF8;
    to_encrypt.value.v_utf8.str = "123456789";
+   const size_t len = strlen (to_encrypt.value.v_utf8.str);
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len));
    to_encrypt.value.v_utf8.len = (uint32_t) len;
 
    ret = mongoc_client_encryption_encrypt (
