@@ -3,8 +3,13 @@
 uint8_t *
 hex_to_bin (const char *hex, uint32_t *len)
 {
+   if (!hex) {
+      *len = 0;
+      return NULL;
+   }
    const size_t hex_len = strlen (hex);
    if (hex_len % 2 != 0) {
+      *len = 0;
       return NULL;
    }
 
@@ -18,6 +23,7 @@ hex_to_bin (const char *hex, uint32_t *len)
 
       if (1 != sscanf (hex + i, "%2x", &hex_char)) {
          bson_free (out);
+         *len = 0;
          return NULL;
       }
       out[i / 2u] = (uint8_t) hex_char;
