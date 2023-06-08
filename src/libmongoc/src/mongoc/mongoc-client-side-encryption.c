@@ -88,6 +88,8 @@ void
 mongoc_auto_encryption_opts_set_keyvault_client (
    mongoc_auto_encryption_opts_t *opts, mongoc_client_t *client)
 {
+   BSON_ASSERT_PARAM (client);
+
    if (!opts) {
       return;
    }
@@ -99,6 +101,8 @@ void
 mongoc_auto_encryption_opts_set_keyvault_client_pool (
    mongoc_auto_encryption_opts_t *opts, mongoc_client_pool_t *pool)
 {
+   BSON_ASSERT_PARAM (pool);
+
    if (!opts) {
       return;
    }
@@ -266,6 +270,8 @@ void
 mongoc_client_encryption_opts_set_keyvault_client (
    mongoc_client_encryption_opts_t *opts, mongoc_client_t *keyvault_client)
 {
+   BSON_ASSERT_PARAM (keyvault_client);
+
    if (!opts) {
       return;
    }
@@ -1070,6 +1076,8 @@ _prep_for_auto_encryption (const mongoc_cmd_t *cmd, bson_t *out)
 mongoc_client_t *
 _get_mongocryptd_client (mongoc_client_t *client_encrypted)
 {
+   BSON_ASSERT_PARAM (client_encrypted);
+
    if (client_encrypted->topology->single_threaded) {
       return client_encrypted->topology->mongocryptd_client;
    }
@@ -1081,6 +1089,9 @@ void
 _release_mongocryptd_client (mongoc_client_t *client_encrypted,
                              mongoc_client_t *mongocryptd_client)
 {
+   BSON_ASSERT_PARAM (client_encrypted);
+   BSON_ASSERT_PARAM (mongocryptd_client);
+
    if (!mongocryptd_client) {
       return;
    }
@@ -1103,6 +1114,8 @@ _release_mongocryptd_client (mongoc_client_t *client_encrypted,
 mongoc_collection_t *
 _get_keyvault_coll (mongoc_client_t *client_encrypted)
 {
+   BSON_ASSERT_PARAM (client_encrypted);
+
    mongoc_write_concern_t *const wc = mongoc_write_concern_new ();
    mongoc_read_concern_t *const rc = mongoc_read_concern_new ();
 
@@ -1148,6 +1161,8 @@ _release_keyvault_coll (mongoc_client_t *client_encrypted,
                         mongoc_collection_t *keyvault_coll)
 {
    mongoc_client_t *keyvault_client;
+
+   BSON_ASSERT_PARAM (client_encrypted);
 
    if (!keyvault_coll) {
       return;
@@ -1206,6 +1221,7 @@ _mongoc_cse_auto_encrypt (mongoc_client_t *client_encrypted,
 
    ENTRY;
 
+   BSON_ASSERT_PARAM (client_encrypted);
    bson_init (encrypted);
 
    if (client_encrypted->topology->bypass_auto_encryption) {
@@ -1315,6 +1331,7 @@ _mongoc_cse_auto_decrypt (mongoc_client_t *client_encrypted,
 
    ENTRY;
 
+   BSON_ASSERT_PARAM (client_encrypted);
    BSON_UNUSED (db_name);
 
    keyvault_coll = _get_keyvault_coll (client_encrypted);
@@ -2920,6 +2937,8 @@ fail:
 bool
 _mongoc_cse_is_enabled (mongoc_client_t *client)
 {
+   BSON_ASSERT_PARAM (client);
+
    while (1) {
       mongoc_topology_cse_state_t state = bson_atomic_int_fetch (
          (int *) &client->topology->cse_state, bson_memory_order_relaxed);
@@ -3203,6 +3222,8 @@ mongoc_client_encryption_get_crypt_shared_version (
 const char *
 mongoc_client_get_crypt_shared_version (const mongoc_client_t *client)
 {
+   BSON_ASSERT_PARAM (client);
+
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
    if (!client->topology->crypt) {
       return NULL;

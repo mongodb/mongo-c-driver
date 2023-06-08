@@ -92,6 +92,8 @@ _mongoc_cursor_array_new (mongoc_client_t *client,
                           const bson_t *opts,
                           const char *field_name)
 {
+   BSON_ASSERT_PARAM (client);
+
    mongoc_cursor_t *cursor = _mongoc_cursor_new_with_opts (
       client, db_and_coll, opts, NULL, NULL, NULL);
    data_array_t *data = BSON_ALIGNED_ALLOC0 (data_array_t);

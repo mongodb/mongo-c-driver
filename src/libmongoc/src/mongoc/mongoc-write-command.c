@@ -615,7 +615,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    ENTRY;
 
    BSON_ASSERT (command);
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (database);
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
@@ -870,7 +870,7 @@ _mongoc_write_command_execute (
    ENTRY;
 
    BSON_ASSERT (command);
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (server_stream);
    BSON_ASSERT (database);
    BSON_ASSERT (collection);
@@ -916,7 +916,7 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    ENTRY;
 
    BSON_ASSERT (command);
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (server_stream);
    BSON_ASSERT (database);
    BSON_ASSERT (collection);

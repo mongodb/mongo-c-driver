@@ -438,6 +438,8 @@ _configure_failpoint (mongoc_client_t *client,
    bool ret;
    bson_error_t error;
 
+   ASSERT (client);
+
    ret = mongoc_client_command_simple (
       client,
       "admin",

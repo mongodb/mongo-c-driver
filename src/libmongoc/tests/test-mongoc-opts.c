@@ -96,6 +96,8 @@ func_ctx_init (func_ctx_t *ctx,
                const mongoc_read_prefs_t *prefs,
                const bson_t *opts)
 {
+   ASSERT (client);
+
    ctx->test = test;
    ctx->client = client;
    ctx->db = db;

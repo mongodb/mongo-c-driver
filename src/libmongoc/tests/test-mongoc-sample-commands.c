@@ -3016,6 +3016,8 @@ test_sample_causal_consistency (mongoc_client_t *client)
    uint32_t increment;
    bson_error_t error;
    bool res;
+   
+   ASSERT (client);
 
    if (!test_framework_skip_if_no_txns ()) {
       return;
@@ -3525,6 +3527,8 @@ insert_employee (mongoc_client_t *client, int employee)
    mongoc_collection_t *events;
    bson_error_t error;
    bool r;
+   
+   ASSERT (client);
 
    employees = mongoc_client_get_collection (client, "hr", "employees");
    mongoc_collection_drop (employees, NULL);
@@ -3720,6 +3724,8 @@ example_func (mongoc_client_t *client)
    bson_error_t error;
    bool r;
 
+   ASSERT (client);
+
    cs = mongoc_client_start_session (client, NULL, &error);
    if (!cs) {
       MONGOC_ERROR ("Could not start session: %s", error.message);
@@ -3741,6 +3747,8 @@ test_sample_txn_commands (mongoc_client_t *client)
 {
    mongoc_collection_t *employees;
    mongoc_collection_t *events;
+
+   ASSERT (client);
 
    if (!test_framework_skip_if_no_txns ()) {
       return;

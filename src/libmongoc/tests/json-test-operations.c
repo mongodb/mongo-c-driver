@@ -175,6 +175,8 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    int i;
    bson_error_t error;
 
+   ASSERT (client);
+
    memset (ctx, 0, sizeof (*ctx));
 
    ctx->client = client;
@@ -1765,7 +1767,7 @@ list_databases (mongoc_client_t *client,
    mongoc_cursor_t *cursor;
    bson_t opts;
 
-   BSON_ASSERT (client);
+   ASSERT (client);
    bson_init (&opts);
    append_session (session, &opts);
 
@@ -1790,7 +1792,7 @@ list_database_names (mongoc_client_t *client,
    bson_t opts;
    bson_error_t error;
 
-   BSON_ASSERT (client);
+   ASSERT (client);
    bson_init (&opts);
    append_session (session, &opts);
 
@@ -2057,6 +2059,8 @@ collection_exists (mongoc_client_t *client, const bson_t *operation)
    bool found = false;
    uint32_t i;
 
+   ASSERT (client);
+
    bson_lookup_doc (operation, "arguments", &args);
    database_name = bson_lookup_utf8 (&args, "database");
    collection_name = bson_lookup_utf8 (&args, "collection");
@@ -2095,6 +2099,8 @@ index_exists (mongoc_client_t *client, const bson_t *operation)
    bson_iter_t index;
    const bson_t *doc;
    bool found = false;
+
+   ASSERT (client);
 
    bson_lookup_doc (operation, "arguments", &args);
    database_name = bson_lookup_utf8 (&args, "database");

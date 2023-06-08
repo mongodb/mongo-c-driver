@@ -33,6 +33,8 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
                        mongoc_query_flags_t user_query_flags,
                        const bson_t *command_body)
 {
+   BSON_ASSERT_PARAM (client);
+
    parts->body = command_body;
    parts->user_query_flags = user_query_flags;
    parts->read_prefs = NULL;

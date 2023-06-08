@@ -35,6 +35,8 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
    uint32_t generation;
    mongoc_server_description_t const *sd;
    bson_error_t error;
+   ASSERT (client);
+
    mc_shared_tpld td = mc_tpld_take_ref (client->topology);
 
    server_id = mongoc_cursor_get_hint (cursor);
@@ -56,6 +58,8 @@ get_connection_count (mongoc_client_t *client)
    bson_t reply;
    bool res;
    int conns;
+
+   ASSERT (client);
 
    BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
    res = mongoc_client_command_simple (
@@ -468,6 +472,8 @@ _check_error (mongoc_client_t *client,
 {
    uint32_t server_id;
    bson_error_t error;
+
+   ASSERT (client);
 
    server_id = mongoc_cursor_get_hint (cursor);
    ASSERT (server_id);

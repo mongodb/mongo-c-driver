@@ -91,6 +91,8 @@ _mongoc_cursor_find_new (mongoc_client_t *client,
                          const mongoc_read_prefs_t *default_prefs,
                          const mongoc_read_concern_t *read_concern)
 {
+   BSON_ASSERT_PARAM (client);
+
    mongoc_cursor_t *cursor;
    data_find_t *data = BSON_ALIGNED_ALLOC0 (data_find_t);
    cursor = _mongoc_cursor_new_with_opts (

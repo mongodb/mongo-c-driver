@@ -585,6 +585,8 @@ client_command (mongoc_client_t *client, bson_error_t *error)
    const bson_t *doc;
    bool r;
 
+   ASSERT (client);
+
    cursor = mongoc_client_command (client,
                                    "test",
                                    MONGOC_QUERY_NONE,
@@ -649,6 +651,8 @@ aggregate (mongoc_client_t *client, bson_error_t *error)
    const bson_t *doc;
    bool r;
 
+   ASSERT (client);
+
    collection = mongoc_client_get_collection (client, "test", "collection");
    cursor = mongoc_collection_aggregate (
       collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), NULL, NULL);
@@ -686,6 +690,7 @@ cursor_next (mongoc_client_t *client, bson_error_t *error)
    const bson_t *doc;
    bool r;
 
+   ASSERT (client);
    collection = get_test_collection (client, "test_cluster_time_cursor");
    cursor = mongoc_collection_find_with_opts (
       collection, tmp_bson ("{'ping': 1}"), NULL, NULL);
@@ -720,6 +725,8 @@ insert (mongoc_client_t *client, bson_error_t *error)
 {
    mongoc_collection_t *collection;
    bool r;
+
+   ASSERT (client);
 
    collection = get_test_collection (client, "test_cluster_time_cursor");
    r = mongoc_collection_insert_one (
@@ -1104,6 +1111,8 @@ future_command_private (mongoc_client_t *client)
 {
    bson_error_t error;
    mongoc_server_stream_t *server_stream;
+
+   ASSERT (client);
 
    server_stream =
       mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, &error);

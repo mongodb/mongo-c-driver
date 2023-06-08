@@ -175,6 +175,8 @@ caching_expected (const mongoc_uri_t *uri)
 static bool
 do_find (mongoc_client_t *client, bson_error_t *error)
 {
+   ASSERT (client);
+
    bson_t *filter = bson_new ();
    mongoc_collection_t *coll =
       mongoc_client_get_collection (client, "aws", "coll");

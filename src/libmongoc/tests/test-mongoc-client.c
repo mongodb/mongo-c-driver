@@ -2994,6 +2994,8 @@ _cmd (mock_server_t *server,
    request_t *request;
    bool r;
 
+   ASSERT (client);
+
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, error);
    request = mock_server_receives_msg (
@@ -3222,6 +3224,8 @@ static future_t *
 _force_hello_with_ping (mongoc_client_t *client, int heartbeat_ms)
 {
    future_t *future;
+
+   BSON_ASSERT_PARAM (client);
 
    /* Wait until we're overdue to send a hello */
    _mongoc_usleep (heartbeat_ms * 2 * 1000);

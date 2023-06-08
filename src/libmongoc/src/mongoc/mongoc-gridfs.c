@@ -104,7 +104,7 @@ _mongoc_gridfs_new (mongoc_client_t *client,
 
    ENTRY;
 
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (db);
 
    if (!prefix) {

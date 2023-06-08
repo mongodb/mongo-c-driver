@@ -49,6 +49,8 @@ mongoc_dump_collection (mongoc_client_t *client,
    char *path;
    int ret = EXIT_SUCCESS;
 
+   BSON_ASSERT_PARAM (client);
+
    path = bson_strdup_printf ("dump/%s/%s.bson", database, collection);
 #ifdef _WIN32
    _unlink (path);
@@ -101,6 +103,7 @@ mongoc_dump_database (mongoc_client_t *client,
    int ret = EXIT_SUCCESS;
    int i;
 
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (database);
 
    path = bson_strdup_printf ("dump/%s", database);
@@ -141,6 +144,8 @@ mongoc_dump (mongoc_client_t *client,
    bson_error_t error;
    char **str;
    int i;
+
+   BSON_ASSERT_PARAM (client);
 
    if (!mongoc_dump_mkdir_p ("dump", 0750)) {
       perror ("Failed to create directory \"dump\"");

@@ -24,6 +24,8 @@ create_schema_file (bson_t *kms_providers,
    FILE *outfile = NULL;
    bool ret = false;
 
+   BSON_ASSERT_PARAM (keyvault_client);
+
    client_encryption_opts = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);

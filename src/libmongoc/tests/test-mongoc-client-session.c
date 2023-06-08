@@ -806,6 +806,8 @@ test_end_sessions_pooled (void *ctx)
 static void
 send_ping (mongoc_client_t *client, mongoc_client_session_t *client_session)
 {
+   ASSERT (client);
+
    bson_t ping_cmd = BSON_INITIALIZER;
    bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
