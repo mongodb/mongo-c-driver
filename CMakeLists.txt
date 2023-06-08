@@ -125,18 +125,6 @@ mongo_setting(
    ]]
 )
 
-mongo_bool_setting(
-   ENABLE_EXTRA_ALIGNMENT
-      "[Deprecated] Enable extra alignment on libbson types"
-   DEFAULT VALUE ON
-      DEVEL VALUE OFF
-   VALIDATE CODE [[
-      if(ENABLE_EXTRA_ALIGNMENT AND MONGO_SANITIZE MATCHES "undefined")
-         message(WARNING "ENABLE_EXTRA_ALIGNMENT=“${ENABLE_EXTRA_ALIGNMENT}” will create conflicts with UndefinedBehaviorSanitizer")
-      endif()
-   ]]
-)
-
 mongo_setting(ENABLE_ICU "Enable ICU support, needed for non-ASCII usernames and passwords"
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)
@@ -193,6 +181,17 @@ mongo_bool_setting(
          message(DEPRECATION
                   "Enabling ENABLE_AUTOMATIC_INIT_AND_CLEANUP is deprecated and "
                   "may be removed in a future release")
+      endif()
+   ]]
+)
+mongo_bool_setting(
+   ENABLE_EXTRA_ALIGNMENT
+      "[Deprecated] Enable extra alignment on libbson types"
+   DEFAULT VALUE ON
+      DEVEL VALUE OFF
+   VALIDATE CODE [[
+      if(ENABLE_EXTRA_ALIGNMENT AND MONGO_SANITIZE MATCHES "undefined")
+         message(WARNING "ENABLE_EXTRA_ALIGNMENT=“${ENABLE_EXTRA_ALIGNMENT}” will create conflicts with UndefinedBehaviorSanitizer")
       endif()
    ]]
 )
