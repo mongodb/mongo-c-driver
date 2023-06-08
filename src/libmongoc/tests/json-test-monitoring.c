@@ -336,7 +336,7 @@ apm_match_visitor (match_ctx_t *ctx,
       visitor_ctx->command_name = bson_strdup (bson_iter_key (doc_iter));
    }
 
-   // Subdocuments in `command` are expected not to not have extra fields.
+   // Subdocuments in `command` should not have extra fields.
    if (NULL != strstr (ctx->path, ".command") && doc_iter) {
       if (BSON_ITER_HOLDS_DOCUMENT (doc_iter) &&
           BSON_ITER_HOLDS_DOCUMENT (pattern_iter)) {
@@ -663,7 +663,7 @@ test_apm_matching (void)
 static void
 test_apm_matching_extra_fields (void)
 {
-   // An extra value in `command` is permitted.
+   // Extra fields are permitted in `command`.
    {
       apm_match_visitor_ctx_t match_visitor_ctx = {0};
       match_ctx_t match_ctx = {{0}};
@@ -682,7 +682,7 @@ test_apm_matching_extra_fields (void)
       apm_match_visitor_ctx_reset (&match_visitor_ctx);
    }
 
-   // A subdocument in `command` does not permit extra values.
+   // Extra fields are not permitted in `command` sub-documents.
    {
       apm_match_visitor_ctx_t match_visitor_ctx = {0};
       match_ctx_t match_ctx = {{0}};
@@ -703,7 +703,7 @@ test_apm_matching_extra_fields (void)
       apm_match_visitor_ctx_reset (&match_visitor_ctx);
    }
 
-   // A subdocument in a subarray in `command` does not permit extra values.
+   // Extra fields are not permitted in `command` sub-arrays.
    {
       apm_match_visitor_ctx_t match_visitor_ctx = {0};
       match_ctx_t match_ctx = {{0}};
