@@ -742,7 +742,7 @@ for server_version in [ "7.0", "5.0" ]:
         all_tasks,
         [
             PostCompileTask(
-                "test-versioned-api",
+                "test-versioned-api-" + server_version,
                 tags=["versioned-api"],
                 get_build="debug-compile-nosasl-openssl",
                 commands=[
@@ -760,7 +760,7 @@ for server_version in [ "7.0", "5.0" ]:
                 ],
             ),
             PostCompileTask(
-                "test-versioned-api-accept-version-two",
+                "test-versioned-api-accept-version-two-" + server_version,
                 tags=["versioned-api"],
                 get_build="debug-compile-nosasl-nossl",
                 commands=[
