@@ -13,7 +13,7 @@ from .ninja import ninja_progress
 from .paths import EXE_SUFFIX, OPT_CACHE_DIR
 from .platform import Architecture, OperatingSystem
 
-CMakeSettingsMapping = Mapping[str, str | int | bool | fs.Pathish]
+CMakeSettingsMapping = Mapping[str, "str | int | bool | fs.Pathish"]
 DEFAULT_PARALLEL = multiprocessing.cpu_count() + 2
 
 
