@@ -38,11 +38,11 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('rhel81-power8',     'gcc',       None, 'cyrus', ['auth'], ['server',          ], [       '4.2', '4.4', '5.0', '6.0', 'latest']),
-    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server',          ], [                     '5.0', '6.0', 'latest']),
-    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server',          ], [       '4.2', '4.4', '5.0', '6.0', 'latest']),
-    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.0', '4.2', '4.4', '5.0', '6.0', 'latest']),
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server',          ], [                                   'latest']),
+    ('rhel81-power8',     'gcc',       None, 'cyrus', ['auth'], ['server',          ], [       '4.2', '4.4', '5.0', '6.0', '7.0', 'latest']),
+    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server',          ], [                     '5.0', '6.0', '7.0', 'latest']),
+    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server',          ], [       '4.2', '4.4', '5.0', '6.0', '7.0', 'latest']),
+    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.0', '4.2', '4.4', '5.0', '6.0', '7.0', 'latest']),
+    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server',          ], [                                          'latest']),
 
     # Test ARM64 + 4.0 on Ubuntu 16.04, as MongoDB server does not produce
     # downloads for Ubuntu 18.04 arm64.

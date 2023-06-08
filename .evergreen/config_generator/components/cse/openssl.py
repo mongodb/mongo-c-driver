@@ -38,10 +38,10 @@ TEST_MATRIX = [
     ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
 
     # Test 6.0+ with a replica set since Queryable Encryption does not support the 'server' topology.
-    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', 'latest']),
-    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', 'latest']),
-    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', 'latest']),
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', 'latest']),
+    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', '7.0', 'latest']),
+    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', '7.0', 'latest']),
+    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', '7.0', 'latest']),
+    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', '7.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
