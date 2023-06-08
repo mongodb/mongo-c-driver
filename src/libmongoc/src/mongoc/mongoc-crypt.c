@@ -1466,7 +1466,6 @@ _mongoc_crypt_auto_encrypt (_mongoc_crypt_t *crypt,
    mongocrypt_binary_t *cmd_bin = NULL;
    bool ret = false;
 
-   BSON_ASSERT_PARAM (mongocryptd_client);
    BSON_ASSERT_PARAM (collinfo_client);
    bson_init (cmd_out);
 
