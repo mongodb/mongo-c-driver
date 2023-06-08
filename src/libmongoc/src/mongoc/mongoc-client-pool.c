@@ -211,7 +211,6 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
    mongoc_client_t *client;
 
    ENTRY;
-   BSON_ASSERT_PARAM (pool);
 
    if (!pool) {
       EXIT;
