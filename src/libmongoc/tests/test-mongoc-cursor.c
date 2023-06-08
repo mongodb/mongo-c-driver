@@ -2459,6 +2459,9 @@ test_cursor_batchsize_override_int32 (void)
    mongoc_collection_destroy (coll);
    mongoc_apm_callbacks_destroy (cbs);
    mongoc_client_destroy (client);
+
+   clear_started_events (&started_events);
+   _mongoc_array_destroy (&started_events);
 }
 
 
