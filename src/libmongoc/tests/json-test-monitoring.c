@@ -554,7 +554,7 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
    match_ctx.retain_dots_in_keys = true;
    match_ctx.allow_placeholders = true;
    match_ctx.visitor_fn = apm_match_visitor;
-   match_ctx.visitor_ctx = (void *) &apm_match_visitor_ctx;
+   match_ctx.visitor_ctx = &apm_match_visitor_ctx;
 
    allow_subset = ctx->config->command_monitoring_allow_subset;
 
@@ -649,7 +649,7 @@ test_apm_matching (void)
                     "}";
 
    match_ctx.visitor_fn = apm_match_visitor;
-   match_ctx.visitor_ctx = (void *) &match_visitor_ctx;
+   match_ctx.visitor_ctx = &match_visitor_ctx;
 
    BSON_ASSERT (match_bson_with_ctx (tmp_bson (e1), tmp_bson (e1), &match_ctx));
    BSON_ASSERT (
@@ -674,7 +674,7 @@ test_apm_matching_extra_fields (void)
          BSON_STR ({"command_started_event" : {"command" : {"a" : 1}}});
 
       match_ctx.visitor_fn = apm_match_visitor;
-      match_ctx.visitor_ctx = (void *) &match_visitor_ctx;
+      match_ctx.visitor_ctx = &match_visitor_ctx;
 
       bool matched =
          match_bson_with_ctx (tmp_bson (event), tmp_bson (pattern), &match_ctx);
@@ -694,7 +694,7 @@ test_apm_matching_extra_fields (void)
          {"command_started_event" : {"command" : {"subdoc" : {"a" : 1}}}});
 
       match_ctx.visitor_fn = apm_match_visitor;
-      match_ctx.visitor_ctx = (void *) &match_visitor_ctx;
+      match_ctx.visitor_ctx = &match_visitor_ctx;
 
       bool matched =
          match_bson_with_ctx (tmp_bson (event), tmp_bson (pattern), &match_ctx);
@@ -717,7 +717,7 @@ test_apm_matching_extra_fields (void)
       });
 
       match_ctx.visitor_fn = apm_match_visitor;
-      match_ctx.visitor_ctx = (void *) &match_visitor_ctx;
+      match_ctx.visitor_ctx = &match_visitor_ctx;
 
       bool matched =
          match_bson_with_ctx (tmp_bson (event), tmp_bson (pattern), &match_ctx);
