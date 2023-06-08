@@ -1201,8 +1201,6 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
 void
 mongoc_client_destroy (mongoc_client_t *client)
 {
-   BSON_ASSERT_PARAM (client);
-
    if (client) {
       if (client->topology->single_threaded) {
          _mongoc_client_end_sessions (client);
