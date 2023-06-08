@@ -1,92 +1,106 @@
-/* gcc example-create-indexes.c -o example-create-indexes $(pkg-config --cflags
- * --libs libmongoc-1.0) */
-
-/* ./example-create-indexes [CONNECTION_STRING [COLLECTION_NAME]] */
+// example-create-indexes creates, lists and deletes an index from the
+// `test.test` collection.
 
 #include <mongoc/mongoc.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> // abort
+
+#define FAIL(...)                                        \
+   if (1) {                                              \
+      fprintf (stderr, "failed on line %d\n", __LINE__); \
+      fprintf (stderr, __VA_ARGS__);                     \
+      fprintf (stderr, "\n");                            \
+      goto fail;                                         \
+   } else                                                \
+      (void) 0
 
 int
 main (int argc, char *argv[])
 {
-   mongoc_client_t *client;
+   mongoc_client_t *client = NULL;
    const char *uri_string =
       "mongodb://127.0.0.1/?appname=create-indexes-example";
-   mongoc_uri_t *uri;
-   mongoc_database_t *db;
-   const char *collection_name = "test";
-   bson_t keys;
-   char *index_name;
-   bson_t *create_indexes;
-   bson_t reply;
-   char *reply_str;
+   mongoc_uri_t *uri = NULL;
+   mongoc_collection_t *coll = NULL;
    bson_error_t error;
-   bool r;
+   bool ok = false;
 
    mongoc_init ();
+
+   if (argc > 2) {
+      FAIL ("Unexpected arguments. Expected usage: %s [CONNECTION_STRING]",
+            argv[0]);
+   }
 
    if (argc > 1) {
       uri_string = argv[1];
    }
 
-   if (argc > 2) {
-      collection_name = argv[2];
-   }
-
    uri = mongoc_uri_new_with_error (uri_string, &error);
    if (!uri) {
-      fprintf (stderr,
-               "failed to parse URI: %s\n"
-               "error message:       %s\n",
-               uri_string,
-               error.message);
-      return EXIT_FAILURE;
+      FAIL ("Failed to parse URI: %s", error.message);
    }
-
-   client = mongoc_client_new_from_uri (uri);
+   client = mongoc_client_new_from_uri_with_error (uri, &error);
    if (!client) {
-      return EXIT_FAILURE;
+      FAIL ("Failed to create client: %s", error.message);
    }
 
-   mongoc_client_set_error_api (client, 2);
-   db = mongoc_client_get_database (client, "test");
+   coll = mongoc_client_get_collection (client, "test", "test");
 
-   /* ascending index on field "x" */
-   bson_init (&keys);
-   BSON_APPEND_INT32 (&keys, "x", 1);
-   index_name = mongoc_collection_keys_to_index_string (&keys);
-   create_indexes = BCON_NEW ("createIndexes",
-                              BCON_UTF8 (collection_name),
-                              "indexes",
-                              "[",
-                              "{",
-                              "key",
-                              BCON_DOCUMENT (&keys),
-                              "name",
-                              BCON_UTF8 (index_name),
-                              "}",
-                              "]");
-
-   r = mongoc_database_write_command_with_opts (
-      db, create_indexes, NULL /* opts */, &reply, &error);
-
-   reply_str = bson_as_json (&reply, NULL);
-   printf ("%s\n", reply_str);
-
-   if (!r) {
-      fprintf (stderr, "Error in createIndexes: %s\n", error.message);
+   {
+      // Create an index ... begin
+      // `keys` represents an ascending index on field `x`.
+      bson_t *keys = BCON_NEW ("x", BCON_INT32 (1));
+      mongoc_index_model_t *im = mongoc_index_model_new (keys, NULL /* opts */);
+      if (!mongoc_collection_create_indexes_with_opts (
+             coll, &im, 1, NULL /* opts */, NULL /* reply */, &error)) {
+         bson_destroy (keys);
+         FAIL ("Failed to create index: %s", error.message);
+      }
+      printf ("Created index\n");
+      bson_destroy (keys);
+      // Create an index ... end
    }
 
-   bson_free (index_name);
-   bson_free (reply_str);
-   bson_destroy (&reply);
-   bson_destroy (create_indexes);
-   mongoc_database_destroy (db);
-   mongoc_uri_destroy (uri);
+   {
+      // List indexes ... begin
+      mongoc_cursor_t *cursor =
+         mongoc_collection_find_indexes_with_opts (coll, NULL /* opts */);
+      printf ("Listing indexes:\n");
+      const bson_t *got;
+      while (mongoc_cursor_next (cursor, &got)) {
+         char *got_str = bson_as_canonical_extended_json (got, NULL);
+         printf ("  %s\n", got_str);
+         bson_free (got_str);
+      }
+      if (mongoc_cursor_error (cursor, &error)) {
+         mongoc_cursor_destroy (cursor);
+         FAIL ("Failed to list indexes: %s", error.message);
+      }
+      mongoc_cursor_destroy (cursor);
+      // List indexes ... end
+   }
+
+   {
+      // Drop an index ... begin
+      bson_t *keys = BCON_NEW ("x", BCON_INT32 (1));
+      char *index_name = mongoc_collection_keys_to_index_string (keys);
+      if (!mongoc_collection_drop_index_with_opts (
+             coll, index_name, NULL /* opts */, &error)) {
+         bson_free (index_name);
+         bson_destroy (keys);
+         FAIL ("Failed to drop index: %s", error.message);
+      }
+      printf ("Dropped index\n");
+      bson_free (index_name);
+      bson_destroy (keys);
+      // Drop an index ... end
+   }
+
+   ok = true;
+fail:
+   mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
-
+   mongoc_uri_destroy (uri);
    mongoc_cleanup ();
-
-   return r ? EXIT_SUCCESS : EXIT_FAILURE;
+   return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

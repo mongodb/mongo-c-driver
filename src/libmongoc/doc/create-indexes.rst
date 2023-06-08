@@ -3,23 +3,28 @@
 Creating Indexes
 ================
 
-To create indexes on a MongoDB collection, execute the ``createIndexes`` command
-with a command function like :symbol:`mongoc_database_write_command_with_opts` or
-:symbol:`mongoc_collection_write_command_with_opts`. See `the MongoDB
-Manual entry for the createIndexes command
-<https://www.mongodb.com/docs/manual/reference/command/createIndexes/>`_ for details.
-
-.. warning::
-
-   The ``commitQuorum`` option to the ``createIndexes`` command is only
-   supported in MongoDB 4.4+ servers, but it is not validated in the command
-   functions. Do not pass ``commitQuorum`` if connected to server versions less
-   than 4.4. Using the ``commitQuorum`` option on server versions less than 4.4
-   may have adverse effects on index builds.
-
-Example
--------
+To create indexes on a MongoDB collection, use :symbol:`mongoc_collection_create_indexes_with_opts`:
 
 .. literalinclude:: ../examples/example-create-indexes.c
    :language: c
-   :caption: example-create-indexes.c
+   :start-after: // Create an index ... begin
+   :end-before: // Create an index ... end
+   :dedent: 6
+
+To list indexes, use :symbol:`mongoc_collection_find_indexes_with_opts`:
+
+.. literalinclude:: ../examples/example-create-indexes.c
+   :language: c
+   :start-after: // List indexes ... begin
+   :end-before: // List indexes ... end
+   :dedent: 6
+
+To drop an index, use :symbol:`mongoc_collection_drop_index_with_opts`. The index name may be obtained from the ``keys`` document with :symbol:`mongoc_collection_keys_to_index_string`:
+
+.. literalinclude:: ../examples/example-create-indexes.c
+   :language: c
+   :start-after: // Drop an index ... begin
+   :end-before: // Drop an index ... end
+   :dedent: 6
+
+For a full example, see `example-create-indexes.c <https://github.com/mongodb/mongo-c-driver/blob/master/src/libmongoc/examples/example-create-indexes.c>`_.
