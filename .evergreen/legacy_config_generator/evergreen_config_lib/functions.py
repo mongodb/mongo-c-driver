@@ -70,8 +70,8 @@ all_functions = OD([
         export BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=${BUILD_SAMPLE_WITH_CMAKE_DEPRECATED}
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        LINK_STATIC=  sh .evergreen/scripts/link-sample-program.sh
-        LINK_STATIC=1 sh .evergreen/scripts/link-sample-program.sh
+        LINK_STATIC=  bash .evergreen/scripts/link-sample-program.sh
+        LINK_STATIC=1 bash .evergreen/scripts/link-sample-program.sh
         ''',
         include_expansions_in_env=['distro_id']),
     )),
@@ -79,12 +79,12 @@ all_functions = OD([
         shell_mongoc(r'''
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 bash .evergreen/scripts/link-sample-program-bson.sh
         ''',
         include_expansions_in_env=['distro_id']),
     )),
@@ -147,14 +147,14 @@ all_functions = OD([
         shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        sh .evergreen/atlas_data_lake/build-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/build-mongohouse-local.sh
         '''),
     )),
     ('run mongohouse', Function(
         shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        sh .evergreen/atlas_data_lake/run-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/run-mongohouse-local.sh
         ''', background=True),
     )),
     ('test mongohouse', Function(
