@@ -1090,7 +1090,6 @@ _release_mongocryptd_client (mongoc_client_t *client_encrypted,
                              mongoc_client_t *mongocryptd_client)
 {
    BSON_ASSERT_PARAM (client_encrypted);
-   BSON_ASSERT_PARAM (mongocryptd_client);
 
    if (!mongocryptd_client) {
       return;
