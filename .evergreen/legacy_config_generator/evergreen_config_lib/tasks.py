@@ -372,9 +372,9 @@ all_tasks = [
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
                 export CMAKE="$(find_cmake_latest)"
-                DESTDIR="$(pwd)/dest" sh ./.evergreen/scripts/install-uninstall-check.sh
-                BSON_ONLY=1 sh ./.evergreen/scripts/install-uninstall-check.sh
-                sh ./.evergreen/scripts/install-uninstall-check.sh""",
+                DESTDIR="$(pwd)/dest" bash ./.evergreen/scripts/install-uninstall-check.sh
+                BSON_ONLY=1 bash ./.evergreen/scripts/install-uninstall-check.sh
+                bash ./.evergreen/scripts/install-uninstall-check.sh""",
                 include_expansions_in_env=["distro_id"],
             )
         ],
