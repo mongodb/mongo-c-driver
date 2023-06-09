@@ -2600,7 +2600,7 @@ test_cursor_install (TestSuite *suite)
                       test_cursor_batchsize_override_int32);
    TestSuite_AddLive (suite,
                       "/Cursor/batchsize_override_int64",
-                      test_cursor_batchsize_override_int32);
+                      test_cursor_batchsize_override_int64);
    TestSuite_AddLive (suite,
                       "/Cursor/batchsize_override_double",
                       test_cursor_batchsize_override_double);
