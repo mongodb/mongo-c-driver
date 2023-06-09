@@ -1473,8 +1473,8 @@ mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor, uint32_t batch_size)
 
    if (bson_iter_init_find (&iter, &cursor->opts, MONGOC_CURSOR_BATCH_SIZE) &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
-      _mongoc_cursor_set_opt_int32 (
-         cursor, MONGOC_CURSOR_BATCH_SIZE, (int32_t) batch_size);
+      BSON_ASSERT (bson_in_range_int32_t_unsigned (batch_size));
+      bson_iter_overwrite_int32 (&iter, (int32_t) batch_size);
    } else {
       _mongoc_cursor_set_opt_int64 (
          cursor, MONGOC_CURSOR_BATCH_SIZE, (int64_t) batch_size);

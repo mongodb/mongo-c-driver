@@ -2353,7 +2353,6 @@ test_find_error_is_alive (void)
 typedef struct _started_event_t {
    char *command_name;
    bson_t *command;
-   struct _started_event_t *next;
 } started_event_t;
 
 static void
@@ -2369,8 +2368,6 @@ command_started (const mongoc_apm_command_started_t *event)
       bson_strdup (mongoc_apm_command_started_get_command_name (event));
    _mongoc_array_append_val (events, started_event);
 
-   MONGOC_DEBUG ("Command %s started",
-                 mongoc_apm_command_started_get_command_name (event));
 }
 
 static void
@@ -2408,7 +2405,8 @@ test_cursor_batchsize_override_int32 (void)
    {
       bson_t *to_insert = BCON_NEW ("x", "y");
 
-      ASSERT_OR_PRINT (mongoc_collection_drop (coll, &error), error);
+      // Ignore "ns not found" error on drop.
+      mongoc_collection_drop (coll, NULL);
       ASSERT_OR_PRINT (
          mongoc_collection_insert_one (
             coll, to_insert, NULL /* opts */, NULL /* reply */, &error),
@@ -2550,6 +2548,6 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddLive (
       suite, "/Cursor/find_error/is_alive", test_find_error_is_alive);
    TestSuite_AddLive (suite,
-                      "/Cursor/overwrite_int64_batch_size",
+                      "/Cursor/batchsize_override_int32",
                       test_cursor_batchsize_override_int32);
 }
