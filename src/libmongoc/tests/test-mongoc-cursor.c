@@ -2376,8 +2376,7 @@ command_started (const mongoc_apm_command_started_t *event)
 static void
 clear_started_events (mongoc_array_t *events)
 {
-   size_t i;
-   for (i = 0; i < events->len; i++) {
+   for (size_t i = 0; i < events->len; i++) {
       started_event_t *started_event =
          _mongoc_array_index (events, started_event_t *, i);
       bson_destroy (started_event->command);
