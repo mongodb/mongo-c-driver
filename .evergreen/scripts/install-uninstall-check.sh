@@ -7,7 +7,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 
 DIR=$(dirname $0)
-. $DIR/find-cmake.sh
+. $DIR/find-cmake-latest.sh
+CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
 
 if command -v gtar 2>/dev/null; then

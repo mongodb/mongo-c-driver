@@ -10,7 +10,6 @@ echo on
 echo
 
 set TAR=C:\cygwin\bin\tar
-set CMAKE=C:\cmake\bin\cmake
 
 set SRCROOT=%CD%
 set BUILD_DIR=%CD%\build-dir

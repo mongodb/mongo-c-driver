@@ -6,7 +6,6 @@ echo
 
 set CMAKE_FLAGS=-DENABLE_SSL=OPENSSL -DENABLE_SASL=CYRUS
 set TAR=C:\cygwin\bin\tar
-set CMAKE=C:\cmake\bin\cmake
 set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\mingw32-make.exe
 set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
 rem Ensure Cygwin executables like sh.exe are not in PATH

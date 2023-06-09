@@ -10,7 +10,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=$BUILD_SAMPLE_WITH_CMAKE_DEPRECATED"
 
 DIR=$(dirname $0)
-. $DIR/find-cmake.sh
+. $DIR/find-cmake-latest.sh
+CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
 
 if command -v gtar 2>/dev/null; then

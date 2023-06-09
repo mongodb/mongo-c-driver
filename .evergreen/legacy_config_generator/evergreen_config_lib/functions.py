@@ -72,7 +72,8 @@ all_functions = OD([
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
         LINK_STATIC=  sh .evergreen/scripts/link-sample-program.sh
         LINK_STATIC=1 sh .evergreen/scripts/link-sample-program.sh
-        '''),
+        ''',
+        include_expansions_in_env=['distro_id']),
     )),
     ('link sample program bson', Function(
         shell_mongoc(r'''
@@ -84,7 +85,8 @@ all_functions = OD([
         BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
         BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
         BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
-        '''),
+        ''',
+        include_expansions_in_env=['distro_id']),
     )),
     ('link sample program MSVC', Function(
         shell_mongoc(r'''

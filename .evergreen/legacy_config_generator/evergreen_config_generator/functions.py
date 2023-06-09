@@ -14,6 +14,7 @@
 
 from collections import OrderedDict as OD
 from textwrap import dedent
+from typing import Iterable
 
 from evergreen_config_generator import ConfigObject
 
@@ -67,6 +68,7 @@ def shell_exec(
     background: bool = False,
     add_expansions_to_env: bool = False,
     redirect_standard_error_to_output: bool = False,
+    include_expansions_in_env: Iterable[str] = (),
 ) -> ValueMapping:
     dedented = ""
     if errexit:
@@ -98,6 +100,9 @@ def shell_exec(
 
     if redirect_standard_error_to_output:
         command["params"]["redirect_standard_error_to_output"] = True
+
+    if include_expansions_in_env:
+        command["params"]["include_expansions_in_env"] = list(include_expansions_in_env)
 
     command["params"]["shell"] = "bash"
     command["params"]["script"] = dedented
