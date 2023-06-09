@@ -31,10 +31,6 @@ set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
 set (MONGOC_OUTPUT_BASENAME "mongoc" CACHE STRING "Output mongoc library base name")
 
-if (ENABLE_COVERAGE)
-   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
-endif ()
-
 if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
    message (FATAL_ERROR
       "ENABLE_ZLIB option must be SYSTEM, BUNDLED, AUTO, or OFF"
@@ -740,6 +736,10 @@ set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidd
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
+if(ENABLE_COVERAGE)
+   target_compile_options(mongoc_shared PRIVATE --coverage)
+   target_link_options(mongoc_shared PUBLIC --coverage)
+endif()
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
    if (APPLE)
@@ -774,6 +774,10 @@ set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BAS
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
+   if(ENABLE_COVERAGE)
+      target_compile_options(mongoc_static PRIVATE --coverage)
+      target_link_options(mongoc_static PUBLIC --coverage)
+   endif()
    target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
