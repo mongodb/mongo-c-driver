@@ -506,8 +506,8 @@ if (ENABLE_MONGOC)
       add_custom_target (doc
          ALL
          DEPENDS
-            $<$<NOT:$<BOOL:"${USE_SYSTEM_LIBBSON}">>:bson-doc>
-            $<$<BOOL:"${ENABLE_MONGOC}">:mongoc-doc>
+            $<$<NOT:$<BOOL:${USE_SYSTEM_LIBBSON}>>:bson-doc>
+            $<$<BOOL:${ENABLE_MONGOC}>:mongoc-doc>
       )
    endif ()
 
