@@ -9673,7 +9673,7 @@ buildvariants:
   - debian-package-build
   - name: rpm-package-build
     distros:
-    - rhel82-arm64-small
+    - rhel90-arm64-small
   batchtime: 1440
 - name: versioned-api
   display_name: Versioned API Tests
