@@ -2104,15 +2104,15 @@ test_rpc_message_to_iovecs_op_reply (void)
    ASSERT (iovecs);
 
    ASSERT_CMPSIZE_T (num_iovecs, ==, 9u);
-   ASSERT_IOVEC_INT32 (0, 68);                  // messageLength
-   ASSERT_IOVEC_INT32 (1, 16909060);            // requestID
-   ASSERT_IOVEC_INT32 (2, 84281096);            // responseTo
-   ASSERT_IOVEC_INT32 (3, 1);                   // opCode
-   ASSERT_IOVEC_INT32 (4, 0);                   // responseFlags
-   ASSERT_IOVEC_INT64 (5, 1234605616436508552); // cursorID
-   ASSERT_IOVEC_INT32 (6, 0);                   // startingFrom
-   ASSERT_IOVEC_INT32 (7, 2);                   // numberReturned
-   ASSERT_IOVEC_BYTES (8, 36u, 32u);            // documents
+   ASSERT_IOVEC_INT32 (0, 68);                            // messageLength
+   ASSERT_IOVEC_INT32 (1, 16909060);                      // requestID
+   ASSERT_IOVEC_INT32 (2, 84281096);                      // responseTo
+   ASSERT_IOVEC_INT32 (3, 1);                             // opCode
+   ASSERT_IOVEC_INT32 (4, 0);                             // responseFlags
+   ASSERT_IOVEC_INT64 (5, INT64_C (1234605616436508552)); // cursorID
+   ASSERT_IOVEC_INT32 (6, 0);                             // startingFrom
+   ASSERT_IOVEC_INT32 (7, 2);                             // numberReturned
+   ASSERT_IOVEC_BYTES (8, 36u, 32u);                      // documents
 
    bson_free (iovecs);
    mcd_rpc_message_destroy (rpc);
@@ -2211,14 +2211,14 @@ test_rpc_message_to_iovecs_op_get_more (void)
    ASSERT (iovecs);
 
    ASSERT_CMPSIZE_T (num_iovecs, ==, 8u);
-   ASSERT_IOVEC_INT32 (0, 40);                  // messageLength
-   ASSERT_IOVEC_INT32 (1, 16909060);            // requestID
-   ASSERT_IOVEC_INT32 (2, 84281096);            // responseTo
-   ASSERT_IOVEC_INT32 (3, 2005);                // opCode
-   ASSERT_IOVEC_INT32 (4, 0);                   // ZERO
-   ASSERT_IOVEC_BYTES (5, 20u, 8u);             // fullCollectionName
-   ASSERT_IOVEC_INT32 (6, 0);                   // numberToReturn
-   ASSERT_IOVEC_INT64 (7, 1234605616436508552); // cursorID
+   ASSERT_IOVEC_INT32 (0, 40);                            // messageLength
+   ASSERT_IOVEC_INT32 (1, 16909060);                      // requestID
+   ASSERT_IOVEC_INT32 (2, 84281096);                      // responseTo
+   ASSERT_IOVEC_INT32 (3, 2005);                          // opCode
+   ASSERT_IOVEC_INT32 (4, 0);                             // ZERO
+   ASSERT_IOVEC_BYTES (5, 20u, 8u);                       // fullCollectionName
+   ASSERT_IOVEC_INT32 (6, 0);                             // numberToReturn
+   ASSERT_IOVEC_INT64 (7, INT64_C (1234605616436508552)); // cursorID
 
    bson_free (iovecs);
    mcd_rpc_message_destroy (rpc);
