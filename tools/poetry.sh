@@ -30,29 +30,31 @@
 #     • The version of Poetry that will be installed by run-poetry when executed.
 
 # Load vars and utils:
-. "$(dirname "${BASH_SOURCE[0]}")/use.sh" python paths base with_lock download
+. "$(dirname "${BASH_SOURCE[0]}")/use.sh" python paths base with_lock
 
 : "${WANT_POETRY_VERSION:=1.4.2}"
 declare -r -x POETRY_HOME=${FORCE_POETRY_HOME:-"$BUILD_CACHE_DIR/poetry-$WANT_POETRY_VERSION"}
 declare -r POETRY_EXE=$POETRY_HOME/bin/poetry$EXE_SUFFIX
 
-# Usage: install-poetry <version> <poetry-home>
+_POETRY_PIP_INSTALL_ARGS=(
+    --disable-pip-version-check
+    --quiet
+    poetry=="$WANT_POETRY_VERSION"
+    # Needed for PowerPC, which doesn't have binary wheels for our version, and our CI does
+    # not have the Rust toolchain available to build it:
+    "cryptography<3.4"
+)
+
 install-poetry() {
-    declare poetry_version=$1
-    declare poetry_home=$2
-    log "Installing Poetry $poetry_version into [$poetry_home]"
-    mkdir -p "$poetry_home"
-    # Download the automated installer:
-    installer=$poetry_home/install-poetry.py
-    download-file --uri=https://install.python-poetry.org --out="$installer"
-    # Run the install:
-    with-lock "$POETRY_HOME/.install.lock" \
-        env POETRY_HOME="$poetry_home" \
-        "$(find-python)" -u "$installer" --yes --version "$poetry_version" \
-    || (
-        cat -- poetry-installer*.log && fail "Poetry installation failed"
-    )
-    printf %s "$poetry_version" > "$POETRY_HOME/installed.txt"
+    log "Creating virtualenv for Poetry…"
+    run-python -m venv "$POETRY_HOME"
+    log "Updating pip…"
+    "$POETRY_HOME/bin/python$EXE_SUFFIX" -m pip install --quiet -U pip
+    log "Installing Poetry…"
+    "$POETRY_HOME/bin/python$EXE_SUFFIX" -m pip install "${_POETRY_PIP_INSTALL_ARGS[@]}"
+    is-file "$POETRY_EXE" || fail "Installation did not create the expected executable [$POETRY_EXE]"
+    log "Installing Poetry… - Done"
+    printf %s "$WANT_POETRY_VERSION" > "$POETRY_HOME/installed.txt"
 }
 
 # Idempotent installation:
@@ -60,9 +62,15 @@ install-poetry() {
 ensure-poetry() {
     declare version=${1:-$WANT_POETRY_VERSION}
     declare home=${2:-$POETRY_HOME}
-    if ! is-file "$home/installed.txt" || [[ "$(cat "$home/installed.txt")" != "$version" ]]; then
-        install-poetry "$version" "$home"
+    if is-file "$home/installed.txt" && [[ "$(cat "$home/installed.txt")" == "$version" ]]; then
+        return 0
     fi
+    mkdir -p "$POETRY_HOME"
+    with-lock "$POETRY_HOME/.install.lock" \
+        env WANT_POETRY_VERSION="$WANT_POETRY_VERSION" \
+            FORCE_POETRY_HOME="$POETRY_HOME" \
+        "$BASH" "$TOOLS_DIR/poetry.sh" --install
+    is-file "$POETRY_EXE" || fail "Installation did not create the expected executable [$POETRY_EXE]"
 }
 
 run-poetry() {
@@ -80,6 +88,12 @@ if is-main; then
     if [[ "$*" = "--ensure-installed" ]]; then
         # Just install, don't run it
         ensure-poetry "$WANT_POETRY_VERSION" "$POETRY_HOME"
+    elif [[ "${1:-}" = "--install" ]]; then
+        shift
+        install-poetry "$@"
+    elif [[ "$*" = "--env-use" ]]; then
+        _python=$(find-python)
+        run-poetry env use -- "$_python"
     else
         # Run the Poetry command:
         run-poetry "$@"

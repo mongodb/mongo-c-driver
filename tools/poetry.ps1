@@ -82,7 +82,19 @@ if (!(Test-Path $stamp_file)) {
     # (No need to double-check, since a second install is a no-op)
     try {
         # Do the actual install:
-        & $py -u "$this_dir/install-poetry.py" --yes --version "$PoetryVersion"
+        Write-Host "Creating virtualenv..."
+        & $py -m venv $PoetryHome
+        if ($LASTEXITCODE -ne 0) {
+            throw "Virtualenv creation failed [$LASTEXITCODE]"
+        }
+        Write-Host "Updating Pip..."
+        $py = "$PoetryHome/bin/python.exe"
+        & $py -m pip install --quiet -U pip
+        if ($LASTEXITCODE -ne 0) {
+            throw "Pip update failed [$LASTEXITCODE]"
+        }
+        Write-Host "Installing Poetry $PoetryVersion..."
+        & $py -m pip install --quiet "poetry==$PoetryVersion"
         if ($LASTEXITCODE -ne 0) {
             throw "Poetry installation failed [$LASTEXITCODE]"
         }
