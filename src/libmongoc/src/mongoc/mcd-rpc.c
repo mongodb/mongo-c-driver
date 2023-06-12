@@ -1421,7 +1421,7 @@ _append_iovec_op_query (mongoc_iovec_t **iovecs,
       iovecs,
       capacity,
       header_iovecs,
-      6u + (size_t) (!!op_query->return_fields_selector));
+      5u + (size_t) (!!op_query->return_fields_selector));
 
    if (!_append_iovec_int32_t (*iovecs, capacity, count, &op_query->flags)) {
       return false;
