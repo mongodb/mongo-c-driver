@@ -1806,7 +1806,7 @@ void
 mcd_rpc_message_set_length (mcd_rpc_message *rpc, int32_t value)
 {
    BSON_ASSERT_PARAM (rpc);
-   rpc->msg_header.message_length += value;
+   rpc->msg_header.message_length = value;
 }
 
 int32_t
