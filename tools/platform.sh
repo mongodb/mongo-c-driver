@@ -82,7 +82,7 @@ if $IS_LINUX; then
         declare -r DIST_ID=${_dist_id}
     fi
 elif $IS_DARWIN; then
-    _version=$(sw_vers | grep ProductionVersion | sed 's|ProductionVersion: \(.*\)|\1|')
+    _version=$(sw_vers | grep ProductVersion | sed 's|ProductVersion: \(.*\)|\1|')
     _major_version=${_version/.*/}
     declare -r MACOS_VERSION=${_version}
     declare -r MACOS_MAJOR_VERSION=${_major_version}
