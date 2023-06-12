@@ -2,8 +2,6 @@
 
 #include <mongoc/mongoc-iovec.h>
 
-#include <bson-dsl.h>
-
 #include "test-conveniences.h"
 #include "TestSuite.h"
 
