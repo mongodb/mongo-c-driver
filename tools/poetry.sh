@@ -42,7 +42,7 @@ _POETRY_PIP_INSTALL_ARGS=(
     poetry=="$WANT_POETRY_VERSION"
     # Needed for PowerPC, which doesn't have binary wheels for our version, and our CI does
     # not have the Rust toolchain available to build it:
-    "cryptography<3.4"
+    "cryptography<3.3"
 )
 
 install-poetry() {
