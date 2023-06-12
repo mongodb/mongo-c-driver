@@ -1188,6 +1188,7 @@ _append_iovec_op_msg (mongoc_iovec_t **iovecs,
    BSON_ASSERT_PARAM (capacity);
    BSON_ASSERT_PARAM (count);
    BSON_ASSERT_PARAM (op_msg);
+   BSON_ASSERT_PARAM (header_iovecs);
 
    size_t section_iovecs = 0u;
    if (!_count_section_iovecs (op_msg, &section_iovecs)) {
@@ -1278,6 +1279,7 @@ _append_iovec_op_reply (mongoc_iovec_t **iovecs,
    BSON_ASSERT_PARAM (capacity);
    BSON_ASSERT_PARAM (count);
    BSON_ASSERT_PARAM (op_reply);
+   BSON_ASSERT_PARAM (header_iovecs);
 
    _append_iovec_reserve_space_for (iovecs, capacity, header_iovecs, 5u);
 
@@ -1324,6 +1326,7 @@ _append_iovec_op_update (mongoc_iovec_t **iovecs,
    BSON_ASSERT_PARAM (capacity);
    BSON_ASSERT_PARAM (count);
    BSON_ASSERT_PARAM (op_update);
+   BSON_ASSERT_PARAM (header_iovecs);
 
    _append_iovec_reserve_space_for (iovecs, capacity, header_iovecs, 5u);
 
@@ -1373,6 +1376,7 @@ _append_iovec_op_insert (mongoc_iovec_t **iovecs,
    BSON_ASSERT_PARAM (capacity);
    BSON_ASSERT_PARAM (count);
    BSON_ASSERT_PARAM (op_insert);
+   BSON_ASSERT_PARAM (header_iovecs);
 
    _append_iovec_reserve_space_for (iovecs, capacity, header_iovecs, 3u);
 
@@ -1411,6 +1415,7 @@ _append_iovec_op_query (mongoc_iovec_t **iovecs,
    BSON_ASSERT_PARAM (capacity);
    BSON_ASSERT_PARAM (count);
    BSON_ASSERT_PARAM (op_query);
+   BSON_ASSERT_PARAM (header_iovecs);
 
    _append_iovec_reserve_space_for (
       iovecs,
@@ -1473,6 +1478,7 @@ _append_iovec_op_get_more (mongoc_iovec_t **iovecs,
    BSON_ASSERT_PARAM (count);
    BSON_ASSERT_PARAM (capacity);
    BSON_ASSERT_PARAM (op_get_more);
+   BSON_ASSERT_PARAM (header_iovecs);
 
    _append_iovec_reserve_space_for (iovecs, capacity, header_iovecs, 4u);
 
@@ -1512,6 +1518,7 @@ _append_iovec_op_delete (mongoc_iovec_t **iovecs,
    BSON_ASSERT_PARAM (capacity);
    BSON_ASSERT_PARAM (count);
    BSON_ASSERT_PARAM (op_delete);
+   BSON_ASSERT_PARAM (header_iovecs);
 
    _append_iovec_reserve_space_for (iovecs, capacity, header_iovecs, 4u);
 
@@ -1553,6 +1560,7 @@ _append_iovec_op_kill_cursors (mongoc_iovec_t **iovecs,
    BSON_ASSERT_PARAM (capacity);
    BSON_ASSERT_PARAM (count);
    BSON_ASSERT_PARAM (op_kill_cursors);
+   BSON_ASSERT_PARAM (header_iovecs);
 
    // Store value before conversion to little endian.
    const int32_t number_of_cursor_ids = op_kill_cursors->number_of_cursor_ids;
