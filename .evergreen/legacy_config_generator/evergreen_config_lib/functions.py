@@ -95,6 +95,7 @@ all_functions = OD([
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+        . .evergreen/scripts/use-tools.sh paths
         . .evergreen/scripts/find-cmake-latest.sh
         export CMAKE="$(native-path "$(find_cmake_latest)")"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
@@ -106,6 +107,7 @@ all_functions = OD([
         shell_mongoc(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
+        . .evergreen/scripts/use-tools.sh paths
         . .evergreen/scripts/find-cmake-latest.sh
         export CMAKE="$(native-path "$(find_cmake_latest)")"
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
@@ -119,6 +121,7 @@ all_functions = OD([
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+        . .evergreen/scripts/use-tools.sh paths
         . .evergreen/scripts/find-cmake-latest.sh
         export CMAKE="$(native-path "$(find_cmake_latest)")"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
@@ -130,6 +133,7 @@ all_functions = OD([
         shell_mongoc(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
+        . .evergreen/scripts/use-tools.sh paths
         . .evergreen/scripts/find-cmake-latest.sh
         export CMAKE="$(native-path "$(find_cmake_latest)")"
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
