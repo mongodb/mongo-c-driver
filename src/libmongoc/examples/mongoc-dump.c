@@ -49,8 +49,6 @@ mongoc_dump_collection (mongoc_client_t *client,
    char *path;
    int ret = EXIT_SUCCESS;
 
-   BSON_ASSERT_PARAM (client);
-
    path = bson_strdup_printf ("dump/%s/%s.bson", database, collection);
 #ifdef _WIN32
    _unlink (path);

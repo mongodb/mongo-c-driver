@@ -88,8 +88,6 @@ void
 mongoc_auto_encryption_opts_set_keyvault_client (
    mongoc_auto_encryption_opts_t *opts, mongoc_client_t *client)
 {
-   BSON_ASSERT_PARAM (client);
-
    if (!opts) {
       return;
    }
@@ -101,8 +99,6 @@ void
 mongoc_auto_encryption_opts_set_keyvault_client_pool (
    mongoc_auto_encryption_opts_t *opts, mongoc_client_pool_t *pool)
 {
-   BSON_ASSERT_PARAM (pool);
-
    if (!opts) {
       return;
    }
@@ -270,8 +266,6 @@ void
 mongoc_client_encryption_opts_set_keyvault_client (
    mongoc_client_encryption_opts_t *opts, mongoc_client_t *keyvault_client)
 {
-   BSON_ASSERT_PARAM (keyvault_client);
-
    if (!opts) {
       return;
    }

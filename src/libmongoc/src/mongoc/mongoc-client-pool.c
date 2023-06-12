@@ -315,7 +315,7 @@ again:
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = _mongoc_client_new_from_topology (pool->topology);
-         BSON_ASSERT_PARAM (client);
+         BSON_ASSERT (client);
          _initialize_new_client (pool, client);
          pool->size++;
       } else {
