@@ -403,12 +403,6 @@ mcd_rpc_op_msg_set_sections_count (mcd_rpc_message *rpc, size_t section_count);
 int32_t
 mcd_rpc_op_msg_set_checksum (mcd_rpc_message *rpc, uint32_t checksum);
 
-// Unset the OP_MSG checksum field.
-//
-// The msgHeader.opCode field MUST equal MONGOC_OP_CODE_MSG.
-void
-mcd_rpc_op_msg_unset_checksum (mcd_rpc_message *rpc);
-
 
 // Get the OP_REPLY responseFlags field.
 //

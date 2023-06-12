@@ -2173,14 +2173,6 @@ mcd_rpc_op_msg_set_checksum (mcd_rpc_message *rpc, uint32_t checksum)
    return sizeof (checksum);
 }
 
-void
-mcd_rpc_op_msg_unset_checksum (mcd_rpc_message *rpc)
-{
-   BSON_ASSERT_PARAM (rpc);
-   BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
-   rpc->op_msg.checksum_set = false;
-}
-
 
 int32_t
 mcd_rpc_op_reply_get_response_flags (const mcd_rpc_message *rpc)
