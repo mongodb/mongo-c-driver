@@ -11,24 +11,25 @@
 // clang-format off
 #define TEST_DATA_OP_COMPRESSED                                        \
    /*    */ /* header (16 bytes) */                                          \
-   /*  0 */ 0x2b, 0x00, 0x00, 0x00, /* messageLength (43)           */       \
+   /*  0 */ 0x2d, 0x00, 0x00, 0x00, /* messageLength (45)           */       \
    /*  4 */ 0x04, 0x03, 0x02, 0x01, /* requestID (16909060)         */       \
    /*  8 */ 0x08, 0x07, 0x06, 0x05, /* responseTo (84281096)        */       \
    /* 12 */ 0xdc, 0x07, 0x00, 0x00, /* opCode (2012: OP_COMPRESSED) */       \
    /*    */                                                                  \
    /*    */ /* OP_COMPRESSED fields (9 bytes) */                             \
    /* 16 */ 0xdd, 0x07, 0x00, 0x00, /* originalOpcode (2013: OP_MSG) */      \
-   /* 20 */ 0x12, 0x00, 0x00, 0x00, /* uncompressedSize (18)         */      \
+   /* 20 */ 0x14, 0x00, 0x00, 0x00, /* uncompressedSize (20)         */      \
    /* 24 */ 0x00,                   /* compressorId (0: noop)        */      \
    /*    */                                                                  \
-   /*    */ /* compressedMessage (18 bytes) */                               \
+   /*    */ /* compressedMessage (20 bytes) */                               \
    /* 25 */ 0x00, 0x00, 0x00, 0x00, /* flagBits (MONGOC_OP_MSG_FLAG_NONE) */ \
-   /* 29 */ 0x00,                   /* Kind 0: Body                       */ \
-   /* 30 */ 0x0d, 0x00, 0x00, 0x00,                       /* (13 bytes) { */ \
-   /* 34 */   0x02,                                       /*   (string)   */ \
-   /* 35 */     0x6f, 0x70, 0x5f, 0x6d, 0x73, 0x67, 0x00, /*     'op_msg' */ \
-   /* 42 */ 0x00                                          /* }            */ \
-   /* 43 */
+   /* 29 */ 0x00,                   /* Kind 0: Body */                       \
+   /* 30 */ 0x0f, 0x00, 0x00, 0x00,           /* (15 bytes) { */             \
+   /* 34 */   0x10,                           /*   (int32)    */             \
+   /* 35 */     0x6b, 0x69, 0x6e, 0x64, 0x00, /*     'kind':  */             \
+   /* 40 */     0x00, 0x00, 0x00, 0x00,       /*      0       */             \
+   /* 44 */ 0x00                              /* }            */             \
+   /* 45 */
 // clang-format on
 
 // clang-format off
@@ -370,7 +371,7 @@ test_rpc_message_from_data_op_compressed_valid (void)
                        MONGOC_OP_CODE_MSG);
 
       ASSERT_CMPINT32 (
-         mcd_rpc_op_compressed_get_uncompressed_size (rpc), ==, 18);
+         mcd_rpc_op_compressed_get_uncompressed_size (rpc), ==, 20);
 
       ASSERT_CMPUINT (mcd_rpc_op_compressed_get_compressor_id (rpc),
                       ==,
@@ -381,7 +382,7 @@ test_rpc_message_from_data_op_compressed_valid (void)
       ASSERT_CMPSIZE_T ((size_t) (compressed_message - data), ==, 25u);
 
       ASSERT_CMPSIZE_T (
-         mcd_rpc_op_compressed_get_compressed_message_length (rpc), ==, 18u);
+         mcd_rpc_op_compressed_get_compressed_message_length (rpc), ==, 20u);
 
       mcd_rpc_message_destroy (rpc);
    }
@@ -1410,17 +1411,17 @@ test_rpc_message_from_data_op_compressed_invalid (void)
    const size_t data_len = sizeof (data) - 2u; // Exclude the extra bytes.
 
    // clang-format off
-   EXPECT_DECR_SUCCESS ( 0u,  0u, 42u); // messageLength (byte 0).
+   EXPECT_DECR_SUCCESS ( 0u,  0u, 44u); // messageLength (byte 0).
    EXPECT_DECR_FAILURE ( 1u,  3u,  0u); // messageLength (bytes 1-3): too large.
-   EXPECT_DECR_SUCCESS ( 4u, 11u, 43u); // requestID, responseTo.
+   EXPECT_DECR_SUCCESS ( 4u, 11u, 45u); // requestID, responseTo.
    EXPECT_DECR_FAILURE (12u, 15u, 12u); // opCode: invalid.
-   EXPECT_DECR_SUCCESS (16u, 42u, 43u); // originalOpcode, uncompressedSize, compressorId, compressedMessage.
+   EXPECT_DECR_SUCCESS (16u, 42u, 45u); // originalOpcode, uncompressedSize, compressorId, compressedMessage.
 
    EXPECT_INCR_FAILURE ( 0u,  3u,  0u); // messageLength: too large.
-   EXPECT_INCR_SUCCESS ( 4u, 11u, 43u); // requestId, responseTo.
+   EXPECT_INCR_SUCCESS ( 4u, 11u, 45u); // requestId, responseTo.
    EXPECT_INCR_IGNORED (12u, 12u, 12u); // opCode (byte 0): parse as OP_MSG.
    EXPECT_INCR_FAILURE (13u, 15u, 12u); // opCode (byte 1-3): invalid.
-   EXPECT_INCR_SUCCESS (16u, 42u, 43u); // originalOpcode, uncompressedSize, compressorId, compressedMessage.
+   EXPECT_INCR_SUCCESS (16u, 42u, 45u); // originalOpcode, uncompressedSize, compressorId, compressedMessage.
    // clang-format on
 
    _test_from_data_input_bounds (data, data_len);
@@ -1980,14 +1981,14 @@ test_rpc_message_to_iovecs_op_compressed (void)
    ASSERT (iovecs);
 
    ASSERT_CMPSIZE_T (num_iovecs, ==, 8u);
-   ASSERT_IOVEC_INT32 (0, 43);       // messageLength
+   ASSERT_IOVEC_INT32 (0, 45);       // messageLength
    ASSERT_IOVEC_INT32 (1, 16909060); // requestID
    ASSERT_IOVEC_INT32 (2, 84281096); // responseTo
    ASSERT_IOVEC_INT32 (3, 2012);     // opCode
    ASSERT_IOVEC_INT32 (4, 2013);     // originalOpcode
-   ASSERT_IOVEC_INT32 (5, 18);       // uncompressedSize
+   ASSERT_IOVEC_INT32 (5, 20);       // uncompressedSize
    ASSERT_IOVEC_UINT8 (6, 0u);       // compressorId
-   ASSERT_IOVEC_BYTES (7, 25u, 18u); // compressedMessage
+   ASSERT_IOVEC_BYTES (7, 25u, 20u); // compressedMessage
 
    bson_free (iovecs);
    mcd_rpc_message_destroy (rpc);
@@ -2366,14 +2367,14 @@ test_rpc_message_setters_op_compressed (void)
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
 
    // clang-format off
-   ASSERT_CMPINT32 ( 4, ==, mcd_rpc_header_set_message_length (rpc, 43));
+   ASSERT_CMPINT32 ( 4, ==, mcd_rpc_header_set_message_length (rpc, 45));
    ASSERT_CMPINT32 ( 4, ==, mcd_rpc_header_set_request_id (rpc, 16909060));
    ASSERT_CMPINT32 ( 4, ==, mcd_rpc_header_set_response_to (rpc, 84281096));
    ASSERT_CMPINT32 ( 4, ==, mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_COMPRESSED));
    ASSERT_CMPINT32 ( 4, ==, mcd_rpc_op_compressed_set_original_opcode (rpc, MONGOC_OP_CODE_MSG));
-   ASSERT_CMPINT32 ( 4, ==, mcd_rpc_op_compressed_set_uncompressed_size (rpc, 18));
+   ASSERT_CMPINT32 ( 4, ==, mcd_rpc_op_compressed_set_uncompressed_size (rpc, 20));
    ASSERT_CMPINT32 ( 1, ==, mcd_rpc_op_compressed_set_compressor_id (rpc, 0));
-   ASSERT_CMPINT32 (18, ==, mcd_rpc_op_compressed_set_compressed_message (rpc, data + 25, 18u));
+   ASSERT_CMPINT32 (20, ==, mcd_rpc_op_compressed_set_compressed_message (rpc, data + 25, 20u));
    // clang-format on
 
    size_t num_iovecs;
