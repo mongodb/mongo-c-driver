@@ -487,8 +487,7 @@ _consume_op_msg (mcd_rpc_message *rpc,
    }
 
    // Each message contains one or more sections. Preallocate space for two
-   // sections, which should cover the most frequent cases (including APM and
-   // CSE).
+   // sections, which should cover the most frequent cases.
    size_t capacity = 2u;
    op_msg->sections = bson_malloc (capacity * sizeof (mcd_rpc_op_msg_section));
    op_msg->sections_count = 0u;
