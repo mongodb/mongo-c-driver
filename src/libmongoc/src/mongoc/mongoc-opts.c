@@ -129,8 +129,9 @@ _mongoc_insert_many_opts_parse (
    bson_error_t *error)
 {
    bson_iter_t iter;
-   
+
    BSON_ASSERT_PARAM (client);
+
    mongoc_insert_many_opts->crud.writeConcern = NULL;
    mongoc_insert_many_opts->crud.write_concern_owned = false;
    mongoc_insert_many_opts->crud.client_session = NULL;
@@ -667,7 +668,7 @@ _mongoc_update_many_opts_parse (
 {
    bson_iter_t iter;
 
-    BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (client);
 
    mongoc_update_many_opts->update.crud.writeConcern = NULL;
    mongoc_update_many_opts->update.crud.write_concern_owned = false;
@@ -2027,6 +2028,7 @@ _mongoc_gridfs_bucket_upload_opts_parse (
 {
    bson_iter_t iter;
 
+   BSON_ASSERT_PARAM (client);
 
    mongoc_gridfs_bucket_upload_opts->chunkSizeBytes = 0;
    bson_init (&mongoc_gridfs_bucket_upload_opts->metadata);
