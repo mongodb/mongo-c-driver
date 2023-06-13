@@ -108,8 +108,14 @@ mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc,
                                     size_t length,
                                     const void **data_end);
 
-// Convert the given RPC message object into an array of iovec structures. The
-// return value must be freed by `bson_free`.
+// Convert the given RPC message object into an array of iovec structures,
+// putting the RPC message object in an iovecs state. The return value must be
+// freed by `bson_free`.
+//
+// Unless otherwise specified, it is undefined behavior to access any RPC
+// message field when the object is in an iovecs state. Use
+// `mcd_rpc_message_reset` to return the object to an initialized state before
+// further reuse.
 //
 // The data layout of the iovec structures is consistent with the definition of
 // `mongoc_iovec_t` as defined in `<mongoc/mongoc-iovec.h>`.
@@ -117,9 +123,6 @@ mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc,
 // rpc: a valid RPC message object whose fields are in native endian.
 // length: if not `NULL`, `*length` is set to the number of iovec structures in
 //         the array.
-//
-// Note: this function converts the fields of the RPC message object to little
-// endian.
 //
 // Returns the array of iovec structures on success. Returns `NULL` on failure.
 void *
@@ -156,6 +159,8 @@ int32_t
 mcd_rpc_header_get_response_to (const mcd_rpc_message *rpc);
 
 // Get the msgHeader.opCode field.
+//
+// This function may be called even if the RPC message is in an iovecs state.
 int32_t
 mcd_rpc_header_get_op_code (const mcd_rpc_message *rpc);
 
@@ -190,6 +195,8 @@ mcd_rpc_header_set_op_code (mcd_rpc_message *rpc, int32_t op_code);
 // Get the OP_COMPRESSED originalOpcode field.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_COMPRESSED.
+//
+// This function may be called even if the RPC message is in an iovecs state.
 int32_t
 mcd_rpc_op_compressed_get_original_opcode (const mcd_rpc_message *rpc);
 

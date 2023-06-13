@@ -30,6 +30,7 @@ struct _mcd_rpc_message_header {
    int32_t request_id;
    int32_t response_to;
    int32_t op_code;
+   bool is_in_iovecs_state; // Not part of actual message.
 };
 
 struct _mcd_rpc_op_compressed {
@@ -160,6 +161,18 @@ union _mcd_rpc_message {
 // BSON document lengths less than 5 may be encountered during parsing due to
 // invalid or malformed input.
 #define MONGOC_RPC_MINIMUM_BSON_LENGTH INT32_C (5)
+
+// To avoid unexpected behavior on big endian targets after
+// `mcd_rpc_message_to_iovecs` due to fields being converted to little endian,
+// forbid use of accessors unless the RPC message has been reset to an
+// initialized state by asserting `!is_in_iovecs_state` even on little endian
+// targets.
+#define ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS            \
+   if (1) {                                              \
+      BSON_ASSERT_PARAM (rpc);                           \
+      BSON_ASSERT (!rpc->msg_header.is_in_iovecs_state); \
+   } else                                                \
+      (void) 0
 
 
 static int32_t
@@ -896,7 +909,7 @@ mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc,
                                     size_t length,
                                     const void **data_end)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT_PARAM (data);
    BSON_ASSERT (data_end || true);
 
@@ -1601,7 +1614,7 @@ _append_iovec_op_kill_cursors (mongoc_iovec_t **iovecs,
 void *
 mcd_rpc_message_to_iovecs (mcd_rpc_message *rpc, size_t *count)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT_PARAM (count);
 
    const int32_t op_code = rpc->msg_header.op_code;
@@ -1622,6 +1635,11 @@ mcd_rpc_message_to_iovecs (mcd_rpc_message *rpc, size_t *count)
 
    mongoc_iovec_t *iovecs = NULL;
    mongoc_iovec_t *ret = NULL;
+
+   // Fields may be converted to little endian even on failure, so consider the
+   // RPC object to be in an iovecs state from this point forward regardless of
+   // success or failure.
+   rpc->msg_header.is_in_iovecs_state = true;
 
    switch (op_code) {
    case MONGOC_OP_CODE_COMPRESSED:
@@ -1712,6 +1730,8 @@ mcd_rpc_message_new (void)
 static int32_t
 _mcd_rpc_header_get_op_code_maybe_le (const mcd_rpc_message *rpc)
 {
+   BSON_ASSERT_PARAM (rpc);
+
    int32_t op_code = rpc->msg_header.op_code;
 
    // May already be in native endian.
@@ -1805,42 +1825,43 @@ mcd_rpc_message_reset (mcd_rpc_message *rpc)
 void
 mcd_rpc_message_set_length (mcd_rpc_message *rpc, int32_t value)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->msg_header.message_length = value;
 }
 
 int32_t
 mcd_rpc_header_get_message_length (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    return rpc->msg_header.message_length;
 }
 
 int32_t
 mcd_rpc_header_get_request_id (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    return rpc->msg_header.request_id;
 }
 
 int32_t
 mcd_rpc_header_get_response_to (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    return rpc->msg_header.response_to;
 }
 
 int32_t
 mcd_rpc_header_get_op_code (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   BSON_ASSERT_PARAM (rpc); // Permit read access even if the RPC message object
+                            // is in an iovecs state.
    return rpc->msg_header.op_code;
 }
 
 int32_t
 mcd_rpc_header_set_message_length (mcd_rpc_message *rpc, int32_t message_length)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->msg_header.message_length = message_length;
    return sizeof (message_length);
 }
@@ -1848,7 +1869,7 @@ mcd_rpc_header_set_message_length (mcd_rpc_message *rpc, int32_t message_length)
 int32_t
 mcd_rpc_header_set_request_id (mcd_rpc_message *rpc, int32_t request_id)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->msg_header.request_id = request_id;
    return sizeof (request_id);
 }
@@ -1856,7 +1877,7 @@ mcd_rpc_header_set_request_id (mcd_rpc_message *rpc, int32_t request_id)
 int32_t
 mcd_rpc_header_set_response_to (mcd_rpc_message *rpc, int32_t response_to)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->msg_header.response_to = response_to;
    return sizeof (response_to);
 }
@@ -1864,7 +1885,7 @@ mcd_rpc_header_set_response_to (mcd_rpc_message *rpc, int32_t response_to)
 int32_t
 mcd_rpc_header_set_op_code (mcd_rpc_message *rpc, int32_t op_code)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
 
    _mcd_rpc_message_free_owners (rpc);
 
@@ -1876,7 +1897,8 @@ mcd_rpc_header_set_op_code (mcd_rpc_message *rpc, int32_t op_code)
 int32_t
 mcd_rpc_op_compressed_get_original_opcode (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   BSON_ASSERT_PARAM (rpc); // Permit read access even if the RPC message object
+                            // is in an iovecs state.
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
    return rpc->op_compressed.original_opcode;
 }
@@ -1884,7 +1906,7 @@ mcd_rpc_op_compressed_get_original_opcode (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_compressed_get_uncompressed_size (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
    return rpc->op_compressed.uncompressed_size;
 }
@@ -1892,7 +1914,7 @@ mcd_rpc_op_compressed_get_uncompressed_size (const mcd_rpc_message *rpc)
 uint8_t
 mcd_rpc_op_compressed_get_compressor_id (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
    return rpc->op_compressed.compressor_id;
 }
@@ -1900,7 +1922,7 @@ mcd_rpc_op_compressed_get_compressor_id (const mcd_rpc_message *rpc)
 const void *
 mcd_rpc_op_compressed_get_compressed_message (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
    return rpc->op_compressed.compressed_message;
 }
@@ -1908,7 +1930,7 @@ mcd_rpc_op_compressed_get_compressed_message (const mcd_rpc_message *rpc)
 size_t
 mcd_rpc_op_compressed_get_compressed_message_length (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
    return rpc->op_compressed.compressed_message_len;
 }
@@ -1917,7 +1939,7 @@ int32_t
 mcd_rpc_op_compressed_set_original_opcode (mcd_rpc_message *rpc,
                                            int32_t original_opcode)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
    rpc->op_compressed.original_opcode = original_opcode;
    return sizeof (original_opcode);
@@ -1927,7 +1949,7 @@ int32_t
 mcd_rpc_op_compressed_set_uncompressed_size (mcd_rpc_message *rpc,
                                              int32_t uncompressed_size)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
    rpc->op_compressed.uncompressed_size = uncompressed_size;
    return sizeof (uncompressed_size);
@@ -1937,7 +1959,7 @@ int32_t
 mcd_rpc_op_compressed_set_compressor_id (mcd_rpc_message *rpc,
                                          uint8_t compressor_id)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
    rpc->op_compressed.compressor_id = compressor_id;
    return sizeof (compressor_id);
@@ -1948,7 +1970,7 @@ mcd_rpc_op_compressed_set_compressed_message (mcd_rpc_message *rpc,
                                               const void *compressed_message,
                                               size_t compressed_message_length)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_COMPRESSED);
    BSON_ASSERT (bson_in_range_unsigned (int32_t, compressed_message_length));
    rpc->op_compressed.compressed_message = compressed_message;
@@ -1960,7 +1982,7 @@ mcd_rpc_op_compressed_set_compressed_message (mcd_rpc_message *rpc,
 uint8_t
 mcd_rpc_op_msg_section_get_kind (const mcd_rpc_message *rpc, size_t index)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
    return rpc->op_msg.sections[index].kind;
@@ -1969,7 +1991,7 @@ mcd_rpc_op_msg_section_get_kind (const mcd_rpc_message *rpc, size_t index)
 int32_t
 mcd_rpc_op_msg_section_get_length (const mcd_rpc_message *rpc, size_t index)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
 
@@ -1992,7 +2014,7 @@ mcd_rpc_op_msg_section_get_length (const mcd_rpc_message *rpc, size_t index)
 const char *
 mcd_rpc_op_msg_section_get_identifier (const mcd_rpc_message *rpc, size_t index)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
 
@@ -2004,7 +2026,7 @@ mcd_rpc_op_msg_section_get_identifier (const mcd_rpc_message *rpc, size_t index)
 const void *
 mcd_rpc_op_msg_section_get_body (const mcd_rpc_message *rpc, size_t index)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
 
@@ -2017,7 +2039,7 @@ const void *
 mcd_rpc_op_msg_section_get_document_sequence (const mcd_rpc_message *rpc,
                                               size_t index)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
 
@@ -2030,7 +2052,7 @@ size_t
 mcd_rpc_op_msg_section_get_document_sequence_length (const mcd_rpc_message *rpc,
                                                      size_t index)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
 
@@ -2044,7 +2066,7 @@ mcd_rpc_op_msg_section_set_kind (mcd_rpc_message *rpc,
                                  size_t index,
                                  uint8_t kind)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
    rpc->op_msg.sections[index].kind = kind;
@@ -2056,7 +2078,7 @@ mcd_rpc_op_msg_section_set_length (mcd_rpc_message *rpc,
                                    size_t index,
                                    int32_t length)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
    BSON_ASSERT (rpc->op_msg.sections[index].kind == 1);
@@ -2069,7 +2091,7 @@ mcd_rpc_op_msg_section_set_identifier (mcd_rpc_message *rpc,
                                        size_t index,
                                        const char *identifier)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
    BSON_ASSERT (rpc->op_msg.sections[index].kind == 1);
@@ -2090,7 +2112,7 @@ mcd_rpc_op_msg_section_set_body (mcd_rpc_message *rpc,
                                  size_t index,
                                  const void *body)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
    BSON_ASSERT (rpc->op_msg.sections[index].kind == 0);
@@ -2109,7 +2131,7 @@ mcd_rpc_op_msg_section_set_document_sequence (mcd_rpc_message *rpc,
                                               const void *document_sequence,
                                               size_t document_sequence_length)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    BSON_ASSERT (index < rpc->op_msg.sections_count);
    BSON_ASSERT (rpc->op_msg.sections[index].kind == 1);
@@ -2130,7 +2152,7 @@ mcd_rpc_op_msg_section_set_document_sequence (mcd_rpc_message *rpc,
 uint32_t
 mcd_rpc_op_msg_get_flag_bits (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    return rpc->op_msg.flag_bits;
 }
@@ -2138,7 +2160,7 @@ mcd_rpc_op_msg_get_flag_bits (const mcd_rpc_message *rpc)
 size_t
 mcd_rpc_op_msg_get_sections_count (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    return rpc->op_msg.sections_count;
 }
@@ -2146,7 +2168,7 @@ mcd_rpc_op_msg_get_sections_count (const mcd_rpc_message *rpc)
 const uint32_t *
 mcd_rpc_op_msg_get_checksum (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    return rpc->op_msg.checksum_set ? &rpc->op_msg.checksum : NULL;
 }
@@ -2154,7 +2176,7 @@ mcd_rpc_op_msg_get_checksum (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_msg_set_flag_bits (mcd_rpc_message *rpc, uint32_t flag_bits)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    rpc->op_msg.flag_bits = flag_bits;
    return sizeof (flag_bits);
@@ -2163,7 +2185,7 @@ mcd_rpc_op_msg_set_flag_bits (mcd_rpc_message *rpc, uint32_t flag_bits)
 void
 mcd_rpc_op_msg_set_sections_count (mcd_rpc_message *rpc, size_t section_count)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
 
    rpc->op_msg.sections = bson_realloc (
@@ -2174,7 +2196,7 @@ mcd_rpc_op_msg_set_sections_count (mcd_rpc_message *rpc, size_t section_count)
 int32_t
 mcd_rpc_op_msg_set_checksum (mcd_rpc_message *rpc, uint32_t checksum)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_MSG);
    rpc->op_msg.checksum = checksum;
    rpc->op_msg.checksum_set = true;
@@ -2185,7 +2207,7 @@ mcd_rpc_op_msg_set_checksum (mcd_rpc_message *rpc, uint32_t checksum)
 int32_t
 mcd_rpc_op_reply_get_response_flags (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_REPLY);
    return rpc->op_reply.response_flags;
 }
@@ -2193,7 +2215,7 @@ mcd_rpc_op_reply_get_response_flags (const mcd_rpc_message *rpc)
 int64_t
 mcd_rpc_op_reply_get_cursor_id (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_REPLY);
    return rpc->op_reply.cursor_id;
 }
@@ -2201,7 +2223,7 @@ mcd_rpc_op_reply_get_cursor_id (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_reply_get_starting_from (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_REPLY);
    return rpc->op_reply.starting_from;
 }
@@ -2209,7 +2231,7 @@ mcd_rpc_op_reply_get_starting_from (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_reply_get_number_returned (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_REPLY);
    return rpc->op_reply.number_returned;
 }
@@ -2217,7 +2239,7 @@ mcd_rpc_op_reply_get_number_returned (const mcd_rpc_message *rpc)
 const void *
 mcd_rpc_op_reply_get_documents (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_REPLY);
    return rpc->op_reply.documents_len > 0 ? rpc->op_reply.documents : NULL;
 }
@@ -2225,7 +2247,7 @@ mcd_rpc_op_reply_get_documents (const mcd_rpc_message *rpc)
 size_t
 mcd_rpc_op_reply_get_documents_len (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_REPLY);
    return rpc->op_reply.documents_len;
 }
@@ -2234,7 +2256,7 @@ int32_t
 mcd_rpc_op_reply_set_response_flags (mcd_rpc_message *rpc,
                                      int32_t response_flags)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_reply.response_flags = response_flags;
    return sizeof (response_flags);
 }
@@ -2242,7 +2264,7 @@ mcd_rpc_op_reply_set_response_flags (mcd_rpc_message *rpc,
 int32_t
 mcd_rpc_op_reply_set_cursor_id (mcd_rpc_message *rpc, int64_t cursor_id)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_reply.cursor_id = cursor_id;
    return sizeof (cursor_id);
 }
@@ -2250,7 +2272,7 @@ mcd_rpc_op_reply_set_cursor_id (mcd_rpc_message *rpc, int64_t cursor_id)
 int32_t
 mcd_rpc_op_reply_set_starting_from (mcd_rpc_message *rpc, int32_t starting_from)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_reply.starting_from = starting_from;
    return sizeof (starting_from);
 }
@@ -2259,7 +2281,7 @@ int32_t
 mcd_rpc_op_reply_set_number_returned (mcd_rpc_message *rpc,
                                       int32_t number_returned)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_reply.number_returned = number_returned;
    return sizeof (number_returned);
 }
@@ -2269,7 +2291,7 @@ mcd_rpc_op_reply_set_documents (mcd_rpc_message *rpc,
                                 const void *documents,
                                 size_t documents_len)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
 
    rpc->op_reply.documents = documents;
    rpc->op_reply.documents_len = documents_len;
@@ -2282,7 +2304,7 @@ mcd_rpc_op_reply_set_documents (mcd_rpc_message *rpc,
 const char *
 mcd_rpc_op_update_get_full_collection_name (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_UPDATE);
    return rpc->op_update.full_collection_name;
 }
@@ -2290,7 +2312,7 @@ mcd_rpc_op_update_get_full_collection_name (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_update_get_flags (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_UPDATE);
    return rpc->op_update.flags;
 }
@@ -2298,7 +2320,7 @@ mcd_rpc_op_update_get_flags (const mcd_rpc_message *rpc)
 const void *
 mcd_rpc_op_update_get_selector (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_UPDATE);
    return rpc->op_update.selector;
 }
@@ -2306,7 +2328,7 @@ mcd_rpc_op_update_get_selector (const mcd_rpc_message *rpc)
 const void *
 mcd_rpc_op_update_get_update (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_UPDATE);
    return rpc->op_update.update;
 }
@@ -2315,7 +2337,7 @@ int32_t
 mcd_rpc_op_update_set_full_collection_name (mcd_rpc_message *rpc,
                                             const char *full_collection_name)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
 
    const size_t length =
       full_collection_name ? strlen (full_collection_name) + 1u : 0u;
@@ -2331,7 +2353,7 @@ mcd_rpc_op_update_set_full_collection_name (mcd_rpc_message *rpc,
 int32_t
 mcd_rpc_op_update_set_flags (mcd_rpc_message *rpc, int32_t flags)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_update.flags = flags;
    return sizeof (flags);
 }
@@ -2339,7 +2361,7 @@ mcd_rpc_op_update_set_flags (mcd_rpc_message *rpc, int32_t flags)
 int32_t
 mcd_rpc_op_update_set_selector (mcd_rpc_message *rpc, const void *selector)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_update.selector = selector;
    return selector ? _int32_from_le (selector) : 0;
 }
@@ -2347,7 +2369,7 @@ mcd_rpc_op_update_set_selector (mcd_rpc_message *rpc, const void *selector)
 int32_t
 mcd_rpc_op_update_set_update (mcd_rpc_message *rpc, const void *update)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    rpc->op_update.update = update;
    return update ? _int32_from_le (update) : 0;
 }
@@ -2356,7 +2378,7 @@ mcd_rpc_op_update_set_update (mcd_rpc_message *rpc, const void *update)
 int32_t
 mcd_rpc_op_insert_get_flags (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_INSERT);
    return rpc->op_insert.flags;
 }
@@ -2364,7 +2386,7 @@ mcd_rpc_op_insert_get_flags (const mcd_rpc_message *rpc)
 const char *
 mcd_rpc_op_insert_get_full_collection_name (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_INSERT);
    return rpc->op_insert.full_collection_name;
 }
@@ -2372,7 +2394,7 @@ mcd_rpc_op_insert_get_full_collection_name (const mcd_rpc_message *rpc)
 const void *
 mcd_rpc_op_insert_get_documents (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_INSERT);
    return rpc->op_insert.documents;
 }
@@ -2380,7 +2402,7 @@ mcd_rpc_op_insert_get_documents (const mcd_rpc_message *rpc)
 size_t
 mcd_rpc_op_insert_get_documents_len (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_INSERT);
    return rpc->op_insert.documents_len;
 }
@@ -2388,7 +2410,7 @@ mcd_rpc_op_insert_get_documents_len (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_insert_set_flags (mcd_rpc_message *rpc, int32_t flags)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_INSERT);
    rpc->op_insert.flags = flags;
    return sizeof (flags);
@@ -2398,7 +2420,7 @@ int32_t
 mcd_rpc_op_insert_set_full_collection_name (mcd_rpc_message *rpc,
                                             const char *full_collection_name)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_INSERT);
 
    const size_t length =
@@ -2416,7 +2438,7 @@ mcd_rpc_op_insert_set_documents (mcd_rpc_message *rpc,
                                  const void *documents,
                                  size_t documents_len)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_INSERT);
 
    rpc->op_insert.documents = documents;
@@ -2430,7 +2452,7 @@ mcd_rpc_op_insert_set_documents (mcd_rpc_message *rpc,
 int32_t
 mcd_rpc_op_query_get_flags (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    return rpc->op_query.flags;
 }
@@ -2438,7 +2460,7 @@ mcd_rpc_op_query_get_flags (const mcd_rpc_message *rpc)
 const char *
 mcd_rpc_op_query_get_full_collection_name (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    return rpc->op_query.full_collection_name;
 }
@@ -2446,7 +2468,7 @@ mcd_rpc_op_query_get_full_collection_name (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_query_get_number_to_skip (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    return rpc->op_query.number_to_skip;
 }
@@ -2454,7 +2476,7 @@ mcd_rpc_op_query_get_number_to_skip (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_query_get_number_to_return (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    return rpc->op_query.number_to_return;
 }
@@ -2462,7 +2484,7 @@ mcd_rpc_op_query_get_number_to_return (const mcd_rpc_message *rpc)
 const void *
 mcd_rpc_op_query_get_query (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    return rpc->op_query.query;
 }
@@ -2470,7 +2492,7 @@ mcd_rpc_op_query_get_query (const mcd_rpc_message *rpc)
 const void *
 mcd_rpc_op_query_get_return_fields_selector (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    return rpc->op_query.return_fields_selector;
 }
@@ -2478,7 +2500,7 @@ mcd_rpc_op_query_get_return_fields_selector (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_query_set_flags (mcd_rpc_message *rpc, int32_t flags)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    rpc->op_query.flags = flags;
    return sizeof (flags);
@@ -2488,7 +2510,7 @@ int32_t
 mcd_rpc_op_query_set_full_collection_name (mcd_rpc_message *rpc,
                                            const char *full_collection_name)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
 
    const size_t length =
@@ -2505,7 +2527,7 @@ int32_t
 mcd_rpc_op_query_set_number_to_skip (mcd_rpc_message *rpc,
                                      int32_t number_to_skip)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    rpc->op_query.number_to_skip = number_to_skip;
    return sizeof (number_to_skip);
@@ -2515,7 +2537,7 @@ int32_t
 mcd_rpc_op_query_set_number_to_return (mcd_rpc_message *rpc,
                                        int32_t number_to_return)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    rpc->op_query.number_to_return = number_to_return;
    return sizeof (number_to_return);
@@ -2524,7 +2546,7 @@ mcd_rpc_op_query_set_number_to_return (mcd_rpc_message *rpc,
 int32_t
 mcd_rpc_op_query_set_query (mcd_rpc_message *rpc, const void *query)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    rpc->op_query.query = query;
    return _int32_from_le (query);
@@ -2534,7 +2556,7 @@ int32_t
 mcd_rpc_op_query_set_return_fields_selector (mcd_rpc_message *rpc,
                                              const void *return_fields_selector)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_QUERY);
    rpc->op_query.return_fields_selector = return_fields_selector;
    return return_fields_selector ? _int32_from_le (return_fields_selector) : 0;
@@ -2544,7 +2566,7 @@ mcd_rpc_op_query_set_return_fields_selector (mcd_rpc_message *rpc,
 const char *
 mcd_rpc_op_get_more_get_full_collection_name (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_GET_MORE);
    return rpc->op_get_more.full_collection_name;
 }
@@ -2552,7 +2574,7 @@ mcd_rpc_op_get_more_get_full_collection_name (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_get_more_get_number_to_return (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_GET_MORE);
    return rpc->op_get_more.number_to_return;
 }
@@ -2560,7 +2582,7 @@ mcd_rpc_op_get_more_get_number_to_return (const mcd_rpc_message *rpc)
 int64_t
 mcd_rpc_op_get_more_get_cursor_id (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_GET_MORE);
    return rpc->op_get_more.cursor_id;
 }
@@ -2569,7 +2591,7 @@ int32_t
 mcd_rpc_op_get_more_set_full_collection_name (mcd_rpc_message *rpc,
                                               const char *full_collection_name)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_GET_MORE);
 
    const size_t length =
@@ -2586,7 +2608,7 @@ int32_t
 mcd_rpc_op_get_more_set_number_to_return (mcd_rpc_message *rpc,
                                           int32_t number_to_return)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_GET_MORE);
    rpc->op_get_more.number_to_return = number_to_return;
    return sizeof (number_to_return);
@@ -2595,7 +2617,7 @@ mcd_rpc_op_get_more_set_number_to_return (mcd_rpc_message *rpc,
 int32_t
 mcd_rpc_op_get_more_set_cursor_id (mcd_rpc_message *rpc, int64_t cursor_id)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_GET_MORE);
    rpc->op_get_more.cursor_id = cursor_id;
    return sizeof (cursor_id);
@@ -2605,7 +2627,7 @@ mcd_rpc_op_get_more_set_cursor_id (mcd_rpc_message *rpc, int64_t cursor_id)
 const char *
 mcd_rpc_op_delete_get_full_collection_name (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
    return rpc->op_delete.full_collection_name;
 }
@@ -2613,7 +2635,7 @@ mcd_rpc_op_delete_get_full_collection_name (const mcd_rpc_message *rpc)
 int32_t
 mcd_rpc_op_delete_get_flags (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    return rpc->op_delete.flags;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
 }
@@ -2621,7 +2643,7 @@ mcd_rpc_op_delete_get_flags (const mcd_rpc_message *rpc)
 const void *
 mcd_rpc_op_delete_get_selector (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
    return rpc->op_delete.selector;
 }
@@ -2630,7 +2652,7 @@ int32_t
 mcd_rpc_op_delete_set_full_collection_name (mcd_rpc_message *rpc,
                                             const char *full_collection_name)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
 
    const size_t length =
@@ -2646,7 +2668,7 @@ mcd_rpc_op_delete_set_full_collection_name (mcd_rpc_message *rpc,
 int32_t
 mcd_rpc_op_delete_set_flags (mcd_rpc_message *rpc, int32_t flags)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
    rpc->op_delete.flags = flags;
    return sizeof (flags);
@@ -2655,7 +2677,7 @@ mcd_rpc_op_delete_set_flags (mcd_rpc_message *rpc, int32_t flags)
 int32_t
 mcd_rpc_op_delete_set_selector (mcd_rpc_message *rpc, const void *selector)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
    rpc->op_delete.selector = selector;
    return selector ? _int32_from_le (selector) : 0;
@@ -2665,7 +2687,7 @@ mcd_rpc_op_delete_set_selector (mcd_rpc_message *rpc, const void *selector)
 int32_t
 mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_KILL_CURSORS);
    return rpc->op_kill_cursors.number_of_cursor_ids;
 }
@@ -2673,7 +2695,7 @@ mcd_rpc_op_kill_cursors_get_number_of_cursor_ids (const mcd_rpc_message *rpc)
 const int64_t *
 mcd_rpc_op_kill_cursors_get_cursor_ids (const mcd_rpc_message *rpc)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_KILL_CURSORS);
    return rpc->op_kill_cursors.number_of_cursor_ids > 0
              ? rpc->op_kill_cursors.cursor_ids
@@ -2685,7 +2707,7 @@ mcd_rpc_op_kill_cursors_set_cursor_ids (mcd_rpc_message *rpc,
                                         const int64_t *cursor_ids,
                                         int32_t number_of_cursor_ids)
 {
-   BSON_ASSERT_PARAM (rpc);
+   ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_KILL_CURSORS);
    BSON_ASSERT (bson_cmp_less_su (number_of_cursor_ids,
                                   (size_t) INT32_MAX / sizeof (int64_t)));
