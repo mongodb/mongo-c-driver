@@ -43,3 +43,6 @@ In the returned cursor each result corresponds to the server's representation of
 
 The cursor functions :symbol:`mongoc_cursor_set_limit`, :symbol:`mongoc_cursor_set_batch_size`, and :symbol:`mongoc_cursor_set_max_await_time_ms` have no use on the returned cursor.
 
+.. seealso::
+
+  | :doc:`manage-collection-indexes`.
