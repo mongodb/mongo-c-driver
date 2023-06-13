@@ -4,7 +4,7 @@
 #include <mongoc/mongoc.h>
 #include <stdlib.h> // abort
 
-#define FAIL(...)                                        \
+#define HANDLE_ERROR(...)                                \
    if (1) {                                              \
       fprintf (stderr, "Failure at %s:%d\n", __FILE__, __LINE__); \
       fprintf (stderr, __VA_ARGS__);                     \
@@ -27,8 +27,9 @@ main (int argc, char *argv[])
    mongoc_init ();
 
    if (argc > 2) {
-      FAIL ("Unexpected arguments. Expected usage: %s [CONNECTION_STRING]",
-            argv[0]);
+      HANDLE_ERROR (
+         "Unexpected arguments. Expected usage: %s [CONNECTION_STRING]",
+         argv[0]);
    }
 
    if (argc > 1) {
@@ -37,11 +38,11 @@ main (int argc, char *argv[])
 
    uri = mongoc_uri_new_with_error (uri_string, &error);
    if (!uri) {
-      FAIL ("Failed to parse URI: %s", error.message);
+      HANDLE_ERROR ("Failed to parse URI: %s", error.message);
    }
    client = mongoc_client_new_from_uri_with_error (uri, &error);
    if (!client) {
-      FAIL ("Failed to create client: %s", error.message);
+      HANDLE_ERROR ("Failed to create client: %s", error.message);
    }
 
    coll = mongoc_client_get_collection (client, "test", "test");
@@ -54,7 +55,7 @@ main (int argc, char *argv[])
       if (!mongoc_collection_create_indexes_with_opts (
              coll, &im, 1, NULL /* opts */, NULL /* reply */, &error)) {
          bson_destroy (keys);
-         FAIL ("Failed to create index: %s", error.message);
+         HANDLE_ERROR ("Failed to create index: %s", error.message);
       }
       printf ("Created index\n");
       bson_destroy (keys);
@@ -74,7 +75,7 @@ main (int argc, char *argv[])
       }
       if (mongoc_cursor_error (cursor, &error)) {
          mongoc_cursor_destroy (cursor);
-         FAIL ("Failed to list indexes: %s", error.message);
+         HANDLE_ERROR ("Failed to list indexes: %s", error.message);
       }
       mongoc_cursor_destroy (cursor);
       // List indexes ... end
@@ -88,7 +89,7 @@ main (int argc, char *argv[])
              coll, index_name, NULL /* opts */, &error)) {
          bson_free (index_name);
          bson_destroy (keys);
-         FAIL ("Failed to drop index: %s", error.message);
+         HANDLE_ERROR ("Failed to drop index: %s", error.message);
       }
       printf ("Dropped index\n");
       bson_free (index_name);
