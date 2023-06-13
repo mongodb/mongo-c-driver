@@ -2518,14 +2518,12 @@ test_cursor_batchsize_override_range_warning (void)
    mongoc_client_t *client;
    mongoc_collection_t *coll;
    bson_t *findopts = BCON_NEW ("batchSize", BCON_INT32 (1.0));
-   bson_error_t error;
 
    client = test_framework_new_default_client ();
    coll = mongoc_client_get_collection (client, "db", "coll");
 
    /* Create a cursor and attempt to override outside int32 range. */
    {
-      const bson_t *got;
       bson_t *filter = bson_new ();
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
          coll, filter, findopts, NULL /* read_prefs */);
