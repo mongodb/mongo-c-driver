@@ -6,7 +6,6 @@ echo
 
 set CMAKE_FLAGS=-DENABLE_SSL=OPENSSL -DENABLE_SASL=CYRUS
 set TAR=C:\cygwin\bin\tar
-set CMAKE=C:\cmake\bin\cmake
 set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\mingw32-make.exe
 set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
 rem Ensure Cygwin executables like sh.exe are not in PATH
@@ -27,7 +26,7 @@ cd %BUILD_DIR%
 %TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
 
 rem Build libmongoc, with flags that the downstream R driver mongolite uses
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %CMAKE_FLAGS% -DENABLE_BSON=ON .
+%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %CMAKE_FLAGS% .
 %CMAKE% --build .
 if errorlevel 1 (
    exit /B 1

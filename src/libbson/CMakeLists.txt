@@ -28,7 +28,7 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../build/cm
 include (LoadVersion)
 LoadVersion (${PROJECT_SOURCE_DIR}/../../VERSION_CURRENT BSON)
 
-message ("lib${BSON_OUTPUT_BASENAME} version (from VERSION_CURRENT file): ${BSON_VERSION}")
+message (STATUS "lib${BSON_OUTPUT_BASENAME} version (from VERSION_CURRENT file): ${BSON_VERSION}")
 
 set (BSON_API_VERSION 1.0)
 
@@ -143,10 +143,6 @@ endif ()
 
 include (MaintainerFlags)
 
-if (ENABLE_COVERAGE)
-   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
-endif ()
-
 set (SOURCES
    ${PROJECT_SOURCE_DIR}/src/bson/bcon.c
    ${PROJECT_SOURCE_DIR}/src/bson/bson.c
@@ -218,6 +214,10 @@ if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
    target_compile_options(bson_shared PRIVATE /wd4756)
 endif ()
 set (CMAKE_CXX_VISIBILITY_PRESET hidden)
+if(ENABLE_COVERAGE)
+   target_compile_options(bson_shared PRIVATE --coverage)
+   target_link_options(bson_shared PUBLIC --coverage)
+endif()
 target_compile_definitions (bson_shared
    PRIVATE
       BSON_COMPILATION
@@ -302,8 +302,12 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    )
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (bson_static PUBLIC -fPIC)
-      message ("Adding -fPIC to compilation of bson_static components")
+      message (STATUS "Adding -fPIC to compilation of bson_static components")
    endif ()
+   if(ENABLE_COVERAGE)
+      target_compile_options(bson_static PRIVATE --coverage)
+      target_link_options(bson_static PUBLIC --coverage)
+   endif()
    # Several directories in the source and build trees contain headers we would like
    # include via relative reference, but they all end up in the same install path
    target_include_directories (

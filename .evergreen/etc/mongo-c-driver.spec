@@ -118,7 +118,6 @@ Documentation: http://mongoc.org/libbson/%{version}/
 
 %build
 %cmake \
-    -DENABLE_BSON:STRING=ON \
     -DENABLE_MONGOC:BOOL=ON \
     -DENABLE_SHM_COUNTERS:BOOL=ON \
     -DENABLE_SSL:STRING=OPENSSL \

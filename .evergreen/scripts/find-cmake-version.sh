@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Used to workaround curl certificate validation failures on certain distros.
-: "${distro_id:?"missing required Evergreen expansion"}"
+. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" platform
 
 # Create a temporary directory in the existing directory $1.
 make_tmpdir_in() {
@@ -177,11 +177,11 @@ find_cmake_version() {
   )
 
   # TODO: remove once BUILD-16817 is resolved.
-  case "${distro_id:?}" in
-  rhel71-power8-* | ubuntu1404-* | ubuntu1604-power8-*)
-    # Workaround SSL certificate validation failures on certain distros.
-    curl_args+=("-k")
-    ;;
+  # Workaround SSL certificate validation failures on certain distros.
+  case "$OS_SHORTNAME-$ARCHNAME" in
+    ubuntu14-*|ubuntu16-ppc|RedHat7-ppc)
+      curl_args+=("-k")
+      ;;
   esac
 
   {

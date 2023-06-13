@@ -36,7 +36,6 @@ override_dh_auto_configure:
 	dh_auto_configure -- \
 	-DBUILD_VERSION=$(DEB_VERSION_UPSTREAM) \
 	-DENABLE_MONGOC=ON \
-	-DENABLE_BSON=ON \
 	-DENABLE_MAN_PAGES=$(DOCS) \
 	-DENABLE_HTML_DOCS=$(DOCS) \
 	-DENABLE_MAINTAINER_FLAGS=ON \

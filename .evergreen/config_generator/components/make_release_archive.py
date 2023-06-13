@@ -20,6 +20,7 @@ class ReleaseArchive(Function):
                 'MONGOC_TEST_SKIP_LIVE': 'on',
                 'MONGOC_TEST_SKIP_SLOW': 'on',
             },
+            include_expansions_in_env=['distro_id'],
             script='''\
                 set -o errexit
                 bash tools/poetry.sh install --with=docs

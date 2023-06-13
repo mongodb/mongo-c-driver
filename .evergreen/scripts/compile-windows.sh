@@ -45,10 +45,14 @@ configure_flags_append_if_not_null() {
 
 declare install_dir="${mongoc_dir}/install-dir"
 
+## * Note: For additional configure-time context, the following lines can be
+## * uncommented to enable CMake's debug output:
+# configure_flags_append --log-level=debug
+# configure_flags_append --log-context
+
 configure_flags_append "-DCMAKE_INSTALL_PREFIX=$(native-path "${install_dir}")"
 configure_flags_append "-DCMAKE_PREFIX_PATH=$(native-path "${install_dir}")"
 configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
-configure_flags_append "-DENABLE_BSON=ON"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 
 if [[ "${RELEASE:-}" == "ON" ]]; then
@@ -79,18 +83,6 @@ fi
 declare -a extra_configure_flags
 IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
 
-if [[ "${CC}" =~ mingw ]]; then
-  # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
-  configure_flags_append "-DCMAKE_CXX_STANDARD=11"
-
-  env \
-    CONFIGURE_FLAGS="${configure_flags[*]} ${extra_configure_flags[*]}" \
-    INSTALL_DIR="${install_dir}" \
-    NJOBS="$(nproc)" \
-    cmd.exe /c "$(native-path "${script_dir}/compile-windows-mingw.bat")"
-  exit
-fi
-
 declare build_config
 
 if [[ "${RELEASE}" == "ON" ]]; then
@@ -111,6 +103,27 @@ else
 fi
 
 "${cmake_binary:?}" --version
+
+if [[ "${CC}" =~ mingw ]]; then
+  # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
+  configure_flags_append "-DCMAKE_CXX_STANDARD=11"
+  cmake_binary=$(native-path "$cmake_binary")
+
+  build_dir=$(native-path "$mongoc_dir")
+  env \
+    "CC=gcc" \
+    "CXX=g++" \
+    "$cmake_binary" \
+      -G "MinGW Makefiles" \
+      -D CMAKE_PREFIX_PATH="$(native-path "$install_dir/lib/cmake")" \
+      "${configure_flags[@]}" \
+      "${extra_configure_flags[@]}" \
+      -B "$build_dir" \
+      -S "$(native-path "$mongoc_dir")"
+
+  env "$cmake_binary" --build "$build_dir" --parallel "$(nproc)"
+  exit 0
+fi
 
 declare compile_flags=(
   "/m" # Number of concurrent processes. No value=# of cpus
