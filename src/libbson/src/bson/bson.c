@@ -3352,13 +3352,16 @@ bson_as_relaxed_extended_json (const bson_t *bson, size_t *length)
    return bson_as_json_with_opts (bson, length, &opts);
 }
 
-
-char *
-bson_array_as_json (const bson_t *bson, size_t *length)
+static char *
+_bson_array_as_json_visit_all (const bson_t *bson,
+                               size_t *length,
+                               bson_json_mode_t mode,
+                               int32_t max_len)
 {
    bson_json_state_t state;
    bson_iter_t iter;
    ssize_t err_offset = -1;
+   int32_t remaining;
 
    BSON_ASSERT (bson);
 
@@ -3383,8 +3386,8 @@ bson_array_as_json (const bson_t *bson, size_t *length)
    state.str = bson_string_new ("[ ");
    state.depth = 0;
    state.err_offset = &err_offset;
-   state.mode = BSON_JSON_MODE_LEGACY;
-   state.max_len = BSON_MAX_LEN_UNLIMITED;
+   state.mode = mode;
+   state.max_len = max_len;
    state.max_len_reached = false;
 
    if ((bson_iter_visit_all (&iter, &bson_as_json_visitors, &state) ||
@@ -3400,13 +3403,57 @@ bson_array_as_json (const bson_t *bson, size_t *length)
       return NULL;
    }
 
-   bson_string_append (state.str, " ]");
+   /* Append closing space and ] separately, in case we hit the max in between.
+    */
+   remaining = state.max_len - state.str->len;
+   if (state.max_len == BSON_MAX_LEN_UNLIMITED || remaining > 1) {
+      bson_string_append (state.str, " ]");
+   } else if (remaining == 1) {
+      bson_string_append (state.str, " ");
+   }
 
    if (length) {
       *length = state.str->len;
    }
 
    return bson_string_free (state.str, false);
+}
+
+
+char *
+bson_array_as_json_with_opts (const bson_t *bson,
+                              size_t *length,
+                              const bson_json_opts_t *opts)
+{
+   return _bson_array_as_json_visit_all (
+      bson, length, opts->mode, opts->max_len);
+}
+
+
+char *
+bson_array_as_json (const bson_t *bson, size_t *length)
+{
+   const bson_json_opts_t opts = {BSON_JSON_MODE_LEGACY,
+                                  BSON_MAX_LEN_UNLIMITED};
+   return bson_array_as_json_with_opts (bson, length, &opts);
+}
+
+
+char *
+bson_array_as_relaxed_extended_json (const bson_t *bson, size_t *length)
+{
+   const bson_json_opts_t opts = {BSON_JSON_MODE_RELAXED,
+                                  BSON_MAX_LEN_UNLIMITED};
+   return bson_array_as_json_with_opts (bson, length, &opts);
+}
+
+
+char *
+bson_array_as_canonical_extended_json (const bson_t *bson, size_t *length)
+{
+   const bson_json_opts_t opts = {BSON_JSON_MODE_CANONICAL,
+                                  BSON_MAX_LEN_UNLIMITED};
+   return bson_array_as_json_with_opts (bson, length, &opts);
 }
 
 
