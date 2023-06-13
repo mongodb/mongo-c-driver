@@ -468,6 +468,7 @@ endif ()
 
 set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-array.c
@@ -498,6 +499,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-flags.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-generation-map.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
@@ -521,6 +523,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cmd.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-optional.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opts-helpers.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opts.c
@@ -729,6 +732,17 @@ if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    else ()
       message (FATAL_ERROR "MONGODB-AWS requires a crypto library")
    endif()
+endif ()
+
+if (MONGOC_ENABLE_STATIC_BUILD)
+   add_library (mcd_rpc STATIC EXCLUDE_FROM_ALL ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c)
+   target_include_directories (mcd_rpc PUBLIC ${PROJECT_SOURCE_DIR}/src)
+   target_link_libraries (mcd_rpc PUBLIC ${BSON_STATIC_LIBRARIES})
+   if (NOT WIN32 AND ENABLE_PIC)
+      target_compile_options (mcd_rpc PUBLIC -fPIC)
+   endif ()
+   target_compile_definitions (mcd_rpc PUBLIC ${BSON_STATIC_PUBLIC_DEFINITIONS})
+   set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
 
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
@@ -963,6 +977,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
    ${PROJECT_SOURCE_DIR}/tests/test-service-gcp.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-integer.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
    ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
    ${PROJECT_SOURCE_DIR}/tests/unified/entity-map.c
@@ -1240,6 +1255,15 @@ export (EXPORT mongoc-targets
    NAMESPACE mongo::
    FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-targets.cmake"
 )
+
+if (TARGET mcd_rpc)
+   # Note: the (mongo::)bson_static target must be included separately via find_package or include.
+   export (
+      TARGETS mcd_rpc
+      NAMESPACE mongo::
+      FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mcd-rpc-targets.cmake"
+   )
+endif ()
 
 configure_file (src/mongoc-config.cmake
    "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"
