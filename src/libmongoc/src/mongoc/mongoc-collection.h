@@ -166,7 +166,7 @@ MONGOC_EXPORT (void) mongoc_index_model_destroy (mongoc_index_model_t *model);
 
 MONGOC_EXPORT (bool)
 mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
-                                            mongoc_index_model_t **models,
+                                            mongoc_index_model_t *const *models,
                                             size_t n_models,
                                             const bson_t *opts,
                                             bson_t *reply,
