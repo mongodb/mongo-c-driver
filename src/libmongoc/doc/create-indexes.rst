@@ -1,7 +1,7 @@
-:man_page: mongoc_create_indexes
+:man_page: mongoc_manage_collection_indexes
 
-Creating Indexes
-================
+Manage Collection Indexes
+=========================
 
 To create indexes on a MongoDB collection, use :symbol:`mongoc_collection_create_indexes_with_opts`:
 
