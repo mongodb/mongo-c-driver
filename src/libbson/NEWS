@@ -1,13 +1,12 @@
-libbson 1.23.5
-==============
-
-No changes since 1.23.3. Version incremented to match the libmongoc version.
-
-
 libbson 1.24.0 (Unreleased)
 ===========================
 
   * Support for macOS 10.14 will be dropped in an upcoming release.
+
+libbson 1.23.5
+==============
+
+No changes since 1.23.3. Version incremented to match the libmongoc version.
 
 
 libbson 1.23.4
