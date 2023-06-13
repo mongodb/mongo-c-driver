@@ -30,7 +30,7 @@
 #     • The version of Poetry that will be installed by run-poetry when executed.
 
 # Load vars and utils:
-. "$(dirname "${BASH_SOURCE[0]}")/use.sh" python paths base with_lock
+. "$(dirname "${BASH_SOURCE[0]}")/use.sh" python paths base with_lock platform
 
 : "${WANT_POETRY_VERSION:=1.4.2}"
 declare -r -x POETRY_HOME=${FORCE_POETRY_HOME:-"$BUILD_CACHE_DIR/poetry-$WANT_POETRY_VERSION"}
@@ -40,10 +40,13 @@ _POETRY_PIP_INSTALL_ARGS=(
     --disable-pip-version-check
     --quiet
     poetry=="$WANT_POETRY_VERSION"
-    # Needed for PowerPC, which doesn't have binary wheels for our version, and our CI does
-    # not have the Rust toolchain available to build it:
-    "cryptography<3.3"
 )
+
+if $IS_POWERPC || $IS_ZSERIES; then
+    # Needed for PowerPC and s390x, which doesn't have binary Cryptography wheels for our version,
+    # and our CI does not have the Rust toolchain available to build one:
+    _POETRY_PIP_INSTALL_ARGS+=("cryptography<3.3")
+fi
 
 install-poetry() {
     log "Creating virtualenv for Poetry…"
