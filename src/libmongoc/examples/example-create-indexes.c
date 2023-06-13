@@ -6,7 +6,7 @@
 
 #define FAIL(...)                                        \
    if (1) {                                              \
-      fprintf (stderr, "failed on line %d\n", __LINE__); \
+      fprintf (stderr, "Failure at %s:%d\n", __FILE__, __LINE__); \
       fprintf (stderr, __VA_ARGS__);                     \
       fprintf (stderr, "\n");                            \
       goto fail;                                         \
