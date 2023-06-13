@@ -2960,7 +2960,7 @@ test_bson_as_json_with_opts (bson_t *bson,
                              int max_len,
                              const char *expected)
 {
-   bson_json_opts_t *opts = bson_json_opts_new (mode, max_len);
+   bson_json_opts_t *opts = bson_json_opts_new (mode, max_len, false);
    size_t json_len;
    char *str = bson_as_json_with_opts (bson, &json_len, opts);
 

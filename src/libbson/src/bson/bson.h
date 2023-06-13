@@ -579,13 +579,6 @@ BSON_EXPORT (char *)
 bson_as_relaxed_extended_json (const bson_t *bson, size_t *length);
 
 
-/* like bson_as_json_with_opts but for outermost arrays. */
-BSON_EXPORT (char *)
-bson_array_as_json_with_opts (const bson_t *bson,
-                              size_t *length,
-                              const bson_json_opts_t *opts);
-
-
 /* like bson_as_json() but for outermost arrays. */
 BSON_EXPORT (char *) bson_array_as_json (const bson_t *bson, size_t *length);
 
@@ -593,6 +586,7 @@ BSON_EXPORT (char *) bson_array_as_json (const bson_t *bson, size_t *length);
 /* like bson_as_relaxed_extended_json() but for outermost arrays. */
 BSON_EXPORT (char *)
 bson_array_as_relaxed_extended_json (const bson_t *bson, size_t *length);
+
 
 /* like bson_as_canonical_extended_json() but for outermost arrays. */
 BSON_EXPORT (char *)

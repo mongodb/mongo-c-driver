@@ -58,7 +58,9 @@ typedef enum {
 
 
 BSON_EXPORT (bson_json_opts_t *)
-bson_json_opts_new (bson_json_mode_t mode, int32_t max_len);
+bson_json_opts_new (bson_json_mode_t mode,
+                    int32_t max_len,
+                    bool is_outermost_array);
 BSON_EXPORT (void)
 bson_json_opts_destroy (bson_json_opts_t *opts);
 
