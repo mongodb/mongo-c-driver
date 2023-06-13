@@ -389,16 +389,13 @@ _noop (void)
 
 
 bson_json_opts_t *
-bson_json_opts_new (bson_json_mode_t mode,
-                    int32_t max_len,
-                    bool is_outermost_array)
+bson_json_opts_new (bson_json_mode_t mode, int32_t max_len)
 {
    bson_json_opts_t *opts;
 
    opts = (bson_json_opts_t *) bson_malloc (sizeof *opts);
    opts->mode = mode;
    opts->max_len = max_len;
-   opts->is_outermost_array = is_outermost_array;
 
    return opts;
 }

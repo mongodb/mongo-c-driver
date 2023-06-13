@@ -517,6 +517,10 @@ bson_as_json_with_opts (const bson_t *bson,
                         size_t *length,
                         const bson_json_opts_t *opts);
 
+BSON_EXPORT (void)
+bson_json_opts_set_outermost_array (bson_json_opts_t *opts,
+                                    bool is_outermost_array);
+
 
 /**
  * bson_as_canonical_extended_json:
