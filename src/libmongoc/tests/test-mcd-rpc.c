@@ -1958,7 +1958,7 @@ test_rpc_message_from_data_op_kill_cursors_invalid (void)
                        (size_t) expected_len,                                  \
                        iovec.iov_len);                                         \
       ASSERT_WITH_MSG (                                                        \
-         iovec.iov_base == (data + expected_base_index),                       \
+         (const uint8_t *) iovec.iov_base == (data + expected_base_index),     \
          "expected iov_base to point to byte %zu (%p), but got byte %zu (%p)", \
          (size_t) (expected_base_index),                                       \
          (void *) (data + expected_base_index),                                \
@@ -2278,7 +2278,7 @@ test_rpc_message_to_iovecs_op_kill_cursors (void)
 
       ASSERT_CMPSIZE_T (iovec->iov_len, ==, 16u);
 
-      const int64_t *const cursor_ids = iovec->iov_base;
+      const int64_t *const cursor_ids = (const int64_t *) iovec->iov_base;
 
       const int64_t cursor_id_0 = _int64_from_le (cursor_ids + 0);
       const int64_t cursor_id_1 = _int64_from_le (cursor_ids + 1);
