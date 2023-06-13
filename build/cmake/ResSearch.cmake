@@ -1,4 +1,7 @@
 include(CheckSymbolExists)
+include(CMakePushCheckState)
+
+cmake_push_check_state(RESET)
 
 # The name of the library that performs name resolution, suitable for giving to the "-l" link flag
 set(RESOLVE_LIB_NAME)
@@ -9,41 +12,37 @@ if(WIN32)
     set(RESOLVE_LIB_NAME Dnsapi)
     set(_MONGOC_HAVE_DNSAPI 1)
 else()
-    # Thread-safe DNS query function for _mongoc_client_get_srv.
-    # Could be a macro, not a function, so use check_symbol_exists.
-    check_symbol_exists(res_nsearch resolv.h _MONGOC_HAVE_RES_NSEARCH)
-    check_symbol_exists(res_ndestroy resolv.h _MONGOC_HAVE_RES_NDESTROY)
-    check_symbol_exists(res_nclose resolv.h _MONGOC_HAVE_RES_NCLOSE)
-    if(MONGOC_HAVE_RES_NSEARCH)
-        # We have res_nsearch. Call res_ndestroy (BSD/Mac) or res_nclose (Linux)?
-        set(RESOLVE_LIB_NAME resolv)
-    elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-        # On FreeBSD, the following line does not properly detect res_search,
-        # which is included in libc on FreeBSD:
-        # check_symbol_exists (res_search resolv.h MONGOC_HAVE_RES_SEARCH)
-        #
-        # Attempting to link with libresolv on FreeBSD will fail with this error:
-        # ld: error: unable to find library -lresolv
-        #
-        # Since res_search has existed since 4.3 BSD (which is the predecessor
-        # of FreeBSD), it is safe to assume that this function will exist in
-        # libc on FreeBSD.
-        set(_MONGOC_HAVE_RES_SEARCH 1)
+    # Try to find the search functions for various configurations.
+    # Headers required by minimum on the strictest system: (Tested on FreeBSD 13)
+    set(resolve_headers netinet/in.h sys/types.h arpa/nameser.h resolv.h)
+    check_symbol_exists(res_nsearch "${resolve_headers}" _MONGOC_HAVE_RES_NSEARCH_NOLINK)
+    check_symbol_exists(res_search "${resolve_headers}" _MONGOC_HAVE_RES_SEARCH_NOLINK)
+    check_symbol_exists(res_ndestroy "${resolve_headers}" _MONGOC_HAVE_RES_NDESTROY_NOLINK)
+    check_symbol_exists(res_nclose "${resolve_headers}" _MONGOC_HAVE_RES_NCLOSE_NOLINK)
+    # Can we use name resolution with just libc?
+    if((_MONGOC_HAVE_RES_NSEARCH_NOLINK OR _MONGOC_HAVE_RES_SEARCH_NOLINK)
+        AND (_MONGOC_HAVE_RES_NDESTROY_NOLINK OR _MONGOC_HAVE_RES_NCLOSE_NOLINK))
         set(resolve_is_libc TRUE)
+        message(VERBOSE "Name resolution is provided by the C runtime")
     else()
-        # Thread-unsafe function.
-        check_symbol_exists(res_search resolv.h _MONGOC_HAVE_RES_SEARCH)
-        if(_MONGOC_HAVE_RES_SEARCH)
+        # Cannot find it without any links. Try linking in the "resolv" library:
+        set(CMAKE_REQUIRES_LIBRARIES resolv)
+        check_symbol_exists(res_nsearch "${resolve_headers}" _MONGOC_HAVE_RES_NSEARCH_RESOLV)
+        check_symbol_exists(res_search "${resolve_headers}" _MONGOC_HAVE_RES_SEARCH_RESOLV)
+        check_symbol_exists(res_ndestroy "${resolve_headers}" _MONGOC_HAVE_RES_NDESTROY_RESOLV)
+        check_symbol_exists(res_nclose "${resolve_headers}" _MONGOC_HAVE_RES_NCLOSE_RESOLV)
+        if((_MONGOC_HAVE_RES_NSEARCH_RESOLV OR _MONGOC_HAVE_RES_SEARCH_RESOLV)
+            AND (_MONGOC_HAVE_RES_NDESTROY_RESOLV OR _MONGOC_HAVE_RES_NCLOSE_RESOLV))
             set(RESOLVE_LIB_NAME resolv)
         endif()
     endif()
 endif()
 
 _mongo_pick(MONGOC_HAVE_DNSAPI 1 0 _MONGOC_HAVE_DNSAPI)
-_mongo_pick(MONGOC_HAVE_RES_NSEARCH 1 0 _MONGOC_HAVE_RES_NSEARCH)
-_mongo_pick(MONGOC_HAVE_RES_NDESTROY 1 0 _MONGOC_HAVE_RES_NDESTROY)
-_mongo_pick(MONGOC_HAVE_RES_NCLOSE 1 0 _MONGOC_HAVE_RES_NCLOSE)
-_mongo_pick(MONGOC_HAVE_RES_SEARCH 1 0 _MONGOC_HAVE_RES_SEARCH)
+_mongo_pick(MONGOC_HAVE_RES_NSEARCH 1 0 [[_MONGOC_HAVE_RES_NSEARCH_NOLINK OR _MONGOC_HAVE_RES_NSEARCH_RESOLV]])
+_mongo_pick(MONGOC_HAVE_RES_SEARCH 1 0 [[_MONGOC_HAVE_RES_SEARCH_NOLINK OR _MONGOC_HAVE_RES_SEARCH_RESOLV]])
+_mongo_pick(MONGOC_HAVE_RES_NDESTROY 1 0 [[_MONGOC_HAVE_RES_NDESTROY_NOLINK OR _MONGOC_HAVE_RES_NDESTROY_RESOLV]])
+_mongo_pick(MONGOC_HAVE_RES_NCLOSE 1 0 [[_MONGOC_HAVE_RES_NCLOSE_NOLINK OR _MONGOC_HAVE_RES_NCLOSE_RESOLV]])
 
 if(RESOLVE_LIB_NAME OR resolve_is_libc)
     # Define the resolver interface:
@@ -54,3 +53,5 @@ if(RESOLVE_LIB_NAME OR resolve_is_libc)
         EXPORT_NAME detail::c_resolve)
     install(TARGETS _mongoc-resolve EXPORT mongoc-targets)
 endif()
+
+cmake_pop_check_state()
