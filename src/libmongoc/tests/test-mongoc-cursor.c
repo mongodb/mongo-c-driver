@@ -2481,7 +2481,7 @@ test_cursor_batchsize_override_int32 (void)
    test_cursor_batchsize_override (findopts, numeric_iter_eq);
 }
 
-/* Test that mongoc_cursor_set_batch_size overrides a previously set in64
+/* Test that mongoc_cursor_set_batch_size overrides a previously set int64
  * batchSize. */
 void
 test_cursor_batchsize_override_int64 (void)
@@ -2508,6 +2508,44 @@ test_cursor_batchsize_override_decimal128 (void)
    bson_decimal128_from_string ("1", &start_val);
    bson_t *findopts = BCON_NEW ("batchSize", BCON_DECIMAL128 (&start_val));
    test_cursor_batchsize_override (findopts, decimal128_iter_eq);
+}
+
+/* Test that attempting to overwrite an int32 batchSize with an out-of-range
+ * value raises a warning */
+void
+test_cursor_batchsize_override_range_warning (void)
+{
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *cbs;
+   mongoc_collection_t *coll;
+   bson_t *findopts = BCON_NEW ("batchSize", BCON_INT32 (1.0));
+   bson_error_t error;
+
+   client = test_framework_new_default_client ();
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   /* Create a cursor and attempt to override outside int32 range. */
+   {
+      const bson_t *got;
+      bson_t *filter = bson_new ();
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         coll, filter, findopts, NULL /* read_prefs */);
+
+      capture_logs (true);
+      /* Attempt to overwrite the 'batchSize' with uint32_max. */
+      mongoc_cursor_set_batch_size (cursor, UINT32_MAX);
+      ASSERT_CAPTURED_LOG (
+         "mongoc_cursor_set_batch_size",
+         MONGOC_LOG_LEVEL_WARNING,
+         "unable to overwrite stored int32 batchSize with out-of-range value");
+
+      mongoc_cursor_destroy (cursor);
+      bson_destroy (findopts);
+      bson_destroy (filter);
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
 }
 
 void
@@ -2607,4 +2645,7 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Cursor/batchsize_override_decimal128",
                       test_cursor_batchsize_override_decimal128);
+   TestSuite_AddLive (suite,
+                      "/Cursor/batchsize_override_range_warning",
+                      test_cursor_batchsize_override_range_warning);
 }

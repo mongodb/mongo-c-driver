@@ -1458,7 +1458,12 @@ mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor, uint32_t batch_size)
    } else if (BSON_ITER_HOLDS_INT64 (&iter)) {
       bson_iter_overwrite_int64 (&iter, (int64_t) batch_size);
    } else if (BSON_ITER_HOLDS_INT32 (&iter)) {
-      BSON_ASSERT (bson_in_range_int32_t_unsigned (batch_size));
+      if (!bson_in_range_int32_t_unsigned (batch_size)) {
+         MONGOC_WARNING ("unable to overwrite stored int32 batchSize with "
+                         "out-of-range value %" PRIu32,
+                         batch_size);
+         return;
+      }
       bson_iter_overwrite_int32 (&iter, (int32_t) batch_size);
    } else if (BSON_ITER_HOLDS_DOUBLE (&iter)) {
       bson_iter_overwrite_double (&iter, (double) batch_size);
