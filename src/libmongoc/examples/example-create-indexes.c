@@ -52,12 +52,13 @@ main (int argc, char *argv[])
       // `keys` represents an ascending index on field `x`.
       bson_t *keys = BCON_NEW ("x", BCON_INT32 (1));
       mongoc_index_model_t *im = mongoc_index_model_new (keys, NULL /* opts */);
-      if (!mongoc_collection_create_indexes_with_opts (
+      if (mongoc_collection_create_indexes_with_opts (
              coll, &im, 1, NULL /* opts */, NULL /* reply */, &error)) {
+         printf ("Successfully created index\n");
+      } else {
          bson_destroy (keys);
          HANDLE_ERROR ("Failed to create index: %s", error.message);
       }
-      printf ("Created index\n");
       bson_destroy (keys);
       // Create an index ... end
    }
@@ -85,13 +86,14 @@ main (int argc, char *argv[])
       // Drop an index ... begin
       bson_t *keys = BCON_NEW ("x", BCON_INT32 (1));
       char *index_name = mongoc_collection_keys_to_index_string (keys);
-      if (!mongoc_collection_drop_index_with_opts (
+      if (mongoc_collection_drop_index_with_opts (
              coll, index_name, NULL /* opts */, &error)) {
+         printf ("Successfully dropped index\n");
+      } else {
          bson_free (index_name);
          bson_destroy (keys);
          HANDLE_ERROR ("Failed to drop index: %s", error.message);
       }
-      printf ("Dropped index\n");
       bson_free (index_name);
       bson_destroy (keys);
       // Drop an index ... end
