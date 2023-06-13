@@ -58,4 +58,4 @@ Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there ar
 
 .. seealso::
 
-  | :doc:`create-indexes`.
+  | :doc:`manage-collection-indexes`.
