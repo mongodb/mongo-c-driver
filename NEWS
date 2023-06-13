@@ -1,3 +1,19 @@
+libmongoc 1.24.0 (Unreleased)
+=============================
+
+Platform Support:
+
+  * Support for macOS 10.14 will be dropped in an upcoming release.
+  * Support for Ubuntu 14.04 will be dropped in an upcoming release.
+  * Support for Debian 8.1 will be dropped in an upcoming release.
+
+Build Configuration:
+
+  * The `ENABLE_BSON` configure-time option has been removed. Build scripts that
+    used `ENABLE_BSON=SYSTEM` should be updated to use `USE_SYSTEM_LIBBSON=TRUE`.
+    If the build script needs to support building arbitrary versions of the C
+    driver, add both `ENABLE_BSON=SYSTEM` and `USE_SYSTEM_LIBBSON=TRUE`.
+
 libmongoc 1.23.5
 ================
 
@@ -11,17 +27,6 @@ Thanks to everyone who contributed to the development of this release.
 
   * Kevin Albertson
   * Romain Geissler @ Amadeus
-
-
-
-libmongoc 1.24.0 (Unreleased)
-=============================
-
-  * Support for macOS 10.14 will be dropped in an upcoming release.
-  * The `ENABLE_BSON` configure-time option has been removed. Build scripts that
-    used `ENABLE_BSON=SYSTEM` should be updated to use `USE_SYSTEM_LIBBSON=TRUE`.
-    If the build script needs to support building arbitrary versions of the C
-    driver, add both `ENABLE_BSON=SYSTEM` and `USE_SYSTEM_LIBBSON=TRUE`.
 
 
 libmongoc 1.23.4
