@@ -13,7 +13,9 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, hex_len / 2u));
+   if (!bson_in_range_unsigned (uint32_t, hex_len / 2u)) {
+      return NULL;
+   }
 
    *len = (uint32_t) (hex_len / 2u);
    uint8_t *const out = bson_malloc0 (*len);
