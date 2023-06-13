@@ -1,6 +1,8 @@
 libbson 1.24.0 (Unreleased)
 ===========================
 
+Platform Support:
+
   * Support for macOS 10.14 will be dropped in an upcoming release.
   * Support for Ubuntu 14.04 will be dropped in an upcoming release.
   * Support for Debian 8.1 will be dropped in an upcoming release.
