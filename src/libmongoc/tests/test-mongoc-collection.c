@@ -6249,7 +6249,7 @@ test_hint_is_validated_countDocuments (void)
       }                                                                      \
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);        \
       ASSERT_WITH_MSG (found,                                                \
-                       "expected to find index for keys: '%s', but did not", \
+                       "could not find expected index for keys: '%s'",       \
                        tmp_json (keys));                                     \
       mongoc_cursor_destroy (cursor);                                        \
    } else                                                                    \
