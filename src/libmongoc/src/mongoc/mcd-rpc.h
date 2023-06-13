@@ -111,6 +111,9 @@ mcd_rpc_message_from_data_in_place (mcd_rpc_message *rpc,
 // Convert the given RPC message object into an array of iovec structures. The
 // return value must be freed by `bson_free`.
 //
+// The data layout of the iovec structures is consistent with the definition of
+// `mongoc_iovec_t` as defined in `<mongoc/mongoc-iovec.h>`.
+//
 // rpc: a valid RPC message object whose fields are in native endian.
 // length: if not `NULL`, `*length` is set to the number of iovec structures in
 //         the array.
