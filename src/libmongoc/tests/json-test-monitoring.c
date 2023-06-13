@@ -336,6 +336,47 @@ apm_match_visitor (match_ctx_t *ctx,
       visitor_ctx->command_name = bson_strdup (bson_iter_key (doc_iter));
    }
 
+   // Subdocuments in `command` should not have extra fields.
+   if (NULL != strstr (ctx->path, ".command") && doc_iter) {
+      if (BSON_ITER_HOLDS_DOCUMENT (doc_iter) &&
+          BSON_ITER_HOLDS_DOCUMENT (pattern_iter)) {
+         bson_t doc_subdoc;
+         bson_iter_bson (doc_iter, &doc_subdoc);
+         bson_iter_t doc_subdoc_iter;
+         bson_iter_init (&doc_subdoc_iter, &doc_subdoc);
+         while (bson_iter_next (&doc_subdoc_iter)) {
+            const char *subdoc_key = bson_iter_key (&doc_subdoc_iter);
+
+            bson_t pattern_subdoc;
+            bson_iter_bson (pattern_iter, &pattern_subdoc);
+            bson_iter_t pattern_subdoc_iter;
+
+            bool skip = false;
+            if (ends_with (ctx->path, "updates") &&
+                (0 == strcmp ("multi", subdoc_key) ||
+                 0 == strcmp ("upsert", subdoc_key))) {
+               // libmongoc includes `multi: false` and `upsert: false`.
+               // Some tests do not include `multi: false` and `upsert: false`
+               // in expectations. See DRIVERS-2271 and DRIVERS-976.
+               skip = true;
+            }
+
+            if (!skip && !bson_iter_init_find (&pattern_subdoc_iter,
+                                               &pattern_subdoc,
+                                               subdoc_key)) {
+               match_err (
+                  ctx,
+                  "unexpected extra field '%s' in captured event "
+                  "command subdocument of field '%s'. pattern_subdoc=%s",
+                  subdoc_key,
+                  key,
+                  tmp_json (&pattern_subdoc));
+               return MATCH_ACTION_ABORT;
+            }
+         }
+      }
+   }
+
    if (IS_COMMAND ("find") || IS_COMMAND ("aggregate")) {
       /* New query. Next server reply or getMore will set cursor_id. */
       visitor_ctx->cursor_id = 0;
@@ -513,7 +554,7 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
    match_ctx.retain_dots_in_keys = true;
    match_ctx.allow_placeholders = true;
    match_ctx.visitor_fn = apm_match_visitor;
-   match_ctx.visitor_ctx = (void *) &apm_match_visitor_ctx;
+   match_ctx.visitor_ctx = &apm_match_visitor_ctx;
 
    allow_subset = ctx->config->command_monitoring_allow_subset;
 
@@ -608,7 +649,7 @@ test_apm_matching (void)
                     "}";
 
    match_ctx.visitor_fn = apm_match_visitor;
-   match_ctx.visitor_ctx = (void *) &match_visitor_ctx;
+   match_ctx.visitor_ctx = &match_visitor_ctx;
 
    BSON_ASSERT (match_bson_with_ctx (tmp_bson (e1), tmp_bson (e1), &match_ctx));
    BSON_ASSERT (
@@ -617,9 +658,80 @@ test_apm_matching (void)
    apm_match_visitor_ctx_reset (&match_visitor_ctx);
 }
 
+// Test that documents in command_started_event.command do not permit extra
+// fields by default.
+static void
+test_apm_matching_extra_fields (void)
+{
+   // Extra fields are permitted in `command`.
+   {
+      apm_match_visitor_ctx_t match_visitor_ctx = {0};
+      match_ctx_t match_ctx = {{0}};
+
+      const char *event = BSON_STR (
+         {"command_started_event" : {"command" : {"a" : 1, "b" : 2}}});
+      const char *pattern =
+         BSON_STR ({"command_started_event" : {"command" : {"a" : 1}}});
+
+      match_ctx.visitor_fn = apm_match_visitor;
+      match_ctx.visitor_ctx = &match_visitor_ctx;
+
+      bool matched =
+         match_bson_with_ctx (tmp_bson (event), tmp_bson (pattern), &match_ctx);
+      ASSERT (matched);
+      apm_match_visitor_ctx_reset (&match_visitor_ctx);
+   }
+
+   // Extra fields are not permitted in `command` sub-documents.
+   {
+      apm_match_visitor_ctx_t match_visitor_ctx = {0};
+      match_ctx_t match_ctx = {{0}};
+
+      const char *event = BSON_STR ({
+         "command_started_event" : {"command" : {"subdoc" : {"a" : 1, "b" : 2}}}
+      });
+      const char *pattern = BSON_STR (
+         {"command_started_event" : {"command" : {"subdoc" : {"a" : 1}}}});
+
+      match_ctx.visitor_fn = apm_match_visitor;
+      match_ctx.visitor_ctx = &match_visitor_ctx;
+
+      bool matched =
+         match_bson_with_ctx (tmp_bson (event), tmp_bson (pattern), &match_ctx);
+      ASSERT (!matched);
+      ASSERT_CONTAINS (match_ctx.errmsg, "unexpected extra field 'b'");
+      apm_match_visitor_ctx_reset (&match_visitor_ctx);
+   }
+
+   // Extra fields are not permitted in `command` sub-arrays.
+   {
+      apm_match_visitor_ctx_t match_visitor_ctx = {0};
+      match_ctx_t match_ctx = {{0}};
+
+      const char *event = BSON_STR ({
+         "command_started_event" :
+            {"command" : {"subarray" : [ {"a" : 1, "b" : 2} ]}}
+      });
+      const char *pattern = BSON_STR ({
+         "command_started_event" : {"command" : {"subarray" : [ {"a" : 1} ]}}
+      });
+
+      match_ctx.visitor_fn = apm_match_visitor;
+      match_ctx.visitor_ctx = &match_visitor_ctx;
+
+      bool matched =
+         match_bson_with_ctx (tmp_bson (event), tmp_bson (pattern), &match_ctx);
+      ASSERT (!matched);
+      ASSERT_CONTAINS (match_ctx.errmsg, "unexpected extra field 'b'");
+      apm_match_visitor_ctx_reset (&match_visitor_ctx);
+   }
+}
+
 
 void
 test_apm_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/apm_test_matching", test_apm_matching);
+   TestSuite_Add (
+      suite, "/apm_test_matching/extra_fields", test_apm_matching_extra_fields);
 }
