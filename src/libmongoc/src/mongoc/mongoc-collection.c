@@ -3848,16 +3848,14 @@ mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
    }
    BSON_ASSERT (bson_append_array_end (&cmd, &indexes));
 
-   if (!mongoc_client_command_with_opts (collection->client,
+   ok = mongoc_client_command_with_opts (collection->client,
                                          collection->db,
                                          &cmd,
                                          NULL /* read_prefs */,
                                          opts,
                                          reply_ptr,
-                                         error)) {
-      GOTO (fail);
-   }
-   ok = true;
+                                         error);
+
 fail:
    mongoc_server_stream_cleanup (server_stream);
    bson_destroy (&cmd);
