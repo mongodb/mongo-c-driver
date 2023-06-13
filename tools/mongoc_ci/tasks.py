@@ -5,27 +5,28 @@ from dagon import task, option, fs
 from . import ninja, cmake, paths
 
 
-OPT_NINJA_VERSION = option.add("ninja.version", type=str, default="1.10.2")
-OPT_CMAKE_VERSION = option.add("cmake.version", type=str, default="3.25.2")
-OPT_SOURCE_DIR = option.add(
+_OPT_NINJA_VERSION = option.add("ninja.version", type=str, default="1.10.2")
+_OPT_CMAKE_VERSION = option.add("cmake.version", type=str, default="3.15.4")
+_OPT_CMAKE_GENERATOR = option.add("cmake.generator", type=str, default="Ninja")
+_OPT_SOURCE_DIR = option.add(
     "source.dir",
     type=Path,
     default=paths.MONGOC_DIR,
     doc="Path to the CMake project to configure",
 )
-OPT_BUILD_DIR = option.add(
+_OPT_BUILD_DIR = option.add(
     "build.dir",
     type=Path,
-    default_factory=lambda: OPT_SOURCE_DIR.get() / "_build/default",
+    default_factory=lambda: _OPT_SOURCE_DIR.get() / "_build/default",
     doc="Path to the directory in which to store build results",
 )
-OPT_BUILD_CONFIG = option.add(
+_OPT_BUILD_CONFIG = option.add(
     "build.config",
     type=str,
     default="RelWithDebInfo",
     doc="The configuration to build and install",
 )
-OPT_INSTALL_DIR = option.add(
+_OPT_INSTALL_DIR = option.add(
     "install.dir",
     type=Path,
     doc="The directory in which to install the build (Required for “cmake.install”)",
@@ -46,16 +47,16 @@ async def cache__clean():
 @task.define(order_only_depends=[cache__clean])
 async def ninja__get() -> Path:
     """Obtain a managed Ninja executable"""
-    return await ninja.auto_get_ninja(OPT_NINJA_VERSION.get())
+    return await ninja.auto_get_ninja(_OPT_NINJA_VERSION.get())
 
 
 @task.define(order_only_depends=[cache__clean])
 async def cmake__get() -> cmake.Installation:
     """Obtain a managed CMake installation"""
-    return await cmake.get_cached_cmake_installation(OPT_CMAKE_VERSION.get())
+    return await cmake.get_cached_cmake_installation(_OPT_CMAKE_VERSION.get())
 
 
-CACHE_WARMUP = task.gather("cache.warmup", [cmake__get, ninja__get], doc="Warm up the tools cache")
+cache__warmup = task.gather("cache.warmup", [cmake__get, ninja__get], doc="Warm up the tools cache")
 
 
 @task.define()
@@ -67,8 +68,8 @@ async def clean():
     files are first moved out-of-the-way, and then deletion begins in the
     background.
     """
-    build_dir = OPT_BUILD_DIR.get()
-    if build_dir == OPT_SOURCE_DIR.get():
+    build_dir = _OPT_BUILD_DIR.get()
+    if build_dir == _OPT_SOURCE_DIR.get():
         raise RuntimeError(f"build.dir and source.dir are the same value. Refusing to delete")
     # Begin the removal. This call will move files out of the way, but suspends
     # before performing the slower delete operations:
@@ -82,17 +83,18 @@ async def cmake__configure() -> Path:
     """
     Perform the CMake project configuration.
     """
-    build_dir = OPT_BUILD_DIR.get()
+    build_dir = _OPT_BUILD_DIR.get()
     cm = await task.result_of(cmake__get)
     ninja_exe = await task.result_of(ninja__get)
     await cm.cmake.configure(
-        source_dir=OPT_SOURCE_DIR.get(),
+        source_dir=_OPT_SOURCE_DIR.get(),
         build_dir=build_dir,
-        generator="Ninja Multi-Config",
+        generator=_OPT_CMAKE_GENERATOR.get(),
         settings={
             "CMAKE_MAKE_PROGRAM": ninja_exe,
         },
-        install_prefix=OPT_INSTALL_DIR.get(default=None),
+        install_prefix=_OPT_INSTALL_DIR.get(default=None),
+        config=_OPT_BUILD_CONFIG.get(),
     )
     return build_dir
 
@@ -103,7 +105,7 @@ async def cmake__build_fast():
     Build the CMake project (No [cmake.config] dep).
     """
     cm = await task.result_of(cmake__get)
-    await cm.cmake.build(OPT_BUILD_DIR.get(), config=OPT_BUILD_CONFIG.get())
+    await cm.cmake.build(_OPT_BUILD_DIR.get(), config=_OPT_BUILD_CONFIG.get())
 
 
 cmake__build = task.gather(
@@ -119,7 +121,7 @@ async def cmake__install_fast():
     Install the build results (No [cmake.build] dep)
     """
     cm = await task.result_of(cmake__get)
-    await cm.cmake.install(OPT_BUILD_DIR.get(), config=OPT_BUILD_CONFIG.get(), prefix=OPT_INSTALL_DIR.get())
+    await cm.cmake.install(_OPT_BUILD_DIR.get(), config=_OPT_BUILD_CONFIG.get(), prefix=_OPT_INSTALL_DIR.get())
 
 
 cmake__install = task.gather(

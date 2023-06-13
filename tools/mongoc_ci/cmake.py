@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import itertools
 import multiprocessing
-import os
 import re
 from pathlib import Path
 from typing import Iterable, Mapping
@@ -57,7 +55,7 @@ class CMakeExecutable:
         Path(build_dir).mkdir(exist_ok=True, parents=True)
         cmd = (
             # First argument is the source directory path:
-            (self.executable, source_dir),
+            (self.executable, "-S", source_dir, "-B", build_dir),
             # Pass a -G argument, if provided
             ("-G", generator) if generator else (),
             # Set the build type
@@ -90,9 +88,9 @@ class CMakeExecutable:
             targets = [targets]
         cmd = [
             (self.executable, "--build", build_dir),
-            (f"--config={config}" if config else ()),
-            f"--parallel={parallel}",
-            (f"--target={t}" for t in targets),
+            (("--config", config) if config else ()),
+            ("--parallel", parallel),
+            (("--target", t) for t in targets),
         ]
         await proc.run(cmd, on_output=ninja_progress)
 
@@ -149,6 +147,7 @@ async def get_cached_cmake_installation(version: str, *, cache_root: Path | None
     install_tmp = install_root.with_suffix(".tmp")
     removal = fs.remove([install_tmp, install_root], recurse=True, absent_ok=True)
     task.cleanup(lambda: removal, when="now")
+    vertup = tuple(map(int, version.split(".")))
 
     osys = OperatingSystem.current()
     if osys.is_windows or osys.is_darwin:
@@ -161,6 +160,8 @@ async def get_cached_cmake_installation(version: str, *, cache_root: Path | None
         and Architecture.current() in (Architecture.x86_64, Architecture.ARM64)
         # CMake.org does not publish a binary compatible with Alpine (libmuslc)
         and not Path("/etc/alpine-release").is_file()
+        # The ARM Linux builds came later:
+        and (Architecture.current() is not Architecture.ARM64 or vertup > (3, 19, 3))
     ):
         tmp_install = await _download_prebuilt(version, install_tmp)
     else:
@@ -179,22 +180,25 @@ async def _download_prebuilt(version: str, install_root: Path) -> Installation:
     ext = "tar.gz"
     nstrip = 1
     exc = NotImplementedError(f"No automatic download implemented for operating system+architecture {osys=}, {arch=}")
+    # CMake changed file naming schemes around version 3.20.0:
+    vertup = tuple(map(int, version.split(".")))
+    new_path = vertup > (3, 20, 0)
     if osys.is_windows:
-        plat = "windows"
+        plat = "windows" if new_path else "win64"
         # Windows comes in a Zip
         ext = "zip"
     elif osys.is_darwin:
-        plat = "macos"
+        plat = "macos" if new_path else "Darwin"
         # macOS has an app bundle, with additional control directories to skip:
         nstrip = 3
     elif osys.is_linux:
-        plat = "linux"
+        plat = "linux" if new_path else "Linux"
     else:
         raise exc
 
     if osys.is_darwin:
-        # macOS has a universal binary
-        arch = "universal"
+        # macOS has a universal binary after 3.20.0
+        arch = "universal" if new_path else "x86_64"
     elif arch is Architecture.x86_64:
         arch = "x86_64"
     elif arch is Architecture.ARM64:
@@ -223,25 +227,6 @@ async def _download_prebuilt(version: str, install_root: Path) -> Installation:
     return Installation(install_root)
 
 
-def _cmake_candidates() -> Iterable[Path]:
-    """Iterate the candidate CMake executable filepaths on PATH"""
-    dirs = os.environ["PATH"].split(os.pathsep)
-    if not OperatingSystem.current().is_windows:
-        # Most systems just have PATH:
-        yield from (Path(d) / "cmake" for d in dirs)
-    # Windows uses PATHEXT:
-    exts = os.environ["PATHEXT"].split(os.pathsep)
-    for dirpath, ext in itertools.product(dirs, exts):
-        yield Path(dirpath) / f"cmake{ext}"
-
-
-def _find_existing_cmake() -> CMakeExecutable | None:
-    """Find a CMake executable on PATH"""
-    for cand in _cmake_candidates():
-        if cand.is_file():
-            return CMakeExecutable(cand)
-
-
 async def _build_from_source(version: str, install_prefix: Path) -> Installation:
     """Build CMake from source and install it to the given prefix. Downloads a source archive."""
     vermat = re.match(r"^(\d+)\.(\d+)", version)
@@ -252,13 +237,18 @@ async def _build_from_source(version: str, install_prefix: Path) -> Installation
     src_dir = install_prefix.with_suffix(".src")
     build_dir = install_prefix.with_suffix(".build")
     async with http.download_tmp(url, suffix="-cmake-src.tgz") as tmp:
-        await ar.expand(tmp, destination=src_dir, strip_components=1, on_extract="print-status", if_exists="replace")
+        await ar.expand(
+            tmp,
+            destination=src_dir,
+            strip_components=1,
+            on_extract="print-status",
+            if_exists="replace",
+            # Hack: CMake 3.15 included some borken files that screw up archive expansion
+            unless=lambda p: "RunCMake/find_program/tmp" in p.as_posix(),
+        )
     task.cleanup(lambda: fs.remove([src_dir, build_dir], recurse=True, absent_ok=True))
     ui.progress(None)
     ui.status(f"Building CMake {version}")
-    host_cmake = _find_existing_cmake()
-    if host_cmake is not None:
-        return await _build_cmake_with_cmake(host_cmake, src_dir, build_dir, install_prefix)
     if not OperatingSystem.current().is_unix_like:
         raise RuntimeError(f"No host CMake was found to perform the CMake bootstrap")
     return await _build_cmake_from_bootstrap(src_dir, build_dir, install_prefix)
@@ -276,19 +266,4 @@ async def _build_cmake_from_bootstrap(src_dir: Path, build_dir: Path, install_ro
     ]
     await proc.run(cmd, cwd=build_dir, on_output="status")
     await proc.run(["make", "-j", nprocs, "install"], on_output=ninja_progress, cwd=build_dir)
-    return Installation(install_root)
-
-
-async def _build_cmake_with_cmake(
-    cmake: CMakeExecutable, src_dir: Path, build_dir: Path, install_root: Path
-) -> Installation:
-    """Build CMake using an already-present version of CMake"""
-    # Async-delete any stale config:
-    removal = fs.remove(build_dir, recurse=True, absent_ok=True)
-    task.cleanup(lambda: removal, when="now")
-    build_dir.mkdir(exist_ok=True, parents=True)
-    # Configure, build, and install
-    await cmake.configure(source_dir=src_dir, build_dir=build_dir, config="Release", install_prefix=install_root)
-    await cmake.build(build_dir, config="Release")
-    await cmake.install(build_dir, config="Release")
     return Installation(install_root)
