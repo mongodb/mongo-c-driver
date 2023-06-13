@@ -27,7 +27,7 @@ Parameters
 ----------
 
 * ``collection``: A :symbol:`mongoc_collection_t`.
-* ``models``: An array of ``mongoc_index_model_t``.
+* ``models``: An array of ``mongoc_index_model_t *``.
 * ``n_models``: The number of ``models``.
 * ``opts``: Optional options.
 * ``reply``: An optional location for the server reply to the ``createIndexes`` command.
