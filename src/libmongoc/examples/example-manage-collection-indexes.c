@@ -1,5 +1,5 @@
-// example-create-indexes creates, lists and deletes an index from the
-// `test.test` collection.
+// example-manage-collection-indexes creates, lists and deletes an index from
+// the `test.test` collection.
 
 #include <mongoc/mongoc.h>
 #include <stdlib.h> // abort
