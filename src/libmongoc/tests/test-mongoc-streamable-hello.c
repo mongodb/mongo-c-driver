@@ -27,6 +27,8 @@ _force_scan (mongoc_client_t *client, mock_server_t *server, const char *hello)
    future_t *future;
    mongoc_server_description_t *sd;
 
+   ASSERT (client);
+
    /* Mark the topology as "stale" to trigger a scan. */
    client->topology->stale = true;
    future =

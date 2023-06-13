@@ -1920,6 +1920,8 @@ storage_engine (mongoc_client_t *client)
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
 
+   ASSERT (client);
+
    /* NOTE: this default will change eventually */
    char *engine = bson_strdup ("mmapv1");
 

@@ -98,6 +98,9 @@ _drop_and_populate_coll (mongoc_client_t *client)
    bool ret;
    bson_error_t err;
    int i;
+
+   ASSERT (client);
+
    coll = mongoc_client_get_collection (client, "test", "test");
    mongoc_collection_drop (coll, NULL); /* don't care if ns not found. */
    for (i = 0; i < 3; i++) {
@@ -114,6 +117,9 @@ _ping (mongoc_client_t *client)
 {
    bool ret;
    bson_error_t err;
+
+   ASSERT (client);
+
    ret = mongoc_client_command_simple (
       client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
    ASSERT_OR_PRINT (ret, err);

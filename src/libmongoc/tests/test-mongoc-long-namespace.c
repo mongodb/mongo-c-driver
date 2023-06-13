@@ -402,6 +402,8 @@ _check_existence (mongoc_client_t *client,
    char **iter;
    bson_error_t error;
 
+   ASSERT (client);
+
    db = mongoc_client_get_database (client, ns_db);
    db_names = mongoc_client_get_database_names_with_opts (
       client, NULL /* opts */, &error);

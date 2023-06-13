@@ -281,6 +281,8 @@ set_apm_callbacks_pooled (json_test_ctx_t *ctx, mongoc_client_pool_t *pool)
 {
    mongoc_apm_callbacks_t *callbacks;
 
+   ASSERT (pool);
+
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, started_cb);
    mongoc_apm_set_server_changed_cb (callbacks, server_changed_cb);

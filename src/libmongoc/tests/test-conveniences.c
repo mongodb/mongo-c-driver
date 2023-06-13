@@ -642,6 +642,8 @@ bson_lookup_session_opts (const bson_t *b, const char *key)
 mongoc_client_session_t *
 bson_lookup_session (const bson_t *b, const char *key, mongoc_client_t *client)
 {
+   ASSERT (client);
+
    mongoc_session_opt_t *opts;
    mongoc_client_session_t *session;
    bson_error_t error;
@@ -1626,7 +1628,7 @@ init_huge_string (mongoc_client_t *client)
 {
    int32_t max_bson_size;
 
-   BSON_ASSERT (client);
+   ASSERT (client);
 
    test_conveniences_init ();
 
@@ -1645,6 +1647,7 @@ init_huge_string (mongoc_client_t *client)
 const char *
 huge_string (mongoc_client_t *client)
 {
+   ASSERT (client);
    init_huge_string (client);
    return gHugeString;
 }
@@ -1653,6 +1656,7 @@ huge_string (mongoc_client_t *client)
 size_t
 huge_string_length (mongoc_client_t *client)
 {
+   ASSERT (client);
    init_huge_string (client);
    return gHugeStringLength;
 }
@@ -1931,6 +1935,8 @@ server_semver (mongoc_client_t *client, semver_t *out)
    bson_t reply;
    bson_error_t error;
    const char *server_version_str;
+
+   ASSERT (client);
 
    ASSERT_OR_PRINT (
       mongoc_client_command_simple (

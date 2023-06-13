@@ -1199,6 +1199,8 @@ execute_test (const json_test_config_t *config,
    mongoc_client_t *outcome_client;
    mongoc_collection_t *outcome_coll;
 
+   ASSERT (client);
+
    if (test_suite_debug_output ()) {
       const char *description = bson_lookup_utf8 (test, "description");
       printf ("  - %s\n", description);
@@ -1296,7 +1298,7 @@ activate_fail_point (mongoc_client_t *client,
    bson_error_t error;
    bool r;
 
-   BSON_ASSERT (client);
+   ASSERT (client);
 
    bson_lookup_doc (test, key, &command);
 
@@ -1333,6 +1335,8 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
    bson_t *command;
    bool r;
    bson_error_t error;
+
+   ASSERT (client);
 
    if (server_id) {
       sd = mongoc_client_get_server_description (client, server_id);
@@ -1440,6 +1444,8 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
    bson_error_t error;
    bool ret;
    bson_t extra;
+
+   ASSERT (client);
 
    if (!bson_has_field (test, "clientOptions.autoEncryptOpts")) {
       return;

@@ -4072,6 +4072,8 @@ server_id_for_read_mode (mongoc_client_t *client, mongoc_read_mode_t read_mode)
    bson_error_t error;
    uint32_t server_id;
 
+   ASSERT (client);
+
    prefs = mongoc_read_prefs_new (read_mode);
    sd = mongoc_topology_select (
       client->topology, MONGOC_SS_READ, prefs, NULL, &error);

@@ -1418,6 +1418,8 @@ test_cursor_hint_errors (void)
 static uint32_t
 server_id_for_read_mode (mongoc_client_t *client, mongoc_read_mode_t read_mode)
 {
+   ASSERT (client);
+
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd;
    bson_error_t error;

@@ -120,7 +120,7 @@ _mongoc_cursor_change_stream_new (mongoc_client_t *client,
    mongoc_cursor_t *cursor;
    _data_change_stream_t *data;
 
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (reply);
 
    data = BSON_ALIGNED_ALLOC0 (_data_change_stream_t);

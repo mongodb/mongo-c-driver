@@ -138,6 +138,8 @@ main (void)
    /* Set up the key vault for this example. */
    keyvault_client = mongoc_client_new (
       "mongodb://localhost/?appname=client-side-encryption-keyvault");
+   BSON_ASSERT (keyvault_client);
+
    keyvault_coll = mongoc_client_get_collection (
       keyvault_client, KEYVAULT_DB, KEYVAULT_COLL);
    mongoc_collection_drop (keyvault_coll, NULL);
@@ -194,6 +196,8 @@ main (void)
 
    client =
       mongoc_client_new ("mongodb://localhost/?appname=client-side-encryption");
+   BSON_ASSERT (client);
+
    ret = mongoc_client_enable_auto_encryption (
       client, auto_encryption_opts, &error);
    if (!ret) {
@@ -242,6 +246,8 @@ main (void)
 
    unencrypted_client = mongoc_client_new (
       "mongodb://localhost/?appname=client-side-encryption-unencrypted");
+   BSON_ASSERT (unencrypted_client);
+
    unencrypted_coll = mongoc_client_get_collection (
       unencrypted_client, ENCRYPTED_DB, ENCRYPTED_COLL);
    printf ("encrypted document: ");

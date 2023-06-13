@@ -59,6 +59,8 @@ run_delete_with_hint_and_wc0 (bool expect_error,
    future_t *future;
    request_t *request;
 
+   ASSERT (client);
+
    coll = mongoc_client_get_collection (client, "db", "coll");
 
    wc = mongoc_write_concern_new ();

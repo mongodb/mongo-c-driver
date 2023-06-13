@@ -60,6 +60,8 @@ void
 mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool,
                                  const mongoc_ssl_opt_t *opts)
 {
+   BSON_ASSERT_PARAM (pool);
+
    bson_mutex_lock (&pool->mutex);
 
    _mongoc_ssl_opts_cleanup (&pool->ssl_opts,
@@ -83,6 +85,8 @@ void
 _mongoc_client_pool_set_internal_tls_opts (
    mongoc_client_pool_t *pool, _mongoc_internal_tls_opts_t *internal)
 {
+   BSON_ASSERT_PARAM (pool);
+
    bson_mutex_lock (&pool->mutex);
    if (!pool->ssl_opts_set) {
       bson_mutex_unlock (&pool->mutex);
@@ -252,6 +256,8 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 static void
 _start_scanner_if_needed (mongoc_client_pool_t *pool)
 {
+   BSON_ASSERT_PARAM (pool);
+
    if (!pool->topology->single_threaded) {
       _mongoc_topology_background_monitoring_start (pool->topology);
    }
@@ -260,6 +266,9 @@ _start_scanner_if_needed (mongoc_client_pool_t *pool)
 static void
 _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
 {
+   BSON_ASSERT_PARAM (pool);
+   BSON_ASSERT_PARAM (client);
+
    /* for tests */
    mongoc_client_set_stream_initiator (
       client,
@@ -292,7 +301,7 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   BSON_ASSERT (pool);
+   BSON_ASSERT_PARAM (pool);
 
    wait_queue_timeout_ms = mongoc_uri_get_option_as_int32 (
       pool->uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1);
@@ -343,7 +352,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   BSON_ASSERT (pool);
+   BSON_ASSERT_PARAM (pool);
 
    bson_mutex_lock (&pool->mutex);
 
@@ -370,8 +379,8 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)
 {
    ENTRY;
 
-   BSON_ASSERT (pool);
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (pool);
+   BSON_ASSERT_PARAM (client);
 
    bson_mutex_lock (&pool->mutex);
    _mongoc_queue_push_head (&pool->queue, client);
@@ -398,6 +407,8 @@ _mongoc_client_pool_set_stream_initiator (mongoc_client_pool_t *pool,
                                           mongoc_stream_initiator_t si,
                                           void *context)
 {
+   BSON_ASSERT_PARAM (pool);
+
    mongoc_topology_scanner_set_stream_initiator (
       pool->topology->scanner, si, context);
 }
@@ -409,6 +420,7 @@ mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
    size_t size = 0;
 
    ENTRY;
+   BSON_ASSERT_PARAM (pool);
 
    bson_mutex_lock (&pool->mutex);
    size = pool->size;
@@ -424,6 +436,7 @@ mongoc_client_pool_num_pushed (mongoc_client_pool_t *pool)
    size_t num_pushed = 0;
 
    ENTRY;
+   BSON_ASSERT_PARAM (pool);
 
    bson_mutex_lock (&pool->mutex);
    num_pushed = pool->queue.length;
@@ -436,6 +449,8 @@ mongoc_client_pool_num_pushed (mongoc_client_pool_t *pool)
 mongoc_topology_t *
 _mongoc_client_pool_get_topology (mongoc_client_pool_t *pool)
 {
+   BSON_ASSERT_PARAM (pool);
+
    return pool->topology;
 }
 
@@ -444,6 +459,7 @@ void
 mongoc_client_pool_max_size (mongoc_client_pool_t *pool, uint32_t max_pool_size)
 {
    ENTRY;
+   BSON_ASSERT_PARAM (pool);
 
    bson_mutex_lock (&pool->mutex);
    pool->max_pool_size = max_pool_size;
@@ -456,6 +472,7 @@ void
 mongoc_client_pool_min_size (mongoc_client_pool_t *pool, uint32_t min_pool_size)
 {
    ENTRY;
+   BSON_ASSERT_PARAM (pool);
 
    MONGOC_WARNING (
       "mongoc_client_pool_min_size is deprecated; its behavior does not match"
@@ -473,6 +490,8 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
                                       mongoc_apm_callbacks_t *callbacks,
                                       void *context)
 {
+   BSON_ASSERT_PARAM (pool);
+
    mongoc_topology_t *const topology = BSON_ASSERT_PTR_INLINE (pool)->topology;
    mc_tpld_modification tdmod;
 
@@ -510,6 +529,8 @@ mongoc_client_pool_set_error_api (mongoc_client_pool_t *pool, int32_t version)
       return false;
    }
 
+   BSON_ASSERT_PARAM (pool);
+
    if (pool->error_api_set) {
       MONGOC_ERROR ("Can only set Error API Version once");
       return false;
@@ -526,6 +547,8 @@ mongoc_client_pool_set_appname (mongoc_client_pool_t *pool, const char *appname)
 {
    bool ret;
 
+   BSON_ASSERT_PARAM (pool);
+
    bson_mutex_lock (&pool->mutex);
    ret = _mongoc_topology_set_appname (pool->topology, appname);
    bson_mutex_unlock (&pool->mutex);
@@ -538,6 +561,8 @@ mongoc_client_pool_enable_auto_encryption (mongoc_client_pool_t *pool,
                                            mongoc_auto_encryption_opts_t *opts,
                                            bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (pool);
+
    return _mongoc_cse_client_pool_enable_auto_encryption (
       pool->topology, opts, error);
 }

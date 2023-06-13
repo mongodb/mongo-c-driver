@@ -316,6 +316,8 @@ sdam_json_test_ctx_init (json_test_ctx_t *ctx,
    const char *db_name;
    const char *coll_name;
 
+   ASSERT (pool);
+
    memset (ctx, 0, sizeof (*ctx));
    ctx->config = config;
    bson_init (&ctx->events);
@@ -374,6 +376,8 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
    bson_t cmd;
    bson_error_t error;
    mc_shared_tpld td;
+
+   ASSERT (client);
 
    bson_init (&cmd);
    BCON_APPEND (&cmd, "configureFailPoint", "failCommand", "mode", "off");

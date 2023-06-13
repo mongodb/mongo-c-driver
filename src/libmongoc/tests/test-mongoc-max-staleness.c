@@ -18,6 +18,8 @@ get_max_staleness (const mongoc_client_t *client)
 {
    const mongoc_read_prefs_t *prefs;
 
+   ASSERT (client);
+
    prefs = mongoc_client_get_read_prefs (client);
 
    return mongoc_read_prefs_get_max_staleness_seconds (prefs);

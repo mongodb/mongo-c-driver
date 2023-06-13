@@ -70,6 +70,8 @@ _set_failpoint (mongoc_client_t *client)
                 " 'mode': {'times': 1},"
                 " 'data': {'errorCode': 10107, 'failCommands': ['count']}}");
 
+   ASSERT (client);
+
    ASSERT_OR_PRINT (
       mongoc_client_command_simple (client, "admin", cmd, NULL, NULL, &error),
       error);

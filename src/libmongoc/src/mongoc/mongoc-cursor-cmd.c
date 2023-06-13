@@ -169,6 +169,8 @@ _mongoc_cursor_cmd_new (mongoc_client_t *client,
                         const mongoc_read_prefs_t *default_prefs,
                         const mongoc_read_concern_t *read_concern)
 {
+   BSON_ASSERT_PARAM (client);
+
    mongoc_cursor_t *cursor;
    data_cmd_t *data = BSON_ALIGNED_ALLOC0 (data_cmd_t);
 
@@ -193,6 +195,8 @@ _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
                                    const bson_t *opts,
                                    bson_t *reply)
 {
+   BSON_ASSERT_PARAM (client);
+
    mongoc_cursor_t *cursor =
       _mongoc_cursor_cmd_new (client, NULL, cmd, opts, NULL, NULL, NULL);
    data_cmd_t *data = (data_cmd_t *) cursor->impl.data;

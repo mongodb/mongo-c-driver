@@ -247,7 +247,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
 
    ENTRY;
 
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
 
    cursor = BSON_ALIGNED_ALLOC0 (mongoc_cursor_t);
    cursor->client = client;
@@ -1584,7 +1584,7 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
    bson_t cmd = BSON_INITIALIZER;
    bson_t opts = BSON_INITIALIZER;
 
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (reply);
    /* options are passed through by adding them to reply. */
    bsonBuildAppend (
@@ -1614,7 +1614,7 @@ mongoc_cursor_new_from_command_reply_with_opts (mongoc_client_t *client,
    mongoc_cursor_t *cursor;
    bson_t cmd = BSON_INITIALIZER;
 
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (reply);
 
    cursor = _mongoc_cursor_cmd_new_from_reply (client, &cmd, opts, reply);

@@ -398,6 +398,8 @@ client_set_topology_event_callbacks (mongoc_client_t *client,
 {
    mongoc_apm_callbacks_t *callbacks;
 
+   ASSERT (client);
+
    callbacks = topology_event_callbacks ();
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) context);
    mongoc_apm_callbacks_destroy (callbacks);
@@ -408,6 +410,8 @@ pool_set_topology_event_callbacks (mongoc_client_pool_t *pool,
                                    context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
+
+   ASSERT (pool);
 
    callbacks = topology_event_callbacks ();
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, (void *) context);
@@ -436,6 +440,8 @@ client_set_heartbeat_event_callbacks (mongoc_client_t *client,
 {
    mongoc_apm_callbacks_t *callbacks;
 
+   ASSERT (client);
+
    callbacks = heartbeat_event_callbacks ();
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) context);
    mongoc_apm_callbacks_destroy (callbacks);
@@ -446,6 +452,8 @@ pool_set_heartbeat_event_callbacks (mongoc_client_pool_t *pool,
                                     context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
+
+   ASSERT (pool);
 
    callbacks = heartbeat_event_callbacks ();
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, (void *) context);

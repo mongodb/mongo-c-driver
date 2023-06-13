@@ -1424,6 +1424,8 @@ has_known_server (mongoc_client_t *client)
    mongoc_server_description_t *sd;
    bool r;
 
+   ASSERT (client);
+
    /* in this test we know the server id is always 1 */
    sd = mongoc_client_get_server_description (client, 1);
    r = (sd->type != MONGOC_SERVER_UNKNOWN);

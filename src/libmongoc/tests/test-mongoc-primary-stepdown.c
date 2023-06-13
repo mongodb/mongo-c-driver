@@ -31,6 +31,8 @@ _setup_test_with_client (mongoc_client_t *client)
    bson_error_t error;
    bson_t *opts;
 
+   ASSERT (client);
+
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_wmajority (wc, -1);
    opts = bson_new ();
@@ -65,6 +67,8 @@ _connection_count (mongoc_client_t *client, uint32_t server_id)
    bson_t reply;
    bool res;
    int conns;
+
+   ASSERT (client);
 
    BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
 
@@ -131,6 +135,8 @@ test_getmore_iteration (mongoc_client_t *client)
    int conn_count;
    int i;
    uint32_t primary_id;
+
+   ASSERT (client);
 
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_wmajority (wc, -1);
@@ -217,6 +223,8 @@ test_not_primary_keep_pool (mongoc_client_t *client)
    int conn_count;
    uint32_t primary_id;
 
+   ASSERT (client);
+
    /* Configure fail points */
    db = mongoc_client_get_database (client, "admin");
    /* Store the primary ID. After step down, the primary may be a different
@@ -286,6 +294,8 @@ test_not_primary_reset_pool (mongoc_client_t *client)
    bool res;
    int conn_count;
    uint32_t primary_id;
+
+   ASSERT (client);
 
    /* Configure fail points */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
@@ -362,6 +372,8 @@ test_shutdown_reset_pool (mongoc_client_t *client)
    int conn_count;
    uint32_t primary_id;
 
+   ASSERT (client);
+
    /* Configure fail points */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    db = mongoc_client_get_database (client, "admin");
@@ -430,6 +442,8 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
    bool res;
    int conn_count;
    uint32_t primary_id;
+
+   ASSERT (client);
 
    /* Configure fail points */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);

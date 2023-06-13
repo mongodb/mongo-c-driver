@@ -1193,6 +1193,8 @@ _mongoc_get_encryptedFields_from_map (mongoc_client_t *client,
                                       bson_t *encryptedFields,
                                       bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (client);
+
    const bson_t *efMap = client->topology->encrypted_fields_map;
 
    bson_init (encryptedFields);
@@ -1226,6 +1228,8 @@ _mongoc_get_encryptedFields_from_server (mongoc_client_t *client,
                                          bson_t *encryptedFields,
                                          bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (client);
+
    mongoc_database_t *db = mongoc_client_get_database (client, dbName);
    bson_t *opts = BCON_NEW ("filter", "{", "name", BCON_UTF8 (collName), "}");
    mongoc_cursor_t *cursor;

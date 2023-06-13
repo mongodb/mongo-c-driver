@@ -87,6 +87,8 @@ _mongoc_cursor_cmd_deprecated_new (mongoc_client_t *client,
                                    const bson_t *cmd,
                                    const mongoc_read_prefs_t *read_prefs)
 {
+   BSON_ASSERT_PARAM (client);
+
    mongoc_cursor_t *cursor =
       _mongoc_cursor_new_with_opts (client,
                                     db_and_coll,
