@@ -41,6 +41,14 @@ Additional options passed in ``opts`` are appended to the ``createIndexes`` comm
 
 If no write concern is provided in ``opts``, the collection's write concern is used.
 
+mongoc_index_model_t
+````````````````````
+Each ``mongoc_index_model_t`` represents an index to create. ``mongoc_index_model_new`` includes:
+
+* ``keys`` Expected to match the form of the ``key`` field in the `createIndexes <https://www.mongodb.com/docs/manual/reference/command/createIndexes/>`_ command.
+* ``opts`` Optional index options appended as a sibling to the ``key`` field in the `createIndexes <https://www.mongodb.com/docs/manual/reference/command/createIndexes/>`_ command.
+
+
 Description
 -----------
 
