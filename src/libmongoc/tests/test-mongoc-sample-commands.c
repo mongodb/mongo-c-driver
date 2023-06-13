@@ -3417,29 +3417,20 @@ test_sample_indexes (mongoc_database_t *db)
 {
    /* Start Index Example 1 */
    const char *collection_name = "records";
-   char *index_name;
-   bson_t *create_indexes;
    bson_t reply;
    bson_t keys;
+   bson_t *index_opts;
    bson_error_t error;
    bool r;
+   mongoc_collection_t *collection;
+   mongoc_index_model_t *im;
 
    bson_init (&keys);
    BSON_APPEND_INT32 (&keys, "score", 1);
-   index_name = mongoc_collection_keys_to_index_string (&keys);
-
-   create_indexes = BCON_NEW ("createIndexes", BCON_UTF8 (collection_name),
-                              "indexes", "[",
-                              "{",
-                              "key", BCON_DOCUMENT (&keys),
-                              "name", BCON_UTF8 (index_name),
-                              "}",
-                              "]");
-
-   r = mongoc_database_write_command_with_opts (
-      db, create_indexes, NULL /* opts */, &reply, &error);
-   bson_destroy (create_indexes);
-   bson_free(index_name);
+   collection = mongoc_database_get_collection (db, collection_name);
+   im = mongoc_index_model_new (&keys, NULL /* opts */);
+   r = mongoc_collection_create_indexes_with_opts (
+      collection, &im, 1, NULL /* opts */, &reply, &error);
 
    if (!r) {
       MONGOC_ERROR ("%s\n", error.message);
@@ -3449,32 +3440,29 @@ test_sample_indexes (mongoc_database_t *db)
 
    bson_destroy (&reply);
    bson_destroy (&keys);
+   mongoc_index_model_destroy (im);
+   mongoc_collection_destroy (collection);
    /* End Index Example 1 */
 
    /* Start Index Example 2 */
    collection_name = "restaurants";
+   collection = mongoc_database_get_collection (db, collection_name);
 
    bson_init (&keys);
    BSON_APPEND_INT32 (&keys, "cuisine", 1);
    BSON_APPEND_INT32 (&keys, "name", 1);
-   index_name = mongoc_collection_keys_to_index_string (&keys);
-   create_indexes = BCON_NEW ("createIndexes", BCON_UTF8 (collection_name),
-                              "indexes", "[",
-                              "{",
-                              "key", BCON_DOCUMENT (&keys),
-                              "partialFilterExpression", "{",
-                              "rating", "{",
-                              "$gt", BCON_INT32 (5),
-                              "}",
-                              "}",
-                              "name", BCON_UTF8 (index_name),
-                              "}",
-                              "]");
+   index_opts = BCON_NEW ("partialFilterExpression",
+                          "{",
+                          "rating",
+                          "{",
+                          "$gt",
+                          BCON_INT32 (5),
+                          "}",
+                          "}");
 
-   r = mongoc_database_write_command_with_opts (
-      db, create_indexes, NULL /* opts */, &reply, &error);
-   bson_destroy (create_indexes);
-   bson_free(index_name);
+   im = mongoc_index_model_new (&keys, index_opts);
+   r = mongoc_collection_create_indexes_with_opts (
+      collection, &im, 1, NULL /* opts */, &reply, &error);
 
    if (!r) {
       MONGOC_ERROR ("%s\n", error.message);
@@ -3483,7 +3471,10 @@ test_sample_indexes (mongoc_database_t *db)
    /* Do something with reply here */
 
    bson_destroy (&reply);
+   bson_destroy (index_opts);
    bson_destroy (&keys);
+   mongoc_index_model_destroy (im);
+   mongoc_collection_destroy (collection);
    /* End Index Example 2 */
 
    ASSERT_NO_CAPTURED_LOGS ("sample index examples");
