@@ -49,8 +49,8 @@ Example
      /* BSON array is a normal BSON document with integer values for the keys,
       * starting with 0 and continuing sequentially
       */
-     BSON_APPEND_UTF8 (&bson, "0", 1);
-     BSON_APPEND_UTF8 (&bson, "1", "bar");
+     BSON_APPEND_INT32 (&bson, "0", 1);
+     BSON_APPEND_INT32 (&bson, "1", "bar");
 
      str = bson_array_as_canonical_extended_json (&bson, NULL);
      /* Prints
