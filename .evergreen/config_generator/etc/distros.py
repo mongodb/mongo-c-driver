@@ -1,7 +1,19 @@
+import itertools
 from typing import Literal
 
-from pydantic import BaseModel, validator
 from packaging.version import Version
+from pydantic import BaseModel, validator
+
+VSVersionString = Literal[
+    "2013",
+    "2015",
+    "2017",
+    "2019",
+    "2022",
+    "vsCurrent",
+    "vsCurrent2",
+    "vsMulti",
+]
 
 
 class Distro(BaseModel):
@@ -19,29 +31,22 @@ class Distro(BaseModel):
 
     name: str
     os: str | None = None
-    os_type: Literal['linux', 'macos', 'windows'] | None = None
+    os_type: Literal["linux", "macos", "windows"] | None = None
     os_ver: str | None = None
-    vs_ver: Literal[
-        '2013',
-        '2015',
-        '2017',
-        '2019',
-        '2022',
-        'vsCurrent',
-        'vsCurrent2',
-        'vsMulti',
-    ] | None = None
-    size: Literal['small', 'large'] | None = None
-    arch: Literal['arm64', 'power8', 'zseries'] | None = None
+    vs_ver: VSVersionString | None = None
+    size: Literal["small", "large", "medium", "xlarge", "xxlarge"] | None = None
+    arch: Literal["arm64", "power8", "zseries"] | None = None
 
-    @validator('os_ver')
+    @validator("os_ver")
     @classmethod
-    def validate_os_ver(cls, value):
-        return Version(value)
+    def validate_os_ver(cls, value: str) -> str:
+        Version(value)  # Just parse and validate
+        return value
+
 
 # See: https://evergreen.mongodb.com/distros
 # pylint: disable=line-too-long
-#fmt: off
+# fmt: off
 ARCHLINUX_DISTROS = [
     Distro(name='archlinux-large', os='archlinux', os_type='linux', size='large'),
     Distro(name='archlinux-small', os='archlinux', os_type='linux', size='small'),
@@ -77,10 +82,14 @@ RHEL_DISTROS = [
     Distro(name='rhel76-large', os='rhel', os_type='linux', os_ver='7.6', size='large'),
     Distro(name='rhel76-small', os='rhel', os_type='linux', os_ver='7.6', size='small'),
     Distro(name='rhel80-large', os='rhel', os_type='linux', os_ver='8.0', size='large'),
+    Distro(name='rhel80-medium', os='rhel', os_type='linux', os_ver='8.0', size='medium'),
     Distro(name='rhel80-small', os='rhel', os_type='linux', os_ver='8.0', size='small'),
+    Distro(name='rhel80-xlarge', os='rhel', os_type='linux', os_ver='8.0', size='xlarge'),
+    Distro(name='rhel80-xxlarge', os='rhel', os_type='linux', os_ver='8.0', size='xxlarge'),
     Distro(name='rhel84-large', os='rhel', os_type='linux', os_ver='8.4', size='large'),
     Distro(name='rhel84-small', os='rhel', os_type='linux', os_ver='8.4', size='small'),
     Distro(name='rhel90-large', os='rhel', os_type='linux', os_ver='9.0', size='large'),
+    Distro(name='rhel90-medium', os='rhel', os_type='linux', os_ver='9.0', size='medium'),
     Distro(name='rhel90-small', os='rhel', os_type='linux', os_ver='9.0', size='small'),
 ]
 
@@ -115,6 +124,7 @@ UBUNTU_DISTROS = [
     Distro(name='ubuntu1804-large', os='ubuntu', os_type='linux', os_ver='18.04', size='large'),
     Distro(name='ubuntu1804-small', os='ubuntu', os_type='linux', os_ver='18.04', size='small'),
     Distro(name='ubuntu2004-large', os='ubuntu', os_type='linux', os_ver='20.04', size='large'),
+    Distro(name='ubuntu2004-medium', os='ubuntu', os_type='linux', os_ver='20.04', size='medium'),
     Distro(name='ubuntu2004-small', os='ubuntu', os_type='linux', os_ver='20.04', size='small'),
     Distro(name='ubuntu2204-large', os='ubuntu', os_type='linux', os_ver='22.04', size='large'),
     Distro(name='ubuntu2204-small', os='ubuntu', os_type='linux', os_ver='22.04', size='small'),
@@ -171,37 +181,40 @@ WINDOWS_DISTROS = [
     Distro(name='windows-vsCurrent2-large', os='windows', os_type='windows', vs_ver='vsCurrent2', size='large'),
     Distro(name='windows-vsCurrent2-small', os='windows', os_type='windows', vs_ver='vsCurrent2', size='small'),
 ]
-#fmt: on
+# fmt: on
 # pylint: enable=line-too-long
 
 # Ensure no-arch distros are ordered before arch-specific distros.
-ALL_DISTROS = [] + \
-    ARCHLINUX_DISTROS + \
-    DEBIAN_DISTROS + \
-    MACOS_DISTROS + \
-    MACOS_ARM64_DISTROS + \
-    RHEL_DISTROS + \
-    RHEL_ARM64_DISTROS + \
-    RHEL_POWER8_DISTROS + \
-    RHEL_ZSERIES_DISTROS + \
-    UBUNTU_DISTROS + \
-    UBUNTU_ARM64_DISTROS + \
-    UBUNTU_POWER8_DISTROS + \
-    UBUNTU_ZSERIES_DISTROS + \
-    WINDOWS_DISTROS
+ALL_DISTROS = list(
+    itertools.chain(
+        ARCHLINUX_DISTROS,
+        DEBIAN_DISTROS,
+        MACOS_DISTROS,
+        MACOS_ARM64_DISTROS,
+        RHEL_DISTROS,
+        RHEL_ARM64_DISTROS,
+        RHEL_POWER8_DISTROS,
+        RHEL_ZSERIES_DISTROS,
+        UBUNTU_DISTROS,
+        UBUNTU_ARM64_DISTROS,
+        UBUNTU_POWER8_DISTROS,
+        UBUNTU_ZSERIES_DISTROS,
+        WINDOWS_DISTROS,
+    )
+)
 
 
-def find_distro(name):
+def find_distro(name: str):
     candidates = [d for d in ALL_DISTROS if name == d.name]
 
     if not candidates:
-        raise ValueError(f'could not find a distro with the name {name}')
+        raise ValueError(f"could not find a distro with the name {name}")
 
     return candidates[0]
 
 
-def find_large_distro(name):
-    candidates = [d for d in ALL_DISTROS if f'{name}-large' == d.name]
+def find_large_distro(name: str):
+    candidates = [d for d in ALL_DISTROS if f"{name}-large" == d.name]
 
     if candidates:
         return candidates[0]
@@ -209,8 +222,8 @@ def find_large_distro(name):
     return find_distro(name)
 
 
-def find_small_distro(name):
-    candidates = [d for d in ALL_DISTROS if f'{name}-small' == d.name]
+def find_small_distro(name: str):
+    candidates = [d for d in ALL_DISTROS if f"{name}-small" == d.name]
 
     if candidates:
         return candidates[0]
@@ -218,54 +231,53 @@ def find_small_distro(name):
     return find_distro(name)
 
 
-def make_distro_str(distro_name, compiler, arch):
-    if distro_name.startswith('windows-vsCurrent'):
+def make_distro_str(distro_name: str, compiler: str, arch: str):
+    if distro_name.startswith("windows-vsCurrent"):
         # Rename `windows-vsCurrent-*` distros to `windows-<year>` where`<year>`
         # is the Windows Server version used by the distro, e.g.:
         #     ('windows-vsCurrent-2022', 'vs2017x64', None) -> windows-2022-vs2017-x64
         #     ('windows-vsCurrent-2022', 'mingw',     None) -> windows-2022-mingw
         #     ('windows-vsCurrent',      'vs2017x64', None) -> windows-2019-vs2017-x64
         #     ('windows-vsCurrent',      'mingw',     None) -> windows-2019-mingw
-        maybe_arch = compiler[len('vs20XY'):]
-        if maybe_arch in ('x86', 'x64'):
-            compiler_str = compiler[:-len(maybe_arch)] + '-' + maybe_arch
+        maybe_arch = compiler[len("vs20XY") :]
+        if maybe_arch in ("x86", "x64"):
+            compiler_str = compiler[: -len(maybe_arch)] + "-" + maybe_arch
         else:
             compiler_str = compiler
-        if distro_name.startswith('windows-vsCurrent-'):
-            distro_str = 'windows-' + \
-                distro_name[len('windows-vsCurrent-'):] + f'-{compiler_str}'
+        if distro_name.startswith("windows-vsCurrent-"):
+            distro_str = "windows-" + distro_name[len("windows-vsCurrent-") :] + f"-{compiler_str}"
         else:
-            distro_str = 'windows-2019' + f'-{compiler_str}'
-    elif distro_name.startswith('windows-64-vs'):
+            distro_str = "windows-2019" + f"-{compiler_str}"
+    elif distro_name.startswith("windows-64-vs"):
         # Abbreviate 'windows-64-vs<type>' as 'vs<type>' and append '-<arch>' if
         # given in compiler string as 'vs<type><arch>', e.g.:
         #     ('windows-64-vs2017', 'vs2017x64', None) -> vs2017-x64
         #     ('windows-64-vs2017', 'mingw',     None) -> vs2017-mingw
-        distro_str = distro_name[len('windows-64-'):] + {
-            'vs2013x64': '-x64',
-            'vs2013x86': '-x86',
-            'vs2015x64': '-x64',
-            'vs2015x86': '-x86',
-            'vs2017x64': '-x64',
-            'vs2017x86': '-x86',
-        }.get(compiler, f'-{compiler}')
+        distro_str = distro_name[len("windows-64-") :] + {
+            "vs2013x64": "-x64",
+            "vs2013x86": "-x86",
+            "vs2015x64": "-x64",
+            "vs2015x86": "-x86",
+            "vs2017x64": "-x64",
+            "vs2017x86": "-x86",
+        }.get(compiler, f"-{compiler}")
     else:
         distro_str = distro_name
         if compiler:
-            distro_str += f'-{compiler}'
+            distro_str += f"-{compiler}"
 
     if arch:
-        distro_str += f'-{arch}'
+        distro_str += f"-{arch}"
 
     return distro_str
 
 
-def to_cc(compiler):
+def to_cc(compiler: str):
     return {
-        'vs2013x64': 'Visual Studio 12 2013 Win64',
-        'vs2013x86': 'Visual Studio 12 2013',
-        'vs2015x64': 'Visual Studio 14 2015 Win64',
-        'vs2015x86': 'Visual Studio 14 2015',
-        'vs2017x64': 'Visual Studio 15 2017 Win64',
-        'vs2017x86': 'Visual Studio 15 2017',
+        "vs2013x64": "Visual Studio 12 2013 Win64",
+        "vs2013x86": "Visual Studio 12 2013",
+        "vs2015x64": "Visual Studio 14 2015 Win64",
+        "vs2015x86": "Visual Studio 14 2015",
+        "vs2017x64": "Visual Studio 15 2017 Win64",
+        "vs2017x86": "Visual Studio 15 2017",
     }.get(compiler, compiler)
