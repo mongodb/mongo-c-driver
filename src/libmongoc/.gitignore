@@ -25,7 +25,7 @@ example-client
 example-collection-watch
 example-command-monitoring
 example-command-with-opts
-example-create-indexes
+example-manage-collection-indexes
 example-gridfs
 example-gridfs-bucket
 example-pool

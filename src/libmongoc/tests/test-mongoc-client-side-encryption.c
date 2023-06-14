@@ -4876,41 +4876,25 @@ _test_unique_index_on_keyaltnames_setup (
    /* Using client, create a unique index on keyAltNames with a partial index
     * filter for only documents where keyAltNames exists. */
    {
-      bson_t *const command = BCON_NEW ("createIndexes",
-                                        "datakeys",
-                                        "indexes",
-                                        "[",
-                                        "{",
-                                        "key",
-                                        "{",
-                                        "keyAltNames",
-                                        BCON_INT32 (1),
-                                        "}",
-                                        "name",
-                                        "keyAltNames_1",
-                                        "unique",
-                                        BCON_BOOL (true),
-                                        "partialFilterExpression",
-                                        "{",
-                                        "keyAltNames",
-                                        "{",
-                                        "$exists",
-                                        BCON_BOOL (true),
-                                        "}",
-                                        "}",
-                                        "}",
-                                        "]",
-                                        "writeConcern",
-                                        "{",
-                                        "w",
-                                        "majority",
-                                        "}");
+      mongoc_collection_t *const datakeys =
+         mongoc_database_get_collection (keyvault, "datakeys");
 
-      ASSERT_OR_PRINT (mongoc_database_write_command_with_opts (
-                          keyvault, command, NULL, NULL, &error),
-                       error);
+      mongoc_index_model_t *im = mongoc_index_model_new (
+         tmp_bson ("{'keyAltNames': 1}"), tmp_bson (BSON_STR ({
+            "name" : "keyAltNames_1",
+            "unique" : true,
+            "partialFilterExpression" : {"keyAltNames" : {"$exists" : true}}
+         })));
 
-      bson_destroy (command);
+      bson_t *const command_opts =
+         tmp_bson ("{'writeConcern': { 'w': 'majority' }}");
+
+      ASSERT_OR_PRINT (
+         mongoc_collection_create_indexes_with_opts (
+            datakeys, &im, 1, command_opts, NULL /* reply */, &error),
+         error);
+      mongoc_index_model_destroy (im);
+      mongoc_collection_destroy (datakeys);
    }
 
    /* Create a ClientEncryption object (referred to as client_encryption) with

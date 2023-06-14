@@ -813,38 +813,6 @@ match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
    return match_bson_with_ctx (doc, pattern, &ctx);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * assert_match_bson --
- *
- *       Test helper that wraps match_bson. Fails the test if there
- *       is no found match.
- *
- * Returns:
- *       Nothing.
- *
- * Side effects:
- *       abort()s if there is no match.
- *
- *--------------------------------------------------------------------------
- */
-void
-assert_match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
-{
-   match_ctx_t ctx = {{0}};
-
-   ctx.strict_numeric_types = true;
-   ctx.is_command = is_command;
-
-   if (!match_bson_with_ctx (doc, pattern, &ctx)) {
-      test_error ("Expected: %s\n, Got: %s\n, %s\n",
-                  bson_as_canonical_extended_json (pattern, NULL),
-                  bson_as_canonical_extended_json (doc, NULL),
-                  ctx.errmsg);
-   }
-}
-
 
 MONGOC_PRINTF_FORMAT (2, 3)
 void

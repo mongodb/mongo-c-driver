@@ -1846,16 +1846,11 @@ test_drop_index (session_test_t *test)
    bson_error_t error;
    bool r;
 
-   /* create the index so that "dropIndexes" can succeed */
-   r = mongoc_database_write_command_with_opts (
-      test->session_db,
-      tmp_bson ("{'createIndexes': '%s',"
-                " 'indexes': [{'key': {'a': 1}, 'name': 'foo'}]}",
-                test->session_collection->collection),
-      &test->opts,
-      NULL,
-      &error);
-
+   mongoc_index_model_t *im = mongoc_index_model_new (
+      tmp_bson ("{'a': 1}"), tmp_bson ("{'name': 'foo'}"));
+   r = mongoc_collection_create_indexes_with_opts (
+      test->session_collection, &im, 1, &test->opts, NULL /* reply */, &error);
+   mongoc_index_model_destroy (im);
    ASSERT_OR_PRINT (r, error);
 
    test->succeeded = mongoc_collection_drop_index_with_opts (

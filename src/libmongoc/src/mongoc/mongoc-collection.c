@@ -947,8 +947,9 @@ mongoc_collection_count_documents (mongoc_collection_t *coll,
 
    // Parse options to validate.
    mongoc_count_document_opts_t cd_opts;
-   if (!_mongoc_count_document_opts_parse (coll->client, opts, &cd_opts, error)) {
-      GOTO(done);
+   if (!_mongoc_count_document_opts_parse (
+          coll->client, opts, &cd_opts, error)) {
+      GOTO (done);
    }
 
    _make_aggregate_for_count (coll, filter, &cd_opts, &aggregate_cmd);
@@ -3339,8 +3340,8 @@ mongoc_collection_create_bulk_operation_with_opts (
  *       If @reply is not NULL, then the result document will be placed
  *       in reply and should be released with bson_destroy().
  *
- *       See https://www.mongodb.com/docs/manual/reference/command/findAndModify/
- *       for more information.
+ *       See for more information:
+ *       https://www.mongodb.com/docs/manual/reference/command/findAndModify/
  *
  * Returns:
  *       true on success; false on failure.
@@ -3658,8 +3659,8 @@ done:
  *       If @_new is true, then the new version of the document is returned
  *       instead of the old document.
  *
- *       See https://www.mongodb.com/docs/manual/reference/command/findAndModify/
- *       for more information.
+ *       See for more information:
+ *       https://www.mongodb.com/docs/manual/reference/command/findAndModify/
  *
  * Returns:
  *       true on success; false on failure.
@@ -3724,4 +3725,140 @@ mongoc_collection_watch (const mongoc_collection_t *coll,
                          const bson_t *opts)
 {
    return _mongoc_change_stream_new_from_collection (coll, pipeline, opts);
+}
+
+struct _mongoc_index_model_t {
+   bson_t *keys;
+   bson_t *opts;
+};
+
+mongoc_index_model_t *
+mongoc_index_model_new (const bson_t *keys, const bson_t *opts)
+{
+   BSON_ASSERT_PARAM (keys);
+   // `opts` may be NULL.
+
+   mongoc_index_model_t *im = bson_malloc (sizeof (mongoc_index_model_t));
+   im->keys = bson_copy (keys);
+   im->opts = opts ? bson_copy (opts) : NULL;
+   return im;
+}
+
+void
+mongoc_index_model_destroy (mongoc_index_model_t *im)
+{
+   if (!im) {
+      return;
+   }
+   bson_destroy (im->keys);
+   bson_destroy (im->opts);
+   bson_free (im);
+}
+
+bool
+mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
+                                            mongoc_index_model_t *const *models,
+                                            size_t n_models,
+                                            const bson_t *opts,
+                                            bson_t *reply,
+                                            bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (collection);
+   BSON_ASSERT_PARAM (models);
+   // `opts` may be NULL.
+   // `reply` may be NULL.
+   // `error` may be NULL.
+   bson_t reply_local = BSON_INITIALIZER;
+   bson_t *reply_ptr;
+   mongoc_server_stream_t *server_stream = NULL;
+   bool ok = false;
+   bson_t cmd = BSON_INITIALIZER;
+
+   reply_ptr = reply ? reply : &reply_local;
+   // Always initialize `reply` if set. Caller is expected to `bson_destroy
+   // (reply)`.
+   bson_init (reply_ptr);
+
+   // Check for commitQuorum option.
+   if (opts && bson_has_field (opts, "commitQuorum")) {
+      server_stream =
+         mongoc_cluster_stream_for_writes (&collection->client->cluster,
+                                           NULL /* mongoc_client_session_t */,
+                                           reply_ptr,
+                                           error);
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_4_4) {
+         // Raise an error required by the specification:
+         // "Drivers MUST manually raise an error if this option is specified
+         // when creating an index on a pre 4.4 server."
+         bson_set_error (
+            error,
+            MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "The selected server does not support the commitQuorum option");
+         GOTO (fail);
+      }
+   }
+
+   // Build the createIndexes command.
+   BSON_ASSERT (
+      BSON_APPEND_UTF8 (&cmd, "createIndexes", collection->collection));
+   bson_t indexes;
+   BSON_ASSERT (BSON_APPEND_ARRAY_BEGIN (&cmd, "indexes", &indexes));
+   for (uint32_t idx = 0; idx < n_models; idx++) {
+      /*
+         Append a document of this form:
+         <idx>: {
+             key: {
+                 <key-value_pair>,
+                 <key-value_pair>,
+                 ...
+             },
+             name: <index_name>,
+             <option1>,
+             <option2>,
+             ...
+         },
+      */
+
+      const char *idx_str_ptr;
+      char idx_str[16];
+      BSON_ASSERT (
+         bson_uint32_to_string (idx, &idx_str_ptr, idx_str, sizeof (idx_str)) <=
+         sizeof (idx_str));
+      bson_t index;
+      BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (&indexes, idx_str_ptr, &index));
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&index, "key", models[idx]->keys));
+      bson_iter_t name_iter;
+      if (models[idx]->opts &&
+          bson_iter_init_find (&name_iter, models[idx]->opts, "name")) {
+         // `name` was specified as an index option.
+      } else {
+         // No `name` was specified. Create index `name` from keys.
+         char *name =
+            mongoc_collection_keys_to_index_string (models[idx]->keys);
+         BSON_ASSERT (name);
+         BSON_ASSERT (BSON_APPEND_UTF8 (&index, "name", name));
+         bson_free (name);
+      }
+
+      if (models[idx]->opts) {
+         BSON_ASSERT (bson_concat (&index, models[idx]->opts));
+      }
+      BSON_ASSERT (bson_append_document_end (&indexes, &index));
+   }
+   BSON_ASSERT (bson_append_array_end (&cmd, &indexes));
+
+   ok = mongoc_client_command_with_opts (collection->client,
+                                         collection->db,
+                                         &cmd,
+                                         NULL /* read_prefs */,
+                                         opts,
+                                         reply_ptr,
+                                         error);
+
+fail:
+   mongoc_server_stream_cleanup (server_stream);
+   bson_destroy (&cmd);
+   bson_destroy (&reply_local);
+   return ok;
 }

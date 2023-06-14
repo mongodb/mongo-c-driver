@@ -156,6 +156,23 @@ MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
                                           const bson_t *opts)
    BSON_GNUC_WARN_UNUSED_RESULT;
+
+typedef struct _mongoc_index_model_t mongoc_index_model_t;
+
+MONGOC_EXPORT (mongoc_index_model_t *)
+mongoc_index_model_new (const bson_t *keys, const bson_t *opts);
+
+MONGOC_EXPORT (void) mongoc_index_model_destroy (mongoc_index_model_t *model);
+
+MONGOC_EXPORT (bool)
+mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
+                                            mongoc_index_model_t *const *models,
+                                            size_t n_models,
+                                            const bson_t *opts,
+                                            bson_t *reply,
+                                            bson_error_t *error);
+
+
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find (mongoc_collection_t *collection,
                         mongoc_query_flags_t flags,
