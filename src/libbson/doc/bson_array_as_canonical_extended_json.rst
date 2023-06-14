@@ -1,7 +1,7 @@
 :man_page: bson_array_as_canonical_extended_json
 
 bson_array_as_canonical_extended_json()
-=================================
+=======================================
 
 Synopsis
 --------

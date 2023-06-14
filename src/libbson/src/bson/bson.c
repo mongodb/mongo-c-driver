@@ -3283,8 +3283,7 @@ _bson_as_json_visit_all (const bson_t *bson,
 
    state.count = 0;
    state.keys = !is_outermost_array;
-   state.str =
-      is_outermost_array ? bson_string_new ("[ ") : bson_string_new ("{ ");
+   state.str = bson_string_new (is_outermost_array ? "[ " : "{ ");
    state.depth = 0;
    state.err_offset = &err_offset;
    state.mode = mode;
@@ -3308,8 +3307,7 @@ _bson_as_json_visit_all (const bson_t *bson,
     */
    remaining = state.max_len - state.str->len;
    if (state.max_len == BSON_MAX_LEN_UNLIMITED || remaining > 1) {
-      is_outermost_array ? bson_string_append (state.str, " ]")
-                         : bson_string_append (state.str, " }");
+      bson_string_append (state.str, is_outermost_array ? " ]" : " }");
    } else if (remaining == 1) {
       bson_string_append (state.str, " ");
    }

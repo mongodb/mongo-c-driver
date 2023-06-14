@@ -1,7 +1,7 @@
 :man_page: bson_json_opts_set_outermost_array
 
 bson_json_opts_set_outermost_array()
-====================
+====================================
 
 Synopsis
 --------
@@ -14,10 +14,10 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A bson_json_opts_t.
+* ``opts``: A ``bson_json_opts_t``.
 * ``is_outermost_array``: A value determining what we want to set the is_outermost_array variable to.
 
 Description
 -----------
 
-The :symbol:`bson_json_opts_set_outermost_array()` function shall set the `is_outermost_array` variable on the `bson_json_opts_t` parameter using the boolean provided.
+The :symbol:`bson_json_opts_set_outermost_array()` function shall set the ``is_outermost_array`` variable on the :symbol:`bson_json_opts_t` parameter using the boolean provided.
