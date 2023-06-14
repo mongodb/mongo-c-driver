@@ -6,12 +6,11 @@ from .platform import OperatingSystem as OS
 
 
 def _get_default_cache_dir() -> Path:
-    opsys = OS.current()
-    if opsys.is_windows:
+    if OS.Current.is_windows:
         return Path(os.environ["LocalAppData"]) / "mongodb-ci"
-    elif opsys.is_darwin:
+    elif OS.Current.is_darwin:
         return Path("~/Library/Caches").expanduser() / "mongodb-ci"
-    elif opsys.is_unix_like:
+    elif OS.Current.is_unix_like:
         base = os.environ.get("XDG_CACHE_HOME", "~/.cache/")
         return Path(base).expanduser() / "mongodb-ci"
     else:

@@ -53,6 +53,7 @@ class CMakeExecutable:
         """
         # Ensure the build directory exists
         Path(build_dir).mkdir(exist_ok=True, parents=True)
+        is_darwin_arm64 = OperatingSystem.Current.is_darwin and Architecture.Current.is_arm64
         cmd = (
             # First argument is the source directory path:
             (self.executable, "-S", source_dir, "-B", build_dir),
@@ -64,6 +65,7 @@ class CMakeExecutable:
             (("-D", f"{key}={val}") for key, val in settings.items()) if settings else (),
             # Set the install prefix:
             ("-D", f"CMAKE_INSTALL_PREFIX={install_prefix}") if install_prefix else (),
+            (("-D", "CMAKE_OSX_ARCHITECTURES=arm64") if is_darwin_arm64 else ()),
         )
         await proc.run(cmd, on_output=on_output, cwd=build_dir)
 
@@ -149,7 +151,7 @@ async def get_cached_cmake_installation(version: str, *, cache_root: Path | None
     task.cleanup(lambda: removal, when="now")
     vertup = tuple(map(int, version.split(".")))
 
-    osys = OperatingSystem.current()
+    osys = OperatingSystem.Current
     if osys.is_windows or osys.is_darwin:
         # Windows and macOS both have prebuilt binaries for any platform we need:
         tmp_install = await _download_prebuilt(version, install_tmp)
@@ -157,11 +159,11 @@ async def get_cached_cmake_installation(version: str, *, cache_root: Path | None
         # Linux is trickier:
         osys.is_linux
         # CMake.org only publishes x64 and arm64 Linux binaries
-        and Architecture.current() in (Architecture.x86_64, Architecture.ARM64)
+        and Architecture.Current in (Architecture.x86_64, Architecture.ARM64)
         # CMake.org does not publish a binary compatible with Alpine (libmuslc)
         and not Path("/etc/alpine-release").is_file()
         # The ARM Linux builds came later:
-        and (Architecture.current() is not Architecture.ARM64 or vertup > (3, 19, 3))
+        and (Architecture.Current is not Architecture.ARM64 or vertup > (3, 19, 3))
     ):
         tmp_install = await _download_prebuilt(version, install_tmp)
     else:
@@ -175,36 +177,36 @@ async def get_cached_cmake_installation(version: str, *, cache_root: Path | None
 
 async def _download_prebuilt(version: str, install_root: Path) -> Installation:
     """Download a pre-built version of CMake from cmake.org"""
-    osys = OperatingSystem.current()
-    arch = Architecture.current()
+    OS = OperatingSystem.Current
+    ARCH = Architecture.Current
     ext = "tar.gz"
     nstrip = 1
-    exc = NotImplementedError(f"No automatic download implemented for operating system+architecture {osys=}, {arch=}")
+    exc = NotImplementedError(f"No automatic download implemented for operating system+architecture {OS=}, {ARCH=}")
     # CMake changed file naming schemes around version 3.20.0:
     vertup = tuple(map(int, version.split(".")))
     new_path = vertup > (3, 20, 0)
-    if osys.is_windows:
+    if OS.is_windows:
         plat = "windows" if new_path else "win64"
         # Windows comes in a Zip
         ext = "zip"
-    elif osys.is_darwin:
+    elif OS.is_darwin:
         plat = "macos" if new_path else "Darwin"
         # macOS has an app bundle, with additional control directories to skip:
         nstrip = 3
-    elif osys.is_linux:
+    elif OS.is_linux:
         plat = "linux" if new_path else "Linux"
     else:
         raise exc
 
-    if osys.is_darwin:
+    if OS.is_darwin:
         # macOS has a universal binary after 3.20.0
         arch = "universal" if new_path else "x86_64"
-    elif arch is Architecture.x86_64:
+    elif ARCH is Architecture.x86_64:
         arch = "x86_64"
-    elif arch is Architecture.ARM64:
-        if osys.is_linux:
+    elif ARCH is Architecture.ARM64:
+        if OS.is_linux:
             arch = "aarch64"
-        elif osys.is_windows:
+        elif OS.is_windows:
             arch = "arm64"
         else:
             raise exc
@@ -249,7 +251,7 @@ async def _build_from_source(version: str, install_prefix: Path) -> Installation
     task.cleanup(lambda: fs.remove([src_dir, build_dir], recurse=True, absent_ok=True))
     ui.progress(None)
     ui.status(f"Building CMake {version}")
-    if not OperatingSystem.current().is_unix_like:
+    if not OperatingSystem.Current.is_unix_like:
         raise RuntimeError(f"No host CMake was found to perform the CMake bootstrap")
     return await _build_cmake_from_bootstrap(src_dir, build_dir, install_prefix)
 

@@ -93,12 +93,12 @@ async def auto_get_ninja(version: str, *, cache_root: Path | None = None) -> Pat
     if expect_exe.is_file():
         return expect_exe
 
-    osys = OperatingSystem.current()
+    osys = OperatingSystem.Current
     if osys.is_windows:
         get = _get_prebuilt(version, ninja_cache_dir, "win")
     elif osys.is_darwin:
         get = _get_prebuilt(version, ninja_cache_dir, "mac")
-    elif osys.is_linux and Architecture.current() is Architecture.x86_64 and not Path("/etc/alpine-release").is_file():
+    elif osys.is_linux and Architecture.Current.is_x86 and not Path("/etc/alpine-release").is_file():
         get = _get_prebuilt(version, ninja_cache_dir, "linux")
     else:
         get = _build_from_source(version, ninja_cache_dir)
