@@ -487,7 +487,7 @@ all_variants = [
         "ubuntu1804-test",
         [
             "debian-package-build",
-            OD([("name", "rpm-package-build"), ("distros", ["rhel82-arm64-small"])]),
+            OD([("name", "rpm-package-build"), ("distros", ["rhel90-arm64-small"])]),
         ],
         {},
         batchtime=days(1),
