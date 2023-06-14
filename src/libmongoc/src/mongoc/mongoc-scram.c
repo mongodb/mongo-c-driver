@@ -1035,11 +1035,8 @@ _mongoc_sasl_prep_impl (const char *name,
                         int in_utf8_len,
                         bson_error_t *err)
 {
-   /* The flow is in_utf8 -> in_utf16 -> SASLPrep -> out_utf16 -> out_utf8. */
-   UChar *in_utf16, *out_utf16;
    char *out_utf8;
-   int32_t in_utf16_len, out_utf16_len, out_utf8_len;
-   UErrorCode error_code = U_ZERO_ERROR;
+   int32_t in_utf8_len, out_utf8_len;
    UStringPrepProfile *prep;
 
 #define SASL_PREP_ERR_RETURN(msg)                        \
@@ -1052,15 +1049,14 @@ _mongoc_sasl_prep_impl (const char *name,
       return NULL;                                       \
    } while (0)
 
-   /* 1. convert str to UTF-16. */
+   /* 1. convert str to unicode. */
    /* preflight to get the destination length. */
-   (void) u_strFromUTF8 (
-      NULL, 0, &in_utf16_len, in_utf8, in_utf8_len, &error_code);
-   if (error_code != U_BUFFER_OVERFLOW_ERROR) {
-      SASL_PREP_ERR_RETURN ("could not calculate UTF-16 length of %s");
+   in_utf8_len = _mongoc_utf8_string_length (in_utf8);
+   if (in_utf8_len == -1) {
+      SASL_PREP_ERR_RETURN ("could not calculate UTF-8 length of %s");
    }
 
-   /* convert to UTF-16. */
+   /* convert to unicode. */
    error_code = U_ZERO_ERROR;
    in_utf16 = bson_malloc (sizeof (UChar) *
                            (in_utf16_len + 1)); /* add one for null byte. */
@@ -1150,4 +1146,101 @@ _mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err)
    return bson_strdup (in_utf8);
 #endif
 }
+
+int
+_mongoc_utf_char_length (const unsigned char *c)
+{
+   int length;
+
+   // UTF8 characters are either 1, 2, 3, or 4 bytes and the character length
+   // can be determined by the first byte
+   if ((*c & 0x80) == 0)
+      length = 1;
+   else if ((*c & 0xe0) == 0xc0)
+      length = 2;
+   else if ((*c & 0xf0) == 0xe0)
+      length = 3;
+   else if ((*c & 0xf8) == 0xf0)
+      length = 4;
+   else
+      length = 1;
+
+   return length;
+}
+
+int
+_mongoc_utf8_string_length (const char *s)
+{
+   const unsigned char *c = (const unsigned char *) s;
+
+   int str_length = 0;
+   int char_length;
+
+   while (*c) {
+      char_length = _mongoc_utf8_char_length (c);
+
+      if (!_mongoc_utf8_is_valid (c, char_length))
+         return -1;
+
+      str_length++;
+      c += char_length;
+   }
+
+   return str_length;
+}
+
+
+bool
+_mongoc_utf8_is_valid (const unsigned char *c, int length)
+{
+   // Referenced table here:
+   // https://lemire.me/blog/2018/05/09/how-quickly-can-you-check-that-a-string-is-valid-unicode-utf-8/
+   switch (length) {
+   case 1:
+      return _mongoc_char_between_chars (*c, 0x00, 0x7F);
+   case 2:
+      return _mongoc_char_between_chars (*c, 0xC2, 0xDF) &&
+             _mongoc_char_between_chars (c[1], 0x80, 0xBF);
+   case 3:
+      // Four options, separated by ||
+      return (_mongoc_char_between_chars (*c, 0xE0, 0xE0) &&
+              _mongoc_char_between_chars (c[1], 0xA0, 0xBF) &&
+              _mongoc_char_between_chars (c[2], 0x80, 0xBF)) ||
+             (_mongoc_char_between_chars (*c, 0xE1, 0xEC) &&
+              _mongoc_char_between_chars (c[1], 0x80, 0xBF) &&
+              _mongoc_char_between_chars (c[2], 0x80, 0xBF)) ||
+             (_mongoc_char_between_chars (*c, 0xED, 0xED) &&
+              _mongoc_char_between_chars (c[1], 0x80, 0x9F) &&
+              _mongoc_char_between_chars (c[2], 0x80, 0xBF)) ||
+             (_mongoc_char_between_chars (*c, 0xEE, 0xEF) &&
+              _mongoc_char_between_chars (c[1], 0x80, 0xBF) &&
+              _mongoc_char_between_chars (c[2], 0x80, 0xBF));
+   case 4:
+      // Three options, separated by ||
+      return (_mongoc_char_between_chars (*c, 0xF0, 0xF0) &&
+              _mongoc_char_between_chars (c[1], 0x90, 0xBF) &&
+              _mongoc_char_between_chars (c[2], 0x80, 0xBF) &&
+              _mongoc_char_between_chars (c[3], 0x80, 0xBF)) ||
+             (_mongoc_char_between_chars (*c, 0xF1, 0xF3) &&
+              _mongoc_char_between_chars (c[1], 0x80, 0xBF) &&
+              _mongoc_char_between_chars (c[2], 0x80, 0xBF) &&
+              _mongoc_char_between_chars (c[3], 0x80, 0xBF)) ||
+             (_mongoc_char_between_chars (*c, 0xF4, 0xF4) &&
+              _mongoc_char_between_chars (c[1], 0x80, 0x8F) &&
+              _mongoc_char_between_chars (c[2], 0x80, 0xBF) &&
+              _mongoc_char_between_chars (c[3], 0x80, 0xBF));
+   default:
+      return true;
+   }
+}
+
+
+bool
+_mongoc_char_between_chars (const unsigned char c,
+                            const unsigned char lower,
+                            const unsigned char upper)
+{
+   return (c >= lower && c <= upper);
+}
+
 #endif
