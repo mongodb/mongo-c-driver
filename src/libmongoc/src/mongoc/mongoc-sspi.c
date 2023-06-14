@@ -204,7 +204,7 @@ _mongoc_sspi_auth_sspi_client_init (WCHAR *service,
                                        /* LogonID (We don't use this) */
                                        NULL,
                                        /* AuthData */
-                                       user ? &authIdentity : NULL,
+                                       password ? &authIdentity : NULL,
                                        /* Always NULL */
                                        NULL,
                                        /* Always NULL */
