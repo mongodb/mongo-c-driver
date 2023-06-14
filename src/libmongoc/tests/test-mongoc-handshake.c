@@ -924,8 +924,10 @@ test_mongoc_handshake_race_condition (void)
       _reset_handshake ();
 
       for (j = 0; j < 4; ++j) {
-         BSON_ASSERT (!mcommon_thread_create (
-            &threads[j], &handshake_append_worker, NULL));
+         BSON_ASSERT (!mcommon_thread_create (&threads[j],
+                                              &handshake_append_worker,
+                                              NULL /* args */,
+                                              NULL /* errno_out */));
       }
       for (j = 0; j < 4; ++j) {
          mcommon_thread_join (threads[j]);

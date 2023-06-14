@@ -403,7 +403,7 @@ mock_server_run (mock_server_t *server)
    mongoc_uri_set_option_as_bool (server->uri, MONGOC_URI_RETRYWRITES, false);
 
    r = mcommon_thread_create (
-      &server->main_thread, main_thread, (void *) server);
+      &server->main_thread, main_thread, (void *) server, NULL /* errno_out */);
    BSON_ASSERT (r == 0);
    while (!server->running) {
       mongoc_cond_wait (&server->cond, &server->mutex);
@@ -1814,7 +1814,8 @@ static BSON_THREAD_FUN (main_thread, data)
          closure->port = port;
 
          bson_mutex_lock (&server->mutex);
-         r = mcommon_thread_create (&thread, worker_thread, closure);
+         r = mcommon_thread_create (
+            &thread, worker_thread, closure, NULL /* errno_out */);
          BSON_ASSERT (r == 0);
          _mongoc_array_append_val (&server->worker_threads, thread);
          bson_mutex_unlock (&server->mutex);

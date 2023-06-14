@@ -139,8 +139,10 @@ main (void)
    closure.pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < NTHREADS; i++) {
-      r = mcommon_thread_create (
-         &threads[i], gssapi_kerberos_worker, (void *) &closure);
+      r = mcommon_thread_create (&threads[i],
+                                 gssapi_kerberos_worker,
+                                 (void *) &closure,
+                                 NULL /* errno_out */);
       BSON_ASSERT (r == 0);
    }
 

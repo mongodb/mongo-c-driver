@@ -16,13 +16,24 @@
 
 #include "common-thread-private.h"
 
+#include <errno.h>
+
 #if defined(BSON_OS_UNIX)
 int
 mcommon_thread_create (bson_thread_t *thread,
                        BSON_THREAD_FUN_TYPE (func),
-                       void *arg)
+                       void *arg,
+                       int *errno_out)
 {
-   return pthread_create (thread, NULL, func, arg);
+   BSON_ASSERT_PARAM (thread);
+   BSON_ASSERT_PARAM (func);
+   BSON_ASSERT (arg || true);       // optional.
+   BSON_ASSERT (errno_out || true); // optional.
+   int ret = pthread_create (thread, NULL, func, arg);
+   if (ret != 0 && errno_out) {
+      *errno_out = ret;
+   }
+   return ret;
 }
 int
 mcommon_thread_join (bson_thread_t thread)
@@ -43,10 +54,18 @@ mcommon_mutex_is_locked (bson_mutex_t *mutex)
 int
 mcommon_thread_create (bson_thread_t *thread,
                        BSON_THREAD_FUN_TYPE (func),
-                       void *arg)
+                       void *arg,
+                       int *errno_out)
 {
+   BSON_ASSERT_PARAM (thread);
+   BSON_ASSERT_PARAM (func);
+   BSON_ASSERT (arg || true);       // optional.
+   BSON_ASSERT (errno_out || true); // optional.
    *thread = (HANDLE) _beginthreadex (NULL, 0, func, arg, 0, NULL);
    if (0 == *thread) {
+      if (errno_out) {
+         *errno_out = errno;
+      }
       return 1;
    }
    return 0;

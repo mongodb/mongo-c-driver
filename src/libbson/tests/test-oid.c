@@ -292,7 +292,8 @@ test_bson_oid_init_with_threads (void)
 
       for (i = 0; i < N_THREADS; i++) {
          contexts[i] = bson_context_new (flags);
-         r = mcommon_thread_create (&threads[i], oid_worker, contexts[i]);
+         r = mcommon_thread_create (
+            &threads[i], oid_worker, contexts[i], NULL /* errno_out */);
          BSON_ASSERT (r == 0);
       }
 
@@ -314,7 +315,8 @@ test_bson_oid_init_with_threads (void)
       context = bson_context_new (BSON_CONTEXT_THREAD_SAFE);
 
       for (i = 0; i < N_THREADS; i++) {
-         r = mcommon_thread_create (&threads[i], oid_worker, context);
+         r = mcommon_thread_create (
+            &threads[i], oid_worker, context, NULL /* errno_out */);
          BSON_ASSERT (r == 0);
       }
 

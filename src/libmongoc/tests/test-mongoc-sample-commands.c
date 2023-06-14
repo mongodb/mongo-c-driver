@@ -2882,7 +2882,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
          client, db->name, "inventory");
       ctx.done = false;
 
-      r = mcommon_thread_create (&thread, insert_docs, (void *) &ctx);
+      r = mcommon_thread_create (&thread, insert_docs, (void *) &ctx, NULL /* errno_out */);
       ASSERT_OR_PRINT_ERRNO (r == 0, r);
 
       capture_logs (true);
