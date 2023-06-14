@@ -16,6 +16,8 @@
 find-python() {
     pys=(
         py
+        /opt/mongodbtoolchain/v4/bin/python3
+        /opt/mongodbtoolchain/v3/bin/python3
         python3.14
         python3.13
         python3.12
@@ -35,6 +37,7 @@ find-python() {
     done
     if ! is-set _found; then
         fail "No Python (≥3.8) executable was found"
+        return 1
     fi
 
     debug "Found Python: $_found"
