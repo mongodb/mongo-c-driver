@@ -1472,6 +1472,8 @@ mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor, uint32_t batch_size)
       val.high = 0x3040000000000000;
       val.low = (uint64_t) batch_size;
       bson_iter_overwrite_decimal128 (&iter, &val);
+   } else {
+      MONGOC_WARNING ("unable to overwrite non-numeric stored batchSize");
    }
 }
 
