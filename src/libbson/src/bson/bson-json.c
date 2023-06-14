@@ -2335,6 +2335,14 @@ bson_json_reader_destroy (bson_json_reader_t *reader) /* IN */
 }
 
 
+void
+bson_json_opts_set_outermost_array (bson_json_opts_t *opts,
+                                    bool is_outermost_array)
+{
+   opts->is_outermost_array = is_outermost_array;
+}
+
+
 typedef struct {
    const uint8_t *data;
    size_t len;

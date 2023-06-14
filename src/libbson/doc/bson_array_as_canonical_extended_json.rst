@@ -1,7 +1,7 @@
-:man_page: bson_array_as_json
+:man_page: bson_array_as_canonical_extended_json
 
-bson_array_as_json()
-====================
+bson_array_as_canonical_extended_json()
+=================================
 
 Synopsis
 --------
@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   char *
-  bson_array_as_json (const bson_t *bson, size_t *length);
+  bson_array_as_canonical_extended_json (const bson_t *bson, size_t *length);
 
 Parameters
 ----------
@@ -20,11 +20,9 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_array_as_json()` function shall encode ``bson`` as a UTF-8
-string using libbson's legacy JSON format, except the outermost element is
-encoded as a JSON array, rather than a JSON document. This function is superseded by :symbol:`bson_array_as_canonical_extended_json()` and :symbol:`bson_array_as_relaxed_extended_json()`, which use the same `MongoDB Extended JSON format`_ as all other MongoDB drivers.
-The caller is responsible for freeing the resulting UTF-8 encoded string by
-calling :symbol:`bson_free()` with the result.
+The :symbol:`bson_array_as_canonical_extended_json()` encodes ``bson`` as a UTF-8 string in the canonical `MongoDB Extended JSON format`_, except the outermost element is encoded as a JSON array, rather than a JSON document.
+
+The caller is responsible for freeing the resulting UTF-8 encoded string by calling :symbol:`bson_free()` with the result.
 
 If non-NULL, ``length`` will be set to the length of the result in bytes.
 
@@ -51,12 +49,12 @@ Example
      /* BSON array is a normal BSON document with integer values for the keys,
       * starting with 0 and continuing sequentially
       */
-     BSON_APPEND_UTF8 (&bson, "0", "foo");
+     BSON_APPEND_UTF8 (&bson, "0", 1);
      BSON_APPEND_UTF8 (&bson, "1", "bar");
 
-     str = bson_array_as_json (&bson, NULL);
+     str = bson_array_as_canonical_extended_json (&bson, NULL);
      /* Prints
-      * [ "foo", "bar" ]
+      * [ { "$numberInt" : 1 }, "bar" ]
       */
      printf ("%s\n", str);
      bson_free (str);
@@ -68,3 +66,5 @@ Example
 .. only:: html
 
   .. include:: includes/seealso/bson-as-json.txt
+
+.. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst

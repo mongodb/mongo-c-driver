@@ -3274,8 +3274,7 @@ _bson_as_json_visit_all (const bson_t *bson,
          *length = 3;
       }
 
-      char *res = is_outermost_array ? "[ ]" : "{ }";
-      return bson_strdup (res);
+      return bson_strdup (is_outermost_array ? "[ ]" : "{ }");
    }
 
    if (!bson_iter_init (&iter, bson)) {
@@ -3330,13 +3329,6 @@ bson_as_json_with_opts (const bson_t *bson,
 {
    return _bson_as_json_visit_all (
       bson, length, opts->mode, opts->max_len, opts->is_outermost_array);
-}
-
-void
-bson_json_opts_set_outermost_array (bson_json_opts_t *opts,
-                                    bool is_outermost_array)
-{
-   opts->is_outermost_array = is_outermost_array;
 }
 
 
