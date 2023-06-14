@@ -20,6 +20,52 @@ buildvariants:
       DEBUG: "ON"
     tasks:
       - name: .cse-matrix-winssl
+  - name: deb10-x64
+    display_name: Debian 10 x86_64
+    run_on:
+      - debian10-large
+      - debian10-small
+    tasks:
+      - name: .dagon
+  - name: deb11-x64
+    display_name: Debian 11 x86_64
+    run_on:
+      - debian11-large
+      - debian11-small
+    tasks:
+      - name: .dagon
+  - name: deb8.1-x64
+    display_name: Debian 8.1 x86_64
+    run_on:
+      - debian81-large
+      - debian81-small
+    tasks:
+      - name: .dagon
+  - name: deb9.2-x64
+    display_name: Debian 9.2 x86_64
+    run_on:
+      - debian92-large
+      - debian92-small
+    tasks:
+      - name: .dagon
+  - name: macos10.14-x64
+    display_name: macOS 10.14 x86_64
+    run_on:
+      - macos-1014
+    tasks:
+      - name: .dagon
+  - name: macos11.00-a64
+    display_name: macOS 11.00 ARM64
+    run_on:
+      - macos-1100-arm64
+    tasks:
+      - name: .dagon
+  - name: macos11.00-x64
+    display_name: macOS 11.00 x86_64
+    run_on:
+      - macos-1100
+    tasks:
+      - name: .dagon
   - name: mock-server-test
     display_name: Mock Server Test
     expansions:
@@ -34,6 +80,80 @@ buildvariants:
     display_name: openssl-static-matrix
     tasks:
       - name: .openssl-static-matrix
+  - name: rh7.0-x64
+    display_name: RHEL 7.0 x86_64
+    run_on:
+      - rhel70-large
+      - rhel70-small
+    tasks:
+      - name: .dagon
+  - name: rh7.2-s390x
+    display_name: RHEL 7.2 zSeries
+    run_on:
+      - rhel72-zseries-large
+      - rhel72-zseries-small
+    tasks:
+      - name: .dagon
+  - name: rh7.6-x64
+    display_name: RHEL 7.6 x86_64
+    run_on:
+      - rhel76-large
+      - rhel76-small
+    tasks:
+      - name: .dagon
+  - name: rh8.0-x64
+    display_name: RHEL 8.0 x86_64
+    run_on:
+      - rhel80-large
+      - rhel80-medium
+      - rhel80-small
+      - rhel80-xlarge
+      - rhel80-xxlarge
+    tasks:
+      - name: .dagon
+  - name: rh8.1-ppc64le
+    display_name: RHEL 8.1 PowerPC
+    run_on:
+      - rhel81-power8-large
+      - rhel81-power8-small
+    tasks:
+      - name: .dagon
+  - name: rh8.2-a64
+    display_name: RHEL 8.2 ARM64
+    run_on:
+      - rhel82-arm64-large
+      - rhel82-arm64-small
+    tasks:
+      - name: .dagon
+  - name: rh8.3-s390x
+    display_name: RHEL 8.3 zSeries
+    run_on:
+      - rhel83-zseries-large
+      - rhel83-zseries-small
+    tasks:
+      - name: .dagon
+  - name: rh8.4-x64
+    display_name: RHEL 8.4 x86_64
+    run_on:
+      - rhel84-large
+      - rhel84-small
+    tasks:
+      - name: .dagon
+  - name: rh9.0-a64
+    display_name: RHEL 9.0 ARM64
+    run_on:
+      - rhel90-arm64-large
+      - rhel90-arm64-small
+    tasks:
+      - name: .dagon
+  - name: rh9.0-x64
+    display_name: RHEL 9.0 x86_64
+    run_on:
+      - rhel90-large
+      - rhel90-medium
+      - rhel90-small
+    tasks:
+      - name: .dagon
   - name: sanitizers-matrix-asan
     display_name: sanitizers-matrix-asan
     expansions:
@@ -85,3 +205,53 @@ buildvariants:
     display_name: std-matrix
     tasks:
       - name: .std-matrix
+  - name: u18-a64
+    display_name: Ubuntu 18.04 ARM64
+    run_on:
+      - ubuntu1804-arm64-large
+      - ubuntu1804-arm64-small
+    tasks:
+      - name: .dagon
+  - name: u18-s390x
+    display_name: Ubuntu 18.04 zSeries
+    run_on:
+      - ubuntu1804-zseries-large
+      - ubuntu1804-zseries-small
+    tasks:
+      - name: .dagon
+  - name: u18-x64
+    display_name: Ubuntu 18.04 x86_64
+    run_on:
+      - ubuntu1804-large
+      - ubuntu1804-small
+    tasks:
+      - name: .dagon
+  - name: u20-a64
+    display_name: Ubuntu 20.04 ARM64
+    run_on:
+      - ubuntu2004-arm64-large
+      - ubuntu2004-arm64-small
+    tasks:
+      - name: .dagon
+  - name: u20-x64
+    display_name: Ubuntu 20.04 x86_64
+    run_on:
+      - ubuntu2004-large
+      - ubuntu2004-medium
+      - ubuntu2004-small
+    tasks:
+      - name: .dagon
+  - name: u22-a64
+    display_name: Ubuntu 22.04 ARM64
+    run_on:
+      - ubuntu2204-arm64-large
+      - ubuntu2204-arm64-small
+    tasks:
+      - name: .dagon
+  - name: u22-x64
+    display_name: Ubuntu 22.04 x86_64
+    run_on:
+      - ubuntu2204-large
+      - ubuntu2204-small
+    tasks:
+      - name: .dagon
