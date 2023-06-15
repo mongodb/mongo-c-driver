@@ -3,16 +3,16 @@ exec_prefix=${prefix}
 libdir=@libdir@
 includedir=${exec_prefix}/include
 
-Name: $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_NAME>
-Description: $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_DESCRIPTION>
-Version: $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_VERSION>
+Name: $<TARGET_PROPERTY:@GENERATE_TARGET@,pkg_config_NAME>
+Description: $<TARGET_PROPERTY:@GENERATE_TARGET@,pkg_config_DESCRIPTION>
+Version: $<TARGET_PROPERTY:@GENERATE_TARGET@,pkg_config_VERSION>
 
 %define $<is-empty: $<STREQUAL:@empty@,
 %define $<<not-empty: $<NOT:$<is-empty:
 
 #~ "Requires" dependencies:
 %define requires_joiner @newline@~ Requires: ~@space@
-%define requires_prop $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_REQUIRES>
+%define requires_prop $<TARGET_PROPERTY:@GENERATE_TARGET@,pkg_config_REQUIRES>
 #~ Conditional: Only expand a first "\nRequires: " if Requires is non-empty:
 %define has_requires $<<not-empty:requires_prop>>
 ~$<has_requires:requires_joiner>
@@ -24,7 +24,7 @@ Version: $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_VERSION>
 #~ Link options:
 Libs: -L${libdir} -l$<TARGET_PROPERTY:@GENERATE_TARGET@,OUTPUT_NAME> ~@space@~
     #~ Join each "Libs" item with spaces. This could be more robust, but it suits our purposes:
-    %define libs_prop $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_LIBS>
+    %define libs_prop $<TARGET_PROPERTY:@GENERATE_TARGET@,pkg_config_LIBS>
     #~ Remove duplicate items, which will usually be redundant link paths:
     %define libs $<REMOVE_DUPLICATES:libs_prop>
     $<JOIN:libs,@space@>~
@@ -36,7 +36,7 @@ Libs: -L${libdir} -l$<TARGET_PROPERTY:@GENERATE_TARGET@,OUTPUT_NAME> ~@space@~
 ~@newline@~
 
 #~ Compile-flags:
-%define cflags_prop $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_CFLAGS>
+%define cflags_prop $<TARGET_PROPERTY:@GENERATE_TARGET@,pkg_config_CFLAGS>
 Cflags: $<JOIN:cflags_prop,@space@> ~@space@~
 
     #~ Options:
@@ -51,7 +51,7 @@ Cflags: $<JOIN:cflags_prop,@space@> ~@space@~
               $<JOIN:defs, -D>~
 
     #~ Inclusions:
-    %define inc_prop $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_INCLUDE_DIRECTORIES>
+    %define inc_prop $<TARGET_PROPERTY:@GENERATE_TARGET@,pkg_config_INCLUDE_DIRECTORIES>
     %define incs $<REMOVE_DUPLICATES:inc_prop>
     #~ Absolute path includes are kept absolute:
     %define abs_includes $<FILTER:incs,INCLUDE,^/>

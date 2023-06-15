@@ -29,6 +29,9 @@ set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
+# Definition for mongoc-config.h:
+_mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
+
 set (MONGOC_OUTPUT_BASENAME "mongoc" CACHE STRING "Output mongoc library base name")
 
 if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
@@ -290,8 +293,6 @@ endif ()
 
 # Find name resolution libaries. Also sets definitions used in configure_file():
 include(ResSearch)
-# Definition for mongoc-config.h:
-_mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
 
 include (CheckSchedGetCPU)
 
@@ -790,7 +791,7 @@ set_target_properties (mongoc_shared PROPERTIES
    OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}"
    VERSION 0.0.0
    SOVERSION 0
-   pc_REQUIRES "libbson-1.0"
+   pkg_config_REQUIRES "libbson-1.0"
    )
 
 if (MONGOC_ENABLE_STATIC_BUILD)
@@ -806,7 +807,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    endif ()
    if(ENABLE_SRV AND RESOLVE_LIB_NAME)
       # The static library needs to link to the resolver in pkg-config:
-      set_property(TARGET mongoc_static APPEND PROPERTY pc_LIBS "-l${RESOLVE_LIB_NAME}")
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-l${RESOLVE_LIB_NAME}")
    endif()
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
@@ -838,7 +839,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    set_target_properties (mongoc_static PROPERTIES
       VERSION 0.0.0
       OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}"
-      pc_REQUIRES "libbson-static-1.0"
+      pkg_config_REQUIRES "libbson-static-1.0"
       )
 endif ()
 
@@ -1219,16 +1220,16 @@ if(TARGET mongoc_static)
    list(TRANSFORM link_options PREPEND "-l" REGEX "^[^-]")
    list(REMOVE_DUPLICATES link_options)
    message(DEBUG "Computed static library link options: ${link_options}")
-   set_property(TARGET mongoc_static APPEND PROPERTY pc_LIBS ${link_options})
+   set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${link_options})
 endif()
 
 # More pkg-config properties:
 set_target_properties(${TARGETS_TO_INSTALL} PROPERTIES
-   pc_NAME "libmongoc"
-   pc_DESCRIPTION "The libmongoc MongoDB client library."
-   pc_VERSION "${VERSION}")
+   pkg_config_NAME "libmongoc"
+   pkg_config_DESCRIPTION "The libmongoc MongoDB client library."
+   pkg_config_VERSION "${VERSION}")
 # Relative include-path will be given the install prefix:
-set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pc_INCLUDE_DIRECTORIES "${MONGOC_HEADER_INSTALL_DIR}")
+set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${MONGOC_HEADER_INSTALL_DIR}")
 
 #[[
 Utility for configuring a file and then evaluating generator expressions on it.
