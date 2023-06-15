@@ -190,7 +190,9 @@ BSON document contains duplicate keys.
     bson_append_undefined
     bson_append_utf8
     bson_append_value
+    bson_array_as_canonical_extended_json
     bson_array_as_json
+    bson_array_as_relaxed_extended_json
     bson_as_canonical_extended_json
     bson_as_json
     bson_as_json_with_opts
