@@ -23,7 +23,7 @@ Version: $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_VERSION>
 
 #~ Link options:
 Libs: -L${libdir} -l$<TARGET_PROPERTY:@GENERATE_TARGET@,OUTPUT_NAME> ~@space@~
-    #~ Join each "Libs" item with spaces. This could be more robust, but it suites our purposes:
+    #~ Join each "Libs" item with spaces. This could be more robust, but it suits our purposes:
     %define libs_prop $<TARGET_PROPERTY:@GENERATE_TARGET@,pc_LIBS>
     #~ Remove duplicate items, which will usually be redundant link paths:
     %define libs $<REMOVE_DUPLICATES:libs_prop>
