@@ -1236,12 +1236,12 @@ The content of the file has a tiny templating DSL for writing generator
 expressions. Expansion takes place as follows:
    1. Delete any content starting at hash-tilde "#~" until the next newline
    2. Search for any lines of the form "%define foo bar". For each instance,
-      replace "foo" with "bar" in the remainder of the file. The "% foo bar"
+      replace "foo" with "bar" in the remainder of the file. The "%define foo bar"
       line is deleted.
    3. If a tilde "~" appears adjacent to any of "$,<:>@", delete the tilde and
       all adjacent whitespace.
    4. Run string(CONFIGURE ... @ONLY) on the result to replace variable
-      references. Special replacements @space@, @newline, and @empty@ are also
+      references. Special replacements @space@, @newline@, and @empty@ are also
       available for adjusting whitespace after ~ trimming.
    5. Run file(GENERATE).
 ]]
@@ -1263,7 +1263,7 @@ function(_mongoc_configure_and_generate_file input output)
       set(def "${CMAKE_MATCH_2}")
       set(val "${CMAKE_MATCH_3}")
       message(TRACE "Replace “${def}” with “${val}”")
-      # Only perform the replacment on the remainder of the file following that
+      # Only perform the replacement on the remainder of the file following that
       # line:
       string(REPLACE "${def}" "${val}" after "${after}")
       # Splice the results:
@@ -1273,7 +1273,7 @@ function(_mongoc_configure_and_generate_file input output)
    string(REGEX REPLACE "([,><:@])~[ \n\t]*" "\\1" content "${content}")
    # Same thing, but on the left-hand side:
    string(REGEX REPLACE "[ \n\t]*~([^ \t\n])" "\\1" content "${content}")
-   # Replace @varables@:
+   # Replace @variables@:
    string(CONFIGURE "${content}" content @ONLY)
    # If given a relative output path, make it relative to the current binary dir:
    if(NOT IS_ABSOLUTE "${output}")
