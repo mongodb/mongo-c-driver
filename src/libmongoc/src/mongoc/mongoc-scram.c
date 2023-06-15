@@ -1035,9 +1035,9 @@ _mongoc_sasl_prep_impl (const char *name,
                         int in_utf8_len,
                         bson_error_t *err)
 {
-   char *unicode_utf8;
+   unsigned int *unicode_utf8;
    int32_t in_utf8_actual_len;
-   int char_length, i;
+   int char_length, i, curr;
    const char *c;
 
 #define SASL_PREP_ERR_RETURN(msg)                        \
@@ -1068,6 +1068,40 @@ _mongoc_sasl_prep_impl (const char *name,
       c += char_length;
    }
    unicode_utf8[i] = '\0';
+
+   /* 2. perform SASLPREP */
+
+   // the steps below come directly from RFC 3454: 2. Preparation Overview.
+
+   // a. Map - For each character in the input, check if it has a mapping (using
+   // the tables) and, if so, replace it with its mapping.
+
+   // because we will have to map some characters to nothing, we'll use two
+   // pointers: one for reading the original characters (i) and one for writing
+   // the new characters (curr). i will always be >= curr.
+   curr = 0;
+   for (i = 0; i < in_utf8_actual_len; ++i) {
+      if (_mongoc_is_code_in_table (
+             unicode_utf8[i],
+             non_ascii_space_character_ranges,
+             lengthof (non_ascii_space_character_ranges)))
+         unicode_utf8[curr++] = 0x200;
+      else if (_mongoc_is_code_in_table (
+                  unicode_utf8[i],
+                  commonly_mapped_to_nothing_ranges,
+                  lengthof (commonly_mapped_to_nothing_ranges))) {
+         // effectively skip over the character because we don't increment curr.
+      } else
+         unicode_utf8[curr++] = unicode_utf8[i];
+   }
+   unicode_utf8[curr] = '\0';
+   in_utf8_actual_len = curr;
+
+
+   // b. Normalize - Possibly normalize the result of step 1 using Unicode
+   // normalization.
+
+
    // if (error_code) {
    //    bson_free (in_utf16);
    //    SASL_PREP_ERR_RETURN ("could not convert %s to UTF-16");
@@ -1269,6 +1303,21 @@ _mongoc_utf8_to_unicode (const char *c, int length)
    default:
       return 0;
    }
+}
+
+
+bool
+_mongoc_is_code_in_table (unsigned int code,
+                          const unsigned int *table,
+                          int size)
+{
+   // all tables have size / 2 ranges
+   for (int i = 0; i < size; i += 2) {
+      if (code >= table[i] || code <= table[i + 1])
+         return true;
+   }
+
+   return false;
 }
 
 #endif
