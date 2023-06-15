@@ -148,6 +148,10 @@ _mongoc_is_code_in_table (unsigned int code,
 unsigned int
 _mongoc_utf8_to_unicode (const char *c, int length);
 
+/* converts a unicode code point to UTF8 character. */
+char *
+_mongoc_unicode_to_utf8 (unsigned int *c);
+
 /* the tables below all fome from RFC 3454. They are all range tables, with
  * value 2*n being the lower range, and value 2*n + 1 being the upper range.
  * Both ranges are exclusive.
@@ -344,7 +348,7 @@ static const unsigned int prohibited_output_ranges[] = {
  * with bidirectional property "L".
  */
 
-static const unsigned int RAL_bidi_ranges[] = {
+static const unsigned int RandALCat_bidi_ranges[] = {
    0x05BE, 0x05BE, 0x05C0, 0x05C0, 0x05C3, 0x05C3, 0x05D0, 0x05EA, 0x05F0,
    0x05F4, 0x061B, 0x061B, 0x061F, 0x061F, 0x0621, 0x063A, 0x0640, 0x064A,
    0x066D, 0x066F, 0x0671, 0x06D5, 0x06DD, 0x06DD, 0x06E5, 0x06E6, 0x06FA,
@@ -358,7 +362,7 @@ static const unsigned int RAL_bidi_ranges[] = {
  * any string that contains one of these characters cannot contain a character
  * with bidirectional property "R" or "AL".
  * */
-static const unsigned int L_bidi_ranges[] = {
+static const unsigned int LCat_bidi_ranges[] = {
    0x0041,  0x005A,  0x0061,  0x007A,  0x00AA,  0x00AA,  0x00B5,   0x00B5,
    0x00BA,  0x00BA,  0x00C0,  0x00D6,  0x00D8,  0x00F6,  0x00F8,   0x0220,
    0x0222,  0x0233,  0x0250,  0x02AD,  0x02B0,  0x02B8,  0x02BB,   0x02C1,

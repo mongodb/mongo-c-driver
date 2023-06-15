@@ -1039,6 +1039,7 @@ _mongoc_sasl_prep_impl (const char *name,
    int32_t in_utf8_actual_len;
    int char_length, i, curr;
    const char *c;
+   bool contains_LCat, contains_RandALCar;
 
 #define SASL_PREP_ERR_RETURN(msg)                        \
    do {                                                  \
@@ -1098,9 +1099,73 @@ _mongoc_sasl_prep_impl (const char *name,
    in_utf8_actual_len = curr;
 
 
-   // b. Normalize - Possibly normalize the result of step 1 using Unicode
+   // b. Normalize - normalize the result of step 1 using Unicode
    // normalization.
 
+
+   // this is an optional step for stringprep, but Unicode normalization with
+   // form KC is required for SASLPrep.
+
+   // NORMALIZE HERE
+
+   // c. Prohibit -- Check for any characters that are not allowed in the
+   // output. If any are found, return an error.
+
+   for (i = 0; i < in_utf8_actual_len; ++i) {
+      if (_mongoc_is_code_in_table (unicode_utf8[i],
+                                    prohibited_output_ranges,
+                                    lengthof (prohibited_output_ranges)) ||
+          _mongoc_is_code_in_table (unicode_utf8[i],
+                                    unassigned_codepoint_ranges,
+                                    lengthof (unassigned_codepoint_ranges))) {
+         // error
+      }
+   }
+
+   // d. Check bidi -- Possibly check for right-to-left characters, and if
+   // any are found, make sure that the whole string satisfies the
+   // requirements for bidirectional strings.  If the string does not
+   // satisfy the requirements for bidirectional strings, return an
+   // error.
+
+   // note: bidi stands for directional (text). Most characters are displayed
+   // left to right but some are displayed right to left. The requirements are
+   // as follows:
+   // 1. If a string contains any RandALCat character, it can't contatin an LCat
+   // character
+   // 2. If it contains an RandALCat character, there must be an RandALCat
+   // character at the beginning and the end of the string (does not have to be
+   // the same character)
+   contains_LCat = false;
+   contains_RandALCar = false;
+
+
+   for (i = 0; i < in_utf8_actual_len; ++i) {
+      if (_mongoc_is_code_in_table (
+             unicode_utf8[i], LCat_bidi_ranges, lengthof (LCat_bidi_ranges))) {
+         contains_LCat = true;
+         if (contains_RandALCar)
+            break;
+      }
+      if (_mongoc_is_code_in_table (unicode_utf8[i],
+                                    RandALCat_bidi_ranges,
+                                    lengthof (RandALCat_bidi_ranges)))
+         contains_RandALCar = true;
+   }
+
+   if (
+      // requirement 1
+      (contains_RandALCar && contains_LCat) ||
+      // requirement 2
+      (contains_RandALCar &&
+       (!_mongoc_is_code_in_table (unicode_utf8[0],
+                                   RandALCat_bidi_ranges,
+                                   lengthof (RandALCat_bidi_ranges)) ||
+        !!_mongoc_is_code_in_table (unicode_utf8[in_utf8_actual_len - 1],
+                                    RandALCat_bidi_ranges,
+                                    lengthof (RandALCat_bidi_ranges))))) {
+      // ERROR
+   }
 
    // if (error_code) {
    //    bson_free (in_utf16);
