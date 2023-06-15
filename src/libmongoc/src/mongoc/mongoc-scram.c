@@ -1035,9 +1035,10 @@ _mongoc_sasl_prep_impl (const char *name,
                         int in_utf8_len,
                         bson_error_t *err)
 {
-   char *out_utf8;
-   int32_t in_utf8_len, out_utf8_len;
-   UStringPrepProfile *prep;
+   char *unicode_utf8;
+   int32_t in_utf8_actual_len;
+   int char_length, i;
+   const char *c;
 
 #define SASL_PREP_ERR_RETURN(msg)                        \
    do {                                                  \
@@ -1051,79 +1052,89 @@ _mongoc_sasl_prep_impl (const char *name,
 
    /* 1. convert str to unicode. */
    /* preflight to get the destination length. */
-   in_utf8_len = _mongoc_utf8_string_length (in_utf8);
-   if (in_utf8_len == -1) {
+   in_utf8_actual_len = _mongoc_utf8_string_length (in_utf8);
+   if (in_utf8_actual_len == -1) {
       SASL_PREP_ERR_RETURN ("could not calculate UTF-8 length of %s");
    }
 
    /* convert to unicode. */
-   error_code = U_ZERO_ERROR;
-   in_utf16 = bson_malloc (sizeof (UChar) *
-                           (in_utf16_len + 1)); /* add one for null byte. */
-   (void) u_strFromUTF8 (
-      in_utf16, in_utf16_len + 1, NULL, in_utf8, in_utf8_len, &error_code);
-   if (error_code) {
-      bson_free (in_utf16);
-      SASL_PREP_ERR_RETURN ("could not convert %s to UTF-16");
+   unicode_utf8 = bson_malloc (
+      sizeof (char) * (in_utf8_actual_len + 1)); /* add one for null byte. */
+   c = in_utf8;
+   for (i = 0; i < in_utf8_actual_len; ++i) {
+      char_length = _mongoc_utf8_char_length (c);
+      unicode_utf8[i] = _mongoc_utf8_to_unicode (c, char_length);
+
+      c += char_length;
    }
+   unicode_utf8[i] = '\0';
+   // if (error_code) {
+   //    bson_free (in_utf16);
+   //    SASL_PREP_ERR_RETURN ("could not convert %s to UTF-16");
+   // }
 
    /* 2. perform SASLPrep. */
-   prep = usprep_openByType (USPREP_RFC4013_SASLPREP, &error_code);
-   if (error_code) {
-      bson_free (in_utf16);
-      SASL_PREP_ERR_RETURN ("could not start SASLPrep for %s");
-   }
-   /* preflight. */
-   out_utf16_len = usprep_prepare (
-      prep, in_utf16, in_utf16_len, NULL, 0, USPREP_DEFAULT, NULL, &error_code);
-   if (error_code != U_BUFFER_OVERFLOW_ERROR) {
-      bson_free (in_utf16);
-      usprep_close (prep);
-      SASL_PREP_ERR_RETURN ("could not calculate SASLPrep length of %s");
-   }
+   // For each character, find if there is a mapping and replace it
 
-   /* convert. */
-   error_code = U_ZERO_ERROR;
-   out_utf16 = bson_malloc (sizeof (UChar) * (out_utf16_len + 1));
-   (void) usprep_prepare (prep,
-                          in_utf16,
-                          in_utf16_len,
-                          out_utf16,
-                          out_utf16_len + 1,
-                          USPREP_DEFAULT,
-                          NULL,
-                          &error_code);
-   if (error_code) {
-      bson_free (in_utf16);
-      bson_free (out_utf16);
-      usprep_close (prep);
-      SASL_PREP_ERR_RETURN ("could not execute SASLPrep for %s");
-   }
-   bson_free (in_utf16);
-   usprep_close (prep);
+   // prep = usprep_openByType (USPREP_RFC4013_SASLPREP, &error_code);
+   // if (error_code) {
+   //    bson_free (in_utf16);
+   //    SASL_PREP_ERR_RETURN ("could not start SASLPrep for %s");
+   // }
+   // /* preflight. */
+   // out_utf16_len = usprep_prepare (
+   //    prep, in_utf16, in_utf16_len, NULL, 0, USPREP_DEFAULT, NULL,
+   //    &error_code);
+   // if (error_code != U_BUFFER_OVERFLOW_ERROR) {
+   //    bson_free (in_utf16);
+   //    usprep_close (prep);
+   //    SASL_PREP_ERR_RETURN ("could not calculate SASLPrep length of %s");
+   // }
 
-   /* 3. convert back to UTF-8. */
-   /* preflight. */
-   (void) u_strToUTF8 (
-      NULL, 0, &out_utf8_len, out_utf16, out_utf16_len, &error_code);
-   if (error_code != U_BUFFER_OVERFLOW_ERROR) {
-      bson_free (out_utf16);
-      SASL_PREP_ERR_RETURN ("could not calculate UTF-8 length of %s");
-   }
+   // /* convert. */
+   // error_code = U_ZERO_ERROR;
+   // out_utf16 = bson_malloc (sizeof (UChar) * (out_utf16_len + 1));
+   // (void) usprep_prepare (prep,
+   //                        in_utf16,
+   //                        in_utf16_len,
+   //                        out_utf16,
+   //                        out_utf16_len + 1,
+   //                        USPREP_DEFAULT,
+   //                        NULL,
+   //                        &error_code);
+   // if (error_code) {
+   //    bson_free (in_utf16);
+   //    bson_free (out_utf16);
+   //    usprep_close (prep);
+   //    SASL_PREP_ERR_RETURN ("could not execute SASLPrep for %s");
+   // }
+   // bson_free (in_utf16);
+   // usprep_close (prep);
 
-   /* convert. */
-   error_code = U_ZERO_ERROR;
-   out_utf8 = (char *) bson_malloc (
-      sizeof (char) * (out_utf8_len + 1)); /* add one for null byte. */
-   (void) u_strToUTF8 (
-      out_utf8, out_utf8_len + 1, NULL, out_utf16, out_utf16_len, &error_code);
-   if (error_code) {
-      bson_free (out_utf8);
-      bson_free (out_utf16);
-      SASL_PREP_ERR_RETURN ("could not convert %s back to UTF-8");
-   }
-   bson_free (out_utf16);
-   return out_utf8;
+   // /* 3. convert back to UTF-8. */
+   // /* preflight. */
+   // (void) u_strToUTF8 (
+   //    NULL, 0, &out_utf8_len, out_utf16, out_utf16_len, &error_code);
+   // if (error_code != U_BUFFER_OVERFLOW_ERROR) {
+   //    bson_free (out_utf16);
+   //    SASL_PREP_ERR_RETURN ("could not calculate UTF-8 length of %s");
+   // }
+
+   // /* convert. */
+   // error_code = U_ZERO_ERROR;
+   // out_utf8 = (char *) bson_malloc (
+   //    sizeof (char) * (out_utf8_len + 1)); /* add one for null byte. */
+   // (void) u_strToUTF8 (
+   //    out_utf8, out_utf8_len + 1, NULL, out_utf16, out_utf16_len,
+   //    &error_code);
+   // if (error_code) {
+   //    bson_free (out_utf8);
+   //    bson_free (out_utf16);
+   //    SASL_PREP_ERR_RETURN ("could not convert %s back to UTF-8");
+   // }
+   // bson_free (out_utf16);
+   // return out_utf8;
+   return NULL;
 #undef SASL_PREP_ERR_RETURN
 }
 #endif
@@ -1148,7 +1159,7 @@ _mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err)
 }
 
 int
-_mongoc_utf_char_length (const unsigned char *c)
+_mongoc_utf8_char_length (const char *c)
 {
    int length;
 
@@ -1171,7 +1182,7 @@ _mongoc_utf_char_length (const unsigned char *c)
 int
 _mongoc_utf8_string_length (const char *s)
 {
-   const unsigned char *c = (const unsigned char *) s;
+   const char *c = s;
 
    int str_length = 0;
    int char_length;
@@ -1191,7 +1202,7 @@ _mongoc_utf8_string_length (const char *s)
 
 
 bool
-_mongoc_utf8_is_valid (const unsigned char *c, int length)
+_mongoc_utf8_is_valid (const char *c, int length)
 {
    // Referenced table here:
    // https://lemire.me/blog/2018/05/09/how-quickly-can-you-check-that-a-string-is-valid-unicode-utf-8/
@@ -1236,11 +1247,28 @@ _mongoc_utf8_is_valid (const unsigned char *c, int length)
 
 
 bool
-_mongoc_char_between_chars (const unsigned char c,
-                            const unsigned char lower,
-                            const unsigned char upper)
+_mongoc_char_between_chars (const char c, const char lower, const char upper)
 {
    return (c >= lower && c <= upper);
+}
+
+unsigned int
+_mongoc_utf8_to_unicode (const char *c, int length)
+{
+   switch (length) {
+   case 1:
+      return (unsigned int) c[0];
+   case 2:
+      return (unsigned int) (((c[0] & 0x1f) << 6) | (c[1] & 0x3f));
+   case 3:
+      return (unsigned int) (((c[0] & 0x0f) << 12) | ((c[1] & 0x3f) << 6) |
+                             (c[2] & 0x3f));
+   case 4:
+      return (unsigned int) (((c[0] & 0x07) << 18) | ((c[1] & 0x3f) << 12) |
+                             ((c[2] & 0x3f) << 6) | (c[3] & 0x3f));
+   default:
+      return 0;
+   }
 }
 
 #endif

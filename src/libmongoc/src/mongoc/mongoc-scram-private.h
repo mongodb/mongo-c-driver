@@ -125,7 +125,7 @@ _mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err);
 
 /* returns how many bytes a UTF8 character is. */
 int
-_mongoc_utf8_char_length (const unsigned char *c);
+_mongoc_utf8_char_length (const char *c);
 
 /* returns how many characters are in a UTF8 string. Returns -1 on error. */
 int
@@ -133,13 +133,16 @@ _mongoc_utf8_string_length (const char *s);
 
 /* returns whether a UTF8 character is valid or not. */
 bool
-_mongoc_utf8_is_valid (const unsigned char *c, int length);
+_mongoc_utf8_is_valid (const char *c, int length);
 
 /* returns whether a character is between two limits (inclusive). */
 bool
-_mongoc_char_between_chars (const unsigned char c,
-                            const unsigned char lower,
-                            const unsigned char upper);
+_mongoc_char_between_chars (const char c, const char lower, const char upper);
+
+
+/* converts a UTF8 character to unicode code point. */
+unsigned int
+_mongoc_utf8_to_unicode (const char *c, int length);
 
 BSON_END_DECLS
 

@@ -669,6 +669,49 @@ test_mongoc_saslprep_auth_no_icu (void *ctx)
    _drop_saslprep_users ();
 }
 
+static void
+test_mongoc_utf8_char_length (void)
+{
+   const char *c0 = ",";
+   const char *c1 = "ɶ";
+   const char *c2 = "ྡྷ";
+   const char *c3 = "🌂";
+
+   ASSERT_CMPINT (_mongoc_utf8_char_length (c0), ==, 1);
+   ASSERT_CMPINT (_mongoc_utf8_char_length (c1), ==, 2);
+   ASSERT_CMPINT (_mongoc_utf8_char_length (c2), ==, 3);
+   ASSERT_CMPINT (_mongoc_utf8_char_length (c3), ==, 4);
+}
+
+static void
+test_mongoc_utf8_string_length (void)
+{
+   const char *s0 = ",ase";
+   const char *s1 = "ɸɴ";
+   const char *s2 = "ྡྷ🌂e4🌕";
+   const char *s3 = "no special characters";
+
+   ASSERT_CMPINT (_mongoc_utf8_string_length (s0), ==, 4);
+   ASSERT_CMPINT (_mongoc_utf8_string_length (s1), ==, 2);
+   ASSERT_CMPINT (_mongoc_utf8_string_length (s2), ==, 5);
+   ASSERT_CMPINT (_mongoc_utf8_string_length (s3), ==, 21);
+}
+
+static void
+test_mongoc_utf8_to_unicode (void)
+{
+   const char *c0 = ",";
+   const char *c1 = "ɶ";
+   const char *c2 = "ྡྷ";
+   const char *c3 = "🌂";
+
+   ASSERT_CMPINT (_mongoc_utf8_to_unicode (c0, 1), ==, 0x002C);
+   ASSERT_CMPINT (_mongoc_utf8_to_unicode (c1, 2), ==, 0x0276);
+   ASSERT_CMPINT (_mongoc_utf8_to_unicode (c2, 3), ==, 0x0FA2);
+   ASSERT_CMPINT (_mongoc_utf8_to_unicode (c3, 4), ==, 0x1F302);
+}
+
+
 void
 test_scram_install (TestSuite *suite)
 {
@@ -679,6 +722,12 @@ test_scram_install (TestSuite *suite)
    TestSuite_Add (suite, "/scram/sasl_prep", test_mongoc_scram_sasl_prep);
    TestSuite_Add (
       suite, "/scram/iteration_count", test_mongoc_scram_iteration_count);
+   TestSuite_Add (
+      suite, "/scram/utf8_char_length", test_mongoc_utf8_char_length);
+   TestSuite_Add (
+      suite, "/scram/utf8_string_length", test_mongoc_utf8_string_length);
+   TestSuite_Add (suite, "/scram/utf8_to_unicode", test_mongoc_utf8_to_unicode);
+
 #endif
    TestSuite_AddFull (suite,
                       "/scram/auth_tests",
