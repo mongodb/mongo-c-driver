@@ -1036,9 +1036,9 @@ _mongoc_sasl_prep_impl (const char *name,
                         bson_error_t *err)
 {
    unsigned int *unicode_utf8;
-   int32_t in_utf8_actual_len;
-   int char_length, i, curr;
+   int char_length, i, curr, in_utf8_actual_len, out_utf8_len;
    const char *c;
+   char *out_utf8;
    bool contains_LCat, contains_RandALCar;
 
 #define SASL_PREP_ERR_RETURN(msg)                        \
@@ -1059,8 +1059,9 @@ _mongoc_sasl_prep_impl (const char *name,
    }
 
    /* convert to unicode. */
-   unicode_utf8 = bson_malloc (
-      sizeof (char) * (in_utf8_actual_len + 1)); /* add one for null byte. */
+   unicode_utf8 =
+      bson_malloc (sizeof (unsigned int) *
+                   (in_utf8_actual_len + 1)); /* add one for null byte. */
    c = in_utf8;
    for (i = 0; i < in_utf8_actual_len; ++i) {
       char_length = _mongoc_utf8_char_length (c);
@@ -1166,6 +1167,15 @@ _mongoc_sasl_prep_impl (const char *name,
                                     lengthof (RandALCat_bidi_ranges))))) {
       // ERROR
    }
+
+   /* 3. convert back to UTF8 */
+
+   // preflight for length
+   out_utf8_len = 0;
+   for (i = 0; i < in_utf8_actual_len; ++i) {
+      out_utf8_len += _mongoc_unicode_codepoint_length (unicode_utf8[i]);
+   }
+   out_utf8 = bson_malloc (sizeof (char) * (out_utf8_len + 1));
 
    // if (error_code) {
    //    bson_free (in_utf16);
@@ -1351,6 +1361,20 @@ _mongoc_char_between_chars (const char c, const char lower, const char upper)
    return (c >= lower && c <= upper);
 }
 
+bool
+_mongoc_is_code_in_table (unsigned int code,
+                          const unsigned int *table,
+                          int size)
+{
+   // all tables have size / 2 ranges
+   for (int i = 0; i < size; i += 2) {
+      if (code >= table[i] || code <= table[i + 1])
+         return true;
+   }
+
+   return false;
+}
+
 unsigned int
 _mongoc_utf8_to_unicode (const char *c, int length)
 {
@@ -1370,19 +1394,48 @@ _mongoc_utf8_to_unicode (const char *c, int length)
    }
 }
 
-
-bool
-_mongoc_is_code_in_table (unsigned int code,
-                          const unsigned int *table,
-                          int size)
+int
+_mongoc_unicode_to_utf8 (unsigned int *c, char *out)
 {
-   // all tables have size / 2 ranges
-   for (int i = 0; i < size; i += 2) {
-      if (code >= table[i] || code <= table[i + 1])
-         return true;
+   if (c <= 0x7F) {
+      // Plain ASCII
+      out[0] = (char) *c;
+      return 1;
+   } else if (c <= 0x07FF) {
+      // 2-byte unicode
+      out[0] = (char) (((*c >> 6) & 0x1F) | 0xC0);
+      out[1] = (char) (((*c >> 0) & 0x3F) | 0x80);
+      return 2;
+   } else if (c <= 0xFFFF) {
+      // 3-byte unicode
+      out[0] = (char) (((*c >> 12) & 0x0F) | 0xE0);
+      out[1] = (char) (((*c >> 6) & 0x3F) | 0x80);
+      out[2] = (char) ((*c & 0x3F) | 0x80);
+      return 3;
+   } else if (c <= 0x10FFFF) {
+      // 4-byte unicode
+      out[0] = (char) (((*c >> 18) & 0x07) | 0xF0);
+      out[1] = (char) (((*c >> 12) & 0x3F) | 0x80);
+      out[2] = (char) (((*c >> 6) & 0x3F) | 0x80);
+      out[3] = (char) ((*c & 0x3F) | 0x80);
+      return 4;
+   } else {
+      return -1;
    }
-
-   return false;
 }
 
+int
+_mongoc_unicode_codepoint_length (unsigned int *c)
+{
+   if (c <= 0x7F)
+      return 1;
+   else if (c <= 0x07FF)
+      return 2;
+   else if (c <= 0xFFFF)
+      return 3;
+   else if (c <= 0x10FFFF)
+      return 4;
+   else
+      return -1;
+}
 #endif

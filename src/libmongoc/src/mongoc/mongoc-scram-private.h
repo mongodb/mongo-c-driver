@@ -148,9 +148,14 @@ _mongoc_is_code_in_table (unsigned int code,
 unsigned int
 _mongoc_utf8_to_unicode (const char *c, int length);
 
-/* converts a unicode code point to UTF8 character. */
-char *
-_mongoc_unicode_to_utf8 (unsigned int *c);
+/* returns how many bytes a unicode codepoint is. */
+int
+_mongoc_unicode_codepoint_length (unsigned int *c);
+
+/* converts a unicode code point to UTF8 character. Returns how many bytes the
+ * character converted is*/
+int
+_mongoc_unicode_to_utf8 (unsigned int *c, char *out);
 
 /* the tables below all fome from RFC 3454. They are all range tables, with
  * value 2*n being the lower range, and value 2*n + 1 being the upper range.
