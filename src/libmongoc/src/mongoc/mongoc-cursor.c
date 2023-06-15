@@ -1449,9 +1449,32 @@ void
 mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor, uint32_t batch_size)
 {
    BSON_ASSERT (cursor);
-
-   _mongoc_cursor_set_opt_int64 (
-      cursor, MONGOC_CURSOR_BATCH_SIZE, (int64_t) batch_size);
+   bson_iter_t iter;
+   if (!bson_iter_init_find (&iter, &cursor->opts, MONGOC_CURSOR_BATCH_SIZE)) {
+      bson_append_int64 (&cursor->opts,
+                         MONGOC_CURSOR_BATCH_SIZE,
+                         MONGOC_CURSOR_BATCH_SIZE_LEN,
+                         batch_size);
+   } else if (BSON_ITER_HOLDS_INT64 (&iter)) {
+      bson_iter_overwrite_int64 (&iter, (int64_t) batch_size);
+   } else if (BSON_ITER_HOLDS_INT32 (&iter)) {
+      if (!bson_in_range_int32_t_unsigned (batch_size)) {
+         MONGOC_WARNING ("unable to overwrite stored int32 batchSize with "
+                         "out-of-range value %" PRIu32,
+                         batch_size);
+         return;
+      }
+      bson_iter_overwrite_int32 (&iter, (int32_t) batch_size);
+   } else if (BSON_ITER_HOLDS_DOUBLE (&iter)) {
+      bson_iter_overwrite_double (&iter, (double) batch_size);
+   } else if (BSON_ITER_HOLDS_DECIMAL128 (&iter)) {
+      bson_decimal128_t val;
+      val.high = 0x3040000000000000;
+      val.low = (uint64_t) batch_size;
+      bson_iter_overwrite_decimal128 (&iter, &val);
+   } else {
+      MONGOC_WARNING ("unable to overwrite non-numeric stored batchSize");
+   }
 }
 
 

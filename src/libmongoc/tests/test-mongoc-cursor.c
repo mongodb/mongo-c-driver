@@ -2352,6 +2352,200 @@ test_find_error_is_alive (void)
    mongoc_client_destroy (client);
 }
 
+typedef struct _started_event_t {
+   char *command_name;
+   bson_t *command;
+} started_event_t;
+
+static void
+command_started (const mongoc_apm_command_started_t *event)
+{
+   mongoc_array_t *events =
+      (mongoc_array_t *) mongoc_apm_command_started_get_context (event);
+   started_event_t *started_event = bson_malloc0 (sizeof (started_event_t));
+
+   started_event->command =
+      bson_copy (mongoc_apm_command_started_get_command (event));
+   started_event->command_name =
+      bson_strdup (mongoc_apm_command_started_get_command_name (event));
+   _mongoc_array_append_val (events, started_event);
+}
+
+static void
+clear_started_events (mongoc_array_t *events)
+{
+   for (size_t i = 0; i < events->len; i++) {
+      started_event_t *started_event =
+         _mongoc_array_index (events, started_event_t *, i);
+      bson_destroy (started_event->command);
+      bson_free (started_event->command_name);
+      bson_free (started_event);
+   }
+   _mongoc_array_clear (events);
+}
+
+void
+numeric_iter_eq (bson_iter_t *iter, int64_t val)
+{
+   ASSERT_CMPINT64 (bson_iter_as_int64 (iter), ==, val);
+}
+
+void
+decimal128_iter_eq (bson_iter_t *iter, int64_t val)
+{
+   bson_decimal128_t d;
+   bson_iter_decimal128 (iter, &d);
+   ASSERT_CMPUINT64 (d.high, ==, 0x3040000000000000);
+   ASSERT_CMPINT64 (d.low, ==, val);
+}
+
+void
+test_cursor_batchsize_override (bson_t *findopts,
+                                void (*assert_eq) (bson_iter_t *, int64_t))
+{
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *cbs;
+   mongoc_collection_t *coll;
+   bson_error_t error;
+   mongoc_array_t started_events;
+
+   client = test_framework_new_default_client ();
+   cbs = mongoc_apm_callbacks_new ();
+   _mongoc_array_init (&started_events, sizeof (started_event_t *));
+   mongoc_apm_set_command_started_cb (cbs, command_started);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   /* Drop and insert two documents into the collection */
+   {
+      bson_t *to_insert = BCON_NEW ("x", "y");
+
+      // Ignore "ns not found" error on drop.
+      mongoc_collection_drop (coll, NULL);
+      ASSERT_OR_PRINT (
+         mongoc_collection_insert_one (
+            coll, to_insert, NULL /* opts */, NULL /* reply */, &error),
+         error);
+      ASSERT_OR_PRINT (
+         mongoc_collection_insert_one (
+            coll, to_insert, NULL /* opts */, NULL /* reply */, &error),
+         error);
+      bson_destroy (to_insert);
+   }
+
+   mongoc_client_set_apm_callbacks (client, cbs, &started_events);
+
+   /* Create a cursor and iterate once. */
+   {
+      const bson_t *got;
+      bson_t *filter = bson_new ();
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         coll, filter, findopts, NULL /* read_prefs */);
+      /* Attempt to overwrite the 'batchSize' with 2. */
+      mongoc_cursor_set_batch_size (cursor, 2);
+      /* Assert no command started events. The cursor does not send 'find' until
+       * the first call to mongoc_cursor_next. */
+      ASSERT_CMPSIZE_T (started_events.len, ==, 0);
+      /* Iterate once. */
+      ASSERT (mongoc_cursor_next (cursor, &got));
+
+      mongoc_cursor_destroy (cursor);
+      bson_destroy (findopts);
+      bson_destroy (filter);
+   }
+
+   /* Check events. */
+   {
+      started_event_t *started_event;
+      bson_iter_t iter;
+      /* Expect first event is find. */
+      started_event =
+         _mongoc_array_index (&started_events, started_event_t *, 0);
+      ASSERT_CMPSTR (started_event->command_name, "find");
+      /* Expect the batchSize sent to be 2. */
+      ASSERT (bson_iter_init_find (&iter, started_event->command, "batchSize"));
+      assert_eq (&iter, 2);
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_apm_callbacks_destroy (cbs);
+   mongoc_client_destroy (client);
+
+   clear_started_events (&started_events);
+   _mongoc_array_destroy (&started_events);
+}
+
+/* Test that mongoc_cursor_set_batch_size overrides a previously set int32
+ * batchSize. */
+void
+test_cursor_batchsize_override_int32 (void)
+{
+   bson_t *findopts = BCON_NEW ("batchSize", BCON_INT32 (1));
+   test_cursor_batchsize_override (findopts, numeric_iter_eq);
+}
+
+/* Test that mongoc_cursor_set_batch_size overrides a previously set int64
+ * batchSize. */
+void
+test_cursor_batchsize_override_int64 (void)
+{
+   bson_t *findopts = BCON_NEW ("batchSize", BCON_INT64 (1));
+   test_cursor_batchsize_override (findopts, numeric_iter_eq);
+}
+
+/* Test that mongoc_cursor_set_batch_size overrides a previously set double
+ * batchSize. */
+void
+test_cursor_batchsize_override_double (void)
+{
+   bson_t *findopts = BCON_NEW ("batchSize", BCON_DOUBLE (1.0));
+   test_cursor_batchsize_override (findopts, numeric_iter_eq);
+}
+
+/* Test that mongoc_cursor_set_batch_size overrides a previously set decimal128
+ * batchSize. */
+void
+test_cursor_batchsize_override_decimal128 (void)
+{
+   bson_decimal128_t start_val;
+   bson_decimal128_from_string ("1", &start_val);
+   bson_t *findopts = BCON_NEW ("batchSize", BCON_DECIMAL128 (&start_val));
+   test_cursor_batchsize_override (findopts, decimal128_iter_eq);
+}
+
+/* Test that attempting to overwrite an int32 batchSize with an out-of-range
+ * value raises a warning */
+void
+test_cursor_batchsize_override_range_warning (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_t *findopts = BCON_NEW ("batchSize", BCON_INT32 (1.0));
+
+   client = test_framework_new_default_client ();
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   /* Create a cursor and attempt to override outside int32 range. */
+   {
+      bson_t *filter = bson_new ();
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+         coll, filter, findopts, NULL /* read_prefs */);
+
+      capture_logs (true);
+      /* Attempt to overwrite the 'batchSize' with uint32_max. */
+      mongoc_cursor_set_batch_size (cursor, UINT32_MAX);
+      ASSERT_CAPTURED_LOG (
+         "mongoc_cursor_set_batch_size",
+         MONGOC_LOG_LEVEL_WARNING,
+         "unable to overwrite stored int32 batchSize with out-of-range value");
+
+      mongoc_cursor_destroy (cursor);
+      bson_destroy (findopts);
+      bson_destroy (filter);
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
 
 void
 test_cursor_install (TestSuite *suite)
@@ -2438,4 +2632,19 @@ test_cursor_install (TestSuite *suite)
       suite, "/Cursor/error_document/command", test_error_document_command);
    TestSuite_AddLive (
       suite, "/Cursor/find_error/is_alive", test_find_error_is_alive);
+   TestSuite_AddLive (suite,
+                      "/Cursor/batchsize_override_int32",
+                      test_cursor_batchsize_override_int32);
+   TestSuite_AddLive (suite,
+                      "/Cursor/batchsize_override_int64",
+                      test_cursor_batchsize_override_int64);
+   TestSuite_AddLive (suite,
+                      "/Cursor/batchsize_override_double",
+                      test_cursor_batchsize_override_double);
+   TestSuite_AddLive (suite,
+                      "/Cursor/batchsize_override_decimal128",
+                      test_cursor_batchsize_override_decimal128);
+   TestSuite_AddLive (suite,
+                      "/Cursor/batchsize_override_range_warning",
+                      test_cursor_batchsize_override_range_warning);
 }
