@@ -3522,7 +3522,7 @@ _mongoc_cluster_run_opmsg_send (mongoc_cluster_t *cluster,
       message_length +=
          mcd_rpc_header_set_request_id (rpc, ++cluster->request_id);
       message_length += mcd_rpc_header_set_response_to (rpc, 0);
-      message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OPCODE_MSG);
+      message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_MSG);
 
       mcd_rpc_op_msg_set_sections_count (rpc, cmd->payload ? 2u : 1u);
 
