@@ -1,4 +1,5 @@
 #include <bson/bcon.h>
+#include <bson/bson-dsl.h>
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cursor-private.h>
@@ -14,7 +15,6 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
-#include "bson-dsl.h"
 
 
 BEGIN_IGNORE_DEPRECATIONS
