@@ -1446,27 +1446,27 @@ mcd_rpc_message_ingress (const mcd_rpc_message *rpc)
       break;
 
    case MONGOC_OP_CODE_UPDATE:
-      BSON_UNREACHABLE ("unexpected MONGOC_OP_UPDATE ingress");
+      BSON_UNREACHABLE ("unexpected OP_UPDATE ingress");
       break;
 
    case MONGOC_OP_CODE_INSERT:
-      BSON_UNREACHABLE ("unexpected MONGOC_OP_INSERT ingress");
+      BSON_UNREACHABLE ("unexpected OP_INSERT ingress");
       break;
 
    case MONGOC_OP_CODE_QUERY:
-      BSON_UNREACHABLE ("unexpected MONGOC_OP_QUERY ingress");
+      BSON_UNREACHABLE ("unexpected OP_QUERY ingress");
       break;
 
    case MONGOC_OP_CODE_GET_MORE:
-      BSON_UNREACHABLE ("unexpected MONGOC_OP_GET_MORE ingress");
+      BSON_UNREACHABLE ("unexpected OP_GET_MORE ingress");
       break;
 
    case MONGOC_OP_CODE_DELETE:
-      BSON_UNREACHABLE ("unexpected MONGOC_OP_DELETE ingress");
+      BSON_UNREACHABLE ("unexpected OP_DELETE ingress");
       break;
 
    case MONGOC_OP_CODE_KILL_CURSORS:
-      BSON_UNREACHABLE ("unexpected MONGOC_OP_CODE_CURSORS ingress");
+      BSON_UNREACHABLE ("unexpected OP_KILL_CURSORS ingress");
       break;
 
    default:
