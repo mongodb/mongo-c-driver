@@ -1258,7 +1258,7 @@ function(_mongoc_configure_and_generate_file input output)
    # Delete "#~" comments:
    string(REGEX REPLACE "#~[^\n]*" "" content "${content}")
    # Replace our simple "%define <name> <value>" macros:
-   while(content MATCHES "(.*)\n *%define *([a-zA-Z_\\$<>:-]+) *([^\n]*)\n(.*)")
+   while(content MATCHES "(.*)\n *%define +([a-zA-Z_\\$<>:-]+) *([^\n]*)\n(.*)")
       set(before "${CMAKE_MATCH_1}")
       set(after "${CMAKE_MATCH_4}")
       set(def "${CMAKE_MATCH_2}")
