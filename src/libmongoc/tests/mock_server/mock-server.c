@@ -88,9 +88,9 @@ typedef struct {
    int n_docs;
    int64_t cursor_id;
    uint16_t client_port;
-   mongoc_opcode_t request_opcode;
-   mongoc_query_flags_t query_flags;
-   mongoc_op_msg_flags_t opmsg_flags;
+   int32_t request_opcode;
+   int32_t query_flags;
+   uint32_t opmsg_flags;
    int32_t response_to;
 } reply_t;
 
@@ -767,7 +767,7 @@ mock_server_get_port (mock_server_t *server)
  *--------------------------------------------------------------------------
  */
 
-int64_t
+static int64_t
 mock_server_get_request_timeout_msec (mock_server_t *server)
 {
    int64_t request_timeout_msec;
@@ -847,7 +847,7 @@ mock_server_set_rand_delay (mock_server_t *server, bool rand_delay)
  *--------------------------------------------------------------------------
  */
 
-double
+static double
 mock_server_get_uptime_sec (mock_server_t *server)
 {
    double uptime;
@@ -1071,10 +1071,10 @@ _mock_server_receives_single_msg (mock_server_t *server,
 }
 
 
-request_t *
+static request_t *
 mock_server_matches_legacy_hello (request_t *request, const char *match_json);
 
-request_t *
+static request_t *
 mock_server_matches_any_hello_with_json (request_t *request,
                                          const char *match_json_op_msg,
                                          const char *match_json_op_query)
@@ -1152,7 +1152,7 @@ mock_server_receives_any_hello (mock_server_t *server)
  *
  *--------------------------------------------------------------------------
  */
-request_t *
+static request_t *
 mock_server_matches_legacy_hello (request_t *request, const char *match_json)
 {
    char *formatted_command_json = NULL;
@@ -1357,191 +1357,6 @@ mock_server_receives_hello_op_msg (mock_server_t *server)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_insert --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not an insert matching ns, flags,
- *       and doc_json.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_insert (mock_server_t *server,
-                             const char *ns,
-                             mongoc_insert_flags_t flags,
-                             const char *doc_json)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_insert (request, ns, flags, doc_json)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_bulk_insert --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not an insert matching ns and flags,
- *       with "n" documents.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_bulk_insert (mock_server_t *server,
-                                  const char *ns,
-                                  mongoc_insert_flags_t flags,
-                                  int n)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_bulk_insert (request, ns, flags, n)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_update --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not an update matching ns, flags,
- *       selector_json, and update_json.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_update (mock_server_t *server,
-                             const char *ns,
-                             mongoc_update_flags_t flags,
-                             const char *selector_json,
-                             const char *update_json)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_update (
-                     request, ns, flags, selector_json, update_json)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_delete --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not a delete matching ns, flags,
- *       and selector_json.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_delete (mock_server_t *server,
-                             const char *ns,
-                             mongoc_remove_flags_t flags,
-                             const char *selector_json)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_delete (request, ns, flags, selector_json)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_getmore --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not a getmore matching n_return
- *       and cursor_id.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_getmore (mock_server_t *server,
-                              const char *ns,
-                              int32_t n_return,
-                              int64_t cursor_id)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_getmore (request, ns, n_return, cursor_id)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-
-/*--------------------------------------------------------------------------
- *
  * mock_server_receives_kill_cursors --
  *
  *       Pop a client request if one is enqueued, or wait up to
@@ -1727,7 +1542,7 @@ reply_to_op_msg_request (request_t *request,
    reply->cursor_id = 0;
    reply->client_port = request_get_client_port (request);
    reply->request_opcode = MONGOC_OPCODE_MSG;
-   reply->response_to = request->request_rpc.header.request_id;
+   reply->response_to = mcd_rpc_header_get_request_id (request->rpc);
 
    q_put (request->replies, reply);
 }
@@ -2047,7 +1862,6 @@ static BSON_THREAD_FUN (worker_thread, data)
    mock_server_t *server = closure->server;
    mongoc_stream_t *client_stream = closure->client_stream;
    mongoc_buffer_t buffer;
-   mongoc_rpc_t *rpc = NULL;
    bool handled;
    bson_error_t error;
    int32_t msg_len;
@@ -2090,9 +1904,6 @@ static BSON_THREAD_FUN (worker_thread, data)
 
 again:
    /* loop, checking for requests to receive or replies to send */
-   bson_free (rpc);
-   rpc = NULL;
-
    if (_mongoc_buffer_fill (&buffer, client_stream, 4, 10, &error) > 0) {
       BSON_ASSERT (buffer.len >= 4);
 
@@ -2132,7 +1943,7 @@ again:
       /* run responders most-recently-added-first */
       handled = false;
 
-      for (i = server->autoresponders.len - 1; i >= 0; i--) {
+      for (i = server->autoresponders.len - 1u; i >= 0; i--) {
          handle = _mongoc_array_index (
             &server->autoresponders, autoresponder_handle_t, i);
 
@@ -2173,7 +1984,6 @@ failure:
 
    mongoc_stream_close (client_stream);
    mongoc_stream_destroy (client_stream);
-   bson_free (rpc);
    bson_free (closure);
    _mongoc_buffer_destroy (&buffer);
 
@@ -2205,8 +2015,8 @@ reply_to_request_with_multiple_docs (request_t *request,
    reply->type = REPLY;
    reply->flags = flags;
    reply->n_docs = n_docs;
-   reply->docs =
-      bson_aligned_alloc0 (BSON_ALIGNOF (bson_t), n_docs * sizeof (bson_t));
+   reply->docs = bson_aligned_alloc0 (BSON_ALIGNOF (bson_t),
+                                      (size_t) n_docs * sizeof (bson_t));
 
    for (i = 0; i < n_docs; i++) {
       bson_copy_to (&docs[i], &reply->docs[i]);
@@ -2214,9 +2024,14 @@ reply_to_request_with_multiple_docs (request_t *request,
 
    reply->cursor_id = cursor_id;
    reply->client_port = request_get_client_port (request);
-   reply->request_opcode = (mongoc_opcode_t) request->request_rpc.header.opcode;
-   reply->query_flags = (mongoc_query_flags_t) request->request_rpc.query.flags;
-   reply->response_to = request->request_rpc.header.request_id;
+   reply->response_to = mcd_rpc_header_get_request_id (request->rpc);
+   reply->request_opcode = mcd_rpc_header_get_op_code (request->rpc);
+
+   if (reply->request_opcode == MONGOC_OP_CODE_MSG) {
+      reply->opmsg_flags = mcd_rpc_op_msg_get_flag_bits (request->rpc);
+   } else {
+      reply->query_flags = mcd_rpc_op_query_get_flags (request->rpc);
+   }
 
    q_put (request->replies, reply);
 }
@@ -2229,13 +2044,6 @@ _mock_server_reply_with_stream (mock_server_t *server,
 {
    char *doc_json;
    bson_string_t *docs_json;
-   mongoc_iovec_t *iov;
-   mongoc_array_t ar;
-   mongoc_rpc_t r = {{0}};
-   size_t expected = 0;
-   ssize_t n_written;
-   int iovcnt;
-   int i;
    uint8_t *buf;
    uint8_t *ptr;
    size_t len;
@@ -2262,7 +2070,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
    }
 
    docs_json = bson_string_new ("");
-   for (i = 0; i < n_docs; i++) {
+   for (int i = 0; i < n_docs; i++) {
       doc_json = bson_as_json (&docs[i], NULL);
       bson_string_append (docs_json, doc_json);
       bson_free (doc_json);
@@ -2282,18 +2090,19 @@ _mock_server_reply_with_stream (mock_server_t *server,
 
    len = 0;
 
-   for (i = 0; i < n_docs; i++) {
+   for (int i = 0; i < n_docs; i++) {
       len += docs[i].len;
    }
 
    ptr = buf = bson_malloc (len);
 
-   for (i = 0; i < n_docs; i++) {
+   for (int i = 0; i < n_docs; i++) {
       memcpy (ptr, bson_get_data (&docs[i]), docs[i].len);
       ptr += docs[i].len;
    }
 
-   _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
+   mcd_rpc_message *const rpc = mcd_rpc_message_new ();
+   int32_t message_len = 0;
 
    bson_mutex_lock (&server->mutex);
 
@@ -2302,44 +2111,43 @@ _mock_server_reply_with_stream (mock_server_t *server,
       server->last_response_id++;
    }
 
-   r.header.request_id = server->last_response_id;
+   message_len += mcd_rpc_header_set_request_id (rpc, server->last_response_id);
    bson_mutex_unlock (&server->mutex);
-   r.header.msg_len = 0;
-   r.header.response_to = reply->response_to;
+   message_len += mcd_rpc_header_set_message_length (rpc, 0);
+   message_len += mcd_rpc_header_set_response_to (rpc, reply->response_to);
 
    if (is_op_msg) {
-      r.header.opcode = MONGOC_OPCODE_MSG;
-      r.msg.n_sections = 1;
-      r.msg.flags = reply->opmsg_flags;
+      message_len += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_MSG);
+      mcd_rpc_op_msg_set_sections_count (rpc, 1);
+      message_len += mcd_rpc_op_msg_set_flag_bits (rpc, reply->opmsg_flags);
       /* we don't yet implement payload type 1, a document stream */
-      r.msg.sections[0].payload_type = 0;
-      r.msg.sections[0].payload.bson_document = buf;
+      message_len += mcd_rpc_op_msg_section_set_kind (rpc, 0, 0);
+      message_len += mcd_rpc_op_msg_section_set_body (rpc, 0, buf);
    } else {
-      r.header.opcode = MONGOC_OPCODE_REPLY;
-      r.reply.flags = flags;
-      r.reply.cursor_id = cursor_id;
-      r.reply.start_from = 0;
-      r.reply.n_returned = 1;
-      r.reply.documents = buf;
-      r.reply.documents_len = (uint32_t) len;
+      message_len += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_REPLY);
+      message_len += mcd_rpc_op_reply_set_response_flags (rpc, (int32_t) flags);
+      message_len += mcd_rpc_op_reply_set_cursor_id (rpc, cursor_id);
+      message_len += mcd_rpc_op_reply_set_starting_from (rpc, 0);
+      message_len += mcd_rpc_op_reply_set_number_returned (rpc, 1);
+      message_len += mcd_rpc_op_reply_set_documents (rpc, buf, len);
    }
+   mcd_rpc_message_set_length (rpc, message_len);
 
-   _mongoc_rpc_gather (&r, &ar);
-   _mongoc_rpc_swab_to_le (&r);
+   size_t iovcnt;
+   mongoc_iovec_t *const iov = mcd_rpc_message_to_iovecs (rpc, &iovcnt);
 
-   iov = (mongoc_iovec_t *) ar.data;
-   iovcnt = (int) ar.len;
-
-   for (i = 0; i < iovcnt; i++) {
+   size_t expected = 0;
+   for (size_t i = 0u; i < iovcnt; i++) {
       expected += iov[i].iov_len;
    }
 
-   n_written = mongoc_stream_writev (client, iov, (size_t) iovcnt, -1);
+   const ssize_t n_written = mongoc_stream_writev (client, iov, iovcnt, -1);
 
-   BSON_ASSERT (n_written == expected);
+   BSON_ASSERT (bson_cmp_equal_su (n_written, expected));
 
+   bson_free (iov);
+   mcd_rpc_message_destroy (rpc);
    bson_string_free (docs_json, true);
-   _mongoc_array_destroy (&ar);
    bson_free (buf);
 }
 

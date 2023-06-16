@@ -22,6 +22,8 @@
 #include "mongoc-array-private.h"
 #include "mongoc-iovec.h"
 
+#include "mcd-rpc.h"
+
 #include <bson/bson.h>
 
 #include <stdbool.h>
@@ -149,6 +151,9 @@ _mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t *rpc,
                                        size_t buflen);
 
 bool
+mcd_rpc_message_get_body (const mcd_rpc_message *rpc, bson_t *reply);
+
+bool
 _mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply);
 bool
 _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply, bson_t *bson);
@@ -159,6 +164,12 @@ _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
                       int32_t error_api_version,
                       bson_error_t *error /* OUT */,
                       bson_t *error_doc /* OUT */);
+
+bool
+mcd_rpc_message_check_ok (mcd_rpc_message *rpc,
+                          int32_t error_api_version,
+                          bson_error_t *error /* OUT */,
+                          bson_t *error_doc /* OUT */);
 bool
 _mongoc_cmd_check_ok (const bson_t *doc,
                       int32_t error_api_version,
@@ -168,6 +179,11 @@ bool
 _mongoc_cmd_check_ok_no_wce (const bson_t *doc,
                              int32_t error_api_version,
                              bson_error_t *error);
+
+void
+mcd_rpc_message_egress (const mcd_rpc_message *rpc);
+void
+mcd_rpc_message_ingress (const mcd_rpc_message *rpc);
 
 BSON_END_DECLS
 

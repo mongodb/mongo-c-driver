@@ -332,7 +332,7 @@ void
 assemble_query (const mongoc_read_prefs_t *read_prefs,
                 const mongoc_server_stream_t *server_stream,
                 const bson_t *query_bson,
-                mongoc_query_flags_t initial_flags,
+                int32_t initial_flags,
                 mongoc_assemble_query_result_t *result /* OUT */)
 {
    mongoc_server_description_type_t server_type;
@@ -360,7 +360,7 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
           * protocol flag on reads to ensure that any server type can handle the
           * request."
           */
-         result->flags |= MONGOC_QUERY_SECONDARY_OK;
+         result->flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
       }
 
       break;
@@ -374,7 +374,7 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
        * the read preference mode is primary.
        */
       if (read_prefs && read_prefs->mode != MONGOC_READ_PRIMARY) {
-         result->flags |= MONGOC_QUERY_SECONDARY_OK;
+         result->flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
       }
 
       break;

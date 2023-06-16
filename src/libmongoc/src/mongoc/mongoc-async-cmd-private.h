@@ -21,12 +21,12 @@
 
 #include <bson/bson.h>
 
+#include "mcd-rpc.h"
 #include "mongoc-client.h"
 #include "mongoc-async-private.h"
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-cmd-private.h"
-#include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
 
 BSON_BEGIN_DECLS
@@ -59,12 +59,11 @@ typedef struct _mongoc_async_cmd {
    int64_t timeout_msec;
    bson_t cmd;
    mongoc_buffer_t buffer;
-   mongoc_array_t array;
    mongoc_iovec_t *iovec;
    size_t niovec;
    size_t bytes_written;
    size_t bytes_to_read;
-   mongoc_rpc_t rpc;
+   mcd_rpc_message *rpc;
    bson_t reply;
    bool reply_needs_cleanup;
    char *ns;
@@ -85,7 +84,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
                       void *setup_ctx,
                       const char *dbname,
                       const bson_t *cmd,
-                      const mongoc_opcode_t cmd_opcode,
+                      const int32_t cmd_opcode,
                       mongoc_async_cmd_cb_t cb,
                       void *cb_data,
                       int64_t timeout_msec);

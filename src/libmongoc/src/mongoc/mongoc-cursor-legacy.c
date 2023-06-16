@@ -114,97 +114,127 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
 }
 
 
+static bool
+_mongoc_cursor_op_getmore_send (mongoc_cursor_t *cursor,
+                                mongoc_server_stream_t *server_stream,
+                                int32_t request_id,
+                                int32_t flags,
+                                mcd_rpc_message *rpc)
+{
+   BSON_ASSERT_PARAM (cursor);
+   BSON_ASSERT_PARAM (server_stream);
+   BSON_ASSERT_PARAM (rpc);
+
+   const int32_t n_return = (flags & MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR) != 0
+                               ? 0
+                               : _mongoc_n_return (cursor);
+
+   {
+      int32_t message_length = 0;
+
+      message_length += mcd_rpc_header_set_message_length (rpc, 0);
+      message_length += mcd_rpc_header_set_request_id (rpc, request_id);
+      message_length += mcd_rpc_header_set_response_to (rpc, 0);
+      message_length +=
+         mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_GET_MORE);
+
+      message_length += sizeof (int32_t); // ZERO
+      message_length +=
+         mcd_rpc_op_get_more_set_full_collection_name (rpc, cursor->ns);
+      message_length +=
+         mcd_rpc_op_get_more_set_number_to_return (rpc, n_return);
+      message_length +=
+         mcd_rpc_op_get_more_set_cursor_id (rpc, cursor->cursor_id);
+
+      mcd_rpc_message_set_length (rpc, message_length);
+   }
+
+   if (!_mongoc_cursor_monitor_legacy_get_more (cursor, server_stream)) {
+      return false;
+   }
+
+   if (!mongoc_cluster_legacy_rpc_sendv_to_server (
+          &cursor->client->cluster, rpc, server_stream, &cursor->error)) {
+      return false;
+   }
+
+   return true;
+}
+
 void
 _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
                            mongoc_cursor_response_legacy_t *response)
 {
-   int64_t started;
-   mongoc_rpc_t rpc;
-   uint32_t request_id;
-   mongoc_cluster_t *cluster;
-   mongoc_query_flags_t flags;
-   mongoc_server_stream_t *server_stream;
+   BSON_ASSERT_PARAM (cursor);
+   BSON_ASSERT_PARAM (response);
 
    ENTRY;
 
-   started = bson_get_monotonic_time ();
-   cluster = &cursor->client->cluster;
+   const int64_t started = bson_get_monotonic_time ();
 
-   server_stream = _mongoc_cursor_fetch_stream (cursor);
+   mongoc_server_stream_t *const server_stream =
+      _mongoc_cursor_fetch_stream (cursor);
+
    if (!server_stream) {
-      return;
+      GOTO (done);
    }
 
+   int32_t flags;
    if (!_mongoc_cursor_opts_to_flags (cursor, server_stream, &flags)) {
       GOTO (fail);
    }
+   mongoc_cluster_t *const cluster = &cursor->client->cluster;
 
-   if (cursor->in_exhaust) {
-      request_id = (uint32_t) response->rpc.header.request_id;
-   } else {
-      request_id = ++cluster->request_id;
+   const int32_t request_id = cursor->in_exhaust
+                                 ? mcd_rpc_header_get_request_id (response->rpc)
+                                 : ++cluster->request_id;
 
-      rpc.get_more.cursor_id = cursor->cursor_id;
-      rpc.header.msg_len = 0;
-      rpc.header.request_id = request_id;
-      rpc.header.response_to = 0;
-      rpc.header.opcode = MONGOC_OPCODE_GET_MORE;
-      rpc.get_more.zero = 0;
-      rpc.get_more.collection = cursor->ns;
-
-      if (flags & MONGOC_QUERY_TAILABLE_CURSOR) {
-         rpc.get_more.n_return = 0;
-      } else {
-         rpc.get_more.n_return = _mongoc_n_return (cursor);
-      }
-
-      if (!_mongoc_cursor_monitor_legacy_get_more (cursor, server_stream)) {
-         GOTO (fail);
-      }
-
-      if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-             cluster, &rpc, server_stream, &cursor->error)) {
-         GOTO (fail);
-      }
+   if (!cursor->in_exhaust &&
+       !_mongoc_cursor_op_getmore_send (
+          cursor, server_stream, request_id, flags, response->rpc)) {
+      GOTO (fail);
    }
 
+   mcd_rpc_message_reset (response->rpc);
    _mongoc_buffer_clear (&response->buffer, false);
-
-   /* reset the last known cursor id. */
    cursor->cursor_id = 0;
 
    if (!_mongoc_client_recv (cursor->client,
-                             &response->rpc,
+                             response->rpc,
                              &response->buffer,
                              server_stream,
                              &cursor->error)) {
       GOTO (fail);
    }
 
-   if (response->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+   const int32_t op_code = mcd_rpc_header_get_op_code (response->rpc);
+   if (op_code != MONGOC_OP_CODE_REPLY) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid opcode. Expected %d, got %d.",
-                      MONGOC_OPCODE_REPLY,
-                      response->rpc.header.opcode);
+                      "invalid opcode for OP_GET_MORE: expected %" PRId32
+                      ", got %" PRId32,
+                      MONGOC_OP_CODE_REPLY,
+                      op_code);
       GOTO (fail);
    }
 
-   if (response->rpc.header.response_to != request_id) {
+   const int32_t response_to = mcd_rpc_header_get_response_to (response->rpc);
+   if (response_to != request_id) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid response_to for getmore. Expected %d, got %d.",
+                      "invalid response_to for OP_GET_MORE: expected %" PRId32
+                      ", got %" PRId32,
                       request_id,
-                      response->rpc.header.response_to);
+                      response_to);
       GOTO (fail);
    }
 
-   if (!_mongoc_rpc_check_ok (&response->rpc,
-                              cursor->client->error_api_version,
-                              &cursor->error,
-                              &cursor->error_doc)) {
+   if (!mcd_rpc_message_check_ok (response->rpc,
+                                  cursor->client->error_api_version,
+                                  &cursor->error,
+                                  &cursor->error_doc)) {
       GOTO (fail);
    }
 
@@ -212,11 +242,11 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       bson_reader_destroy (response->reader);
    }
 
-   cursor->cursor_id = response->rpc.reply.cursor_id;
+   cursor->cursor_id = mcd_rpc_op_reply_get_cursor_id (response->rpc);
 
-   response->reader =
-      bson_reader_new_from_data (response->rpc.reply.documents,
-                                 (size_t) response->rpc.reply.documents_len);
+   response->reader = bson_reader_new_from_data (
+      mcd_rpc_op_reply_get_documents (response->rpc),
+      mcd_rpc_op_reply_get_documents_len (response->rpc));
 
    _mongoc_cursor_monitor_succeeded (cursor,
                                      response,
@@ -226,9 +256,11 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
                                      "getMore");
 
    GOTO (done);
+
 fail:
    _mongoc_cursor_monitor_failed (
       cursor, bson_get_monotonic_time () - started, server_stream, "getMore");
+
 done:
    mongoc_server_stream_cleanup (server_stream);
 }
@@ -313,7 +345,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
                                         bson_t *filter,
                                         bson_t *query /* OUT */,
                                         bson_t *fields /* OUT */,
-                                        mongoc_query_flags_t *flags /* OUT */,
+                                        int32_t *flags /* OUT */,
                                         int32_t *skip /* OUT */)
 {
    bool pushed_dollar_query;
@@ -324,7 +356,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
    const char *key;
    char *dollar_modifier;
 
-   *flags = MONGOC_QUERY_NONE;
+   *flags = MONGOC_OP_QUERY_FLAG_NONE;
    *skip = 0;
 
    /* assume we'll send filter straight to server, like "{a: 1}". if we find an
@@ -358,9 +390,9 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
       }
       /* the rest of the options, alphabetically */
       else if (!strcmp (key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
-         OPT_FLAG (MONGOC_QUERY_PARTIAL);
+         OPT_FLAG (MONGOC_OP_QUERY_FLAG_PARTIAL);
       } else if (!strcmp (key, MONGOC_CURSOR_AWAIT_DATA)) {
-         OPT_FLAG (MONGOC_QUERY_AWAIT_DATA);
+         OPT_FLAG (MONGOC_OP_QUERY_FLAG_AWAIT_DATA);
       } else if (!strcmp (key, MONGOC_CURSOR_COMMENT)) {
          OPT_CHECK (UTF8);
          PUSH_DOLLAR_QUERY ();
@@ -455,108 +487,144 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
 #undef OPT_SUBDOCUMENT
 
 
-bool
-_mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
-                              bson_t *filter,
-                              mongoc_cursor_response_legacy_t *response)
+static bool
+_mongoc_cursor_op_query_find_send (mongoc_cursor_t *cursor,
+                                   mongoc_server_stream_t *server_stream,
+                                   int32_t request_id,
+                                   bson_t *filter,
+                                   mcd_rpc_message *rpc)
 {
-   int64_t started;
-   uint32_t request_id;
-   mongoc_rpc_t rpc;
-   const bson_t *query_ptr;
-   bson_t query = BSON_INITIALIZER;
-   bson_t fields = BSON_INITIALIZER;
-   mongoc_query_flags_t flags;
-   mongoc_assemble_query_result_t result = ASSEMBLE_QUERY_RESULT_INIT;
-   bool succeeded = false;
-   mongoc_server_stream_t *server_stream;
-
-   ENTRY;
-
-   server_stream = _mongoc_cursor_fetch_stream (cursor);
-   if (!server_stream) {
-      return false;
-   }
-
-   started = bson_get_monotonic_time ();
+   bool ret = false;
 
    cursor->operation_id = ++cursor->client->cluster.operation_id;
 
-   request_id = ++cursor->client->cluster.request_id;
-
-   rpc.header.msg_len = 0;
-   rpc.header.request_id = request_id;
-   rpc.header.response_to = 0;
-   rpc.header.opcode = MONGOC_OPCODE_QUERY;
-   rpc.query.flags = MONGOC_QUERY_NONE;
-   rpc.query.collection = cursor->ns;
-   rpc.query.skip = 0;
-   rpc.query.n_return = 0;
-   rpc.query.fields = NULL;
-
-   query_ptr = _mongoc_cursor_parse_opts_for_op_query (
-      cursor, server_stream, filter, &query, &fields, &flags, &rpc.query.skip);
+   mongoc_assemble_query_result_t result = ASSEMBLE_QUERY_RESULT_INIT;
+   bson_t query = BSON_INITIALIZER;
+   bson_t fields = BSON_INITIALIZER;
+   int32_t skip;
+   int32_t flags;
+   const bson_t *const query_ptr = _mongoc_cursor_parse_opts_for_op_query (
+      cursor, server_stream, filter, &query, &fields, &flags, &skip);
 
    if (!query_ptr) {
-      /* invalid opts. cursor->error is set */
       GOTO (done);
    }
 
    assemble_query (
       cursor->read_prefs, server_stream, query_ptr, flags, &result);
 
-   rpc.query.query = bson_get_data (result.assembled_query);
-   rpc.query.flags = result.flags;
-   rpc.query.n_return = _mongoc_n_return (cursor);
-   if (!bson_empty (&fields)) {
-      rpc.query.fields = bson_get_data (&fields);
+   {
+      int32_t message_length = 0;
+
+      message_length += mcd_rpc_header_set_message_length (rpc, 0);
+      message_length += mcd_rpc_header_set_request_id (rpc, request_id);
+      message_length += mcd_rpc_header_set_response_to (rpc, 0);
+      message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_QUERY);
+
+      message_length += mcd_rpc_op_query_set_flags (rpc, result.flags);
+      message_length +=
+         mcd_rpc_op_query_set_full_collection_name (rpc, cursor->ns);
+      message_length += mcd_rpc_op_query_set_number_to_skip (rpc, skip);
+      message_length +=
+         mcd_rpc_op_query_set_number_to_return (rpc, _mongoc_n_return (cursor));
+      message_length += mcd_rpc_op_query_set_query (
+         rpc, bson_get_data (result.assembled_query));
+
+      if (!bson_empty (&fields)) {
+         message_length += mcd_rpc_op_query_set_return_fields_selector (
+            rpc, bson_get_data (&fields));
+      }
+
+      mcd_rpc_message_set_length (rpc, message_length);
    }
 
-   /* cursor from mongoc_collection_find[_with_opts] is about to send its
-    * initial OP_QUERY to pre-3.2 MongoDB */
    if (!_mongoc_cursor_monitor_legacy_query (cursor, filter, server_stream)) {
       GOTO (done);
    }
 
    if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-          &cursor->client->cluster, &rpc, server_stream, &cursor->error)) {
+          &cursor->client->cluster, rpc, server_stream, &cursor->error)) {
       GOTO (done);
    }
 
+   ret = true;
+
+done:
+   assemble_query_result_cleanup (&result);
+   bson_destroy (&fields);
+   bson_destroy (&query);
+
+   return ret;
+}
+
+bool
+_mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
+                              bson_t *filter,
+                              mongoc_cursor_response_legacy_t *response)
+{
+   BSON_ASSERT_PARAM (cursor);
+   BSON_ASSERT_PARAM (filter);
+   BSON_ASSERT_PARAM (response);
+
+   ENTRY;
+
+   bool ret = false;
+
+   mongoc_server_stream_t *const server_stream =
+      _mongoc_cursor_fetch_stream (cursor);
+
+   if (!server_stream) {
+      RETURN (false);
+   }
+
+   const int64_t started = bson_get_monotonic_time ();
+   const int32_t request_id = ++cursor->client->cluster.request_id;
+   mcd_rpc_message *const rpc = mcd_rpc_message_new ();
+
+   if (!_mongoc_cursor_op_query_find_send (
+          cursor, server_stream, request_id, filter, rpc)) {
+      GOTO (done);
+   }
+
+   mcd_rpc_message_reset (rpc);
    _mongoc_buffer_clear (&response->buffer, false);
 
    if (!_mongoc_client_recv (cursor->client,
-                             &response->rpc,
+                             response->rpc,
                              &response->buffer,
                              server_stream,
                              &cursor->error)) {
       GOTO (done);
    }
 
-   if (response->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+   const int32_t op_code = mcd_rpc_header_get_op_code (response->rpc);
+   if (op_code != MONGOC_OP_CODE_REPLY) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid opcode. Expected %d, got %d.",
-                      MONGOC_OPCODE_REPLY,
-                      response->rpc.header.opcode);
+                      "invalid opcode for OP_QUERY: expected %" PRId32
+                      ", got %" PRId32,
+                      MONGOC_OP_CODE_REPLY,
+                      op_code);
       GOTO (done);
    }
 
-   if (response->rpc.header.response_to != request_id) {
+   const int32_t response_to = mcd_rpc_header_get_response_to (response->rpc);
+   if (response_to != request_id) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid response_to for query. Expected %d, got %d.",
+                      "invalid response_to for OP_QUERY: expected %" PRId32
+                      ", got %" PRId32,
                       request_id,
-                      response->rpc.header.response_to);
+                      response_to);
       GOTO (done);
    }
 
-   if (!_mongoc_rpc_check_ok (&response->rpc,
-                              cursor->client->error_api_version,
-                              &cursor->error,
-                              &cursor->error_doc)) {
+   if (!mcd_rpc_message_check_ok (response->rpc,
+                                  cursor->client->error_api_version,
+                                  &cursor->error,
+                                  &cursor->error_doc)) {
       GOTO (done);
    }
 
@@ -564,11 +632,11 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
       bson_reader_destroy (response->reader);
    }
 
-   cursor->cursor_id = response->rpc.reply.cursor_id;
+   cursor->cursor_id = mcd_rpc_op_reply_get_cursor_id (response->rpc);
 
-   response->reader =
-      bson_reader_new_from_data (response->rpc.reply.documents,
-                                 (size_t) response->rpc.reply.documents_len);
+   response->reader = bson_reader_new_from_data (
+      mcd_rpc_op_reply_get_documents (response->rpc),
+      mcd_rpc_op_reply_get_documents_len (response->rpc));
 
    if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
       cursor->in_exhaust = true;
@@ -581,25 +649,26 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
                                      true, /* first_batch */
                                      server_stream,
                                      "find");
-   succeeded = true;
+
+   ret = true;
 
 done:
-   if (!succeeded) {
+   if (!ret) {
       _mongoc_cursor_monitor_failed (
          cursor, bson_get_monotonic_time () - started, server_stream, "find");
    }
 
+   mcd_rpc_message_destroy (rpc);
    mongoc_server_stream_cleanup (server_stream);
-   assemble_query_result_cleanup (&result);
-   bson_destroy (&query);
-   bson_destroy (&fields);
-   return succeeded;
+
+   return ret;
 }
 
 
 void
 _mongoc_cursor_response_legacy_init (mongoc_cursor_response_legacy_t *response)
 {
+   response->rpc = mcd_rpc_message_new ();
    _mongoc_buffer_init (&response->buffer, NULL, 0, NULL, NULL);
 }
 
@@ -613,4 +682,5 @@ _mongoc_cursor_response_legacy_destroy (
       response->reader = NULL;
    }
    _mongoc_buffer_destroy (&response->buffer);
+   mcd_rpc_message_destroy (response->rpc);
 }
