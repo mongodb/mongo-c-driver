@@ -4088,13 +4088,14 @@ mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
           mcd_rpc_op_compressed_get_compressed_message_length (rpc),
           ptr + message_header_length,
           &actual_uncompressed_size)) {
+      bson_free (ptr);
       return false;
    }
 
    BSON_ASSERT (uncompressed_size == actual_uncompressed_size);
 
    *data_len = original_message_length;
-   *data = ptr;
+   *data = ptr; // Ownership transfer.
 
    mcd_rpc_message_reset (rpc);
 
