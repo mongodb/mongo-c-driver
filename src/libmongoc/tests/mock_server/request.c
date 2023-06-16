@@ -29,15 +29,6 @@ static void
 request_from_query (request_t *request);
 
 static void
-request_from_insert (request_t *request);
-
-static void
-request_from_update (request_t *request);
-
-static void
-request_from_delete (request_t *request);
-
-static void
 request_from_killcursors (request_t *request);
 
 static void
@@ -48,12 +39,6 @@ request_from_op_msg (request_t *request);
 
 static char *
 query_flags_str (int32_t flags);
-static char *
-insert_flags_str (int32_t flags);
-static char *
-update_flags_str (int32_t flags);
-static char *
-delete_flags_str (int32_t flags);
 
 request_t *
 request_new (const mongoc_buffer_t *buffer,
@@ -95,39 +80,34 @@ request_new (const mongoc_buffer_t *buffer,
    _mongoc_array_init (&request->docs, sizeof (bson_t *));
 
    switch (request->opcode) {
-   case MONGOC_OPCODE_COMPRESSED:
+   case MONGOC_OP_CODE_COMPRESSED:
+      // Nothing to do.
       break;
-   case MONGOC_OPCODE_QUERY:
+
+   case MONGOC_OP_CODE_QUERY:
       request_from_query (request);
       break;
 
-   case MONGOC_OPCODE_INSERT:
-      request_from_insert (request);
-      break;
-
-   case MONGOC_OPCODE_UPDATE:
-      request_from_update (request);
-      break;
-
-   case MONGOC_OPCODE_KILL_CURSORS:
+   case MONGOC_OP_CODE_KILL_CURSORS:
+      // Still being used for legacy OP_KILL_CURSORS tests.
       request_from_killcursors (request);
       break;
 
-   case MONGOC_OPCODE_GET_MORE:
+   case MONGOC_OP_CODE_GET_MORE:
+      // Still being used for exhaust cursor tests.
       request_from_getmore (request);
       break;
 
-   case MONGOC_OPCODE_DELETE:
-      request_from_delete (request);
-      break;
-
-   case MONGOC_OPCODE_MSG:
+   case MONGOC_OP_CODE_MSG:
       request_from_op_msg (request);
       break;
 
-   case MONGOC_OPCODE_REPLY:
+   case MONGOC_OP_CODE_DELETE:
+   case MONGOC_OP_CODE_INSERT:
+   case MONGOC_OP_CODE_REPLY:
+   case MONGOC_OP_CODE_UPDATE:
    default:
-      test_error ("Unimplemented opcode %d", request->opcode);
+      test_error ("Mock server does not support opcode %d", request->opcode);
    }
 
    return request;
@@ -259,221 +239,6 @@ request_matches_query (const request_t *request,
 done:
    bson_free (doc_as_json);
    return ret;
-}
-
-
-/* TODO: take file, line, function params from caller, wrap in macro */
-bool
-request_matches_insert (const request_t *request,
-                        const char *ns,
-                        mongoc_insert_flags_t flags,
-                        const char *doc_json)
-{
-   BSON_ASSERT (request);
-
-   if (request->opcode != MONGOC_OPCODE_INSERT) {
-      test_error ("request's opcode does not match INSERT, got: %d",
-                  request->opcode);
-      return false;
-   }
-
-   const char *const request_ns =
-      mcd_rpc_op_insert_get_full_collection_name (request->rpc);
-   if (strcmp (request_ns, ns)) {
-      test_error ("insert's namespace is '%s', expected '%s'", request_ns, ns);
-      return false;
-   }
-
-   const int32_t request_flags = mcd_rpc_op_insert_get_flags (request->rpc);
-   if (bson_cmp_not_equal_su (request_flags, flags)) {
-      test_error ("request's insert flags are %s, expected %s",
-                  insert_flags_str (request_flags),
-                  insert_flags_str ((int32_t) flags));
-      return false;
-   }
-
-   ASSERT_CMPSIZE_T (
-      mcd_rpc_op_insert_get_documents_len (request->rpc), ==, 1u);
-   const bson_t *const doc = request_get_doc (request, 0);
-   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, doc_json)) {
-      return false;
-   }
-
-   return true;
-}
-
-
-/* TODO: take file, line, function params from caller, wrap in macro */
-bool
-request_matches_bulk_insert (const request_t *request,
-                             const char *ns,
-                             mongoc_insert_flags_t flags,
-                             int n)
-{
-   BSON_ASSERT (request);
-
-   if (request->opcode != MONGOC_OPCODE_INSERT) {
-      test_error ("request's opcode does not match INSERT, got: %d",
-                  request->opcode);
-      return false;
-   }
-
-   const char *const request_ns =
-      mcd_rpc_op_insert_get_full_collection_name (request->rpc);
-   if (strcmp (request_ns, ns)) {
-      test_error ("insert's namespace is '%s', expected '%s'", request_ns, ns);
-      return false;
-   }
-
-   const int32_t request_flags = mcd_rpc_op_insert_get_flags (request->rpc);
-   if (bson_cmp_not_equal_su (request_flags, flags)) {
-      test_error ("request's insert flags are %s, expected %s",
-                  insert_flags_str (request_flags),
-                  insert_flags_str ((int32_t) flags));
-      return false;
-   }
-
-   if (bson_cmp_not_equal_us (request->docs.len, n)) {
-      test_error ("expected %d docs inserted, got %zu", n, request->docs.len);
-      return false;
-   }
-
-   return true;
-}
-
-
-/* TODO: take file, line, function params from caller, wrap in macro */
-bool
-request_matches_update (const request_t *request,
-                        const char *ns,
-                        mongoc_update_flags_t flags,
-                        const char *selector_json,
-                        const char *update_json)
-{
-   BSON_ASSERT (request);
-
-   if (request->opcode != MONGOC_OPCODE_UPDATE) {
-      test_error ("request's opcode does not match UPDATE, got: %d",
-                  request->opcode);
-      return false;
-   }
-
-   const char *const request_ns =
-      mcd_rpc_op_update_get_full_collection_name (request->rpc);
-   if (strcmp (request_ns, ns)) {
-      test_error ("update's namespace is '%s', expected '%s'", request_ns, ns);
-      return false;
-   }
-
-   const int32_t request_flags = mcd_rpc_op_update_get_flags (request->rpc);
-   if (bson_cmp_not_equal_su (request_flags, flags)) {
-      test_error ("request's update flags are %s, expected %s",
-                  update_flags_str (request_flags),
-                  update_flags_str ((int32_t) flags));
-      return false;
-   }
-
-   ASSERT_CMPINT ((int) request->docs.len, ==, 2);
-   {
-      const bson_t *const doc = request_get_doc (request, 0);
-      if (!match_json (
-             doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
-         return false;
-      }
-   }
-   {
-      const bson_t *const doc = request_get_doc (request, 1);
-      if (!match_json (
-             doc, false, __FILE__, __LINE__, BSON_FUNC, update_json)) {
-         return false;
-      }
-   }
-
-   return true;
-}
-
-
-/* TODO: take file, line, function params from caller, wrap in macro */
-bool
-request_matches_delete (const request_t *request,
-                        const char *ns,
-                        mongoc_remove_flags_t flags,
-                        const char *selector_json)
-{
-   BSON_ASSERT (request);
-
-   if (request->opcode != MONGOC_OPCODE_DELETE) {
-      test_error ("request's opcode does not match DELETE, got: %d",
-                  request->opcode);
-      return false;
-   }
-
-   const char *const request_ns =
-      mcd_rpc_op_delete_get_full_collection_name (request->rpc);
-   if (strcmp (request_ns, ns)) {
-      test_error ("delete's namespace is '%s', expected '%s'", request_ns, ns);
-      return false;
-   }
-
-   const int32_t request_flags = mcd_rpc_op_delete_get_flags (request->rpc);
-   if (bson_cmp_not_equal_su (request_flags, flags)) {
-      test_error ("request's delete flags are %s, expected %s",
-                  delete_flags_str (request_flags),
-                  delete_flags_str ((int32_t) flags));
-      return false;
-   }
-
-   ASSERT_CMPINT ((int) request->docs.len, ==, 1);
-   const bson_t *const doc = request_get_doc (request, 0);
-   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
-      return false;
-   }
-
-   return true;
-}
-
-
-/* TODO: take file, line, function params from caller, wrap in macro */
-bool
-request_matches_getmore (const request_t *request,
-                         const char *ns,
-                         int32_t n_return,
-                         int64_t cursor_id)
-{
-   BSON_ASSERT (request);
-
-   if (request->opcode != MONGOC_OPCODE_GET_MORE) {
-      test_error ("request's opcode does not match GET_MORE, got: %d",
-                  request->opcode);
-      return false;
-   }
-
-   const char *const request_ns =
-      mcd_rpc_op_get_more_get_full_collection_name (request->rpc);
-   if (strcmp (request_ns, ns)) {
-      test_error ("request's namespace is '%s', expected '%s'", request_ns, ns);
-      return false;
-   }
-
-   const int32_t request_n_return =
-      mcd_rpc_op_get_more_get_number_to_return (request->rpc);
-   if (request_n_return != n_return) {
-      test_error ("requests's n_return = %" PRId32 ", expected %" PRId32,
-                  request_n_return,
-                  n_return);
-      return false;
-   }
-
-   const int64_t request_cursor_id =
-      mcd_rpc_op_get_more_get_cursor_id (request->rpc);
-   if (request_cursor_id != cursor_id) {
-      test_error ("requests's cursor_id = %" PRId64 ", expected %" PRId64,
-                  request_cursor_id,
-                  cursor_id);
-      return false;
-   }
-
-   return true;
 }
 
 
@@ -865,179 +630,6 @@ request_from_query (request_t *request)
    }
 
    request->as_str = bson_string_free (query_as_str, false);
-}
-
-
-static char *
-insert_flags_str (int32_t flags)
-{
-   if (flags == MONGOC_OP_QUERY_FLAG_NONE) {
-      return bson_strdup ("0");
-   } else {
-      return bson_strdup ("CONTINUE_ON_ERROR");
-   }
-}
-
-
-static void
-request_from_insert (request_t *request)
-{
-   const uint8_t *pos = mcd_rpc_op_insert_get_documents (request->rpc);
-   uint8_t *end = request->data + request->data_len;
-   bson_string_t *insert_as_str = bson_string_new ("OP_INSERT");
-   size_t n_documents;
-   char *str;
-
-   while (pos < end) {
-      const int32_t len = length_prefix (pos);
-      bson_t *const doc = bson_new_from_data (pos, (size_t) len);
-      BSON_ASSERT (doc);
-      _mongoc_array_append_val (&request->docs, doc);
-      pos += len;
-   }
-
-   n_documents = request->docs.len;
-
-   bson_string_append_printf (insert_as_str, " %d ", (int) n_documents);
-
-   for (size_t i = 0u; i < n_documents; i++) {
-      str = bson_as_json (request_get_doc (request, i), NULL);
-      BSON_ASSERT (str);
-      bson_string_append (insert_as_str, str);
-      bson_free (str);
-
-      if (i < n_documents - 1u) {
-         bson_string_append (insert_as_str, ", ");
-      }
-   }
-
-   bson_string_append (insert_as_str, " flags=");
-
-   str = insert_flags_str (mcd_rpc_op_insert_get_flags (request->rpc));
-   bson_string_append (insert_as_str, str);
-   bson_free (str);
-
-   request->as_str = bson_string_free (insert_as_str, false);
-}
-
-
-static char *
-update_flags_str (int32_t flags)
-{
-   int flag = 1;
-   bson_string_t *str = bson_string_new ("");
-   bool begun = false;
-
-   if (flags == MONGOC_OP_UPDATE_FLAG_NONE) {
-      bson_string_append (str, "0");
-   } else {
-      while (flag <= MONGOC_OP_UPDATE_FLAG_MULTI_UPDATE) {
-         flag <<= 1;
-
-         if (flags & flag) {
-            if (begun) {
-               bson_string_append (str, "|");
-            }
-
-            begun = true;
-
-            switch (flag) {
-            case MONGOC_OP_UPDATE_FLAG_UPSERT:
-               bson_string_append (str, "UPSERT");
-               break;
-            case MONGOC_OP_UPDATE_FLAG_MULTI_UPDATE:
-               bson_string_append (str, "MULTI");
-               break;
-            case MONGOC_OP_UPDATE_FLAG_NONE:
-            default:
-               BSON_ASSERT (false);
-            }
-         }
-      }
-   }
-
-   return bson_string_free (str, false); /* detach buffer */
-}
-
-
-static void
-request_from_update (request_t *request)
-{
-   bson_string_t *update_as_str = bson_string_new ("OP_UPDATE ");
-   char *str;
-
-   const void *const update = mcd_rpc_op_update_get_update (request->rpc);
-   const void *const selector = mcd_rpc_op_update_get_selector (request->rpc);
-   const int32_t flags = mcd_rpc_op_update_get_flags (request->rpc);
-
-   {
-      const int32_t len = length_prefix (selector);
-      bson_t *const doc = bson_new_from_data (selector, (size_t) len);
-      BSON_ASSERT (doc);
-      _mongoc_array_append_val (&request->docs, doc);
-
-      str = bson_as_json (doc, NULL);
-      bson_string_append (update_as_str, str);
-      bson_free (str);
-   }
-
-   bson_string_append (update_as_str, ", ");
-
-   {
-      const int32_t len = length_prefix (update);
-      bson_t *const doc = bson_new_from_data (update, (size_t) len);
-      BSON_ASSERT (doc);
-      _mongoc_array_append_val (&request->docs, doc);
-
-      str = bson_as_json (doc, NULL);
-      bson_string_append (update_as_str, str);
-      bson_free (str);
-   }
-
-   bson_string_append (update_as_str, " flags=");
-
-   str = update_flags_str (flags);
-   bson_string_append (update_as_str, str);
-   bson_free (str);
-
-   request->as_str = bson_string_free (update_as_str, false);
-}
-
-
-static char *
-delete_flags_str (int32_t flags)
-{
-   if (flags == MONGOC_OP_DELETE_FLAG_NONE) {
-      return bson_strdup ("0");
-   } else {
-      return bson_strdup ("SINGLE_REMOVE");
-   }
-}
-
-
-static void
-request_from_delete (request_t *request)
-{
-   bson_string_t *delete_as_str = bson_string_new ("OP_DELETE ");
-   char *str;
-
-   const void *const selector = mcd_rpc_op_delete_get_selector (request->rpc);
-   const int32_t len = length_prefix (selector);
-   bson_t *const doc = bson_new_from_data (selector, (size_t) len);
-   BSON_ASSERT (doc);
-   _mongoc_array_append_val (&request->docs, doc);
-
-   str = bson_as_json (doc, NULL);
-   bson_string_append (delete_as_str, str);
-   bson_free (str);
-
-   bson_string_append (delete_as_str, " flags=");
-
-   str = delete_flags_str (mcd_rpc_op_delete_get_flags (request->rpc));
-   bson_string_append (delete_as_str, str);
-   bson_free (str);
-
-   request->as_str = bson_string_free (delete_as_str, false);
 }
 
 

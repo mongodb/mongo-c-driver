@@ -767,7 +767,7 @@ mock_server_get_port (mock_server_t *server)
  *--------------------------------------------------------------------------
  */
 
-int64_t
+static int64_t
 mock_server_get_request_timeout_msec (mock_server_t *server)
 {
    int64_t request_timeout_msec;
@@ -847,7 +847,7 @@ mock_server_set_rand_delay (mock_server_t *server, bool rand_delay)
  *--------------------------------------------------------------------------
  */
 
-double
+static double
 mock_server_get_uptime_sec (mock_server_t *server)
 {
    double uptime;
@@ -1071,10 +1071,10 @@ _mock_server_receives_single_msg (mock_server_t *server,
 }
 
 
-request_t *
+static request_t *
 mock_server_matches_legacy_hello (request_t *request, const char *match_json);
 
-request_t *
+static request_t *
 mock_server_matches_any_hello_with_json (request_t *request,
                                          const char *match_json_op_msg,
                                          const char *match_json_op_query)
@@ -1152,7 +1152,7 @@ mock_server_receives_any_hello (mock_server_t *server)
  *
  *--------------------------------------------------------------------------
  */
-request_t *
+static request_t *
 mock_server_matches_legacy_hello (request_t *request, const char *match_json)
 {
    char *formatted_command_json = NULL;
@@ -1352,191 +1352,6 @@ mock_server_receives_hello_op_msg (mock_server_t *server)
       server,
       0,
       tmp_bson ("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}"));
-}
-
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_insert --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not an insert matching ns, flags,
- *       and doc_json.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_insert (mock_server_t *server,
-                             const char *ns,
-                             mongoc_insert_flags_t flags,
-                             const char *doc_json)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_insert (request, ns, flags, doc_json)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_bulk_insert --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not an insert matching ns and flags,
- *       with "n" documents.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_bulk_insert (mock_server_t *server,
-                                  const char *ns,
-                                  mongoc_insert_flags_t flags,
-                                  int n)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_bulk_insert (request, ns, flags, n)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_update --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not an update matching ns, flags,
- *       selector_json, and update_json.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_update (mock_server_t *server,
-                             const char *ns,
-                             mongoc_update_flags_t flags,
-                             const char *selector_json,
-                             const char *update_json)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_update (
-                     request, ns, flags, selector_json, update_json)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_delete --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not a delete matching ns, flags,
- *       and selector_json.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_delete (mock_server_t *server,
-                             const char *ns,
-                             mongoc_remove_flags_t flags,
-                             const char *selector_json)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_delete (request, ns, flags, selector_json)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
-}
-
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_getmore --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not a getmore matching n_return
- *       and cursor_id.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_getmore (mock_server_t *server,
-                              const char *ns,
-                              int32_t n_return,
-                              int64_t cursor_id)
-{
-   request_t *request;
-
-   request = mock_server_receives_request (server);
-
-   if (request && !request_matches_getmore (request, ns, n_return, cursor_id)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
 }
 
 

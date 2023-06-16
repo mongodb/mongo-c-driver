@@ -31,13 +31,7 @@ mock_rs_with_auto_hello (int32_t max_wire_version,
 
 
 void
-mock_rs_tag_primary (mock_rs_t *rs, const bson_t *tags);
-
-void
 mock_rs_tag_secondary (mock_rs_t *rs, int server_number, const bson_t *tags);
-
-int64_t
-mock_rs_get_request_timeout_msec (mock_rs_t *rs);
 
 void
 mock_rs_set_request_timeout_msec (mock_rs_t *rs, int64_t request_timeout_msec);
@@ -50,34 +44,6 @@ mock_rs_get_uri (mock_rs_t *rs);
 
 request_t *
 mock_rs_receives_request (mock_rs_t *rs);
-
-request_t *
-mock_rs_receives_query (mock_rs_t *rs,
-                        const char *ns,
-                        mongoc_query_flags_t flags,
-                        uint32_t skip,
-                        int32_t n_return,
-                        const char *query_json,
-                        const char *fields_json);
-
-request_t *
-mock_rs_receives_command (mock_rs_t *rs,
-                          const char *database_name,
-                          mongoc_query_flags_t flags,
-                          const char *command_json,
-                          ...);
-
-request_t *
-mock_rs_receives_insert (mock_rs_t *rs,
-                         const char *ns,
-                         mongoc_insert_flags_t flags,
-                         const char *doc_json);
-
-request_t *
-mock_rs_receives_getmore (mock_rs_t *rs,
-                          const char *ns,
-                          int32_t n_return,
-                          int64_t cursor_id);
 
 request_t *
 mock_rs_receives_kill_cursors (mock_rs_t *rs, int64_t cursor_id);

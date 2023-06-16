@@ -69,37 +69,6 @@ request_matches_query (const request_t *request,
                        bool is_command);
 
 bool
-request_matches_insert (const request_t *request,
-                        const char *ns,
-                        mongoc_insert_flags_t flags,
-                        const char *doc_json);
-
-bool
-request_matches_bulk_insert (const request_t *request,
-                             const char *ns,
-                             mongoc_insert_flags_t flags,
-                             int n);
-
-bool
-request_matches_update (const request_t *request,
-                        const char *ns,
-                        mongoc_update_flags_t flags,
-                        const char *selector_json,
-                        const char *update_json);
-
-bool
-request_matches_delete (const request_t *request,
-                        const char *ns,
-                        mongoc_remove_flags_t flags,
-                        const char *selector_json);
-
-bool
-request_matches_getmore (const request_t *request,
-                         const char *ns,
-                         int32_t n_return,
-                         int64_t cursor_id);
-
-bool
 request_matches_kill_cursors (const request_t *request, int64_t cursor_id);
 
 bool
