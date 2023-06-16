@@ -3396,7 +3396,9 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "message length %" PRId32
-                      " is not within valid range of 16-%" PRId32 " bytes",
+                      " is not within valid range of %" PRId32 "-%" PRId32
+                      " bytes",
+                      message_header_length,
                       message_length,
                       server_stream->sd->max_msg_size);
       _handle_network_error (cluster, server_stream, error);
@@ -3639,7 +3641,9 @@ _mongoc_cluster_run_opmsg_recv (mongoc_cluster_t *cluster,
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
                    MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                    "message length %" PRId32
-                   " is not within valid range of 16-%" PRId32 " bytes",
+                   " is not within valid range of %" PRId32 "-%" PRId32
+                   " bytes",
+                   message_header_length,
                    message_length,
                    server_stream->sd->max_msg_size);
       _handle_network_error (cluster, server_stream, error);
