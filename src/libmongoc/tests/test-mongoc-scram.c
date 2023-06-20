@@ -102,14 +102,27 @@ test_mongoc_scram_sasl_prep (void)
    char *normalized;
    bson_error_t err;
    /* examples from RFC 4013 section 3. */
-   sasl_prep_testcase_t tests[] = {{"\x65\xCC\x81", "\xC3\xA9", true, true},
-                                   {"I\xC2\xADX", "IX", true, true},
-                                   {"user", "user", false, true},
-                                   {"USER", "USER", false, true},
-                                   {"\xC2\xAA", "a", true, true},
-                                   {"\xE2\x85\xA8", "IX", true, true},
-                                   {"\x07", "(invalid)", true, false},
-                                   {"\xD8\xA7\x31", "(invalid)", true, false}};
+   sasl_prep_testcase_t tests[] = {
+      // normalization
+      {"\x65\xCC\x81", "\xC3\xA9", true, true},
+      {"\xC2\xAA", "a", true, true},
+      {"\xE2\x85\xA8", "IX", true, true},
+      // mapped to nothing character (Table B.1)
+      {"I\xC2\xADX", "IX", true, true},
+      // mapped to nothing character (Table C.1.2)
+      {"I\xE2\x80\x80\xC2\xA0X", "I  X", true, true},
+      // prohibited character
+      {"banana \x07 apple", "(invalid)", true, false},
+      // unassigned codepoint (Table A.1)
+      {"banana \xe0\xAA\xBA apple", "(invalid)", true, false},
+      // bidi: RandALCat but not RandALCat at beginning and end
+      {"\xD8\xA7\x31", "(invalid)", true, false},
+      // bidi: RandALCat and LCat characters
+      {"\xFB\x1D apple \x09\xA8", "(invalid)", true, false},
+      // bidi: RandALCat with RandALCat at beginning and end
+      {"\xD8\xA1 \xDC\x92", "\xD8\xA1 \xDC\x92", true, true},
+      {"user", "user", false, true},
+      {"USER", "USER", false, true}};
    ntests = sizeof (tests) / sizeof (sasl_prep_testcase_t);
    for (i = 0; i < ntests; i++) {
       ASSERT_CMPINT (tests[i].should_be_required,

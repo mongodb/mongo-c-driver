@@ -1038,7 +1038,7 @@ _mongoc_sasl_prep_impl (const char *name,
    unsigned int *unicode_utf8;
    int char_length, i, curr, in_utf8_actual_len, out_utf8_len;
    const char *c;
-   char *out_utf8;
+   char *out_utf8, *out_loc;
    bool contains_LCat, contains_RandALCar;
 
 #define SASL_PREP_ERR_RETURN(msg)                        \
@@ -1083,15 +1083,16 @@ _mongoc_sasl_prep_impl (const char *name,
    // the new characters (curr). i will always be >= curr.
    curr = 0;
    for (i = 0; i < in_utf8_actual_len; ++i) {
-      if (_mongoc_is_code_in_table (
-             unicode_utf8[i],
-             non_ascii_space_character_ranges,
-             lengthof (non_ascii_space_character_ranges)))
-         unicode_utf8[curr++] = 0x200;
+      if (_mongoc_is_code_in_table (unicode_utf8[i],
+                                    non_ascii_space_character_ranges,
+                                    sizeof (non_ascii_space_character_ranges) /
+                                       sizeof (unsigned int)))
+         unicode_utf8[curr++] = 0x0020;
       else if (_mongoc_is_code_in_table (
                   unicode_utf8[i],
                   commonly_mapped_to_nothing_ranges,
-                  lengthof (commonly_mapped_to_nothing_ranges))) {
+                  sizeof (commonly_mapped_to_nothing_ranges) /
+                     sizeof (unsigned int))) {
          // effectively skip over the character because we don't increment curr.
       } else
          unicode_utf8[curr++] = unicode_utf8[i];
@@ -1115,11 +1116,14 @@ _mongoc_sasl_prep_impl (const char *name,
    for (i = 0; i < in_utf8_actual_len; ++i) {
       if (_mongoc_is_code_in_table (unicode_utf8[i],
                                     prohibited_output_ranges,
-                                    lengthof (prohibited_output_ranges)) ||
+                                    sizeof (prohibited_output_ranges) /
+                                       sizeof (unsigned int)) ||
           _mongoc_is_code_in_table (unicode_utf8[i],
                                     unassigned_codepoint_ranges,
-                                    lengthof (unassigned_codepoint_ranges))) {
-         // error
+                                    sizeof (unassigned_codepoint_ranges) /
+                                       sizeof (unsigned int))) {
+         bson_free (unicode_utf8);
+         SASL_PREP_ERR_RETURN ("prohibited character included in %s");
       }
    }
 
@@ -1142,15 +1146,18 @@ _mongoc_sasl_prep_impl (const char *name,
 
 
    for (i = 0; i < in_utf8_actual_len; ++i) {
-      if (_mongoc_is_code_in_table (
-             unicode_utf8[i], LCat_bidi_ranges, lengthof (LCat_bidi_ranges))) {
+      if (_mongoc_is_code_in_table (unicode_utf8[i],
+                                    LCat_bidi_ranges,
+                                    sizeof (LCat_bidi_ranges) /
+                                       sizeof (unsigned int))) {
          contains_LCat = true;
          if (contains_RandALCar)
             break;
       }
       if (_mongoc_is_code_in_table (unicode_utf8[i],
                                     RandALCat_bidi_ranges,
-                                    lengthof (RandALCat_bidi_ranges)))
+                                    sizeof (RandALCat_bidi_ranges) /
+                                       sizeof (unsigned int)))
          contains_RandALCar = true;
    }
 
@@ -1161,11 +1168,14 @@ _mongoc_sasl_prep_impl (const char *name,
       (contains_RandALCar &&
        (!_mongoc_is_code_in_table (unicode_utf8[0],
                                    RandALCat_bidi_ranges,
-                                   lengthof (RandALCat_bidi_ranges)) ||
-        !!_mongoc_is_code_in_table (unicode_utf8[in_utf8_actual_len - 1],
-                                    RandALCat_bidi_ranges,
-                                    lengthof (RandALCat_bidi_ranges))))) {
-      // ERROR
+                                   sizeof (RandALCat_bidi_ranges) /
+                                      sizeof (unsigned int)) ||
+        !_mongoc_is_code_in_table (unicode_utf8[in_utf8_actual_len - 1],
+                                   RandALCat_bidi_ranges,
+                                   sizeof (RandALCat_bidi_ranges) /
+                                      sizeof (unsigned int))))) {
+      bson_free (unicode_utf8);
+      SASL_PREP_ERR_RETURN ("%s does not meet bidirectional requirements");
    }
 
    /* 3. convert back to UTF8 */
@@ -1175,75 +1185,18 @@ _mongoc_sasl_prep_impl (const char *name,
    for (i = 0; i < in_utf8_actual_len; ++i) {
       out_utf8_len += _mongoc_unicode_codepoint_length (unicode_utf8[i]);
    }
-   out_utf8 = bson_malloc (sizeof (char) * (out_utf8_len + 1));
+   out_utf8 = (char *) bson_malloc (sizeof (char) * (out_utf8_len + 1));
 
-   // if (error_code) {
-   //    bson_free (in_utf16);
-   //    SASL_PREP_ERR_RETURN ("could not convert %s to UTF-16");
-   // }
+   out_loc = out_utf8;
+   for (i = 0; i < in_utf8_actual_len; ++i) {
+      char_length = _mongoc_unicode_to_utf8 (unicode_utf8[i], out_loc);
+      out_loc += char_length;
+   }
+   *out_loc = '\0';
 
-   /* 2. perform SASLPrep. */
-   // For each character, find if there is a mapping and replace it
+   bson_free (unicode_utf8);
 
-   // prep = usprep_openByType (USPREP_RFC4013_SASLPREP, &error_code);
-   // if (error_code) {
-   //    bson_free (in_utf16);
-   //    SASL_PREP_ERR_RETURN ("could not start SASLPrep for %s");
-   // }
-   // /* preflight. */
-   // out_utf16_len = usprep_prepare (
-   //    prep, in_utf16, in_utf16_len, NULL, 0, USPREP_DEFAULT, NULL,
-   //    &error_code);
-   // if (error_code != U_BUFFER_OVERFLOW_ERROR) {
-   //    bson_free (in_utf16);
-   //    usprep_close (prep);
-   //    SASL_PREP_ERR_RETURN ("could not calculate SASLPrep length of %s");
-   // }
-
-   // /* convert. */
-   // error_code = U_ZERO_ERROR;
-   // out_utf16 = bson_malloc (sizeof (UChar) * (out_utf16_len + 1));
-   // (void) usprep_prepare (prep,
-   //                        in_utf16,
-   //                        in_utf16_len,
-   //                        out_utf16,
-   //                        out_utf16_len + 1,
-   //                        USPREP_DEFAULT,
-   //                        NULL,
-   //                        &error_code);
-   // if (error_code) {
-   //    bson_free (in_utf16);
-   //    bson_free (out_utf16);
-   //    usprep_close (prep);
-   //    SASL_PREP_ERR_RETURN ("could not execute SASLPrep for %s");
-   // }
-   // bson_free (in_utf16);
-   // usprep_close (prep);
-
-   // /* 3. convert back to UTF-8. */
-   // /* preflight. */
-   // (void) u_strToUTF8 (
-   //    NULL, 0, &out_utf8_len, out_utf16, out_utf16_len, &error_code);
-   // if (error_code != U_BUFFER_OVERFLOW_ERROR) {
-   //    bson_free (out_utf16);
-   //    SASL_PREP_ERR_RETURN ("could not calculate UTF-8 length of %s");
-   // }
-
-   // /* convert. */
-   // error_code = U_ZERO_ERROR;
-   // out_utf8 = (char *) bson_malloc (
-   //    sizeof (char) * (out_utf8_len + 1)); /* add one for null byte. */
-   // (void) u_strToUTF8 (
-   //    out_utf8, out_utf8_len + 1, NULL, out_utf16, out_utf16_len,
-   //    &error_code);
-   // if (error_code) {
-   //    bson_free (out_utf8);
-   //    bson_free (out_utf16);
-   //    SASL_PREP_ERR_RETURN ("could not convert %s back to UTF-8");
-   // }
-   // bson_free (out_utf16);
-   // return out_utf8;
-   return NULL;
+   return out_utf8;
 #undef SASL_PREP_ERR_RETURN
 }
 #endif
@@ -1368,7 +1321,7 @@ _mongoc_is_code_in_table (unsigned int code,
 {
    // all tables have size / 2 ranges
    for (int i = 0; i < size; i += 2) {
-      if (code >= table[i] || code <= table[i + 1])
+      if (code >= table[i] && code <= table[i + 1])
          return true;
    }
 
@@ -1395,29 +1348,29 @@ _mongoc_utf8_to_unicode (const char *c, int length)
 }
 
 int
-_mongoc_unicode_to_utf8 (unsigned int *c, char *out)
+_mongoc_unicode_to_utf8 (unsigned int c, char *out)
 {
    if (c <= 0x7F) {
       // Plain ASCII
-      out[0] = (char) *c;
+      out[0] = (char) c;
       return 1;
    } else if (c <= 0x07FF) {
       // 2-byte unicode
-      out[0] = (char) (((*c >> 6) & 0x1F) | 0xC0);
-      out[1] = (char) (((*c >> 0) & 0x3F) | 0x80);
+      out[0] = (char) (((c >> 6) & 0x1F) | 0xC0);
+      out[1] = (char) (((c >> 0) & 0x3F) | 0x80);
       return 2;
    } else if (c <= 0xFFFF) {
       // 3-byte unicode
-      out[0] = (char) (((*c >> 12) & 0x0F) | 0xE0);
-      out[1] = (char) (((*c >> 6) & 0x3F) | 0x80);
-      out[2] = (char) ((*c & 0x3F) | 0x80);
+      out[0] = (char) (((c >> 12) & 0x0F) | 0xE0);
+      out[1] = (char) (((c >> 6) & 0x3F) | 0x80);
+      out[2] = (char) ((c & 0x3F) | 0x80);
       return 3;
    } else if (c <= 0x10FFFF) {
       // 4-byte unicode
-      out[0] = (char) (((*c >> 18) & 0x07) | 0xF0);
-      out[1] = (char) (((*c >> 12) & 0x3F) | 0x80);
-      out[2] = (char) (((*c >> 6) & 0x3F) | 0x80);
-      out[3] = (char) ((*c & 0x3F) | 0x80);
+      out[0] = (char) (((c >> 18) & 0x07) | 0xF0);
+      out[1] = (char) (((c >> 12) & 0x3F) | 0x80);
+      out[2] = (char) (((c >> 6) & 0x3F) | 0x80);
+      out[3] = (char) ((c & 0x3F) | 0x80);
       return 4;
    } else {
       return -1;
@@ -1425,7 +1378,7 @@ _mongoc_unicode_to_utf8 (unsigned int *c, char *out)
 }
 
 int
-_mongoc_unicode_codepoint_length (unsigned int *c)
+_mongoc_unicode_codepoint_length (unsigned int c)
 {
    if (c <= 0x7F)
       return 1;
