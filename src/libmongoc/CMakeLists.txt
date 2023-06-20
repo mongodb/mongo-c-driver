@@ -41,6 +41,12 @@ if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
       )
 endif ()
 
+if (NOT ENABLE_UTF8PROC MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
+   message (FATAL_ERROR
+      "ENABLE_UTF8PROC option must be SYSTEM, BUNDLED, AUTO, or OFF"
+      )
+endif ()
+
 if (NOT ENABLE_ZSTD MATCHES "ON|AUTO|OFF")
    message (FATAL_ERROR "ENABLE_ZSTD option must be ON, AUTO, or OFF")
 endif ()
@@ -111,6 +117,71 @@ else ()
    message (STATUS "Disabling zlib compression")
 endif ()
 
+# Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
+# will look for zconf.h in that location.
+configure_file (
+   "${SOURCE_DIR}/src/utf8proc-2.8.0/utf8proc.h"
+   "${CMAKE_BINARY_DIR}/src/utf8proc-2.8.0/utf8proc.h"
+   COPYONLY
+)
+set (UTF8PROC_INCLUDE_DIRS "")
+# if (ENABLE_UTF8PROC MATCHES "SYSTEM|AUTO")
+#    message (STATUS "Searching for utf8proc CMake packages")
+#    include (FindUTF8PROC)
+#    if (UTF8_FOUND)
+#       message ("--   utf8proc found version \"${UTF8PROC_VERSION_STRING}\"")
+#       message ("--   utf8proc include path \"${UTF8PROC_INCLUDE_DIRS}\"")
+#       message ("--   utf8proc libraries \"${UTF8PROC_LIBRARIES}\"")
+#    else ()
+#       if (ENABLE_UTF8PROC STREQUAL "SYSTEM")
+#          message (FATAL_ERROR
+#             "Unable to find system utf8proc package. Either specify the utf8proc \
+#             location by setting UTF8PROC_ROOT, or else set ENABLE_UTF8PROC=BUNDLED or \
+#             set ENABLE_UTF8PROC=OFF."
+#             )
+#       endif ()
+#       set (UTF8PROC_LIBRARIES "")
+#    endif ()
+# endif ()
+
+if ( (ENABLE_UTF8PROC STREQUAL "BUNDLED")
+   OR (ENABLE_UTF8PROC STREQUAL "AUTO" AND NOT UTF8PROC_FOUND) )
+   message (STATUS "Enabling utf8proc compression (bundled)")
+   add_library (utf8proc_obj OBJECT "${UTF8PROC_SOURCES}")
+   set_property (TARGET utf8proc_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   # This tells the bundled zlib where to find its generated headers
+   target_include_directories (utf8proc_obj
+      BEFORE PUBLIC
+      "${SOURCE_DIR}/src/utf8proc-2.8.0"
+      "${CMAKE_BINARY_DIR}/src/utf8proc-2.8.0"
+   )
+   # Disable all warnings for compiling Zlib
+   target_compile_options (utf8proc_obj PRIVATE -w)
+   set (SOURCES ${SOURCES} $<TARGET_OBJECTS:utf8proc_obj>)
+   # This tells mongoc_shared/mongoc_static where to find generated zlib headers
+   set (
+      UTF8PROC_INCLUDE_DIRS
+      "${SOURCE_DIR}/src/utf8proc-2.8.0"
+      "${CMAKE_BINARY_DIR}/src/utf8proc-2.8.0"
+   )
+endif ()
+
+if (NOT ENABLE_UTF8PROC STREQUAL "OFF")
+   # At this point the system zlib was found, or the bundled library was used
+   include (CheckIncludeFiles)
+   check_include_files ("unistd.h" HAVE_UNISTD_H)
+   check_include_files ("stdarg.h" HAVE_STDARG_H)
+   if (HAVE_UNISTD_H)
+      add_definitions (-DHAVE_UNISTD_H)
+   endif ()
+   if (HAVE_STDARG_H)
+      add_definitions (-DHAVE_STDARG_H)
+   endif ()
+   set (MONGOC_ENABLE_COMPRESSION 1)
+   set (MONGOC_ENABLE_COMPRESSION_UTF8PROC 1)
+else ()
+   message (STATUS "Disabling utf8proc compression")
+endif ()
 
 if (NOT ENABLE_ZSTD STREQUAL OFF)
    message (STATUS "Searching for compression library zstd")
@@ -729,11 +800,11 @@ endif ()
 
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${UTF8PROC_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${UTF8PROC_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
 if (WIN32)
@@ -762,6 +833,7 @@ add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
+target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
@@ -803,6 +875,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       message ("Adding -fPIC to compilation of mongoc_static components")
    endif ()
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
+   target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
@@ -1198,7 +1271,7 @@ set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 foreach (
       FLAG
       ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
+      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${UTF8PROC_LIBRARIES} ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
       ${LIBMONGOCRYPT_LIBRARY})
 
    if (IS_ABSOLUTE "${FLAG}")
