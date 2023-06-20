@@ -5027,7 +5027,7 @@ test_bulk_write_set_client_after_operation (void)
    mongoc_client_set_appname (client, "test_bulk_write_client_after_operation");
    bulk = mongoc_bulk_operation_new (false /* ordered */);
    ok = mongoc_bulk_operation_insert_with_opts (
-      bulk, tmp_bson ("{'_id': 1}"), tmp_bson ("{}"), &error);
+      bulk, tmp_bson ("{'x': 1}"), tmp_bson ("{}"), &error);
    ASSERT_OR_PRINT (ok, error);
    mongoc_bulk_operation_set_client (bulk, client);
    mongoc_bulk_operation_set_database (bulk, "db");
