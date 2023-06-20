@@ -1,7 +1,6 @@
 prefix=@prefix@
 exec_prefix=${prefix}
 libdir=@libdir@
-includedir=${exec_prefix}/include
 
 Name: $<TARGET_PROPERTY:@GENERATE_TARGET@,pkg_config_NAME>
 Description: $<TARGET_PROPERTY:@GENERATE_TARGET@,pkg_config_DESCRIPTION>

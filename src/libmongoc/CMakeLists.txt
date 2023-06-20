@@ -1213,7 +1213,7 @@ if(TARGET mongoc_static)
       ${LIBMONGOCRYPT_LIBRARY})
    # Replace all absolute paths with search-dir link-file options:
    list(TRANSFORM link_options
-        REPLACE "^(.+)/lib([^/]+)\\.[a-z]+$"
+        REPLACE "^(.+)/lib([^/\\.]+)\\..+$"
                 "-L\\1;-l\\2"
         REGEX "^/")
    # Prepend "-l" to all bare names:
