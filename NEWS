@@ -1,5 +1,40 @@
-libmongoc 1.24.0 (Unreleased)
-=============================
+libmongoc 1.24.1
+================
+
+Fixes:
+
+    * Remove unnecessary assert in bulk API. May result in an abort when creating bulk operations with the `mongoc_bulk_operation_new` API intended for wrapping drivers.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 1.24.0
+================
+
+New Features:
+
+  * Support MongoDB server version 7.0.
+  * Support updated Queryable Encryption protocol.
+      * Introduces backwards breaking changes to the Queryable Encryption protocol. Using Queryable Encryption now requires MongoDB server version 7.0+.
+  * Support new Queryable Encryption features.
+      * Add `mongoc_client_encryption_create_encrypted_collection` to automatically create data encryption keys when creating a new encrypted collection.
+  * Support new security features.
+      * Add ability to fetch KMS credentials automatically from Azure, GCP, and AWS environments.
+      * Support authentication with KMS AWS temporary credentials.
+      * Cache fetched AWS credentials.
+      * Support AWS IAM Roles for service accounts, EKS in particular.
+  * Retry operations if the connection handshake fails.
+  * Add index creation helper: `mongoc_collection_create_indexes_with_opts`.
+
+Fixes:
+
+  * Fix default applied credentials for Kerberos with SSPI on Windows.
+  * Fix possible overcounting in Performance Counters used by `mongoc-stat`.
+
+Language Standard Support:
+
+  * C89 support has been dropped. C99 is the default tested C standard.
 
 Platform Support:
 
@@ -13,6 +48,22 @@ Build Configuration:
     used `ENABLE_BSON=SYSTEM` should be updated to use `USE_SYSTEM_LIBBSON=TRUE`.
     If the build script needs to support building arbitrary versions of the C
     driver, add both `ENABLE_BSON=SYSTEM` and `USE_SYSTEM_LIBBSON=TRUE`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+  * Gil Alon
+  * Kyle Kloberdanz
+  * Jeremy Mikola
+  * Andreas Braun
+  * Kondaiah Valagonda
+  * Joshua Siegel
+  * Roberto C. Sánchez
+  * Romain Geissler @ Amadeus
+  * bisht2050
+  * Adrian Dole
 
 libmongoc 1.23.5
 ================
