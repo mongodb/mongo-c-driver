@@ -107,6 +107,7 @@ test_mongoc_scram_sasl_prep (void)
       {"\x65\xCC\x81", "\xC3\xA9", true, true},
       {"\xC2\xAA", "a", true, true},
       {"Henry \xE2\x85\xA3", "Henry IV", true, true},
+      {"A\xEF\xAC\x83n", "Affin", true, true},
       // mapped to nothing character (Table B.1)
       {"I\xC2\xADX", "IX", true, true},
       // mapped to nothing character (Table C.1.2)
