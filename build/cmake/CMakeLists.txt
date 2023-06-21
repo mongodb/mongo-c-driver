@@ -7,7 +7,6 @@ set (build_cmake_MODULES
    FindSnappy.cmake
    FindSphinx.cmake
    LoadVersion.cmake
-   MaintainerFlags.cmake
    MongoCPackage.cmake
    MongoSettings.cmake
    MongoC-Warnings.cmake

@@ -222,6 +222,31 @@ include (CMakeDependentOption)
 
 include(MongoC-Warnings)
 
+# Enable "maintainer flags," which are supplementary but not mandatory.
+# (As opposed to MongoC-Warnings.cmake, which defines "the code is broken" warnings)
+if(ENABLE_MAINTAINER_FLAGS)
+   mongoc_add_platform_compile_options(
+      gnu-like:-Werror
+      gnu-like:-pedantic
+      gnu-like:-Wall
+      gnu-like:-Wempty-body
+      gnu:not-gcc-lt7:-Wexpansion-to-defined
+      gnu-like:-Wformat
+      gnu-like:-Wformat-nonliteral
+      gnu-like:-Wformat-security
+      gnu-like:-Winit-self
+      gnu-like:-Wmissing-include-dirs
+      gnu-like:-Wredundant-decls
+      gnu-like:-Wshadow
+      gnu-like:lang-c:-Wstrict-prototypes
+      gnu-like:-Wswitch-enum
+      gnu-like:-Wundef
+      gnu-like:-Wuninitialized
+      # Disabled, for now:
+      gnu-like:-Wno-strict-aliasing
+   )
+endif()
+
 # Enable CCache, if possible
 include (CCache)
 
@@ -275,10 +300,6 @@ endif ()
 
 include (LoadVersion)
 LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
-
-# Enable "maintainer flags," which are supplementary but not mandatory.
-# (As opposed to MongoC-Warnings.cmake, which are required warnings)
-include (MaintainerFlags)
 
 if ( (ENABLE_BUILD_DEPENDECIES STREQUAL OFF) AND (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) )
    set (ENABLE_BUILD_DEPENDECIES ON)
