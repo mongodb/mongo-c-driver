@@ -430,9 +430,7 @@ test_multithreaded (const mongoc_uri_t *uri)
    // Test authenticating in many threads concurrently.
    bson_thread_t threads[64];
    for (size_t i = 0; i < sizeof threads / sizeof threads[0]; i++) {
-      ASSERT (0 ==
-              mcommon_thread_create (
-                 &threads[i], auth_fn, (void *) uri, NULL /* errno_out */));
+      ASSERT (0 == mcommon_thread_create (&threads[i], auth_fn, (void *) uri));
    }
 
    for (size_t i = 0; i < sizeof threads / sizeof threads[0]; i++) {

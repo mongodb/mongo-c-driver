@@ -162,17 +162,13 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
       _mongoc_topology_background_monitoring_reconcile (topology, tdmod.new_td);
       /* Start SRV polling thread. */
       if (mongoc_topology_should_rescan_srv (topology)) {
-         int errno_out;
-         int ret = mcommon_thread_create (&topology->srv_polling_thread,
-                                          srv_polling_run,
-                                          topology,
-                                          &errno_out);
+         int ret = mcommon_thread_create (
+            &topology->srv_polling_thread, srv_polling_run, topology);
          if (ret == 0) {
             topology->is_srv_polling = true;
          } else {
             char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
-            char *errmsg =
-               bson_strerror_r (errno_out, errmsg_buf, sizeof errmsg_buf);
+            char *errmsg = bson_strerror_r (ret, errmsg_buf, sizeof errmsg_buf);
             MONGOC_ERROR ("Failed to start SRV polling thread. SRV records "
                           "will not be polled. Error: %s",
                           errmsg);

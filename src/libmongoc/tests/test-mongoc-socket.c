@@ -357,12 +357,10 @@ _test_mongoc_socket_check_closed (int32_t server_sleep_ms)
    mongoc_cond_init (&data.cond);
    data.server_sleep_ms = server_sleep_ms;
 
-   r = mcommon_thread_create (
-      threads, &socket_test_server, &data, NULL /* errno_out */);
+   r = mcommon_thread_create (threads, &socket_test_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = mcommon_thread_create (
-      threads + 1, &socket_test_client, &data, NULL /* errno_out */);
+   r = mcommon_thread_create (threads + 1, &socket_test_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
@@ -403,12 +401,10 @@ test_mongoc_socket_sendv (void *ctx)
    bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = mcommon_thread_create (
-      threads, &sendv_test_server, &data, NULL /* errno_out */);
+   r = mcommon_thread_create (threads, &sendv_test_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = mcommon_thread_create (
-      threads + 1, &sendv_test_client, &data, NULL /* errno_out */);
+   r = mcommon_thread_create (threads + 1, &sendv_test_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {

@@ -119,14 +119,13 @@ typedef struct {
  * libbson and libmongoc statically. */
 int
 mcommon_thread_join (bson_thread_t thread);
-// mcommon_thread_create returns 0 on success. Returns non-zero on error.
-// `errno_out` is set to an error code on error. Callers may use
-// `bson_strerror_r` to get an error message from `errno_out`.
+// mcommon_thread_create returns 0 on success. Returns a non-zero error code on
+// error. Callers may use `bson_strerror_r` to get an error message from the
+// returned error code.
 int
 mcommon_thread_create (bson_thread_t *thread,
                        BSON_THREAD_FUN_TYPE (func),
-                       void *arg,
-                       int *errno_out);
+                       void *arg);
 
 #if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
 #define mcommon_mutex_is_locked COMMON_NAME (mutex_is_locked)

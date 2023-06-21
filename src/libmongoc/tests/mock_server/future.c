@@ -472,7 +472,7 @@ future_start (future_t *future,
 {
    int r = mcommon_thread_create (&future->thread,
                                   start_routine,
-                                  (void *) future, NULL /* errno_out */);
+                                  (void *) future);
 
    BSON_ASSERT (!r);
 }
