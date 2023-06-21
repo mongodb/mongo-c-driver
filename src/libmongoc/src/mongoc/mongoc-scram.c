@@ -1131,7 +1131,7 @@ _mongoc_sasl_prep_impl (const char *name,
    // allowed. Because the normalization step is guarenteed to not create any
    // characters that will cause an error, we will use the utf8_codepoints
    // codepoints to check (pre-normalization) as to avoid converting back and
-   // forth from utf8 to unicode codepoints.
+   // forth from UTF-8 to unicode codepoints.
 
    // c. Prohibit -- Check for any characters
    // that are not allowed in the output. If any are found, return an error.
@@ -1235,7 +1235,7 @@ _mongoc_utf8_char_length (const char *c)
 {
    int length;
 
-   // UTF8 characters are either 1, 2, 3, or 4 bytes and the character length
+   // UTF-8 characters are either 1, 2, 3, or 4 bytes and the character length
    // can be determined by the first byte
    if ((*c & 0x80) == 0)
       length = 1;
