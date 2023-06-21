@@ -1036,10 +1036,10 @@ _mongoc_sasl_prep_impl (const char *name,
                         int in_utf8_len,
                         bson_error_t *err)
 {
-   unsigned int *unicode_utf8;
-   int char_length, i, curr, in_utf8_actual_len, utf8_pre_norm_len;
+   unsigned int *utf8_codepoints;
+   int utf8_char_length, i, curr, num_chars, utf8_pre_norm_len;
    const char *c;
-   char *utf8_pre_norm, *out_utf8, *out_loc;
+   char *utf8_pre_norm, *out_utf8, *loc;
    bool contains_LCat, contains_RandALCar;
 
 #define SASL_PREP_ERR_RETURN(msg)                        \
@@ -1054,23 +1054,22 @@ _mongoc_sasl_prep_impl (const char *name,
 
    /* 1. convert str to unicode. */
    /* preflight to get the destination length. */
-   in_utf8_actual_len = _mongoc_utf8_string_length (in_utf8);
-   if (in_utf8_actual_len == -1) {
+   num_chars = _mongoc_utf8_string_length (in_utf8);
+   if (num_chars == -1) {
       SASL_PREP_ERR_RETURN ("could not calculate UTF-8 length of %s");
    }
 
    /* convert to unicode. */
-   unicode_utf8 =
-      bson_malloc (sizeof (unsigned int) *
-                   (in_utf8_actual_len + 1)); /* add one for null byte. */
+   utf8_codepoints = bson_malloc (sizeof (unsigned int) *
+                                  (num_chars + 1)); /* add one for null byte. */
    c = in_utf8;
-   for (i = 0; i < in_utf8_actual_len; ++i) {
-      char_length = _mongoc_utf8_char_length (c);
-      unicode_utf8[i] = _mongoc_utf8_to_unicode (c, char_length);
+   for (i = 0; i < num_chars; ++i) {
+      utf8_char_length = _mongoc_utf8_char_length (c);
+      utf8_codepoints[i] = _mongoc_utf8_to_unicode (c, utf8_char_length);
 
-      c += char_length;
+      c += utf8_char_length;
    }
-   unicode_utf8[i] = '\0';
+   utf8_codepoints[i] = '\0';
 
    /* 2. perform SASLPREP */
 
@@ -1083,23 +1082,23 @@ _mongoc_sasl_prep_impl (const char *name,
    // pointers: one for reading the original characters (i) and one for writing
    // the new characters (curr). i will always be >= curr.
    curr = 0;
-   for (i = 0; i < in_utf8_actual_len; ++i) {
-      if (_mongoc_is_code_in_table (unicode_utf8[i],
+   for (i = 0; i < num_chars; ++i) {
+      if (_mongoc_is_code_in_table (utf8_codepoints[i],
                                     non_ascii_space_character_ranges,
                                     sizeof (non_ascii_space_character_ranges) /
                                        sizeof (unsigned int)))
-         unicode_utf8[curr++] = 0x0020;
+         utf8_codepoints[curr++] = 0x0020;
       else if (_mongoc_is_code_in_table (
-                  unicode_utf8[i],
+                  utf8_codepoints[i],
                   commonly_mapped_to_nothing_ranges,
                   sizeof (commonly_mapped_to_nothing_ranges) /
                      sizeof (unsigned int))) {
          // effectively skip over the character because we don't increment curr.
       } else
-         unicode_utf8[curr++] = unicode_utf8[i];
+         utf8_codepoints[curr++] = utf8_codepoints[i];
    }
-   unicode_utf8[curr] = '\0';
-   in_utf8_actual_len = curr;
+   utf8_codepoints[curr] = '\0';
+   num_chars = curr;
 
 
    // b. Normalize - normalize the result of step 1 using Unicode
@@ -1112,41 +1111,42 @@ _mongoc_sasl_prep_impl (const char *name,
 
    // preflight for length
    utf8_pre_norm_len = 0;
-   for (i = 0; i < in_utf8_actual_len; ++i) {
-      utf8_pre_norm_len += _mongoc_unicode_codepoint_length (unicode_utf8[i]);
+   for (i = 0; i < num_chars; ++i) {
+      utf8_pre_norm_len +=
+         _mongoc_unicode_codepoint_length (utf8_codepoints[i]);
    }
    utf8_pre_norm =
       (char *) bson_malloc (sizeof (char) * (utf8_pre_norm_len + 1));
 
-   out_loc = utf8_pre_norm;
-   for (i = 0; i < in_utf8_actual_len; ++i) {
-      char_length = _mongoc_unicode_to_utf8 (unicode_utf8[i], out_loc);
-      out_loc += char_length;
+   loc = utf8_pre_norm;
+   for (i = 0; i < num_chars; ++i) {
+      utf8_char_length = _mongoc_unicode_to_utf8 (utf8_codepoints[i], loc);
+      loc += utf8_char_length;
    }
-   *out_loc = '\0';
+   *loc = '\0';
 
    out_utf8 = (char *) utf8proc_NFKC ((utf8proc_uint8_t *) utf8_pre_norm);
 
    // the last two steps are both checks for characters that should not be
    // allowed. Because the normalization step is guarenteed to not create any
-   // characters that will cause an error, we will use the unicode_utf8
-   // codepoints to check (pre-conversion) as to avoid converting back and forth
-   // from utf8 to unicode codepoints.
+   // characters that will cause an error, we will use the utf8_codepoints
+   // codepoints to check (pre-normalization) as to avoid converting back and
+   // forth from utf8 to unicode codepoints.
 
    // c. Prohibit -- Check for any characters
    // that are not allowed in the output. If any are found, return an error.
 
-   for (i = 0; i < in_utf8_actual_len; ++i) {
-      if (_mongoc_is_code_in_table (unicode_utf8[i],
+   for (i = 0; i < num_chars; ++i) {
+      if (_mongoc_is_code_in_table (utf8_codepoints[i],
                                     prohibited_output_ranges,
                                     sizeof (prohibited_output_ranges) /
                                        sizeof (unsigned int)) ||
-          _mongoc_is_code_in_table (unicode_utf8[i],
+          _mongoc_is_code_in_table (utf8_codepoints[i],
                                     unassigned_codepoint_ranges,
                                     sizeof (unassigned_codepoint_ranges) /
                                        sizeof (unsigned int))) {
          bson_free (utf8_pre_norm);
-         bson_free (unicode_utf8);
+         bson_free (utf8_codepoints);
          SASL_PREP_ERR_RETURN ("prohibited character included in %s");
       }
    }
@@ -1169,8 +1169,8 @@ _mongoc_sasl_prep_impl (const char *name,
    contains_RandALCar = false;
 
 
-   for (i = 0; i < in_utf8_actual_len; ++i) {
-      if (_mongoc_is_code_in_table (unicode_utf8[i],
+   for (i = 0; i < num_chars; ++i) {
+      if (_mongoc_is_code_in_table (utf8_codepoints[i],
                                     LCat_bidi_ranges,
                                     sizeof (LCat_bidi_ranges) /
                                        sizeof (unsigned int))) {
@@ -1178,7 +1178,7 @@ _mongoc_sasl_prep_impl (const char *name,
          if (contains_RandALCar)
             break;
       }
-      if (_mongoc_is_code_in_table (unicode_utf8[i],
+      if (_mongoc_is_code_in_table (utf8_codepoints[i],
                                     RandALCat_bidi_ranges,
                                     sizeof (RandALCat_bidi_ranges) /
                                        sizeof (unsigned int)))
@@ -1190,21 +1190,21 @@ _mongoc_sasl_prep_impl (const char *name,
       (contains_RandALCar && contains_LCat) ||
       // requirement 2
       (contains_RandALCar &&
-       (!_mongoc_is_code_in_table (unicode_utf8[0],
+       (!_mongoc_is_code_in_table (utf8_codepoints[0],
                                    RandALCat_bidi_ranges,
                                    sizeof (RandALCat_bidi_ranges) /
                                       sizeof (unsigned int)) ||
-        !_mongoc_is_code_in_table (unicode_utf8[in_utf8_actual_len - 1],
+        !_mongoc_is_code_in_table (utf8_codepoints[num_chars - 1],
                                    RandALCat_bidi_ranges,
                                    sizeof (RandALCat_bidi_ranges) /
                                       sizeof (unsigned int))))) {
       bson_free (utf8_pre_norm);
-      bson_free (unicode_utf8);
+      bson_free (utf8_codepoints);
       SASL_PREP_ERR_RETURN ("%s does not meet bidirectional requirements");
    }
 
    bson_free (utf8_pre_norm);
-   bson_free (unicode_utf8);
+   bson_free (utf8_codepoints);
 
    return out_utf8;
 #undef SASL_PREP_ERR_RETURN
@@ -1257,16 +1257,16 @@ _mongoc_utf8_string_length (const char *s)
    const char *c = s;
 
    int str_length = 0;
-   int char_length;
+   int utf8_char_length;
 
    while (*c) {
-      char_length = _mongoc_utf8_char_length (c);
+      utf8_char_length = _mongoc_utf8_char_length (c);
 
-      if (!_mongoc_utf8_is_valid (c, char_length))
+      if (!_mongoc_utf8_is_valid (c, utf8_char_length))
          return -1;
 
       str_length++;
-      c += char_length;
+      c += utf8_char_length;
    }
 
    return str_length;
