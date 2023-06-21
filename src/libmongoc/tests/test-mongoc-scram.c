@@ -104,9 +104,9 @@ test_mongoc_scram_sasl_prep (void)
    /* examples from RFC 4013 section 3. */
    sasl_prep_testcase_t tests[] = {
       // normalization
-      // {"\x65\xCC\x81", "\xC3\xA9", true, true},
-      // {"\xC2\xAA", "a", true, true},
-      // {"\xE2\x85\xA8", "IX", true, true},
+      {"\x65\xCC\x81", "\xC3\xA9", true, true},
+      {"\xC2\xAA", "a", true, true},
+      {"Henry \xE2\x85\xA3", "Henry IV", true, true},
       // mapped to nothing character (Table B.1)
       {"I\xC2\xADX", "IX", true, true},
       // mapped to nothing character (Table C.1.2)
@@ -121,6 +121,8 @@ test_mongoc_scram_sasl_prep (void)
       {"\xFB\x1D apple \x09\xA8", "(invalid)", true, false},
       // bidi: RandALCat with RandALCat at beginning and end
       {"\xD8\xA1 \xDC\x92", "\xD8\xA1 \xDC\x92", true, true},
+      // normalization and mapped to nothing
+      {"I\xE2\x80\x80\xC2\xA0X \xE2\x85\xA3", "I  X IV", true, true},
       {"user", "user", false, true},
       {"USER", "USER", false, true}};
    ntests = sizeof (tests) / sizeof (sasl_prep_testcase_t);

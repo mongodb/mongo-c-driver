@@ -29,6 +29,7 @@
 #include "common-b64-private.h"
 
 #include "mongoc-memcmp-private.h"
+#include "../utf8proc-2.8.0/utf8proc.h"
 
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
@@ -1036,9 +1037,9 @@ _mongoc_sasl_prep_impl (const char *name,
                         bson_error_t *err)
 {
    unsigned int *unicode_utf8;
-   int char_length, i, curr, in_utf8_actual_len, out_utf8_len;
+   int char_length, i, curr, in_utf8_actual_len, utf8_pre_norm_len;
    const char *c;
-   char *out_utf8, *out_loc;
+   char *utf8_pre_norm, *out_utf8, *out_loc;
    bool contains_LCat, contains_RandALCar;
 
 #define SASL_PREP_ERR_RETURN(msg)                        \
@@ -1104,14 +1105,36 @@ _mongoc_sasl_prep_impl (const char *name,
    // b. Normalize - normalize the result of step 1 using Unicode
    // normalization.
 
-
    // this is an optional step for stringprep, but Unicode normalization with
    // form KC is required for SASLPrep.
 
-   // NORMALIZE HERE
+   // in order to do this, we must first convert back to UTF8.
 
-   // c. Prohibit -- Check for any characters that are not allowed in the
-   // output. If any are found, return an error.
+   // preflight for length
+   utf8_pre_norm_len = 0;
+   for (i = 0; i < in_utf8_actual_len; ++i) {
+      utf8_pre_norm_len += _mongoc_unicode_codepoint_length (unicode_utf8[i]);
+   }
+   utf8_pre_norm =
+      (char *) bson_malloc (sizeof (char) * (utf8_pre_norm_len + 1));
+
+   out_loc = utf8_pre_norm;
+   for (i = 0; i < in_utf8_actual_len; ++i) {
+      char_length = _mongoc_unicode_to_utf8 (unicode_utf8[i], out_loc);
+      out_loc += char_length;
+   }
+   *out_loc = '\0';
+
+   out_utf8 = (char *) utf8proc_NFKC ((utf8proc_uint8_t *) utf8_pre_norm);
+
+   // the last two steps are both checks for characters that should not be
+   // allowed. Because the normalization step is guarenteed to not create any
+   // characters that will cause an error, we will use the unicode_utf8
+   // codepoints to check (pre-conversion) as to avoid converting back and forth
+   // from utf8 to unicode codepoints.
+
+   // c. Prohibit -- Check for any characters
+   // that are not allowed in the output. If any are found, return an error.
 
    for (i = 0; i < in_utf8_actual_len; ++i) {
       if (_mongoc_is_code_in_table (unicode_utf8[i],
@@ -1122,6 +1145,7 @@ _mongoc_sasl_prep_impl (const char *name,
                                     unassigned_codepoint_ranges,
                                     sizeof (unassigned_codepoint_ranges) /
                                        sizeof (unsigned int))) {
+         bson_free (utf8_pre_norm);
          bson_free (unicode_utf8);
          SASL_PREP_ERR_RETURN ("prohibited character included in %s");
       }
@@ -1174,26 +1198,12 @@ _mongoc_sasl_prep_impl (const char *name,
                                    RandALCat_bidi_ranges,
                                    sizeof (RandALCat_bidi_ranges) /
                                       sizeof (unsigned int))))) {
+      bson_free (utf8_pre_norm);
       bson_free (unicode_utf8);
       SASL_PREP_ERR_RETURN ("%s does not meet bidirectional requirements");
    }
 
-   /* 3. convert back to UTF8 */
-
-   // preflight for length
-   out_utf8_len = 0;
-   for (i = 0; i < in_utf8_actual_len; ++i) {
-      out_utf8_len += _mongoc_unicode_codepoint_length (unicode_utf8[i]);
-   }
-   out_utf8 = (char *) bson_malloc (sizeof (char) * (out_utf8_len + 1));
-
-   out_loc = out_utf8;
-   for (i = 0; i < in_utf8_actual_len; ++i) {
-      char_length = _mongoc_unicode_to_utf8 (unicode_utf8[i], out_loc);
-      out_loc += char_length;
-   }
-   *out_loc = '\0';
-
+   bson_free (utf8_pre_norm);
    bson_free (unicode_utf8);
 
    return out_utf8;
