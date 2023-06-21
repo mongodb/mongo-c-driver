@@ -1052,7 +1052,7 @@ _mongoc_sasl_prep_impl (const char *name,
       return NULL;                                       \
    } while (0)
 
-   /* 1. convert str to unicode. */
+   /* 1. convert str to Unicode codepoints. */
    /* preflight to get the destination length. */
    num_chars = _mongoc_utf8_string_length (in_utf8);
    if (num_chars == -1) {
@@ -1160,7 +1160,7 @@ _mongoc_sasl_prep_impl (const char *name,
    // note: bidi stands for directional (text). Most characters are displayed
    // left to right but some are displayed right to left. The requirements are
    // as follows:
-   // 1. If a string contains any RandALCat character, it can't contatin an LCat
+   // 1. If a string contains any RandALCat character, it can't contain an LCat
    // character
    // 2. If it contains an RandALCat character, there must be an RandALCat
    // character at the beginning and the end of the string (does not have to be

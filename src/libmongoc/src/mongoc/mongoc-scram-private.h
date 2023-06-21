@@ -139,6 +139,9 @@ _mongoc_utf8_is_valid (const char *c, int length);
 bool
 _mongoc_char_between_chars (const char c, const char lower, const char upper);
 
+/* returns whether a codepoint exists in the specified table. The table format
+ * is that the 2*n element is the lower bound and the 2*n + 1 is the upper bound
+ * (both inclusive). */
 bool
 _mongoc_is_code_in_table (unsigned int code,
                           const unsigned int *table,
@@ -153,7 +156,7 @@ int
 _mongoc_unicode_codepoint_length (unsigned int c);
 
 /* converts a unicode code point to UTF-8 character. Returns how many bytes the
- * character converted is*/
+ * character converted is. */
 int
 _mongoc_unicode_to_utf8 (unsigned int c, char *out);
 
