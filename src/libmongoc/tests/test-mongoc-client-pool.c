@@ -451,8 +451,8 @@ test_client_pool_max_pool_size_exceeded (void)
    bson_mutex_init (&args->mutex);
    mongoc_cond_init (&args->cond);
 
-   mcommon_thread_create (&thread1, worker, args);
-   mcommon_thread_create (&thread2, worker, args);
+   ASSERT_CMPINT (0, ==, mcommon_thread_create (&thread1, worker, args));
+   ASSERT_CMPINT (0, ==, mcommon_thread_create (&thread2, worker, args));
 
    bson_mutex_lock (&args->mutex);
    while (args->nleft > 0) {

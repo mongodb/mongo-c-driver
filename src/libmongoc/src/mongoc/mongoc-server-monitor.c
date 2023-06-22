@@ -1402,9 +1402,19 @@ mongoc_server_monitor_run (mongoc_server_monitor_t *server_monitor)
    bson_mutex_lock (&server_monitor->shared.mutex);
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = false;
-      server_monitor->shared.state = MONGOC_THREAD_RUNNING;
-      mcommon_thread_create (
+      int ret = mcommon_thread_create (
          &server_monitor->thread, _server_monitor_thread, server_monitor);
+      if (ret == 0) {
+         server_monitor->shared.state = MONGOC_THREAD_RUNNING;
+      } else {
+         char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+         char *errmsg = bson_strerror_r (ret, errmsg_buf, sizeof errmsg_buf);
+         _server_monitor_log (server_monitor,
+                              MONGOC_LOG_LEVEL_ERROR,
+                              "Failed to start monitoring thread. This server "
+                              "may not be selectable. Error: %s",
+                              errmsg);
+      }
    }
    bson_mutex_unlock (&server_monitor->shared.mutex);
 }
@@ -1415,9 +1425,19 @@ mongoc_server_monitor_run_as_rtt (mongoc_server_monitor_t *server_monitor)
    bson_mutex_lock (&server_monitor->shared.mutex);
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = true;
-      server_monitor->shared.state = MONGOC_THREAD_RUNNING;
-      mcommon_thread_create (
+      int ret = mcommon_thread_create (
          &server_monitor->thread, _server_monitor_rtt_thread, server_monitor);
+      if (ret == 0) {
+         server_monitor->shared.state = MONGOC_THREAD_RUNNING;
+      } else {
+         char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+         char *errmsg = bson_strerror_r (ret, errmsg_buf, sizeof errmsg_buf);
+         _server_monitor_log (
+            server_monitor,
+            MONGOC_LOG_LEVEL_ERROR,
+            "Failed to start Round-Trip Time monitoring thread. Error: %s",
+            errmsg);
+      }
    }
    bson_mutex_unlock (&server_monitor->shared.mutex);
 }
