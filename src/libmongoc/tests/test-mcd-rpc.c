@@ -1939,7 +1939,8 @@ test_rpc_message_from_data_op_kill_cursors_invalid (void)
       (void) 0
 
 #define ASSERT_IOVEC_UINT8(index, expected) \
-   ASSERT_IOVEC_VALUE (index, expected, uint8_t, uint8_t, (uint8_t), PRIu8)
+   ASSERT_IOVEC_VALUE (                     \
+      index, (uint8_t) expected, uint8_t, uint8_t, (uint8_t), PRIu8)
 #define ASSERT_IOVEC_INT32(index, expected) \
    ASSERT_IOVEC_VALUE (                     \
       index, expected, int32_t, uint32_t, BSON_UINT32_FROM_LE, PRId32)
