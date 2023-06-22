@@ -51,6 +51,7 @@ function (RUN_DIST_CHECK PACKAGE_PREFIX EXT)
          -D ENABLE_MAINTAINER_FLAGS=ON
          -D ENABLE_SNAPPY=AUTO
          -D ENABLE_ZLIB=BUNDLED
+         -D ENABLE_UTF8PROC=BUNDLED
          ../${PACKAGE_PREFIX}
       WORKING_DIRECTORY ${BUILD_DIR}
       ERROR_MSG "CMake configure command failed."

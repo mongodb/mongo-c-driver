@@ -85,6 +85,9 @@ mongo_setting(ENABLE_ZSTD "Enable zstd compression support"
 mongo_setting(ENABLE_ZLIB "Enable zlib compression support"
               OPTIONS BUNDLED SYSTEM OFF
               DEFAULT VALUE BUNDLED)
+mongo_setting(ENABLE_UTF8PROC "Enable building with utf8proc. Needed for SCRAM-SHA-256 authentication with non-ASCII passwords"
+              OPTIONS BUNDLED SYSTEM
+              DEFAULT VALUE BUNDLED)
 mongo_setting(
    ENABLE_SSL [[Enable TLS connection and SCRAM authentication.]]
    OPTIONS WINDOWS DARWIN OPENSSL LIBRESSL OFF AUTO
@@ -432,6 +435,10 @@ if (ENABLE_MONGOC)
       ${SOURCE_DIR}/src/zlib-1.2.13/gzlib.c
       ${SOURCE_DIR}/src/zlib-1.2.13/gzread.c
       ${SOURCE_DIR}/src/zlib-1.2.13/gzwrite.c
+   )
+
+   set (UTF8PROC_SOURCES
+      ${SOURCE_DIR}/src/utf8proc-2.8.0/utf8proc.c
    )
 
    set (MONGOC_ENABLE_ICU 0)
