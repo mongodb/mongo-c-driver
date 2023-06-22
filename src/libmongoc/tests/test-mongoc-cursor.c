@@ -2519,7 +2519,7 @@ test_cursor_batchsize_override_range_warning (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *coll;
-   bson_t *findopts = BCON_NEW ("batchSize", BCON_INT32 (1.0));
+   bson_t *findopts = BCON_NEW ("batchSize", BCON_INT32 (1));
 
    client = test_framework_new_default_client ();
    coll = mongoc_client_get_collection (client, "db", "coll");
