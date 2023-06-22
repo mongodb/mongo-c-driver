@@ -119,6 +119,9 @@ typedef struct {
  * libbson and libmongoc statically. */
 int
 mcommon_thread_join (bson_thread_t thread);
+// mcommon_thread_create returns 0 on success. Returns a non-zero error code on
+// error. Callers may use `bson_strerror_r` to get an error message from the
+// returned error code.
 int
 mcommon_thread_create (bson_thread_t *thread,
                        BSON_THREAD_FUN_TYPE (func),

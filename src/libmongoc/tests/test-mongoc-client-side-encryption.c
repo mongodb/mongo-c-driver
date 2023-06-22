@@ -6793,7 +6793,8 @@ test_bypass_mongocryptd_shared_library (void *unused)
    listen_socket_args_t *args = bson_malloc0 (sizeof (listen_socket_args_t));
    bson_mutex_init (&args->mutex);
    mongoc_cond_init (&args->cond);
-   mcommon_thread_create (&socket_thread, listen_socket, args);
+   ASSERT_CMPINT (
+      0, ==, mcommon_thread_create (&socket_thread, listen_socket, args));
 
    // configure mongoclient with auto encryption
    char *env_cryptSharedLibPath =
