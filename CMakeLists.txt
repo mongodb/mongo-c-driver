@@ -4,7 +4,6 @@ project (mongo-c-driver C)
 
 list (APPEND CMAKE_MODULE_PATH
       "${PROJECT_SOURCE_DIR}/build/cmake"
-      "${PROJECT_SOURCE_DIR}/build/cmake/make_dist"
       )
 
 include (MongoSettings)
@@ -346,8 +345,6 @@ unset (dist_generated_depends CACHE)
 
 set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
 
-include (MakeDistFiles)
-
 # Enable CTest
 include (CTest)
 if (BUILD_TESTING)
@@ -537,9 +534,7 @@ if (ENABLE_MONGOC)
    # CMake does not implement anything like 'dist' and 'distcheck' from autotools.
    # This implementation is based on the one in GnuCash.
 
-   add_subdirectory (build)
    # sub-directory 'doc' was already included above
-   add_subdirectory (orchestration_configs)
    add_subdirectory (src)
    # 'src/libbson' was already included, so 'src' will not include it directly
    # 'src/kms-message' was already included if appropriate
@@ -548,63 +543,7 @@ if (ENABLE_MONGOC)
    set (PACKAGE_PREFIX "mongo-c-driver-${MONGOC_DIST_VERSION}")
    set (DIST_FILE "${PACKAGE_PREFIX}.tar.gz")
 
-   set (top_DIST_local
-      CMakeLists.txt
-      CONTRIBUTING.md
-      COPYING
-      NEWS
-      README.rst
-      THIRD_PARTY_NOTICES
-      VERSION_CURRENT
-      # This sub-directory is added later, so manually include here
-      generate_uninstall/CMakeLists.txt
-   )
-
-   set_local_dist (top_DIST ${top_DIST_local})
-
-   set (ALL_DIST
-      ${top_DIST}
-      ${build_DIST}
-      ${orchestration_configs_DIST}
-      ${src_DIST}
-      ${src_libbson_DIST}
-      ${src_libmongoc_DIST}
-   )
-
-   # Write a dist manifest
-   string (REPLACE ";" "\n" ALL_DIST_LINES "${ALL_DIST}")
-   file (WRITE ${CMAKE_BINARY_DIR}/dist_manifest.txt ${ALL_DIST_LINES})
-
-   # This is the command that produces the distribution tarball
-   add_custom_command (OUTPUT ${DIST_FILE}
-      COMMAND ${CMAKE_COMMAND}
-         -D CMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/build/cmake/make_dist
-         -D PACKAGE_PREFIX=${PACKAGE_PREFIX}
-         -D MONGOC_SOURCE_DIR=${CMAKE_SOURCE_DIR}
-         -D BUILD_SOURCE_DIR=${BUILD_SOURCE_DIR}
-         -D SHELL=${SHELL}
-         "-Ddist_generated=\"${dist_generated}\""
-         -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDist.cmake
-
-      DEPENDS
-         ${ALL_DIST} ${dist_generated_depends}
-   )
-
    if (NOT USE_SYSTEM_LIBBSON AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
-      # Since our 'dist' implementation does not add top-level targets for every
-      # file to be included, we declare a dependency on the 'mongo-doc' target so
-      # that documentation is built before the distribution tarball is generated.
-      add_custom_target (dist DEPENDS doc ${DIST_FILE})
-
-      add_custom_target (distcheck DEPENDS dist
-         COMMAND ${CMAKE_COMMAND}
-            -D CMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/build/cmake/make_dist
-            -D CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
-            -D PACKAGE_PREFIX=${PACKAGE_PREFIX}
-            -D CMAKE_C_FLAGS=${CMAKE_C_FLAGS}
-            -D CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-            -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDistCheck.cmake
-      )
    else ()
       string (CONCAT DISTERRMSG
          "The dist and distcheck targets are disabled. Set USE_SYSTEM_LIBBSON=OFF, "

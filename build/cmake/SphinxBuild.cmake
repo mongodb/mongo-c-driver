@@ -16,9 +16,6 @@
 #   + each output file
 #   + additional Sphinx-generated content
 # - create the custom target that depends on the output files and calls sphinx
-# - set doc_DIST_rsts and doc_DIST_htmls in the parent scope with the lists of
-#   source .rst and output .html files, respectively, for making distributions
-#
 function (sphinx_build_html target_name doc_dir)
    include (ProcessorCount)
    ProcessorCount (NPROCS)
@@ -82,10 +79,6 @@ function (sphinx_build_html target_name doc_dir)
    endif ()
 
    add_custom_target (${target_name} DEPENDS ${doc_htmls})
-
-   # Pass lists back up for building distributions
-   set (doc_DIST_rsts ${doc_rsts} PARENT_SCOPE)
-   set (doc_DIST_htmls ${doc_htmls} PARENT_SCOPE)
 endfunction ()
 
 # function (sphinx_build_man)
@@ -101,8 +94,6 @@ endfunction ()
 # - create the custom Sphinx command that produces the man page output
 # - add install rules for each output file
 # - create the custom target that depends on the output files and calls sphinx
-# - set doc_DIST_rsts and doc_DIST_mans in the parent scope with the lists of
-#   source .rst and output .html files, respectively, for making distributions
 #
 function (sphinx_build_man target_name)
    include (ProcessorCount)
@@ -154,8 +145,4 @@ function (sphinx_build_man target_name)
    endforeach ()
 
    add_custom_target (${target_name} DEPENDS ${doc_mans})
-
-   # Pass lists back up for building distributions
-   set (doc_DIST_rsts ${doc_rsts} PARENT_SCOPE)
-   set (doc_DIST_mans ${doc_mans} PARENT_SCOPE)
 endfunction ()

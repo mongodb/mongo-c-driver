@@ -1304,24 +1304,3 @@ if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
       $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:mongoc-html>
    )
 endif ()
-
-add_subdirectory (build)
-# sub-directory 'doc' was already included above
-add_subdirectory (examples)
-add_subdirectory (src)
-add_subdirectory (tests)
-
-set_local_dist (src_libmongoc_DIST_local
-   CMakeLists.txt
-   THIRD_PARTY_NOTICES
-)
-
-set (src_libmongoc_DIST
-   ${src_libmongoc_DIST_local}
-   ${src_libmongoc_build_DIST}
-   ${src_libmongoc_doc_DIST}
-   ${src_libmongoc_examples_DIST}
-   ${src_libmongoc_src_DIST}
-   ${src_libmongoc_tests_DIST}
-   PARENT_SCOPE
-)
