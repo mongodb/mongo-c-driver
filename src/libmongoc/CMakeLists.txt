@@ -107,32 +107,14 @@ else ()
    message (STATUS "Disabling zlib compression")
 endif ()
 
-
-configure_file (
-   "${SOURCE_DIR}/src/utf8proc-2.8.0/utf8proc.h"
-   "${CMAKE_BINARY_DIR}/src/utf8proc-2.8.0/utf8proc.h"
-   COPYONLY
-)
 set (UTF8PROC_INCLUDE_DIRS "")
 
-if ( (ENABLE_UTF8PROC STREQUAL "BUNDLED")
-   OR (ENABLE_UTF8PROC STREQUAL "AUTO" AND NOT UTF8PROC_FOUND) )
-   message (STATUS "Enabling utf8proc compression (bundled)")
+if (ENABLE_UTF8PROC STREQUAL "BUNDLED")
+   message (STATUS "Enabling utf8proc (bundled)")
    add_library (utf8proc_obj OBJECT "${UTF8PROC_SOURCES}")
    set_property (TARGET utf8proc_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-   # This tells the bundled utf8proc where to find its generated headers
-   target_include_directories (utf8proc_obj
-      BEFORE PUBLIC
-      "${SOURCE_DIR}/src/utf8proc-2.8.0"
-      "${CMAKE_BINARY_DIR}/src/utf8proc-2.8.0"
-   )
    set (SOURCES ${SOURCES} $<TARGET_OBJECTS:utf8proc_obj>)
-   # This tells mongoc_shared/mongoc_static where to find generated utf8proc headers
-   set (
-      UTF8PROC_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/utf8proc-2.8.0"
-      "${CMAKE_BINARY_DIR}/src/utf8proc-2.8.0"
-   )
+   target_compile_definitions (utf8proc_obj PUBLIC UTF8PROC_STATIC)
 endif ()
 
 if (NOT ENABLE_ZSTD STREQUAL OFF)
