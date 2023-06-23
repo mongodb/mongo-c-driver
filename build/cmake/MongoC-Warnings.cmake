@@ -33,7 +33,7 @@ function (mongoc_add_platform_compile_options)
          set(before "${CMAKE_MATCH_1}${CMAKE_MATCH_2}")
          set(prefix "${CMAKE_MATCH_3}")
          set(suffix "${CMAKE_MATCH_4}")
-         message(DEBUG "Substitution: prefix “${prefix}” in “${opt}”, suffix is “${suffix}”")
+         message(TRACE "Substitution: prefix “${prefix}” in “${opt}”, suffix is “${suffix}”")
          set(cond "cond/${prefix}")
          set(not 0)
          if(prefix MATCHES "^not-(.*)")
@@ -51,7 +51,7 @@ function (mongoc_add_platform_compile_options)
             break()
          endif ()
          set(opt "${before}${opt}")
-         message(DEBUG "Become: ${opt}")
+         message(TRACE "Become: ${opt}")
       endwhile ()
       add_compile_options("${opt}")
    endforeach ()
@@ -70,7 +70,7 @@ endif ()
 # almost definitely broken
 mongoc_add_platform_compile_options (
      # Implicit function or variable declarations
-     gnu-like:lang-c:-Werror=implicit # msvc:/we4013 msvc:/we4431
+     gnu-like:lang-c:-Werror=implicit msvc:/we4013 msvc:/we4431
      # Missing return types/statements
      gnu-like:-Werror=return-type msvc:/we4716
      # Incompatible pointer types
