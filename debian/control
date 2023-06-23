@@ -57,7 +57,8 @@ Package: libmongoc-doc
 Section: doc
 Architecture: all
 Build-Profiles: <!pkg.mongo-c-driver.no-libmongocrypt>
-Depends: ${misc:Depends}
+Depends: libjs-mathjax,
+         ${misc:Depends}
 Description: MongoDB C client library - documentation
  libmongoc is the officially supported MongoDB client library for C
  applications.
