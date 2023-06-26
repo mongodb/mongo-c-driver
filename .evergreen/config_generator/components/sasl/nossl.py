@@ -23,7 +23,7 @@ COMPILE_MATRIX = [
 
 TEST_MATRIX = [
     ('ubuntu1604', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['3.6',                                            ]),
-    ('ubuntu1804', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], [       '4.0', '4.2', '4.4', '5.0', '7.0', 'latest']),
+    ('ubuntu1804', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], [       '4.0', '4.2', '4.4', '5.0', '6.0', '7.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
