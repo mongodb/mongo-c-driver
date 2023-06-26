@@ -71,11 +71,9 @@ mongo_bool_setting(ENABLE_EXAMPLES "Build MongoDB C Driver examples")
 mongo_bool_setting(ENABLE_MAN_PAGES "Build the manual pages" DEFAULT VALUE OFF)
 mongo_bool_setting(ENABLE_HTML_DOCS "Build the HTML documentation" DEFAULT VALUE OFF)
 mongo_bool_setting(ENABLE_UNINSTALL "Generate an 'uninstall' script and an 'uninstall' build target")
+mongo_bool_setting(ENABLE_SRV "Enable support for mongodb+srv URIs.")
 
 # Optional features that are ENABLED when necessary dependencies are found:
-mongo_setting(ENABLE_SRV "Enable support for mongodb+srv URIs."
-              OPTIONS ON OFF AUTO
-              DEFAULT VALUE AUTO)
 mongo_setting(ENABLE_SNAPPY "Enable Snappy compression support"
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)
