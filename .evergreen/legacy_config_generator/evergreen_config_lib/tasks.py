@@ -935,7 +935,7 @@ class AWSTestTask(MatrixTask):
     axes = OD(
         [
             ("testcase", ["regular", "ec2", "ecs", "lambda", "assume_role", "assume_role_with_web_identity"]),
-            ("version", ["latest", "7.0", "5.0", "4.4"]),
+            ("version", ["latest", "7.0", "6.0", "5.0", "4.4"]),
         ]
     )
 
@@ -985,7 +985,7 @@ class OCSPTask(MatrixTask):
             ("delegate", ["delegate", "nodelegate"]),
             ("cert", ["rsa", "ecdsa"]),
             ("ssl", ["openssl", "openssl-1.0.1", "darwinssl", "winssl"]),
-            ("version", ["latest", "7.0", "5.0", "4.4"]),
+            ("version", ["latest", "7.0", "6.0", "5.0", "4.4"]),
         ]
     )
 
@@ -1120,7 +1120,7 @@ class LoadBalancedTask(MatrixTask):
             # Whether tests are run with SSL connections.
             ("test_ssl", [True, False]),
             ("test_auth", [True, False]),
-            ("version", ["7.0", "5.0", "latest"]),
+            ("version", ["7.0", "6.0", "5.0", "latest"]),
         ]
     )
 
