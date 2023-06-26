@@ -33,15 +33,15 @@ TEST_MATRIX = [
     # 4.2 and 4.4 not available on rhel83-zseries.
     ('rhel83-zseries', 'gcc', None, 'cyrus', ['auth'], ['server'], ['5.0']),
 
-    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
-    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
+    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0'                ]),
+    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0'                ]),
+    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0'                ]),
 
-    # Test 6.0+ with a replica set since Queryable Encryption does not support the 'server' topology.
-    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', '7.0', 'latest']),
-    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', '7.0', 'latest']),
-    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', '7.0', 'latest']),
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], ['6.0', '7.0', 'latest']),
+    # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
+    ('ubuntu1804',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [                '7.0', 'latest']),
+    ('rhel83-zseries',    'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [                '7.0', 'latest']),
+    ('ubuntu1804-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [                '7.0', 'latest']),
+    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], [                '7.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
