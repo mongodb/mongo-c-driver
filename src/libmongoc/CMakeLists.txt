@@ -692,24 +692,18 @@ else ()
    message (STATUS "SASL disabled")
 endif ()
 
-
-set (THREADS_PREFER_PTHREAD_FLAG 1)
-find_package (Threads REQUIRED)
-if (CMAKE_USE_PTHREADS_INIT)
-   set (THREAD_LIB ${CMAKE_THREAD_LIBS_INIT})
-endif ()
-
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
 add_library(_mongoc-dependencies INTERFACE)
 add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
+target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform)
 install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
 set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
 
@@ -759,10 +753,6 @@ set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidd
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
-if(ENABLE_COVERAGE)
-   target_compile_options(mongoc_shared PRIVATE --coverage)
-   target_link_options(mongoc_shared PUBLIC --coverage)
-endif()
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
    if (APPLE)
@@ -802,10 +792,6 @@ mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VE
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   if(ENABLE_COVERAGE)
-      target_compile_options(mongoc_static PRIVATE --coverage)
-      target_link_options(mongoc_static PUBLIC --coverage)
-   endif()
    target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
@@ -1120,7 +1106,6 @@ if (ENABLE_EXAMPLES)
    mongoc_add_example (example-gridfs-bucket ${PROJECT_SOURCE_DIR}/examples/example-gridfs-bucket.c)
    if (NOT WIN32 AND ENABLE_EXAMPLES)
       mongoc_add_example (example-pool ${PROJECT_SOURCE_DIR}/examples/example-pool.c)
-      target_link_libraries (example-pool Threads::Threads)
    endif ()
    mongoc_add_example (example-scram ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
    mongoc_add_example (example-sdam-monitoring ${PROJECT_SOURCE_DIR}/examples/example-sdam-monitoring.c)
@@ -1212,7 +1197,7 @@ endif ()
 # Collect link items for the static library to be inserted into the pkg-config
 if(TARGET mongoc_static)
    set(link_options
-      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${THREAD_LIB} ${ZLIB_LIBRARIES}
+      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${ZLIB_LIBRARIES}
       ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
       ${LIBMONGOCRYPT_LIBRARY})
    # Replace all absolute paths with search-dir link-file options:
