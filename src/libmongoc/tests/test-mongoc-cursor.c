@@ -2663,14 +2663,17 @@ test_open_cursor_from_reply (void)
 
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
       const bson_t *got;
-      ASSERT (mongoc_cursor_next (cursor, &got));
+      bool found = mongoc_cursor_next (cursor, &got);
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT (found);
       ASSERT_MATCH (got, "{'_id': 0}");
-      ASSERT (mongoc_cursor_next (cursor, &got));
+      found = mongoc_cursor_next (cursor, &got);
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT (found);
       ASSERT_MATCH (got, "{'_id': 1}");
-      ASSERT (!mongoc_cursor_next (cursor, &got));
+      found = mongoc_cursor_next (cursor, &got);
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT (!found);
 
       mongoc_cursor_destroy (cursor);
    }
