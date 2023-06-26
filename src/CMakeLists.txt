@@ -22,6 +22,7 @@ set (src_zlib_DIST
 set (src_utf8proc_DIST
    src/utf8proc-2.8.0/utf8proc.h
    src/utf8proc-2.8.0/utf8proc.c
+   src/utf8proc-2.8.0/utf8proc_data.c
 )
 # Strip leading directory components to make the paths relative for MakeDist.
 # The ZLIB_SOURCES list is set in the top-level CMakeLists.txt.
