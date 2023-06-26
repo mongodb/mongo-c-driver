@@ -1,15 +1,4 @@
 set (src_libmongoc_src_mongoc_DIST_defs
-   op-delete.def
-   op-get-more.def
-   op-header.def
-   op-insert.def
-   op-kill-cursors.def
-   op-msg.def
-   op-query.def
-   op-reply.def
-   op-reply-header.def
-   op-update.def
-   op-compressed.def
    mongoc-counters.defs
 )
 
