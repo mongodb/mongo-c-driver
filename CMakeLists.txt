@@ -8,6 +8,7 @@ list (APPEND CMAKE_MODULE_PATH
       )
 
 include (MongoSettings)
+include (MongoPlatform)
 
 # Subcomponents:
 mongo_bool_setting(ENABLE_MONGOC "Enable the build of libmongoc libraries (The MongoDB C database driver)")
@@ -194,6 +195,11 @@ mongo_bool_setting(
    ]]
 )
 
+if(ENABLE_COVERAGE)
+   mongo_add_platform_link_options(--coverage)
+   mongo_add_platform_compile_options($<BUILD_INTERFACE:--coverage>)
+endif()
+
 # Optionally enable C++ to do some C++-specific tests
 include (CheckLanguage)
 check_language (CXX)
@@ -223,7 +229,7 @@ include(MongoC-Warnings)
 # Enable "maintainer flags," which are supplementary but not mandatory.
 # (As opposed to MongoC-Warnings.cmake, which defines "the code is broken" warnings)
 if(ENABLE_MAINTAINER_FLAGS)
-   mongoc_add_platform_compile_options(
+   mongoc_add_warning_options(
       gnu-like:-Werror
       gnu-like:-pedantic
       gnu-like:-Wall

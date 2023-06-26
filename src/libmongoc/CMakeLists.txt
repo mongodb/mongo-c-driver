@@ -710,6 +710,7 @@ set (STATIC_LIBRARIES
 
 add_library(_mongoc-dependencies INTERFACE)
 add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
+target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform)
 install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
 set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
 
@@ -759,10 +760,6 @@ set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidd
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
-if(ENABLE_COVERAGE)
-   target_compile_options(mongoc_shared PRIVATE --coverage)
-   target_link_options(mongoc_shared PUBLIC --coverage)
-endif()
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
    if (APPLE)
@@ -801,10 +798,6 @@ set_target_properties (mongoc_shared PROPERTIES
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   if(ENABLE_COVERAGE)
-      target_compile_options(mongoc_static PRIVATE --coverage)
-      target_link_options(mongoc_static PUBLIC --coverage)
-   endif()
    target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)

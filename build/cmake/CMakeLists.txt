@@ -8,6 +8,7 @@ set (build_cmake_MODULES
    FindSphinx.cmake
    LoadVersion.cmake
    MongoCPackage.cmake
+   MongoPlatform.cmake
    MongoSettings.cmake
    MongoC-Warnings.cmake
    ParseVersion.cmake
