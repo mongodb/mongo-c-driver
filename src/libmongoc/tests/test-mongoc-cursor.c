@@ -2519,7 +2519,7 @@ test_cursor_batchsize_override_range_warning (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *coll;
-   bson_t *findopts = BCON_NEW ("batchSize", BCON_INT32 (1.0));
+   bson_t *findopts = BCON_NEW ("batchSize", BCON_INT32 (1));
 
    client = test_framework_new_default_client ();
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -2541,6 +2541,186 @@ test_cursor_batchsize_override_range_warning (void)
       mongoc_cursor_destroy (cursor);
       bson_destroy (findopts);
       bson_destroy (filter);
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+// Test using an open cursor created by
+// `mongoc_cursor_new_from_command_reply_with_opts`.
+// This is a regression test for CDRIVER-3969.
+static void
+test_open_cursor_from_reply (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_error_t error;
+   bool ok;
+
+   client = test_framework_new_default_client ();
+   coll = get_test_collection (client, "test_open_cursor_from_reply");
+
+   // Drop collection to remove data from prior runs.
+   // Ignore errors. Dropping a non-existing collection may return an "ns not
+   // found" error.
+   mongoc_collection_drop (coll, &error);
+
+   // Insert two documents.
+   {
+      ok = mongoc_collection_insert_one (coll,
+                                         tmp_bson ("{'_id': 0}"),
+                                         NULL /* opts */,
+                                         NULL /* reply */,
+                                         &error);
+      ASSERT_OR_PRINT (ok, error);
+      ok = mongoc_collection_insert_one (coll,
+                                         tmp_bson ("{'_id': 1}"),
+                                         NULL /* opts */,
+                                         NULL /* reply */,
+                                         &error);
+      ASSERT_OR_PRINT (ok, error);
+   }
+
+   // Test creating an open cursor created without a serverId. Expect error.
+   {
+      mongoc_cursor_t *cursor;
+      bson_t reply;
+      // Use a smaller batchSize than the number of documents. The smaller
+      // batchSize will result in the cursor being left open on the server.
+      bson_t *cmd = tmp_bson ("{'find': '%s', 'batchSize': 1}",
+                              mongoc_collection_get_name (coll));
+      ok = mongoc_collection_command_simple (
+         coll, cmd, NULL /* read_prefs */, &reply, &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      // Assert that the cursor has a non-zero cursorId. A non-zero cursorId
+      // means the cursor is open on the server.
+      {
+         bson_iter_t iter;
+         ASSERT (bson_iter_init (&iter, &reply));
+         ASSERT (bson_iter_find_descendant (&iter, "cursor.id", &iter));
+         ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
+         ASSERT_CMPINT64 (bson_iter_int64 (&iter), >, 0);
+      }
+
+      // `reply` is destroyed by
+      // `mongoc_cursor_new_from_command_reply_with_opts`.
+      cursor = mongoc_cursor_new_from_command_reply_with_opts (
+         client, &reply, NULL /* opts */);
+
+      // Expect an error to be returned.
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CURSOR,
+                             MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                             "Expected `serverId` option");
+
+      mongoc_cursor_destroy (cursor);
+   }
+
+   // Test iterating an open cursor created with a serverId. Expect no error.
+   {
+      // Get a serverID.
+      uint32_t server_id;
+      {
+         mongoc_server_description_t *sd = mongoc_client_select_server (
+            client, true /* for_writes */, NULL /* read prefs */, &error);
+         ASSERT_OR_PRINT (sd, error);
+         server_id = mongoc_server_description_id (sd);
+         mongoc_server_description_destroy (sd);
+      }
+      mongoc_cursor_t *cursor;
+      bson_t reply;
+      // Use a smaller batchSize than the number of documents. The smaller
+      // batchSize will result in the cursor being left open on the server.
+      bson_t *cmd =
+         tmp_bson ("{'find': '%s', 'batchSize': 1, 'sort': {'_id': 1}}",
+                   mongoc_collection_get_name (coll));
+      ok = mongoc_collection_command_with_opts (
+         coll,
+         cmd,
+         NULL /* read_prefs */,
+         tmp_bson ("{'serverId': %" PRIu32 "}", server_id),
+         &reply,
+         &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      // Assert that the cursor has a non-zero cursorId. A non-zero cursorId
+      // means the cursor is open on the server.
+      {
+         bson_iter_t iter;
+         ASSERT (bson_iter_init (&iter, &reply));
+         ASSERT (bson_iter_find_descendant (&iter, "cursor.id", &iter));
+         ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
+         ASSERT_CMPINT64 (bson_iter_int64 (&iter), >, 0);
+      }
+
+      // `reply` is destroyed by
+      // `mongoc_cursor_new_from_command_reply_with_opts`.
+      cursor = mongoc_cursor_new_from_command_reply_with_opts (
+         client, &reply, tmp_bson ("{'serverId': %" PRIu32 "}", server_id));
+
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      const bson_t *got;
+      bool found = mongoc_cursor_next (cursor, &got);
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT (found);
+      ASSERT_MATCH (got, "{'_id': 0}");
+      found = mongoc_cursor_next (cursor, &got);
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT (found);
+      ASSERT_MATCH (got, "{'_id': 1}");
+      found = mongoc_cursor_next (cursor, &got);
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT (!found);
+
+      mongoc_cursor_destroy (cursor);
+   }
+
+   // Test destroying an open cursor created with a serverId. Expect no error.
+   {
+      // Get a serverID.
+      uint32_t server_id;
+      {
+         mongoc_server_description_t *sd = mongoc_client_select_server (
+            client, true /* for_writes */, NULL /* read prefs */, &error);
+         ASSERT_OR_PRINT (sd, error);
+         server_id = mongoc_server_description_id (sd);
+         mongoc_server_description_destroy (sd);
+      }
+      mongoc_cursor_t *cursor;
+      bson_t reply;
+      // Use a smaller batchSize than the number of documents. The smaller
+      // batchSize will result in the cursor being left open on the server.
+      bson_t *cmd = tmp_bson ("{'find': '%s', 'batchSize': 1}",
+                              mongoc_collection_get_name (coll));
+      ok = mongoc_collection_command_with_opts (
+         coll,
+         cmd,
+         NULL /* read_prefs */,
+         tmp_bson ("{'serverId': %" PRIu32 "}", server_id),
+         &reply,
+         &error);
+      ASSERT_OR_PRINT (ok, error);
+
+      // Assert that the cursor has a non-zero cursorId. A non-zero cursorId
+      // means the cursor is open on the server.
+      {
+         bson_iter_t iter;
+         ASSERT (bson_iter_init (&iter, &reply));
+         ASSERT (bson_iter_find_descendant (&iter, "cursor.id", &iter));
+         ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
+         ASSERT_CMPINT64 (bson_iter_int64 (&iter), >, 0);
+      }
+
+      // `reply` is destroyed by
+      // `mongoc_cursor_new_from_command_reply_with_opts`.
+      cursor = mongoc_cursor_new_from_command_reply_with_opts (
+         client, &reply, tmp_bson ("{'serverId': %" PRIu32 "}", server_id));
+
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      mongoc_cursor_destroy (cursor);
    }
 
    mongoc_collection_destroy (coll);
@@ -2647,4 +2827,6 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Cursor/batchsize_override_range_warning",
                       test_cursor_batchsize_override_range_warning);
+   TestSuite_AddLive (
+      suite, "/Cursor/open_cursor_from_reply", test_open_cursor_from_reply);
 }
