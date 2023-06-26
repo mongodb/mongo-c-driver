@@ -239,6 +239,7 @@ if(ENABLE_MAINTAINER_FLAGS)
       gnu-like:-Wredundant-decls
       gnu-like:-Wshadow
       gnu-like:lang-c:-Wstrict-prototypes
+      gnu-like:-Wswitch-default
       gnu-like:-Wswitch-enum
       gnu-like:-Wundef
       gnu-like:-Wuninitialized

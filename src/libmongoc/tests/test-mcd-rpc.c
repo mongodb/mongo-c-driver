@@ -1918,6 +1918,7 @@ test_rpc_message_from_data_op_kill_cursors_invalid (void)
 
 #define ASSERT_IOVEC_VALUE(index, expected, type, raw_type, from_le, spec)  \
    if (1) {                                                                 \
+      const type _expected = expected;                                      \
       const mongoc_iovec_t iovec = iovecs[index];                           \
       const size_t len = sizeof (type);                                     \
       ASSERT_WITH_MSG (iovec.iov_len == sizeof (type),                      \
@@ -1929,18 +1930,17 @@ test_rpc_message_from_data_op_kill_cursors_invalid (void)
       storage = from_le (storage);                                          \
       type value;                                                           \
       memcpy (&value, &storage, sizeof (type));                             \
-      ASSERT_WITH_MSG (value == expected,                                   \
+      ASSERT_WITH_MSG (value == _expected,                                  \
                        "expected iov_base to point to %s with value %" spec \
                        ", but got %" spec,                                  \
                        #type,                                               \
-                       expected,                                            \
+                       _expected,                                           \
                        value);                                              \
    } else                                                                   \
       (void) 0
 
 #define ASSERT_IOVEC_UINT8(index, expected) \
-   ASSERT_IOVEC_VALUE (                     \
-      index, (uint8_t) expected, uint8_t, uint8_t, (uint8_t), PRIu8)
+   ASSERT_IOVEC_VALUE (index, expected, uint8_t, uint8_t, (uint8_t), PRIu8)
 #define ASSERT_IOVEC_INT32(index, expected) \
    ASSERT_IOVEC_VALUE (                     \
       index, expected, int32_t, uint32_t, BSON_UINT32_FROM_LE, PRId32)
