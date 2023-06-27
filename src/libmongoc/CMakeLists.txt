@@ -692,20 +692,13 @@ else ()
    message (STATUS "SASL disabled")
 endif ()
 
-
-set (THREADS_PREFER_PTHREAD_FLAG 1)
-find_package (Threads REQUIRED)
-if (CMAKE_USE_PTHREADS_INIT)
-   set (THREAD_LIB ${CMAKE_THREAD_LIBS_INIT})
-endif ()
-
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
 add_library(_mongoc-dependencies INTERFACE)
@@ -1109,7 +1102,6 @@ if (ENABLE_EXAMPLES)
    mongoc_add_example (example-gridfs-bucket ${PROJECT_SOURCE_DIR}/examples/example-gridfs-bucket.c)
    if (NOT WIN32 AND ENABLE_EXAMPLES)
       mongoc_add_example (example-pool ${PROJECT_SOURCE_DIR}/examples/example-pool.c)
-      target_link_libraries (example-pool Threads::Threads)
    endif ()
    mongoc_add_example (example-scram ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
    mongoc_add_example (example-sdam-monitoring ${PROJECT_SOURCE_DIR}/examples/example-sdam-monitoring.c)
@@ -1206,7 +1198,7 @@ set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 # Collect link items for the static library to be inserted into the pkg-config
 if(TARGET mongoc_static)
    set(link_options
-      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${THREAD_LIB} ${ZLIB_LIBRARIES}
+      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${ZLIB_LIBRARIES}
       ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
       ${LIBMONGOCRYPT_LIBRARY})
    # Replace all absolute paths with search-dir link-file options:

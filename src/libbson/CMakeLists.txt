@@ -263,13 +263,6 @@ if (!APPLE)
    endif ()
 endif ()
 
-set (THREADS_PREFER_PTHREAD_FLAG 1)
-find_package (Threads REQUIRED)
-target_link_libraries (bson_shared PRIVATE Threads::Threads)
-if (CMAKE_USE_PTHREADS_INIT)
-   set (BSON_LIBRARIES ${BSON_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-endif ()
-
 if (WIN32)
    # gethostbyname
    target_link_libraries (bson_shared PRIVATE ws2_32)
@@ -315,9 +308,6 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    )
    set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
    set_target_properties (bson_static PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")
-   # We use CMAKE_THREAD_LIBS_INIT rather than Threads::Threads here because the
-   # latter fails when building on Mac OS X
-   target_link_libraries (bson_static PUBLIC ${CMAKE_THREAD_LIBS_INIT})
    if (RT_LIBRARY)
       target_link_libraries (bson_static PUBLIC ${RT_LIBRARY})
    endif ()

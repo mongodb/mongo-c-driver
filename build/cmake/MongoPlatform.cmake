@@ -44,5 +44,6 @@ function(mongo_add_platform_link_options)
 endfunction()
 
 # Enable multi-threading:
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 target_link_libraries(_mongo-platform INTERFACE Threads::Threads)
