@@ -2452,21 +2452,15 @@ test_bson_json_merge_multiple (void)
 {
    bson_error_t error;
    bson_t *b = bson_new_from_json (
-      (const uint8_t *) "{\"a\" : 12, \"b\" : 34}, {\"c\" : 56}, {\"d\" : 78}",
-      -1,
-      &error);
+      (const uint8_t *) "{\"a\" : 1}, {\"b\" : 2}", -1, &error);
    ASSERT_OR_PRINT (b, error);
 
-   bson_t compare;
-   bson_init (&compare);
-   bson_append_int32 (&compare, "a", 1, 12);
-   bson_append_int32 (&compare, "b", 1, 34);
-   bson_append_int32 (&compare, "c", 1, 56);
-   bson_append_int32 (&compare, "d", 1, 78);
+   bson_t *compare = bson_new_from_json (
+      (const uint8_t *) BSON_STR ({"a" : 1, "b" : 2}), -1, &error);
 
-   bson_eq_bson (b, &compare);
+   bson_eq_bson (b, compare);
    bson_destroy (b);
-   bson_destroy (&compare);
+   bson_destroy (compare);
 }
 
 static void
@@ -2485,19 +2479,15 @@ test_bson_json_extra_chars (void)
 
    {
       bson_t *b = bson_new_from_json (
-         (const uint8_t *) "{\"a\" : 12, \"b\" : 34}{abc,[],{},123",
-         -1,
-         &error);
+         (const uint8_t *) "{\"a\" : 1}{abc,[],{},123", -1, &error);
       ASSERT_OR_PRINT (b, error);
 
-      bson_t compare;
-      bson_init (&compare);
-      bson_append_int32 (&compare, "a", 1, 12);
-      bson_append_int32 (&compare, "b", 1, 34);
+      bson_t *compare =
+         bson_new_from_json ((const uint8_t *) "{\"a\" : 1}", -1, &error);
 
-      bson_eq_bson (b, &compare);
+      bson_eq_bson (b, compare);
       bson_destroy (b);
-      bson_destroy (&compare);
+      bson_destroy (compare);
    }
 }
 
