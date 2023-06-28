@@ -5,7 +5,7 @@
  %global libname      libmongoc
  %global libver       1.0
 -%global up_version   1.24.1
-+%global up_version   1.25.0
++%global up_version   1.24.2
  #global up_prever    rc0
  # disabled as require a MongoDB server
  %bcond_with          tests
