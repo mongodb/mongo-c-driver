@@ -9228,8 +9228,6 @@ buildvariants:
   - abi-compliance-check
 - name: releng
   display_name: '**Release Archive Creator'
-  expansions:
-    SKIP_LEGACY_SHELL: '1'
   run_on: ubuntu2204-small
   tasks:
   - make-release-archive
