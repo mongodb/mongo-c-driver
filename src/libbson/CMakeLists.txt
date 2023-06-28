@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.1)
+cmake_minimum_required (VERSION 3.15)
 
 project (libbson C)
 
@@ -237,6 +237,7 @@ target_include_directories (
 )
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}")
+mongo_generate_pkg_config (bson_shared FILENAME libbson-1.0.pc INSTALL)
 
 if (ENABLE_APPLE_FRAMEWORK)
    set_target_properties(bson_shared PROPERTIES
@@ -334,6 +335,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       # gethostbyname
       target_link_libraries (bson_static ws2_32)
    endif ()
+   if(MONGOC_ENABLE_STATIC_INSTALL)
+      mongo_generate_pkg_config(bson_static FILENAME libbson-static-1.0.pc INSTALL)
+   endif()
 endif ()
 
 function (add_example bin src)
@@ -378,6 +382,12 @@ install (
    INCLUDES DESTINATION ${BSON_HEADER_INSTALL_DIR}
    FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+set_target_properties(${TARGETS_TO_INSTALL} PROPERTIES
+   pkg_config_NAME libbson
+   pkg_config_DESCRIPTION "The libbson BSON serialization library."
+   pkg_config_VERSION "${BSON_VERSION}"
+)
+set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${BSON_HEADER_INSTALL_DIR}")
 
 install (
    FILES ${HEADERS}
@@ -407,35 +417,6 @@ endforeach ()
 foreach (_lib ${BSON_SYSTEM_LIBRARIES})
    set (LIBBSON_LIBRARIES "${LIBBSON_LIBRARIES} ${_lib}")
 endforeach ()
-
-set (VERSION "${BSON_VERSION}")
-set (prefix "${CMAKE_INSTALL_PREFIX}")
-set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
-configure_file (
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-1.0.pc.in
-   ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
-   @ONLY)
-
-install (
-   FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
-   DESTINATION
-      ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
-
-if (MONGOC_ENABLE_STATIC_INSTALL)
-   configure_file (
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-static-1.0.pc.in
-      ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
-      @ONLY)
-
-   install (
-      FILES
-         ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
-      DESTINATION
-         ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-   )
-endif ()
 
 include (CMakePackageConfigHelpers)
 set (INCLUDE_INSTALL_DIRS "${BSON_HEADER_INSTALL_DIR}")

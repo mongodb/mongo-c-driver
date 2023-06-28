@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.1)
+cmake_minimum_required (VERSION 3.15)
 
 project (libmongoc C)
 
@@ -786,6 +786,8 @@ target_compile_definitions (mongoc_shared
       MONGOC_COMPILATION
       ${KMS_MSG_DEFINITIONS}
       MCOMMON_NAME_PREFIX=_mongoc_mcommon
+   PUBLIC
+      $<$<CONFIG:Debug>:meow>
 )
 # Several directories in the source and build trees contain headers we would like
 # include via relative reference, but they all end up in the same install path
@@ -807,6 +809,7 @@ set_target_properties (mongoc_shared PROPERTIES
    SOVERSION 0
    pkg_config_REQUIRES "libbson-1.0"
    )
+mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VERSION}.pc)
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
@@ -855,6 +858,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}"
       pkg_config_REQUIRES "libbson-static-1.0"
       )
+   if(MONGOC_ENABLE_STATIC_INSTALL)
+      mongo_generate_pkg_config (mongoc_static FILENAME libmongoc-static-${MONGOC_API_VERSION}.pc INSTALL)
+   endif()
 endif ()
 
 if (ENABLE_APPLE_FRAMEWORK)
@@ -1214,11 +1220,6 @@ if (ENABLE_APPLE_FRAMEWORK)
    )
 endif ()
 
-# Define pkg-config files
-set (VERSION "${MONGOC_VERSION}")
-set (prefix "${CMAKE_INSTALL_PREFIX}")
-set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
-
 # Collect link items for the static library to be inserted into the pkg-config
 if(TARGET mongoc_static)
    set(link_options
@@ -1241,86 +1242,9 @@ endif()
 set_target_properties(${TARGETS_TO_INSTALL} PROPERTIES
    pkg_config_NAME "libmongoc"
    pkg_config_DESCRIPTION "The libmongoc MongoDB client library."
-   pkg_config_VERSION "${VERSION}")
+   pkg_config_VERSION "${MONGOC_VERSION}")
 # Relative include-path will be given the install prefix:
 set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${MONGOC_HEADER_INSTALL_DIR}")
-
-#[[
-Utility for configuring a file and then evaluating generator expressions on it.
-The content of the file has a tiny templating DSL for writing generator
-expressions. Expansion takes place as follows:
-   1. Delete any content starting at hash-tilde "#~" until the next newline
-   2. Search for any lines of the form "%define foo bar". For each instance,
-      replace "foo" with "bar" in the remainder of the file. The "%define foo bar"
-      line is deleted.
-   3. If a tilde "~" appears adjacent to any of "$,<:>@", delete the tilde and
-      all adjacent whitespace.
-   4. Run string(CONFIGURE ... @ONLY) on the result to replace variable
-      references. Special replacements @space@, @newline@, and @empty@ are also
-      available for adjusting whitespace after ~ trimming.
-   5. Run file(GENERATE).
-]]
-function(_mongoc_configure_and_generate_file input output)
-   set(CMAKE_MESSAGE_CONTEXT _mongoc_configure_and_generate_file)
-   # If given a relative input path, make it relative to the current source dir:
-   get_filename_component(abs_in "${input}" ABSOLUTE)
-   file(READ "${input}" content)
-   # Some convenience values for @expansion@ in the file:
-   set(space " ")
-   set(newline "\n")
-   set(empty "")
-   # Delete "#~" comments:
-   string(REGEX REPLACE "#~[^\n]*" "" content "${content}")
-   # Replace our simple "%define <name> <value>" macros:
-   while(content MATCHES "(.*)\n *%define +([a-zA-Z_\\$<>:-]+) *([^\n]*)\n(.*)")
-      set(before "${CMAKE_MATCH_1}")
-      set(after "${CMAKE_MATCH_4}")
-      set(def "${CMAKE_MATCH_2}")
-      set(val "${CMAKE_MATCH_3}")
-      message(TRACE "Replace “${def}” with “${val}”")
-      # Only perform the replacement on the remainder of the file following that
-      # line:
-      string(REPLACE "${def}" "${val}" after "${after}")
-      # Splice the results:
-      set(content "${before}\n${after}")
-   endwhile()
-   # Whitespace trimming. right-trim when tilde is to the right of special chars:
-   string(REGEX REPLACE "([,><:@])~[ \n\t]*" "\\1" content "${content}")
-   # Same thing, but on the left-hand side:
-   string(REGEX REPLACE "[ \n\t]*~([^ \t\n])" "\\1" content "${content}")
-   # Replace @variables@:
-   string(CONFIGURE "${content}" content @ONLY)
-   # If given a relative output path, make it relative to the current binary dir:
-   if(NOT IS_ABSOLUTE "${output}")
-      get_filename_component(output "${CMAKE_CURRENT_BINARY_DIR}/${output}" ABSOLUTE)
-   endif()
-   message(DEBUG "Configure+generate file [${input}] -> [${output}]")
-   message(TRACE "Content:\n${content}")
-   # Generate it:
-   file(GENERATE OUTPUT "${output}" CONTENT "${content}" ${ARGN})
-endfunction()
-
-# Generate pkg-config for mongoc_shared
-if(TARGET mongoc_shared)
-   set(GENERATE_TARGET mongoc_shared)
-   _mongoc_configure_and_generate_file(
-      src/libmongoc.pc.in
-      src/libmongoc-1.0.pc)
-   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
-           DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-endif()
-
-# Now one for mongoc_static:
-if(TARGET mongoc_static)
-   set(GENERATE_TARGET mongoc_static)
-   _mongoc_configure_and_generate_file(
-      src/libmongoc.pc.in
-      src/libmongoc-static-1.0.pc)
-   if(MONGOC_ENABLE_STATIC_INSTALL)
-      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
-              DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-   endif()
-endif()
 
 # Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086.
 if (MONGOC_ENABLE_SSL)
