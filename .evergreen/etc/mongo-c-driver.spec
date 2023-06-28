@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.23.5
+%global up_version   1.24.1
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -28,7 +28,7 @@ URL:       https://github.com/%{gh_owner}/%{gh_project}
 
 Source0:   https://github.com/%{gh_owner}/%{gh_project}/releases/download/%{up_version}%{?up_prever:-%{up_prever}}/%{gh_project}-%{up_version}%{?up_prever:-%{up_prever}}.tar.gz
 
-BuildRequires: cmake >= 3.1
+BuildRequires: cmake >= 3.15
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make
@@ -128,6 +128,9 @@ Documentation: http://mongoc.org/libbson/%{version}/
     -DENABLE_CRYPTO_SYSTEM_PROFILE:BOOL=ON \
     -DENABLE_MAN_PAGES:BOOL=ON \
     -DENABLE_STATIC:STRING=OFF \
+    -DENABLE_ZLIB:STRING=SYSTEM \
+    -DENABLE_ZSTD:STRING=ON \
+    -DENABLE_SNAPPY:STRING=ON \
 %if %{with tests}
     -DENABLE_TESTS:BOOL=ON \
 %else
@@ -235,6 +238,12 @@ exit $ret
 
 
 %changelog
+* Wed Jun 21 2023 Remi Collet <remi@remirepo.net> - 1.24.1-1
+- update to 1.24.1
+
+* Wed Jun 21 2023 Remi Collet <remi@remirepo.net> - 1.24.0-1
+- update to 1.24.0
+
 * Wed Jun  7 2023 Remi Collet <remi@remirepo.net> - 1.23.5-1
 - update to 1.23.5
 
