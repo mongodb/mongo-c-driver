@@ -29,6 +29,19 @@ The ``bson_init_from_json()`` function will initialize a new :symbol:`bson_t` by
 
 ``data`` should be in `MongoDB Extended JSON <https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/>`_ format.
 
+
+Deprecated behavior
+-------------------
+
+If there are multiple comma-separated JSONs in ``data``, the keys from all JSONs are merged in the returned BSON.
+For example, ``{"a": 1},{"b": 2}`` is parsed as ``{"a": 1, "b": 2}``.
+
+If the first character encountered after the last valid
+JSON object is ``{``, all following characters are ignored and no error is set.
+Otherwise, an error will be set and NULL returned.
+
+This deprecated behavior is subject to change in a future release.
+
 Errors
 ------
 
