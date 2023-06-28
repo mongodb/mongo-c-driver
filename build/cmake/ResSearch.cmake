@@ -1,6 +1,9 @@
 include(CheckSymbolExists)
 include(CMakePushCheckState)
 
+# Required so that some libresolv symbols will be visible:
+set(CMAKE_C_EXTENSIONS ON)
+
 cmake_push_check_state(RESET)
 
 # The name of the library that performs name resolution, suitable for giving to the "-l" link flag
