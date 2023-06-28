@@ -2519,7 +2519,7 @@ static void
 test_bson_dsl_parse (void)
 {
    // Do nothing:
-   bsonParse (*TMP_BSON_FROM_JSON ({}), do());
+   bsonParse (*TMP_BSON_FROM_JSON ({}), do ());
    BSON_ASSERT (!bsonParseError);
 
    // Generate an error
@@ -2527,13 +2527,13 @@ test_bson_dsl_parse (void)
    ASSERT_CMPSTR (bsonParseError, "failed 1");
 
    // Error is reset on each entry
-   bsonParse (*TMP_BSON_FROM_JSON ({}), do());
+   bsonParse (*TMP_BSON_FROM_JSON ({}), do ());
    BSON_ASSERT (!bsonParseError);
 
    // Find an element
    bson_t *simple_foo_bar = TMP_BSON_FROM_JSON ({"foo" : "bar"});
    bool found = false;
-   bsonParse (*simple_foo_bar, find (key ("foo"), do(found = true)));
+   bsonParse (*simple_foo_bar, find (key ("foo"), do (found = true)));
    BSON_ASSERT (found);
 
    // Store a reference to the string
@@ -2545,16 +2545,16 @@ test_bson_dsl_parse (void)
    found = false;
    bool not_found = false;
    bsonParse (*simple_foo_bar,
-              find (key ("bad"), do(found = true)),
-              else(do(not_found = true)));
+              find (key ("bad"), do (found = true)),
+              else (do (not_found = true)));
    BSON_ASSERT (!found);
    BSON_ASSERT (not_found);
 
    // We can find two items
    int32_t a = 0, b = 0;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : 1729, "bar" : 42}),
-              find (key ("foo"), do(a = bsonAs (int32))),
-              find (key ("bar"), do(b = bsonAs (int32))));
+              find (key ("foo"), do (a = bsonAs (int32))),
+              find (key ("bar"), do (b = bsonAs (int32))));
    ASSERT_CMPINT (a, ==, 1729);
    ASSERT_CMPINT (b, ==, 42);
 
@@ -2562,7 +2562,7 @@ test_bson_dsl_parse (void)
    a = 91;
    found = false;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : "string"}),
-              find (key ("foo"), do(found = true; a = bsonAs (int32))));
+              find (key ("foo"), do (found = true; a = bsonAs (int32))));
    BSON_ASSERT (found);
    ASSERT_CMPINT (a, ==, 0);
 
@@ -2570,7 +2570,7 @@ test_bson_dsl_parse (void)
    found = false;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : null, "bar" : null}),
               find (key ("foo"), error ("got foo")),
-              find (key ("bar"), do(found = true)));
+              find (key ("bar"), do (found = true)));
    ASSERT_CMPSTR (bsonParseError, "got foo");
    BSON_ASSERT (!found);
 
@@ -2578,7 +2578,7 @@ test_bson_dsl_parse (void)
    found = false;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : null, "bar" : null}),
               find (key ("foo"), halt),
-              find (key ("bar"), do(found = true)));
+              find (key ("bar"), do (found = true)));
    BSON_ASSERT (!bsonParseError);
    BSON_ASSERT (!found);
 
@@ -2587,14 +2587,14 @@ test_bson_dsl_parse (void)
    b = 0;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 2}),
               if (a == 812,
-                  then (find (key ("foo"), do(b = bsonAs (int32)))),
-                  else(find (key ("bar"), do(b = bsonAs (int32))))));
+                  then (find (key ("foo"), do (b = bsonAs (int32)))),
+                  else (find (key ("bar"), do (b = bsonAs (int32))))));
    ASSERT_CMPINT (b, ==, 1);
    a = 4;
    bsonParse (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 2}),
               if (a == 812,
-                  then (find (key ("foo"), do(b = bsonAs (int32)))),
-                  else(find (key ("bar"), do(b = bsonAs (int32))))));
+                  then (find (key ("foo"), do (b = bsonAs (int32)))),
+                  else (find (key ("bar"), do (b = bsonAs (int32))))));
    ASSERT_CMPINT (b, ==, 2);
 
    bson_t tmp = BSON_INITIALIZER;
@@ -2603,7 +2603,7 @@ test_bson_dsl_parse (void)
    }
    BSON_APPEND_BOOL (&tmp, "final", true);
    int unvisited = 0;
-   bsonParse (tmp, find (key ("final"), nop), visitOthers (do(++unvisited)));
+   bsonParse (tmp, find (key ("final"), nop), visitOthers (do (++unvisited)));
    ASSERT_CMPINT (unvisited, ==, 1024);
    bson_destroy (&tmp);
 }
@@ -2613,15 +2613,15 @@ test_bson_dsl_visit (void)
 {
    // Count elements
    int count = 0;
-   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 1}), do(++count));
+   bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : 1, "bar" : 1}), do (++count));
    ASSERT_CMPINT (count, ==, 2);
 
    // Branch on keys
    int foo_val = 0;
    int bar_val = 0;
    bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : 61, "bar" : 951}),
-                  if (key ("foo"), then (do(foo_val = bsonAs (int32)))),
-                  if (key ("bar"), then (do(bar_val = bsonAs (int32)))));
+                  if (key ("foo"), then (do (foo_val = bsonAs (int32)))),
+                  if (key ("bar"), then (do (bar_val = bsonAs (int32)))));
    ASSERT_CMPINT (foo_val, ==, 61);
    ASSERT_CMPINT (bar_val, ==, 951);
 
@@ -2630,7 +2630,7 @@ test_bson_dsl_visit (void)
    bsonVisitEach (*TMP_BSON_FROM_JSON ({"foo" : {"bar" : 42}}),
                   storeDocRef (subdoc));
    bar_val = 0;
-   bsonVisitEach (subdoc, do(bar_val = bsonAs (int32)));
+   bsonVisitEach (subdoc, do (bar_val = bsonAs (int32)));
    ASSERT_CMPINT (bar_val, ==, 42);
 
    // Visit subdocs directly
@@ -2692,21 +2692,21 @@ test_bson_dsl_predicate (void)
          require (type (doc)),
          visitEach (if (lastElement,
                         then (require (key ("b")), require (type (utf8))),
-                        else(require (key ("a")), require (type (null)))))),
+                        else (require (key ("a")), require (type (null)))))),
       require (
          key ("with_last"),
          visitEach (case (when (key ("a"), require (type (null))),
                           when (key ("b"), require (strEqual ("lastElement"))),
-                          else(do(abort ()))))),
+                          else (do (abort ()))))),
       require (key ("string"),
-               case (when (strEqual ("goodbye"), do(abort ())),
+               case (when (strEqual ("goodbye"), do (abort ())),
                      when (strEqual ("hello"), nop),
                      // Not eached since the prior case matched:
-                     when (strEqual ("hello"), do(abort ())),
-                     else(do(abort ())))),
+                     when (strEqual ("hello"), do (abort ())),
+                     else (do (abort ())))),
       visitOthers (if (key ("unhandled"),
-                       then (do(saw_other = true)),
-                       else(do(abort ())))));
+                       then (do (saw_other = true)),
+                       else (do (abort ())))));
    BSON_ASSERT (saw_other);
 }
 
@@ -2738,7 +2738,7 @@ static void
 test_bson_dsl_build (void)
 {
    // Create a very simple empty document
-   bsonBuildDecl (doc, do());
+   bsonBuildDecl (doc, do ());
    BSON_ASSERT (!bsonBuildError);
    ASSERT_BSON_EQUAL (doc, {});
    bson_destroy (&doc);
@@ -2756,8 +2756,8 @@ test_bson_dsl_build (void)
    bson_destroy (&doc);
 
    // Conditional insert
-   bsonBuild (doc,
-              if (0, then (kv ("never", null)), else(kv ("truth", int32 (1)))));
+   bsonBuild (
+      doc, if (0, then (kv ("never", null)), else (kv ("truth", int32 (1)))));
    ASSERT_BSON_EQUAL (doc, {"truth" : 1});
    bson_destroy (&doc);
 
