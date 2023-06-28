@@ -2,43 +2,41 @@ include_guard(GLOBAL)
 
 include(GNUInstallDirs)
 
-if(NOT DEFINED CMAKE_SCRIPT_MODE_FILE)
-    define_property(
-        TARGET PROPERTY pkg_config_REQUIRES INHERITED
-        BRIEF_DOCS "pkg-config 'Requires:' items"
-        FULL_DOCS "Specify 'Requires:' items for the targets' pkg-config file"
-        )
-    define_property(
-        TARGET PROPERTY pkg_config_NAME INHERITED
-        BRIEF_DOCS "The 'Name' for pkg-config"
-        FULL_DOCS "The 'Name' of the pkg-config target"
-        )
-    define_property(
-        TARGET PROPERTY pkg_config_DESCRIPTION INHERITED
-        BRIEF_DOCS "The 'Description' pkg-config property"
-        FULL_DOCS "The 'Description' property to add to a target's pkg-config file"
-        )
-    define_property(
-        TARGET PROPERTY pkg_config_VERSION INHERITED
-        BRIEF_DOCS "The 'Version' pkg-config property"
-        FULL_DOCS "The 'Version' property to add to a target's pkg-config file"
-        )
-    define_property(
-        TARGET PROPERTY pkg_config_CFLAGS INHERITED
-        BRIEF_DOCS "The 'Cflags' pkg-config property"
-        FULL_DOCS "Set a list of options to add to a target's pkg-config file 'Cflags' field"
-        )
-    define_property(
-        TARGET PROPERTY pkg_config_INCLUDE_DIRECTORIES INHERITED
-        BRIEF_DOCS "Add -I options to the 'Cflags' pkg-config property"
-        FULL_DOCS "Set a list of directories that will be added using -I for the 'Cflags' pkg-config field"
-        )
-    define_property(
-        TARGET PROPERTY pkg_config_LIBS INHERITED
-        BRIEF_DOCS "Add linker options to the 'Libs' pkg-config field"
-        FULL_DOCS "Set a list of linker options that will joined in a string for the 'Libs' pkg-config field"
-        )
-endif()
+define_property(
+    TARGET PROPERTY pkg_config_REQUIRES INHERITED
+    BRIEF_DOCS "pkg-config 'Requires:' items"
+    FULL_DOCS "Specify 'Requires:' items for the targets' pkg-config file"
+    )
+define_property(
+    TARGET PROPERTY pkg_config_NAME INHERITED
+    BRIEF_DOCS "The 'Name' for pkg-config"
+    FULL_DOCS "The 'Name' of the pkg-config target"
+    )
+define_property(
+    TARGET PROPERTY pkg_config_DESCRIPTION INHERITED
+    BRIEF_DOCS "The 'Description' pkg-config property"
+    FULL_DOCS "The 'Description' property to add to a target's pkg-config file"
+    )
+define_property(
+    TARGET PROPERTY pkg_config_VERSION INHERITED
+    BRIEF_DOCS "The 'Version' pkg-config property"
+    FULL_DOCS "The 'Version' property to add to a target's pkg-config file"
+    )
+define_property(
+    TARGET PROPERTY pkg_config_CFLAGS INHERITED
+    BRIEF_DOCS "The 'Cflags' pkg-config property"
+    FULL_DOCS "Set a list of options to add to a target's pkg-config file 'Cflags' field"
+    )
+define_property(
+    TARGET PROPERTY pkg_config_INCLUDE_DIRECTORIES INHERITED
+    BRIEF_DOCS "Add -I options to the 'Cflags' pkg-config property"
+    FULL_DOCS "Set a list of directories that will be added using -I for the 'Cflags' pkg-config field"
+    )
+define_property(
+    TARGET PROPERTY pkg_config_LIBS INHERITED
+    BRIEF_DOCS "Add linker options to the 'Libs' pkg-config field"
+    FULL_DOCS "Set a list of linker options that will joined in a string for the 'Libs' pkg-config field"
+    )
 
 # Given a string, escape any generator-expression-special characters
 function(_genex_escape out in)
@@ -53,6 +51,13 @@ function(_genex_escape out in)
     # Escape ";"
     string(REPLACE ";" "$<SEMICOLON>" str "${str}")
     set("${out}" "${str}" PARENT_SCOPE)
+endfunction()
+
+# Create a generator expression that ensures the given input generator expression
+# is evaluated within the context of the named target.
+function(_bind_genex_to_target out target genex)
+    _genex_escape(escaped "${genex}")
+    set("${out}" $<TARGET_GENEX_EVAL:${target},${escaped}> PARENT_SCOPE)
 endfunction()
 
 #[==[
@@ -107,29 +112,32 @@ All named parameters accept generator expressions.
 ]==]
 function(mongo_generate_pkg_config target)
     # Collect some target properties:
-    set(tprop "TARGET_PROPERTY:${target}")
     # The name:
     _genex_escape(proj_name "${PROJECT_NAME}")
-    string(CONCAT pc_name
-        $<IF:$<STREQUAL:,$<${tprop},pkg_config_NAME>>,
-            ${proj_name},
-            $<${tprop},pkg_config_NAME>>)
-    # Version:
-    string(CONCAT pc_version
-        $<IF:$<STREQUAL:,$<${tprop},pkg_config_VERSION>>,
-            ${PROJECT_VERSION},
-            $<${tprop},pkg_config_VERSION>>)
-    # Description:
     _genex_escape(proj_desc "${PROJECT_DESCRIPTION}")
-    string(CONCAT pc_desc
-        $<IF:$<STREQUAL:,$<${tprop},pkg_config_DESCRIPTION>>,
-            ${proj_desc},
-            $<${tprop},pkg_config_DESCRIPTION>>)
+    set(tgt_name $<TARGET_PROPERTY:pkg_config_NAME>)
+    set(tgt_version $<TARGET_PROPERTY:pkg_config_VERSION>)
+    set(tgt_desc $<TARGET_PROPERTY:pkg_config_DESCRIPTION>)
+    string(CONCAT gx_name
+        $<IF:$<STREQUAL:,${tgt_name}>,
+             ${proj_name},
+             ${tgt_name}>)
+    # Version:
+    string(CONCAT gx_version
+        $<IF:$<STREQUAL:,${tgt_version}>,
+             ${PROJECT_VERSION},
+             ${tgt_version}>)
+    # Description:
+    string(CONCAT gx_desc
+        $<IF:$<STREQUAL:,${tgt_desc}>,
+             ${proj_desc},
+             ${tgt_desc}>)
 
     # Parse and validate arguments:
     cmake_parse_arguments(PARSE_ARGV 1 ARG "" "FILENAME;LIBDIR;CONDITION" "INSTALL")
 
-    if(NOT ARG_FILENAME)
+    # Compute the default FILENAME
+    if(NOT DEFINED ARG_FILENAME)
         # No filename given. Pick a default:
         if(DEFINED CMAKE_CONFIGURATION_TYPES)
             # Multi-conf: We may want to generate more than one, so qualify the
@@ -140,90 +148,105 @@ function(mongo_generate_pkg_config target)
             set(ARG_FILENAME "$<TARGET_FILE_BASE_NAME:${target}>.pc")
         endif()
     endif()
+
+    # The defalut CONDITION is just "1" (true)
     if(NOT DEFINED ARG_CONDITION)
         set(ARG_CONDITION 1)
     endif()
+    _bind_genex_to_target(gx_cond ${target} "${ARG_CONDITION}")
+
+    # The default LIBDIR comes from GNUInstallDirs.cmake
     if(NOT ARG_LIBDIR)
         set(ARG_LIBDIR "${CMAKE_INSTALL_LIBDIR}")
     endif()
-    _genex_escape(filename "${ARG_FILENAME}")
-    set(filename $<TARGET_GENEX_EVAL:${target},${filename}>)
+    _bind_genex_to_target(gx_libdir ${target} "${ARG_LIBDIR}")
+
+    # Evaluate the filename genex in the context of the target:
+    _bind_genex_to_target(gx_filename ${target} "${ARG_FILENAME}")
     if(IS_ABSOLUTE "${ARG_FILENAME}")
-        set(generate_file "${filename}")
+        set(gx_output "${gx_filename}")
     else()
-        get_filename_component(generate_file "${CMAKE_CURRENT_BINARY_DIR}/${filename}" ABSOLUTE)
+        get_filename_component(gx_output "${CMAKE_CURRENT_BINARY_DIR}/${gx_filename}" ABSOLUTE)
     endif()
 
+    # Generate the content of the file:
     _generate_pkg_config_content(content
-        NAME "${pc_name}"
-        VERSION "${pc_version}"
-        DESCRIPTION "${pc_desc}"
+        NAME "${gx_name}"
+        VERSION "${gx_version}"
+        DESCRIPTION "${gx_desc}"
         PREFIX "%INSTALL_PLACEHOLDER%"
-        LIBDIR "${ARG_LIBDIR}"
+        LIBDIR "${gx_libdir}"
         GENEX_TARGET "${target}"
         )
-    string(REPLACE "%INSTALL_PLACEHOLDER%" "${CMAKE_INSTALL_PREFIX}" with_prefix "${content}")
-    file(GENERATE OUTPUT "${generate_file}" CONTENT "${with_prefix}" CONDITION "${ARG_CONDITION}")
-    set(this_file "${CMAKE_CURRENT_FUNCTION_LIST_FILE}")
-    if(NOT DEFINED ARG_INSTALL AND NOT "INSTALL" IN_LIST ARG_KEYWORDS_MISSING_VALUES)
+    _bind_genex_to_target(gx_content ${target} "${content}")
+    string(REPLACE "%INSTALL_PLACEHOLDER%" "${CMAKE_INSTALL_PREFIX}" gx_with_prefix "${gx_content}")
+    # Now, generate the file:
+    file(GENERATE
+         OUTPUT "${gx_output}"
+         CONTENT "${gx_with_prefix}"
+         CONDITION "${gx_cond}")
+    if(NOT "INSTALL" IN_LIST ARGN)
         # Nothing more to do here.
         return()
     endif()
+
+    # Installation handling:
     # Use file(GENERATE) to generate a temporary file to be picked up at install-time.
-    # (For some reason, injecting this directly into install(CODE) fails in corner cases)
-    set(tmpfile "${CMAKE_CURRENT_BINARY_DIR}/${target}-$<LOWER_CASE:$<CONFIG>>-pc-install.txt")
-    file(GENERATE OUTPUT "${tmpfile}"
-            CONTENT "${content}"
-            CONDITION "${ARG_CONDITION}")
+    # (For some reason, injecting the content directly into install(CODE) fails in corner cases)
+    set(gx_tmpfile "${CMAKE_CURRENT_BINARY_DIR}/_pkgconfig/${target}-$<LOWER_CASE:$<CONFIG>>-for-install.txt")
+    file(GENERATE OUTPUT "${gx_tmpfile}"
+         CONTENT "${gx_content}"
+         CONDITION "${gx_cond}")
     # Parse the install args that we will inspect:
     cmake_parse_arguments(inst "" "DESTINATION;RENAME" "" ${ARG_INSTALL})
     if(NOT DEFINED inst_DESTINATION)
         # Install based on the libdir:
-        set(inst_DESTINATION "${ARG_LIBDIR}/pkgconfig")
+        set(inst_DESTINATION "${gx_libdir}/pkgconfig")
     endif()
     if(NOT DEFINED inst_RENAME)
         set(inst_RENAME "${ARG_FILENAME}")
     endif()
     # install(CODE) will write a simple temporary file:
     set(inst_tmp "${CMAKE_CURRENT_BINARY_DIR}/${target}-pkg-config-tmp.txt")
-    _genex_escape(cond_genex_str "${ARG_CONDITION}")
+    _genex_escape(esc_cond "${ARG_CONDITION}")
     string(CONFIGURE [==[
-        $<@ARG_CONDITION@:
+        $<@gx_cond@:
             # Installation of pkg-config for target @target@
             message(STATUS "Generating pkg-config file: @inst_RENAME@")
-            file(READ [[@tmpfile@]] content)
+            file(READ [[@gx_tmpfile@]] content)
             # Insert the install prefix:
             string(REPLACE "%INSTALL_PLACEHOLDER%" "${CMAKE_INSTALL_PREFIX}" content "${content}")
             # Write it before installing again:
             file(WRITE [[@inst_tmp@]] "${content}")
         >
-        $<$<NOT:@ARG_CONDITION@>:
+        $<$<NOT:@gx_cond@>:
             # Installation was disabled for this generation.
-            if(EXISTS [[@inst_tmp@]])
-                file(REMOVE [[@inst_tmp@]])
-            endif()
-            message(STATUS "Skipping install of file [@inst_RENAME@]: Disabled by CONDITION “@cond_genex_str@”")
+            message(STATUS "Skipping install of file [@inst_RENAME@]: Disabled by CONDITION “@esc_cond@”")
         >
     ]==] code @ONLY)
     install(CODE "${code}")
-    install(FILES "$<${ARG_CONDITION}:${inst_tmp}>"
-            DESTINATION "${inst_DESTINATION}"
-            RENAME "${inst_RENAME}"
+    _bind_genex_to_target(gx_dest ${target} "${inst_DESTINATION}")
+    _bind_genex_to_target(gx_rename ${target} "${inst_RENAME}")
+    # Wrap the filename to install with the same condition used to generate it. If the condition
+    # is not met, then the FILES list will be empty, and nothing will be installed.
+    install(FILES "$<${gx_cond}:${inst_tmp}>"
+            DESTINATION ${gx_dest}
+            RENAME ${gx_rename}
             ${inst_UNPARSED_ARGUMENTS})
 endfunction()
 
 # Generates the actual content of a .pc file.
 function(_generate_pkg_config_content out)
     cmake_parse_arguments(PARSE_ARGV 1 ARG "" "PREFIX;NAME;VERSION;DESCRIPTION;GENEX_TARGET;LIBDIR" "")
-    foreach(arg IN LISTS ARG_UNPARSE_ARGUMENTS)
-        message(FATAL_ERROR "Unknown argument: ${arg}")
-    endforeach()
+    if(ARG_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments: ${ARG_UNPARSED_ARGUMENTS}")
+    endif()
     set(content)
     string(APPEND content
         "# pkg-config .pc file generated by CMake ${CMAKE_VERSION} for ${ARG_NAME}-${ARG_VERSION}. DO NOT EDIT!\n"
         "prefix=${ARG_PREFIX}\n"
         "exec_prefix=\${prefix}\n"
-        "libdir=\${exec_prefix}/${ARG_LIBDIR}\n"
+        "libdir=\${exec_prefix}/${gx_libdir}\n"
         "\n"
         "Name: ${ARG_NAME}\n"
         "Description: ${ARG_DESCRIPTION}\n"
@@ -231,35 +254,35 @@ function(_generate_pkg_config_content out)
         )
     # Add Requires:
     set(requires_joiner "\nRequires: ")
-    set(gx_requires "$<prop:pkg_config_REQUIRES>")
-    set(has_requires "$<NOT:$<STREQUAL:,${gx_requires}>>")
+    set(gx_requires $<GENEX_EVAL:$<TARGET_PROPERTY:pkg_config_REQUIRES>>)
+    set(has_requires $<NOT:$<STREQUAL:,${gx_requires}>>)
     string(APPEND content "$<${has_requires}:${requires_joiner}$<JOIN:${gx_requires},${requires_joiner}>>\n")
     string(APPEND content "\n")
     # Add "Libs:"
     set(libs)
     # Link options:
     set(gx_libs
-        [[-L${libdir}]]
-        "-l$<prop:OUTPUT_NAME>"
-        $<TARGET_GENEX_EVAL:${ARG_GENEX_TARGET},$<prop:pkg_config_LIBS>>
-        $<prop:INTERFACE_LINK_OPTIONS>
+        "-L\${libdir}"
+        "-l$<TARGET_PROPERTY:OUTPUT_NAME>"
+        $<GENEX_EVAL:$<TARGET_PROPERTY:pkg_config_LIBS>>
+        $<TARGET_PROPERTY:INTERFACE_LINK_OPTIONS>
         )
     string(APPEND libs "$<JOIN:${gx_libs};${gx_linkopts}, >")
 
     # Cflags:
     set(cflags)
     set(gx_flags
-        $<REMOVE_DUPLICATES:$<TARGET_GENEX_EVAL:${ARG_GENEX_TARGET},$<prop:pkg_config_CFLAGS>>>
-        $<REMOVE_DUPLICATES:$<prop:INTERFACE_COMPILE_OPTIONS>>
+        $<REMOVE_DUPLICATES:$<GENEX_EVAL:$<TARGET_PROPERTY:pkg_config_CFLAGS>>>
+        $<REMOVE_DUPLICATES:$<TARGET_PROPERTY:INTERFACE_COMPILE_OPTIONS>>
         )
     string(APPEND cflags "$<JOIN:${gx_flags}, >")
     # Definitions:
-    set(gx_defs $<REMOVE_DUPLICATES:$<prop:INTERFACE_COMPILE_DEFINITIONS>>)
+    set(gx_defs $<REMOVE_DUPLICATES:$<TARGET_PROPERTY:INTERFACE_COMPILE_DEFINITIONS>>)
     set(has_defs $<NOT:$<STREQUAL:,${gx_defs}>>)
     set(def_joiner " -D")
     string(APPEND cflags $<${has_defs}:${def_joiner}$<JOIN:${gx_defs},${def_joiner}>>)
     # Includes:
-    set(gx_inc $<prop:pkg_config_INCLUDE_DIRECTORIES>)
+    set(gx_inc $<GENEX_EVAL:$<TARGET_PROPERTY:pkg_config_INCLUDE_DIRECTORIES>>)
     set(gx_inc "$<REMOVE_DUPLICATES:${gx_inc}>")
     set(gx_abs_inc "$<FILTER:${gx_inc},INCLUDE,^/>")
     set(gx_rel_inc "$<FILTER:${gx_inc},EXCLUDE,^/>")
@@ -267,11 +290,9 @@ function(_generate_pkg_config_content out)
     set(has_rel_inc $<NOT:$<STREQUAL:,${gx_rel_inc}>>)
     string(APPEND cflags $<${has_rel_inc}: " -I\${prefix}/"
                             $<JOIN:${gx_rel_inc}, " -I\${prefix}/" >>
-                            $<${has_abs_inc}: " -I"
+                         $<${has_abs_inc}: " -I"
                             $<JOIN:${gx_abs_inc}, " -I" >>)
     string(APPEND content "Libs: ${libs}\n")
     string(APPEND content "Cflags: ${cflags}\n")
-    string(REPLACE "$<prop:" "$<TARGET_PROPERTY:${ARG_GENEX_TARGET}," content "${content}")
-
     set("${out}" "${content}" PARENT_SCOPE)
 endfunction()
