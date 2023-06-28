@@ -786,8 +786,6 @@ target_compile_definitions (mongoc_shared
       MONGOC_COMPILATION
       ${KMS_MSG_DEFINITIONS}
       MCOMMON_NAME_PREFIX=_mongoc_mcommon
-   PUBLIC
-      $<$<CONFIG:Debug>:meow>
 )
 # Several directories in the source and build trees contain headers we would like
 # include via relative reference, but they all end up in the same install path
