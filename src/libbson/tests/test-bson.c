@@ -2875,6 +2875,47 @@ test_bson_with_duplicate_keys (void)
    bson_destroy (&with_dups);
 }
 
+static void
+test_bson_uint32_to_string (void)
+{
+   // Test a value < 1000.
+   {
+      char buf[16] = {0};
+      const char *strptr;
+      size_t got = bson_uint32_to_string (123, &strptr, buf, sizeof buf);
+      ASSERT_CMPSIZE_T (got, ==, 3);
+      ASSERT_CMPSTR (strptr, "123");
+      // Values < 1000 return a static string. Expect the input buffer is not
+      // used.
+      ASSERT_CMPSTR (buf, "");
+   }
+
+   // Test a value >= 1000.
+   {
+      char buf[16] = {0};
+      const char *strptr;
+      size_t got = bson_uint32_to_string (1000, &strptr, buf, sizeof buf);
+      ASSERT_CMPSIZE_T (got, ==, 4);
+      ASSERT_CMPSTR (strptr, "1000");
+      // Expect the input buffer is used.
+      ASSERT_CMPSTR (buf, "1000");
+   }
+
+   // Test when input buffer is too small.
+   {
+      char buf[4] = {0};
+      const char *strptr;
+      size_t got = bson_uint32_to_string (1000, &strptr, buf, sizeof buf);
+      // Expect the returned value is the number of required bytes excluding the
+      // NULL terminator.
+      ASSERT_CMPSIZE_T (got, ==, 4);
+      // Expect only three characters are written.
+      ASSERT_CMPSTR (strptr, "100");
+      // Expect the input buffer is used.
+      ASSERT_CMPSTR (buf, "100");
+   }
+}
+
 void
 test_bson_install (TestSuite *suite)
 {
@@ -2980,4 +3021,5 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/dsl/build", test_bson_dsl_build);
    TestSuite_Add (
       suite, "/bson/with_duplicate_keys", test_bson_with_duplicate_keys);
+   TestSuite_Add (suite, "/bson/uint32_to_string", test_bson_uint32_to_string);
 }
