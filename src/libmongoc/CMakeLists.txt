@@ -115,7 +115,7 @@ if (USE_BUNDLED_UTF8PROC STREQUAL "TRUE")
    target_compile_definitions (utf8proc_obj PUBLIC UTF8PROC_STATIC)
 else ()
    message (STATUS "Searching for utf8proc")
-   find_package(utf8proc REQUIRED)
+   find_package(Utf8proc REQUIRED)
 endif()
 
 if (NOT ENABLE_ZSTD STREQUAL OFF)
