@@ -171,7 +171,7 @@ class LinkTask(NamedTask):
 
         super().__init__(
             task_name=task_name,
-            depends_on=[OD([("name", "make-release-archive"), ("variant", "releng")])],
+            depends_on=[],
             commands=bootstrap_commands + list(suffix_commands),
         )
 
