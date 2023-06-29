@@ -94,8 +94,8 @@ INSTALL [DESTINATION <dir>] [RENAME <filename>]
 
       DESTINATION <dir>
         - If provided, specify the *directory* (relative to the install-prefix)
-          in which the generated file will be installed. If unspecfied, the default
-          destination is `<libdir>/pkgconfig`
+          in which the generated file will be installed. If unspecified, the
+          default destination is `<libdir>/pkgconfig`
 
       RENAME <filename>
         - If provided, set the filename of the installed pkg-config file. If
