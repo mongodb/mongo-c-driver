@@ -57,14 +57,7 @@ function (mongoc_add_platform_compile_options)
    endforeach ()
 endfunction ()
 
-if (CMAKE_VERSION VERSION_LESS 3.3)
-   # On older CMake versions, we'll just always pass the warning options, even
-   # if the generate warnings for the C++ check file
-   set (is_c_lang "1")
-else ()
-   # $<COMPILE_LANGUAGE> is only valid in CMake 3.3+
-   set (is_c_lang "$<COMPILE_LANGUAGE:C>")
-endif ()
+set (is_c_lang "$<COMPILE_LANGUAGE:C>")
 
 # These below warnings should always be unconditional hard errors, as the code is
 # almost definitely broken
