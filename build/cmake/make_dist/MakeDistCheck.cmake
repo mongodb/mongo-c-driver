@@ -16,7 +16,6 @@ function (RUN_DIST_CHECK PACKAGE_PREFIX EXT)
       set (TAR_OPTION "jxf")
    endif ()
 
-   set (MY_CMAKE_COMMAND "")
    set (MY_CMAKE_COMMAND ${CMAKE_COMMAND} -E env)
 
    find_program (MAKE_COMMAND NAMES make gmake)
