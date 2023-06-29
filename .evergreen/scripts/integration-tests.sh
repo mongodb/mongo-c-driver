@@ -30,8 +30,7 @@ DIR=$(dirname $0)
 
 get_distro
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
-DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT"
-
+DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT" "$MONGOSH_DOWNLOAD_URL" "$EXTRACT_MONGOSH"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 
@@ -161,7 +160,7 @@ python -m json.tool curl_mo.txt
 sleep 15
 
 if [ "$AUTH" = "auth" ]; then
-  MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
+  MONGO_SHELL_CONNECTION_FLAGS="--username bob --password pwd123"
 fi
 
 if [ -n "$AUTHSOURCE" ]; then
@@ -177,7 +176,7 @@ fi
 if [ ! -z "$REQUIRE_API_VERSION" ]; then
   MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --apiVersion=1"
   # Set the requireApiVersion parameter.
-  mongosh $MONGO_SHELL_CONNECTION_FLAGS $DIR/../etc/require-api-version.js
+  ./mongodb/bin/mongosh $MONGO_SHELL_CONNECTION_FLAGS $DIR/../etc/require-api-version.js
 fi
 
 echo $MONGO_SHELL_CONNECTION_FLAGS
