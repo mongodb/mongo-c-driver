@@ -52,3 +52,6 @@ override_dh_auto_install:
 
 override_dh_makeshlibs:
 	dh_makeshlibs -V
+
+override_dh_auto_test:
+	echo "Skip dh_auto_test because upstream CI already tests extensively"

@@ -2448,6 +2448,50 @@ test_bson_json_array_subdoc (void)
 }
 
 static void
+test_bson_json_merge_multiple (void)
+{
+   bson_error_t error;
+   bson_t *b = bson_new_from_json (
+      (const uint8_t *) "{\"a\" : 1}, {\"b\" : 2}", -1, &error);
+   ASSERT_OR_PRINT (b, error);
+
+   bson_t *compare = bson_new_from_json (
+      (const uint8_t *) BSON_STR ({"a" : 1, "b" : 2}), -1, &error);
+
+   bson_eq_bson (b, compare);
+   bson_destroy (b);
+   bson_destroy (compare);
+}
+
+static void
+test_bson_json_extra_chars (void)
+{
+   bson_error_t error;
+   {
+      bson_t *b =
+         bson_new_from_json ((const uint8_t *) "{\"a\": 1}abc", -1, &error);
+      ASSERT (b == NULL);
+      ASSERT_ERROR_CONTAINS (error,
+                             BSON_ERROR_JSON,
+                             BSON_JSON_ERROR_READ_CORRUPT_JS,
+                             "Got parse error at \"a\"");
+   }
+
+   {
+      bson_t *b = bson_new_from_json (
+         (const uint8_t *) "{\"a\" : 1}{abc,[],{},123", -1, &error);
+      ASSERT_OR_PRINT (b, error);
+
+      bson_t *compare =
+         bson_new_from_json ((const uint8_t *) "{\"a\" : 1}", -1, &error);
+
+      bson_eq_bson (b, compare);
+      bson_destroy (b);
+      bson_destroy (compare);
+   }
+}
+
+static void
 test_bson_json_date_check (const char *json, int64_t value)
 {
    bson_error_t error = {0};
@@ -3637,6 +3681,10 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/integer/width", test_bson_integer_width);
    TestSuite_Add (
       suite, "/bson/json/read/null_in_str", test_bson_json_null_in_str);
+   TestSuite_Add (
+      suite, "/bson/json/read/merge_multiple", test_bson_json_merge_multiple);
+   TestSuite_Add (
+      suite, "/bson/json/read/extra_chars", test_bson_json_extra_chars);
    TestSuite_Add (
       suite, "/bson/as_json/multi_object", test_bson_as_json_multi_object);
    TestSuite_Add (suite,

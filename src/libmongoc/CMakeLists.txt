@@ -29,6 +29,9 @@ set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
+# Definition for mongoc-config.h:
+_mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
+
 set (MONGOC_OUTPUT_BASENAME "mongoc" CACHE STRING "Output mongoc library base name")
 
 if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
@@ -135,11 +138,7 @@ if (NOT ENABLE_ZSTD STREQUAL OFF)
 
       include_directories (${ZSTD_INCLUDE_DIRS})
       link_directories (${ZSTD_LIBRARY_DIRS})
-      if (${CMAKE_VERSION} VERSION_LESS "3.12.0")
-         set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LIBRARIES})
-      else ()
-         set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LINK_LIBRARIES})
-      endif ()
+      set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LINK_LIBRARIES})
    endif()
 endif()
 
@@ -159,7 +158,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
          message (STATUS "   Found ${LIBRESSL_LIBRARIES}")
          set (SSL_LIBRARIES ${LIBRESSL_LIBRARIES})
          if (LIBRESSL_INCLUDE_DIRS)
-           include_directories ("${LIBRESSL_INCLUDE_DIRS}")
+           include_directories (SYSTEM "${LIBRESSL_INCLUDE_DIRS}")
          endif ()
          link_directories ("${LIBRESSL_LIBRARY_DIRS}")
          set (LIBRESSL 1)
@@ -194,11 +193,6 @@ if (NOT ENABLE_SSL STREQUAL OFF)
 endif ()
 
 if (OPENSSL_FOUND)
-   if (WIN32 AND OPENSSL_VERSION VERSION_GREATER 1.1 AND
-         ${CMAKE_VERSION} VERSION_LESS 3.7)
-      message (FATAL_ERROR "Building against OpenSSL 1.1.0 and later requires CMake 3.7 or later (hint:"
-         " You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
-   endif ()
    if (APPLE AND NOT OPENSSL_ROOT_DIR)
       message (WARNING "Building with OpenSSL but OPENSSL_ROOT_DIR not defined. If build fails to link"
          " to OpenSSL, define OPENSSL_ROOT_DIR as the path to the OpenSSL installation directory.")
@@ -290,7 +284,9 @@ else ()
    set (MONGOC_SOCKET_ARG3 "int")
 endif ()
 
-include (FindResSearch)
+# Find name resolution libaries. Also sets definitions used in configure_file():
+include(ResSearch)
+
 include (CheckSchedGetCPU)
 
 function (mongoc_get_accept_args ARG2 ARG3)
@@ -643,7 +639,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ocsp-cache.c
       )
       set (SSL_LIBRARIES ${OPENSSL_LIBRARIES})
-      include_directories (${OPENSSL_INCLUDE_DIR})
+      include_directories (SYSTEM ${OPENSSL_INCLUDE_DIR})
       if (WIN32)
          set (SSL_LIBRARIES ${SSL_LIBRARIES} crypt32.lib)
       else ()
@@ -706,15 +702,28 @@ if (CMAKE_USE_PTHREADS_INIT)
 endif ()
 
 set (LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 list(APPEND LIBRARIES $<BUILD_INTERFACE:utf8proc>)
 list(APPEND STATIC_LIBRARIES $<BUILD_INTERFACE:utf8proc>)
+
+add_library(_mongoc-dependencies INTERFACE)
+add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
+install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
+set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
+
+if(ENABLE_SRV)
+   # Interface target defined by ResSearch.cmake:
+   if(NOT TARGET mongo::detail::c_resolve)
+      message(SEND_ERROR "ENABLE_SRV is “${ENABLE_SRV}”, but we were unable to find a name resolution library")
+   endif()
+   target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_resolve)
+endif()
 
 if (WIN32)
    set (LIBRARIES ${LIBRARIES} ws2_32)
@@ -751,7 +760,7 @@ endif ()
 
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
-target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
+target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
 if(ENABLE_COVERAGE)
@@ -787,8 +796,12 @@ target_include_directories (
       $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
 )
 
-set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
-set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}")
+set_target_properties (mongoc_shared PROPERTIES
+   OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}"
+   VERSION 0.0.0
+   SOVERSION 0
+   pkg_config_REQUIRES "libbson-1.0"
+   )
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
@@ -796,11 +809,15 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       target_compile_options(mongoc_static PRIVATE --coverage)
       target_link_options(mongoc_static PUBLIC --coverage)
    endif()
-   target_link_libraries (mongoc_static PRIVATE ${STATIC_LIBRARIES} PUBLIC ${BSON_STATIC_LIBRARIES})
+   target_link_libraries (mongoc_static PRIVATE ${STATIC_LIBRARIES} PUBLIC ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
       message (STATUS "Adding -fPIC to compilation of mongoc_static components")
    endif ()
+   if(ENABLE_SRV AND RESOLVE_LIB_NAME)
+      # The static library needs to link to the resolver in pkg-config:
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-l${RESOLVE_LIB_NAME}")
+   endif()
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
@@ -828,8 +845,11 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
    )
-   set_target_properties (mongoc_static PROPERTIES VERSION 0.0.0)
-   set_target_properties (mongoc_static PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}")
+   set_target_properties (mongoc_static PROPERTIES
+      VERSION 0.0.0
+      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}"
+      pkg_config_REQUIRES "libbson-static-1.0"
+      )
 endif ()
 
 if (ENABLE_APPLE_FRAMEWORK)
@@ -946,7 +966,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sample-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-scram.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
@@ -1195,44 +1214,109 @@ set (VERSION "${MONGOC_VERSION}")
 set (prefix "${CMAKE_INSTALL_PREFIX}")
 set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 
-foreach (
-      FLAG
-      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
+# Collect link items for the static library to be inserted into the pkg-config
+if(TARGET mongoc_static)
+   set(link_options
+      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${THREAD_LIB} ${ZLIB_LIBRARIES}
+      ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
       ${LIBMONGOCRYPT_LIBRARY})
+   # Replace all absolute paths with search-dir link-file options:
+   list(TRANSFORM link_options
+        REPLACE "^(.+)/lib([^/\\.]+)\\..+$"
+                "-L\\1;-l\\2"
+        REGEX "^/")
+   # Prepend "-l" to all bare names:
+   list(TRANSFORM link_options PREPEND "-l" REGEX "^[^-]")
+   list(REMOVE_DUPLICATES link_options)
+   message(DEBUG "Computed static library link options: ${link_options}")
+   set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${link_options})
+endif()
 
-   if (IS_ABSOLUTE "${FLAG}")
-      get_filename_component (FLAG_DIR "${FLAG}" DIRECTORY)
-      get_filename_component (FLAG_FILE "${FLAG}" NAME_WE)
-      STRING (REGEX REPLACE "^lib" "" FLAG_FILE "${FLAG_FILE}")
-      set (MONGOC_LIBRARIES "${MONGOC_LIBRARIES} -L${FLAG_DIR} -l${FLAG_FILE}")
-   elseif (FLAG MATCHES "^-.*")
-      # Flag starts with dash, add it as-is.
-      set (MONGOC_LIBRARIES "${MONGOC_LIBRARIES} ${FLAG}")
-   else ()
-      # Flag doesn't start with dash, add it with a dash.
-      set (MONGOC_LIBRARIES "${MONGOC_LIBRARIES} -l${FLAG}")
-   endif ()
-endforeach ()
+# More pkg-config properties:
+set_target_properties(${TARGETS_TO_INSTALL} PROPERTIES
+   pkg_config_NAME "libmongoc"
+   pkg_config_DESCRIPTION "The libmongoc MongoDB client library."
+   pkg_config_VERSION "${VERSION}")
+# Relative include-path will be given the install prefix:
+set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${MONGOC_HEADER_INSTALL_DIR}")
 
-configure_file (
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-1.0.pc.in
-   ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
-@ONLY)
-install (
-   FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
-   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
-if (MONGOC_ENABLE_STATIC_INSTALL)
-   configure_file (
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-static-1.0.pc.in
-      ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
-   @ONLY)
-   install (
-      FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-   )
-endif ()
+#[[
+Utility for configuring a file and then evaluating generator expressions on it.
+The content of the file has a tiny templating DSL for writing generator
+expressions. Expansion takes place as follows:
+   1. Delete any content starting at hash-tilde "#~" until the next newline
+   2. Search for any lines of the form "%define foo bar". For each instance,
+      replace "foo" with "bar" in the remainder of the file. The "%define foo bar"
+      line is deleted.
+   3. If a tilde "~" appears adjacent to any of "$,<:>@", delete the tilde and
+      all adjacent whitespace.
+   4. Run string(CONFIGURE ... @ONLY) on the result to replace variable
+      references. Special replacements @space@, @newline@, and @empty@ are also
+      available for adjusting whitespace after ~ trimming.
+   5. Run file(GENERATE).
+]]
+function(_mongoc_configure_and_generate_file input output)
+   set(CMAKE_MESSAGE_CONTEXT _mongoc_configure_and_generate_file)
+   # If given a relative input path, make it relative to the current source dir:
+   get_filename_component(abs_in "${input}" ABSOLUTE)
+   file(READ "${input}" content)
+   # Some convenience values for @expansion@ in the file:
+   set(space " ")
+   set(newline "\n")
+   set(empty "")
+   # Delete "#~" comments:
+   string(REGEX REPLACE "#~[^\n]*" "" content "${content}")
+   # Replace our simple "%define <name> <value>" macros:
+   while(content MATCHES "(.*)\n *%define +([a-zA-Z_\\$<>:-]+) *([^\n]*)\n(.*)")
+      set(before "${CMAKE_MATCH_1}")
+      set(after "${CMAKE_MATCH_4}")
+      set(def "${CMAKE_MATCH_2}")
+      set(val "${CMAKE_MATCH_3}")
+      message(TRACE "Replace “${def}” with “${val}”")
+      # Only perform the replacement on the remainder of the file following that
+      # line:
+      string(REPLACE "${def}" "${val}" after "${after}")
+      # Splice the results:
+      set(content "${before}\n${after}")
+   endwhile()
+   # Whitespace trimming. right-trim when tilde is to the right of special chars:
+   string(REGEX REPLACE "([,><:@])~[ \n\t]*" "\\1" content "${content}")
+   # Same thing, but on the left-hand side:
+   string(REGEX REPLACE "[ \n\t]*~([^ \t\n])" "\\1" content "${content}")
+   # Replace @variables@:
+   string(CONFIGURE "${content}" content @ONLY)
+   # If given a relative output path, make it relative to the current binary dir:
+   if(NOT IS_ABSOLUTE "${output}")
+      get_filename_component(output "${CMAKE_CURRENT_BINARY_DIR}/${output}" ABSOLUTE)
+   endif()
+   message(DEBUG "Configure+generate file [${input}] -> [${output}]")
+   message(TRACE "Content:\n${content}")
+   # Generate it:
+   file(GENERATE OUTPUT "${output}" CONTENT "${content}" ${ARGN})
+endfunction()
+
+# Generate pkg-config for mongoc_shared
+if(TARGET mongoc_shared)
+   set(GENERATE_TARGET mongoc_shared)
+   _mongoc_configure_and_generate_file(
+      src/libmongoc.pc.in
+      src/libmongoc-1.0.pc)
+   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
+           DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+endif()
+
+# Now one for mongoc_static:
+if(TARGET mongoc_static)
+   set(GENERATE_TARGET mongoc_static)
+   _mongoc_configure_and_generate_file(
+      src/libmongoc.pc.in
+      src/libmongoc-static-1.0.pc)
+   if(MONGOC_ENABLE_STATIC_INSTALL)
+      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
+              DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+   endif()
+endif()
+
 # Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086.
 if (MONGOC_ENABLE_SSL)
    configure_file (

@@ -871,6 +871,9 @@ test_handshake_platform_config (void)
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_HAVE_SCHED_GETCPU));
 #endif
 
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SRV) ==
+                MONGOC_SRV_ENABLED);
+
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS));
 #endif

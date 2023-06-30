@@ -2,7 +2,8 @@ Source: mongo-c-driver
 Priority: optional
 Maintainer: Mongo C Driver Team <mongo-c-driver-debian@googlegroups.com>
 Uploaders: Kevin Albertson <kevin.albertson@mongodb.com>,
-           Roberto C. Sanchez <roberto@connexer.com>
+           Roberto C. Sanchez <roberto@connexer.com>,
+           Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>
 Build-Depends: debhelper (>= 11),
                cmake,
                libssl-dev,
@@ -14,7 +15,7 @@ Build-Depends: debhelper (>= 11),
                libsasl2-dev,
                libsnappy-dev,
                libzstd-dev
-Standards-Version: 4.6.1
+Standards-Version: 4.6.2
 Section: libs
 Homepage: https://github.com/mongodb/mongo-c-driver
 Vcs-Git: https://github.com/mongodb/mongo-c-driver.git
@@ -56,7 +57,8 @@ Package: libmongoc-doc
 Section: doc
 Architecture: all
 Build-Profiles: <!pkg.mongo-c-driver.no-libmongocrypt>
-Depends: ${misc:Depends}
+Depends: libjs-mathjax,
+         ${misc:Depends}
 Description: MongoDB C client library - documentation
  libmongoc is the officially supported MongoDB client library for C
  applications.

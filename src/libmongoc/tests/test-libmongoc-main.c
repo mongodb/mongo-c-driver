@@ -89,7 +89,6 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_read_prefs_install);
    TEST_INSTALL (test_retryable_writes_install);
    TEST_INSTALL (test_retryable_reads_install);
-   TEST_INSTALL (test_rpc_install);
    TEST_INSTALL (test_socket_install);
    TEST_INSTALL (test_opts_install);
    TEST_INSTALL (test_topology_scanner_install);

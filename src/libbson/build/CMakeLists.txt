@@ -2,7 +2,6 @@ add_subdirectory (cmake)
 
 set_local_dist (src_libbson_build_DIST_local
    CMakeLists.txt
-   maintainer-flags.txt
 )
 
 set (src_libbson_build_DIST

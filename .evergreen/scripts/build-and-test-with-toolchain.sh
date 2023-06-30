@@ -81,7 +81,7 @@ for ssl_ver in "${ssl_vers[@]}"; do
 
   # Verify that the toolchain components were used
   if grep -Ec "[-]I/opt/mongo-c-toolchain/include" "${output_file}" >/dev/null &&
-    grep -Ec "[-]I/opt/mongo-c-toolchain/${ssl_ver}/include" "${output_file}" >/dev/null &&
+    grep -Ec "[-]isystem /opt/mongo-c-toolchain/${ssl_ver}/include" "${output_file}" >/dev/null &&
     grep -Ec "[-]L/opt/mongo-c-toolchain/lib" "${output_file}" >/dev/null &&
     grep -Ec "/opt/mongo-c-toolchain/${ssl_ver}/lib" "${output_file}" >/dev/null; then
     echo "TOOLCHAIN COMPONENTS FOR ${ssl_ver} DETECTED IN BUILD OUTPUT."

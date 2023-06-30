@@ -141,8 +141,6 @@ if (APPLE)
    cmake_policy (SET CMP0042 OLD)
 endif ()
 
-include (MaintainerFlags)
-
 set (SOURCES
    ${PROJECT_SOURCE_DIR}/src/bson/bcon.c
    ${PROJECT_SOURCE_DIR}/src/bson/bson.c
