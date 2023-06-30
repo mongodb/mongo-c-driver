@@ -2,6 +2,7 @@ add_subdirectory (make_dist)
 
 set (build_cmake_MODULES
    CheckSchedGetCPU.cmake
+   GeneratePkgConfig.cmake
    ResSearch.cmake
    FindSASL2.cmake
    FindSnappy.cmake
