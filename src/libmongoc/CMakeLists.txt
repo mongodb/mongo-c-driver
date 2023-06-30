@@ -136,11 +136,7 @@ if (NOT ENABLE_ZSTD STREQUAL OFF)
 
       include_directories (${ZSTD_INCLUDE_DIRS})
       link_directories (${ZSTD_LIBRARY_DIRS})
-      if (${CMAKE_VERSION} VERSION_LESS "3.12.0")
-         set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LIBRARIES})
-      else ()
-         set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LINK_LIBRARIES})
-      endif ()
+      set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LINK_LIBRARIES})
    endif()
 endif()
 
@@ -195,11 +191,6 @@ if (NOT ENABLE_SSL STREQUAL OFF)
 endif ()
 
 if (OPENSSL_FOUND)
-   if (WIN32 AND OPENSSL_VERSION VERSION_GREATER 1.1 AND
-         ${CMAKE_VERSION} VERSION_LESS 3.7)
-      message (FATAL_ERROR "Building against OpenSSL 1.1.0 and later requires CMake 3.7 or later (hint:"
-         " You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
-   endif ()
    if (APPLE AND NOT OPENSSL_ROOT_DIR)
       message (WARNING "Building with OpenSSL but OPENSSL_ROOT_DIR not defined. If build fails to link"
          " to OpenSSL, define OPENSSL_ROOT_DIR as the path to the OpenSSL installation directory.")

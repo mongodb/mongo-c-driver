@@ -30,8 +30,7 @@ DIR=$(dirname $0)
 
 get_distro
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
-DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT"
-
+DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT" "$MONGOSH_DOWNLOAD_URL" "$EXTRACT_MONGOSH"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 
@@ -115,7 +114,6 @@ case "$OS" in
       cd mongo-orchestration
       python -m pip install .
       cd ../..
-      ls `pwd`/mongodb/bin/mongo* || true
       nohup mongo-orchestration -f orchestration.config -e default --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern -s wsgiref start > $MONGO_ORCHESTRATION_HOME/out.log 2> $MONGO_ORCHESTRATION_HOME/err.log < /dev/null &
       ;;
    *)
@@ -162,7 +160,7 @@ python -m json.tool curl_mo.txt
 sleep 15
 
 if [ "$AUTH" = "auth" ]; then
-  MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
+  MONGO_SHELL_CONNECTION_FLAGS="--username bob --password pwd123"
 fi
 
 if [ -n "$AUTHSOURCE" ]; then
@@ -178,13 +176,10 @@ fi
 if [ ! -z "$REQUIRE_API_VERSION" ]; then
   MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --apiVersion=1"
   # Set the requireApiVersion parameter.
-  `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS $DIR/../etc/require-api-version.js
+  ./mongodb/bin/mongosh $MONGO_SHELL_CONNECTION_FLAGS $DIR/../etc/require-api-version.js
 fi
 
 echo $MONGO_SHELL_CONNECTION_FLAGS
-
-`pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())' admin
-`pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
 
 # Create mo-expansion.yml. expansions.update expects the file to exist.
 touch mo-expansion.yml
@@ -199,7 +194,7 @@ else
     echo "CRYPT_SHARED_LIB_PATH must be assigned, but wasn't" 1>&2 # write to stderr"
     exit 1
   fi
-cat >>mo-expansion.yml <<EOT 
+cat >>mo-expansion.yml <<EOT
 CRYPT_SHARED_LIB_PATH: "$CRYPT_SHARED_LIB_PATH"
 EOT
 
