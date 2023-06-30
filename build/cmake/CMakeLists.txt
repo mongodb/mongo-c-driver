@@ -6,7 +6,7 @@ set (build_cmake_MODULES
    FindSASL2.cmake
    FindSnappy.cmake
    FindSphinx.cmake
-   FindUtf8proc.cmake
+   FindUtf8Proc.cmake
    LoadVersion.cmake
    MongoCPackage.cmake
    MongoSettings.cmake
