@@ -196,8 +196,8 @@ mongo_bool_setting(
 )
 
 if(ENABLE_COVERAGE)
-   mongo_add_platform_link_options(--coverage)
-   mongo_add_platform_compile_options($<BUILD_INTERFACE:--coverage>)
+   mongo_platform_link_options(--coverage)
+   mongo_platform_compile_options($<BUILD_INTERFACE:--coverage>)
 endif()
 
 # Optionally enable C++ to do some C++-specific tests

@@ -1,17 +1,18 @@
 #[[
 
-Defines a target mongo::detail::c_platform (alias of mongo-platform), which
+Defines a target mongo::detail::c_platform (alias of _mongo-platform), which
 exposes system-level supporting compile and link usage requirements. All targets
 should link to this target with level PUBLIC.
 
-Use mongo_add_platform_compile_options and mongo_add_platform_link_options to
-add usage requirements to this library.
+Use mongo_platform_compile_options and mongo_platform_link_options to add usage
+requirements to this library.
 
 The mongo::detail::c_platform library is installed and exported with the
 bson-targets export set as an implementation detail. It is installed with this
 export set so that it is available to both libbson and libmongoc (attempting to
 install this target in both bson-targets and mongoc-targets export sets would
-lead to duplicate definitions of mongo::detail::c_platform for downstream users).
+lead to duplicate definitions of mongo::detail::c_platform for downstream
+users).
 
 ]]
 
@@ -26,7 +27,7 @@ Define additional platform-support compile options
 
 These options are added to the mongo::detail::c_platform INTERFACE library.
 ]]
-function (mongo_add_platform_compile_options)
+function (mongo_platform_compile_options)
     list(APPEND CMAKE_MESSAGE_CONTEXT ${CMAKE_CURRENT_FUNCTION})
     message(DEBUG "Add platform-support compilation options: ${ARGN}")
     target_compile_options(_mongo-platform INTERFACE ${ARGN})
@@ -37,13 +38,35 @@ Define additional platform-support link options.
 
 These options are added to the mongo::detail::c_platform INTERFACE library.
 ]]
-function(mongo_add_platform_link_options)
+function(mongo_platform_link_options)
     list(APPEND CMAKE_MESSAGE_CONTEXT ${CMAKE_CURRENT_FUNCTION})
     message(DEBUG "Add platform-support runtime linking options: ${ARGN}")
     target_link_options(_mongo-platform INTERFACE ${ARGN})
 endfunction()
 
+#[[
+Add targets to the usage requirements for the current platform.
+
+All of the named items must be the names of existing targets. Note that these
+targets will also need to be available at import-time for consumers (unless
+wrapped in $<BUILD_INTERFACE:>).
+]]
+function(mongo_platform_use_target)
+    list(APPEND CMAKE_MESSAGE_CONTEXT ${CMAKE_CURRENT_FUNCTION})
+    message(DEBUG "Add platform-support usage of targets: ${ARGN}")
+    foreach(item IN LISTS ARGN)
+        if(item MATCHES "::")
+            # CMake will enforce that this link names an existing target
+            target_link_libraries(_mongo-platform INTERFACE "${item}")
+        else()
+            # Generate a configure-time-error if the named item is not the name of a target
+            target_link_libraries(_mongo-platform INTERFACE
+                $<IF:$<TARGET_EXISTS:${item}>,${item},NO_SUCH_TARGET::${item}>)
+        endif()
+    endforeach()
+endfunction()
+
 # Enable multi-threading:
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
-target_link_libraries(_mongo-platform INTERFACE Threads::Threads)
+mongo_platform_use_target(Threads::Threads)
