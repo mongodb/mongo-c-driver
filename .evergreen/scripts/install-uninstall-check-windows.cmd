@@ -8,6 +8,7 @@ rem set PATH=C:\Windows\system32;C:\Windows
 echo on
 echo
 
+set SRCROOT=%CD%
 set TAR=C:\cygwin\bin\tar
 set CMAKE=C:\cmake\bin\cmake
 set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\mingw32-make.exe
@@ -30,10 +31,7 @@ mkdir %INSTALL_DIR%
 set PATH=%PATH%;%INSTALL_DIR%\bin
 
 cd %BUILD_DIR%
-%TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
-if errorlevel 1 (
-   exit /B 1
-)
+robocopy "%SRCROOT%" "%BUILD_DIR%" /E /XD ".git" "%BUILD_DIR%" "_build" "cmake-build" /NP /NFL /NDL
 
 if "%BSON_ONLY%"=="1" (
   set BSON_ONLY_OPTION=-DENABLE_MONGOC=OFF
