@@ -1,18 +1,14 @@
-find_package(PkgConfig)
-pkg_check_modules(PC_Utf8proc QUIET utf8proc)
-
-find_path(Utf8proc_INCLUDE_DIR
-    NAMES utf8proc.h
-    PATHS ${PC_utf8proc_INCLUDE_DIRS}
-    PATH_SUFFIXES utf8proc-2.8.0
-)
-
-set(Utf8proc_VERSION ${PC_utf8proc_VERSION})
-
-mark_as_advanced(Utf8proc_FOUND Utf8proc_INCLUDE_DIR Utf8proc_VERSION)
-
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Utf8proc
-    REQUIRED_VARS Utf8proc_INCLUDE_DIR
-    VERSION_VAR Utf8proc_VERSION
-)
+if(USE_BUNDLED_UTF8PROC STREQUAL "TRUE")
+   message (STATUS "Enabling utf8proc (bundled)")
+   add_library (utf8proc_obj OBJECT "${UTF8PROC_SOURCES}")
+   set_property (TARGET utf8proc_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   set (SOURCES ${SOURCES} $<TARGET_OBJECTS:utf8proc_obj>)
+   target_compile_definitions (utf8proc_obj PUBLIC UTF8PROC_STATIC)
+else()
+  find_package(PkgConfig)
+  pkg_check_modules(PC_UTF8PROC REQUIRED libutf8proc)
+  add_library(utf8proc STATIC IMPORTED)
+  set_property(TARGET utf8proc APPEND PROPERTY COMPILE_OPTIONS ${PC_UTF8PROC_STATIC_CFLAGS})
+  set_property(TARGET utf8proc APPEND PROPERTY LINK_OPTIONS ${PC_UTF8PROC_STATIC_LDFLAGS})
+  set_property(TARGET utf8proc APPEND PROPERTY IMPORTED_LOCATION "${PC_UTF8PROC_LINK_LIBRARIES}")
+endif()

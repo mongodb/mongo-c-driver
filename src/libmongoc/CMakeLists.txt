@@ -107,16 +107,8 @@ else ()
    message (STATUS "Disabling zlib compression")
 endif ()
 
-if (USE_BUNDLED_UTF8PROC STREQUAL "TRUE")
-   message (STATUS "Enabling utf8proc (bundled)")
-   add_library (utf8proc_obj OBJECT "${UTF8PROC_SOURCES}")
-   set_property (TARGET utf8proc_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-   set (SOURCES ${SOURCES} $<TARGET_OBJECTS:utf8proc_obj>)
-   target_compile_definitions (utf8proc_obj PUBLIC UTF8PROC_STATIC)
-else ()
-   message (STATUS "Searching for utf8proc")
-   find_package(Utf8proc REQUIRED)
-endif()
+
+find_package(Utf8proc REQUIRED)
 
 if (NOT ENABLE_ZSTD STREQUAL OFF)
    message (STATUS "Searching for compression library zstd")
@@ -721,6 +713,8 @@ set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
+list(APPEND LIBRARIES utf8proc)
+list(APPEND STATIC_LIBRARIES utf8proc)
 
 if (WIN32)
    set (LIBRARIES ${LIBRARIES} ws2_32)
