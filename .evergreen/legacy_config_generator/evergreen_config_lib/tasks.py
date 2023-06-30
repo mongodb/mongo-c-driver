@@ -944,6 +944,10 @@ class AWSTestTask(MatrixTask):
     def additional_dependencies(self) -> Iterable[DependencySpec]:
         yield "debug-compile-aws"
 
+    def additional_tags(self) -> Iterable[str]:
+        yield from super().additional_tags()
+        yield f'test-aws'
+
     def post_commands(self) -> Iterable[Value]:
         return [
             func("fetch-build", BUILD_NAME="debug-compile-aws"),
