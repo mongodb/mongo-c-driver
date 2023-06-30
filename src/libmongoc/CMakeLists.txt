@@ -108,7 +108,7 @@ else ()
 endif ()
 
 
-find_package(Utf8proc REQUIRED)
+find_package(Utf8Proc REQUIRED)
 
 if (NOT ENABLE_ZSTD STREQUAL OFF)
    message (STATUS "Searching for compression library zstd")
@@ -713,8 +713,8 @@ set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
-list(APPEND LIBRARIES utf8proc)
-list(APPEND STATIC_LIBRARIES utf8proc)
+list(APPEND LIBRARIES $<BUILD_INTERFACE:utf8proc>)
+list(APPEND STATIC_LIBRARIES $<BUILD_INTERFACE:utf8proc>)
 
 if (WIN32)
    set (LIBRARIES ${LIBRARIES} ws2_32)
@@ -796,7 +796,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       target_compile_options(mongoc_static PRIVATE --coverage)
       target_link_options(mongoc_static PUBLIC --coverage)
    endif()
-   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
+   target_link_libraries (mongoc_static PRIVATE ${STATIC_LIBRARIES} PUBLIC ${BSON_STATIC_LIBRARIES})
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
       message (STATUS "Adding -fPIC to compilation of mongoc_static components")

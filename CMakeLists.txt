@@ -438,10 +438,6 @@ if (ENABLE_MONGOC)
       ${SOURCE_DIR}/src/zlib-1.2.13/gzwrite.c
    )
 
-   set (UTF8PROC_SOURCES
-      ${SOURCE_DIR}/src/utf8proc-2.8.0/utf8proc.c
-   )
-
    set (MONGOC_ENABLE_ICU 0)
 
    set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
