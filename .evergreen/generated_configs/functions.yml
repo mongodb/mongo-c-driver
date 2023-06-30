@@ -223,15 +223,6 @@ functions:
       type: setup
       params:
         binary: bash
-        args:
-          - -c
-          - |
-            rm -f *.tar.gz
-            curl --retry 5 --output mongoc.tar.gz -sS --max-time 120 https://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
-    - command: subprocess.exec
-      type: setup
-      params:
-        binary: bash
         working_dir: mongoc
         args:
           - -c
@@ -239,6 +230,20 @@ functions:
             for file in $(find .evergreen/scripts -type f); do
                 chmod +rx "$file" || exit
             done
+  make-docs:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        include_expansions_in_env:
+          - distro_id
+        args:
+          - -c
+          - |
+            set -o errexit
+            bash tools/poetry.sh install --with=docs
+            bash tools/poetry.sh run                     bash .evergreen/scripts/build-docs.sh
   openssl-static-compile:
     - command: subprocess.exec
       type: test
@@ -270,24 +275,6 @@ functions:
                     echo "Cannot append kerberos.realm to /etc/krb5.conf; skipping." 1>&2
                 fi
             fi
-  release-archive:
-    - command: subprocess.exec
-      type: test
-      params:
-        binary: bash
-        working_dir: mongoc
-        env:
-          MONGOC_TEST_FUTURE_TIMEOUT_MS: "30000"
-          MONGOC_TEST_SKIP_LIVE: "on"
-          MONGOC_TEST_SKIP_SLOW: "on"
-        include_expansions_in_env:
-          - distro_id
-        args:
-          - -c
-          - |
-            set -o errexit
-            bash tools/poetry.sh install --with=docs
-            bash tools/poetry.sh run                     bash .evergreen/scripts/check-release-archive.sh
   run-mock-kms-servers:
     - command: subprocess.exec
       type: setup
@@ -501,7 +488,7 @@ functions:
     - command: subprocess.exec
       params:
         binary: bash
-        working_dir: mongoc/cmake_build/src/libbson
+        working_dir: mongoc/_build/for-docs/src/libbson
         env:
           AWS_ACCESS_KEY_ID: ${aws_key}
           AWS_SECRET_ACCESS_KEY: ${aws_secret}
@@ -515,13 +502,13 @@ functions:
         aws_secret: ${aws_secret}
         bucket: mciuploads
         content_type: text/html
-        local_file: mongoc/cmake_build/src/libbson/doc/html/index.html
+        local_file: mongoc/_build/for-docs/src/libbson/doc/html/index.html
         permissions: public-read
         remote_file: ${project}/docs/libbson/${CURRENT_VERSION}/index.html
     - command: subprocess.exec
       params:
         binary: bash
-        working_dir: mongoc/cmake_build/src/libmongoc
+        working_dir: mongoc/_build/for-docs/src/libmongoc
         env:
           AWS_ACCESS_KEY_ID: ${aws_key}
           AWS_SECRET_ACCESS_KEY: ${aws_secret}
@@ -535,7 +522,7 @@ functions:
         aws_secret: ${aws_secret}
         bucket: mciuploads
         content_type: text/html
-        local_file: mongoc/cmake_build/src/libmongoc/doc/html/index.html
+        local_file: mongoc/_build/for-docs/src/libmongoc/doc/html/index.html
         permissions: public-read
         remote_file: ${project}/docs/libmongoc/${CURRENT_VERSION}/index.html
   upload-man-pages:
@@ -554,8 +541,8 @@ functions:
             make
             popd # aha-repo
             mv aha-repo/aha .
-            .evergreen/scripts/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
-            .evergreen/scripts/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
+            .evergreen/scripts/man-pages-to-html.sh libbson _build/for-docs/src/libbson/doc/man > bson-man-pages.html
+            .evergreen/scripts/man-pages-to-html.sh libmongoc _build/for-docs/src/libmongoc/doc/man > mongoc-man-pages.html
     - command: s3.put
       params:
         display_name: libbson man pages
@@ -657,25 +644,6 @@ functions:
         optional: true
         permissions: public-read
         remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log
-  upload-release:
-    - command: subprocess.exec
-      params:
-        binary: bash
-        args:
-          - -c
-          - |
-            if compgen -G "mongoc/cmake_build/mongo*gz" > /dev/null; then
-                mv mongoc/cmake_build/mongo*gz mongoc.tar.gz
-            fi
-    - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        bucket: mciuploads
-        content_type: ${content_type|application/x-gzip}
-        local_file: mongoc.tar.gz
-        permissions: public-read
-        remote_file: ${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
   upload-test-results:
     - command: subprocess.exec
       params:

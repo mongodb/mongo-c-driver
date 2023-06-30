@@ -218,9 +218,7 @@ all_tasks = [
         SSL="OPENSSL",
     ),
     CompileTask("compile-tracing", TRACING="ON", CFLAGS="-Werror -Wno-cast-align"),
-    CompileTask(
-        "release-compile", config="release", depends_on=[OD([("name", "make-release-archive"), ("variant", "releng")])]
-    ),
+    CompileTask("release-compile", config="release"),
     CompileTask("debug-compile-nosasl-openssl", tags=["debug-compile", "nosasl", "openssl"], SSL="OPENSSL"),
     CompileTask(
         "debug-compile-nosasl-openssl-static", tags=["debug-compile", "nosasl", "openssl-static"], SSL="OPENSSL_STATIC"
@@ -336,7 +334,6 @@ all_tasks = [
     ),
     NamedTask(
         "install-uninstall-check-mingw",
-        depends_on=[OD([("name", "make-release-archive"), ("variant", "releng")])],
         commands=[
             shell_mongoc(
                 r"""
@@ -351,7 +348,6 @@ all_tasks = [
     ),
     NamedTask(
         "install-uninstall-check-msvc",
-        depends_on=[OD([("name", "make-release-archive"), ("variant", "releng")])],
         commands=[
             shell_mongoc(
                 r"""
@@ -366,7 +362,6 @@ all_tasks = [
     ),
     NamedTask(
         "install-uninstall-check",
-        depends_on=[OD([("name", "make-release-archive"), ("variant", "releng")])],
         commands=[
             shell_mongoc(
                 r"""

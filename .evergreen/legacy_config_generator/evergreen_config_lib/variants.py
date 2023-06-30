@@ -42,7 +42,7 @@ all_variants = [
         "**Release Archive Creator",
         "ubuntu2204-small",
         [
-            "make-release-archive",
+            "make-docs",
             "release-compile",
             "debug-compile-no-counters",
             "compile-tracing",

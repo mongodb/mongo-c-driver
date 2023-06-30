@@ -510,9 +510,6 @@ tasks:
         env CFLAGS="-Werror -Wno-cast-align" DEBUG="ON" TRACING="ON" bash .evergreen/scripts/compile.sh
   - func: upload-build
 - name: release-compile
-  depends_on:
-    name: make-release-archive
-    variant: releng
   commands:
   - command: shell.exec
     type: test
@@ -919,9 +916,6 @@ tasks:
       local_file: rpm.tar.gz
       content_type: ${content_type|application/x-gzip}
 - name: install-uninstall-check-mingw
-  depends_on:
-    name: make-release-archive
-    variant: releng
   commands:
   - command: shell.exec
     type: test
@@ -938,9 +932,6 @@ tasks:
         BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
         cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
 - name: install-uninstall-check-msvc
-  depends_on:
-    name: make-release-archive
-    variant: releng
   commands:
   - command: shell.exec
     type: test
@@ -957,9 +948,6 @@ tasks:
         BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
         cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
 - name: install-uninstall-check
-  depends_on:
-    name: make-release-archive
-    variant: releng
   commands:
   - command: shell.exec
     type: test
@@ -9175,7 +9163,7 @@ buildvariants:
     SKIP_LEGACY_SHELL: '1'
   run_on: ubuntu2204-small
   tasks:
-  - make-release-archive
+  - make-docs
   - release-compile
   - debug-compile-no-counters
   - compile-tracing
