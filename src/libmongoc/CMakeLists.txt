@@ -110,9 +110,6 @@ else ()
    message (STATUS "Disabling zlib compression")
 endif ()
 
-
-find_package(Utf8Proc REQUIRED)
-
 if (NOT ENABLE_ZSTD STREQUAL OFF)
    message (STATUS "Searching for compression library zstd")
    find_package(PkgConfig)
@@ -709,7 +706,12 @@ set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
-if (USE_BUNDLED_UTF8PROC STREQUAL "FALSE")
+
+# utf8proc configuration
+find_package(Utf8Proc REQUIRED)
+if ("${USE_BUNDLED_UTF8PROC}" STREQUAL "TRUE")
+   list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
+else()
    list(APPEND LIBRARIES utf8proc)
    list(APPEND STATIC_LIBRARIES utf8proc)
 endif()
