@@ -2717,7 +2717,9 @@ do_assert_bson_equal (const bson_t *actual,
                       int line)
 {
    char *actual_str = bson_as_canonical_extended_json (actual, NULL);
+   ASSERT (actual_str);
    char *expected_str = bson_as_canonical_extended_json (expected, NULL);
+   ASSERT (expected_str);
    if (strcmp (actual_str, expected_str) != 0) {
       test_error ("%s:%d: BSON documents are not equal:\n  Expected: %s\n    "
                   "Actual: %s\n",
@@ -2733,6 +2735,9 @@ do_assert_bson_equal (const bson_t *actual,
 #define ASSERT_BSON_EQUAL(Actual, ...) \
    do_assert_bson_equal (              \
       &(Actual), TMP_BSON_FROM_JSON (__VA_ARGS__), __FILE__, __LINE__)
+
+#define ASSERT_BSON_EQUAL_BSON(Actual, Expected) \
+   do_assert_bson_equal (&(Actual), &(Expected), __FILE__, __LINE__)
 
 static void
 test_bson_dsl_build (void)
