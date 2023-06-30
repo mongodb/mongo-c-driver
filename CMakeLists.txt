@@ -440,6 +440,10 @@ if (ENABLE_MONGOC)
 
    set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
+   set (UTF8PROC_SOURCES
+      ${SOURCE_DIR}/src/utf8proc-2.8.0/utf8proc.c
+   )
+
    set (ZLIB_SOURCES
       ${SOURCE_DIR}/src/zlib-1.2.13/adler32.c
       ${SOURCE_DIR}/src/zlib-1.2.13/crc32.c
