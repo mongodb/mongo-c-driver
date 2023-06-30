@@ -5,7 +5,7 @@ includedir=${exec_prefix}/include
 
 Name: libmongoc-@MONGOC_API_VERSION@
 Description: SSL support for the libmongoc-@MONGOC_API_VERSION@ library.
-Version: @VERSION@
+Version: @MONGOC_VERSION@
 Requires: libmongoc-1.0
 Libs:
 Cflags:

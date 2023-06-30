@@ -9,6 +9,7 @@ list (APPEND CMAKE_MODULE_PATH
 
 include (MongoSettings)
 include (MongoPlatform)
+include (GeneratePkgConfig)
 
 # Subcomponents:
 mongo_bool_setting(ENABLE_MONGOC "Enable the build of libmongoc libraries (The MongoDB C database driver)")
