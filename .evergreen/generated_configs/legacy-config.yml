@@ -9157,8 +9157,8 @@ buildvariants:
   - ubuntu1804-large
   tasks:
   - abi-compliance-check
-- name: releng
-  display_name: '**Release Archive Creator'
+- name: smoke
+  display_name: Smoke Tests
   expansions:
     SKIP_LEGACY_SHELL: '1'
   run_on: ubuntu2204-small

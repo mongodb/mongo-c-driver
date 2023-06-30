@@ -38,8 +38,8 @@ all_variants = [
         ["abi-compliance-check"],
     ),
     Variant(
-        "releng",
-        "**Release Archive Creator",
+        "smoke",
+        "Smoke Tests",
         "ubuntu2204-small",
         [
             "make-docs",
