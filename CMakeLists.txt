@@ -201,6 +201,11 @@ if(ENABLE_COVERAGE)
    mongo_platform_compile_options($<BUILD_INTERFACE:--coverage>)
 endif()
 
+# Enable multi-threading:
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+mongo_platform_use_target(Threads::Threads)
+
 # Optionally enable C++ to do some C++-specific tests
 include (CheckLanguage)
 check_language (CXX)

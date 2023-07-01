@@ -65,8 +65,3 @@ function(mongo_platform_use_target)
         endif()
     endforeach()
 endfunction()
-
-# Enable multi-threading:
-set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-find_package(Threads REQUIRED)
-mongo_platform_use_target(Threads::Threads)
