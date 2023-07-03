@@ -714,7 +714,7 @@ set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependen
 
 # utf8proc configuration
 find_package(Utf8Proc REQUIRED)
-if (${USE_BUNDLED_UTF8PROC})
+if (USE_BUNDLED_UTF8PROC)
    list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
 else()
    target_link_libraries(_mongoc-dependencies INTERFACE utf8proc)
