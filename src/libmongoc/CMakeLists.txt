@@ -707,19 +707,18 @@ set (STATIC_LIBRARIES
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
-# utf8proc configuration
-find_package(Utf8Proc REQUIRED)
-if ("${USE_BUNDLED_UTF8PROC}" STREQUAL "TRUE")
-   list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
-else()
-   list(APPEND LIBRARIES utf8proc)
-   list(APPEND STATIC_LIBRARIES utf8proc)
-endif()
-
 add_library(_mongoc-dependencies INTERFACE)
 add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
 install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
 set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
+
+# utf8proc configuration
+find_package(Utf8Proc REQUIRED)
+if (${USE_BUNDLED_UTF8PROC})
+   list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
+else()
+   target_link_libraries(_mongoc-dependencies INTERFACE utf8proc)
+endif()
 
 if(ENABLE_SRV)
    # Interface target defined by ResSearch.cmake:
