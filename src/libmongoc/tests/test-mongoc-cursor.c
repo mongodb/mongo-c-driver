@@ -1106,6 +1106,19 @@ test_cursor_new_tailable_await (void)
 
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+
+   // Select a server to get the server_id.
+   // mongoc_cursor_new_from_command_reply_with_opts expects to receive a
+   // serverId when creating an open cursor (non-zero cursor.id)
+   uint32_t server_id;
+   {
+      mongoc_server_description_t *sd = mongoc_client_select_server (
+         client, false /* for_writes */, NULL /* prefs */, &error);
+      ASSERT_OR_PRINT (sd, error);
+      server_id = mongoc_server_description_id (sd);
+      mongoc_server_description_destroy (sd);
+   }
+
    cursor = mongoc_cursor_new_from_command_reply_with_opts (
       client,
       bson_copy (tmp_bson ("{'ok': 1,"
@@ -1120,8 +1133,9 @@ test_cursor_new_tailable_await (void)
                            "}")),
       tmp_bson ("{'tailable': true,"
                 " 'awaitData': true,"
-                " 'maxAwaitTimeMS': 100"
-                "}"));
+                " 'maxAwaitTimeMS': 100,"
+                " 'serverId': %" PRIu32 "}",
+                server_id));
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
@@ -1172,6 +1186,18 @@ test_cursor_int64_t_maxtimems (void)
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
+   // Select a server to get the server_id.
+   // mongoc_cursor_new_from_command_reply_with_opts expects to receive a
+   // serverId when creating an open cursor (non-zero cursor.id)
+   uint32_t server_id;
+   {
+      mongoc_server_description_t *sd = mongoc_client_select_server (
+         client, false /* for_writes */, NULL /* prefs */, &error);
+      ASSERT_OR_PRINT (sd, error);
+      server_id = mongoc_server_description_id (sd);
+      mongoc_server_description_destroy (sd);
+   }
+
    max_await_time_ms = tmp_bson (NULL);
    bson_append_bool (max_await_time_ms, "tailable", 8, true);
    bson_append_bool (max_await_time_ms, "awaitData", 9, true);
@@ -1179,6 +1205,8 @@ test_cursor_int64_t_maxtimems (void)
                       MONGOC_CURSOR_MAX_AWAIT_TIME_MS,
                       MONGOC_CURSOR_MAX_AWAIT_TIME_MS_LEN,
                       ms_int64);
+   ASSERT (bson_in_range_int32_t_unsigned (server_id));
+   BSON_APPEND_INT32 (max_await_time_ms, "serverId", (uint32_t) server_id);
 
    cursor = mongoc_cursor_new_from_command_reply_with_opts (
       client,
