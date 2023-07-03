@@ -2921,6 +2921,83 @@ test_bson_uint32_to_string (void)
    }
 }
 
+static void
+test_bson_array_builder (void)
+{
+   // Build a top-level array.
+   {
+      bson_array_builder_t *bab = bson_array_builder_new ();
+      ASSERT (bson_array_builder_append_int32 (bab, 1));
+      ASSERT (bson_array_builder_append_int32 (bab, 2));
+      bson_t b;
+      ASSERT (bson_array_builder_build (bab, &b));
+      ASSERT_BSON_EQUAL (b, [ 1, 2 ]);
+      bson_array_builder_destroy (bab);
+      bson_destroy (&b);
+   }
+
+   // Build a top-level, heap allocated array.
+   {
+      char *large_str = bson_malloc0 (64);
+      for (size_t i = 0; i < 64 - 1; i++) {
+         large_str[i] = '.';
+      }
+      bson_array_builder_t *bab = bson_array_builder_new ();
+      ASSERT (bson_array_builder_append_utf8 (bab, large_str, -1));
+      ASSERT (bson_array_builder_append_utf8 (
+         bab, large_str, -1)); // heap allocates.
+      ASSERT (bson_array_builder_append_utf8 (bab, large_str, -1));
+      bson_t *expect = BCON_NEW ("0",
+                                 BCON_UTF8 (large_str),
+                                 "1",
+                                 BCON_UTF8 (large_str),
+                                 "2",
+                                 BCON_UTF8 (large_str));
+      bson_t b;
+      ASSERT (bson_array_builder_build (bab, &b));
+      ASSERT_BSON_EQUAL_BSON (b, *expect);
+      bson_destroy (expect);
+      bson_array_builder_destroy (bab);
+      bson_destroy (&b);
+      bson_free (large_str);
+   }
+
+   // Build a nested array.
+   {
+      bson_t *b = bson_new ();
+      bson_array_builder_t *child;
+      ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (b, "array", &child));
+      ASSERT (bson_array_builder_append_int32 (child, 1));
+      ASSERT (bson_array_builder_append_int32 (child, 2));
+      ASSERT (bson_append_array_builder_end (b, child));
+      ASSERT_BSON_EQUAL (*b, {"array" : [ 1, 2 ]});
+      bson_destroy (b);
+   }
+
+   // Reuse a `bson_array_builder`.
+   {
+      bson_array_builder_t *bab = bson_array_builder_new ();
+
+      ASSERT (bson_array_builder_append_int32 (bab, 1));
+      ASSERT (bson_array_builder_append_int32 (bab, 2));
+      bson_t b;
+      ASSERT (bson_array_builder_build (bab, &b));
+      ASSERT_BSON_EQUAL (b, [ 1, 2 ]);
+      bson_destroy (&b);
+      // Reuse to build another array.
+      ASSERT (bson_array_builder_append_int32 (bab, 3));
+      ASSERT (bson_array_builder_append_int32 (bab, 4));
+      ASSERT (bson_array_builder_build (bab, &b));
+      ASSERT_BSON_EQUAL (b, [ 3, 4 ]);
+      bson_array_builder_destroy (bab);
+   }
+
+   // Build an array with every BSON type.
+   {
+      // TODO.
+   }
+}
+
 void
 test_bson_install (TestSuite *suite)
 {
@@ -3027,4 +3104,5 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/bson/with_duplicate_keys", test_bson_with_duplicate_keys);
    TestSuite_Add (suite, "/bson/uint32_to_string", test_bson_uint32_to_string);
+   TestSuite_Add (suite, "/bson/array_builder", test_bson_array_builder);
 }

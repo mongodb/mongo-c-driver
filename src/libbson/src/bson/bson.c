@@ -3649,3 +3649,114 @@ bson_concat (bson_t *dst, const bson_t *src)
 
    return true;
 }
+
+struct _bson_array_builder_t {
+   uint32_t index;
+   bson_t bson;
+};
+
+bson_array_builder_t *
+bson_array_builder_new (void)
+{
+   bson_array_builder_t *bab = bson_malloc0 (sizeof (bson_array_builder_t));
+   bson_init (&bab->bson);
+   return bab;
+}
+
+// `bson_array_builder_append_impl` generates the next key index, calls
+// `append_fn`, and may update the tracked next index.
+#define bson_array_builder_append_impl(append_fn, ...)                        \
+   if (1) {                                                                   \
+      BSON_ASSERT_PARAM (bab);                                                \
+      const char *key;                                                        \
+      char buf[16];                                                           \
+      size_t key_length =                                                     \
+         bson_uint32_to_string (bab->index, &key, buf, sizeof buf);           \
+      /* Expect enough room in `buf` for key string. UINT32_MAX is 10 digits. \
+       * With the NULL terminator, 11 is expected maximum number of           \
+       * characters.  */                                                      \
+      BSON_ASSERT (key_length < sizeof buf);                                  \
+      bool ok = append_fn (&bab->bson, key, key_length, __VA_ARGS__);         \
+      if (ok) {                                                               \
+         bab->index += 1;                                                     \
+      }                                                                       \
+      return ok;                                                              \
+   } else                                                                     \
+      (void) 0
+
+#define bson_array_builder_append_impl_noargs(append_fn)                      \
+   if (1) {                                                                   \
+      BSON_ASSERT_PARAM (bab);                                                \
+      const char *key;                                                        \
+      char buf[16];                                                           \
+      size_t key_length =                                                     \
+         bson_uint32_to_string (bab->index, &key, buf, sizeof buf);           \
+      /* Expect enough room in `buf` for key string. UINT32_MAX is 10 digits. \
+       * With the NULL terminator, 11 is expected maximum number of           \
+       * characters.  */                                                      \
+      BSON_ASSERT (key_length < sizeof buf);                                  \
+      bool ok = append_fn (&bab->bson, key, key_length);                      \
+      if (ok) {                                                               \
+         bab->index += 1;                                                     \
+      }                                                                       \
+      return ok;                                                              \
+   } else                                                                     \
+      (void) 0
+
+bool
+bson_array_builder_append_int32 (bson_array_builder_t *bab, int32_t value)
+{
+   bson_array_builder_append_impl (bson_append_int32, value);
+}
+
+bool
+bson_array_builder_append_utf8 (bson_array_builder_t *bab,
+                                const char *value,
+                                int length)
+{
+   bson_array_builder_append_impl (bson_append_utf8, value, length);
+}
+
+bool
+bson_array_builder_build (bson_array_builder_t *bab, bson_t *out)
+{
+   BSON_ASSERT_PARAM (bab);
+   BSON_ASSERT_PARAM (out);
+   if (!bson_steal (out, &bab->bson)) {
+      return false;
+   }
+   bson_init (&bab->bson);
+   bab->index = 0;
+   return true;
+}
+
+void
+bson_array_builder_destroy (bson_array_builder_t *bab)
+{
+   if (!bab) {
+      return;
+   }
+   bson_destroy (&bab->bson);
+   bson_free (bab);
+}
+
+bool
+bson_append_array_builder_begin (bson_t *bson,
+                                 const char *key,
+                                 int key_length,
+                                 bson_array_builder_t **child)
+{
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (key);
+   BSON_ASSERT_PARAM (child);
+   *child = bson_array_builder_new ();
+   return bson_append_array_begin (bson, key, key_length, &(*child)->bson);
+}
+
+bool
+bson_append_array_builder_end (bson_t *bson, bson_array_builder_t *child)
+{
+   bool ok = bson_append_array_end (bson, &child->bson);
+   bson_array_builder_destroy (child);
+   return ok;
+}

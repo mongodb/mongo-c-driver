@@ -1177,6 +1177,44 @@ bson_append_undefined (bson_t *bson, const char *key, int key_length);
 BSON_EXPORT (bool)
 bson_concat (bson_t *dst, const bson_t *src);
 
+// bson_array_builder_t defines an API for building arrays.
+// BSON arrays require sequential numeric keys "0", "1", "2", ...
+typedef struct _bson_array_builder_t bson_array_builder_t;
+
+// bson_array_builder_new may be used to build a top-level BSON array. Example:
+// `[1,2,3]`.
+// To append an array field to a document (Example: `{ "field": [1,2,3] }`), use
+// `bson_append_array_builder_begin`.
+BSON_EXPORT (bson_array_builder_t *) bson_array_builder_new (void);
+
+BSON_EXPORT (bool)
+bson_array_builder_append_int32 (bson_array_builder_t *bab, int32_t value);
+
+BSON_EXPORT (bool)
+bson_array_builder_append_utf8 (bson_array_builder_t *bab,
+                                const char *value,
+                                int length);
+
+// bson_array_builder_build initializes and moves BSON data to `out`.
+// `bab` may be reused and will start appending a new array at index "0".
+BSON_EXPORT (bool)
+bson_array_builder_build (bson_array_builder_t *bab, bson_t *out);
+
+BSON_EXPORT (void)
+bson_array_builder_destroy (bson_array_builder_t *bab);
+
+BSON_EXPORT (bool)
+bson_append_array_builder_begin (bson_t *bson,
+                                 const char *key,
+                                 int key_length,
+                                 bson_array_builder_t **child);
+
+BSON_EXPORT (bool)
+bson_append_array_builder_end (bson_t *bson, bson_array_builder_t *child);
+
+#define BSON_APPEND_ARRAY_BUILDER_BEGIN(b, key, child) \
+   bson_append_array_builder_begin (b, key, (int) strlen (key), child)
+
 
 BSON_END_DECLS
 
