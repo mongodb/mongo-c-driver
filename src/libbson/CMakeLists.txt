@@ -212,10 +212,6 @@ if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
    target_compile_options(bson_shared PRIVATE /wd4756)
 endif ()
 set (CMAKE_CXX_VISIBILITY_PRESET hidden)
-if(ENABLE_COVERAGE)
-   target_compile_options(bson_shared PRIVATE --coverage)
-   target_link_options(bson_shared PUBLIC --coverage)
-endif()
 target_compile_definitions (bson_shared
    PRIVATE
       BSON_COMPILATION
@@ -237,6 +233,7 @@ target_include_directories (
 )
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}")
+target_link_libraries (bson_shared PUBLIC mongo::detail::c_platform)
 mongo_generate_pkg_config (bson_shared FILENAME libbson-1.0.pc INSTALL)
 
 if (ENABLE_APPLE_FRAMEWORK)
@@ -267,13 +264,6 @@ if (!APPLE)
    endif ()
 endif ()
 
-set (THREADS_PREFER_PTHREAD_FLAG 1)
-find_package (Threads REQUIRED)
-target_link_libraries (bson_shared PRIVATE Threads::Threads)
-if (CMAKE_USE_PTHREADS_INIT)
-   set (BSON_LIBRARIES ${BSON_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-endif ()
-
 if (WIN32)
    # gethostbyname
    target_link_libraries (bson_shared PRIVATE ws2_32)
@@ -299,14 +289,11 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          JSONSL_PARSE_NAN
          MCOMMON_NAME_PREFIX=_bson_mcommon
    )
+   target_link_libraries(bson_static PUBLIC mongo::detail::c_platform)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (bson_static PUBLIC -fPIC)
       message (STATUS "Adding -fPIC to compilation of bson_static components")
    endif ()
-   if(ENABLE_COVERAGE)
-      target_compile_options(bson_static PRIVATE --coverage)
-      target_link_options(bson_static PUBLIC --coverage)
-   endif()
    # Several directories in the source and build trees contain headers we would like
    # include via relative reference, but they all end up in the same install path
    target_include_directories (
@@ -322,18 +309,15 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    )
    set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
    set_target_properties (bson_static PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")
-   # We use CMAKE_THREAD_LIBS_INIT rather than Threads::Threads here because the
-   # latter fails when building on Mac OS X
-   target_link_libraries (bson_static ${CMAKE_THREAD_LIBS_INIT})
    if (RT_LIBRARY)
-      target_link_libraries (bson_static ${RT_LIBRARY})
+      target_link_libraries (bson_static PUBLIC ${RT_LIBRARY})
    endif ()
    if (M_LIBRARY)
-      target_link_libraries (bson_static ${M_LIBRARY})
+      target_link_libraries (bson_static PUBLIC ${M_LIBRARY})
    endif ()
    if (NOT UNIX)
       # gethostbyname
-      target_link_libraries (bson_static ws2_32)
+      target_link_libraries (bson_static PUBLIC ws2_32)
    endif ()
    if(MONGOC_ENABLE_STATIC_INSTALL)
       mongo_generate_pkg_config(bson_static FILENAME libbson-static-1.0.pc INSTALL)
