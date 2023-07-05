@@ -9,5 +9,4 @@ if(NOT _mongoc_built_with_bundled_utf8proc AND NOT TARGET PkgConfig::PC_UTF8PROC
   # imported target here:
   find_dependency(PkgConfig)
   pkg_config_check_modules(PC_UTF8PROC REQUIRED utf8proc IMPORTED_TARGET GLOBAL)
-  add_library(utf8proc ALIAS PkgConfig::PC_UTF8PROC)
 endif()
