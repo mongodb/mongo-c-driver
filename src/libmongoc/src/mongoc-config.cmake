@@ -8,5 +8,5 @@ if(NOT _mongoc_built_with_bundled_utf8proc AND NOT TARGET PkgConfig::PC_UTF8PROC
   # FindPkgConfig-generated IMPORTED target. Find that package and generate that 
   # imported target here:
   find_dependency(PkgConfig)
-  pkg_config_check_modules(PC_UTF8PROC REQUIRED utf8proc IMPORTED_TARGET GLOBAL)
+  pkg_check_modules(PC_UTF8PROC REQUIRED libutf8proc IMPORTED_TARGET GLOBAL)
 endif()
