@@ -72,7 +72,10 @@ all_variants = [
             "debug-compile-with-warnings",
             OD([("name", "build-and-test-with-toolchain"), ("distros", ["debian10-small"])]),
         ],
-        {},
+        {
+            # Disable the MongoDB legacy shell download, which is not available in 5.0 for u22
+            "SKIP_LEGACY_SHELL": "1"
+        },
     ),
     Variant(
         "clang34ubuntu",

@@ -29,5 +29,7 @@ set_and_check (BSON_INCLUDE_DIRS "@PACKAGE_INCLUDE_INSTALL_DIRS@")
 # BSON_LIBRARY themselves.
 find_library (BSON_LIBRARY bson-1.0 PATHS "@PACKAGE_LIBRARY_INSTALL_DIRS@" NO_DEFAULT_PATH)
 
-set (BSON_LIBRARIES ${BSON_LIBRARY})
+set (BSON_LIBRARIES ${BSON_LIBRARY} mongo::detail::c_platform)
 
+include(CMakeFindDependencyMacro)
+find_dependency(bson-1.0)

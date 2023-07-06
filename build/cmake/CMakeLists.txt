@@ -2,6 +2,7 @@ add_subdirectory (make_dist)
 
 set (build_cmake_MODULES
    CheckSchedGetCPU.cmake
+   GeneratePkgConfig.cmake
    ResSearch.cmake
    FindSASL2.cmake
    FindSnappy.cmake
@@ -9,6 +10,7 @@ set (build_cmake_MODULES
    FindUtf8Proc.cmake
    LoadVersion.cmake
    MongoCPackage.cmake
+   MongoPlatform.cmake
    MongoSettings.cmake
    MongoC-Warnings.cmake
    ParseVersion.cmake

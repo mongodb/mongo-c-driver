@@ -13,8 +13,8 @@
 
    These options are attached to the source directory and its children.
 ]]
-function (mongoc_add_platform_compile_options)
-   list(APPEND CMAKE_MESSAGE_CONTEXT mongoc_add_platform_compile_options)
+function (mongoc_add_warning_options)
+   list(APPEND CMAKE_MESSAGE_CONTEXT ${CMAKE_CURRENT_FUNCTION})
    # Conditional prefixes:
    set(cond/gnu $<C_COMPILER_ID:GNU>)
    set(cond/llvm-clang $<C_COMPILER_ID:Clang>)
@@ -47,7 +47,7 @@ function (mongoc_add_platform_compile_options)
             endif()
             set(opt "$<${expr}:${suffix}>")
          else ()
-            message (SEND_ERROR "Unknown option prefix to mongoc_add_platform_compile_options(): “${prefix}” in “${opt}”")
+            message (SEND_ERROR "Unknown option prefix to ${CMAKE_CURRENT_FUNCTION}(): “${prefix}” in “${opt}”")
             break()
          endif ()
          set(opt "${before}${opt}")
@@ -61,7 +61,7 @@ set (is_c_lang "$<COMPILE_LANGUAGE:C>")
 
 # These below warnings should always be unconditional hard errors, as the code is
 # almost definitely broken
-mongoc_add_platform_compile_options (
+mongoc_add_warning_options (
      # Implicit function or variable declarations
      gnu-like:lang-c:-Werror=implicit msvc:/we4013 msvc:/we4431
      # Missing return types/statements

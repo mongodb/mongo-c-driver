@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.1)
+cmake_minimum_required (VERSION 3.15)
 
 project (libbson C)
 
@@ -212,10 +212,6 @@ if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
    target_compile_options(bson_shared PRIVATE /wd4756)
 endif ()
 set (CMAKE_CXX_VISIBILITY_PRESET hidden)
-if(ENABLE_COVERAGE)
-   target_compile_options(bson_shared PRIVATE --coverage)
-   target_link_options(bson_shared PUBLIC --coverage)
-endif()
 target_compile_definitions (bson_shared
    PRIVATE
       BSON_COMPILATION
@@ -237,6 +233,8 @@ target_include_directories (
 )
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}")
+target_link_libraries (bson_shared PUBLIC mongo::detail::c_platform)
+mongo_generate_pkg_config (bson_shared FILENAME libbson-1.0.pc INSTALL)
 
 if (ENABLE_APPLE_FRAMEWORK)
    set_target_properties(bson_shared PROPERTIES
@@ -266,13 +264,6 @@ if (!APPLE)
    endif ()
 endif ()
 
-set (THREADS_PREFER_PTHREAD_FLAG 1)
-find_package (Threads REQUIRED)
-target_link_libraries (bson_shared PRIVATE Threads::Threads)
-if (CMAKE_USE_PTHREADS_INIT)
-   set (BSON_LIBRARIES ${BSON_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-endif ()
-
 if (WIN32)
    # gethostbyname
    target_link_libraries (bson_shared PRIVATE ws2_32)
@@ -298,14 +289,11 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          JSONSL_PARSE_NAN
          MCOMMON_NAME_PREFIX=_bson_mcommon
    )
+   target_link_libraries(bson_static PUBLIC mongo::detail::c_platform)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (bson_static PUBLIC -fPIC)
       message (STATUS "Adding -fPIC to compilation of bson_static components")
    endif ()
-   if(ENABLE_COVERAGE)
-      target_compile_options(bson_static PRIVATE --coverage)
-      target_link_options(bson_static PUBLIC --coverage)
-   endif()
    # Several directories in the source and build trees contain headers we would like
    # include via relative reference, but they all end up in the same install path
    target_include_directories (
@@ -321,19 +309,19 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    )
    set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
    set_target_properties (bson_static PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")
-   # We use CMAKE_THREAD_LIBS_INIT rather than Threads::Threads here because the
-   # latter fails when building on Mac OS X
-   target_link_libraries (bson_static ${CMAKE_THREAD_LIBS_INIT})
    if (RT_LIBRARY)
-      target_link_libraries (bson_static ${RT_LIBRARY})
+      target_link_libraries (bson_static PUBLIC ${RT_LIBRARY})
    endif ()
    if (M_LIBRARY)
-      target_link_libraries (bson_static ${M_LIBRARY})
+      target_link_libraries (bson_static PUBLIC ${M_LIBRARY})
    endif ()
    if (NOT UNIX)
       # gethostbyname
-      target_link_libraries (bson_static ws2_32)
+      target_link_libraries (bson_static PUBLIC ws2_32)
    endif ()
+   if(MONGOC_ENABLE_STATIC_INSTALL)
+      mongo_generate_pkg_config(bson_static FILENAME libbson-static-1.0.pc INSTALL)
+   endif()
 endif ()
 
 function (add_example bin src)
@@ -378,6 +366,12 @@ install (
    INCLUDES DESTINATION ${BSON_HEADER_INSTALL_DIR}
    FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+set_target_properties(${TARGETS_TO_INSTALL} PROPERTIES
+   pkg_config_NAME libbson
+   pkg_config_DESCRIPTION "The libbson BSON serialization library."
+   pkg_config_VERSION "${BSON_VERSION}"
+)
+set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${BSON_HEADER_INSTALL_DIR}")
 
 install (
    FILES ${HEADERS}
@@ -407,35 +401,6 @@ endforeach ()
 foreach (_lib ${BSON_SYSTEM_LIBRARIES})
    set (LIBBSON_LIBRARIES "${LIBBSON_LIBRARIES} ${_lib}")
 endforeach ()
-
-set (VERSION "${BSON_VERSION}")
-set (prefix "${CMAKE_INSTALL_PREFIX}")
-set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
-configure_file (
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-1.0.pc.in
-   ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
-   @ONLY)
-
-install (
-   FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
-   DESTINATION
-      ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
-
-if (MONGOC_ENABLE_STATIC_INSTALL)
-   configure_file (
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-static-1.0.pc.in
-      ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
-      @ONLY)
-
-   install (
-      FILES
-         ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
-      DESTINATION
-         ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-   )
-endif ()
 
 include (CMakePackageConfigHelpers)
 set (INCLUDE_INSTALL_DIRS "${BSON_HEADER_INSTALL_DIR}")
