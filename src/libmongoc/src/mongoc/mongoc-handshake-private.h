@@ -86,6 +86,13 @@ typedef enum {
    LAST_MONGOC_MD_FLAG
 } mongoc_handshake_config_flag_bit_t;
 
+typedef enum {
+   MONGOC_HANDSHAKE_ENV_NONE,
+   MONGOC_HANDSHAKE_ENV_AWS,
+   MONGOC_HANDSHAKE_ENV_VERCEL,
+   MONGOC_HANDSHAKE_ENV_GCP,
+   MONGOC_HANDSHAKE_ENV_AZURE
+} mongoc_handshake_env_t;
 
 typedef struct _mongoc_handshake_t {
    char *os_type;
@@ -98,6 +105,11 @@ typedef struct _mongoc_handshake_t {
    char *platform;
    char *compiler_info;
    char *flags;
+   
+   mongoc_handshake_env_t env;
+   int32_t env_timeout_sec;
+   int32_t env_memory_mb;
+   char *env_region;
 
    bool frozen;
 } mongoc_handshake_t;
@@ -108,8 +120,8 @@ _mongoc_handshake_init (void);
 void
 _mongoc_handshake_cleanup (void);
 
-bool
-_mongoc_handshake_build_doc_with_application (bson_t *doc,
+bson_t *
+_mongoc_handshake_build_doc_with_application (
                                               const char *application);
 
 void

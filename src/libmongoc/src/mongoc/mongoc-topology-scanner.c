@@ -264,19 +264,17 @@ _build_handshake_cmd (const bson_t *basis_cmd,
    const bson_t *compressors;
    int count = 0;
    char buf[16];
-   bool subdoc_okay;
 
    BSON_ASSERT (doc);
+   bson_t *handshake_doc =
+      _mongoc_handshake_build_doc_with_application (appname);
 
-   BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
-   subdoc_okay =
-      _mongoc_handshake_build_doc_with_application (&subdoc, appname);
-   bson_append_document_end (doc, &subdoc);
-
-   if (!subdoc_okay) {
+   if (!handshake_doc) {
       bson_destroy (doc);
       return NULL;
    }
+   bson_append_document (doc, HANDSHAKE_FIELD, -1, handshake_doc);
+   bson_destroy (handshake_doc);
 
    BSON_APPEND_ARRAY_BEGIN (doc, "compression", &subdoc);
    if (uri) {

@@ -386,7 +386,6 @@ _test_platform (bool platform_oversized)
    mongoc_handshake_t *md;
    size_t platform_len;
    const char *platform_suffix = "b";
-   bson_t doc = BSON_INITIALIZER;
 
    _mongoc_handshake_cleanup ();
    _mongoc_handshake_init ();
@@ -419,10 +418,12 @@ _test_platform (bool platform_oversized)
    /* returns true, but ignores the suffix; there's no room */
    ASSERT (mongoc_handshake_data_append (NULL, NULL, platform_suffix));
    ASSERT (!strstr (md->platform, "b"));
-   ASSERT (_mongoc_handshake_build_doc_with_application (&doc, "my app"));
-   ASSERT_CMPUINT32 (doc.len, ==, (uint32_t) HANDSHAKE_MAX_SIZE);
 
-   bson_destroy (&doc);
+   bson_t *doc;
+   ASSERT (doc = _mongoc_handshake_build_doc_with_application ("my app"));
+   ASSERT_CMPUINT32 (doc->len, ==, (uint32_t) HANDSHAKE_MAX_SIZE);
+
+   bson_destroy (doc);
    _reset_handshake (); /* frees the strings created above */
 }
 
@@ -556,7 +557,6 @@ static void
 test_mongoc_platform_truncate (int drop)
 {
    mongoc_handshake_t *md;
-   bson_t doc = BSON_INITIALIZER;
    bson_iter_t iter;
 
    char *undropped;
@@ -613,19 +613,21 @@ test_mongoc_platform_truncate (int drop)
    big_string[handshake_remaining_space + 1u] = '\0';
 
    ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
-   ASSERT (_mongoc_handshake_build_doc_with_application (&doc, "my app"));
+
+   bson_t *doc;
+   ASSERT (doc = _mongoc_handshake_build_doc_with_application ("my app"));
 
    /* doc.len being strictly less than HANDSHAKE_MAX_SIZE proves that we have
     * dropped the flags correctly, instead of truncating anything
     */
-   ASSERT_CMPUINT32 (doc.len, <, (uint32_t) HANDSHAKE_MAX_SIZE);
-   bson_iter_init_find (&iter, &doc, "platform");
+   ASSERT_CMPUINT32 (doc->len, <, (uint32_t) HANDSHAKE_MAX_SIZE);
+   bson_iter_init_find (&iter, doc, "platform");
    expected = bson_strdup_printf ("%s%s", big_string, undropped);
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), expected);
 
    bson_free (expected);
    bson_free (undropped);
-   bson_destroy (&doc);
+   bson_destroy (doc);
    /* So later tests don't have "aaaaa..." as the md platform string */
    _reset_handshake ();
 }

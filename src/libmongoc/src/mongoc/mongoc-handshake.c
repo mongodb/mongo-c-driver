@@ -389,6 +389,69 @@ _set_platform_string (mongoc_handshake_t *handshake)
 }
 
 static void
+_free_env_info (mongoc_handshake_t *handshake)
+{
+   bson_free (handshake->env_region);
+}
+
+static void
+_get_env_info (mongoc_handshake_t *handshake)
+{
+   char *aws_env = _mongoc_getenv ("AWS_EXECUTION_ENV");
+   char *vercel_env = _mongoc_getenv ("VERCEL");
+   char *azure_env = _mongoc_getenv ("FUNCTIONS_WORKER_RUNTIME");
+   char *gcp_env = _mongoc_getenv ("K_SERVICE");
+   char *memory_str = NULL;
+   char *timeout_str = NULL;
+
+   bool is_aws =
+      aws_env &&
+      strlen (aws_env) && (aws_env == strstr("AWS_Lambda_", aws_env));
+   bool is_vercel = vercel_env && strlen (vercel_env);
+   bool is_azure = azure_env && strlen (azure_env);
+   bool is_gcp = gcp_env && strlen (gcp_env);
+
+   handshake->env = MONGOC_HANDSHAKE_ENV_NONE;
+   if ((is_aws || is_vercel) + is_azure + is_gcp != 1) {
+      goto cleanup;
+   }
+
+   handshake->env_region = NULL;
+
+   if (is_aws && !is_vercel) {
+      handshake->env = MONGOC_HANDSHAKE_ENV_AWS;
+      handshake->env_region = _mongoc_getenv ("AWS_REGION");
+      memory_str = _mongoc_getenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE");
+   } else if (is_vercel) {
+      handshake->env = MONGOC_HANDSHAKE_ENV_VERCEL;
+      handshake->env_region = _mongoc_getenv ("VERCEL_REGION");
+   } else if (is_gcp) {
+      handshake->env = MONGOC_HANDSHAKE_ENV_GCP;
+      handshake->env_region = _mongoc_getenv ("FUNCTION_REGION");
+      memory_str = _mongoc_getenv ("FUNCTION_MEMORY_MB");
+      timeout_str = _mongoc_getenv ("FUNCTION_TIMEOUT_SEC");
+   } else if (is_azure) {
+      handshake->env = MONGOC_HANDSHAKE_ENV_AZURE;
+   }
+
+   if (memory_str) {
+      handshake->env_memory_mb = atoi (memory_str);
+   }
+
+   if (timeout_str) {
+      handshake->env_timeout_sec = atoi (timeout_str);
+   }
+
+cleanup:
+   bson_free (aws_env);
+   bson_free (vercel_env);
+   bson_free (azure_env);
+   bson_free (gcp_env);
+   bson_free (memory_str);
+   bson_free (timeout_str);
+}
+
+static void
 _set_compiler_info (mongoc_handshake_t *handshake)
 {
    bson_string_t *str;
@@ -450,6 +513,7 @@ _mongoc_handshake_init (void)
    _get_system_info (_mongoc_handshake_get ());
    _get_driver_info (_mongoc_handshake_get ());
    _set_platform_string (_mongoc_handshake_get ());
+   _get_env_info (_mongoc_handshake_get ());
    _set_compiler_info (_mongoc_handshake_get ());
    _set_flags (_mongoc_handshake_get ());
 
@@ -463,12 +527,13 @@ _mongoc_handshake_cleanup (void)
    _free_system_info (_mongoc_handshake_get ());
    _free_driver_info (_mongoc_handshake_get ());
    _free_platform_string (_mongoc_handshake_get ());
+   _free_env_info (_mongoc_handshake_get ());
 
    bson_mutex_destroy (&gHandshakeLock);
 }
 
 static void
-_append_platform_field (bson_t *doc, const char *platform)
+_append_platform_field (bson_t *doc, const char *platform, bool truncate)
 {
    char *compiler_info = _mongoc_handshake_get ()->compiler_info;
    char *flags = _mongoc_handshake_get ()->flags;
@@ -495,12 +560,13 @@ _append_platform_field (bson_t *doc, const char *platform)
     * platform information is truncated
     * Try to drop flags first, and if there is still not enough space also drop
     * compiler info */
-   if (bson_cmp_greater_su (max_platform_str_size,
-                            combined_platform->len + strlen (compiler_info) +
-                               1u)) {
+   if (!truncate || bson_cmp_greater_su (max_platform_str_size,
+                                         combined_platform->len +
+                                            strlen (compiler_info) + 1u)) {
       bson_string_append (combined_platform, compiler_info);
    }
-   if (bson_cmp_greater_su (max_platform_str_size,
+   if (!truncate ||
+       bson_cmp_greater_su (max_platform_str_size,
                             combined_platform->len + strlen (flags) + 1u)) {
       bson_string_append (combined_platform, flags);
    }
@@ -508,15 +574,84 @@ _append_platform_field (bson_t *doc, const char *platform)
    /* We use the flags_index field to check if the CLAGS/LDFLAGS need to be
     * truncated, and if so we drop them altogether */
    BSON_ASSERT (bson_in_range_unsigned (int, combined_platform->len));
+   int length = truncate ? BSON_MIN (max_platform_str_size - 1,
+                                     (int) combined_platform->len)
+                         : -1;
    bson_append_utf8 (
-      doc,
-      HANDSHAKE_PLATFORM_FIELD,
-      -1,
-      combined_platform->str,
-      BSON_MIN (max_platform_str_size - 1, (int) combined_platform->len));
+      doc, HANDSHAKE_PLATFORM_FIELD, -1, combined_platform->str, length);
 
    bson_string_free (combined_platform, true);
-   BSON_ASSERT (doc->len <= HANDSHAKE_MAX_SIZE);
+}
+
+static bool
+_get_subdoc_static (bson_t *doc, char *subdoc_name)
+{
+   bson_iter_t iter;
+   if (bson_iter_init_find (&iter, doc, subdoc_name) &&
+       BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      uint32_t len;
+      const uint8_t *data;
+      bson_iter_document (&iter, &len, &data);
+
+      return bson_init_static (doc, data, len);
+   }
+   return false;
+}
+
+static bool
+_truncate_handshake (bson_t **doc)
+{
+   if ((*doc)->len > HANDSHAKE_MAX_SIZE) {
+      bson_t env_doc;
+      if (_get_subdoc_static (&env_doc, "env")) {
+         bson_t *new_env = bson_new ();
+         bson_copy_to_including_noinit (&env_doc, new_env, "name", NULL);
+
+         bson_t *new_doc = bson_new ();
+         bson_copy_to_excluding_noinit (*doc, new_doc, "env", NULL);
+
+         bson_append_document (new_doc, "env", -1, new_env);
+         bson_destroy (new_env);
+         bson_destroy (*doc);
+         *doc = new_doc;
+         // bson_destroy(&env_doc);
+      }
+   }
+
+   if ((*doc)->len > HANDSHAKE_MAX_SIZE) {
+      bson_t os_doc;
+      if (_get_subdoc_static (&os_doc, "os")) {
+         bson_t *new_os = bson_new ();
+         bson_copy_to_including_noinit (&os_doc, new_os, "type", NULL);
+
+         bson_t *new_doc = bson_new ();
+         bson_copy_to_excluding_noinit (*doc, new_doc, "os", NULL);
+
+         bson_append_document (new_doc, "os", -1, new_os);
+         bson_destroy (new_os);
+         bson_destroy (*doc);
+         *doc = new_doc;
+         // bson_destroy(&os_doc);
+      }
+   }
+
+   if ((*doc)->len > HANDSHAKE_MAX_SIZE) {
+      bson_t *new_doc = bson_new ();
+      bson_copy_to_excluding_noinit (*doc, new_doc, "env", NULL);
+      bson_destroy (*doc);
+      *doc = new_doc;
+   }
+
+   const mongoc_handshake_t *md = _mongoc_handshake_get ();
+   if ((*doc)->len > HANDSHAKE_MAX_SIZE && md->platform) {
+      bson_t *new_doc = bson_new ();
+      bson_copy_to_excluding_noinit (*doc, new_doc, "platform", NULL);
+      _append_platform_field (new_doc, md->platform, true);
+      bson_destroy (*doc);
+      *doc = new_doc;
+   }
+
+   return (*doc)->len <= HANDSHAKE_MAX_SIZE;
 }
 
 /*
@@ -524,11 +659,33 @@ _append_platform_field (bson_t *doc, const char *platform)
  * false if there's no way to prevent the doc from being too big. In this
  * case, the caller shouldn't include it with hello
  */
-bool
-_mongoc_handshake_build_doc_with_application (bson_t *doc, const char *appname)
+bson_t *
+_mongoc_handshake_build_doc_with_application (const char *appname)
 {
    const mongoc_handshake_t *md = _mongoc_handshake_get ();
+   char *env_name = NULL;
+   switch (md->env) {
+   case MONGOC_HANDSHAKE_ENV_AWS:
+      env_name = "aws.lambda";
+      break;
+   case MONGOC_HANDSHAKE_ENV_GCP:
+      env_name = "gcp.func";
+      break;
+   case MONGOC_HANDSHAKE_ENV_AZURE:
+      env_name = "azure.func";
+      break;
+   case MONGOC_HANDSHAKE_ENV_VERCEL:
+      env_name = "vercel";
+      break;
+   case MONGOC_HANDSHAKE_ENV_NONE:
+      env_name = NULL;
+      break;
+   default:
+      break;
+   }
 
+   bson_t *doc = bson_new ();
+   // Optimistically include all handshake data
    bsonBuildAppend (
       *doc,
       if (appname,
@@ -542,20 +699,28 @@ _mongoc_handshake_build_doc_with_application (bson_t *doc, const char *appname)
               if (md->os_name, then (kv ("name", cstr (md->os_name)))),
               if (md->os_version, then (kv ("version", cstr (md->os_version)))),
               if (md->os_architecture,
-                  then (kv ("architecture", cstr (md->os_architecture)))))));
-
-   if (doc->len > HANDSHAKE_MAX_SIZE) {
-      /* We've done all we can possibly do to ensure the current
-       * document is below the maxsize, so if it overflows there is
-       * nothing else we can do, so we fail */
-      return false;
-   }
+                  then (kv ("architecture", cstr (md->os_architecture)))))),
+      if (env_name,
+          then (kv (
+             "env",
+             doc (kv ("name", cstr (env_name)),
+                  if (md->env_timeout_sec,
+                      then (kv ("timeout_sec", int32 (md->env_timeout_sec)))),
+                  if (md->env_memory_mb,
+                      then (kv ("memory_mb", int32 (md->env_memory_mb)))),
+                  if (md->env_region,
+                      then (kv ("region", cstr (md->env_region)))))))));
 
    if (md->platform) {
-      _append_platform_field (doc, md->platform);
+      _append_platform_field (doc, md->platform, false);
    }
 
-   return true;
+   if (_truncate_handshake (&doc)) {
+      return doc;
+   } else {
+      bson_destroy (doc);
+      return NULL;
+   }
 }
 
 void
@@ -693,7 +858,7 @@ _mongoc_handshake_parse_sasl_supported_mechs (
               find (keyWithType ("saslSupportedMechs", array),
                     visitEach (case (
                        when (strEqual ("SCRAM-SHA-256"),
-                             do(sasl_supported_mechs->scram_sha_256 = true)),
+                             do (sasl_supported_mechs->scram_sha_256 = true)),
                        when (strEqual ("SCRAM-SHA-1"),
-                             do(sasl_supported_mechs->scram_sha_1 = true))))));
+                             do (sasl_supported_mechs->scram_sha_1 = true))))));
 }
