@@ -2235,6 +2235,28 @@ should_ignore (const char *first_exclude, va_list args, const char *name)
 }
 
 
+static bool
+should_include (const char *first_include, va_list args, const char *name)
+{
+   bool ret = false;
+   const char *include = first_include;
+   va_list args_copy;
+
+   va_copy (args_copy, args);
+
+   do {
+      if (strcmp (name, include)) {
+         ret = true;
+         break;
+      }
+   } while ((include = va_arg (args_copy, const char *)));
+
+   va_end (args_copy);
+
+   return ret;
+}
+
+
 void
 bson_copy_to_excluding_noinit_va (const bson_t *src,
                                   bson_t *dst,
@@ -2246,6 +2268,31 @@ bson_copy_to_excluding_noinit_va (const bson_t *src,
    if (bson_iter_init (&iter, src)) {
       while (bson_iter_next (&iter)) {
          if (!should_ignore (first_exclude, args, bson_iter_key (&iter))) {
+            if (!bson_append_iter (dst, NULL, 0, &iter)) {
+               /*
+                * This should not be able to happen since we are copying
+                * from within a valid bson_t.
+                */
+               BSON_ASSERT (false);
+               return;
+            }
+         }
+      }
+   }
+}
+
+
+void
+bson_copy_to_including_noinit_va (const bson_t *src,
+                                  bson_t *dst,
+                                  const char *first_include,
+                                  va_list args)
+{
+   bson_iter_t iter;
+
+   if (bson_iter_init (&iter, src)) {
+      while (bson_iter_next (&iter)) {
+         if (should_include (first_include, args, bson_iter_key (&iter))) {
             if (!bson_append_iter (dst, NULL, 0, &iter)) {
                /*
                 * This should not be able to happen since we are copying
@@ -2296,6 +2343,22 @@ bson_copy_to_excluding_noinit (const bson_t *src,
    va_end (args);
 }
 
+void
+bson_copy_to_including_noinit (const bson_t *src,
+                               bson_t *dst,
+                               const char *first_include,
+                               ...)
+{
+   va_list args;
+
+   BSON_ASSERT (src);
+   BSON_ASSERT (dst);
+   BSON_ASSERT (first_include);
+
+   va_start (args, first_include);
+   bson_copy_to_including_noinit_va (src, dst, first_include, args);
+   va_end (args);
+}
 
 void
 bson_destroy (bson_t *bson)
