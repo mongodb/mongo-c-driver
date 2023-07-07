@@ -171,7 +171,6 @@ class LinkTask(NamedTask):
 
         super().__init__(
             task_name=task_name,
-            depends_on=[],
             commands=bootstrap_commands + list(suffix_commands),
         )
 

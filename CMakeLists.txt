@@ -351,9 +351,6 @@ if (USE_SYSTEM_LIBBSON)
    set (BSON_STATIC_LIBRARIES mongo::bson_static)
 endif ()
 
-unset (dist_generated CACHE)
-unset (dist_generated_depends CACHE)
-
 set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
 
 # Enable CTest
@@ -540,37 +537,11 @@ if (ENABLE_MONGOC)
       )
    endif ()
 
-   # Implement 'dist' and 'distcheck' targets
-   #
-   # CMake does not implement anything like 'dist' and 'distcheck' from autotools.
-   # This implementation is based on the one in GnuCash.
-
    # sub-directory 'doc' was already included above
    add_subdirectory (src)
    # 'src/libbson' was already included, so 'src' will not include it directly
    # 'src/kms-message' was already included if appropriate
    # 'src/libmongoc' was already included, so 'src' will not include it directly
-
-   set (PACKAGE_PREFIX "mongo-c-driver-${MONGOC_DIST_VERSION}")
-   set (DIST_FILE "${PACKAGE_PREFIX}.tar.gz")
-
-   if (NOT USE_SYSTEM_LIBBSON AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
-   else ()
-      string (CONCAT DISTERRMSG
-         "The dist and distcheck targets are disabled. Set USE_SYSTEM_LIBBSON=OFF, "
-         "ENABLE_MAN_PAGES=ON, ENABLE_HTML_DOCS=ON, and generate VERSION_CURRENT "
-         "to enable."
-      )
-
-      add_custom_target (dist
-         COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
-      )
-
-      add_custom_target (distcheck
-         COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
-      )
-   endif ()
-
 endif ()
 
 install (FILES COPYING NEWS README.rst THIRD_PARTY_NOTICES

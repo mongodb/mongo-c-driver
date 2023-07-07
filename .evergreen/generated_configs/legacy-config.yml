@@ -9221,7 +9221,7 @@ buildvariants:
     distros:
     - debian10-small
   tags:
-  - merge-gate
+  - pr-merge-gate
 - name: clang34ubuntu
   display_name: clang 3.4 (Ubuntu 14.04)
   expansions:

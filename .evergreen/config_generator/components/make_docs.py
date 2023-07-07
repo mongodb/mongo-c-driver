@@ -17,8 +17,7 @@ class MakeDocs(Function):
             script="""\
                 set -o errexit
                 bash tools/poetry.sh install --with=docs
-                bash tools/poetry.sh run \
-                    bash .evergreen/scripts/build-docs.sh
+                bash tools/poetry.sh run bash .evergreen/scripts/build-docs.sh
                 """,
         ),
     ]

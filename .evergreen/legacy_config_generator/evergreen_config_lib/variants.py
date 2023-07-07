@@ -76,7 +76,7 @@ all_variants = [
             # Disable the MongoDB legacy shell download, which is not available in 5.0 for u22
             "SKIP_LEGACY_SHELL": "1"
         },
-        tags=["merge-gate"],
+        tags=["pr-merge-gate"],
     ),
     Variant(
         "clang34ubuntu",
