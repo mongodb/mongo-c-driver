@@ -29,7 +29,7 @@
 #include "common-b64-private.h"
 
 #include "mongoc-memcmp-private.h"
-#include "../utf8proc-2.8.0/utf8proc.h"
+#include "utf8proc.h"
 
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
