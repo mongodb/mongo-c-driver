@@ -34,6 +34,7 @@ DISTRO_ID_MAP = {
     'opensuse': 'sles',
     'redhat': 'rhel',
     'rocky': 'rhel',
+    'ol': 'rhel',
 }
 
 DISTRO_VERSION_MAP = {

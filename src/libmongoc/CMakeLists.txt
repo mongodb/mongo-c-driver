@@ -103,7 +103,6 @@ else ()
    message (STATUS "Disabling zlib compression")
 endif ()
 
-
 if (NOT ENABLE_ZSTD STREQUAL OFF)
    message (STATUS "Searching for compression library zstd")
    find_package(PkgConfig)
@@ -699,6 +698,14 @@ add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
 target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform)
 install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
 set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
+
+# utf8proc configuration
+find_package(Utf8Proc REQUIRED)
+if (USE_BUNDLED_UTF8PROC)
+   list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
+else()
+   target_link_libraries(_mongoc-dependencies INTERFACE utf8proc)
+endif()
 
 if(ENABLE_SRV)
    # Interface target defined by ResSearch.cmake:
