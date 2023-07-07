@@ -101,18 +101,17 @@ fi
 
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/${spec_file}" ..
 
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-  [ -d cmake-build ] || mkdir cmake-build ;
-  cd cmake-build ;
-  /usr/bin/cmake -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED .. ;
-  /usr/bin/cmake --build . --target dist -- -j 8
-  )"
-
-[ -d cmake-build ] || mkdir cmake-build
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/cmake-build/${package}*.tar.gz" cmake-build
-
 [ -d ~/rpmbuild/SOURCES ] || mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-mv cmake-build/${package}*.tar.gz ~/rpmbuild/SOURCES/
+
+# Create a source archive for rpmbuild to use:
+tar_filename=$package-$bare_upstream_version.tar
+tar_filepath="/tmp/$tar_filename"
+tgz_filepath="$HOME/rpmbuild/SOURCES/$tar_filename.gz"
+git archive --format=tar --output="$tar_filepath" --prefix="$package-$bare_upstream_version/" HEAD
+mkdir -p "$package-$bare_upstream_version"
+cp VERSION_CURRENT "$package-$bare_upstream_version"
+tar -rf "$tar_filepath" "$package-$bare_upstream_version/"
+gzip --keep "$tar_filepath" --stdout > "$tgz_filepath"
 
 echo "Building source RPM ..."
 rpmbuild -bs ${spec_file}
