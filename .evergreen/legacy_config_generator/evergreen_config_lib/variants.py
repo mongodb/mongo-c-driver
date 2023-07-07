@@ -494,7 +494,7 @@ all_variants = [
             OD([("name", "rpm-package-build"), ("distros", ["rhel90-arm64-small"])]),
         ],
         {},
-        batchtime=days(1),
+        tags=["pr-merge-gate"],
     ),
     Variant(
         "versioned-api",
