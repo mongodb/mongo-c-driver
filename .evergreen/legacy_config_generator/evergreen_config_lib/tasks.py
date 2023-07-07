@@ -340,9 +340,12 @@ all_tasks = [
         commands=[
             shell_mongoc(
                 r"""
-                  export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
-                  BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-                  cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd"""
+                . .evergreen/scripts/find-cmake-latest.sh
+                export CMAKE="$(find_cmake_latest)"
+                export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
+                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
+                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd""",
+                include_expansions_in_env=["distro_id"],
             )
         ],
     ),
@@ -352,9 +355,12 @@ all_tasks = [
         commands=[
             shell_mongoc(
                 r"""
-                  export CC="Visual Studio 14 2015 Win64"
-                  BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-                  cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd"""
+                . .evergreen/scripts/find-cmake-latest.sh
+                export CMAKE="$(find_cmake_latest)"
+                export CC="Visual Studio 14 2015 Win64"
+                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
+                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd""",
+                include_expansions_in_env=["distro_id"],
             )
         ],
     ),
@@ -364,9 +370,12 @@ all_tasks = [
         commands=[
             shell_mongoc(
                 r"""
-                  DESTDIR="$(pwd)/dest" sh ./.evergreen/scripts/install-uninstall-check.sh
-                  BSON_ONLY=1 sh ./.evergreen/scripts/install-uninstall-check.sh
-                  sh ./.evergreen/scripts/install-uninstall-check.sh"""
+                . .evergreen/scripts/find-cmake-latest.sh
+                export CMAKE="$(find_cmake_latest)"
+                DESTDIR="$(pwd)/dest" bash ./.evergreen/scripts/install-uninstall-check.sh
+                BSON_ONLY=1 bash ./.evergreen/scripts/install-uninstall-check.sh
+                bash ./.evergreen/scripts/install-uninstall-check.sh""",
+                include_expansions_in_env=["distro_id"],
             )
         ],
     ),
@@ -396,7 +405,7 @@ all_tasks = [
                             [
                                 ("aws_key", "${toolchain_aws_key}"),
                                 ("aws_secret", "${toolchain_aws_secret}"),
-                                ("remote_file", "mongo-c-toolchain/${distro_id}/mongo-c-toolchain.tar.gz"),
+                                ("remote_file", "mongo-c-toolchain/${distro_id}/2023/06/07/mongo-c-toolchain.tar.gz"),
                                 ("bucket", "mongo-c-toolchain"),
                                 ("local_file", "mongo-c-toolchain.tar.gz"),
                             ]

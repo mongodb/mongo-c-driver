@@ -19,8 +19,11 @@ set (src_zlib_DIST
    src/zlib-1.2.13/zutil.h
 )
 
-extra_dist_generated (utf8proc-2.8.0/utf8proc.h)
-
+set (src_utf8proc_DIST
+   src/utf8proc-2.8.0/utf8proc.h
+   src/utf8proc-2.8.0/utf8proc.c
+   src/utf8proc-2.8.0/utf8proc_data.c
+)
 # Strip leading directory components to make the paths relative for MakeDist.
 # The ZLIB_SOURCES list is set in the top-level CMakeLists.txt.
 foreach (zlib_src IN LISTS ZLIB_SOURCES)
@@ -41,6 +44,7 @@ set (src_DIST
    ${src_zlib_DIST}
    ${src_common_DIST}
    ${src_kms_message_DIST}
+   ${src_utf8proc_DIST}
    PARENT_SCOPE
 )
 

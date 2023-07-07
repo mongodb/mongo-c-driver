@@ -103,9 +103,6 @@ mock_server_get_host_and_port (mock_server_t *server);
 uint16_t
 mock_server_get_port (mock_server_t *server);
 
-int64_t
-mock_server_get_request_timeout_msec (mock_server_t *server);
-
 void
 mock_server_set_request_timeout_msec (mock_server_t *server,
                                       int64_t request_timeout_msec);
@@ -116,9 +113,6 @@ mock_server_get_rand_delay (mock_server_t *server);
 void
 mock_server_set_rand_delay (mock_server_t *server, bool rand_delay);
 
-double
-mock_server_get_uptime_sec (mock_server_t *server);
-
 request_t *
 mock_server_receives_request (mock_server_t *server);
 
@@ -128,11 +122,6 @@ mock_server_receives_command (mock_server_t *server,
                               mongoc_query_flags_t flags,
                               const char *command_json,
                               ...);
-
-request_t *
-mock_server_matches_any_hello_with_json (request_t *request,
-                                         const char *match_json_op_msg,
-                                         const char *match_json_op_query);
 
 request_t *
 mock_server_receives_any_hello (mock_server_t *server);
@@ -160,37 +149,6 @@ mock_server_receives_query (mock_server_t *server,
                             int32_t n_return,
                             const char *query_json,
                             const char *fields_json);
-
-request_t *
-mock_server_receives_insert (mock_server_t *server,
-                             const char *ns,
-                             mongoc_insert_flags_t flags,
-                             const char *doc_json);
-
-request_t *
-mock_server_receives_bulk_insert (mock_server_t *server,
-                                  const char *ns,
-                                  mongoc_insert_flags_t flags,
-                                  int n);
-
-request_t *
-mock_server_receives_update (mock_server_t *server,
-                             const char *ns,
-                             mongoc_update_flags_t flags,
-                             const char *selector_json,
-                             const char *update_json);
-
-request_t *
-mock_server_receives_delete (mock_server_t *server,
-                             const char *ns,
-                             mongoc_remove_flags_t flags,
-                             const char *selector_json);
-
-request_t *
-mock_server_receives_getmore (mock_server_t *server,
-                              const char *ns,
-                              int32_t n_return,
-                              int64_t cursor_id);
 
 request_t *
 mock_server_receives_kill_cursors (mock_server_t *server, int64_t cursor_id);

@@ -871,6 +871,9 @@ test_handshake_platform_config (void)
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_HAVE_SCHED_GETCPU));
 #endif
 
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SRV) ==
+                MONGOC_SRV_ENABLED);
+
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS));
 #endif
@@ -925,7 +928,7 @@ test_mongoc_handshake_race_condition (void)
 
       for (j = 0; j < 4; ++j) {
          BSON_ASSERT (!mcommon_thread_create (
-            &threads[j], &handshake_append_worker, NULL));
+            &threads[j], &handshake_append_worker, NULL /* args */));
       }
       for (j = 0; j < 4; ++j) {
          mcommon_thread_join (threads[j]);

@@ -632,6 +632,9 @@ set_up_original_error_test (mongoc_apm_callbacks_t *callbacks,
 {
    uint32_t server_id;
    bson_error_t error;
+
+   ASSERT (client);
+
    // clean up in case a previous test aborted
    server_id = mongoc_topology_select_server_id (
       client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
@@ -669,6 +672,8 @@ cleanup_original_error_test (mongoc_client_t *client,
                              mongoc_collection_t *coll,
                              mongoc_apm_callbacks_t *callbacks)
 {
+   ASSERT (client);
+
    deactivate_fail_points (client, server_id); // disable the fail point
    bson_destroy (reply);
    mongoc_collection_destroy (coll);

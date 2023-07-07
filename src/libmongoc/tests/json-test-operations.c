@@ -140,7 +140,9 @@ static void
 start_thread (json_test_worker_thread_t *wt)
 {
    wt->shutdown_requested = false;
-   mcommon_thread_create (&wt->thread, json_test_worker_thread_run, wt);
+   int ret =
+      mcommon_thread_create (&wt->thread, json_test_worker_thread_run, wt);
+   ASSERT_CMPINT (0, ==, ret);
 }
 
 static void
@@ -174,6 +176,8 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    char *session_opts_path;
    int i;
    bson_error_t error;
+
+   ASSERT (client);
 
    memset (ctx, 0, sizeof (*ctx));
 
@@ -1765,7 +1769,7 @@ list_databases (mongoc_client_t *client,
    mongoc_cursor_t *cursor;
    bson_t opts;
 
-   BSON_ASSERT (client);
+   ASSERT (client);
    bson_init (&opts);
    append_session (session, &opts);
 
@@ -1790,7 +1794,7 @@ list_database_names (mongoc_client_t *client,
    bson_t opts;
    bson_error_t error;
 
-   BSON_ASSERT (client);
+   ASSERT (client);
    bson_init (&opts);
    append_session (session, &opts);
 
@@ -2005,7 +2009,6 @@ create_index (mongoc_database_t *db,
    bson_t keys;
    const char *name;
    bson_t opts = BSON_INITIALIZER;
-   bson_t *create_indexes;
    bson_error_t error;
    bool r;
 
@@ -2021,23 +2024,13 @@ create_index (mongoc_database_t *db,
    name = bson_lookup_utf8 (&args, "name");
    COPY_EXCEPT ("keys", "name");
 
-   create_indexes = BCON_NEW ("createIndexes",
-                              BCON_UTF8 (collection->collection),
-                              "indexes",
-                              "[",
-                              "{",
-                              "key",
-                              BCON_DOCUMENT (&keys),
-                              "name",
-                              BCON_UTF8 (name),
-                              "}",
-                              "]");
-
-   r = mongoc_database_write_command_with_opts (
-      db, create_indexes, &opts, NULL, &error);
+   mongoc_index_model_t *im =
+      mongoc_index_model_new (&keys, tmp_bson ("{'name': '%s'}", name));
+   r = mongoc_collection_create_indexes_with_opts (
+      collection, &im, 1, &opts, NULL /* reply */, &error);
+   mongoc_index_model_destroy (im);
 
    bson_destroy (&opts);
-   bson_destroy (create_indexes);
 
    check_result (test, operation, r, NULL, &error);
 
@@ -2056,6 +2049,8 @@ collection_exists (mongoc_client_t *client, const bson_t *operation)
    mongoc_database_t *db;
    bool found = false;
    uint32_t i;
+
+   ASSERT (client);
 
    bson_lookup_doc (operation, "arguments", &args);
    database_name = bson_lookup_utf8 (&args, "database");
@@ -2095,6 +2090,8 @@ index_exists (mongoc_client_t *client, const bson_t *operation)
    bson_iter_t index;
    const bson_t *doc;
    bool found = false;
+
+   ASSERT (client);
 
    bson_lookup_doc (operation, "arguments", &args);
    database_name = bson_lookup_utf8 (&args, "database");

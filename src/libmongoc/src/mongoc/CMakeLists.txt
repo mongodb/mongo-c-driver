@@ -1,15 +1,4 @@
 set (src_libmongoc_src_mongoc_DIST_defs
-   op-delete.def
-   op-get-more.def
-   op-header.def
-   op-insert.def
-   op-kill-cursors.def
-   op-msg.def
-   op-query.def
-   op-reply.def
-   op-reply-header.def
-   op-update.def
-   op-compressed.def
    mongoc-counters.defs
 )
 
@@ -76,6 +65,7 @@ extra_dist_generated (
 set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mcd-azure.h
    mcd-integer.h
+   mcd-rpc.h
    mcd-time.h
    mongoc-aggregate-private.h
    mongoc-apm-private.h
@@ -182,6 +172,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
 
 set (src_libmongoc_src_mongoc_DIST_cs
    mcd-azure.c
+   mcd-rpc.c
    mongoc-aggregate.c
    mongoc-apm.c
    mongoc-array.c
@@ -211,6 +202,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-cursor-cmd-deprecated.c
    mongoc-database.c
    mongoc-error.c
+   mongoc-flags.c
    mongoc-find-and-modify.c
    mongoc-generation-map.c
    mongoc-host-list.c
@@ -233,6 +225,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-memcmp.c
    mongoc-cmd.c
    mongoc-ocsp-cache.c
+   mongoc-opcode.c
    mongoc-optional.c
    mongoc-opts.c
    mongoc-opts-helpers.c

@@ -115,8 +115,8 @@ main (void)
    bson_t *kms_providers = NULL;
    bson_error_t error = {0};
    bson_t *index_keys = NULL;
-   char *index_name = NULL;
-   bson_t *create_index_cmd = NULL;
+   bson_t *index_opts = NULL;
+   mongoc_index_model_t *index_model = NULL;
    bson_json_reader_t *reader = NULL;
    bson_t schema = BSON_INITIALIZER;
    bson_t *schema_map = NULL;
@@ -153,6 +153,8 @@ main (void)
    /* Set up the key vault for this example. */
    keyvault_client = mongoc_client_new (
       "mongodb://localhost/?appname=client-side-encryption-keyvault");
+   BSON_ASSERT (keyvault_client);
+
    keyvault_coll = mongoc_client_get_collection (
       keyvault_client, KEYVAULT_DB, KEYVAULT_COLL);
    mongoc_collection_drop (keyvault_coll, NULL);
@@ -160,34 +162,23 @@ main (void)
    /* Create a unique index to ensure that two data keys cannot share the same
     * keyAltName. This is recommended practice for the key vault. */
    index_keys = BCON_NEW ("keyAltNames", BCON_INT32 (1));
-   index_name = mongoc_collection_keys_to_index_string (index_keys);
-   create_index_cmd = BCON_NEW ("createIndexes",
-                                KEYVAULT_COLL,
-                                "indexes",
-                                "[",
-                                "{",
-                                "key",
-                                BCON_DOCUMENT (index_keys),
-                                "name",
-                                index_name,
-                                "unique",
-                                BCON_BOOL (true),
-                                "partialFilterExpression",
-                                "{",
-                                "keyAltNames",
-                                "{",
-                                "$exists",
-                                BCON_BOOL (true),
-                                "}",
-                                "}",
-                                "}",
-                                "]");
-   ret = mongoc_client_command_simple (keyvault_client,
-                                       KEYVAULT_DB,
-                                       create_index_cmd,
-                                       NULL /* read prefs */,
-                                       NULL /* reply */,
-                                       &error);
+   index_opts = BCON_NEW ("unique",
+                          BCON_BOOL (true),
+                          "partialFilterExpression",
+                          "{",
+                          "keyAltNames",
+                          "{",
+                          "$exists",
+                          BCON_BOOL (true),
+                          "}",
+                          "}");
+   index_model = mongoc_index_model_new (index_keys, index_opts);
+   ret = mongoc_collection_create_indexes_with_opts (keyvault_coll,
+                                                     &index_model,
+                                                     1,
+                                                     NULL /* opts */,
+                                                     NULL /* reply */,
+                                                     &error);
 
    if (!ret) {
       goto fail;
@@ -227,6 +218,7 @@ main (void)
 
    client =
       mongoc_client_new ("mongodb://localhost/?appname=client-side-encryption");
+   BSON_ASSERT (client);
 
    /* Enable automatic encryption. It will determine that encryption is
     * necessary from the schema map instead of relying on the server to provide
@@ -256,6 +248,8 @@ main (void)
 
    unencrypted_client = mongoc_client_new (
       "mongodb://localhost/?appname=client-side-encryption-unencrypted");
+   BSON_ASSERT (unencrypted_client);
+
    unencrypted_coll = mongoc_client_get_collection (
       unencrypted_client, ENCRYPTED_DB, ENCRYPTED_COLL);
    printf ("encrypted document: ");
@@ -273,9 +267,9 @@ fail:
    bson_free (local_masterkey);
    bson_destroy (kms_providers);
    mongoc_collection_destroy (keyvault_coll);
+   mongoc_index_model_destroy (index_model);
+   bson_destroy (index_opts);
    bson_destroy (index_keys);
-   bson_free (index_name);
-   bson_destroy (create_index_cmd);
    bson_json_reader_destroy (reader);
    mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
    mongoc_collection_destroy (coll);

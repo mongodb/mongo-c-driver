@@ -167,7 +167,7 @@ _mongoc_client_create_stream (mongoc_client_t *client,
 
 bool
 _mongoc_client_recv (mongoc_client_t *client,
-                     mongoc_rpc_t *rpc,
+                     mcd_rpc_message *rpc,
                      mongoc_buffer_t *buffer,
                      mongoc_server_stream_t *server_stream,
                      bson_error_t *error);

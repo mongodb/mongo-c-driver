@@ -4072,6 +4072,8 @@ server_id_for_read_mode (mongoc_client_t *client, mongoc_read_mode_t read_mode)
    bson_error_t error;
    uint32_t server_id;
 
+   ASSERT (client);
+
    prefs = mongoc_read_prefs_new (read_mode);
    sd = mongoc_topology_select (
       client->topology, MONGOC_SS_READ, prefs, NULL, &error);
@@ -5009,6 +5011,35 @@ test_bulk_write_multiple_errors (void *unused)
    mongoc_client_destroy (client);
 }
 
+// test_bulk_write_set_client_after_operation is a regression test for
+// CDRIVER-4665.
+static void
+test_bulk_write_set_client_after_operation (void)
+{
+   mongoc_client_t *client;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   bool ok;
+
+   client = test_framework_new_default_client ();
+   BSON_ASSERT (client);
+   mongoc_client_set_appname (client, "test_bulk_write_client_after_operation");
+   bulk = mongoc_bulk_operation_new (false /* ordered */);
+   ok = mongoc_bulk_operation_insert_with_opts (
+      bulk, tmp_bson ("{'x': 1}"), tmp_bson ("{}"), &error);
+   ASSERT_OR_PRINT (ok, error);
+   mongoc_bulk_operation_set_client (bulk, client);
+   mongoc_bulk_operation_set_database (bulk, "db");
+   mongoc_bulk_operation_set_collection (bulk, "coll");
+
+   ok = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (ok, error);
+   ASSERT_MATCH (&reply, "{'nInserted': 1 }");
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_client_destroy (client);
+}
 
 void
 test_bulk_install (TestSuite *suite)
@@ -5314,4 +5345,7 @@ test_bulk_install (TestSuite *suite)
                       test_framework_skip_if_no_failpoint,
                       /* Require server 4.2 for failCommand appName */
                       test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/set_client_after_operation",
+                      test_bulk_write_set_client_after_operation);
 }

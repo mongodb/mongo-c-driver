@@ -56,8 +56,6 @@ for ssl_ver in "${ssl_vers[@]}"; do
   declare ssl_base_dir
   ssl_base_dir="$(readlink -f "/opt/mongo-c-toolchain/${ssl_ver}")"
 
-  declare ssl_lib_dir="${ssl_base_dir}/lib"
-
   # Output some information about our build environment
   "${cmake_binary}" --version
 
@@ -76,14 +74,14 @@ for ssl_ver in "${ssl_vers[@]}"; do
     CFLAGS="-Wno-redundant-decls" \
     EXTRA_CMAKE_PREFIX_PATH="${ssl_base_dir};${toolchain_base_dir}" \
     EXTRA_CONFIGURE_FLAGS="-DCMAKE_VERBOSE_MAKEFILE=ON" \
-    LD_LIBRARY_PATH="${ssl_lib_dir}:${toolchain_lib_dir}" \
+    LD_LIBRARY_PATH="${toolchain_lib_dir}" \
     PATH="${new_path}" \
     SSL="${ssl}" \
     bash .evergreen/scripts/compile-unix.sh 2>&1 >|"${output_file}"
 
   # Verify that the toolchain components were used
   if grep -Ec "[-]I/opt/mongo-c-toolchain/include" "${output_file}" >/dev/null &&
-    grep -Ec "[-]I/opt/mongo-c-toolchain/${ssl_ver}/include" "${output_file}" >/dev/null &&
+    grep -Ec "[-]isystem /opt/mongo-c-toolchain/${ssl_ver}/include" "${output_file}" >/dev/null &&
     grep -Ec "[-]L/opt/mongo-c-toolchain/lib" "${output_file}" >/dev/null &&
     grep -Ec "/opt/mongo-c-toolchain/${ssl_ver}/lib" "${output_file}" >/dev/null; then
     echo "TOOLCHAIN COMPONENTS FOR ${ssl_ver} DETECTED IN BUILD OUTPUT."

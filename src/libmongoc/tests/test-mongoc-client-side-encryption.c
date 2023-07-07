@@ -1253,6 +1253,8 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
    mongoc_client_encryption_opts_t *client_encryption_opts_invalid;
    bson_error_t error;
 
+   ASSERT (keyvault_client);
+
    char *mongoc_test_aws_access_key_id =
       test_framework_getenv_required ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
    char *mongoc_test_aws_secret_access_key =
@@ -2141,6 +2143,8 @@ _reset (mongoc_client_pool_t **pool,
    bson_t *schema;
    bson_t *schema_map;
 
+   ASSERT (pool);
+
    mongoc_auto_encryption_opts_destroy (*opts);
    *opts = mongoc_auto_encryption_opts_new ();
    {
@@ -2214,6 +2218,8 @@ _perform_op (mongoc_client_t *client_encrypted)
    bson_error_t error;
    mongoc_collection_t *coll;
 
+   ASSERT (client_encrypted);
+
    coll = mongoc_client_get_collection (client_encrypted, "db", "coll");
    ret = mongoc_collection_insert_one (coll,
                                        tmp_bson ("{'encrypted_string': 'abc'}"),
@@ -2228,6 +2234,8 @@ static void
 _perform_op_pooled (mongoc_client_pool_t *client_pool_encrypted)
 {
    mongoc_client_t *client_encrypted;
+
+   ASSERT (client_pool_encrypted);
 
    client_encrypted = mongoc_client_pool_pop (client_pool_encrypted);
    _perform_op (client_encrypted);
@@ -2788,6 +2796,8 @@ _make_kms_certificate_client_encryption (mongoc_client_t *client,
 {
    mongoc_client_encryption_t *client_encryption;
 
+   ASSERT (client);
+
    mongoc_client_encryption_opts_t *client_encryption_opts =
       mongoc_client_encryption_opts_new ();
 
@@ -2992,6 +3002,8 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
    bson_error_t error = {0};
    mongoc_client_encryption_t *client_encryption;
    bson_t *tls_opts = NULL;
+
+   ASSERT (keyvault_client);
 
    char *mongoc_test_aws_access_key_id =
       test_framework_getenv_required ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
@@ -4864,41 +4876,25 @@ _test_unique_index_on_keyaltnames_setup (
    /* Using client, create a unique index on keyAltNames with a partial index
     * filter for only documents where keyAltNames exists. */
    {
-      bson_t *const command = BCON_NEW ("createIndexes",
-                                        "datakeys",
-                                        "indexes",
-                                        "[",
-                                        "{",
-                                        "key",
-                                        "{",
-                                        "keyAltNames",
-                                        BCON_INT32 (1),
-                                        "}",
-                                        "name",
-                                        "keyAltNames_1",
-                                        "unique",
-                                        BCON_BOOL (true),
-                                        "partialFilterExpression",
-                                        "{",
-                                        "keyAltNames",
-                                        "{",
-                                        "$exists",
-                                        BCON_BOOL (true),
-                                        "}",
-                                        "}",
-                                        "}",
-                                        "]",
-                                        "writeConcern",
-                                        "{",
-                                        "w",
-                                        "majority",
-                                        "}");
+      mongoc_collection_t *const datakeys =
+         mongoc_database_get_collection (keyvault, "datakeys");
 
-      ASSERT_OR_PRINT (mongoc_database_write_command_with_opts (
-                          keyvault, command, NULL, NULL, &error),
-                       error);
+      mongoc_index_model_t *im = mongoc_index_model_new (
+         tmp_bson ("{'keyAltNames': 1}"), tmp_bson (BSON_STR ({
+            "name" : "keyAltNames_1",
+            "unique" : true,
+            "partialFilterExpression" : {"keyAltNames" : {"$exists" : true}}
+         })));
 
-      bson_destroy (command);
+      bson_t *const command_opts =
+         tmp_bson ("{'writeConcern': { 'w': 'majority' }}");
+
+      ASSERT_OR_PRINT (
+         mongoc_collection_create_indexes_with_opts (
+            datakeys, &im, 1, command_opts, NULL /* reply */, &error),
+         error);
+      mongoc_index_model_destroy (im);
+      mongoc_collection_destroy (datakeys);
    }
 
    /* Create a ClientEncryption object (referred to as client_encryption) with
@@ -6433,6 +6429,8 @@ test_create_encrypted_collection_no_encryptedFields_helper (
    bson_t *const kmsProviders = _make_kms_providers (true, true);
    bson_t *const tlsOptions = _make_tls_opts ();
 
+   ASSERT (client);
+
    // Drop prior data
    {
       mongoc_collection_t *const coll =
@@ -6795,7 +6793,8 @@ test_bypass_mongocryptd_shared_library (void *unused)
    listen_socket_args_t *args = bson_malloc0 (sizeof (listen_socket_args_t));
    bson_mutex_init (&args->mutex);
    mongoc_cond_init (&args->cond);
-   mcommon_thread_create (&socket_thread, listen_socket, args);
+   ASSERT_CMPINT (
+      0, ==, mcommon_thread_create (&socket_thread, listen_socket, args));
 
    // configure mongoclient with auto encryption
    char *env_cryptSharedLibPath =

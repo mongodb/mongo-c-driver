@@ -1,4 +1,5 @@
 #include <bson/bcon.h>
+#include <bson/bson-dsl.h>
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cursor-private.h>
@@ -1919,6 +1920,8 @@ storage_engine (mongoc_client_t *client)
    bson_error_t error;
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
+
+   ASSERT (client);
 
    /* NOTE: this default will change eventually */
    char *engine = bson_strdup ("mmapv1");
@@ -6225,6 +6228,189 @@ test_hint_is_validated_countDocuments (void)
    mongoc_client_destroy (client);
 }
 
+#define ASSERT_INDEX_EXISTS(keys, expect_name)                               \
+   if (1) {                                                                  \
+      bool found = false;                                                    \
+      mongoc_cursor_t *cursor =                                              \
+         mongoc_collection_find_indexes_with_opts (coll, NULL /* opts */);   \
+      const bson_t *got;                                                     \
+      while (mongoc_cursor_next (cursor, &got)) {                            \
+         bson_t got_key;                                                     \
+         const char *got_name = NULL;                                        \
+         /* Results have the form: `{ v: 2, key: { x: 1 }, name: 'x_1' }` */ \
+         bsonParse (                                                         \
+            *got,                                                            \
+            require (keyWithType ("key", doc), storeDocRef (got_key)),       \
+            require (keyWithType ("name", utf8), storeStrRef (got_name)));   \
+         ASSERT_WITH_MSG (                                                   \
+            !bsonParseError, "got parse error: %s", bsonParseError);         \
+         if (bson_equal (&got_key, keys)) {                                  \
+            found = true;                                                    \
+            ASSERT_CMPSTR (got_name, expect_name);                           \
+         }                                                                   \
+      }                                                                      \
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);        \
+      ASSERT_WITH_MSG (found,                                                \
+                       "could not find expected index for keys: '%s'",       \
+                       tmp_json (keys));                                     \
+      mongoc_cursor_destroy (cursor);                                        \
+   } else                                                                    \
+      (void) 0
+
+static void
+test_create_indexes_with_opts (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll =
+      get_test_collection (client, "test_create_indexes_with_opts");
+   bson_error_t error;
+
+   // Test creating an index.
+   {
+      const bson_t *keys = tmp_bson ("{'x': 1}");
+      mongoc_index_model_t *im = mongoc_index_model_new (keys, NULL);
+      bool ok = mongoc_collection_create_indexes_with_opts (
+         coll, &im, 1, NULL /* opts */, NULL /* reply */, &error);
+      ASSERT_OR_PRINT (ok, error);
+      mongoc_index_model_destroy (im);
+      ASSERT_INDEX_EXISTS (keys, "x_1");
+   }
+
+   // Drop collection to remove previously created index.
+   ASSERT_OR_PRINT (mongoc_collection_drop (coll, &error), error);
+
+   // Test creating an index uses specified `name`.
+   {
+      const bson_t *keys = tmp_bson ("{'x': 1}");
+      mongoc_index_model_t *im =
+         mongoc_index_model_new (keys, tmp_bson ("{'name': 'foobar'}"));
+      bool ok = mongoc_collection_create_indexes_with_opts (
+         coll, &im, 1, NULL /* opts */, NULL /* reply */, &error);
+      ASSERT_OR_PRINT (ok, error);
+      mongoc_index_model_destroy (im);
+      ASSERT_INDEX_EXISTS (keys, "foobar");
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_create_indexes_with_opts_no_retry (void *unused)
+{
+   BSON_UNUSED (unused);
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll =
+      get_test_collection (client, "test_create_indexes_with_opts");
+   bson_error_t error;
+
+   // Configure failpoint to cause a network error.
+   {
+      const char *cmd_str = BSON_STR ({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {"failCommands" : ["createIndexes"], "closeConnection" : true}
+      });
+      bson_t *failpoint_cmd =
+         bson_new_from_json ((const uint8_t *) cmd_str, -1, &error);
+      ASSERT_OR_PRINT (failpoint_cmd, error);
+      bool ok = mongoc_client_command_simple (client,
+                                              "admin",
+                                              failpoint_cmd,
+                                              NULL /* read_prefs */,
+                                              NULL /* reply */,
+                                              &error);
+      ASSERT_OR_PRINT (ok, error);
+      bson_destroy (failpoint_cmd);
+   }
+
+   // Test creating an index does not retry on network error.
+   {
+      const bson_t *keys = tmp_bson ("{'x': 1}");
+      mongoc_index_model_t *im = mongoc_index_model_new (keys, NULL);
+      bool ok = mongoc_collection_create_indexes_with_opts (
+         coll, &im, 1, NULL /* opts */, NULL /* reply */, &error);
+      ASSERT (!ok);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "Failed to send");
+      mongoc_index_model_destroy (im);
+   }
+
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+// Test creating an index with the 'commitQuorum' option results in a driver
+// error on Server Version <4.4.
+static void
+test_create_indexes_with_opts_commitQuorum_pre44 (void *unused)
+{
+   BSON_UNUSED (unused);
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll =
+      get_test_collection (client, "test_create_indexes_with_opts");
+   bson_error_t error;
+
+   // Create index.
+   {
+      const bson_t *keys = tmp_bson ("{'x': 1}");
+      mongoc_index_model_t *im = mongoc_index_model_new (keys, NULL);
+      bool ok = mongoc_collection_create_indexes_with_opts (
+         coll,
+         &im,
+         1,
+         tmp_bson ("{'commitQuorum': 'majority'}"),
+         NULL /* reply */,
+         &error);
+      ASSERT (!ok);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+         "The selected server does not support the commitQuorum option");
+      mongoc_index_model_destroy (im);
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+// Test creating an index with the 'commitQuorum' option succeeds on Server
+// Version >=4.4.
+static void
+test_create_indexes_with_opts_commitQuorum_post44 (void *unused)
+{
+   BSON_UNUSED (unused);
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll =
+      get_test_collection (client, "test_create_indexes_with_opts");
+   bson_error_t error;
+
+   // Create index.
+   {
+      const bson_t *keys = tmp_bson ("{'x': 1}");
+      mongoc_index_model_t *im = mongoc_index_model_new (keys, NULL);
+      bool ok = mongoc_collection_create_indexes_with_opts (
+         coll,
+         &im,
+         1,
+         tmp_bson ("{'commitQuorum': 'majority'}"),
+         NULL /* reply */,
+         &error);
+      ASSERT_OR_PRINT (ok, error);
+      mongoc_index_model_destroy (im);
+      ASSERT_INDEX_EXISTS (keys, "x_1");
+   }
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+#undef ASSERT_INDEX_EXISTS
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -6468,4 +6654,34 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Collection/hint_is_validated/countDocuments",
                       test_hint_is_validated_countDocuments);
+   TestSuite_AddLive (suite,
+                      "/Collection/create_indexes_with_opts",
+                      test_create_indexes_with_opts);
+   TestSuite_AddFull (
+      suite,
+      "/Collection/create_indexes_with_opts/commitQuorum/pre44",
+      test_create_indexes_with_opts_commitQuorum_pre44,
+      NULL /* _dtor */,
+      NULL /* _ctx */,
+      // commitQuorum option is not available on standalone servers.
+      test_framework_skip_if_not_replset,
+      // Server Version 4.4 has Wire Version 9.
+      test_framework_skip_if_max_wire_version_more_than_8);
+   TestSuite_AddFull (
+      suite,
+      "/Collection/create_indexes_with_opts/commitQuorum/post44",
+      test_create_indexes_with_opts_commitQuorum_post44,
+      NULL /* _dtor */,
+      NULL /* _ctx */,
+      // commitQuorum option is not available on standalone servers.
+      test_framework_skip_if_not_replset,
+      // Server Version 4.4 has Wire Version 9.
+      test_framework_skip_if_max_wire_version_less_than_9);
+   TestSuite_AddFull (suite,
+                      "/Collection/create_indexes_with_opts/no_retry",
+                      test_create_indexes_with_opts_no_retry,
+                      NULL /* _dtor */,
+                      NULL /* _ctx */,
+                      // requires failpoint
+                      test_framework_skip_if_no_failpoint);
 }

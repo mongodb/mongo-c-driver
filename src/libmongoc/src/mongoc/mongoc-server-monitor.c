@@ -17,9 +17,9 @@
 #include "common-thread-private.h"
 #include "mongoc-server-monitor-private.h"
 
+#include "mongoc/mcd-rpc.h"
 #include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-error-private.h"
-#include "mongoc/mongoc-flags-private.h"
 #include "mongoc/mongoc-ssl-private.h"
 #include "mongoc/mongoc-stream-private.h"
 #include "mongoc/mongoc-topology-background-monitoring-private.h"
@@ -210,6 +210,14 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
    }
    mc_tpld_drop_ref (&td);
 }
+
+static int32_t
+_int32_from_le (const void *data)
+{
+   BSON_ASSERT_PARAM (data);
+   return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
+}
+
 static bool
 _server_monitor_send_and_recv_hello_opmsg (
    mongoc_server_monitor_t *server_monitor,
@@ -217,100 +225,131 @@ _server_monitor_send_and_recv_hello_opmsg (
    bson_t *reply,
    bson_error_t *error)
 {
-   mongoc_rpc_t rpc = {._init = 0};
-   mongoc_array_t array_to_write;
-
-   mongoc_buffer_t buffer;
-   uint32_t reply_len;
-   bson_t temp_reply;
    bool ret = false;
 
-   /* First, let's construct and send our OPCODE_MSG: */
-   rpc.header.msg_len = 0;
-   rpc.header.request_id = server_monitor->request_id++;
-   rpc.header.response_to = 0;
-   rpc.header.opcode = MONGOC_OPCODE_MSG;
-   rpc.msg.flags = 0;
-   rpc.msg.n_sections = 1;
-   rpc.msg.sections[0].payload_type = 0;
-   rpc.msg.sections[0].payload.bson_document = bson_get_data (cmd);
+   mcd_rpc_message *const rpc = mcd_rpc_message_new ();
+   mongoc_buffer_t buffer;
+   _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
+   void *decompressed_data = NULL;
+   size_t decompressed_data_len = 0u;
 
-   _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
-   _mongoc_rpc_gather (&rpc, &array_to_write);
+   /* First, let's construct and send our OP_MSG: */
+   {
+      int32_t message_length = 0;
 
-   mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
-   const size_t niovec = array_to_write.len;
-   _mongoc_rpc_swab_to_le (&rpc);
+      message_length += mcd_rpc_header_set_message_length (rpc, 0);
+      message_length +=
+         mcd_rpc_header_set_request_id (rpc, server_monitor->request_id++);
+      message_length += mcd_rpc_header_set_response_to (rpc, 0);
+      message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_MSG);
+
+      mcd_rpc_op_msg_set_sections_count (rpc, 1u);
+
+      message_length +=
+         mcd_rpc_op_msg_set_flag_bits (rpc, MONGOC_OP_MSG_FLAG_NONE);
+      message_length += mcd_rpc_op_msg_section_set_kind (rpc, 0u, 0);
+      message_length +=
+         mcd_rpc_op_msg_section_set_body (rpc, 0u, bson_get_data (cmd));
+
+      mcd_rpc_message_set_length (rpc, message_length);
+   }
+
+   size_t num_iovecs = 0u;
+   mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
+   BSON_ASSERT (iovecs);
 
    MONITOR_LOG (server_monitor,
                 "sending with timeout %" PRId64,
                 server_monitor->connect_timeout_ms);
 
-   _mongoc_rpc_op_egress_inc (&rpc);
+   mcd_rpc_message_egress (rpc);
    if (!_mongoc_stream_writev_full (server_monitor->stream,
-                                    iovec,
-                                    niovec,
+                                    iovecs,
+                                    num_iovecs,
                                     server_monitor->connect_timeout_ms,
                                     error)) {
       MONITOR_LOG_ERROR (
          server_monitor, "failed to write polling hello: %s", error->message);
-      _mongoc_array_destroy (&array_to_write);
-      return false;
+      goto fail;
    }
 
    /* Done sending! Now, receive the reply: */
-
-   _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
-
    if (!_mongoc_buffer_append_from_stream (&buffer,
                                            server_monitor->stream,
-                                           4,
+                                           sizeof (int32_t),
                                            server_monitor->connect_timeout_ms,
                                            error)) {
       goto fail;
    }
 
-   memcpy (&reply_len, buffer.data, 4);
-   reply_len = BSON_UINT32_FROM_LE (reply_len);
+   const int32_t message_length = _int32_from_le (buffer.data);
+
+   // msgHeader consists of four int32 fields.
+   const int32_t message_header_length = 4u * sizeof (int32_t);
+
+   if (message_length < message_header_length) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "invalid reply from server: message length");
+      goto fail;
+   }
+
+   const size_t remaining_bytes = (size_t) message_length - sizeof (int32_t);
 
    if (!_mongoc_buffer_append_from_stream (&buffer,
                                            server_monitor->stream,
-                                           reply_len - buffer.len,
+                                           remaining_bytes,
                                            server_monitor->connect_timeout_ms,
                                            error)) {
       goto fail;
    }
 
-   if (!_mongoc_rpc_scatter (&rpc, buffer.data, buffer.len)) {
+   mcd_rpc_message_reset (rpc);
+   if (!mcd_rpc_message_from_data_in_place (
+          rpc, buffer.data, buffer.len, NULL)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid reply from server.");
-
+                      "invalid reply from server: malformed message");
       goto fail;
    }
 
-   if (!_mongoc_rpc_decompress_if_necessary (&rpc, &buffer, error)) {
-      goto fail;
-   }
-   _mongoc_rpc_swab_from_le (&rpc);
+   mcd_rpc_message_ingress (rpc);
 
-   if (!_mongoc_rpc_get_first_document (&rpc, &temp_reply)) {
+   if (!mcd_rpc_message_decompress_if_necessary (
+          rpc, &decompressed_data, &decompressed_data_len)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid reply from server");
+                      "invalid reply from server: decompression failure");
       goto fail;
    }
-   bson_copy_to (&temp_reply, reply);
+
+   bson_t body;
+   if (!mcd_rpc_message_get_body (rpc, &body)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "invalid reply from server: malformed body");
+      goto fail;
+   }
+
+   bson_copy_to (&body, reply);
+   bson_destroy (&body);
 
    ret = true;
+
 fail:
    if (!ret) {
       bson_init (reply);
    }
-   _mongoc_array_destroy (&array_to_write);
+
+   bson_free (decompressed_data);
    _mongoc_buffer_destroy (&buffer);
+   bson_free (iovecs);
+   mcd_rpc_message_destroy (rpc);
+
    return ret;
 }
 
@@ -320,36 +359,43 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                        bson_t *reply,
                                        bson_error_t *error)
 {
-   mongoc_rpc_t rpc = {._init = 0};
-   mongoc_array_t array_to_write;
-   mongoc_buffer_t buffer;
-   uint32_t reply_len;
-   bson_t temp_reply;
    bool ret = false;
 
-   rpc.header.msg_len = 0;
-   rpc.header.request_id = server_monitor->request_id++;
-   rpc.header.response_to = 0;
-   rpc.header.opcode = MONGOC_OPCODE_QUERY;
-   rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
-   rpc.query.collection = "admin.$cmd";
-   rpc.query.skip = 0;
-   rpc.query.n_return = -1;
-   rpc.query.query = bson_get_data (cmd);
-   rpc.query.fields = NULL;
-
+   mcd_rpc_message *const rpc = mcd_rpc_message_new ();
+   size_t num_iovecs = 0u;
+   mongoc_iovec_t *iovecs = NULL;
+   mongoc_buffer_t buffer;
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
-   _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
-   _mongoc_rpc_gather (&rpc, &array_to_write);
+   void *decompressed_data = NULL;
+   size_t decompressed_data_len = 0u;
 
-   mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
-   const size_t niovec = array_to_write.len;
-   _mongoc_rpc_swab_to_le (&rpc);
+   {
+      int32_t message_length = 0;
 
-   _mongoc_rpc_op_egress_inc (&rpc);
+      message_length += mcd_rpc_header_set_message_length (rpc, 0);
+      message_length +=
+         mcd_rpc_header_set_request_id (rpc, server_monitor->request_id++);
+      message_length += mcd_rpc_header_set_response_to (rpc, 0);
+      message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_QUERY);
+
+      message_length +=
+         mcd_rpc_op_query_set_flags (rpc, MONGOC_OP_QUERY_FLAG_SECONDARY_OK);
+      message_length +=
+         mcd_rpc_op_query_set_full_collection_name (rpc, "admin.$cmd");
+      message_length += mcd_rpc_op_query_set_number_to_skip (rpc, 0);
+      message_length += mcd_rpc_op_query_set_number_to_return (rpc, -1);
+      message_length += mcd_rpc_op_query_set_query (rpc, bson_get_data (cmd));
+
+      mcd_rpc_message_set_length (rpc, message_length);
+   }
+
+   iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
+   BSON_ASSERT (iovecs);
+
+   mcd_rpc_message_egress (rpc);
    if (!_mongoc_stream_writev_full (server_monitor->stream,
-                                    iovec,
-                                    niovec,
+                                    iovecs,
+                                    num_iovecs,
                                     server_monitor->connect_timeout_ms,
                                     error)) {
       goto fail;
@@ -357,53 +403,80 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
 
    if (!_mongoc_buffer_append_from_stream (&buffer,
                                            server_monitor->stream,
-                                           4,
+                                           sizeof (int32_t),
                                            server_monitor->connect_timeout_ms,
                                            error)) {
       goto fail;
    }
 
-   memcpy (&reply_len, buffer.data, 4);
-   reply_len = BSON_UINT32_FROM_LE (reply_len);
+   const int32_t message_length = _int32_from_le (buffer.data);
+
+   // msgHeader consists of four int32 fields.
+   const int32_t message_header_length = 4u * sizeof (int32_t);
+
+   if (message_length < message_header_length) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "invalid reply from server: message length");
+      goto fail;
+   }
+
+   const size_t remaining_bytes = (size_t) message_length - sizeof (int32_t);
 
    if (!_mongoc_buffer_append_from_stream (&buffer,
                                            server_monitor->stream,
-                                           reply_len - buffer.len,
+                                           remaining_bytes,
                                            server_monitor->connect_timeout_ms,
                                            error)) {
       goto fail;
    }
 
-   if (!_mongoc_rpc_scatter (&rpc, buffer.data, buffer.len)) {
+   mcd_rpc_message_reset (rpc);
+   if (!mcd_rpc_message_from_data_in_place (
+          rpc, buffer.data, buffer.len, NULL)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid reply from server.");
-
+                      "invalid reply from server: malformed message");
       goto fail;
    }
 
-   if (!_mongoc_rpc_decompress_if_necessary (&rpc, &buffer, error)) {
-      goto fail;
-   }
-   _mongoc_rpc_swab_from_le (&rpc);
+   mcd_rpc_message_ingress (rpc);
 
-   if (!_mongoc_rpc_get_first_document (&rpc, &temp_reply)) {
+   if (!mcd_rpc_message_decompress_if_necessary (
+          rpc, &decompressed_data, &decompressed_data_len)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid reply from server");
+                      "invalid reply from server: decompression failure");
       goto fail;
    }
-   bson_copy_to (&temp_reply, reply);
+
+   bson_t body;
+   if (!mcd_rpc_message_get_body (rpc, &body)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "invalid reply from server: malformed body");
+      goto fail;
+   }
+
+   bson_copy_to (&body, reply);
+   bson_destroy (&body);
 
    ret = true;
+
 fail:
    if (!ret) {
       bson_init (reply);
    }
-   _mongoc_array_destroy (&array_to_write);
+
+   bson_free (decompressed_data);
    _mongoc_buffer_destroy (&buffer);
+   bson_free (iovecs);
+   mcd_rpc_message_destroy (rpc);
+
    return ret;
 }
 
@@ -454,42 +527,56 @@ _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
                                       bson_t *cmd,
                                       bson_error_t *error)
 {
-   mongoc_rpc_t rpc = {._init = 0};
-   mongoc_array_t array_to_write;
+   bool ret = false;
 
-   rpc.header.msg_len = 0;
-   rpc.header.request_id = server_monitor->request_id++;
-   rpc.header.response_to = 0;
-   rpc.header.opcode = MONGOC_OPCODE_MSG;
-   rpc.msg.flags = MONGOC_MSG_EXHAUST_ALLOWED;
-   rpc.msg.n_sections = 1;
-   rpc.msg.sections[0].payload_type = 0;
-   rpc.msg.sections[0].payload.bson_document = bson_get_data (cmd);
+   mcd_rpc_message *const rpc = mcd_rpc_message_new ();
 
-   _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
-   _mongoc_rpc_gather (&rpc, &array_to_write);
+   {
+      int32_t message_length = 0;
 
-   mongoc_iovec_t *const iovec = (mongoc_iovec_t *) array_to_write.data;
-   const size_t niovec = array_to_write.len;
-   _mongoc_rpc_swab_to_le (&rpc);
+      message_length += mcd_rpc_header_set_message_length (rpc, 0);
+      message_length +=
+         mcd_rpc_header_set_request_id (rpc, server_monitor->request_id++);
+      message_length += mcd_rpc_header_set_response_to (rpc, 0);
+      message_length += mcd_rpc_header_set_op_code (rpc, MONGOC_OP_CODE_MSG);
+
+      mcd_rpc_op_msg_set_sections_count (rpc, 1);
+
+      message_length +=
+         mcd_rpc_op_msg_set_flag_bits (rpc, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED);
+      message_length += mcd_rpc_op_msg_section_set_kind (rpc, 0u, 0);
+      message_length +=
+         mcd_rpc_op_msg_section_set_body (rpc, 0u, bson_get_data (cmd));
+
+      mcd_rpc_message_set_length (rpc, message_length);
+   }
+
+   size_t num_iovecs;
+   mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
+   BSON_ASSERT (iovecs);
 
    MONITOR_LOG (server_monitor,
                 "sending with timeout %" PRId64,
                 server_monitor->connect_timeout_ms);
 
-   _mongoc_rpc_op_egress_inc (&rpc);
+   mcd_rpc_message_egress (rpc);
    if (!_mongoc_stream_writev_full (server_monitor->stream,
-                                    iovec,
-                                    niovec,
+                                    iovecs,
+                                    num_iovecs,
                                     server_monitor->connect_timeout_ms,
                                     error)) {
       MONITOR_LOG_ERROR (
          server_monitor, "failed to write awaitable hello: %s", error->message);
-      _mongoc_array_destroy (&array_to_write);
-      return false;
+      goto done;
    }
-   _mongoc_array_destroy (&array_to_write);
-   return true;
+
+   ret = true;
+
+done:
+   bson_free (iovecs);
+   mcd_rpc_message_destroy (rpc);
+
+   return ret;
 }
 
 /* Poll the server monitor stream for reading. Allows cancellation.
@@ -607,96 +694,121 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
                                       bson_error_t *error)
 {
    bool ret = false;
-   mongoc_buffer_t buffer;
-   int32_t msg_len;
-   mongoc_rpc_t rpc;
-   bson_t reply_local;
-   int64_t expire_at_ms;
-   int64_t timeout_ms;
 
-   expire_at_ms = _now_ms () + server_monitor->heartbeat_frequency_ms +
-                  server_monitor->connect_timeout_ms;
+   int64_t timeout_ms;
+   mcd_rpc_message *const rpc = mcd_rpc_message_new ();
+   mongoc_buffer_t buffer;
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
+   void *decompressed_data = NULL;
+   size_t decompressed_data_len = 0u;
+
+   const int64_t expire_at_ms = _now_ms () +
+                                server_monitor->heartbeat_frequency_ms +
+                                server_monitor->connect_timeout_ms;
+
    if (!_server_monitor_poll_with_interrupt (
           server_monitor, expire_at_ms, cancelled, error)) {
       GOTO (fail);
    }
 
    timeout_ms = _get_timeout_ms (expire_at_ms, error);
-   if (!timeout_ms) {
+   if (timeout_ms == 0) {
       GOTO (fail);
    }
+
    MONITOR_LOG (server_monitor,
                 "reading first 4 bytes with timeout: %" PRId64,
                 timeout_ms);
-   if (!_mongoc_buffer_append_from_stream (
-          &buffer, server_monitor->stream, 4, (int32_t) timeout_ms, error)) {
+   if (!_mongoc_buffer_append_from_stream (&buffer,
+                                           server_monitor->stream,
+                                           sizeof (int32_t),
+                                           (int32_t) timeout_ms,
+                                           error)) {
       GOTO (fail);
    }
 
-   BSON_ASSERT (buffer.len == 4);
-   memcpy (&msg_len, buffer.data, 4);
-   msg_len = BSON_UINT32_FROM_LE (msg_len);
+   const int32_t message_length = _int32_from_le (buffer.data);
 
-   if ((msg_len < 16) ||
-       (msg_len > server_monitor->description->max_msg_size)) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_PROTOCOL,
-         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-         "Message size %d is not within expected range 16-%d bytes",
-         msg_len,
-         server_monitor->description->max_msg_size);
+   // msgHeader consists of four int32 fields.
+   const int32_t message_header_length = 4u * sizeof (int32_t);
+
+   if ((message_length < message_header_length) ||
+       (message_length > server_monitor->description->max_msg_size)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "message size %" PRId32
+                      " is not within expected range 16-%" PRId32 " bytes",
+                      message_length,
+                      server_monitor->description->max_msg_size);
       GOTO (fail);
    }
 
    timeout_ms = _get_timeout_ms (expire_at_ms, error);
-   if (!timeout_ms) {
+   if (timeout_ms == 0) {
       GOTO (fail);
    }
+
+   const size_t remaining_bytes = (size_t) message_length - sizeof (int32_t);
+
    MONITOR_LOG (server_monitor,
-                "reading remaining %d bytes. Timeout %" PRId64,
-                (int) (msg_len - 4),
+                "reading remaining %zu bytes. Timeout %" PRId64,
+                remaining_bytes,
                 timeout_ms);
-   if (!_mongoc_buffer_append_from_stream (
-          &buffer, server_monitor->stream, msg_len - 4, timeout_ms, error)) {
+   if (!_mongoc_buffer_append_from_stream (&buffer,
+                                           server_monitor->stream,
+                                           remaining_bytes,
+                                           timeout_ms,
+                                           error)) {
       GOTO (fail);
    }
 
-   if (!_mongoc_rpc_scatter (&rpc, buffer.data, buffer.len)) {
+   if (!mcd_rpc_message_from_data_in_place (
+          rpc, buffer.data, buffer.len, NULL)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Malformed message from server");
+                      "malformed message from server");
       GOTO (fail);
    }
 
-   if (!_mongoc_rpc_decompress_if_necessary (&rpc, &buffer, error)) {
-      GOTO (fail);
-   }
+   mcd_rpc_message_ingress (rpc);
 
-   _mongoc_rpc_swab_from_le (&rpc);
-   memcpy (&msg_len, rpc.msg.sections[0].payload.bson_document, 4);
-   msg_len = BSON_UINT32_FROM_LE (msg_len);
-   if (!bson_init_static (
-          &reply_local, rpc.msg.sections[0].payload.bson_document, msg_len)) {
+   if (!mcd_rpc_message_decompress_if_necessary (
+          rpc, &decompressed_data, &decompressed_data_len)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Malformed BSON payload from server");
+                      "decompression failure");
       GOTO (fail);
    }
 
-   bson_copy_to (&reply_local, hello_response);
-   server_monitor->more_to_come =
-      (rpc.msg.flags & MONGOC_MSG_MORE_TO_COME) != 0;
+   bson_t body;
+   if (!mcd_rpc_message_get_body (rpc, &body)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "malformed BSON payload from server");
+      GOTO (fail);
+   }
+
+   bson_copy_to (&body, hello_response);
+   bson_destroy (&body);
+
+   server_monitor->more_to_come = (mcd_rpc_op_msg_get_flag_bits (rpc) &
+                                   MONGOC_OP_MSG_FLAG_MORE_TO_COME) != 0;
 
    ret = true;
+
 fail:
    if (!ret) {
       bson_init (hello_response);
    }
+
+   bson_free (decompressed_data);
    _mongoc_buffer_destroy (&buffer);
+   mcd_rpc_message_destroy (rpc);
+
    return ret;
 }
 
@@ -1290,9 +1402,19 @@ mongoc_server_monitor_run (mongoc_server_monitor_t *server_monitor)
    bson_mutex_lock (&server_monitor->shared.mutex);
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = false;
-      server_monitor->shared.state = MONGOC_THREAD_RUNNING;
-      mcommon_thread_create (
+      int ret = mcommon_thread_create (
          &server_monitor->thread, _server_monitor_thread, server_monitor);
+      if (ret == 0) {
+         server_monitor->shared.state = MONGOC_THREAD_RUNNING;
+      } else {
+         char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+         char *errmsg = bson_strerror_r (ret, errmsg_buf, sizeof errmsg_buf);
+         _server_monitor_log (server_monitor,
+                              MONGOC_LOG_LEVEL_ERROR,
+                              "Failed to start monitoring thread. This server "
+                              "may not be selectable. Error: %s",
+                              errmsg);
+      }
    }
    bson_mutex_unlock (&server_monitor->shared.mutex);
 }
@@ -1303,9 +1425,19 @@ mongoc_server_monitor_run_as_rtt (mongoc_server_monitor_t *server_monitor)
    bson_mutex_lock (&server_monitor->shared.mutex);
    if (server_monitor->shared.state == MONGOC_THREAD_OFF) {
       server_monitor->is_rtt = true;
-      server_monitor->shared.state = MONGOC_THREAD_RUNNING;
-      mcommon_thread_create (
+      int ret = mcommon_thread_create (
          &server_monitor->thread, _server_monitor_rtt_thread, server_monitor);
+      if (ret == 0) {
+         server_monitor->shared.state = MONGOC_THREAD_RUNNING;
+      } else {
+         char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+         char *errmsg = bson_strerror_r (ret, errmsg_buf, sizeof errmsg_buf);
+         _server_monitor_log (
+            server_monitor,
+            MONGOC_LOG_LEVEL_ERROR,
+            "Failed to start Round-Trip Time monitoring thread. Error: %s",
+            errmsg);
+      }
    }
    bson_mutex_unlock (&server_monitor->shared.mutex);
 }

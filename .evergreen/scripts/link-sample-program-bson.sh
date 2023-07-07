@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
@@ -10,7 +10,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=$BUILD_SAMPLE_WITH_CMAKE_DEPRECATED"
 
 DIR=$(dirname $0)
-. $DIR/find-cmake.sh
+. $DIR/find-cmake-latest.sh
+CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
 
 if command -v gtar 2>/dev/null; then
@@ -48,11 +49,11 @@ $TAR xf ../../mongoc.tar.gz -C . --strip-components=1
 
 if [ "$LINK_STATIC" ]; then
   # Our CMake system builds shared and static by default.
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_BSON=ON .
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF .
   $CMAKE --build .
   $CMAKE --build . --target install
 else
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_BSON=ON -DENABLE_STATIC=OFF .
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .
   $CMAKE --build .
   $CMAKE --build . --target install
 

@@ -59,11 +59,15 @@ configure_flags_append_if_not_null() {
   fi
 }
 
+## * Note: For additional configure-time context, the following lines can be
+## * uncommented to enable CMake's debug output:
+# configure_flags_append --log-level=debug
+# configure_flags_append --log-context
+
 configure_flags_append "-DCMAKE_INSTALL_PREFIX=${install_dir}"
 configure_flags_append "-DCMAKE_PREFIX_PATH=${cmake_prefix_path}"
 configure_flags_append "-DCMAKE_SKIP_RPATH=TRUE" # Avoid hardcoding absolute paths to dependency libraries.
 configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
-configure_flags_append "-DENABLE_BSON=ON"
 configure_flags_append "-DENABLE_HTML_DOCS=OFF"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 configure_flags_append "-DENABLE_MAN_PAGES=OFF"

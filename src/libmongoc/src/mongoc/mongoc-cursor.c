@@ -247,7 +247,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
 
    ENTRY;
 
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
 
    cursor = BSON_ALIGNED_ALLOC0 (mongoc_cursor_t);
    cursor->client = client;
@@ -885,12 +885,12 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
                               mongoc_server_stream_t *stream,
-                              mongoc_query_flags_t *flags /* OUT */)
+                              int32_t *flags /* OUT */)
 {
    bson_iter_t iter;
    const char *key;
 
-   *flags = MONGOC_QUERY_NONE;
+   *flags = MONGOC_OP_QUERY_FLAG_NONE;
 
    if (!bson_iter_init (&iter, &cursor->opts)) {
       bson_set_error (&cursor->error,
@@ -904,27 +904,27 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
       key = bson_iter_key (&iter);
 
       if (!strcmp (key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
-         ADD_FLAG (flags, MONGOC_QUERY_PARTIAL);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_PARTIAL);
       } else if (!strcmp (key, MONGOC_CURSOR_AWAIT_DATA)) {
-         ADD_FLAG (flags, MONGOC_QUERY_AWAIT_DATA);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_AWAIT_DATA);
       } else if (!strcmp (key, MONGOC_CURSOR_EXHAUST)) {
-         ADD_FLAG (flags, MONGOC_QUERY_EXHAUST);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_EXHAUST);
       } else if (!strcmp (key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT)) {
-         ADD_FLAG (flags, MONGOC_QUERY_NO_CURSOR_TIMEOUT);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT);
       } else if (!strcmp (key, MONGOC_CURSOR_OPLOG_REPLAY)) {
-         ADD_FLAG (flags, MONGOC_QUERY_OPLOG_REPLAY);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY);
       } else if (!strcmp (key, MONGOC_CURSOR_TAILABLE)) {
-         ADD_FLAG (flags, MONGOC_QUERY_TAILABLE_CURSOR);
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
       }
    }
 
    if (cursor->secondary_ok) {
-      *flags |= MONGOC_QUERY_SECONDARY_OK;
+      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
    } else if (cursor->server_id &&
               (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
                stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
               stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
-      *flags |= MONGOC_QUERY_SECONDARY_OK;
+      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
    }
 
    return true;
@@ -1014,10 +1014,13 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    db = bson_strndup (cursor->ns, cursor->dblen);
    parts.assembled.db_name = db;
 
-   if (!_mongoc_cursor_opts_to_flags (
-          cursor, server_stream, &parts.user_query_flags)) {
-      _mongoc_bson_init_if_set (reply);
-      GOTO (done);
+   {
+      int32_t flags;
+      if (!_mongoc_cursor_opts_to_flags (cursor, server_stream, &flags)) {
+         _mongoc_bson_init_if_set (reply);
+         GOTO (done);
+      }
+      parts.user_query_flags = (mongoc_query_flags_t) flags;
    }
 
    /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.
@@ -1449,9 +1452,32 @@ void
 mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor, uint32_t batch_size)
 {
    BSON_ASSERT (cursor);
-
-   _mongoc_cursor_set_opt_int64 (
-      cursor, MONGOC_CURSOR_BATCH_SIZE, (int64_t) batch_size);
+   bson_iter_t iter;
+   if (!bson_iter_init_find (&iter, &cursor->opts, MONGOC_CURSOR_BATCH_SIZE)) {
+      bson_append_int64 (&cursor->opts,
+                         MONGOC_CURSOR_BATCH_SIZE,
+                         MONGOC_CURSOR_BATCH_SIZE_LEN,
+                         batch_size);
+   } else if (BSON_ITER_HOLDS_INT64 (&iter)) {
+      bson_iter_overwrite_int64 (&iter, (int64_t) batch_size);
+   } else if (BSON_ITER_HOLDS_INT32 (&iter)) {
+      if (!bson_in_range_int32_t_unsigned (batch_size)) {
+         MONGOC_WARNING ("unable to overwrite stored int32 batchSize with "
+                         "out-of-range value %" PRIu32,
+                         batch_size);
+         return;
+      }
+      bson_iter_overwrite_int32 (&iter, (int32_t) batch_size);
+   } else if (BSON_ITER_HOLDS_DOUBLE (&iter)) {
+      bson_iter_overwrite_double (&iter, (double) batch_size);
+   } else if (BSON_ITER_HOLDS_DECIMAL128 (&iter)) {
+      bson_decimal128_t val;
+      val.high = 0x3040000000000000;
+      val.low = (uint64_t) batch_size;
+      bson_iter_overwrite_decimal128 (&iter, &val);
+   } else {
+      MONGOC_WARNING ("unable to overwrite non-numeric stored batchSize");
+   }
 }
 
 
@@ -1584,7 +1610,7 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
    bson_t cmd = BSON_INITIALIZER;
    bson_t opts = BSON_INITIALIZER;
 
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (reply);
    /* options are passed through by adding them to reply. */
    bsonBuildAppend (
@@ -1614,7 +1640,7 @@ mongoc_cursor_new_from_command_reply_with_opts (mongoc_client_t *client,
    mongoc_cursor_t *cursor;
    bson_t cmd = BSON_INITIALIZER;
 
-   BSON_ASSERT (client);
+   BSON_ASSERT_PARAM (client);
    BSON_ASSERT (reply);
 
    cursor = _mongoc_cursor_cmd_new_from_reply (client, &cmd, opts, reply);

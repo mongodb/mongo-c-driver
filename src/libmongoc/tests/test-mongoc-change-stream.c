@@ -91,6 +91,8 @@ drop_and_get_coll (mongoc_client_t *client,
                    const char *db_name,
                    const char *coll_name)
 {
+   ASSERT (client);
+
    mongoc_collection_t *coll =
       mongoc_client_get_collection (client, db_name, coll_name);
    mongoc_collection_drop (coll, NULL);

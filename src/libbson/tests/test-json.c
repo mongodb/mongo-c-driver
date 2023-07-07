@@ -2113,8 +2113,10 @@ test_bson_json_double (void)
    BSON_ASSERT (BSON_ITER_HOLDS_DOUBLE (&iter));
    ASSERT_CMPDOUBLE (bson_iter_double (&iter), ==, 0.0);
 
-/* check that "x" is -0.0. signbit not available on Solaris, FreeBSD, or VS 2010 */
-#if !defined(__sun) && !defined(__FreeBSD__) && (!defined(_MSC_VER) || (_MSC_VER >= 1800))
+/* check that "x" is -0.0. signbit not available on Solaris, FreeBSD, or VS 2010
+ */
+#if !defined(__sun) && !defined(__FreeBSD__) && \
+   (!defined(_MSC_VER) || (_MSC_VER >= 1800))
    BSON_ASSERT (signbit (bson_iter_double (&iter)));
 #endif
 
@@ -2446,6 +2448,50 @@ test_bson_json_array_subdoc (void)
 }
 
 static void
+test_bson_json_merge_multiple (void)
+{
+   bson_error_t error;
+   bson_t *b = bson_new_from_json (
+      (const uint8_t *) "{\"a\" : 1}, {\"b\" : 2}", -1, &error);
+   ASSERT_OR_PRINT (b, error);
+
+   bson_t *compare = bson_new_from_json (
+      (const uint8_t *) BSON_STR ({"a" : 1, "b" : 2}), -1, &error);
+
+   bson_eq_bson (b, compare);
+   bson_destroy (b);
+   bson_destroy (compare);
+}
+
+static void
+test_bson_json_extra_chars (void)
+{
+   bson_error_t error;
+   {
+      bson_t *b =
+         bson_new_from_json ((const uint8_t *) "{\"a\": 1}abc", -1, &error);
+      ASSERT (b == NULL);
+      ASSERT_ERROR_CONTAINS (error,
+                             BSON_ERROR_JSON,
+                             BSON_JSON_ERROR_READ_CORRUPT_JS,
+                             "Got parse error at \"a\"");
+   }
+
+   {
+      bson_t *b = bson_new_from_json (
+         (const uint8_t *) "{\"a\" : 1}{abc,[],{},123", -1, &error);
+      ASSERT_OR_PRINT (b, error);
+
+      bson_t *compare =
+         bson_new_from_json ((const uint8_t *) "{\"a\" : 1}", -1, &error);
+
+      bson_eq_bson (b, compare);
+      bson_destroy (b);
+      bson_destroy (compare);
+   }
+}
+
+static void
 test_bson_json_date_check (const char *json, int64_t value)
 {
    bson_error_t error = {0};
@@ -2672,7 +2718,7 @@ test_bson_json_timestamp (void)
 
 
 static void
-test_bson_array_as_json (void)
+test_bson_array_as_legacy_json (void)
 {
    bson_t d = BSON_INITIALIZER;
    size_t len;
@@ -2698,6 +2744,59 @@ test_bson_array_as_json (void)
    bson_destroy (&d);
 }
 
+static void
+test_bson_array_as_relaxed_json (void)
+{
+   bson_t d = BSON_INITIALIZER;
+   size_t len;
+   char *str;
+
+   str = bson_array_as_relaxed_extended_json (&d, &len);
+   ASSERT_CMPSTR (str, "[ ]");
+   ASSERT_CMPSIZE_T (len, ==, 3u);
+   bson_free (str);
+
+   BSON_APPEND_INT32 (&d, "0", 1);
+   str = bson_array_as_relaxed_extended_json (&d, &len);
+   ASSERT_CMPSTR (str, "[ 1 ]");
+   ASSERT_CMPSIZE_T (len, ==, 5u);
+   bson_free (str);
+
+   /* test corrupted bson */
+   BSON_APPEND_UTF8 (&d, "1", "\x80"); /* bad UTF-8 */
+   str = bson_array_as_relaxed_extended_json (&d, &len);
+   BSON_ASSERT (!str);
+   BSON_ASSERT (!len);
+
+   bson_destroy (&d);
+}
+
+static void
+test_bson_array_as_canonical_json (void)
+{
+   bson_t d = BSON_INITIALIZER;
+   size_t len;
+   char *str;
+
+   str = bson_array_as_canonical_extended_json (&d, &len);
+   ASSERT_CMPSTR (str, "[ ]");
+   ASSERT_CMPSIZE_T (len, ==, 3u);
+   bson_free (str);
+
+   BSON_APPEND_INT32 (&d, "0", 1);
+   str = bson_array_as_canonical_extended_json (&d, &len);
+   ASSERT_CMPSTR (str, "[ { \"$numberInt\" : \"1\" } ]");
+   ASSERT_CMPSIZE_T (len, ==, 26u);
+   bson_free (str);
+
+   /* test corrupted bson */
+   BSON_APPEND_UTF8 (&d, "1", "\x80"); /* bad UTF-8 */
+   str = bson_array_as_canonical_extended_json (&d, &len);
+   BSON_ASSERT (!str);
+   BSON_ASSERT (!len);
+
+   bson_destroy (&d);
+}
 
 static void
 test_bson_as_json_spacing (void)
@@ -3486,7 +3585,13 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/bson/as_json/corrupt_binary", test_bson_corrupt_binary);
    TestSuite_Add (suite, "/bson/as_json_spacing", test_bson_as_json_spacing);
-   TestSuite_Add (suite, "/bson/array_as_json", test_bson_array_as_json);
+   TestSuite_Add (
+      suite, "/bson/array_as_legacy_json", test_bson_array_as_legacy_json);
+   TestSuite_Add (
+      suite, "/bson/array_as_relaxed_json", test_bson_array_as_relaxed_json);
+   TestSuite_Add (suite,
+                  "/bson/array_as_canonical_json",
+                  test_bson_array_as_canonical_json);
    TestSuite_Add (
       suite, "/bson/json/allow_multiple", test_bson_json_allow_multiple);
    TestSuite_Add (
@@ -3576,6 +3681,10 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/integer/width", test_bson_integer_width);
    TestSuite_Add (
       suite, "/bson/json/read/null_in_str", test_bson_json_null_in_str);
+   TestSuite_Add (
+      suite, "/bson/json/read/merge_multiple", test_bson_json_merge_multiple);
+   TestSuite_Add (
+      suite, "/bson/json/read/extra_chars", test_bson_json_extra_chars);
    TestSuite_Add (
       suite, "/bson/as_json/multi_object", test_bson_as_json_multi_object);
    TestSuite_Add (suite,

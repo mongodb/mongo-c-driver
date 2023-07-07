@@ -23,8 +23,8 @@ main (void)
    bson_t *kms_providers = NULL;
    bson_error_t error = {0};
    bson_t *index_keys = NULL;
-   char *index_name = NULL;
-   bson_t *create_index_cmd = NULL;
+   bson_t *index_opts = NULL;
+   mongoc_index_model_t *index_model = NULL;
    bson_t *schema = NULL;
    mongoc_client_t *client = NULL;
    mongoc_collection_t *coll = NULL;
@@ -78,34 +78,23 @@ main (void)
    /* Create a unique index to ensure that two data keys cannot share the same
     * keyAltName. This is recommended practice for the key vault. */
    index_keys = BCON_NEW ("keyAltNames", BCON_INT32 (1));
-   index_name = mongoc_collection_keys_to_index_string (index_keys);
-   create_index_cmd = BCON_NEW ("createIndexes",
-                                KEYVAULT_COLL,
-                                "indexes",
-                                "[",
-                                "{",
-                                "key",
-                                BCON_DOCUMENT (index_keys),
-                                "name",
-                                index_name,
-                                "unique",
-                                BCON_BOOL (true),
-                                "partialFilterExpression",
-                                "{",
-                                "keyAltNames",
-                                "{",
-                                "$exists",
-                                BCON_BOOL (true),
-                                "}",
-                                "}",
-                                "}",
-                                "]");
-   ret = mongoc_client_command_simple (client,
-                                       KEYVAULT_DB,
-                                       create_index_cmd,
-                                       NULL /* read prefs */,
-                                       NULL /* reply */,
-                                       &error);
+   index_opts = BCON_NEW ("unique",
+                          BCON_BOOL (true),
+                          "partialFilterExpression",
+                          "{",
+                          "keyAltNames",
+                          "{",
+                          "$exists",
+                          BCON_BOOL (true),
+                          "}",
+                          "}");
+   index_model = mongoc_index_model_new (index_keys, index_opts);
+   ret = mongoc_collection_create_indexes_with_opts (keyvault_coll,
+                                                     &index_model,
+                                                     1,
+                                                     NULL /* opts */,
+                                                     NULL /* reply */,
+                                                     &error);
 
    if (!ret) {
       goto fail;
@@ -138,9 +127,6 @@ main (void)
       goto fail;
    }
 
-   const size_t len = strlen (to_encrypt.value.v_utf8.str);
-   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len));
-
    /* Explicitly encrypt a field */
    encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_algorithm (
@@ -148,6 +134,8 @@ main (void)
    mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &datakey_id);
    to_encrypt.value_type = BSON_TYPE_UTF8;
    to_encrypt.value.v_utf8.str = "123456789";
+   const size_t len = strlen (to_encrypt.value.v_utf8.str);
+   BSON_ASSERT (bson_in_range_unsigned (uint32_t, len));
    to_encrypt.value.v_utf8.len = (uint32_t) len;
 
    ret = mongoc_client_encryption_encrypt (
@@ -187,9 +175,9 @@ fail:
    bson_free (local_masterkey);
    bson_destroy (kms_providers);
    mongoc_collection_destroy (keyvault_coll);
+   mongoc_index_model_destroy (index_model);
+   bson_destroy (index_opts);
    bson_destroy (index_keys);
-   bson_free (index_name);
-   bson_destroy (create_index_cmd);
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
    bson_destroy (to_insert);

@@ -43,6 +43,8 @@ _force_hello_with_ping (mongoc_client_t *client)
 {
    future_t *future;
 
+   ASSERT (client);
+
    /* Send a ping */
    future = future_client_command_simple (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);

@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.1)
+cmake_minimum_required (VERSION 3.15)
 
 project (libmongoc C)
 
@@ -7,7 +7,7 @@ include (MongoC-Warnings)
 include (InstallRequiredSystemLibraries)
 include (CheckStructHasMember)
 
-message ("libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
+message (STATUS "libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
 
 # Defaults.
 set (MONGOC_ENABLE_SSL 0)
@@ -29,11 +29,10 @@ set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
-set (MONGOC_OUTPUT_BASENAME "mongoc" CACHE STRING "Output mongoc library base name")
+# Definition for mongoc-config.h:
+_mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
 
-if (ENABLE_COVERAGE)
-   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
-endif ()
+set (MONGOC_OUTPUT_BASENAME "mongoc" CACHE STRING "Output mongoc library base name")
 
 if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
    message (FATAL_ERROR
@@ -63,9 +62,9 @@ if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
    message (STATUS "Searching for zlib CMake packages")
    include (FindZLIB)
    if (ZLIB_FOUND)
-      message ("--   zlib found version \"${ZLIB_VERSION_STRING}\"")
-      message ("--   zlib include path \"${ZLIB_INCLUDE_DIRS}\"")
-      message ("--   zlib libraries \"${ZLIB_LIBRARIES}\"")
+      message (STATUS "   zlib found version \"${ZLIB_VERSION_STRING}\"")
+      message (STATUS "   zlib include path \"${ZLIB_INCLUDE_DIRS}\"")
+      message (STATUS "   zlib libraries \"${ZLIB_LIBRARIES}\"")
    else ()
       if (ENABLE_ZLIB STREQUAL "SYSTEM")
          message (FATAL_ERROR
@@ -117,72 +116,6 @@ else ()
    message (STATUS "Disabling zlib compression")
 endif ()
 
-# Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
-# will look for zconf.h in that location.
-configure_file (
-   "${SOURCE_DIR}/src/utf8proc-2.8.0/utf8proc.h"
-   "${CMAKE_BINARY_DIR}/src/utf8proc-2.8.0/utf8proc.h"
-   COPYONLY
-)
-set (UTF8PROC_INCLUDE_DIRS "")
-# if (ENABLE_UTF8PROC MATCHES "SYSTEM|AUTO")
-#    message (STATUS "Searching for utf8proc CMake packages")
-#    include (FindUTF8PROC)
-#    if (UTF8_FOUND)
-#       message ("--   utf8proc found version \"${UTF8PROC_VERSION_STRING}\"")
-#       message ("--   utf8proc include path \"${UTF8PROC_INCLUDE_DIRS}\"")
-#       message ("--   utf8proc libraries \"${UTF8PROC_LIBRARIES}\"")
-#    else ()
-#       if (ENABLE_UTF8PROC STREQUAL "SYSTEM")
-#          message (FATAL_ERROR
-#             "Unable to find system utf8proc package. Either specify the utf8proc \
-#             location by setting UTF8PROC_ROOT, or else set ENABLE_UTF8PROC=BUNDLED or \
-#             set ENABLE_UTF8PROC=OFF."
-#             )
-#       endif ()
-#       set (UTF8PROC_LIBRARIES "")
-#    endif ()
-# endif ()
-
-if ( (ENABLE_UTF8PROC STREQUAL "BUNDLED")
-   OR (ENABLE_UTF8PROC STREQUAL "AUTO" AND NOT UTF8PROC_FOUND) )
-   message (STATUS "Enabling utf8proc compression (bundled)")
-   add_library (utf8proc_obj OBJECT "${UTF8PROC_SOURCES}")
-   set_property (TARGET utf8proc_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
-   # This tells the bundled zlib where to find its generated headers
-   target_include_directories (utf8proc_obj
-      BEFORE PUBLIC
-      "${SOURCE_DIR}/src/utf8proc-2.8.0"
-      "${CMAKE_BINARY_DIR}/src/utf8proc-2.8.0"
-   )
-   # Disable all warnings for compiling Zlib
-   target_compile_options (utf8proc_obj PRIVATE -w)
-   set (SOURCES ${SOURCES} $<TARGET_OBJECTS:utf8proc_obj>)
-   # This tells mongoc_shared/mongoc_static where to find generated zlib headers
-   set (
-      UTF8PROC_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/utf8proc-2.8.0"
-      "${CMAKE_BINARY_DIR}/src/utf8proc-2.8.0"
-   )
-endif ()
-
-if (NOT ENABLE_UTF8PROC STREQUAL "OFF")
-   # At this point the system zlib was found, or the bundled library was used
-   include (CheckIncludeFiles)
-   check_include_files ("unistd.h" HAVE_UNISTD_H)
-   check_include_files ("stdarg.h" HAVE_STDARG_H)
-   if (HAVE_UNISTD_H)
-      add_definitions (-DHAVE_UNISTD_H)
-   endif ()
-   if (HAVE_STDARG_H)
-      add_definitions (-DHAVE_STDARG_H)
-   endif ()
-   set (MONGOC_ENABLE_COMPRESSION 1)
-   set (MONGOC_ENABLE_COMPRESSION_UTF8PROC 1)
-else ()
-   message (STATUS "Disabling utf8proc compression")
-endif ()
-
 if (NOT ENABLE_ZSTD STREQUAL OFF)
    message (STATUS "Searching for compression library zstd")
    find_package(PkgConfig)
@@ -208,11 +141,7 @@ if (NOT ENABLE_ZSTD STREQUAL OFF)
 
       include_directories (${ZSTD_INCLUDE_DIRS})
       link_directories (${ZSTD_LIBRARY_DIRS})
-      if (${CMAKE_VERSION} VERSION_LESS "3.12.0")
-         set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LIBRARIES})
-      else ()
-         set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LINK_LIBRARIES})
-      endif ()
+      set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LINK_LIBRARIES})
    endif()
 endif()
 
@@ -226,18 +155,18 @@ if (NOT ENABLE_SSL STREQUAL OFF)
 
    if (ENABLE_SSL STREQUAL LIBRESSL)
       include (FindPkgConfig)
-      message ("-- Searching for LibreSSL/libtls")
+      message (STATUS " Searching for LibreSSL/libtls")
       pkg_check_modules (LIBRESSL libtls)
       if (LIBRESSL_FOUND)
-         message ("--   Found ${LIBRESSL_LIBRARIES}")
+         message (STATUS "   Found ${LIBRESSL_LIBRARIES}")
          set (SSL_LIBRARIES ${LIBRESSL_LIBRARIES})
          if (LIBRESSL_INCLUDE_DIRS)
-           include_directories ("${LIBRESSL_INCLUDE_DIRS}")
+           include_directories (SYSTEM "${LIBRESSL_INCLUDE_DIRS}")
          endif ()
          link_directories ("${LIBRESSL_LIBRARY_DIRS}")
          set (LIBRESSL 1)
       else ()
-         message ("--   Not found")
+         message (STATUS "   Not found")
       endif ()
    endif ()
 
@@ -267,11 +196,6 @@ if (NOT ENABLE_SSL STREQUAL OFF)
 endif ()
 
 if (OPENSSL_FOUND)
-   if (WIN32 AND OPENSSL_VERSION VERSION_GREATER 1.1 AND
-         ${CMAKE_VERSION} VERSION_LESS 3.7)
-      message (FATAL_ERROR "Building against OpenSSL 1.1.0 and later requires CMake 3.7 or later (hint:"
-         " You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
-   endif ()
    if (APPLE AND NOT OPENSSL_ROOT_DIR)
       message (WARNING "Building with OpenSSL but OPENSSL_ROOT_DIR not defined. If build fails to link"
          " to OpenSSL, define OPENSSL_ROOT_DIR as the path to the OpenSSL installation directory.")
@@ -315,11 +239,6 @@ endif ()
 
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH AND ENABLE_SSL STREQUAL OFF)
    message (FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH but no SSL library was found")
-endif ()
-
-if (NOT ENABLE_SASL MATCHES "CYRUS|SSPI|AUTO|OFF")
-   message (FATAL_ERROR
-      "ENABLE_SASL option must be CYRUS, SSPI, AUTO, or OFF")
 endif ()
 
 # Defaults.
@@ -368,7 +287,9 @@ else ()
    set (MONGOC_SOCKET_ARG3 "int")
 endif ()
 
-include (FindResSearch)
+# Find name resolution libaries. Also sets definitions used in configure_file():
+include(ResSearch)
+
 include (CheckSchedGetCPU)
 
 function (mongoc_get_accept_args ARG2 ARG3)
@@ -443,25 +364,7 @@ endif ()
 
 set (MONGOC_ENABLE_SHM_COUNTERS 0)
 
-if (NOT ENABLE_SHM_COUNTERS MATCHES "ON|OFF|AUTO")
-   message (FATAL_ERROR "ENABLE_SHM_COUNTERS option must be ON, OFF, or AUTO")
-endif ()
-
-if (ENABLE_SHM_COUNTERS STREQUAL "AUTO")
-   if (UNIX AND NOT APPLE)
-      set (ENABLE_SHM_COUNTERS ON)
-   endif ()
-   if (APPLE AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
-      set (ENABLE_SHM_COUNTERS ON)
-   endif ()
-endif ()
-
-if (ENABLE_SHM_COUNTERS STREQUAL "ON")
-   if (( NOT ${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64" AND APPLE ) OR NOT UNIX)
-      message (
-         FATAL_ERROR
-	 "Shared memory performance counters only supported on arm64 Mac and Linux")
-   endif ()
+if (ENABLE_SHM_COUNTERS)
    set (MONGOC_ENABLE_SHM_COUNTERS 1)
    find_library(RT_LIBRARY rt HINTS /usr/lib32)
    if (RT_LIBRARY)
@@ -504,7 +407,7 @@ if (NOT MONGOC_ENABLE_SSL)
       message (STATUS "SSL disabled. Configuring without Client-Side Field Level Encryption support.")
    endif ()
 elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
-   message ("Searching for libmongocrypt")
+   message (STATUS "Searching for libmongocrypt")
    if (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
       # do not suppress log output if find_package cannot find libmongocrypt
       find_package (mongocrypt)
@@ -513,9 +416,9 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
    endif ()
 
    if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.8.0)
-      message ("--   libmongocrypt found at ${mongocrypt_DIR}")
-      message ("--   libmongocrypt version ${mongocrypt_VERSION} found")
-      message ("--   libmongocrypt version 1.8.0 is required to enable Client-Side Field Level Encryption Support.")
+      message (STATUS "  libmongocrypt found at ${mongocrypt_DIR}")
+      message (STATUS "  libmongocrypt version ${mongocrypt_VERSION} found")
+      message (STATUS "  libmongocrypt version 1.8.0 is required to enable Client-Side Field Level Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -529,9 +432,9 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       get_filename_component(LIBMONGOCRYPT_LIBRARY_LOCATION ${LIBMONGOCRYPT_RUNTIME_LIBRARY} DIRECTORY)
       find_library (LIBMONGOCRYPT_LIBRARY NAMES mongocrypt PATHS ${LIBMONGOCRYPT_LIBRARY_LOCATION})
       get_target_property (LIBMONGOCRYPT_INCLUDE_DIRECTORIES mongo::mongocrypt INTERFACE_INCLUDE_DIRECTORIES)
-      message ("--   libmongocrypt found at ${LIBMONGOCRYPT_LIBRARY}")
-      message ("--   libmongocrypt include path ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES}")
-      message ("--   libmongocrypt version ${mongocrypt_VERSION}")
+      message (STATUS "  libmongocrypt found at ${LIBMONGOCRYPT_LIBRARY}")
+      message (STATUS "  libmongocrypt include path ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES}")
+      message (STATUS "  libmongocrypt version ${mongocrypt_VERSION}")
       set (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION 1)
    elseif (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
       message (FATAL_ERROR "Required library (libmongocrypt) not found.")
@@ -566,6 +469,7 @@ endif ()
 
 set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-array.c
@@ -596,6 +500,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-flags.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-generation-map.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
@@ -619,6 +524,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cmd.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-optional.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opts-helpers.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opts.c
@@ -736,7 +642,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ocsp-cache.c
       )
       set (SSL_LIBRARIES ${OPENSSL_LIBRARIES})
-      include_directories (${OPENSSL_INCLUDE_DIR})
+      include_directories (SYSTEM ${OPENSSL_INCLUDE_DIR})
       if (WIN32)
          set (SSL_LIBRARIES ${SSL_LIBRARIES} crypt32.lib)
       else ()
@@ -791,21 +697,36 @@ else ()
    message (STATUS "SASL disabled")
 endif ()
 
-
-set (THREADS_PREFER_PTHREAD_FLAG 1)
-find_package (Threads REQUIRED)
-if (CMAKE_USE_PTHREADS_INIT)
-   set (THREAD_LIB ${CMAKE_THREAD_LIBS_INIT})
-endif ()
-
 set (LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${UTF8PROC_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${UTF8PROC_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
+
+add_library(_mongoc-dependencies INTERFACE)
+add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
+target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform)
+install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
+set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
+
+# utf8proc configuration
+find_package(Utf8Proc REQUIRED)
+if (USE_BUNDLED_UTF8PROC)
+   list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
+else()
+   target_link_libraries(_mongoc-dependencies INTERFACE utf8proc)
+endif()
+
+if(ENABLE_SRV)
+   # Interface target defined by ResSearch.cmake:
+   if(NOT TARGET mongo::detail::c_resolve)
+      message(SEND_ERROR "ENABLE_SRV is “${ENABLE_SRV}”, but we were unable to find a name resolution library")
+   endif()
+   target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_resolve)
+endif()
 
 if (WIN32)
    set (LIBRARIES ${LIBRARIES} ws2_32)
@@ -829,9 +750,20 @@ if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    endif()
 endif ()
 
+if (MONGOC_ENABLE_STATIC_BUILD)
+   add_library (mcd_rpc STATIC EXCLUDE_FROM_ALL ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c)
+   target_include_directories (mcd_rpc PUBLIC ${PROJECT_SOURCE_DIR}/src)
+   target_link_libraries (mcd_rpc PUBLIC ${BSON_STATIC_LIBRARIES})
+   if (NOT WIN32 AND ENABLE_PIC)
+      target_compile_options (mcd_rpc PUBLIC -fPIC)
+   endif ()
+   target_compile_definitions (mcd_rpc PUBLIC ${BSON_STATIC_PUBLIC_DEFINITIONS})
+   set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
+endif ()
+
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
-target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
+target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
@@ -864,16 +796,25 @@ target_include_directories (
       $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
 )
 
-set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
-set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}")
+set_target_properties (mongoc_shared PROPERTIES
+   OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}"
+   VERSION 0.0.0
+   SOVERSION 0
+   pkg_config_REQUIRES "libbson-1.0"
+   )
+mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VERSION}.pc)
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
+   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
-      message ("Adding -fPIC to compilation of mongoc_static components")
+      message (STATUS "Adding -fPIC to compilation of mongoc_static components")
    endif ()
+   if(ENABLE_SRV AND RESOLVE_LIB_NAME)
+      # The static library needs to link to the resolver in pkg-config:
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-l${RESOLVE_LIB_NAME}")
+   endif()
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
@@ -902,8 +843,14 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
          $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
    )
-   set_target_properties (mongoc_static PROPERTIES VERSION 0.0.0)
-   set_target_properties (mongoc_static PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}")
+   set_target_properties (mongoc_static PROPERTIES
+      VERSION 0.0.0
+      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}"
+      pkg_config_REQUIRES "libbson-static-1.0"
+      )
+   if(MONGOC_ENABLE_STATIC_INSTALL)
+      mongo_generate_pkg_config (mongoc_static FILENAME libmongoc-static-${MONGOC_API_VERSION}.pc INSTALL)
+   endif()
 endif ()
 
 if (ENABLE_APPLE_FRAMEWORK)
@@ -921,7 +868,7 @@ add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
 target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
 
 # mongoc-stat works if shared memory performance counters are enabled.
-if (ENABLE_SHM_COUNTERS STREQUAL "ON")
+if (ENABLE_SHM_COUNTERS)
    install (TARGETS mongoc-stat
             EXPORT mongoc_targets
             RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
@@ -1020,7 +967,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sample-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-scram.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
@@ -1055,6 +1001,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-azure-imds.c
    ${PROJECT_SOURCE_DIR}/tests/test-service-gcp.c
    ${PROJECT_SOURCE_DIR}/tests/test-mcd-integer.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
    ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
    ${PROJECT_SOURCE_DIR}/tests/unified/entity-map.c
@@ -1169,12 +1116,11 @@ if (ENABLE_EXAMPLES)
    mongoc_add_example (example-start-at-optime ${PROJECT_SOURCE_DIR}/examples/example-start-at-optime.c)
    mongoc_add_example (example-command-monitoring ${PROJECT_SOURCE_DIR}/examples/example-command-monitoring.c)
    mongoc_add_example (example-command-with-opts ${PROJECT_SOURCE_DIR}/examples/example-command-with-opts.c)
-   mongoc_add_example (example-create-indexes ${PROJECT_SOURCE_DIR}/examples/example-create-indexes.c)
+   mongoc_add_example (example-manage-collection-indexes ${PROJECT_SOURCE_DIR}/examples/example-manage-collection-indexes.c)
    mongoc_add_example (example-gridfs ${PROJECT_SOURCE_DIR}/examples/example-gridfs.c)
    mongoc_add_example (example-gridfs-bucket ${PROJECT_SOURCE_DIR}/examples/example-gridfs-bucket.c)
    if (NOT WIN32 AND ENABLE_EXAMPLES)
       mongoc_add_example (example-pool ${PROJECT_SOURCE_DIR}/examples/example-pool.c)
-      target_link_libraries (example-pool Threads::Threads)
    endif ()
    mongoc_add_example (example-scram ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
    mongoc_add_example (example-sdam-monitoring ${PROJECT_SOURCE_DIR}/examples/example-sdam-monitoring.c)
@@ -1263,49 +1209,32 @@ if (ENABLE_APPLE_FRAMEWORK)
    )
 endif ()
 
-# Define pkg-config files
-set (VERSION "${MONGOC_VERSION}")
-set (prefix "${CMAKE_INSTALL_PREFIX}")
-set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
-
-foreach (
-      FLAG
-      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${UTF8PROC_LIBRARIES} ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
+# Collect link items for the static library to be inserted into the pkg-config
+if(TARGET mongoc_static)
+   set(link_options
+      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${ZLIB_LIBRARIES}
+      ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
       ${LIBMONGOCRYPT_LIBRARY})
+   # Replace all absolute paths with search-dir link-file options:
+   list(TRANSFORM link_options
+        REPLACE "^(.+)/lib([^/\\.]+)\\..+$"
+                "-L\\1;-l\\2"
+        REGEX "^/")
+   # Prepend "-l" to all bare names:
+   list(TRANSFORM link_options PREPEND "-l" REGEX "^[^-]")
+   list(REMOVE_DUPLICATES link_options)
+   message(DEBUG "Computed static library link options: ${link_options}")
+   set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${link_options})
+endif()
 
-   if (IS_ABSOLUTE "${FLAG}")
-      get_filename_component (FLAG_DIR "${FLAG}" DIRECTORY)
-      get_filename_component (FLAG_FILE "${FLAG}" NAME_WE)
-      STRING (REGEX REPLACE "^lib" "" FLAG_FILE "${FLAG_FILE}")
-      set (MONGOC_LIBRARIES "${MONGOC_LIBRARIES} -L${FLAG_DIR} -l${FLAG_FILE}")
-   elseif (FLAG MATCHES "^-.*")
-      # Flag starts with dash, add it as-is.
-      set (MONGOC_LIBRARIES "${MONGOC_LIBRARIES} ${FLAG}")
-   else ()
-      # Flag doesn't start with dash, add it with a dash.
-      set (MONGOC_LIBRARIES "${MONGOC_LIBRARIES} -l${FLAG}")
-   endif ()
-endforeach ()
+# More pkg-config properties:
+set_target_properties(${TARGETS_TO_INSTALL} PROPERTIES
+   pkg_config_NAME "libmongoc"
+   pkg_config_DESCRIPTION "The libmongoc MongoDB client library."
+   pkg_config_VERSION "${MONGOC_VERSION}")
+# Relative include-path will be given the install prefix:
+set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${MONGOC_HEADER_INSTALL_DIR}")
 
-configure_file (
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-1.0.pc.in
-   ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
-@ONLY)
-install (
-   FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
-   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
-if (MONGOC_ENABLE_STATIC_INSTALL)
-   configure_file (
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-static-1.0.pc.in
-      ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
-   @ONLY)
-   install (
-      FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-   )
-endif ()
 # Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086.
 if (MONGOC_ENABLE_SSL)
    configure_file (
@@ -1332,6 +1261,15 @@ export (EXPORT mongoc-targets
    NAMESPACE mongo::
    FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-targets.cmake"
 )
+
+if (TARGET mcd_rpc)
+   # Note: the (mongo::)bson_static target must be included separately via find_package or include.
+   export (
+      TARGETS mcd_rpc
+      NAMESPACE mongo::
+      FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mcd-rpc-targets.cmake"
+   )
+endif ()
 
 configure_file (src/mongoc-config.cmake
    "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"

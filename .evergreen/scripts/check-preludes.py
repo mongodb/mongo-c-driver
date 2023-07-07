@@ -30,10 +30,10 @@ COMMON_PREFIX = Path("src/common")
 checks = [
     {
         "name": "libmongoc",
-        "headers": list(MONGOC_PREFIX.glob("*.h")),
+        "headers": list(MONGOC_PREFIX.glob("mongoc-*.h")),
         "exclusions": [
             MONGOC_PREFIX / "mongoc-prelude.h",
-            MONGOC_PREFIX / "mongoc.h"
+            MONGOC_PREFIX / "mongoc.h",
         ],
         "include": "#include \"mongoc-prelude.h\""
     },
@@ -41,9 +41,9 @@ checks = [
         "name": "libbson",
         "headers": list(BSON_PREFIX.glob("*.h")),
         "exclusions": [
-            BSON_PREFIX / "bson-prelude.h",
             BSON_PREFIX / "bson-dsl.h",
-            BSON_PREFIX / "bson.h"
+            BSON_PREFIX / "bson-prelude.h",
+            BSON_PREFIX / "bson.h",
         ],
         "include": "#include \"bson-prelude.h\""
     },

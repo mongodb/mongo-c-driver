@@ -141,7 +141,9 @@
 #define BSON_ABS(a) (((a) < 0) ? ((a) * -1) : (a))
 #endif
 
-#if __STDC_VERSION__ >= 201112L
+#if defined(__cplusplus) && (__cplusplus >= 201103L || defined(_MSVC_LANG))
+#define BSON_ALIGNOF(expr) alignof(expr)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #define BSON_ALIGNOF(expr) _Alignof(expr)
 #else
 #if defined(_MSC_VER)

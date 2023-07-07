@@ -847,6 +847,8 @@ set_cmd_test_callbacks (mongoc_client_t *client, void *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
+   ASSERT (client);
+
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, cmd_started_cb);
    mongoc_apm_set_command_succeeded_cb (callbacks, cmd_succeeded_cb);

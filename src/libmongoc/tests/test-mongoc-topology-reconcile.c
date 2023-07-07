@@ -69,6 +69,8 @@ selects_server (mongoc_client_t *client,
    mongoc_server_description_t *sd;
    bool result;
 
+   ASSERT (client);
+
    sd = mongoc_topology_select (
       client->topology, MONGOC_SS_READ, read_prefs, NULL, &error);
 

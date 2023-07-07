@@ -1,8 +1,15 @@
 include (CheckCSourceCompiles)
 include (CMakePushCheckState)
+include (MongoSettings)
 
-## Directly control the options passed to -fsanitize
-set (MONGO_SANITIZE "" CACHE STRING "Semicolon/comma-separated list of sanitizers to apply when building")
+mongo_setting (
+   MONGO_SANITIZE "Semicolon/comma-separated list of sanitizers to apply when building"
+   DEFAULT
+      DEVEL EVAL [[
+         if(NOT MSVC)
+            set(DEFAULT "address,undefined")
+         endif()
+      ]])
 
 # Replace commas with semicolons for the genex
 string(REPLACE ";" "," _sanitize "${MONGO_SANITIZE}")
@@ -28,8 +35,8 @@ if (_sanitize)
     if (NOT "${${varname}}")
         message (SEND_ERROR "Requested sanitizer option '${flag}' is not supported by the compiler+linker")
     else ()
-        message (STATUS "Building with ${flag}")
-        add_compile_options ("${flag}")
-        link_libraries ("${flag}")
+        message (STATUS "Enabling sanitizers: ${flag}")
+        mongo_platform_compile_options ($<BUILD_INTERFACE:${flag}>)
+        mongo_platform_link_options (${flag})
     endif ()
 endif ()

@@ -1,13 +1,42 @@
+libbson 1.24.1
+==============
+
+No changes since 1.24.0. Version incremented to match the libmongoc version.
+
+libbson 1.24.0
+==============
+
+New Features:
+
+  * Add extended JSON helpers for top-level BSON arrays `bson_array_as_canonical_extended_json` and `bson_array_as_relaxed_extended_json`.
+
+Language Standard Support:
+
+  * C89 support has been dropped. C99 is the default tested C standard.
+
+Platform Support:
+
+  * Support for macOS 10.14 will be dropped in an upcoming release.
+  * Support for Ubuntu 14.04 will be dropped in an upcoming release.
+  * Support for Debian 8.1 will be dropped in an upcoming release.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
+  * Colby Pike
+  * Joshua Siegel
+  * Jeroen Ooms
+  * Jean-Marc Le Roux
+  * Kyle Kloberdanz
+  * bisht2050
+  * gopukrishnasIBM
+  * Charles Pritchard
+
 libbson 1.23.5
 ==============
 
 No changes since 1.23.3. Version incremented to match the libmongoc version.
-
-
-libbson 1.24.0 (Unreleased)
-===========================
-
-  * Support for macOS 10.14 will be dropped in an upcoming release.
 
 
 libbson 1.23.4

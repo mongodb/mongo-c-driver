@@ -48,3 +48,4 @@ The ``max_len`` member holds a maximum length for the resulting JSON string. Enc
 
 	     bson_json_opts_new
 	     bson_json_opts_destroy
+	     bson_json_opts_set_outermost_array

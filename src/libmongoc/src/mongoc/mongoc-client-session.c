@@ -1382,6 +1382,7 @@ _mongoc_client_session_from_iter (mongoc_client_t *client,
                                   bson_error_t *error)
 {
    ENTRY;
+   BSON_ASSERT_PARAM (client);
 
    /* must be int64 that fits in uint32 */
    if (!BSON_ITER_HOLDS_INT64 (iter) || bson_iter_int64 (iter) > 0xffffffff) {

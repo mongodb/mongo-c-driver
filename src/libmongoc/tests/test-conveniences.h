@@ -175,8 +175,19 @@ typedef struct _match_ctx_t {
    bool is_command;
 } match_ctx_t;
 
-void
-assert_match_bson (const bson_t *doc, const bson_t *pattern, bool is_command);
+#define assert_match_bson(doc, pattern, _is_command)                  \
+   if (1) {                                                           \
+      match_ctx_t _ctx = {.strict_numeric_types = true,               \
+                          .is_command = _is_command};                 \
+                                                                      \
+      if (!match_bson_with_ctx (doc, pattern, &_ctx)) {               \
+         test_error ("Expected: %s\n, Got: %s\n, %s\n",               \
+                     bson_as_canonical_extended_json (pattern, NULL), \
+                     bson_as_canonical_extended_json (doc, NULL),     \
+                     _ctx.errmsg);                                    \
+      }                                                               \
+   } else                                                             \
+      (void) 0
 
 bool
 match_bson (const bson_t *doc, const bson_t *pattern, bool is_command);

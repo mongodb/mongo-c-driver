@@ -169,6 +169,8 @@ _mongoc_cursor_cmd_new (mongoc_client_t *client,
                         const mongoc_read_prefs_t *default_prefs,
                         const mongoc_read_concern_t *read_concern)
 {
+   BSON_ASSERT_PARAM (client);
+
    mongoc_cursor_t *cursor;
    data_cmd_t *data = BSON_ALIGNED_ALLOC0 (data_cmd_t);
 
@@ -193,6 +195,8 @@ _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
                                    const bson_t *opts,
                                    bson_t *reply)
 {
+   BSON_ASSERT_PARAM (client);
+
    mongoc_cursor_t *cursor =
       _mongoc_cursor_cmd_new (client, NULL, cmd, opts, NULL, NULL, NULL);
    data_cmd_t *data = (data_cmd_t *) cursor->impl.data;
@@ -212,5 +216,26 @@ _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
                       MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                       "Couldn't parse cursor document");
    }
+
+   if (0 != cursor->cursor_id && 0 == cursor->server_id) {
+      // A non-zero cursor_id means the cursor is still open on the server.
+      // Expect the "serverId" option to have been passed. The "serverId" option
+      // identifies the server with the cursor.
+      // The server with the cursor is required to send a "getMore" or
+      // "killCursors" command.
+      bson_set_error (
+         &cursor->error,
+         MONGOC_ERROR_CURSOR,
+         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+         "Expected `serverId` option to identify server with open cursor "
+         "(cursor ID is %" PRId64 "). "
+         "Consider using `mongoc_client_select_server` and using the "
+         "resulting server ID to create the cursor.",
+         cursor->cursor_id);
+      // Reset cursor_id to 0 to avoid an assertion error in
+      // `mongoc_cursor_destroy` when attempting to send "killCursors".
+      cursor->cursor_id = 0;
+   }
+
    return cursor;
 }

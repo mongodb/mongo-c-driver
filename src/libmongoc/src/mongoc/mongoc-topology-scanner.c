@@ -390,14 +390,12 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
                   bool use_handshake)
 {
    mongoc_topology_scanner_t *ts = node->ts;
-   mongoc_opcode_t cmd_opcode_type = MONGOC_OPCODE_QUERY;
    bson_t cmd;
 
    /* If we're asked to use a specific API version, we should send our
    hello handshake via op_msg rather than the legacy op_query: */
-   if (_should_use_op_msg (ts)) {
-      cmd_opcode_type = MONGOC_OPCODE_MSG;
-   }
+   const int32_t cmd_opcode =
+      _should_use_op_msg (ts) ? MONGOC_OP_CODE_MSG : MONGOC_OP_CODE_QUERY;
 
    if (node->last_used != -1 && node->last_failed == -1 && !use_handshake) {
       /* The node's been used before and not failed recently */
@@ -446,7 +444,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
                          node->host.host,
                          "admin",
                          &cmd,
-                         cmd_opcode_type,
+                         cmd_opcode,
                          &_async_handler,
                          node,
                          ts->connect_timeout_msec);

@@ -6,15 +6,6 @@
    early in the process before the code is even run.
 ]]
 
-set (__is_gnu "$<C_COMPILER_ID:GNU>")
-set (__is_clang "$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>>")
-set (__is_gnu_like "$<OR:${__is_gnu},${__is_clang}>")
-set (__is_msvc "$<C_COMPILER_ID:MSVC>")
-
-# "Old" GNU is GCC < 5, which is missing several warning options
-set (__is_old_gnu "$<AND:${__is_gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,5>>")
-set (__not_old_gnu "$<NOT:${__is_old_gnu}>")
-
 #[[
    Define additional compile options, conditional on the compiler being used.
    Each option should be prefixed by `gnu:`, `clang:`, `msvc:`, or `gnu-like:`.
@@ -22,49 +13,66 @@ set (__not_old_gnu "$<NOT:${__is_old_gnu}>")
 
    These options are attached to the source directory and its children.
 ]]
-function (mongoc_add_platform_compile_options)
+function (mongoc_add_warning_options)
+   list(APPEND CMAKE_MESSAGE_CONTEXT ${CMAKE_CURRENT_FUNCTION})
+   # Conditional prefixes:
+   set(cond/gnu $<C_COMPILER_ID:GNU>)
+   set(cond/llvm-clang $<C_COMPILER_ID:Clang>)
+   set(cond/apple-clang $<C_COMPILER_ID:AppleClang>)
+   set(cond/clang $<OR:${cond/llvm-clang},${cond/apple-clang}>)
+   set(cond/gnu-like $<OR:${cond/gnu},${cond/clang}>)
+   set(cond/msvc $<C_COMPILER_ID:MSVC>)
+   set(cond/lang-c $<COMPILE_LANGUAGE:C>)
+   # "Old" GNU is GCC < 5, which is missing several warning options
+   set(cond/gcc-lt5 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,5>>)
+   set(cond/gcc-lt7 $<AND:${cond/gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,7>>)
+   # Process options:
    foreach (opt IN LISTS ARGV)
-      if (NOT opt MATCHES "^(gnu-like|gnu|clang|msvc):(.*)")
-         message (SEND_ERROR "Invalid option '${opt}' (Should be prefixed by 'msvc:', 'gnu:', 'clang:', or 'gnu-like:'")
-         continue ()
-      endif ()
-      if (CMAKE_MATCH_1 STREQUAL "gnu-like")
-         add_compile_options ("$<${__is_gnu_like}:${CMAKE_MATCH_2}>")
-      elseif (CMAKE_MATCH_1 STREQUAL gnu)
-         add_compile_options ("$<${__is_gnu}:${CMAKE_MATCH_2}>")
-      elseif (CMAKE_MATCH_1 STREQUAL clang)
-         add_compile_options ("$<${__is_clang}:${CMAKE_MATCH_2}>")
-      elseif (CMAKE_MATCH_1 STREQUAL "msvc")
-         add_compile_options ("$<${__is_msvc}:${CMAKE_MATCH_2}>")
-      else ()
-         message (SEND_ERROR "Invalid option to mongoc_add_platform_compile_options(): '${opt}'")
-      endif ()
+      # Replace prefixes. Matches right-most first:
+      while (opt MATCHES "(.*)(^|:)([a-z0-9-]+):(.*)")
+         set(before "${CMAKE_MATCH_1}${CMAKE_MATCH_2}")
+         set(prefix "${CMAKE_MATCH_3}")
+         set(suffix "${CMAKE_MATCH_4}")
+         message(TRACE "Substitution: prefix “${prefix}” in “${opt}”, suffix is “${suffix}”")
+         set(cond "cond/${prefix}")
+         set(not 0)
+         if(prefix MATCHES "^not-(.*)")
+            set(cond "cond/${CMAKE_MATCH_1}")
+            set(not 1)
+         endif()
+         if(DEFINED "${cond}")
+            set(expr "${${cond}}")
+            if(not)
+               set(expr "$<NOT:${expr}>")
+            endif()
+            set(opt "$<${expr}:${suffix}>")
+         else ()
+            message (SEND_ERROR "Unknown option prefix to ${CMAKE_CURRENT_FUNCTION}(): “${prefix}” in “${opt}”")
+            break()
+         endif ()
+         set(opt "${before}${opt}")
+         message(TRACE "Become: ${opt}")
+      endwhile ()
+      add_compile_options("${opt}")
    endforeach ()
 endfunction ()
 
-if (CMAKE_VERSION VERSION_LESS 3.3)
-   # On older CMake versions, we'll just always pass the warning options, even
-   # if the generate warnings for the C++ check file
-   set (is_c_lang "1")
-else ()
-   # $<COMPILE_LANGUAGE> is only valid in CMake 3.3+
-   set (is_c_lang "$<COMPILE_LANGUAGE:C>")
-endif ()
+set (is_c_lang "$<COMPILE_LANGUAGE:C>")
 
 # These below warnings should always be unconditional hard errors, as the code is
 # almost definitely broken
-mongoc_add_platform_compile_options (
+mongoc_add_warning_options (
      # Implicit function or variable declarations
-     gnu-like:$<${is_c_lang}:-Werror=implicit> msvc:/we4013 msvc:/we4431
+     gnu-like:lang-c:-Werror=implicit msvc:/we4013 msvc:/we4431
      # Missing return types/statements
      gnu-like:-Werror=return-type msvc:/we4716
      # Incompatible pointer types
-     gnu-like:$<$<AND:${is_c_lang},${__not_old_gnu}>:-Werror=incompatible-pointer-types> msvc:/we4113
+     gnu-like:lang-c:not-gcc-lt5:-Werror=incompatible-pointer-types msvc:/we4113
      # Integral/pointer conversions
-     gnu-like:$<$<AND:${is_c_lang},${__not_old_gnu}>:-Werror=int-conversion> msvc:/we4047
+     gnu-like:lang-c:not-gcc-lt5:-Werror=int-conversion msvc:/we4047
      # Discarding qualifiers
-     gnu:$<$<AND:${is_c_lang},${__not_old_gnu}>:-Werror=discarded-qualifiers>
-     clang:$<${is_c_lang}:-Werror=ignored-qualifiers>
+     gnu:lang-c:not-gcc-lt5:-Werror=discarded-qualifiers
+     clang:lang-c:-Werror=ignored-qualifiers
      msvc:/we4090
      # Definite use of uninitialized value
      gnu-like:-Werror=uninitialized msvc:/we4700

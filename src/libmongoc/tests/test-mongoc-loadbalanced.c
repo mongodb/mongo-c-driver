@@ -113,6 +113,8 @@ set_client_callbacks (mongoc_client_t *client)
    mongoc_apm_callbacks_t *cbs;
    stats_t *stats;
 
+   ASSERT (client);
+
    stats = bson_malloc0 (sizeof (stats_t));
    cbs = make_callbacks ();
    mongoc_client_set_apm_callbacks (client, cbs, stats);
@@ -125,6 +127,8 @@ set_client_pool_callbacks (mongoc_client_pool_t *pool)
 {
    mongoc_apm_callbacks_t *cbs;
    stats_t *stats;
+
+   ASSERT (pool);
 
    stats = bson_malloc0 (sizeof (stats_t));
    cbs = make_callbacks ();

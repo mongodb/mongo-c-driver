@@ -666,6 +666,8 @@ _prose_test_ping (mongoc_client_t *client)
    bson_error_t error;
    bson_t *cmd = BCON_NEW ("ping", BCON_INT32 (1));
 
+   ASSERT (client);
+
    if (!mongoc_client_command_simple (
           client, "admin", cmd, NULL, NULL, &error)) {
       test_error ("ping failed: %s", error.message);

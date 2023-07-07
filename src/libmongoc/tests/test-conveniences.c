@@ -642,6 +642,8 @@ bson_lookup_session_opts (const bson_t *b, const char *key)
 mongoc_client_session_t *
 bson_lookup_session (const bson_t *b, const char *key, mongoc_client_t *client)
 {
+   ASSERT (client);
+
    mongoc_session_opt_t *opts;
    mongoc_client_session_t *session;
    bson_error_t error;
@@ -811,38 +813,6 @@ match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
    return match_bson_with_ctx (doc, pattern, &ctx);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * assert_match_bson --
- *
- *       Test helper that wraps match_bson. Fails the test if there
- *       is no found match.
- *
- * Returns:
- *       Nothing.
- *
- * Side effects:
- *       abort()s if there is no match.
- *
- *--------------------------------------------------------------------------
- */
-void
-assert_match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
-{
-   match_ctx_t ctx = {{0}};
-
-   ctx.strict_numeric_types = true;
-   ctx.is_command = is_command;
-
-   if (!match_bson_with_ctx (doc, pattern, &ctx)) {
-      test_error ("Expected: %s\n, Got: %s\n, %s\n",
-                  bson_as_canonical_extended_json (pattern, NULL),
-                  bson_as_canonical_extended_json (doc, NULL),
-                  ctx.errmsg);
-   }
-}
-
 
 MONGOC_PRINTF_FORMAT (2, 3)
 void
@@ -977,10 +947,14 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
          match_action_t action =
             ctx->visitor_fn (ctx, &pattern_iter, found ? &doc_iter : NULL);
          if (action == MATCH_ACTION_ABORT) {
+            // Visitor encountered a match error.
             goto fail;
          } else if (action == MATCH_ACTION_SKIP) {
+            // Visitor handled match of this field. Skip any additional matching
+            // of this field.
             goto next;
          }
+         ASSERT (action == MATCH_ACTION_CONTINUE);
       }
 
       if (value->value_type == BSON_TYPE_NULL && found) {
@@ -1302,6 +1276,20 @@ match_bson_arrays (const bson_t *array, const bson_t *pattern, match_ctx_t *ctx)
 
       derive (ctx, &derived, bson_iter_key (&array_iter));
 
+      if (ctx && ctx->visitor_fn) {
+         match_action_t action =
+            ctx->visitor_fn (ctx, &pattern_iter, &array_iter);
+         if (action == MATCH_ACTION_ABORT) {
+            // Visitor encountered a match error.
+            return false;
+         } else if (action == MATCH_ACTION_SKIP) {
+            // Visitor handled match of this field. Skip any additional matching
+            // of this field.
+            continue;
+         }
+         ASSERT (action == MATCH_ACTION_CONTINUE);
+      }
+
       if (!match_bson_value (array_value, pattern_value, &derived)) {
          return false;
       }
@@ -1608,7 +1596,7 @@ init_huge_string (mongoc_client_t *client)
 {
    int32_t max_bson_size;
 
-   BSON_ASSERT (client);
+   ASSERT (client);
 
    test_conveniences_init ();
 
@@ -1627,6 +1615,7 @@ init_huge_string (mongoc_client_t *client)
 const char *
 huge_string (mongoc_client_t *client)
 {
+   ASSERT (client);
    init_huge_string (client);
    return gHugeString;
 }
@@ -1635,6 +1624,7 @@ huge_string (mongoc_client_t *client)
 size_t
 huge_string_length (mongoc_client_t *client)
 {
+   ASSERT (client);
    init_huge_string (client);
    return gHugeStringLength;
 }
@@ -1913,6 +1903,8 @@ server_semver (mongoc_client_t *client, semver_t *out)
    bson_t reply;
    bson_error_t error;
    const char *server_version_str;
+
+   ASSERT (client);
 
    ASSERT_OR_PRINT (
       mongoc_client_command_simple (

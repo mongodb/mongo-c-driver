@@ -246,6 +246,7 @@ gen_collection_name (const char *str)
 mongoc_collection_t *
 get_test_collection (mongoc_client_t *client, const char *prefix)
 {
+   ASSERT (client);
    mongoc_collection_t *ret;
    char *str;
 
@@ -1459,7 +1460,7 @@ test_framework_server_count (void)
 void
 test_framework_set_ssl_opts (mongoc_client_t *client)
 {
-   BSON_ASSERT (client);
+   ASSERT (client);
 
    if (test_framework_get_ssl ()) {
 #ifndef MONGOC_ENABLE_SSL
@@ -1846,6 +1847,8 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
    bson_error_t error;
    bool ret;
 
+   ASSERT (client);
+
    sd = mongoc_topology_description_server_by_id_const (
       client->topology->_shared_descr_.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
@@ -2176,6 +2179,8 @@ test_framework_get_server_version_with_client (mongoc_client_t *client)
    bson_t reply;
    bson_error_t error;
    server_version_t ret = 0;
+
+   ASSERT (client);
 
    ASSERT_OR_PRINT (
       mongoc_client_command_simple (

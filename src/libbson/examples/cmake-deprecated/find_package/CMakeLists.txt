@@ -30,9 +30,9 @@ project (hello_bson LANGUAGES C)
 # Specify the minimum version you require.
 find_package (libbson-1.0 1.7 REQUIRED)
 
-message ("--   libbson found version \"${BSON_VERSION}\"")
-message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
-message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
+message (STATUS "   libbson found version \"${BSON_VERSION}\"")
+message (STATUS "   libbson include path \"${BSON_INCLUDE_DIRS}\"")
+message (STATUS "   libbson libraries \"${BSON_LIBRARIES}\"")
 
 # The "hello_bson.c" sample program is shared among four tests.
 add_executable (hello_bson ../../hello_bson.c)

@@ -104,7 +104,7 @@ sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
   [ -d cmake-build ] || mkdir cmake-build ;
   cd cmake-build ;
-  /usr/bin/cmake -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=ON .. ;
+  /usr/bin/cmake -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED .. ;
   /usr/bin/cmake --build . --target dist -- -j 8
   )"
 

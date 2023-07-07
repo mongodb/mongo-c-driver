@@ -19,6 +19,8 @@ _{{ struct_name }}_parse (
 {
    bson_iter_t iter;
 
+   BSON_ASSERT (client || true); // client may be NULL.
+
 {% for path, opt_name, info in paths(description) %}
 {% if info['type'] == 'bool' %}
    {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'false') }};

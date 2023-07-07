@@ -38,7 +38,7 @@ struct _mongoc_read_prefs_t {
 typedef struct _mongoc_assemble_query_result_t {
    bson_t *assembled_query;
    bool query_owned;
-   mongoc_query_flags_t flags;
+   int32_t flags;
 } mongoc_assemble_query_result_t;
 
 
@@ -54,7 +54,7 @@ void
 assemble_query (const mongoc_read_prefs_t *read_prefs,
                 const mongoc_server_stream_t *server_stream,
                 const bson_t *query_bson,
-                mongoc_query_flags_t initial_flags,
+                int32_t initial_flags,
                 mongoc_assemble_query_result_t *result);
 
 void

@@ -86,6 +86,8 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
       shell: bash
       script: |-
         set -o errexit
@@ -95,29 +97,33 @@ functions:
         export BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=${BUILD_SAMPLE_WITH_CMAKE_DEPRECATED}
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        LINK_STATIC=  sh .evergreen/scripts/link-sample-program.sh
-        LINK_STATIC=1 sh .evergreen/scripts/link-sample-program.sh
+        LINK_STATIC=  bash .evergreen/scripts/link-sample-program.sh
+        LINK_STATIC=1 bash .evergreen/scripts/link-sample-program.sh
   link sample program bson:
   - command: shell.exec
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
       shell: bash
       script: |-
         set -o errexit
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  sh .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 sh .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=1 bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=  bash .evergreen/scripts/link-sample-program-bson.sh
+        BUILD_SAMPLE_WITH_CMAKE=1 BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1 LINK_STATIC=1 bash .evergreen/scripts/link-sample-program-bson.sh
   link sample program MSVC:
   - command: shell.exec
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
       shell: bash
       script: |-
         set -o errexit
@@ -126,6 +132,9 @@ functions:
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+        . .evergreen/scripts/use-tools.sh paths
+        . .evergreen/scripts/find-cmake-latest.sh
+        export CMAKE="$(native-path "$(find_cmake_latest)")"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
   link sample program mingw:
@@ -133,17 +142,24 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
       shell: bash
       script: |-
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
+        . .evergreen/scripts/use-tools.sh paths
+        . .evergreen/scripts/find-cmake-latest.sh
+        export CMAKE="$(native-path "$(find_cmake_latest)")"
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
   link sample program MSVC bson:
   - command: shell.exec
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
       shell: bash
       script: |-
         set -o errexit
@@ -152,6 +168,9 @@ functions:
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+        . .evergreen/scripts/use-tools.sh paths
+        . .evergreen/scripts/find-cmake-latest.sh
+        export CMAKE="$(native-path "$(find_cmake_latest)")"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
   link sample program mingw bson:
@@ -164,6 +183,9 @@ functions:
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
+        . .evergreen/scripts/use-tools.sh paths
+        . .evergreen/scripts/find-cmake-latest.sh
+        export CMAKE="$(native-path "$(find_cmake_latest)")"
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
   update codecov.io:
   - command: shell.exec
@@ -201,7 +223,7 @@ functions:
         set -o errexit
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        sh .evergreen/atlas_data_lake/build-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/build-mongohouse-local.sh
   run mongohouse:
   - command: shell.exec
     type: test
@@ -212,7 +234,7 @@ functions:
         set -o errexit
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
-        sh .evergreen/atlas_data_lake/run-mongohouse-local.sh
+        bash .evergreen/atlas_data_lake/run-mongohouse-local.sh
   test mongohouse:
   - command: shell.exec
     type: test
@@ -962,9 +984,13 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
       shell: bash
       script: |-
         set -o errexit
+        . .evergreen/scripts/find-cmake-latest.sh
+        export CMAKE="$(find_cmake_latest)"
         export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
         BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
         cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
@@ -977,9 +1003,13 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
       shell: bash
       script: |-
         set -o errexit
+        . .evergreen/scripts/find-cmake-latest.sh
+        export CMAKE="$(find_cmake_latest)"
         export CC="Visual Studio 14 2015 Win64"
         BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
         cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
@@ -992,12 +1022,16 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
       shell: bash
       script: |-
         set -o errexit
-        DESTDIR="$(pwd)/dest" sh ./.evergreen/scripts/install-uninstall-check.sh
-        BSON_ONLY=1 sh ./.evergreen/scripts/install-uninstall-check.sh
-        sh ./.evergreen/scripts/install-uninstall-check.sh
+        . .evergreen/scripts/find-cmake-latest.sh
+        export CMAKE="$(find_cmake_latest)"
+        DESTDIR="$(pwd)/dest" bash ./.evergreen/scripts/install-uninstall-check.sh
+        BSON_ONLY=1 bash ./.evergreen/scripts/install-uninstall-check.sh
+        bash ./.evergreen/scripts/install-uninstall-check.sh
 - name: debug-compile-with-warnings
   commands:
   - command: shell.exec
@@ -1049,7 +1083,7 @@ tasks:
     params:
       aws_key: ${toolchain_aws_key}
       aws_secret: ${toolchain_aws_secret}
-      remote_file: mongo-c-toolchain/${distro_id}/mongo-c-toolchain.tar.gz
+      remote_file: mongo-c-toolchain/${distro_id}/2023/06/07/mongo-c-toolchain.tar.gz
       bucket: mongo-c-toolchain
       local_file: mongo-c-toolchain.tar.gz
   - command: shell.exec
@@ -9194,6 +9228,8 @@ buildvariants:
   - abi-compliance-check
 - name: releng
   display_name: '**Release Archive Creator'
+  expansions:
+    SKIP_LEGACY_SHELL: '1'
   run_on: ubuntu2204-small
   tasks:
   - make-release-archive
@@ -9673,7 +9709,7 @@ buildvariants:
   - debian-package-build
   - name: rpm-package-build
     distros:
-    - rhel82-arm64-small
+    - rhel90-arm64-small
   batchtime: 1440
 - name: versioned-api
   display_name: Versioned API Tests

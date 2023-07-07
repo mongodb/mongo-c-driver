@@ -8,8 +8,8 @@ to stdout */
 bool
 print_one_document (mongoc_collection_t *coll, bson_error_t *error);
 
-/* Helper method to convert hexadecimal key strings to the binary format that
-client-side encryption expects */
+/* hex_to_bin parses a hexadecimal string to an array of bytes. `NULL` is
+ * returned on error. `len` is set to the number of bytes written. */
 uint8_t *
 hex_to_bin (const char *hex, uint32_t *len);
 

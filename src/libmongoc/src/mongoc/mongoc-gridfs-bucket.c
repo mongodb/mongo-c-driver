@@ -161,7 +161,7 @@ mongoc_gridfs_bucket_open_upload_stream_with_id (mongoc_gridfs_bucket_t *bucket,
    BSON_ASSERT (filename);
 
    if (!_mongoc_gridfs_bucket_upload_opts_parse (
-          NULL /* not needed. */, opts, &gridfs_opts, error)) {
+          bucket->files->client, opts, &gridfs_opts, error)) {
       _mongoc_gridfs_bucket_upload_opts_cleanup (&gridfs_opts);
       return NULL;
    }
