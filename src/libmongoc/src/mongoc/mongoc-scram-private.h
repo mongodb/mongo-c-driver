@@ -162,7 +162,7 @@ _mongoc_unicode_codepoint_length (uint32_t c);
 int
 _mongoc_unicode_to_utf8 (uint32_t c, uint8_t *out);
 
-/* the tables below all fome from RFC 3454. They are all range tables, with
+/* the tables below all come from RFC 3454. They are all range tables, with
  * value 2*n being the lower range, and value 2*n + 1 being the upper range.
  * Both ranges are exclusive.
  */
