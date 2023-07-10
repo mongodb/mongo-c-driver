@@ -1148,6 +1148,7 @@ _mongoc_sasl_prep_impl (const char *name,
                                           unassigned_codepoint_ranges,
                                           sizeof (unassigned_codepoint_ranges) /
                                              sizeof (uint32_t))) {
+         bson_free (out_utf8);
          bson_free (utf8_pre_norm);
          bson_free (utf8_codepoints);
          SASL_PREP_ERR_RETURN ("prohibited character included in %s");
@@ -1201,6 +1202,7 @@ _mongoc_sasl_prep_impl (const char *name,
                                          RandALCat_bidi_ranges,
                                          sizeof (RandALCat_bidi_ranges) /
                                             sizeof (uint32_t))))) {
+      bson_free (out_utf8);
       bson_free (utf8_pre_norm);
       bson_free (utf8_codepoints);
       SASL_PREP_ERR_RETURN ("%s does not meet bidirectional requirements");
