@@ -1232,6 +1232,7 @@ _mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err)
    return bson_strdup (in_utf8);
 #endif
 }
+#endif
 
 size_t
 _mongoc_utf8_char_length (const uint8_t *c)
@@ -1444,4 +1445,3 @@ _mongoc_unicode_codepoint_length (uint32_t c)
    else
       return -1;
 }
-#endif
