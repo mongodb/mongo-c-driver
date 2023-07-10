@@ -124,41 +124,43 @@ char *
 _mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err);
 
 /* returns how many bytes a UTF-8 character is. */
-int
-_mongoc_utf8_char_length (const char *c);
+size_t
+_mongoc_utf8_char_length (const uint8_t *c);
 
 /* returns how many characters are in a UTF-8 string. Returns -1 on error. */
-int
-_mongoc_utf8_string_length (const char *s);
+size_t
+_mongoc_utf8_string_length (const uint8_t *s);
 
 /* returns whether a UTF-8 character is valid or not. */
 bool
-_mongoc_utf8_is_valid (const char *c, int length);
+_mongoc_utf8_is_valid (const uint8_t *c, size_t length);
 
 /* returns whether a character is between two limits (inclusive). */
 bool
-_mongoc_char_between_chars (const char c, const char lower, const char upper);
+_mongoc_code_unit_between_code_unit (const uint8_t c,
+                                     const uint8_t lower,
+                                     const uint8_t upper);
 
 /* returns whether a codepoint exists in the specified table. The table format
  * is that the 2*n element is the lower bound and the 2*n + 1 is the upper bound
  * (both inclusive). */
 bool
-_mongoc_is_code_in_table (unsigned int code,
-                          const unsigned int *table,
-                          int size);
+_mongoc_is_code_point_in_table (uint32_t code,
+                                const uint32_t *table,
+                                size_t size);
 
-/* converts a UTF-8 character to unicode code point. */
-unsigned int
-_mongoc_utf8_to_unicode (const char *c, int length);
+/* returns the first Unicode codepoint of a UTF-8 character. */
+uint32_t
+_mongoc_utf8_get_first_code_point (const uint8_t *c, size_t length);
 
 /* returns how many bytes a unicode codepoint is. */
-int
-_mongoc_unicode_codepoint_length (unsigned int c);
+size_t
+_mongoc_unicode_codepoint_length (uint32_t c);
 
-/* converts a unicode code point to UTF-8 character. Returns how many bytes the
+/* converts a Unicode code point to UTF-8 character. Returns how many bytes the
  * character converted is. */
 int
-_mongoc_unicode_to_utf8 (unsigned int c, char *out);
+_mongoc_unicode_to_utf8 (uint32_t c, uint8_t *out);
 
 /* the tables below all fome from RFC 3454. They are all range tables, with
  * value 2*n being the lower range, and value 2*n + 1 being the upper range.
@@ -168,7 +170,7 @@ _mongoc_unicode_to_utf8 (unsigned int c, char *out);
 /* A.1 Unassigned code points in Unicode 3.2
  * these characters are not allowed for SASLPrep
  */
-static const unsigned int unassigned_codepoint_ranges[] = {
+static const uint32_t unassigned_codepoint_ranges[] = {
    0x0221,  0x0221,  0x0234,  0x024F,  0x02AE,  0x02AF,  0x02EF,  0x02FF,
    0x0350,  0x035F,  0x0370,  0x0373,  0x0376,  0x0379,  0x037B,  0x037D,
    0x037F,  0x0383,  0x038B,  0x038B,  0x038D,  0x038D,  0x03A2,  0x03A2,
@@ -273,46 +275,46 @@ static const unsigned int unassigned_codepoint_ranges[] = {
  * Table B.1 Commonly mapped to nothing
  * these are all of the characters that will be mapped to nothing.
  */
-static const unsigned int commonly_mapped_to_nothing_ranges[] = {0x00AD,
-                                                                 0x00AD,
-                                                                 0x034F,
-                                                                 0x034F,
-                                                                 0x1806,
-                                                                 0x1806,
-                                                                 0x180B,
-                                                                 0x180D,
-                                                                 0x200B,
-                                                                 0x200D,
-                                                                 0x2060,
-                                                                 0x2060,
-                                                                 0xFE00,
-                                                                 0xFE0F,
-                                                                 0xFEFF,
-                                                                 0xFEFF};
+static const uint32_t commonly_mapped_to_nothing_ranges[] = {0x00AD,
+                                                             0x00AD,
+                                                             0x034F,
+                                                             0x034F,
+                                                             0x1806,
+                                                             0x1806,
+                                                             0x180B,
+                                                             0x180D,
+                                                             0x200B,
+                                                             0x200D,
+                                                             0x2060,
+                                                             0x2060,
+                                                             0xFE00,
+                                                             0xFE0F,
+                                                             0xFEFF,
+                                                             0xFEFF};
 
 /*
  * Table C.1.2 Non-ASCII space characters
  * these are all of the characters that will be mapped to the space character.
  * (0x0020)
  */
-static const unsigned int non_ascii_space_character_ranges[] = {0x00A0,
-                                                                0x00A0,
-                                                                0x1680,
-                                                                0x1680,
-                                                                0x2000,
-                                                                0x200B,
-                                                                0x202F,
-                                                                0x202F,
-                                                                0x205F,
-                                                                0x205F,
-                                                                0x3000,
-                                                                0x3000};
+static const uint32_t non_ascii_space_character_ranges[] = {0x00A0,
+                                                            0x00A0,
+                                                            0x1680,
+                                                            0x1680,
+                                                            0x2000,
+                                                            0x200B,
+                                                            0x202F,
+                                                            0x202F,
+                                                            0x205F,
+                                                            0x205F,
+                                                            0x3000,
+                                                            0x3000};
 
 /*
  * these are all of the characters that are "prohibited output" for SASLprep.
  * The tables that they come from are listed.
  */
-static const unsigned int prohibited_output_ranges[] = {
+static const uint32_t prohibited_output_ranges[] = {
    0x0000,   0x001F,  /* C.2.1 */
    0x007F,   0x00A0,  /* C.1.2, C.2.1, C.2.2 */
    0x0340,   0x0341,  /* C.8 */
@@ -356,7 +358,7 @@ static const unsigned int prohibited_output_ranges[] = {
  * with bidirectional property "L".
  */
 
-static const unsigned int RandALCat_bidi_ranges[] = {
+static const uint32_t RandALCat_bidi_ranges[] = {
    0x05BE, 0x05BE, 0x05C0, 0x05C0, 0x05C3, 0x05C3, 0x05D0, 0x05EA, 0x05F0,
    0x05F4, 0x061B, 0x061B, 0x061F, 0x061F, 0x0621, 0x063A, 0x0640, 0x064A,
    0x066D, 0x066F, 0x0671, 0x06D5, 0x06DD, 0x06DD, 0x06E5, 0x06E6, 0x06FA,
@@ -370,7 +372,7 @@ static const unsigned int RandALCat_bidi_ranges[] = {
  * any string that contains one of these characters cannot contain a character
  * with bidirectional property "R" or "AL".
  * */
-static const unsigned int LCat_bidi_ranges[] = {
+static const uint32_t LCat_bidi_ranges[] = {
    0x0041,  0x005A,  0x0061,  0x007A,  0x00AA,  0x00AA,  0x00B5,   0x00B5,
    0x00BA,  0x00BA,  0x00C0,  0x00D6,  0x00D8,  0x00F6,  0x00F8,   0x0220,
    0x0222,  0x0233,  0x0250,  0x02AD,  0x02B0,  0x02B8,  0x02BB,   0x02C1,
