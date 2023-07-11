@@ -244,7 +244,6 @@ if(ENABLE_MAINTAINER_FLAGS)
       gnu-like:-Wempty-body
       gnu:not-gcc-lt7:-Wexpansion-to-defined
       gnu-like:-Wformat
-      gnu-like:-Wformat-nonliteral
       gnu-like:-Wformat-security
       gnu-like:-Winit-self
       gnu-like:-Wmissing-include-dirs
@@ -258,6 +257,11 @@ if(ENABLE_MAINTAINER_FLAGS)
       # Disabled, for now:
       gnu-like:-Wno-strict-aliasing
    )
+
+   if (NOT ((CMAKE_C_COMPILER_ID STREQUAL "Clang") OR (CMAKE_C_COMPILER_ID STREQUAL "AppleClang")))
+      # Clang throws a false positive warning for the function mongoc_vlog while GCC does not
+      mongoc_add_warning_options(gnu-like:-Wformat-nonliteral)
+   endif()
 endif()
 
 # Enable CCache, if possible

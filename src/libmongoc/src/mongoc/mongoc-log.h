@@ -90,6 +90,30 @@ mongoc_log_set_handler (mongoc_log_func_t log_func, void *user_data);
  * @log_domain: The log domain (such as "client").
  * @format: The format string for the log message.
  *
+ * This function differs from `mongoc_log` only in that it takes a va_list as an
+ * argument rather than being a variable arg function. `mongoc_log` is a wrapper
+ * calling this function.
+ *
+ * Logs a message using the currently configured logger.
+ *
+ * This method will hold a logging lock to prevent concurrent calls to the
+ * logging infrastructure. It is important that your configured log function
+ * does not re-enter the logging system or deadlock will occur.
+ *
+ */
+MONGOC_EXPORT (void)
+mongoc_vlog (mongoc_log_level_t log_level,
+             const char *log_domain,
+             const char *format,
+             va_list args);
+
+
+/**
+ * mongoc_log:
+ * @log_level: The log level.
+ * @log_domain: The log domain (such as "client").
+ * @format: The format string for the log message.
+ *
  * Logs a message using the currently configured logger.
  *
  * This method will hold a logging lock to prevent concurrent calls to the

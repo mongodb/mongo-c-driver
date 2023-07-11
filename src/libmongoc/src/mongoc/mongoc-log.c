@@ -91,17 +91,15 @@ _mongoc_log_get_handler (mongoc_log_func_t *log_func, void **user_data)
 
 
 void
-mongoc_log (mongoc_log_level_t log_level,
-            const char *log_domain,
-            const char *format,
-            ...)
+mongoc_vlog (mongoc_log_level_t log_level,
+             const char *log_domain,
+             const char *format,
+             va_list args)
 {
-   va_list args;
    char *message;
    int stop_logging;
 
    bson_once (&once, &_mongoc_ensure_mutex_once);
-
    stop_logging = !gLogFunc;
    stop_logging = stop_logging || (log_level == MONGOC_LOG_LEVEL_TRACE &&
                                    !_mongoc_log_trace_is_enabled ());
@@ -111,15 +109,26 @@ mongoc_log (mongoc_log_level_t log_level,
 
    BSON_ASSERT (format);
 
-   va_start (args, format);
    message = bson_strdupv_printf (format, args);
-   va_end (args);
 
    bson_mutex_lock (&gLogMutex);
    gLogFunc (log_level, log_domain, message, gLogData);
    bson_mutex_unlock (&gLogMutex);
 
    bson_free (message);
+}
+
+
+void
+mongoc_log (mongoc_log_level_t log_level,
+            const char *log_domain,
+            const char *format,
+            ...)
+{
+   va_list args;
+   va_start (args, format);
+   mongoc_vlog (log_level, log_domain, format, args);
+   va_end (args);
 }
 
 
