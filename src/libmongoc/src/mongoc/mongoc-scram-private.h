@@ -125,42 +125,45 @@ _mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err);
 
 /* returns how many bytes a UTF-8 character is. */
 size_t
-_mongoc_utf8_char_length (const uint8_t *c);
+_mongoc_utf8_char_length (const char *c);
 
 /* returns how many characters are in a UTF-8 string. Returns -1 on error. */
-size_t
-_mongoc_utf8_string_length (const uint8_t *s);
+ssize_t
+_mongoc_utf8_string_length (const char *s);
 
 /* returns whether a UTF-8 character is valid or not. */
 bool
-_mongoc_utf8_is_valid (const uint8_t *c, size_t length);
+_mongoc_utf8_is_valid (const char *c, size_t length);
 
 /* returns whether a character is between two limits (inclusive). */
 bool
-_mongoc_code_unit_between_code_unit (const uint8_t c,
-                                     const uint8_t lower,
-                                     const uint8_t upper);
+_mongoc_utf8_code_unit_in_range (const uint8_t c,
+                                 const uint8_t lower,
+                                 const uint8_t upper);
 
 /* returns whether a codepoint exists in the specified table. The table format
  * is that the 2*n element is the lower bound and the 2*n + 1 is the upper bound
  * (both inclusive). */
 bool
-_mongoc_is_code_point_in_table (uint32_t code,
-                                const uint32_t *table,
-                                size_t size);
+_mongoc_utf8_code_point_is_in_table (uint32_t code,
+                                     const uint32_t *table,
+                                     size_t size);
 
 /* returns the first Unicode codepoint of a UTF-8 character. */
 uint32_t
-_mongoc_utf8_get_first_code_point (const uint8_t *c, size_t length);
+_mongoc_utf8_get_first_code_point (const char *c, size_t length);
 
-/* returns how many bytes a unicode codepoint is. */
-size_t
-_mongoc_unicode_codepoint_length (uint32_t c);
+/* returns how many bytes a unicode codepoint is. Returns -1 on invalid code
+ * point. */
+ssize_t
+_mongoc_utf8_code_point_length (uint32_t c);
 
 /* converts a Unicode code point to UTF-8 character. Returns how many bytes the
- * character converted is. */
-int
-_mongoc_unicode_to_utf8 (uint32_t c, uint8_t *out);
+ * character converted is. Returns -1 if the code point is invalid.
+ * char *out must be large enough to contain all of the code units written to
+ * it. */
+ssize_t
+_mongoc_utf8_code_point_to_str (uint32_t c, char *out);
 
 /* the tables below all come from RFC 3454. They are all range tables, with
  * value 2*n being the lower range, and value 2*n + 1 being the upper range.

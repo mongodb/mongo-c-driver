@@ -1040,7 +1040,7 @@ _mongoc_sasl_prep_impl (const char *name,
    BSON_ASSERT_PARAM (in_utf8);
 
    uint32_t *utf8_codepoints;
-   size_t utf8_char_length, num_chars;
+   ssize_t num_chars;
    uint8_t *out_utf8;
 
 #define SASL_PREP_ERR_RETURN(msg)                        \
@@ -1055,7 +1055,7 @@ _mongoc_sasl_prep_impl (const char *name,
 
    /* 1. convert str to Unicode codepoints. */
    /* preflight to get the destination length. */
-   num_chars = _mongoc_utf8_string_length ((uint8_t *) in_utf8);
+   num_chars = _mongoc_utf8_string_length (in_utf8);
    if (num_chars == -1) {
       SASL_PREP_ERR_RETURN ("could not calculate UTF-8 length of %s");
    }
@@ -1063,10 +1063,10 @@ _mongoc_sasl_prep_impl (const char *name,
    /* convert to unicode. */
    utf8_codepoints = bson_malloc (sizeof (uint32_t) *
                                   (num_chars + 1)); /* add one for null byte. */
-   const uint8_t *c = (uint8_t *) in_utf8;
+   const char *c = in_utf8;
 
    for (size_t i = 0; i < num_chars; ++i) {
-      utf8_char_length = _mongoc_utf8_char_length (c);
+      const size_t utf8_char_length = _mongoc_utf8_char_length (c);
       utf8_codepoints[i] =
          _mongoc_utf8_get_first_code_point (c, utf8_char_length);
 
@@ -1086,12 +1086,12 @@ _mongoc_sasl_prep_impl (const char *name,
    // the new characters (curr). i will always be >= curr.
    size_t curr = 0;
    for (size_t i = 0; i < num_chars; ++i) {
-      if (_mongoc_is_code_point_in_table (
+      if (_mongoc_utf8_code_point_is_in_table (
              utf8_codepoints[i],
              non_ascii_space_character_ranges,
              sizeof (non_ascii_space_character_ranges) / sizeof (uint32_t)))
          utf8_codepoints[curr++] = 0x0020;
-      else if (_mongoc_is_code_point_in_table (
+      else if (_mongoc_utf8_code_point_is_in_table (
                   utf8_codepoints[i],
                   commonly_mapped_to_nothing_ranges,
                   sizeof (commonly_mapped_to_nothing_ranges) /
@@ -1115,15 +1115,26 @@ _mongoc_sasl_prep_impl (const char *name,
    // preflight for length
    size_t utf8_pre_norm_len = 0;
    for (size_t i = 0; i < num_chars; ++i) {
-      utf8_pre_norm_len +=
-         _mongoc_unicode_codepoint_length (utf8_codepoints[i]);
+      const ssize_t len = _mongoc_utf8_code_point_length (utf8_codepoints[i]);
+      if (len == -1) {
+         bson_free (utf8_codepoints);
+         SASL_PREP_ERR_RETURN ("invalid Unicode code point in %s");
+      } else {
+         utf8_pre_norm_len += len;
+      }
    }
-   uint8_t *utf8_pre_norm =
-      (uint8_t *) bson_malloc (sizeof (uint8_t) * (utf8_pre_norm_len + 1));
+   char *utf8_pre_norm =
+      (char *) bson_malloc (sizeof (char) * (utf8_pre_norm_len + 1));
 
-   uint8_t *loc = utf8_pre_norm;
+   char *loc = utf8_pre_norm;
    for (size_t i = 0; i < num_chars; ++i) {
-      utf8_char_length = _mongoc_unicode_to_utf8 (utf8_codepoints[i], loc);
+      const ssize_t utf8_char_length =
+         _mongoc_utf8_code_point_to_str (utf8_codepoints[i], loc);
+      if (utf8_char_length == -1) {
+         bson_free (utf8_pre_norm);
+         bson_free (utf8_codepoints);
+         SASL_PREP_ERR_RETURN ("invalid Unicode code point in %s");
+      }
       loc += utf8_char_length;
    }
    *loc = '\0';
@@ -1140,14 +1151,14 @@ _mongoc_sasl_prep_impl (const char *name,
    // that are not allowed in the output. If any are found, return an error.
 
    for (size_t i = 0; i < num_chars; ++i) {
-      if (_mongoc_is_code_point_in_table (utf8_codepoints[i],
-                                          prohibited_output_ranges,
-                                          sizeof (prohibited_output_ranges) /
-                                             sizeof (uint32_t)) ||
-          _mongoc_is_code_point_in_table (utf8_codepoints[i],
-                                          unassigned_codepoint_ranges,
-                                          sizeof (unassigned_codepoint_ranges) /
-                                             sizeof (uint32_t))) {
+      if (_mongoc_utf8_code_point_is_in_table (
+             utf8_codepoints[i],
+             prohibited_output_ranges,
+             sizeof (prohibited_output_ranges) / sizeof (uint32_t)) ||
+          _mongoc_utf8_code_point_is_in_table (
+             utf8_codepoints[i],
+             unassigned_codepoint_ranges,
+             sizeof (unassigned_codepoint_ranges) / sizeof (uint32_t))) {
          bson_free (out_utf8);
          bson_free (utf8_pre_norm);
          bson_free (utf8_codepoints);
@@ -1174,18 +1185,18 @@ _mongoc_sasl_prep_impl (const char *name,
 
 
    for (size_t i = 0; i < num_chars; ++i) {
-      if (_mongoc_is_code_point_in_table (utf8_codepoints[i],
-                                          LCat_bidi_ranges,
-                                          sizeof (LCat_bidi_ranges) /
-                                             sizeof (uint32_t))) {
+      if (_mongoc_utf8_code_point_is_in_table (utf8_codepoints[i],
+                                               LCat_bidi_ranges,
+                                               sizeof (LCat_bidi_ranges) /
+                                                  sizeof (uint32_t))) {
          contains_LCat = true;
          if (contains_RandALCar)
             break;
       }
-      if (_mongoc_is_code_point_in_table (utf8_codepoints[i],
-                                          RandALCat_bidi_ranges,
-                                          sizeof (RandALCat_bidi_ranges) /
-                                             sizeof (uint32_t)))
+      if (_mongoc_utf8_code_point_is_in_table (utf8_codepoints[i],
+                                               RandALCat_bidi_ranges,
+                                               sizeof (RandALCat_bidi_ranges) /
+                                                  sizeof (uint32_t)))
          contains_RandALCar = true;
    }
 
@@ -1194,14 +1205,14 @@ _mongoc_sasl_prep_impl (const char *name,
       (contains_RandALCar && contains_LCat) ||
       // requirement 2
       (contains_RandALCar &&
-       (!_mongoc_is_code_point_in_table (utf8_codepoints[0],
-                                         RandALCat_bidi_ranges,
-                                         sizeof (RandALCat_bidi_ranges) /
-                                            sizeof (uint32_t)) ||
-        !_mongoc_is_code_point_in_table (utf8_codepoints[num_chars - 1],
-                                         RandALCat_bidi_ranges,
-                                         sizeof (RandALCat_bidi_ranges) /
-                                            sizeof (uint32_t))))) {
+       (!_mongoc_utf8_code_point_is_in_table (utf8_codepoints[0],
+                                              RandALCat_bidi_ranges,
+                                              sizeof (RandALCat_bidi_ranges) /
+                                                 sizeof (uint32_t)) ||
+        !_mongoc_utf8_code_point_is_in_table (utf8_codepoints[num_chars - 1],
+                                              RandALCat_bidi_ranges,
+                                              sizeof (RandALCat_bidi_ranges) /
+                                                 sizeof (uint32_t))))) {
       bson_free (out_utf8);
       bson_free (utf8_pre_norm);
       bson_free (utf8_codepoints);
@@ -1236,37 +1247,38 @@ _mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err)
 }
 
 size_t
-_mongoc_utf8_char_length (const uint8_t *c)
+_mongoc_utf8_char_length (const char *c)
 {
    BSON_ASSERT_PARAM (c);
 
+   uint8_t *temp_c = (uint8_t *) c;
    // UTF-8 characters are either 1, 2, 3, or 4 bytes and the character length
    // can be determined by the first byte
-   if ((*c & UINT8_C (0x80)) == 0)
+   if ((*temp_c & UINT8_C (0x80)) == 0)
       return 1u;
-   else if ((*c & UINT8_C (0xe0)) == UINT8_C (0xc0))
+   else if ((*temp_c & UINT8_C (0xe0)) == UINT8_C (0xc0))
       return 2u;
-   else if ((*c & UINT8_C (0xf0)) == UINT8_C (0xe0))
+   else if ((*temp_c & UINT8_C (0xf0)) == UINT8_C (0xe0))
       return 3u;
-   else if ((*c & UINT8_C (0xf8)) == UINT8_C (0xf0))
+   else if ((*temp_c & UINT8_C (0xf8)) == UINT8_C (0xf0))
       return 4u;
    else
       return 1u;
 }
 
-size_t
-_mongoc_utf8_string_length (const uint8_t *s)
+ssize_t
+_mongoc_utf8_string_length (const char *s)
 {
    BSON_ASSERT_PARAM (s);
 
-   const uint8_t *c = s;
+   const uint8_t *c = (uint8_t *) s;
 
    size_t str_length = 0;
 
    while (*c) {
-      const size_t utf8_char_length = _mongoc_utf8_char_length (c);
+      const size_t utf8_char_length = _mongoc_utf8_char_length ((char *) c);
 
-      if (!_mongoc_utf8_is_valid (c, utf8_char_length))
+      if (!_mongoc_utf8_is_valid ((char *) c, utf8_char_length))
          return -1;
 
       str_length++;
@@ -1278,73 +1290,74 @@ _mongoc_utf8_string_length (const uint8_t *s)
 
 
 bool
-_mongoc_utf8_is_valid (const uint8_t *c, size_t length)
+_mongoc_utf8_is_valid (const char *c, size_t length)
 {
    BSON_ASSERT_PARAM (c);
 
+   uint8_t *temp_c = (uint8_t *) c;
    // Referenced table here:
    // https://lemire.me/blog/2018/05/09/how-quickly-can-you-check-that-a-string-is-valid-unicode-utf-8/
    switch (length) {
    case 1:
-      return _mongoc_code_unit_between_code_unit (
-         *c, UINT8_C (0x00), UINT8_C (0x7F));
+      return _mongoc_utf8_code_unit_in_range (
+         temp_c[0], UINT8_C (0x00), UINT8_C (0x7F));
    case 2:
-      return _mongoc_code_unit_between_code_unit (
-                *c, UINT8_C (0xC2), UINT8_C (0xDF)) &&
-             _mongoc_code_unit_between_code_unit (
-                c[1], UINT8_C (0x80), UINT8_C (0xBF));
+      return _mongoc_utf8_code_unit_in_range (
+                temp_c[0], UINT8_C (0xC2), UINT8_C (0xDF)) &&
+             _mongoc_utf8_code_unit_in_range (
+                temp_c[1], UINT8_C (0x80), UINT8_C (0xBF));
    case 3:
       // Four options, separated by ||
-      return (_mongoc_code_unit_between_code_unit (
-                 *c, UINT8_C (0xE0), UINT8_C (0xE0)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[1], UINT8_C (0xA0), UINT8_C (0xBF)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[2], UINT8_C (0x80), UINT8_C (0xBF))) ||
-             (_mongoc_code_unit_between_code_unit (
-                 *c, UINT8_C (0xE1), UINT8_C (0xEC)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[1], UINT8_C (0x80), UINT8_C (0xBF)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[2], UINT8_C (0x80), UINT8_C (0xBF))) ||
-             (_mongoc_code_unit_between_code_unit (
-                 *c, UINT8_C (0xED), UINT8_C (0xED)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[1], UINT8_C (0x80), UINT8_C (0x9F)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[2], UINT8_C (0x80), UINT8_C (0xBF))) ||
-             (_mongoc_code_unit_between_code_unit (
-                 *c, UINT8_C (0xEE), UINT8_C (0xEF)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[1], UINT8_C (0x80), UINT8_C (0xBF)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[2], UINT8_C (0x80), UINT8_C (0xBF)));
+      return (_mongoc_utf8_code_unit_in_range (
+                 temp_c[0], UINT8_C (0xE0), UINT8_C (0xE0)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[1], UINT8_C (0xA0), UINT8_C (0xBF)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[2], UINT8_C (0x80), UINT8_C (0xBF))) ||
+             (_mongoc_utf8_code_unit_in_range (
+                 temp_c[0], UINT8_C (0xE1), UINT8_C (0xEC)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[1], UINT8_C (0x80), UINT8_C (0xBF)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[2], UINT8_C (0x80), UINT8_C (0xBF))) ||
+             (_mongoc_utf8_code_unit_in_range (
+                 temp_c[0], UINT8_C (0xED), UINT8_C (0xED)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[1], UINT8_C (0x80), UINT8_C (0x9F)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[2], UINT8_C (0x80), UINT8_C (0xBF))) ||
+             (_mongoc_utf8_code_unit_in_range (
+                 temp_c[0], UINT8_C (0xEE), UINT8_C (0xEF)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[1], UINT8_C (0x80), UINT8_C (0xBF)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[2], UINT8_C (0x80), UINT8_C (0xBF)));
    case 4:
       // Three options, separated by ||
-      return (_mongoc_code_unit_between_code_unit (
-                 *c, UINT8_C (0xF0), UINT8_C (0xF0)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[1], UINT8_C (0x90), UINT8_C (0xBF)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[2], UINT8_C (0x80), UINT8_C (0xBF)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[3], UINT8_C (0x80), UINT8_C (0xBF))) ||
-             (_mongoc_code_unit_between_code_unit (
-                 *c, UINT8_C (0xF1), UINT8_C (0xF3)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[1], UINT8_C (0x80), UINT8_C (0xBF)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[2], UINT8_C (0x80), UINT8_C (0xBF)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[3], UINT8_C (0x80), UINT8_C (0xBF))) ||
-             (_mongoc_code_unit_between_code_unit (
-                 *c, UINT8_C (0xF4), UINT8_C (0xF4)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[1], UINT8_C (0x80), UINT8_C (0x8F)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[2], UINT8_C (0x80), UINT8_C (0xBF)) &&
-              _mongoc_code_unit_between_code_unit (
-                 c[3], UINT8_C (0x80), UINT8_C (0xBF)));
+      return (_mongoc_utf8_code_unit_in_range (
+                 temp_c[0], UINT8_C (0xF0), UINT8_C (0xF0)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[1], UINT8_C (0x90), UINT8_C (0xBF)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[2], UINT8_C (0x80), UINT8_C (0xBF)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[3], UINT8_C (0x80), UINT8_C (0xBF))) ||
+             (_mongoc_utf8_code_unit_in_range (
+                 temp_c[0], UINT8_C (0xF1), UINT8_C (0xF3)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[1], UINT8_C (0x80), UINT8_C (0xBF)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[2], UINT8_C (0x80), UINT8_C (0xBF)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[3], UINT8_C (0x80), UINT8_C (0xBF))) ||
+             (_mongoc_utf8_code_unit_in_range (
+                 temp_c[0], UINT8_C (0xF4), UINT8_C (0xF4)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[1], UINT8_C (0x80), UINT8_C (0x8F)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[2], UINT8_C (0x80), UINT8_C (0xBF)) &&
+              _mongoc_utf8_code_unit_in_range (
+                 temp_c[3], UINT8_C (0x80), UINT8_C (0xBF)));
    default:
       return true;
    }
@@ -1352,17 +1365,17 @@ _mongoc_utf8_is_valid (const uint8_t *c, size_t length)
 
 
 bool
-_mongoc_code_unit_between_code_unit (const uint8_t c,
-                                     const uint8_t lower,
-                                     const uint8_t upper)
+_mongoc_utf8_code_unit_in_range (const uint8_t c,
+                                 const uint8_t lower,
+                                 const uint8_t upper)
 {
    return (c >= lower && c <= upper);
 }
 
 bool
-_mongoc_is_code_point_in_table (uint32_t code,
-                                const uint32_t *table,
-                                size_t size)
+_mongoc_utf8_code_point_is_in_table (uint32_t code,
+                                     const uint32_t *table,
+                                     size_t size)
 {
    BSON_ASSERT_PARAM (table);
 
@@ -1376,64 +1389,67 @@ _mongoc_is_code_point_in_table (uint32_t code,
 }
 
 uint32_t
-_mongoc_utf8_get_first_code_point (const uint8_t *c, size_t length)
+_mongoc_utf8_get_first_code_point (const char *c, size_t length)
 {
    BSON_ASSERT_PARAM (c);
 
+   uint8_t *temp_c = (uint8_t *) c;
    switch (length) {
    case 1:
-      return (uint32_t) c[0];
+      return (uint32_t) temp_c[0];
    case 2:
-      return (uint32_t) (((c[0] & UINT8_C (0x1f)) << 6) |
-                         (c[1] & UINT8_C (0x3f)));
+      return (uint32_t) (((temp_c[0] & UINT8_C (0x1f)) << 6) |
+                         (temp_c[1] & UINT8_C (0x3f)));
    case 3:
-      return (uint32_t) (((c[0] & UINT8_C (0x0f)) << 12) |
-                         ((c[1] & UINT8_C (0x3f)) << 6) |
-                         (c[2] & UINT8_C (0x3f)));
+      return (uint32_t) (((temp_c[0] & UINT8_C (0x0f)) << 12) |
+                         ((temp_c[1] & UINT8_C (0x3f)) << 6) |
+                         (temp_c[2] & UINT8_C (0x3f)));
    case 4:
-      return (uint32_t) (((c[0] & UINT8_C (0x07)) << 18) |
-                         ((c[1] & UINT8_C (0x3f)) << 12) |
-                         ((c[2] & UINT8_C (0x3f)) << 6) |
-                         (c[3] & UINT8_C (0x3f)));
+      return (uint32_t) (((temp_c[0] & UINT8_C (0x07)) << 18) |
+                         ((temp_c[1] & UINT8_C (0x3f)) << 12) |
+                         ((temp_c[2] & UINT8_C (0x3f)) << 6) |
+                         (temp_c[3] & UINT8_C (0x3f)));
    default:
       return 0;
    }
 }
 
-int
-_mongoc_unicode_to_utf8 (uint32_t c, uint8_t *out)
+ssize_t
+_mongoc_utf8_code_point_to_str (uint32_t c, char *out)
 {
    BSON_ASSERT_PARAM (out);
 
+   uint8_t *ptr = (uint8_t *) out;
+
    if (c <= UINT8_C (0x7F)) {
       // Plain ASCII
-      out[0] = (uint8_t) c;
+      ptr[0] = (uint8_t) c;
       return 1;
    } else if (c <= 0x07FF) {
       // 2-byte unicode
-      out[0] = (uint8_t) (((c >> 6) & UINT8_C (0x1F)) | UINT8_C (0xC0));
-      out[1] = (uint8_t) (((c >> 0) & UINT8_C (0x3F)) | UINT8_C (0x80));
+      ptr[0] = (uint8_t) (((c >> 6) & UINT8_C (0x1F)) | UINT8_C (0xC0));
+      ptr[1] = (uint8_t) (((c >> 0) & UINT8_C (0x3F)) | UINT8_C (0x80));
       return 2;
    } else if (c <= 0xFFFF) {
       // 3-byte unicode
-      out[0] = (uint8_t) (((c >> 12) & UINT8_C (0x0F)) | UINT8_C (0xE0));
-      out[1] = (uint8_t) (((c >> 6) & UINT8_C (0x3F)) | UINT8_C (0x80));
-      out[2] = (uint8_t) ((c & UINT8_C (0x3F)) | UINT8_C (0x80));
+      ptr[0] = (uint8_t) (((c >> 12) & UINT8_C (0x0F)) | UINT8_C (0xE0));
+      ptr[1] = (uint8_t) (((c >> 6) & UINT8_C (0x3F)) | UINT8_C (0x80));
+      ptr[2] = (uint8_t) ((c & UINT8_C (0x3F)) | UINT8_C (0x80));
       return 3;
    } else if (c <= 0x10FFFF) {
       // 4-byte unicode
-      out[0] = (uint8_t) (((c >> 18) & UINT8_C (0x07)) | UINT8_C (0xF0));
-      out[1] = (uint8_t) (((c >> 12) & UINT8_C (0x3F)) | UINT8_C (0x80));
-      out[2] = (uint8_t) (((c >> 6) & UINT8_C (0x3F)) | UINT8_C (0x80));
-      out[3] = (uint8_t) ((c & UINT8_C (0x3F)) | UINT8_C (0x80));
+      ptr[0] = (uint8_t) (((c >> 18) & UINT8_C (0x07)) | UINT8_C (0xF0));
+      ptr[1] = (uint8_t) (((c >> 12) & UINT8_C (0x3F)) | UINT8_C (0x80));
+      ptr[2] = (uint8_t) (((c >> 6) & UINT8_C (0x3F)) | UINT8_C (0x80));
+      ptr[3] = (uint8_t) ((c & UINT8_C (0x3F)) | UINT8_C (0x80));
       return 4;
    } else {
       return -1;
    }
 }
 
-size_t
-_mongoc_unicode_codepoint_length (uint32_t c)
+ssize_t
+_mongoc_utf8_code_point_length (uint32_t c)
 {
    if (c <= UINT8_C (0x7F))
       return 1;

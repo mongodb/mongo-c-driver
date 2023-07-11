@@ -150,35 +150,29 @@ test_mongoc_scram_sasl_prep (void)
 static void
 test_mongoc_utf8_char_length (void)
 {
-   ASSERT_CMPINT (_mongoc_utf8_char_length ((uint8_t *) ","), ==, 1u);
-   ASSERT_CMPINT (_mongoc_utf8_char_length ((uint8_t *) "ɶ"), ==, 2u);
-   ASSERT_CMPINT (_mongoc_utf8_char_length ((uint8_t *) "ྡྷ"), ==, 3u);
-   ASSERT_CMPINT (_mongoc_utf8_char_length ((uint8_t *) "🌂"), ==, 4u);
+   ASSERT_CMPINT (_mongoc_utf8_char_length (","), ==, 1u);
+   ASSERT_CMPINT (_mongoc_utf8_char_length ("ɶ"), ==, 2u);
+   ASSERT_CMPINT (_mongoc_utf8_char_length ("ྡྷ"), ==, 3u);
+   ASSERT_CMPINT (_mongoc_utf8_char_length ("🌂"), ==, 4u);
 }
 
 static void
 test_mongoc_utf8_string_length (void)
 {
-   ASSERT_CMPINT (_mongoc_utf8_string_length ((uint8_t *) ",ase"), ==, 4u);
-   ASSERT_CMPINT (_mongoc_utf8_string_length ((uint8_t *) "ɸɴ"), ==, 2u);
-   ASSERT_CMPINT (_mongoc_utf8_string_length ((uint8_t *) "ྡྷ🌂e4🌕"), ==, 5u);
+   ASSERT_CMPINT (_mongoc_utf8_string_length (",ase"), ==, 4u);
+   ASSERT_CMPINT (_mongoc_utf8_string_length ("ɸɴ"), ==, 2u);
+   ASSERT_CMPINT (_mongoc_utf8_string_length ("ྡྷ🌂e4🌕"), ==, 5u);
    ASSERT_CMPINT (
-      _mongoc_utf8_string_length ((uint8_t *) "no special characters"),
-      ==,
-      21u);
+      _mongoc_utf8_string_length ("no special characters"), ==, 21u);
 }
 
 static void
 test_mongoc_utf8_to_unicode (void)
 {
-   ASSERT_CMPINT (
-      _mongoc_utf8_get_first_code_point ((uint8_t *) ",", 1), ==, 0x002C);
-   ASSERT_CMPINT (
-      _mongoc_utf8_get_first_code_point ((uint8_t *) "ɶ", 2), ==, 0x0276);
-   ASSERT_CMPINT (
-      _mongoc_utf8_get_first_code_point ((uint8_t *) "ྡྷ", 3), ==, 0x0FA2);
-   ASSERT_CMPINT (
-      _mongoc_utf8_get_first_code_point ((uint8_t *) "🌂", 4), ==, 0x1F302);
+   ASSERT_CMPINT (_mongoc_utf8_get_first_code_point (",", 1), ==, 0x002C);
+   ASSERT_CMPINT (_mongoc_utf8_get_first_code_point ("ɶ", 2), ==, 0x0276);
+   ASSERT_CMPINT (_mongoc_utf8_get_first_code_point ("ྡྷ", 3), ==, 0x0FA2);
+   ASSERT_CMPINT (_mongoc_utf8_get_first_code_point ("🌂", 4), ==, 0x1F302);
 }
 
 #endif
