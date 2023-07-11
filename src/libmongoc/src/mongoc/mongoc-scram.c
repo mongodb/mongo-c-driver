@@ -1269,7 +1269,7 @@ _mongoc_utf8_string_length (const char *s)
 
    const uint8_t *c = (uint8_t *) s;
 
-   size_t str_length = 0;
+   ssize_t str_length = 0;
 
    while (*c) {
       const size_t utf8_char_length = _mongoc_utf8_char_length ((char *) c);

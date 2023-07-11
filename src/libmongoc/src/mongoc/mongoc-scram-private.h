@@ -123,15 +123,16 @@ _mongoc_sasl_prep_required (const char *str);
 char *
 _mongoc_sasl_prep (const char *in_utf8, bson_error_t *err);
 
-/* returns how many bytes a UTF-8 character is. */
+/* returns the byte length of the first UTF-8 code point in `s`. */
 size_t
 _mongoc_utf8_char_length (const char *c);
 
-/* returns how many characters are in a UTF-8 string. Returns -1 on error. */
+/* returns the byte length of the UTF-8 string. Returns -1 if `s` is not a valid
+ * UTF-8 string. */
 ssize_t
 _mongoc_utf8_string_length (const char *s);
 
-/* returns whether a UTF-8 character is valid or not. */
+/* returns true if the first UTF-8 code point in `s` is valid. */
 bool
 _mongoc_utf8_is_valid (const char *c, size_t length);
 
@@ -149,12 +150,13 @@ _mongoc_utf8_code_point_is_in_table (uint32_t code,
                                      const uint32_t *table,
                                      size_t size);
 
-/* returns the first Unicode codepoint of a UTF-8 character. */
+/* returns the first Unicode code point in `c`. Returns 0 if length is 0.
+ * `c` must be a valid UTF-8 string. */
 uint32_t
 _mongoc_utf8_get_first_code_point (const char *c, size_t length);
 
-/* returns how many bytes a unicode codepoint is. Returns -1 on invalid code
- * point. */
+/* returns the byte length of the UTF-8 code point. Returns -1 if `c` is not a
+ * valid UTF-8 code point. */
 ssize_t
 _mongoc_utf8_code_point_length (uint32_t c);
 
