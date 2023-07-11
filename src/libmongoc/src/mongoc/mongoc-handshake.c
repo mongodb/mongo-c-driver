@@ -403,31 +403,33 @@ _get_env_info (mongoc_handshake_t *handshake)
    char *gcp_env = _mongoc_getenv ("K_SERVICE");
    char *memory_str = NULL;
    char *timeout_str = NULL;
+   char *region_str = NULL;
 
-   bool is_aws =
-      aws_env &&
-      strlen (aws_env) && (aws_env == strstr("AWS_Lambda_", aws_env));
+   bool is_aws = aws_env && strlen (aws_env) &&
+                 (aws_env == strstr (aws_env, "AWS_Lambda_"));
    bool is_vercel = vercel_env && strlen (vercel_env);
    bool is_azure = azure_env && strlen (azure_env);
    bool is_gcp = gcp_env && strlen (gcp_env);
 
    handshake->env = MONGOC_HANDSHAKE_ENV_NONE;
+   handshake->env_region = NULL;
+   handshake->env_memory_mb = 0;
+   handshake->env_timeout_sec = 0;
+
    if ((is_aws || is_vercel) + is_azure + is_gcp != 1) {
       goto cleanup;
    }
 
-   handshake->env_region = NULL;
-
    if (is_aws && !is_vercel) {
       handshake->env = MONGOC_HANDSHAKE_ENV_AWS;
-      handshake->env_region = _mongoc_getenv ("AWS_REGION");
+      region_str = _mongoc_getenv ("AWS_REGION");
       memory_str = _mongoc_getenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE");
    } else if (is_vercel) {
       handshake->env = MONGOC_HANDSHAKE_ENV_VERCEL;
-      handshake->env_region = _mongoc_getenv ("VERCEL_REGION");
+      region_str = _mongoc_getenv ("VERCEL_REGION");
    } else if (is_gcp) {
       handshake->env = MONGOC_HANDSHAKE_ENV_GCP;
-      handshake->env_region = _mongoc_getenv ("FUNCTION_REGION");
+      region_str = _mongoc_getenv ("FUNCTION_REGION");
       memory_str = _mongoc_getenv ("FUNCTION_MEMORY_MB");
       timeout_str = _mongoc_getenv ("FUNCTION_TIMEOUT_SEC");
    } else if (is_azure) {
@@ -437,9 +439,11 @@ _get_env_info (mongoc_handshake_t *handshake)
    if (memory_str) {
       handshake->env_memory_mb = atoi (memory_str);
    }
-
    if (timeout_str) {
       handshake->env_timeout_sec = atoi (timeout_str);
+   }
+   if (region_str && strlen (region_str)) {
+      handshake->env_region = bson_strdup (region_str);
    }
 
 cleanup:
@@ -449,6 +453,7 @@ cleanup:
    bson_free (gcp_env);
    bson_free (memory_str);
    bson_free (timeout_str);
+   bson_free (region_str);
 }
 
 static void
@@ -541,15 +546,17 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
 
    /* Compute space left for platform field */
    const int max_platform_str_size =
-      HANDSHAKE_MAX_SIZE - ((int) doc->len +
-                            /* 1 byte for utf8 tag */
-                            1 +
+      truncate
+         ? HANDSHAKE_MAX_SIZE - ((int) doc->len +
+                                 /* 1 byte for utf8 tag */
+                                 1 +
 
-                            /* key size */
-                            (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
+                                 /* key size */
+                                 (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
 
-                            /* 4 bytes for length of string */
-                            4);
+                                 /* 4 bytes for length of string */
+                                 4)
+         : HANDSHAKE_MAX_SIZE;
 
    if (max_platform_str_size <= 0) {
       bson_string_free (combined_platform, true);
@@ -583,7 +590,7 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
    bson_string_free (combined_platform, true);
 }
 
-static bool
+static bson_t *
 _get_subdoc_static (bson_t *doc, char *subdoc_name)
 {
    bson_iter_t iter;
@@ -593,19 +600,19 @@ _get_subdoc_static (bson_t *doc, char *subdoc_name)
       const uint8_t *data;
       bson_iter_document (&iter, &len, &data);
 
-      return bson_init_static (doc, data, len);
+      return bson_new_from_data (data, len);
    }
-   return false;
+   return NULL;
 }
 
 static bool
 _truncate_handshake (bson_t **doc)
 {
    if ((*doc)->len > HANDSHAKE_MAX_SIZE) {
-      bson_t env_doc;
-      if (_get_subdoc_static (&env_doc, "env")) {
+      bson_t *env_doc = _get_subdoc_static (*doc, "env");
+      if (env_doc) {
          bson_t *new_env = bson_new ();
-         bson_copy_to_including_noinit (&env_doc, new_env, "name", NULL);
+         bson_copy_to_including_noinit (env_doc, new_env, "name", NULL);
 
          bson_t *new_doc = bson_new ();
          bson_copy_to_excluding_noinit (*doc, new_doc, "env", NULL);
@@ -614,15 +621,15 @@ _truncate_handshake (bson_t **doc)
          bson_destroy (new_env);
          bson_destroy (*doc);
          *doc = new_doc;
-         // bson_destroy(&env_doc);
+         bson_destroy (env_doc);
       }
    }
 
    if ((*doc)->len > HANDSHAKE_MAX_SIZE) {
-      bson_t os_doc;
-      if (_get_subdoc_static (&os_doc, "os")) {
+      bson_t *os_doc = _get_subdoc_static (*doc, "os");
+      if (os_doc) {
          bson_t *new_os = bson_new ();
-         bson_copy_to_including_noinit (&os_doc, new_os, "type", NULL);
+         bson_copy_to_including_noinit (os_doc, new_os, "type", NULL);
 
          bson_t *new_doc = bson_new ();
          bson_copy_to_excluding_noinit (*doc, new_doc, "os", NULL);
@@ -631,7 +638,7 @@ _truncate_handshake (bson_t **doc)
          bson_destroy (new_os);
          bson_destroy (*doc);
          *doc = new_doc;
-         // bson_destroy(&os_doc);
+         bson_destroy (os_doc);
       }
    }
 
