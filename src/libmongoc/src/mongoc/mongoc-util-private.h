@@ -162,6 +162,21 @@ _mongoc_document_is_pipeline (const bson_t *document);
 char *
 _mongoc_getenv (const char *name);
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_setenv --
+ *
+ *       Set or overwrite the value of an environment variable.
+ *
+ * Returns:
+ *       False if setting the variable was unsuccessful.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+_mongoc_setenv (const char *name, const char *value);
+
 /* Returns a uniformly-distributed uint32_t generated using
  * `_mongoc_rand_bytes()` if a source of cryptographic randomness is available
  * (defined only if `MONGOC_ENABLE_CRYPTO` is defined).

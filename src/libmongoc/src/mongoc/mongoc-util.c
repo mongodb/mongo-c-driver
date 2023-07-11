@@ -688,6 +688,29 @@ _mongoc_getenv (const char *name)
 #endif
 }
 
+bool
+_mongoc_setenv (const char *name, const char *value)
+{
+#ifdef _WIN32
+   char *envstring;
+
+   envstring = bson_strdup_printf ("%s=%s", name, value);
+   if (0 != _putenv (envstring)) {
+      return false;
+   }
+
+   return true;
+#else
+
+   if (0 != setenv (name, value, 1)) {
+      return false;
+   }
+
+   return true;
+#endif
+}
+
+
 /* Nearly Divisionless (Algorithm 5): https://arxiv.org/abs/1805.10941 */
 static uint32_t
 _mongoc_rand_nduid32 (uint32_t s, uint32_t (*rand32) (void))
