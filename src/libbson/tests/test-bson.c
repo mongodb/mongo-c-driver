@@ -2989,12 +2989,372 @@ test_bson_array_builder (void)
       ASSERT (bson_array_builder_append_int32 (bab, 4));
       ASSERT (bson_array_builder_build (bab, &b));
       ASSERT_BSON_EQUAL (b, [ 3, 4 ]);
+      bson_destroy (&b);
       bson_array_builder_destroy (bab);
    }
 
-   // Build an array with every BSON type.
+   // Test each bson_array_builder_append_* function.
    {
-      // TODO.
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         bson_value_t v = {.value_type = BSON_TYPE_INT32,
+                           .value = {.v_int32 = 1}};
+         ASSERT (bson_array_builder_append_value (bab, &v));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [1]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_array (
+            bab, TMP_BSON_FROM_JSON ([ 1, 2 ])));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [[ 1, 2 ]]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_binary (
+            bab, BSON_SUBTYPE_BINARY, (const uint8_t *) "A", 1));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (
+            b, [ {"$binary" : {"base64" : "QQ==", "subType" : "00"}} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_bool (bab, true));
+         ASSERT (bson_array_builder_build (bab, &b));
+         // Use string literal for expectation instead of `ASSERT_BSON_EQUAL`
+         // macro, since `true` may be replaced by `1` in preprocessing.
+         ASSERT_BSON_EQUAL_BSON (b, *tmp_bson ("[true]"));
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_code (bab, "A"));
+         ASSERT (bson_array_builder_build (bab, &b));
+         // Use document string: `{ "0": ... , "1": ... }` instead of array
+         // string: `[ ... , ... ]` for expectation. Parsing the array string
+         // `[{ "$code": ... }]` results in a failure. TODO: file
+         // CDRIVER ticket.
+         ASSERT_BSON_EQUAL (b, {"0" : {"$code" : "A"}});
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_code_with_scope (
+            bab, "A", TMP_BSON_FROM_JSON ({"B" : 1})));
+         ASSERT (bson_array_builder_build (bab, &b));
+         // Use document string: `{ "0": ... , "1": ... }` instead of array
+         // string: `[ ... , ... ]` for expectation. Parsing the array string
+         // `[{ "$code": ... }]` results in a failure. TODO: file
+         // CDRIVER ticket.
+         ASSERT_BSON_EQUAL (b, {"0" : {"$code" : "A", "$scope" : {"B" : 1}}});
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         bson_oid_t oid;
+         bson_oid_init_from_string (&oid, "FFFFFFFFFFFFFFFFFFFFFFFF");
+         ASSERT (bson_array_builder_append_dbpointer (bab, "E", &oid));
+         ASSERT (bson_array_builder_build (bab, &b));
+         // Use document string: `{ "0": ... , "1": ... }` instead of array
+         // string: `[ ... , ... ]` for expectation. Parsing the array string
+         // `[{ "$dbPointer": ... }]` results in a failure. TODO: file
+         // CDRIVER ticket.
+         ASSERT_BSON_EQUAL (b, {
+            "0" : {
+               "$dbPointer" :
+                  {"$ref" : "E",
+                   "$id" : {"$oid" : "ffffffffffffffffffffffff"}}
+            }
+         });
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_double (bab, 1.0));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$numberDouble" : "1.0"} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_document (
+            bab, TMP_BSON_FROM_JSON ({"A" : 1})));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"A" : {"$numberInt" : "1"}} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         bson_t child;
+         ASSERT (bson_array_builder_append_document_begin (bab, &child));
+         ASSERT (BSON_APPEND_INT32 (&child, "A", 1));
+         ASSERT (bson_array_builder_append_document_end (bab, &child));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"A" : {"$numberInt" : "1"}} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         bson_t child;
+         ASSERT (bson_array_builder_append_array_begin (bab, &child));
+         ASSERT (BSON_APPEND_INT32 (&child, "0", 1));
+         ASSERT (BSON_APPEND_INT32 (&child, "1", 2));
+         ASSERT (bson_array_builder_append_array_end (bab, &child));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [[ 1, 2 ]]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_int32 (bab, 1));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [1]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_int64 (bab, 1));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$numberLong" : "1"} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         bson_decimal128_t d128;
+         ASSERT (bson_decimal128_from_string ("1.0", &d128));
+         ASSERT (bson_array_builder_append_decimal128 (bab, &d128));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$numberDecimal" : "1.0"} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         {
+            bson_t *b = TMP_BSON_FROM_JSON ({"A" : 1});
+            bson_iter_t iter;
+            ASSERT (bson_iter_init_find (&iter, b, "A"));
+            ASSERT (bson_array_builder_append_iter (bab, &iter));
+         }
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [1]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_minkey (bab));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$minKey" : 1} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_maxkey (bab));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$maxKey" : 1} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_null (bab));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [null]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         bson_oid_t oid;
+         bson_oid_init_from_string (&oid, "FFFFFFFFFFFFFFFFFFFFFFFF");
+         ASSERT (bson_array_builder_append_oid (bab, &oid));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$oid" : "ffffffffffffffffffffffff"} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_regex (bab, "A", "i"));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (
+            b, [ {"$regularExpression" : {"pattern" : "A", "options" : "i"}} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_regex_w_len (bab, "A", 1, "i"));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (
+            b, [ {"$regularExpression" : {"pattern" : "A", "options" : "i"}} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_utf8 (bab, "A", 1));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, ["A"]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_symbol (bab, "A", 1));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$symbol" : "A"} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         time_t t = {0};
+         ASSERT (bson_array_builder_append_time_t (bab, t));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$date" : {"$numberLong" : "0"}} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         struct timeval t = {0};
+         ASSERT (bson_array_builder_append_timeval (bab, &t));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$date" : {"$numberLong" : "0"}} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_date_time (bab, 1));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$date" : {"$numberLong" : "1"}} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_now_utc (bab));
+         ASSERT (bson_array_builder_build (bab, &b));
+         // Check that one element exists of the expected type. Do not check
+         // exact value.
+         ASSERT_CMPUINT32 (bson_count_keys (&b), ==, 1);
+         bson_iter_t iter;
+         ASSERT (bson_iter_init_find (&iter, &b, "0"));
+         ASSERT_CMPINT (
+            (int) bson_iter_type (&iter), ==, (int) BSON_TYPE_DATE_TIME);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_timestamp (bab, 1, 2));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [ {"$timestamp" : {"t" : 1, "i" : 2}} ]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         ASSERT (bson_array_builder_append_undefined (bab));
+         ASSERT (bson_array_builder_build (bab, &b));
+         // Use string literal for expectation instead of `ASSERT_BSON_EQUAL`
+         // macro, since `true` may be replaced by `1` in preprocessing.
+         ASSERT_BSON_EQUAL_BSON (b, *tmp_bson ("[{'$undefined' : true}]"));
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new ();
+         bson_array_builder_t *child;
+         ASSERT (bson_array_builder_append_array_builder_begin (bab, &child));
+         ASSERT (bson_array_builder_append_int32 (child, 1));
+         ASSERT (bson_array_builder_append_int32 (child, 2));
+         ASSERT (bson_array_builder_append_array_builder_end (bab, child));
+         ASSERT (bson_array_builder_build (bab, &b));
+         ASSERT_BSON_EQUAL (b, [[ 1, 2 ]]);
+         bson_destroy (&b);
+         bson_array_builder_destroy (bab);
+      }
    }
 }
 
