@@ -260,6 +260,20 @@ if(ENABLE_MAINTAINER_FLAGS)
 
    if (NOT ((CMAKE_C_COMPILER_ID STREQUAL "Clang") OR (CMAKE_C_COMPILER_ID STREQUAL "AppleClang")))
       # Clang throws a false positive warning for the function mongoc_vlog while GCC does not
+      #
+      # The following trick which was done for mongoc_log only works for varargs and does not
+      # work for a va_list function, i.e., the trick below results in the following error:
+      #
+      # MONGOC_EXPORT (void)
+      # mongoc_vlog (mongoc_log_level_t log_level,
+      #              const char *log_domain,
+      #              const char *format,
+      #              va_list args) __attribute__ ((format (printf, 3, 4)));
+      #
+      # error:
+      # /mongo-c-driver/src/libmongoc/src/mongoc/mongoc-log.h:105:1: error: format attribute requires variadic function
+      # mongoc_vlog (mongoc_log_level_t log_level,
+      # ^
       mongoc_add_warning_options(gnu-like:-Wformat-nonliteral)
    endif()
 endif()
