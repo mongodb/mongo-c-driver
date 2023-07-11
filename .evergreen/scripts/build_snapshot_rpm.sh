@@ -107,6 +107,7 @@ sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/
 tar_filename=$package-$bare_upstream_version.tar
 tar_filepath="/tmp/$tar_filename"
 tgz_filepath="$HOME/rpmbuild/SOURCES/$tar_filename.gz"
+echo "Creating source archive [$tgz_filepath]"
 git archive --format=tar --output="$tar_filepath" --prefix="$package-$bare_upstream_version/" HEAD
 mkdir -p "$package-$bare_upstream_version"
 cp VERSION_CURRENT "$package-$bare_upstream_version"
