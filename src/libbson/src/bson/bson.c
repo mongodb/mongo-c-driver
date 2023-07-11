@@ -2245,7 +2245,7 @@ should_include (const char *first_include, va_list args, const char *name)
    va_copy (args_copy, args);
 
    do {
-      if (strcmp (name, include)) {
+      if (!strcmp (name, include)) {
          ret = true;
          break;
       }
