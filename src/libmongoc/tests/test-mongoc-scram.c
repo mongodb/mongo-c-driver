@@ -132,8 +132,7 @@ test_mongoc_scram_sasl_prep (void)
                      ==,
                      _mongoc_sasl_prep_required (tests[i].original));
       memset (&err, 0, sizeof (err));
-      normalized = _mongoc_sasl_prep (
-         tests[i].original, strlen (tests[i].original), &err);
+      normalized = _mongoc_sasl_prep (tests[i].original, &err);
       if (tests[i].should_succeed) {
          ASSERT_CMPSTR (tests[i].normalized, normalized);
          ASSERT_CMPINT (err.code, ==, 0);

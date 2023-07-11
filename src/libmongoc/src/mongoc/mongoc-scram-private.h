@@ -121,7 +121,7 @@ _mongoc_sasl_prep_required (const char *str);
  * null on error and sets err.
  * `name` should be "username" or "password". */
 char *
-_mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err);
+_mongoc_sasl_prep (const char *in_utf8, bson_error_t *err);
 
 /* returns how many bytes a UTF-8 character is. */
 size_t

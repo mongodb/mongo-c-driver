@@ -560,8 +560,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       /* Auth spec for SCRAM-SHA-256: "Passwords MUST be prepared with SASLprep,
        * per RFC 5802. Passwords are used directly for key derivation; they
        * MUST NOT be digested as they are in SCRAM-SHA-1." */
-      hashed_password =
-         _mongoc_sasl_prep (scram->pass, (int) strlen (scram->pass), error);
+      hashed_password = _mongoc_sasl_prep (scram->pass, error);
       if (!hashed_password) {
          goto FAIL;
       }
@@ -1033,7 +1032,6 @@ _mongoc_sasl_prep_required (const char *str)
 char *
 _mongoc_sasl_prep_impl (const char *name,
                         const char *in_utf8,
-                        int in_utf8_len,
                         bson_error_t *err)
 {
    BSON_ASSERT_PARAM (name);
@@ -1228,12 +1226,10 @@ _mongoc_sasl_prep_impl (const char *name,
 #endif
 
 char *
-_mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err)
+_mongoc_sasl_prep (const char *in_utf8, bson_error_t *err)
 {
-   BSON_UNUSED (in_utf8_len);
-
 #ifdef MONGOC_ENABLE_ICU
-   return _mongoc_sasl_prep_impl ("password", in_utf8, in_utf8_len, err);
+   return _mongoc_sasl_prep_impl ("password", in_utf8, err);
 #else
    if (_mongoc_sasl_prep_required (in_utf8)) {
       bson_set_error (err,
