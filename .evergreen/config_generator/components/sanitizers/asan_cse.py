@@ -15,6 +15,7 @@ COMPILE_MATRIX = [
 
 TEST_MATRIX = [
     ('ubuntu1804', 'clang', None, 'cyrus', ['auth'], ['server',          ], ['4.2', '4.4', '5.0', '6.0'                ]),
+
     # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
     ('ubuntu1804', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], [                           '7.0', 'latest']),
 ]

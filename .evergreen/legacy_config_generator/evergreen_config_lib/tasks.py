@@ -737,7 +737,7 @@ all_tasks = chain(
 )
 
 # Add API version tasks.
-for server_version in [ "7.0", "6.0", "5.0" ]:
+for server_version in [ "7.0", "6.0", "5.0"]:
     all_tasks = chain(
         all_tasks,
         [
