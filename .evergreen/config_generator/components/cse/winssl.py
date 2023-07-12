@@ -20,10 +20,10 @@ COMPILE_MATRIX = [
 
 # TODO (CDRIVER-3789): test cse with the 'sharded' topology.
 TEST_MATRIX = [
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
+    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0'                ]),
 
-    # Test 6.0+ with a replica set since Queryable Encryption does not support the 'server' topology.
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica' ], ['6.0', 'latest']),
+    # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
+    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica' ], [               '7.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
