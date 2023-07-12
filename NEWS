@@ -1,3 +1,17 @@
+libmongoc 1.24.2
+================
+
+Fixes:
+
+  * Fix possible crash if thread creation fails.
+  * Fix possible assertion if `mongoc_cursor_new_from_command_reply_with_opts` is called with open cursor and no `serverId` option.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libmongoc 1.24.1
 ================
 
