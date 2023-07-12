@@ -3049,8 +3049,7 @@ test_bson_array_builder (void)
          ASSERT (bson_array_builder_build (bab, &b));
          // Use document string: `{ "0": ... , "1": ... }` instead of array
          // string: `[ ... , ... ]` for expectation. Parsing the array string
-         // `[{ "$code": ... }]` results in a failure. TODO: file
-         // CDRIVER ticket.
+         // `[{ "$code": ... }]` results in incorrect BSON. See CDRIVER-4678.
          ASSERT_BSON_EQUAL (b, {"0" : {"$code" : "A"}});
          bson_destroy (&b);
          bson_array_builder_destroy (bab);
@@ -3064,8 +3063,7 @@ test_bson_array_builder (void)
          ASSERT (bson_array_builder_build (bab, &b));
          // Use document string: `{ "0": ... , "1": ... }` instead of array
          // string: `[ ... , ... ]` for expectation. Parsing the array string
-         // `[{ "$code": ... }]` results in a failure. TODO: file
-         // CDRIVER ticket.
+         // `[{ "$code": ... }]` results in incorrect BSON. See CDRIVER-4678.
          ASSERT_BSON_EQUAL (b, {"0" : {"$code" : "A", "$scope" : {"B" : 1}}});
          bson_destroy (&b);
          bson_array_builder_destroy (bab);
@@ -3080,8 +3078,8 @@ test_bson_array_builder (void)
          ASSERT (bson_array_builder_build (bab, &b));
          // Use document string: `{ "0": ... , "1": ... }` instead of array
          // string: `[ ... , ... ]` for expectation. Parsing the array string
-         // `[{ "$dbPointer": ... }]` results in a failure. TODO: file
-         // CDRIVER ticket.
+         // `[{ "$dbPointer": ... }]` results in incorrect BSON. See
+         // CDRIVER-4678.
          ASSERT_BSON_EQUAL (b, {
             "0" : {
                "$dbPointer" :
