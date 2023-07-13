@@ -34,3 +34,7 @@ Returns
 -------
 
 Returns ``true`` if the operation was applied successfully. The function fails if appending the array grows ``bson`` larger than INT32_MAX.
+
+.. seealso::
+
+  | :symbol:`bson_array_builder_t`
