@@ -3793,20 +3793,6 @@ bson_array_builder_append_document_end (bson_array_builder_t *bab,
 
 
 bool
-bson_array_builder_append_array_begin (bson_array_builder_t *bab, bson_t *child)
-{
-   bson_array_builder_append_impl (bson_append_array_begin, child);
-}
-
-
-bool
-bson_array_builder_append_array_end (bson_array_builder_t *bab, bson_t *child)
-{
-   return bson_append_array_end (&bab->bson, child);
-}
-
-
-bool
 bson_array_builder_append_int32 (bson_array_builder_t *bab, int32_t value)
 {
    bson_array_builder_append_impl (bson_append_int32, value);

@@ -1265,16 +1265,6 @@ BSON_EXPORT (bool)
 bson_array_builder_append_document_end (bson_array_builder_t *bab,
                                         bson_t *child);
 
-
-BSON_EXPORT (bool)
-bson_array_builder_append_array_begin (bson_array_builder_t *bab,
-                                       bson_t *child);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_array_end (bson_array_builder_t *bab, bson_t *child);
-
-
 BSON_EXPORT (bool)
 bson_array_builder_append_int32 (bson_array_builder_t *bab, int32_t value);
 

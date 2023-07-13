@@ -3128,20 +3128,6 @@ test_bson_array_builder (void)
       {
          bson_t b;
          bson_array_builder_t *bab = bson_array_builder_new ();
-         bson_t child;
-         ASSERT (bson_array_builder_append_array_begin (bab, &child));
-         ASSERT (BSON_APPEND_INT32 (&child, "0", 1));
-         ASSERT (BSON_APPEND_INT32 (&child, "1", 2));
-         ASSERT (bson_array_builder_append_array_end (bab, &child));
-         ASSERT (bson_array_builder_build (bab, &b));
-         ASSERT_BSON_EQUAL (b, [[ 1, 2 ]]);
-         bson_destroy (&b);
-         bson_array_builder_destroy (bab);
-      }
-
-      {
-         bson_t b;
-         bson_array_builder_t *bab = bson_array_builder_new ();
          ASSERT (bson_array_builder_append_int32 (bab, 1));
          ASSERT (bson_array_builder_build (bab, &b));
          ASSERT_BSON_EQUAL (b, [1]);
