@@ -1157,16 +1157,19 @@ _mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op, /* IN */
          BSON_ASSERT (false);
          str = NULL;
       }
-      bson_append_array_begin (bson, str, -1, &child);
-      bson_append_document_begin (&child, "0", 1, &child2);
-      _mongoc_matcher_op_to_bson (op->logical.left, &child2);
-      bson_append_document_end (&child, &child2);
-      if (op->logical.right) {
-         bson_append_document_begin (&child, "1", 1, &child2);
-         _mongoc_matcher_op_to_bson (op->logical.right, &child2);
-         bson_append_document_end (&child, &child2);
+      {
+         bson_array_builder_t *bab;
+         bson_append_array_builder_begin (bson, str, -1, &bab);
+         bson_array_builder_append_document_begin (bab, &child2);
+         _mongoc_matcher_op_to_bson (op->logical.left, &child2);
+         bson_array_builder_append_document_end (bab, &child2);
+         if (op->logical.right) {
+            bson_array_builder_append_document_begin (bab, &child2);
+            _mongoc_matcher_op_to_bson (op->logical.right, &child2);
+            bson_array_builder_append_document_end (bab, &child2);
+         }
+         bson_append_array_builder_end (bson, bab);
       }
-      bson_append_array_end (bson, &child);
       break;
    case MONGOC_MATCHER_OPCODE_NOT:
       bson_append_document_begin (bson, op->not_.path, -1, &child);

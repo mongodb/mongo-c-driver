@@ -260,11 +260,9 @@ _build_handshake_cmd (const bson_t *basis_cmd,
    bson_t *doc = bson_copy (basis_cmd);
    bson_t subdoc;
    bson_iter_t iter;
-   const char *key;
    const bson_t *compressors;
-   int count = 0;
-   char buf[16];
    bool subdoc_okay;
+   bson_array_builder_t *subarray;
 
    BSON_ASSERT (doc);
 
@@ -278,21 +276,18 @@ _build_handshake_cmd (const bson_t *basis_cmd,
       return NULL;
    }
 
-   BSON_APPEND_ARRAY_BEGIN (doc, "compression", &subdoc);
+   BSON_APPEND_ARRAY_BUILDER_BEGIN (doc, "compression", &subarray);
    if (uri) {
       compressors = mongoc_uri_get_compressors (uri);
 
       if (bson_iter_init (&iter, compressors)) {
          while (bson_iter_next (&iter)) {
-            const size_t keylen =
-               bson_uint32_to_string (count++, &key, buf, sizeof (buf));
-            BSON_ASSERT (bson_in_range_unsigned (int, keylen));
-            bson_append_utf8 (
-               &subdoc, key, (int) keylen, bson_iter_key (&iter), -1);
+            bson_array_builder_append_utf8 (
+               subarray, bson_iter_key (&iter), -1);
          }
       }
    }
-   bson_append_array_end (doc, &subdoc);
+   bson_append_array_builder_end (doc, subarray);
 
    if (is_loadbalanced) {
       BSON_APPEND_BOOL (doc, "loadBalanced", true);

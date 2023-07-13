@@ -3460,7 +3460,7 @@ done:
 static void
 network_error_reply (bson_t *reply, mongoc_cmd_t *cmd)
 {
-   bson_t labels;
+   bson_array_builder_t *labels;
 
    if (reply) {
       bson_init (reply);
@@ -3489,9 +3489,9 @@ network_error_reply (bson_t *reply, mongoc_cmd_t *cmd)
             return;
          }
 
-         BSON_APPEND_ARRAY_BEGIN (reply, "errorLabels", &labels);
-         BSON_APPEND_UTF8 (&labels, "0", TRANSIENT_TXN_ERR);
-         bson_append_array_end (reply, &labels);
+         BSON_APPEND_ARRAY_BUILDER_BEGIN (reply, "errorLabels", &labels);
+         bson_array_builder_append_utf8 (labels, TRANSIENT_TXN_ERR, -1);
+         bson_append_array_builder_end (reply, labels);
       }
    }
 }
