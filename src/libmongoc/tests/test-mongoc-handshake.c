@@ -491,8 +491,7 @@ test_multiple_faas (void)
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
 
-   bson_iter_t md_iter;
-   ASSERT (!bson_iter_init_find (&md_iter, doc, "env"));
+   ASSERT (!bson_has_field(doc, "env"));
 
    bson_destroy (doc);
    clear_faas_env ();
@@ -562,8 +561,7 @@ test_aws_not_lambda (void)
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
 
-   bson_iter_t iter;
-   ASSERT (!bson_iter_init_find (&iter, doc, "env"));
+   ASSERT (!bson_has_field(doc, "env"));
 
    bson_destroy (doc);
    clear_faas_env ();
@@ -823,66 +821,74 @@ test_mongoc_platform_truncate (int drop)
    char *undropped;
    char *expected;
    char big_string[HANDSHAKE_MAX_SIZE];
+   memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
+   big_string[HANDSHAKE_MAX_SIZE - 1] = '\0';
 
    /* Need to know how much space storing fields in our BSON will take
     * so that we can make our platform string the correct length here */
-   const size_t handshake_bson_size = 163;
+   // const size_t handshake_bson_size = 163;
    _reset_handshake ();
-
-   md = _mongoc_handshake_get ();
 
    /* we manually bypass the defaults of the handshake to ensure an exceedingly
     * long field does not cause our test to incorrectly fail */
+   md = _mongoc_handshake_get ();
    bson_free (md->os_type);
    md->os_type = bson_strdup ("test_a");
    bson_free (md->os_name);
    md->os_name = bson_strdup ("test_b");
-   bson_free (md->os_version);
-   md->os_version = bson_strdup ("test_c");
    bson_free (md->os_architecture);
    md->os_architecture = bson_strdup ("test_d");
    bson_free (md->driver_name);
    md->driver_name = bson_strdup ("test_e");
    bson_free (md->driver_version);
    md->driver_version = bson_strdup ("test_f");
+
+   // Set all fields used to generate the platform string to empty
+   bson_free(md->platform);
+   md->platform = bson_strdup("");
+   bson_free(md->compiler_info);
+   md->compiler_info = bson_strdup("");
+   bson_free(md->flags);
+   md->flags = bson_strdup("");
+
+   // Set os_version to a long string to force drop all os fields except name
+   bson_free (md->os_version);
+   md->os_version = big_string;
+
+   bson_t* handshake_no_platform = _mongoc_handshake_build_doc_with_application (default_appname);
+   size_t handshake_remaining_space = HANDSHAKE_MAX_SIZE - handshake_no_platform->len;
+   bson_destroy (handshake_no_platform);
+
+   md->os_version = bson_strdup ("test_c");
    bson_free (md->compiler_info);
    md->compiler_info = bson_strdup ("test_g");
    bson_free (md->flags);
    md->flags = bson_strdup ("test_h");
 
-   size_t handshake_remaining_space =
-      (size_t) HANDSHAKE_MAX_SIZE -
-      (strlen (md->os_type) + strlen (md->os_name) + strlen (md->os_version) +
-       strlen (md->os_architecture) + strlen (md->driver_name) +
-       strlen (md->driver_version) + strlen (md->compiler_info) +
-       strlen (md->flags) + handshake_bson_size);
-
    /* adjust remaining space depending on which combination of
     * flags/compiler_info we want to test dropping */
    if (drop == 2) {
-      handshake_remaining_space +=
-         strlen (md->flags) + strlen (md->compiler_info);
       undropped = bson_strdup_printf ("%s", "");
    } else if (drop == 1) {
-      handshake_remaining_space += strlen (md->flags);
+      handshake_remaining_space -= strlen(md->compiler_info);
       undropped = bson_strdup_printf ("%s", md->compiler_info);
    } else {
+      handshake_remaining_space -= strlen(md->flags) + strlen(md->compiler_info);
       undropped = bson_strdup_printf ("%s%s", md->compiler_info, md->flags);
    }
 
-   memset (big_string, 'a', handshake_remaining_space + 1u);
-   big_string[handshake_remaining_space + 1u] = '\0';
-
+   big_string[handshake_remaining_space] = '\0';
    ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
 
    bson_t *doc;
-   ASSERT (doc = _mongoc_handshake_build_doc_with_application ("my app"));
+   ASSERT (doc = _mongoc_handshake_build_doc_with_application (default_appname));
 
    /* doc.len being strictly less than HANDSHAKE_MAX_SIZE proves that we have
     * dropped the flags correctly, instead of truncating anything
     */
-   ASSERT_CMPUINT32 (doc->len, <, (uint32_t) HANDSHAKE_MAX_SIZE);
-   bson_iter_init_find (&iter, doc, "platform");
+
+   ASSERT_CMPUINT32 (doc->len, <=, (uint32_t) HANDSHAKE_MAX_SIZE);
+   ASSERT (bson_iter_init_find (&iter, doc, "platform"));
    expected = bson_strdup_printf ("%s%s", big_string, undropped);
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), expected);
 
@@ -918,19 +924,18 @@ test_mongoc_handshake_cannot_send (void)
    const char *const server_reply = "{'ok': 1, 'isWritablePrimary': true}";
    const bson_t *request_doc;
    char big_string[HANDSHAKE_MAX_SIZE];
-   mongoc_handshake_t *md;
 
    _reset_handshake ();
    capture_logs (true);
 
-   /* Mess with our global handshake struct so the handshake doc will be
-    * way too big */
    memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
    big_string[HANDSHAKE_MAX_SIZE - 1] = '\0';
 
-   md = _mongoc_handshake_get ();
-   bson_free (md->os_name);
-   md->os_name = bson_strdup (big_string);
+   /* The handshake cannot be built if a field that cannot be dropped
+    * (os.type) is set to a very long string */
+   mongoc_handshake_t *md = _mongoc_handshake_get ();
+   bson_free (md->os_type);
+   md->os_type = bson_strdup (big_string);
 
    server = mock_server_new ();
    mock_server_run (server);

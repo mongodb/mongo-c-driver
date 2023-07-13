@@ -529,12 +529,14 @@ _mongoc_handshake_init (void)
 void
 _mongoc_handshake_cleanup (void)
 {
-   _free_system_info (_mongoc_handshake_get ());
-   _free_driver_info (_mongoc_handshake_get ());
-   _free_platform_string (_mongoc_handshake_get ());
-   _free_env_info (_mongoc_handshake_get ());
+   mongoc_handshake_t *h = _mongoc_handshake_get();
+   _free_system_info (h);
+   _free_driver_info (h);
+   _free_platform_string (h);
+   _free_env_info (h);
 
    bson_mutex_destroy (&gHandshakeLock);
+   *h = (mongoc_handshake_t) { 0 };
 }
 
 static void
@@ -567,13 +569,13 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
     * platform information is truncated
     * Try to drop flags first, and if there is still not enough space also drop
     * compiler info */
-   if (!truncate || bson_cmp_greater_su (max_platform_str_size,
+   if (!truncate || bson_cmp_greater_equal_su (max_platform_str_size,
                                          combined_platform->len +
                                             strlen (compiler_info) + 1u)) {
       bson_string_append (combined_platform, compiler_info);
    }
    if (!truncate ||
-       bson_cmp_greater_su (max_platform_str_size,
+       bson_cmp_greater_equal_su (max_platform_str_size,
                             combined_platform->len + strlen (flags) + 1u)) {
       bson_string_append (combined_platform, flags);
    }
