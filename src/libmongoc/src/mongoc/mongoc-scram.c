@@ -34,6 +34,36 @@
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
 
+/* returns true if the first UTF-8 code point in `s` is valid. */
+bool
+_mongoc_utf8_first_code_point_is_valid (const char *c, size_t length);
+
+/* returns whether a character is between two limits (inclusive). */
+bool
+_mongoc_utf8_code_unit_in_range (const uint8_t c,
+                                 const uint8_t lower,
+                                 const uint8_t upper);
+
+/* returns whether a codepoint exists in the specified table. The table format
+ * is that the 2*n element is the lower bound and the 2*n + 1 is the upper bound
+ * (both inclusive). */
+bool
+_mongoc_utf8_code_point_is_in_table (uint32_t code,
+                                     const uint32_t *table,
+                                     size_t size);
+
+/* returns the byte length of the UTF-8 code point. Returns -1 if `c` is not a
+ * valid UTF-8 code point. */
+ssize_t
+_mongoc_utf8_code_point_length (uint32_t c);
+
+/* converts a Unicode code point to UTF-8 character. Returns how many bytes the
+ * character converted is. Returns -1 if the code point is invalid.
+ * char *out must be large enough to contain all of the code units written to
+ * it. */
+ssize_t
+_mongoc_utf8_code_point_to_str (uint32_t c, char *out);
+
 static int
 _scram_hash_size (mongoc_scram_t *scram)
 {
@@ -1059,8 +1089,8 @@ _mongoc_sasl_prep_impl (const char *name,
    }
 
    /* convert to unicode. */
-   utf8_codepoints = bson_malloc (sizeof (uint32_t) *
-                                  (num_chars + 1)); /* add one for null byte. */
+   utf8_codepoints = bson_malloc (
+      sizeof (uint32_t) * (num_chars + 1)); /* add one for trailing 0 value. */
    const char *c = in_utf8;
 
    for (size_t i = 0; i < num_chars; ++i) {
@@ -1102,7 +1132,7 @@ _mongoc_sasl_prep_impl (const char *name,
    num_chars = curr;
 
 
-   // b. Normalize - normalize the result of step 1 using Unicode
+   // b. Normalize - normalize the result of step `a` using Unicode
    // normalization.
 
    // this is an optional step for stringprep, but Unicode normalization with
@@ -1188,8 +1218,6 @@ _mongoc_sasl_prep_impl (const char *name,
                                                sizeof (LCat_bidi_ranges) /
                                                   sizeof (uint32_t))) {
          contains_LCat = true;
-         if (contains_RandALCar)
-            break;
       }
       if (_mongoc_utf8_code_point_is_in_table (utf8_codepoints[i],
                                                RandALCat_bidi_ranges,
@@ -1229,7 +1257,10 @@ char *
 _mongoc_sasl_prep (const char *in_utf8, bson_error_t *err)
 {
 #ifdef MONGOC_ENABLE_ICU
-   return _mongoc_sasl_prep_impl ("password", in_utf8, err);
+   if (_mongoc_sasl_prep_required (in_utf8)) {
+      return _mongoc_sasl_prep_impl ("password", in_utf8, err);
+   }
+   return bson_strdup (in_utf8);
 #else
    if (_mongoc_sasl_prep_required (in_utf8)) {
       bson_set_error (err,
@@ -1243,20 +1274,20 @@ _mongoc_sasl_prep (const char *in_utf8, bson_error_t *err)
 }
 
 size_t
-_mongoc_utf8_char_length (const char *c)
+_mongoc_utf8_char_length (const char *s)
 {
-   BSON_ASSERT_PARAM (c);
+   BSON_ASSERT_PARAM (s);
 
-   uint8_t *temp_c = (uint8_t *) c;
+   uint8_t *c = (uint8_t *) s;
    // UTF-8 characters are either 1, 2, 3, or 4 bytes and the character length
    // can be determined by the first byte
-   if ((*temp_c & UINT8_C (0x80)) == 0)
+   if ((*c & UINT8_C (0x80)) == 0)
       return 1u;
-   else if ((*temp_c & UINT8_C (0xe0)) == UINT8_C (0xc0))
+   else if ((*c & UINT8_C (0xe0)) == UINT8_C (0xc0))
       return 2u;
-   else if ((*temp_c & UINT8_C (0xf0)) == UINT8_C (0xe0))
+   else if ((*c & UINT8_C (0xf0)) == UINT8_C (0xe0))
       return 3u;
-   else if ((*temp_c & UINT8_C (0xf8)) == UINT8_C (0xf0))
+   else if ((*c & UINT8_C (0xf8)) == UINT8_C (0xf0))
       return 4u;
    else
       return 1u;
@@ -1274,7 +1305,8 @@ _mongoc_utf8_string_length (const char *s)
    while (*c) {
       const size_t utf8_char_length = _mongoc_utf8_char_length ((char *) c);
 
-      if (!_mongoc_utf8_is_valid ((char *) c, utf8_char_length))
+      if (!_mongoc_utf8_first_code_point_is_valid ((char *) c,
+                                                   utf8_char_length))
          return -1;
 
       str_length++;
@@ -1286,7 +1318,7 @@ _mongoc_utf8_string_length (const char *s)
 
 
 bool
-_mongoc_utf8_is_valid (const char *c, size_t length)
+_mongoc_utf8_first_code_point_is_valid (const char *c, size_t length)
 {
    BSON_ASSERT_PARAM (c);
 
