@@ -104,15 +104,16 @@ sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/
 [ -d ~/rpmbuild/SOURCES ] || mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 
 # Create a source archive for rpmbuild to use:
-pkg_version=$(awk '/%global\s+up_version/ { print $3 }' < ../mongo-c-driver.spec)
-tar_filename=$package-$pkg_version.tar
+pkg_version=$(rpmspec --srpm -q --qf '%{version}' "$spec_file")
+tar_filestem=$package-$pkg_version
+tar_filename=$tar_filestem.tar
 tar_filepath="/tmp/$tar_filename"
 tgz_filepath="$HOME/rpmbuild/SOURCES/$tar_filename.gz"
 echo "Creating source archive [$tgz_filepath]"
-git archive --format=tar --output="$tar_filepath" --prefix="$package-$pkg_version/" HEAD
-mkdir -p "$package-$pkg_version"
-cp VERSION_CURRENT "$package-$pkg_version"
-tar -rf "$tar_filepath" "$package-$pkg_version/"
+git archive --format=tar --output="$tar_filepath" --prefix="$tar_filestem/" HEAD
+mkdir -p "$tar_filestem"
+cp VERSION_CURRENT "$tar_filestem/."
+tar -rf "$tar_filepath" "$tar_filestem/"
 gzip --keep "$tar_filepath" --stdout > "$tgz_filepath"
 
 echo "Building source RPM ..."
