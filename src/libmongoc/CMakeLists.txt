@@ -366,28 +366,6 @@ if (ENABLE_SHM_COUNTERS)
    endif ()
 endif ()
 
-if (NOT ENABLE_ICU MATCHES "AUTO|ON|OFF")
-   message (FATAL_ERROR, "ENABLE_ICU option must be AUTO, ON, or OFF")
-endif()
-
-if (NOT ENABLE_ICU STREQUAL OFF)
-   if (ENABLE_ICU STREQUAL ON)
-      # do not suppress log output if find_package cannot find ICU
-      find_package (ICU COMPONENTS uc)
-   elseif (ENABLE_ICU STREQUAL AUTO)
-      find_package (ICU QUIET COMPONENTS uc)
-   endif()
-   if (ICU_FOUND)
-      set (MONGOC_ENABLE_ICU 1)
-      include_directories ("${ICU_INCLUDE_DIR}")
-   elseif (ENABLE_ICU STREQUAL ON)
-      message (FATAL_ERROR "No ICU library found. If ICU is installed in a non-standard directory, define ICU_ROOT as the ICU installation path.")
-   elseif (ENABLE_ICU STREQUAL AUTO)
-      message (STATUS "No ICU library found, SASLPrep disabled for SCRAM-SHA-256 authentication.")
-      message (STATUS "If ICU is installed in a non-standard directory, define ICU_ROOT as the ICU installation path.")
-   endif()
-endif()
-
 # Configure In-Use Encryption
 set (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION 0)
 if (NOT ENABLE_CLIENT_SIDE_ENCRYPTION MATCHES "AUTO|ON|OFF")
@@ -693,11 +671,11 @@ endif ()
 
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
 add_library(_mongoc-dependencies INTERFACE)
@@ -1212,8 +1190,7 @@ endif ()
 if(TARGET mongoc_static)
    set(link_options
       ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${ZLIB_LIBRARIES}
-      ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
-      ${LIBMONGOCRYPT_LIBRARY})
+      ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY})
    # Replace all absolute paths with search-dir link-file options:
    list(TRANSFORM link_options
         REPLACE "^(.+)/lib([^/\\.]+)\\..+$"

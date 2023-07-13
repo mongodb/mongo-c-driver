@@ -112,12 +112,6 @@ _mongoc_scram_cache_copy (const mongoc_scram_cache_t *cache)
    return ret;
 }
 
-#ifdef MONGOC_ENABLE_ICU
-#include <unicode/usprep.h>
-#include <unicode/ustring.h>
-#endif
-
-
 void
 _mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache)
 {
@@ -1058,7 +1052,6 @@ _mongoc_sasl_prep_required (const char *str)
    return false;
 }
 
-#ifdef MONGOC_ENABLE_ICU
 char *
 _mongoc_sasl_prep_impl (const char *name,
                         const char *in_utf8,
@@ -1251,26 +1244,14 @@ _mongoc_sasl_prep_impl (const char *name,
    return (char *) out_utf8;
 #undef SASL_PREP_ERR_RETURN
 }
-#endif
 
 char *
 _mongoc_sasl_prep (const char *in_utf8, bson_error_t *err)
 {
-#ifdef MONGOC_ENABLE_ICU
    if (_mongoc_sasl_prep_required (in_utf8)) {
       return _mongoc_sasl_prep_impl ("password", in_utf8, err);
    }
    return bson_strdup (in_utf8);
-#else
-   if (_mongoc_sasl_prep_required (in_utf8)) {
-      bson_set_error (err,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: ICU required to SASLPrep password");
-      return NULL;
-   }
-   return bson_strdup (in_utf8);
-#endif
 }
 
 size_t
