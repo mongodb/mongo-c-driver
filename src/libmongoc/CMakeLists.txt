@@ -708,7 +708,12 @@ set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependen
 
 # utf8proc configuration
 find_package(Utf8Proc REQUIRED)
+set(UTF8PROC_INCLUDE_DIRS, "")
 if (USE_BUNDLED_UTF8PROC)
+   set (
+      UTF8PROC_INCLUDE_DIRS
+      "${SOURCE_DIR}/src/utf8proc-2.8.0"
+   )
    list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
 else()
    target_link_libraries(_mongoc-dependencies INTERFACE utf8proc)
@@ -759,6 +764,7 @@ add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
+target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
@@ -809,6 +815,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-l${RESOLVE_LIB_NAME}")
    endif()
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
+   target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
