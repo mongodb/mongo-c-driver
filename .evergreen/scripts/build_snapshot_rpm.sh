@@ -105,10 +105,11 @@ sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/
 
 # Create a source archive for rpmbuild to use:
 pkg_version=$(rpmspec --srpm -q --qf '%{version}' "$spec_file")
+expect_filename=$(rpmspec --srpm -q --qf '%{source}' "$spec_file")
 tar_filestem=$package-$pkg_version
 tar_filename=$tar_filestem.tar
 tar_filepath="/tmp/$tar_filename"
-tgz_filepath="$HOME/rpmbuild/SOURCES/$tar_filename.gz"
+tgz_filepath="$HOME/rpmbuild/SOURCES/$expect_filename"
 echo "Creating source archive [$tgz_filepath]"
 git archive --format=tar --output="$tar_filepath" --prefix="$tar_filestem/" HEAD
 mkdir -p "$tar_filestem"
