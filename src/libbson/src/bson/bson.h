@@ -921,6 +921,9 @@ bson_append_iter (bson_t *bson,
                   int key_length,
                   const bson_iter_t *iter);
 
+#define BSON_APPEND_ITER(b, key, val) \
+   bson_append_iter (b, key, (int) strlen (key), val)
+
 
 /**
  * bson_append_minkey:
@@ -1185,6 +1188,9 @@ bson_append_date_time (bson_t *bson,
  */
 BSON_EXPORT (bool)
 bson_append_now_utc (bson_t *bson, const char *key, int key_length);
+
+#define BSON_APPEND_NOW_UTC(b, key) \
+   bson_append_now_utc (b, key, (int) strlen (key))
 
 /**
  * bson_append_timestamp:
