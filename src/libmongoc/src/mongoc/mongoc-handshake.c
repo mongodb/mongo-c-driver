@@ -534,9 +534,9 @@ _mongoc_handshake_cleanup (void)
    _free_driver_info (h);
    _free_platform_string (h);
    _free_env_info (h);
+   *h = (mongoc_handshake_t) { 0 };
 
    bson_mutex_destroy (&gHandshakeLock);
-   *h = (mongoc_handshake_t) { 0 };
 }
 
 static void
