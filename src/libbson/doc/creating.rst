@@ -52,28 +52,21 @@ Notice that we omitted the call to :symbol:`bson_init()`. By specifying ``BSON_I
 Sub-Documents and Sub-Arrays
 ----------------------------
 
-To simplify the creation of sub-documents and arrays, :symbol:`bson_append_document_begin()` and :symbol:`bson_append_array_begin()` exist. These can be used to build a sub-document using the parent documents memory region as the destination buffer.
+To simplify the creation of sub-documents :symbol:`bson_append_document_begin()` can be used to build a sub-document using the parent's memory region as the destination buffer.
 
-.. code-block:: c
+.. literalinclude:: ../examples/creating.c
+   :language: c
+   :start-after: // bson_append_document_begin example ... begin
+   :end-before: // bson_append_document_begin example ... end
+   :dedent: 6
 
-  bson_t parent;
-  bson_t child;
-  char *str;
+To simplify the creation of sub-arrays :symbol:`bson_array_builder_t` can be used to build a sub-array using the parent's memory region as the destination buffer.
 
-  bson_init (&parent);
-  bson_append_document_begin (&parent, "foo", 3, &child);
-  bson_append_int32 (&child, "baz", 3, 1);
-  bson_append_document_end (&parent, &child);
-
-  str = bson_as_canonical_extended_json (&parent, NULL);
-  printf ("%s\n", str);
-  bson_free (str);
-
-  bson_destroy (&parent);
-
-.. code-block:: none
-
-  { "foo" : { "baz" : 1 } }
+.. literalinclude:: ../examples/creating.c
+   :language: c
+   :start-after: // bson_array_builder_t example ... begin
+   :end-before: // bson_array_builder_t example ... end
+   :dedent: 6
 
 Simplified BSON C Object Notation
 ---------------------------------

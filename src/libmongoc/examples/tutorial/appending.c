@@ -1,4 +1,3 @@
-
 #include <bson/bson.h>
 
 int
@@ -10,12 +9,9 @@ main (int argc, char *argv[])
    const char *schools[] = {"Vassar", "Yale"};
    const char *degrees[] = {"BA", "PhD"};
    uint32_t i;
-   char buf[16];
-   const char *key;
-   size_t keylen;
    bson_t *document;
    bson_t child;
-   bson_t child2;
+   bson_array_builder_t *bab;
    char *str;
 
    document = bson_new ();
@@ -53,26 +49,24 @@ main (int argc, char *argv[])
    /*
     * Append array of strings. Generate keys "0", "1", "2".
     */
-   BSON_APPEND_ARRAY_BEGIN (document, "languages", &child);
+   BSON_APPEND_ARRAY_BUILDER_BEGIN (document, "languages", &bab);
    for (i = 0; i < sizeof lang_names / sizeof (char *); ++i) {
-      keylen = bson_uint32_to_string (i, &key, buf, sizeof buf);
-      bson_append_utf8 (&child, key, (int) keylen, lang_names[i], -1);
+      bson_array_builder_append_utf8 (bab, lang_names[i], -1);
    }
-   bson_append_array_end (document, &child);
+   bson_append_array_builder_end (document, bab);
 
    /*
     * Array of subdocuments:
     *    degrees: [ { degree: "BA", school: "Vassar" }, ... ]
     */
-   BSON_APPEND_ARRAY_BEGIN (document, "degrees", &child);
+   BSON_APPEND_ARRAY_BUILDER_BEGIN (document, "degrees", &bab);
    for (i = 0; i < sizeof degrees / sizeof (char *); ++i) {
-      keylen = bson_uint32_to_string (i, &key, buf, sizeof buf);
-      bson_append_document_begin (&child, key, (int) keylen, &child2);
-      BSON_APPEND_UTF8 (&child2, "degree", degrees[i]);
-      BSON_APPEND_UTF8 (&child2, "school", schools[i]);
-      bson_append_document_end (&child, &child2);
+      bson_array_builder_append_document_begin (bab, &child);
+      BSON_APPEND_UTF8 (&child, "degree", degrees[i]);
+      BSON_APPEND_UTF8 (&child, "school", schools[i]);
+      bson_array_builder_append_document_end (bab, &child);
    }
-   bson_append_array_end (document, &child);
+   bson_append_array_builder_end (document, bab);
 
    /*
     * Print the document as a JSON string.

@@ -346,6 +346,7 @@ if (ENABLE_EXAMPLES)
    add_example (bson-validate examples/bson-validate.c)
    add_example (json-to-bson examples/json-to-bson.c)
    add_example (bson-check-depth examples/bson-check-depth.c)
+   add_example (creating examples/creating.c)
 endif () # ENABLE_EXAMPLES
 
 set (BSON_HEADER_INSTALL_DIR
