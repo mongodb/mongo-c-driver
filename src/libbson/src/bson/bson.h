@@ -592,6 +592,24 @@ bson_array_as_relaxed_extended_json (const bson_t *bson, size_t *length);
 BSON_EXPORT (char *)
 bson_array_as_canonical_extended_json (const bson_t *bson, size_t *length);
 
+// bson_array_builder_t defines an API for building arrays.
+// BSON arrays require sequential numeric keys "0", "1", "2", ...
+typedef struct _bson_array_builder_t bson_array_builder_t;
+
+// bson_array_builder_new may be used to build a top-level BSON array. Example:
+// `[1,2,3]`.
+// To append an array field to a document (Example: `{ "field": [1,2,3] }`), use
+// `bson_append_array_builder_begin`.
+BSON_EXPORT (bson_array_builder_t *) bson_array_builder_new (void);
+
+// bson_array_builder_build initializes and moves BSON data to `out`.
+// `bab` may be reused and will start appending a new array at index "0".
+BSON_EXPORT (bool)
+bson_array_builder_build (bson_array_builder_t *bab, bson_t *out);
+
+BSON_EXPORT (void)
+bson_array_builder_destroy (bson_array_builder_t *bab);
+
 BSON_EXPORT (bool)
 bson_append_value (bson_t *bson,
                    const char *key,
@@ -600,6 +618,10 @@ bson_append_value (bson_t *bson,
 
 #define BSON_APPEND_VALUE(b, key, val) \
    bson_append_value (b, key, (int) strlen (key), (val))
+
+BSON_EXPORT (bool)
+bson_array_builder_append_value (bson_array_builder_t *bab,
+                                 const bson_value_t *value);
 
 /**
  * bson_append_array:
@@ -621,6 +643,10 @@ bson_append_array (bson_t *bson,
 
 #define BSON_APPEND_ARRAY(b, key, val) \
    bson_append_array (b, key, (int) strlen (key), val)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_array (bson_array_builder_t *bab,
+                                 const bson_t *array);
 
 /**
  * bson_append_binary:
@@ -645,6 +671,12 @@ bson_append_binary (bson_t *bson,
 #define BSON_APPEND_BINARY(b, key, subtype, val, len) \
    bson_append_binary (b, key, (int) strlen (key), subtype, val, len)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_binary (bson_array_builder_t *bab,
+                                  bson_subtype_t subtype,
+                                  const uint8_t *binary,
+                                  uint32_t length);
+
 /**
  * bson_append_bool:
  * @bson: A bson_t.
@@ -660,6 +692,9 @@ bson_append_bool (bson_t *bson, const char *key, int key_length, bool value);
 
 #define BSON_APPEND_BOOL(b, key, val) \
    bson_append_bool (b, key, (int) strlen (key), val)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_bool (bson_array_builder_t *bab, bool value);
 
 /**
  * bson_append_code:
@@ -680,6 +715,10 @@ bson_append_code (bson_t *bson,
 
 #define BSON_APPEND_CODE(b, key, val) \
    bson_append_code (b, key, (int) strlen (key), val)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_code (bson_array_builder_t *bab,
+                                const char *javascript);
 
 /**
  * bson_append_code_with_scope:
@@ -703,6 +742,11 @@ bson_append_code_with_scope (bson_t *bson,
 #define BSON_APPEND_CODE_WITH_SCOPE(b, key, val, scope) \
    bson_append_code_with_scope (b, key, (int) strlen (key), val, scope)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_code_with_scope (bson_array_builder_t *bab,
+                                           const char *javascript,
+                                           const bson_t *scope);
+
 /**
  * bson_append_dbpointer:
  * @bson: A bson_t.
@@ -725,6 +769,11 @@ bson_append_dbpointer (bson_t *bson,
 #define BSON_APPEND_DBPOINTER(b, key, coll, oid) \
    bson_append_dbpointer (b, key, (int) strlen (key), coll, oid)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_dbpointer (bson_array_builder_t *bab,
+                                     const char *collection,
+                                     const bson_oid_t *oid);
+
 /**
  * bson_append_double:
  * @bson: A bson_t.
@@ -742,6 +791,9 @@ bson_append_double (bson_t *bson,
 
 #define BSON_APPEND_DOUBLE(b, key, val) \
    bson_append_double (b, key, (int) strlen (key), val)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_double (bson_array_builder_t *bab, double value);
 
 /**
  * bson_append_document:
@@ -762,6 +814,10 @@ bson_append_document (bson_t *bson,
 
 #define BSON_APPEND_DOCUMENT(b, key, val) \
    bson_append_document (b, key, (int) strlen (key), val)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_document (bson_array_builder_t *bab,
+                                    const bson_t *value);
 
 /**
  * bson_append_document_begin:
@@ -789,6 +845,10 @@ bson_append_document_begin (bson_t *bson,
 #define BSON_APPEND_DOCUMENT_BEGIN(b, key, child) \
    bson_append_document_begin (b, key, (int) strlen (key), child)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_document_begin (bson_array_builder_t *bab,
+                                          bson_t *child);
+
 /**
  * bson_append_document_end:
  * @bson: A bson_t.
@@ -801,6 +861,10 @@ bson_append_document_begin (bson_t *bson,
  */
 BSON_EXPORT (bool)
 bson_append_document_end (bson_t *bson, bson_t *child);
+
+BSON_EXPORT (bool)
+bson_array_builder_append_document_end (bson_array_builder_t *bab,
+                                        bson_t *child);
 
 
 /**
@@ -865,6 +929,9 @@ bson_append_int32 (bson_t *bson,
 #define BSON_APPEND_INT32(b, key, val) \
    bson_append_int32 (b, key, (int) strlen (key), val)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_int32 (bson_array_builder_t *bab, int32_t value);
+
 /**
  * bson_append_int64:
  * @bson: A bson_t.
@@ -884,6 +951,9 @@ bson_append_int64 (bson_t *bson,
 #define BSON_APPEND_INT64(b, key, val) \
    bson_append_int64 (b, key, (int) strlen (key), val)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_int64 (bson_array_builder_t *bab, int64_t value);
+
 /**
  * bson_append_decimal128:
  * @bson: A bson_t.
@@ -902,6 +972,10 @@ bson_append_decimal128 (bson_t *bson,
 
 #define BSON_APPEND_DECIMAL128(b, key, val) \
    bson_append_decimal128 (b, key, (int) strlen (key), val)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_decimal128 (bson_array_builder_t *bab,
+                                      const bson_decimal128_t *value);
 
 /**
  * bson_append_iter:
@@ -924,6 +998,9 @@ bson_append_iter (bson_t *bson,
 #define BSON_APPEND_ITER(b, key, val) \
    bson_append_iter (b, key, (int) strlen (key), val)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_iter (bson_array_builder_t *bab,
+                                const bson_iter_t *iter);
 
 /**
  * bson_append_minkey:
@@ -943,6 +1020,8 @@ bson_append_minkey (bson_t *bson, const char *key, int key_length);
 #define BSON_APPEND_MINKEY(b, key) \
    bson_append_minkey (b, key, (int) strlen (key))
 
+BSON_EXPORT (bool)
+bson_array_builder_append_minkey (bson_array_builder_t *bab);
 
 /**
  * bson_append_maxkey:
@@ -962,6 +1041,8 @@ bson_append_maxkey (bson_t *bson, const char *key, int key_length);
 #define BSON_APPEND_MAXKEY(b, key) \
    bson_append_maxkey (b, key, (int) strlen (key))
 
+BSON_EXPORT (bool)
+bson_array_builder_append_maxkey (bson_array_builder_t *bab);
 
 /**
  * bson_append_null:
@@ -977,6 +1058,8 @@ bson_append_null (bson_t *bson, const char *key, int key_length);
 
 #define BSON_APPEND_NULL(b, key) bson_append_null (b, key, (int) strlen (key))
 
+BSON_EXPORT (bool)
+bson_array_builder_append_null (bson_array_builder_t *bab);
 
 /**
  * bson_append_oid:
@@ -997,6 +1080,10 @@ bson_append_oid (bson_t *bson,
 
 #define BSON_APPEND_OID(b, key, val) \
    bson_append_oid (b, key, (int) strlen (key), val)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_oid (bson_array_builder_t *bab,
+                               const bson_oid_t *oid);
 
 /**
  * bson_append_regex:
@@ -1031,6 +1118,11 @@ bson_append_regex (bson_t *bson,
 #define BSON_APPEND_REGEX(b, key, val, opt) \
    bson_append_regex (b, key, (int) strlen (key), val, opt)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_regex (bson_array_builder_t *bab,
+                                 const char *regex,
+                                 const char *options);
+
 /**
  * bson_append_regex:
  * @bson: A bson_t.
@@ -1064,6 +1156,11 @@ bson_append_regex_w_len (bson_t *bson,
                          int regex_length,
                          const char *options);
 
+BSON_EXPORT (bool)
+bson_array_builder_append_regex_w_len (bson_array_builder_t *bab,
+                                       const char *regex,
+                                       int regex_length,
+                                       const char *options);
 
 /**
  * bson_append_utf8:
@@ -1090,6 +1187,10 @@ bson_append_utf8 (bson_t *bson,
 #define BSON_APPEND_UTF8(b, key, val) \
    bson_append_utf8 (b, key, (int) strlen (key), val, (int) strlen (val))
 
+BSON_EXPORT (bool)
+bson_array_builder_append_utf8 (bson_array_builder_t *bab,
+                                const char *value,
+                                int length);
 
 /**
  * bson_append_symbol:
@@ -1115,6 +1216,11 @@ bson_append_symbol (bson_t *bson,
 #define BSON_APPEND_SYMBOL(b, key, val) \
    bson_append_symbol (b, key, (int) strlen (key), val, (int) strlen (val))
 
+BSON_EXPORT (bool)
+bson_array_builder_append_symbol (bson_array_builder_t *bab,
+                                  const char *value,
+                                  int length);
+
 /**
  * bson_append_time_t:
  * @bson: A bson_t.
@@ -1134,6 +1240,9 @@ bson_append_time_t (bson_t *bson,
 
 #define BSON_APPEND_TIME_T(b, key, val) \
    bson_append_time_t (b, key, (int) strlen (key), val)
+
+BSON_EXPORT (bool)
+bson_array_builder_append_time_t (bson_array_builder_t *bab, time_t value);
 
 /**
  * bson_append_timeval:
@@ -1155,6 +1264,10 @@ bson_append_timeval (bson_t *bson,
 #define BSON_APPEND_TIMEVAL(b, key, val) \
    bson_append_timeval (b, key, (int) strlen (key), val)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_timeval (bson_array_builder_t *bab,
+                                   struct timeval *value);
+
 /**
  * bson_append_date_time:
  * @bson: A bson_t.
@@ -1175,6 +1288,9 @@ bson_append_date_time (bson_t *bson,
 #define BSON_APPEND_DATE_TIME(b, key, val) \
    bson_append_date_time (b, key, (int) strlen (key), val)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_date_time (bson_array_builder_t *bab, int64_t value);
+
 /**
  * bson_append_now_utc:
  * @bson: A bson_t.
@@ -1191,6 +1307,9 @@ bson_append_now_utc (bson_t *bson, const char *key, int key_length);
 
 #define BSON_APPEND_NOW_UTC(b, key) \
    bson_append_now_utc (b, key, (int) strlen (key))
+
+BSON_EXPORT (bool)
+bson_array_builder_append_now_utc (bson_array_builder_t *bab);
 
 /**
  * bson_append_timestamp:
@@ -1218,6 +1337,10 @@ bson_append_timestamp (bson_t *bson,
 #define BSON_APPEND_TIMESTAMP(b, key, val, inc) \
    bson_append_timestamp (b, key, (int) strlen (key), val, inc)
 
+BSON_EXPORT (bool)
+bson_array_builder_append_timestamp (bson_array_builder_t *bab,
+                                     uint32_t timestamp,
+                                     uint32_t increment);
 
 /**
  * bson_append_undefined:
@@ -1236,27 +1359,11 @@ bson_append_undefined (bson_t *bson, const char *key, int key_length);
 #define BSON_APPEND_UNDEFINED(b, key) \
    bson_append_undefined (b, key, (int) strlen (key))
 
+BSON_EXPORT (bool)
+bson_array_builder_append_undefined (bson_array_builder_t *bab);
 
 BSON_EXPORT (bool)
 bson_concat (bson_t *dst, const bson_t *src);
-
-// bson_array_builder_t defines an API for building arrays.
-// BSON arrays require sequential numeric keys "0", "1", "2", ...
-typedef struct _bson_array_builder_t bson_array_builder_t;
-
-// bson_array_builder_new may be used to build a top-level BSON array. Example:
-// `[1,2,3]`.
-// To append an array field to a document (Example: `{ "field": [1,2,3] }`), use
-// `bson_append_array_builder_begin`.
-BSON_EXPORT (bson_array_builder_t *) bson_array_builder_new (void);
-
-// bson_array_builder_build initializes and moves BSON data to `out`.
-// `bab` may be reused and will start appending a new array at index "0".
-BSON_EXPORT (bool)
-bson_array_builder_build (bson_array_builder_t *bab, bson_t *out);
-
-BSON_EXPORT (void)
-bson_array_builder_destroy (bson_array_builder_t *bab);
 
 BSON_EXPORT (bool)
 bson_append_array_builder_begin (bson_t *bson,
@@ -1264,166 +1371,19 @@ bson_append_array_builder_begin (bson_t *bson,
                                  int key_length,
                                  bson_array_builder_t **child);
 
-BSON_EXPORT (bool)
-bson_append_array_builder_end (bson_t *bson, bson_array_builder_t *child);
-
 #define BSON_APPEND_ARRAY_BUILDER_BEGIN(b, key, child) \
    bson_append_array_builder_begin (b, key, (int) strlen (key), child)
-
-/* bson_array_builder_append_* functions ... begin */
-
-BSON_EXPORT (bool)
-bson_array_builder_append_value (bson_array_builder_t *bab,
-                                 const bson_value_t *value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_array (bson_array_builder_t *bab,
-                                 const bson_t *array);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_binary (bson_array_builder_t *bab,
-                                  bson_subtype_t subtype,
-                                  const uint8_t *binary,
-                                  uint32_t length);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_bool (bson_array_builder_t *bab, bool value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_code (bson_array_builder_t *bab,
-                                const char *javascript);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_code_with_scope (bson_array_builder_t *bab,
-                                           const char *javascript,
-                                           const bson_t *scope);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_dbpointer (bson_array_builder_t *bab,
-                                     const char *collection,
-                                     const bson_oid_t *oid);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_double (bson_array_builder_t *bab, double value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_document (bson_array_builder_t *bab,
-                                    const bson_t *value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_document_begin (bson_array_builder_t *bab,
-                                          bson_t *child);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_document_end (bson_array_builder_t *bab,
-                                        bson_t *child);
-
-BSON_EXPORT (bool)
-bson_array_builder_append_int32 (bson_array_builder_t *bab, int32_t value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_int64 (bson_array_builder_t *bab, int64_t value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_decimal128 (bson_array_builder_t *bab,
-                                      const bson_decimal128_t *value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_iter (bson_array_builder_t *bab,
-                                const bson_iter_t *iter);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_minkey (bson_array_builder_t *bab);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_maxkey (bson_array_builder_t *bab);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_null (bson_array_builder_t *bab);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_oid (bson_array_builder_t *bab,
-                               const bson_oid_t *oid);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_regex (bson_array_builder_t *bab,
-                                 const char *regex,
-                                 const char *options);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_regex_w_len (bson_array_builder_t *bab,
-                                       const char *regex,
-                                       int regex_length,
-                                       const char *options);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_utf8 (bson_array_builder_t *bab,
-                                const char *value,
-                                int length);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_symbol (bson_array_builder_t *bab,
-                                  const char *value,
-                                  int length);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_time_t (bson_array_builder_t *bab, time_t value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_timeval (bson_array_builder_t *bab,
-                                   struct timeval *value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_date_time (bson_array_builder_t *bab, int64_t value);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_now_utc (bson_array_builder_t *bab);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_timestamp (bson_array_builder_t *bab,
-                                     uint32_t timestamp,
-                                     uint32_t increment);
-
-
-BSON_EXPORT (bool)
-bson_array_builder_append_undefined (bson_array_builder_t *bab);
-
 
 BSON_EXPORT (bool)
 bson_array_builder_append_array_builder_begin (bson_array_builder_t *bab,
                                                bson_array_builder_t **child);
 
 BSON_EXPORT (bool)
+bson_append_array_builder_end (bson_t *bson, bson_array_builder_t *child);
+
+BSON_EXPORT (bool)
 bson_array_builder_append_array_builder_end (bson_array_builder_t *bab,
                                              bson_array_builder_t *child);
-
-/* bson_array_builder_append_* functions ... end */
 
 
 BSON_END_DECLS
