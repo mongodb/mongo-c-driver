@@ -759,6 +759,11 @@ target_compile_definitions (mongoc_shared
       ${KMS_MSG_DEFINITIONS}
       MCOMMON_NAME_PREFIX=_mongoc_mcommon
 )
+
+if (USE_BUNDLED_UTF8PROC)
+   target_compile_definitions (mongoc_shared PRIVATE UTF8PROC_STATIC)
+endif ()
+
 # Several directories in the source and build trees contain headers we would like
 # include via relative reference, but they all end up in the same install path
 target_include_directories (
@@ -807,6 +812,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          ${KMS_MSG_DEFINITIONS}
          MCOMMON_NAME_PREFIX=_mongoc_mcommon
    )
+   if (USE_BUNDLED_UTF8PROC)
+      target_compile_definitions (mongoc_static PRIVATE UTF8PROC_STATIC)
+   endif ()
    # Several directories in the source and build trees contain headers we would like
    # include via relative reference, but they all end up in the same install path
    target_include_directories (
