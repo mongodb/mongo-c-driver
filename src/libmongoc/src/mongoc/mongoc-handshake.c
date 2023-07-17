@@ -611,8 +611,8 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
    bson_string_free (combined_platform, true);
 }
 
-static bson_t *
-_get_subdoc_static (bson_t *doc, char *subdoc_name)
+static bool
+_get_subdoc_static (bson_t *doc, char *subdoc_name, bson_t *out)
 {
    bson_iter_t iter;
    if (bson_iter_init_find (&iter, doc, subdoc_name) &&
@@ -620,20 +620,21 @@ _get_subdoc_static (bson_t *doc, char *subdoc_name)
       uint32_t len;
       const uint8_t *data;
       bson_iter_document (&iter, &len, &data);
+      bson_init_static (out, data, len);
 
-      return bson_new_from_data (data, len);
+      return true;
    }
-   return NULL;
+   return false;
 }
 
 static bool
 _truncate_handshake (bson_t **doc)
 {
    if ((*doc)->len > HANDSHAKE_MAX_SIZE) {
-      bson_t *env_doc = _get_subdoc_static (*doc, "env");
-      if (env_doc) {
+      bson_t env_doc;
+      if (_get_subdoc_static (*doc, "env", &env_doc)) {
          bson_t *new_env = bson_new ();
-         bson_copy_to_including_noinit (env_doc, new_env, "name", NULL);
+         bson_copy_to_including_noinit (&env_doc, new_env, "name", NULL);
 
          bson_t *new_doc = bson_new ();
          bson_copy_to_excluding_noinit (*doc, new_doc, "env", NULL);
@@ -642,15 +643,14 @@ _truncate_handshake (bson_t **doc)
          bson_destroy (new_env);
          bson_destroy (*doc);
          *doc = new_doc;
-         bson_destroy (env_doc);
       }
    }
 
    if ((*doc)->len > HANDSHAKE_MAX_SIZE) {
-      bson_t *os_doc = _get_subdoc_static (*doc, "os");
-      if (os_doc) {
+      bson_t os_doc;
+      if (_get_subdoc_static (*doc, "os", &os_doc)) {
          bson_t *new_os = bson_new ();
-         bson_copy_to_including_noinit (os_doc, new_os, "type", NULL);
+         bson_copy_to_including_noinit (&os_doc, new_os, "type", NULL);
 
          bson_t *new_doc = bson_new ();
          bson_copy_to_excluding_noinit (*doc, new_doc, "os", NULL);
@@ -659,7 +659,6 @@ _truncate_handshake (bson_t **doc)
          bson_destroy (new_os);
          bson_destroy (*doc);
          *doc = new_doc;
-         bson_destroy (os_doc);
       }
    }
 
