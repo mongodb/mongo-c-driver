@@ -260,14 +260,14 @@ _handshake_check_env (bson_t *doc,
 
    if (expected_timeout_sec) {
       ASSERT (bson_iter_find (&inner_iter, "timeout_sec"));
-      ASSERT (BSON_ITER_HOLDS_INT (&inner_iter));
-      ASSERT (bson_iter_as_int64 (&inner_iter) == expected_timeout_sec);
+      ASSERT (BSON_ITER_HOLDS_INT32 (&inner_iter));
+      ASSERT_CMPINT32 (bson_iter_int32 (&inner_iter), ==, expected_timeout_sec);
    }
 
    if (expected_memory_mb) {
       ASSERT (bson_iter_find (&inner_iter, "memory_mb"));
       ASSERT (BSON_ITER_HOLDS_INT32 (&inner_iter));
-      ASSERT (bson_iter_int32 (&inner_iter) == expected_memory_mb);
+      ASSERT_CMPINT32 (bson_iter_int32 (&inner_iter), ==, expected_memory_mb);
    }
 
    if (expected_region) {
