@@ -398,6 +398,7 @@ static void
 _get_env_info (mongoc_handshake_t *handshake)
 {
    char *aws_env = _mongoc_getenv ("AWS_EXECUTION_ENV");
+   char *aws_lambda = _mongoc_getenv ("AWS_LAMBDA_RUNTIME_API");
    char *vercel_env = _mongoc_getenv ("VERCEL");
    char *azure_env = _mongoc_getenv ("FUNCTIONS_WORKER_RUNTIME");
    char *gcp_env = _mongoc_getenv ("K_SERVICE");
@@ -405,8 +406,9 @@ _get_env_info (mongoc_handshake_t *handshake)
    char *timeout_str = NULL;
    char *region_str = NULL;
 
-   bool is_aws = aws_env && strlen (aws_env) &&
-                 (aws_env == strstr (aws_env, "AWS_Lambda_"));
+   bool is_aws = (aws_env && strlen (aws_env) &&
+                  (aws_env == strstr (aws_env, "AWS_Lambda_"))) ||
+                 (aws_lambda && strlen (aws_lambda));
    bool is_vercel = vercel_env && strlen (vercel_env);
    bool is_azure = azure_env && strlen (azure_env);
    bool is_gcp = gcp_env && strlen (gcp_env);
@@ -531,12 +533,12 @@ _mongoc_handshake_init (void)
 void
 _mongoc_handshake_cleanup (void)
 {
-   mongoc_handshake_t *h = _mongoc_handshake_get();
+   mongoc_handshake_t *h = _mongoc_handshake_get ();
    _free_system_info (h);
    _free_driver_info (h);
    _free_platform_string (h);
    _free_env_info (h);
-   *h = (mongoc_handshake_t) { 0 };
+   *h = (mongoc_handshake_t){0};
 
    bson_mutex_destroy (&gHandshakeLock);
 }
@@ -571,14 +573,14 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
     * platform information is truncated
     * Try to drop flags first, and if there is still not enough space also drop
     * compiler info */
-   if (!truncate || bson_cmp_greater_equal_su (max_platform_str_size,
-                                         combined_platform->len +
-                                            strlen (compiler_info) + 1u)) {
+   if (!truncate || bson_cmp_greater_equal_su (
+                       max_platform_str_size,
+                       combined_platform->len + strlen (compiler_info) + 1u)) {
       bson_string_append (combined_platform, compiler_info);
    }
-   if (!truncate ||
-       bson_cmp_greater_equal_su (max_platform_str_size,
-                            combined_platform->len + strlen (flags) + 1u)) {
+   if (!truncate || bson_cmp_greater_equal_su (max_platform_str_size,
+                                               combined_platform->len +
+                                                  strlen (flags) + 1u)) {
       bson_string_append (combined_platform, flags);
    }
 
@@ -716,7 +718,8 @@ _mongoc_handshake_build_doc_with_application (const char *appname)
              "env",
              doc (kv ("name", cstr (env_name)),
                   if (md->env_timeout_sec.set,
-                      then (kv ("timeout_sec", int32 (md->env_timeout_sec.value)))),
+                      then (kv ("timeout_sec",
+                                int32 (md->env_timeout_sec.value)))),
                   if (md->env_memory_mb.set,
                       then (kv ("memory_mb", int32 (md->env_memory_mb.value)))),
                   if (md->env_region,
