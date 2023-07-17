@@ -42,13 +42,13 @@ main (int argc, const char **argv)
       bson_array_builder_t *bab;
 
       bson_append_array_builder_begin (&parent, "foo", 3, &bab);
-      bson_array_builder_append_int32 (bab, 1);
-      bson_array_builder_append_int32 (bab, 2);
-      bson_array_builder_append_int32 (bab, 3);
+      bson_array_builder_append_int32 (bab, 9);
+      bson_array_builder_append_int32 (bab, 8);
+      bson_array_builder_append_int32 (bab, 7);
       bson_append_array_builder_end (&parent, bab);
 
       char *str = bson_as_relaxed_extended_json (&parent, NULL);
-      printf ("%s\n", str); // Prints: { "foo" : [ 1, 2, 3 ] }
+      printf ("%s\n", str); // Prints: { "foo" : [ 9, 8, 7 ] }
       bson_free (str);
 
       bson_destroy (&parent);
