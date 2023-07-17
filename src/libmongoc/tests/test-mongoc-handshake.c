@@ -376,6 +376,7 @@ static void
 clear_faas_env (void)
 {
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", ""));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_RUNTIME_API", ""));
    ASSERT (_mongoc_setenv ("AWS_REGION", ""));
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", ""));
    ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", ""));
@@ -400,6 +401,55 @@ test_mongoc_handshake_data_append_success (void)
    _handshake_check_platform (doc);
 
    bson_destroy (doc);
+   _reset_handshake ();
+}
+
+static void
+test_valid_aws_lambda (void)
+{
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_RUNTIME_API", "foo"));
+   ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
+   _handshake_check_env_name (doc, "aws.lambda");
+
+   bson_iter_t iter;
+   ASSERT (bson_iter_init_find (&iter, doc, "env"));
+   bson_iter_t inner_iter;
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   bson_iter_recurse (&iter, &inner_iter);
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_valid_aws_and_vercel (void)
+{
+   // Test that Vercel takes precedence over AWS. From the specification:
+   // > When variables for multiple ``client.env.name`` values are present,
+   // > ``vercel`` takes precedence over ``aws.lambda``
+
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
+
+   ASSERT (_mongoc_setenv ("VERCEL", "1"));
+   ASSERT (_mongoc_setenv ("VERCEL_REGION", "cdg1"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env (doc, 0, 0, "cdg1");
+   _handshake_check_env_name (doc, "vercel");
+
+   bson_destroy (doc);
+   clear_faas_env ();
    _reset_handshake ();
 }
 
@@ -491,7 +541,7 @@ test_multiple_faas (void)
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
 
-   ASSERT (!bson_has_field(doc, "env"));
+   ASSERT (!bson_has_field (doc, "env"));
 
    bson_destroy (doc);
    clear_faas_env ();
@@ -561,7 +611,7 @@ test_aws_not_lambda (void)
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
 
-   ASSERT (!bson_has_field(doc, "env"));
+   ASSERT (!bson_has_field (doc, "env"));
 
    bson_destroy (doc);
    clear_faas_env ();
@@ -844,19 +894,21 @@ test_mongoc_platform_truncate (int drop)
    md->driver_version = bson_strdup ("test_f");
 
    // Set all fields used to generate the platform string to empty
-   bson_free(md->platform);
-   md->platform = bson_strdup("");
-   bson_free(md->compiler_info);
-   md->compiler_info = bson_strdup("");
-   bson_free(md->flags);
-   md->flags = bson_strdup("");
+   bson_free (md->platform);
+   md->platform = bson_strdup ("");
+   bson_free (md->compiler_info);
+   md->compiler_info = bson_strdup ("");
+   bson_free (md->flags);
+   md->flags = bson_strdup ("");
 
    // Set os_version to a long string to force drop all os fields except name
    bson_free (md->os_version);
    md->os_version = big_string;
 
-   bson_t* handshake_no_platform = _mongoc_handshake_build_doc_with_application (default_appname);
-   size_t handshake_remaining_space = HANDSHAKE_MAX_SIZE - handshake_no_platform->len;
+   bson_t *handshake_no_platform =
+      _mongoc_handshake_build_doc_with_application (default_appname);
+   size_t handshake_remaining_space =
+      HANDSHAKE_MAX_SIZE - handshake_no_platform->len;
    bson_destroy (handshake_no_platform);
 
    md->os_version = bson_strdup ("test_c");
@@ -870,10 +922,11 @@ test_mongoc_platform_truncate (int drop)
    if (drop == 2) {
       undropped = bson_strdup_printf ("%s", "");
    } else if (drop == 1) {
-      handshake_remaining_space -= strlen(md->compiler_info);
+      handshake_remaining_space -= strlen (md->compiler_info);
       undropped = bson_strdup_printf ("%s", md->compiler_info);
    } else {
-      handshake_remaining_space -= strlen(md->flags) + strlen(md->compiler_info);
+      handshake_remaining_space -=
+         strlen (md->flags) + strlen (md->compiler_info);
       undropped = bson_strdup_printf ("%s%s", md->compiler_info, md->flags);
    }
 
@@ -881,7 +934,8 @@ test_mongoc_platform_truncate (int drop)
    ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
 
    bson_t *doc;
-   ASSERT (doc = _mongoc_handshake_build_doc_with_application (default_appname));
+   ASSERT (doc =
+              _mongoc_handshake_build_doc_with_application (default_appname));
 
    /* doc.len being strictly less than HANDSHAKE_MAX_SIZE proves that we have
     * dropped the flags correctly, instead of truncating anything
@@ -1248,6 +1302,11 @@ test_handshake_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/MongoDB/handshake/faas/valid_azure", test_valid_azure);
    TestSuite_Add (suite, "/MongoDB/handshake/faas/valid_gcp", test_valid_gcp);
+   TestSuite_Add (
+      suite, "/MongoDB/handshake/faas/valid_aws_lambda", test_valid_aws_lambda);
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/faas/valid_aws_and_vercel",
+                  test_valid_aws_and_vercel);
    TestSuite_Add (
       suite, "/MongoDB/handshake/faas/valid_vercel", test_valid_vercel);
    TestSuite_Add (

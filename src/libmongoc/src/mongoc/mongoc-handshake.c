@@ -452,6 +452,7 @@ _get_env_info (mongoc_handshake_t *handshake)
 
 cleanup:
    bson_free (aws_env);
+   bson_free (aws_lambda);
    bson_free (vercel_env);
    bson_free (azure_env);
    bson_free (gcp_env);
