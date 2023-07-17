@@ -2288,6 +2288,9 @@ bson_copy_to_including_noinit_va (const bson_t *src,
                                   const char *first_include,
                                   va_list args)
 {
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (first_include);
    bson_iter_t iter;
 
    if (bson_iter_init (&iter, src)) {
@@ -2349,12 +2352,14 @@ bson_copy_to_including_noinit (const bson_t *src,
                                const char *first_include,
                                ...)
 {
-   va_list args;
-
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (first_include);
    BSON_ASSERT (src);
    BSON_ASSERT (dst);
    BSON_ASSERT (first_include);
 
+   va_list args;
    va_start (args, first_include);
    bson_copy_to_including_noinit_va (src, dst, first_include, args);
    va_end (args);
