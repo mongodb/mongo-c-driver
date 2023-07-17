@@ -177,6 +177,18 @@ _mongoc_getenv (const char *name);
 bool
 _mongoc_setenv (const char *name, const char *value);
 
+BSON_EXPORT (void)
+bson_copy_to_including_noinit (const bson_t *src,
+                               bson_t *dst,
+                               const char *first_include,
+                               ...) BSON_GNUC_NULL_TERMINATED;
+
+BSON_EXPORT (void)
+bson_copy_to_including_noinit_va (const bson_t *src,
+                                  bson_t *dst,
+                                  const char *first_include,
+                                  va_list args);
+
 /* Returns a uniformly-distributed uint32_t generated using
  * `_mongoc_rand_bytes()` if a source of cryptographic randomness is available
  * (defined only if `MONGOC_ENABLE_CRYPTO` is defined).

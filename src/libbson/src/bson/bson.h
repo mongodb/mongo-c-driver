@@ -361,17 +361,6 @@ bson_copy_to_excluding_noinit_va (const bson_t *src,
                                   const char *first_exclude,
                                   va_list args);
 
-BSON_EXPORT (void)
-bson_copy_to_including_noinit (const bson_t *src,
-                               bson_t *dst,
-                               const char *first_include,
-                               ...) BSON_GNUC_NULL_TERMINATED;
-
-BSON_EXPORT (void)
-bson_copy_to_including_noinit_va (const bson_t *src,
-                                  bson_t *dst,
-                                  const char *first_include,
-                                  va_list args);
 
 /**
  * bson_destroy:
