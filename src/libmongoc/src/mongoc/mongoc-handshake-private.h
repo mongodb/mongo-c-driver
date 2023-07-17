@@ -94,6 +94,11 @@ typedef enum {
    MONGOC_HANDSHAKE_ENV_AZURE
 } mongoc_handshake_env_t;
 
+typedef struct _optional_int32 {
+   bool set;
+   int32_t value;
+} optional_int32;
+
 typedef struct _mongoc_handshake_t {
    char *os_type;
    char *os_name;
@@ -107,8 +112,8 @@ typedef struct _mongoc_handshake_t {
    char *flags;
    
    mongoc_handshake_env_t env;
-   int32_t env_timeout_sec;
-   int32_t env_memory_mb;
+   optional_int32 env_timeout_sec;
+   optional_int32 env_memory_mb;
    char *env_region;
 
    bool frozen;

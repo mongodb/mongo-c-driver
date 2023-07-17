@@ -413,8 +413,8 @@ _get_env_info (mongoc_handshake_t *handshake)
 
    handshake->env = MONGOC_HANDSHAKE_ENV_NONE;
    handshake->env_region = NULL;
-   handshake->env_memory_mb = 0;
-   handshake->env_timeout_sec = 0;
+   handshake->env_memory_mb.set = false;
+   handshake->env_timeout_sec.set = false;
 
    if ((is_aws || is_vercel) + is_azure + is_gcp != 1) {
       goto cleanup;
@@ -437,10 +437,12 @@ _get_env_info (mongoc_handshake_t *handshake)
    }
 
    if (memory_str) {
-      handshake->env_memory_mb = atoi (memory_str);
+      handshake->env_memory_mb.set = true;
+      handshake->env_memory_mb.value = atoi (memory_str);
    }
    if (timeout_str) {
-      handshake->env_timeout_sec = atoi (timeout_str);
+      handshake->env_timeout_sec.set = true;
+      handshake->env_timeout_sec.value = atoi (timeout_str);
    }
    if (region_str && strlen (region_str)) {
       handshake->env_region = bson_strdup (region_str);
@@ -713,10 +715,10 @@ _mongoc_handshake_build_doc_with_application (const char *appname)
           then (kv (
              "env",
              doc (kv ("name", cstr (env_name)),
-                  if (md->env_timeout_sec,
-                      then (kv ("timeout_sec", int32 (md->env_timeout_sec)))),
-                  if (md->env_memory_mb,
-                      then (kv ("memory_mb", int32 (md->env_memory_mb)))),
+                  if (md->env_timeout_sec.set,
+                      then (kv ("timeout_sec", int32 (md->env_timeout_sec.value)))),
+                  if (md->env_memory_mb.set,
+                      then (kv ("memory_mb", int32 (md->env_memory_mb.value)))),
                   if (md->env_region,
                       then (kv ("region", cstr (md->env_region)))))))));
 
