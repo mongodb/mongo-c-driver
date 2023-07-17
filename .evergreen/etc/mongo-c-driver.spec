@@ -37,6 +37,7 @@ BuildRequires: openssl-devel
 BuildRequires: pkgconfig(libsasl2)
 BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(snappy)
+BuildRequires: pkgconfig(icu-uc)
 BuildRequires: pkgconfig(libzstd)
 %if %{with tests}
 BuildRequires: mongodb-server
@@ -122,6 +123,7 @@ Documentation: http://mongoc.org/libbson/%{version}/
     -DENABLE_SSL:STRING=OPENSSL \
     -DENABLE_SASL:STRING=CYRUS \
     -DENABLE_MONGODB_AWS_AUTH:STRING=ON \
+    -DENABLE_ICU:STRING=ON \
     -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
     -DENABLE_CRYPTO_SYSTEM_PROFILE:BOOL=ON \
     -DENABLE_MAN_PAGES:BOOL=ON \
