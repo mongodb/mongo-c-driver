@@ -439,12 +439,26 @@ _get_env_info (mongoc_handshake_t *handshake)
    }
 
    if (memory_str) {
-      handshake->env_memory_mb.set = true;
-      handshake->env_memory_mb.value = atoi (memory_str);
+      char *endptr;
+      int64_t env_memory_mb = bson_ascii_strtoll (memory_str, &endptr, 10);
+      bool parse_ok = endptr == memory_str + (strlen (memory_str));
+      bool in_range = bson_in_range_int32_t_signed (env_memory_mb);
+
+      if (parse_ok && in_range) {
+         handshake->env_memory_mb.set = true;
+         handshake->env_memory_mb.value = (int32_t) env_memory_mb;
+      }
    }
    if (timeout_str) {
-      handshake->env_timeout_sec.set = true;
-      handshake->env_timeout_sec.value = atoi (timeout_str);
+      char *endptr;
+      int64_t env_timeout_sec = bson_ascii_strtoll (timeout_str, &endptr, 10);
+      bool parse_ok = endptr == timeout_str + (strlen (timeout_str));
+      bool in_range = bson_in_range_int32_t_signed (env_timeout_sec);
+
+      if (parse_ok && in_range) {
+         handshake->env_timeout_sec.set = true;
+         handshake->env_timeout_sec.value = (int32_t) env_timeout_sec;
+      }
    }
    if (region_str && strlen (region_str)) {
       handshake->env_region = bson_strdup (region_str);
@@ -572,8 +586,8 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
 
    /* We opt to drop compiler info and flags if they can't fit, while the
     * platform information is truncated
-    * Try to drop flags first, and if there is still not enough space also drop
-    * compiler info */
+    * Try to drop flags first, and if there is still not enough space also
+    * drop compiler info */
    if (!truncate || bson_cmp_greater_equal_su (
                        max_platform_str_size,
                        combined_platform->len + strlen (compiler_info) + 1u)) {
@@ -781,8 +795,8 @@ _append_and_truncate (char **s, const char *suffix, size_t max_len)
  * Set some values in our global handshake struct. These values will be sent
  * to the server as part of the initial connection handshake (hello).
  * If this function is called more than once, or after we've connected to a
- * mongod, then it will do nothing and return false. It will return true if it
- * successfully sets the values.
+ * mongod, then it will do nothing and return false. It will return true if
+ * it successfully sets the values.
  *
  * All arguments are optional.
  */
@@ -808,8 +822,9 @@ mongoc_handshake_data_append (const char *driver_name,
       HANDSHAKE_MAX_SIZE - (int) strlen (_mongoc_handshake_get ()->platform);
 
    if (platform) {
-      /* we check for an empty string as a special case to avoid an unnecessary
-       * delimiter being added in front of the string by _append_and_truncate */
+      /* we check for an empty string as a special case to avoid an
+       * unnecessary delimiter being added in front of the string by
+       * _append_and_truncate */
       if (_mongoc_handshake_get ()->platform[0] == '\0') {
          bson_free (_mongoc_handshake_get ()->platform);
          _mongoc_handshake_get ()->platform =
