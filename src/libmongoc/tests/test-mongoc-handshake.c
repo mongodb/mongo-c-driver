@@ -876,7 +876,6 @@ test_mongoc_platform_truncate (int drop)
 
    /* Need to know how much space storing fields in our BSON will take
     * so that we can make our platform string the correct length here */
-   // const size_t handshake_bson_size = 163;
    _reset_handshake ();
 
    /* we manually bypass the defaults of the handshake to ensure an exceedingly

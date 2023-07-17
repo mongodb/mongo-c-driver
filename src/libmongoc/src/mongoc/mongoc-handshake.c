@@ -567,19 +567,17 @@ _append_platform_field (bson_t *doc, const char *platform, bool truncate)
 
    /* Compute space left for platform field */
    const int max_platform_str_size =
-      truncate
-         ? HANDSHAKE_MAX_SIZE - ((int) doc->len +
-                                 /* 1 byte for utf8 tag */
-                                 1 +
+      HANDSHAKE_MAX_SIZE - ((int) doc->len +
+                            /* 1 byte for utf8 tag */
+                            1 +
 
-                                 /* key size */
-                                 (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
+                            /* key size */
+                            (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
 
-                                 /* 4 bytes for length of string */
-                                 4)
-         : HANDSHAKE_MAX_SIZE;
+                            /* 4 bytes for length of string */
+                            4);
 
-   if (max_platform_str_size <= 0) {
+   if (truncate && max_platform_str_size <= 0) {
       bson_string_free (combined_platform, true);
       return;
    }
