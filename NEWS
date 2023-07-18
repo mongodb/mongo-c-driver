@@ -1,3 +1,11 @@
+libmongoc 1.25.0 (Unreleased)
+=============================
+
+* The source-distribution release archive tarball is no longer created as a
+  release artifact. Please instead use the per-release repository archive
+  attached to a GitHub release, or clone the repository at the desired release
+  tag.
+
 libmongoc 1.24.1
 ================
 
