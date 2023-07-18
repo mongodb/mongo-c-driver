@@ -44,13 +44,6 @@ if (NOT ENABLE_ZSTD MATCHES "ON|AUTO|OFF")
    message (FATAL_ERROR "ENABLE_ZSTD option must be ON, AUTO, or OFF")
 endif ()
 
-# Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
-# will look for zconf.h in that location.
-configure_file (
-   "${SOURCE_DIR}/src/zlib-1.2.13/zconf.h.in"
-   "${CMAKE_BINARY_DIR}/src/zlib-1.2.13/zconf.h"
-   COPYONLY
-)
 set (ZLIB_INCLUDE_DIRS "")
 if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
    message (STATUS "Searching for zlib CMake packages")
@@ -1288,24 +1281,3 @@ if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
       $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:mongoc-html>
    )
 endif ()
-
-add_subdirectory (build)
-# sub-directory 'doc' was already included above
-add_subdirectory (examples)
-add_subdirectory (src)
-add_subdirectory (tests)
-
-set_local_dist (src_libmongoc_DIST_local
-   CMakeLists.txt
-   THIRD_PARTY_NOTICES
-)
-
-set (src_libmongoc_DIST
-   ${src_libmongoc_DIST_local}
-   ${src_libmongoc_build_DIST}
-   ${src_libmongoc_doc_DIST}
-   ${src_libmongoc_examples_DIST}
-   ${src_libmongoc_src_DIST}
-   ${src_libmongoc_tests_DIST}
-   PARENT_SCOPE
-)

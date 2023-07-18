@@ -38,11 +38,11 @@ all_variants = [
         ["abi-compliance-check"],
     ),
     Variant(
-        "releng",
-        "**Release Archive Creator",
+        "smoke",
+        "Smoke Tests",
         "ubuntu2204-small",
         [
-            "make-release-archive",
+            "make-docs",
             "release-compile",
             "debug-compile-no-counters",
             "compile-tracing",
@@ -76,6 +76,7 @@ all_variants = [
             # Disable the MongoDB legacy shell download, which is not available in 5.0 for u22
             "SKIP_LEGACY_SHELL": "1"
         },
+        tags=["pr-merge-gate"],
     ),
     Variant(
         "clang34ubuntu",
@@ -481,7 +482,7 @@ all_variants = [
             OD([("name", "rpm-package-build"), ("distros", ["rhel90-arm64-small"])]),
         ],
         {},
-        batchtime=days(1),
+        tags=["pr-merge-gate"],
     ),
     Variant(
         "versioned-api",

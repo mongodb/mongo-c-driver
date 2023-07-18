@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -o errexit
 
@@ -39,7 +39,7 @@ done
 
 package=mongo-c-driver
 spec_file=../mongo-c-driver.spec
-config=${MOCK_TARGET_CONFIG:=fedora-39-aarch64}
+config=${MOCK_TARGET_CONFIG:=fedora-38-aarch64}
 
 if [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/rpmspec ]; then
   echo "Missing the rpmbuild or rpmspec utility from the rpm-build package"
@@ -84,7 +84,7 @@ sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${bu
   )"
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/VERSION_CURRENT" "/tmp/${build_dir}/VERSION_RELEASED" .
 
-bare_upstream_version=$(sed -E 's/([^-]+).*/\1/' VERSION_CURRENT)
+bare_upstream_version=$(rpmspec --srpm -q --qf '%{version}' "$spec_file")
 # Upstream version in the .spec file cannot have hyphen (-); replace the current
 # version so that the dist tarball version does not have a pre-release component
 sudo sh -c "echo ${bare_upstream_version} > VERSION_CURRENT"
@@ -101,18 +101,20 @@ fi
 
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/${spec_file}" ..
 
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-  [ -d cmake-build ] || mkdir cmake-build ;
-  cd cmake-build ;
-  /usr/bin/cmake -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED .. ;
-  /usr/bin/cmake --build . --target dist -- -j 8
-  )"
-
-[ -d cmake-build ] || mkdir cmake-build
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/cmake-build/${package}*.tar.gz" cmake-build
-
 [ -d ~/rpmbuild/SOURCES ] || mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-mv cmake-build/${package}*.tar.gz ~/rpmbuild/SOURCES/
+
+# Create a source archive for rpmbuild to use:
+expect_filename=$(rpmspec --srpm -q --qf '%{source}' "$spec_file")
+tar_filestem=$package-$bare_upstream_version
+tar_filename=$tar_filestem.tar
+tar_filepath="/tmp/$tar_filename"
+tgz_filepath="$HOME/rpmbuild/SOURCES/$expect_filename"
+echo "Creating source archive [$tgz_filepath]"
+git archive --format=tar --output="$tar_filepath" --prefix="$tar_filestem/" HEAD
+mkdir -p "$tar_filestem"
+cp VERSION_CURRENT "$tar_filestem/."
+tar -rf "$tar_filepath" "$tar_filestem/"
+gzip --keep "$tar_filepath" --stdout > "$tgz_filepath"
 
 echo "Building source RPM ..."
 rpmbuild -bs ${spec_file}

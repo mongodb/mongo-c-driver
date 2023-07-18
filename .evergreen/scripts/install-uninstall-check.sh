@@ -10,19 +10,19 @@ DIR=$(dirname $0)
 . $DIR/find-cmake-latest.sh
 CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
+SRCROOT=$(pwd)
 
-if command -v gtar 2>/dev/null; then
-  TAR=gtar
-else
-  TAR=tar
-fi
+SCRATCH_DIR=$(pwd)/.scratch
+rm -rf "$SCRATCH_DIR"
+mkdir -p "$SCRATCH_DIR"
+cp -vr -- "$SRCROOT"/* "$SCRATCH_DIR"
 
 if [ "$BSON_ONLY" ]; then
-  BUILD_DIR=$(pwd)/build-dir-bson
-  INSTALL_PREFIX=$(pwd)/install-dir-bson
+  BUILD_DIR=$SCRATCH_DIR/build-dir-bson
+  INSTALL_PREFIX=$SCRATCH_DIR/install-dir-bson
 else
-  BUILD_DIR=$(pwd)/build-dir-mongoc
-  INSTALL_PREFIX=$(pwd)/install-dir-mongoc
+  BUILD_DIR=$SCRATCH_DIR/build-dir-mongoc
+  INSTALL_PREFIX=$SCRATCH_DIR/install-dir-mongoc
 fi
 
 if [ "$DESTDIR" ]; then
@@ -38,7 +38,8 @@ rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
 
 cd $BUILD_DIR
-$TAR xf ../../mongoc.tar.gz -C . --strip-components=1
+
+cp -r -- "$SRCROOT"/* "$SCRATCH_DIR"
 
 if [ "$BSON_ONLY" ]; then
   BSON_ONLY_OPTION="-DENABLE_MONGOC=OFF"
@@ -47,7 +48,7 @@ else
 fi
 
 
-$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $BSON_ONLY_OPTION .
+$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $BSON_ONLY_OPTION "$SCRATCH_DIR"
 $CMAKE --build .
 if [ "$DESTDIR" ]; then
    DESTDIR=$DESTDIR $CMAKE --build . --target install

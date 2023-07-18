@@ -98,23 +98,7 @@ if [[ "${COVERAGE}" == "ON" ]]; then
   configure_flags_append "-DENABLE_COVERAGE=ON" "-DENABLE_EXAMPLES=OFF"
 fi
 
-if [[ "${RELEASE}" == "ON" ]]; then
-  # Build from the release tarball.
-  mkdir build-dir
-  declare -a tar_args=("xf" "../mongoc.tar.gz" "-C" "build-dir" "--strip-components=1")
-
-  # --strip-components is an GNU tar extension. Check if the platform
-  # has GNU tar installed as `gtar`, otherwise we assume to be on
-  # platform that supports it
-  # command -v returns success error code if found and prints the path to it
-  if command -v gtar 2>/dev/null; then
-    gtar "${tar_args[@]}"
-  else
-    tar "${tar_args[@]}"
-  fi
-
-  cd build-dir
-else
+if [[ "${RELEASE}" != "ON" ]]; then
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 

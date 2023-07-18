@@ -23,7 +23,7 @@ rem Set path to dumpbin.exe and other VS tools.
 call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build\vcvars64.bat"
 
 cd %BUILD_DIR%
-%TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
+robocopy "%SRCROOT%" "%BUILD_DIR%" /E /XD ".git" "%BUILD_DIR%" "_build" "cmake-build" /NP /NFL /NDL
 
 if "%LINK_STATIC%"=="1" (
   %CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF .
