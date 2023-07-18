@@ -97,27 +97,41 @@ test_mongoc_scram_iteration_count (void)
 static void
 test_mongoc_scram_sasl_prep (void)
 {
-#ifdef MONGOC_ENABLE_ICU
    int i, ntests;
    char *normalized;
    bson_error_t err;
    /* examples from RFC 4013 section 3. */
-   sasl_prep_testcase_t tests[] = {{"\x65\xCC\x81", "\xC3\xA9", true, true},
-                                   {"I\xC2\xADX", "IX", true, true},
-                                   {"user", "user", false, true},
-                                   {"USER", "USER", false, true},
-                                   {"\xC2\xAA", "a", true, true},
-                                   {"\xE2\x85\xA8", "IX", true, true},
-                                   {"\x07", "(invalid)", true, false},
-                                   {"\xD8\xA7\x31", "(invalid)", true, false}};
+   sasl_prep_testcase_t tests[] = {
+      // normalization
+      {"\x65\xCC\x81", "\xC3\xA9", true, true},
+      {"\xC2\xAA", "a", true, true},
+      {"Henry \xE2\x85\xA3", "Henry IV", true, true},
+      {"A\xEF\xAC\x83n", "Affin", true, true},
+      // mapped to nothing character (Table B.1)
+      {"I\xC2\xADX", "IX", true, true},
+      // mapped to nothing character (Table C.1.2)
+      {"I\xE2\x80\x80\xC2\xA0X", "I  X", true, true},
+      // prohibited character
+      {"banana \x07 apple", "(invalid)", true, false},
+      // unassigned codepoint (Table A.1)
+      {"banana \xe0\xAA\xBA apple", "(invalid)", true, false},
+      // bidi: RandALCat but not RandALCat at beginning and end
+      {"\xD8\xA7\x31", "(invalid)", true, false},
+      // bidi: RandALCat and LCat characters
+      {"\xFB\x1D apple \x09\xA8", "(invalid)", true, false},
+      // bidi: RandALCat with RandALCat at beginning and end
+      {"\xD8\xA1 \xDC\x92", "\xD8\xA1 \xDC\x92", true, true},
+      // normalization and mapped to nothing
+      {"I\xE2\x80\x80\xC2\xA0X \xE2\x85\xA3", "I  X IV", true, true},
+      {"user", "user", false, true},
+      {"USER", "USER", false, true}};
    ntests = sizeof (tests) / sizeof (sasl_prep_testcase_t);
    for (i = 0; i < ntests; i++) {
       ASSERT_CMPINT (tests[i].should_be_required,
                      ==,
                      _mongoc_sasl_prep_required (tests[i].original));
       memset (&err, 0, sizeof (err));
-      normalized = _mongoc_sasl_prep (
-         tests[i].original, strlen (tests[i].original), &err);
+      normalized = _mongoc_sasl_prep (tests[i].original, &err);
       if (tests[i].should_succeed) {
          ASSERT_CMPSTR (tests[i].normalized, normalized);
          ASSERT_CMPINT (err.code, ==, 0);
@@ -128,8 +142,36 @@ test_mongoc_scram_sasl_prep (void)
          BSON_ASSERT (normalized == NULL);
       }
    }
-#endif
 }
+
+static void
+test_mongoc_utf8_char_length (void)
+{
+   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length (","), ==, 1u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length ("ɶ"), ==, 2u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length ("ྡྷ"), ==, 3u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length ("🌂"), ==, 4u);
+}
+
+static void
+test_mongoc_utf8_string_length (void)
+{
+   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length (",ase"), ==, 4u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length ("ɸɴ"), ==, 2u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length ("ྡྷ🌂e4🌕"), ==, 5u);
+   ASSERT_CMPSIZE_T (
+      _mongoc_utf8_string_length ("no special characters"), ==, 21u);
+}
+
+static void
+test_mongoc_utf8_to_unicode (void)
+{
+   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point (",", 1), ==, 0x002C);
+   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point ("ɶ", 2), ==, 0x0276);
+   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point ("ྡྷ", 3), ==, 0x0FA2);
+   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point ("🌂", 4), ==, 0x1F302);
+}
+
 #endif
 
 static void
@@ -274,8 +316,7 @@ _check_mechanism (bool pooled,
 typedef enum {
    MONGOC_TEST_NO_ERROR,
    MONGOC_TEST_USER_NOT_FOUND_ERROR,
-   MONGOC_TEST_AUTH_ERROR,
-   MONGOC_TEST_NO_ICU_ERROR
+   MONGOC_TEST_AUTH_ERROR
 } test_error_t;
 
 void
@@ -303,11 +344,6 @@ _check_error (const bson_error_t *error, test_error_t expected_error)
       domain = MONGOC_ERROR_CLIENT;
       code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
       message = "Could not find user";
-      break;
-   case MONGOC_TEST_NO_ICU_ERROR:
-      domain = MONGOC_ERROR_SCRAM;
-      code = MONGOC_ERROR_SCRAM_PROTOCOL_ERROR;
-      message = "SCRAM Failure: ICU required to SASLPrep password";
       break;
    case MONGOC_TEST_NO_ERROR:
    default:
@@ -483,22 +519,6 @@ _skip_if_no_sha256 (void)
 #define ROMAN_NUMERAL_NINE "\xE2\x85\xA8"
 #define ROMAN_NUMERAL_FOUR "\xE2\x85\xA3"
 
-static int
-skip_if_no_icu (void)
-{
-#ifdef MONGOC_ENABLE_ICU
-   return true;
-#else
-   return false;
-#endif
-}
-
-static int
-skip_if_icu (void)
-{
-   return !skip_if_no_icu ();
-}
-
 static void
 _clear_saslprep_users (void)
 {
@@ -643,32 +663,6 @@ test_mongoc_saslprep_auth (void *ctx)
    _drop_saslprep_users ();
 }
 
-
-static void
-_test_mongoc_scram_saslprep_auth_no_icu (bool pooled)
-{
-   _try_auth (pooled, "IX", "IX", NULL, MONGOC_TEST_NO_ERROR);
-   _try_auth (pooled, "IX", ROMAN_NUMERAL_NINE, NULL, MONGOC_TEST_NO_ICU_ERROR);
-   _try_auth (pooled, ROMAN_NUMERAL_NINE, "IV", NULL, MONGOC_TEST_NO_ERROR);
-   _try_auth (pooled,
-              ROMAN_NUMERAL_NINE,
-              ROMAN_NUMERAL_FOUR,
-              NULL,
-              MONGOC_TEST_NO_ICU_ERROR);
-}
-
-static void
-test_mongoc_saslprep_auth_no_icu (void *ctx)
-{
-   BSON_UNUSED (ctx);
-
-   _clear_saslprep_users ();
-   _create_saslprep_users ();
-   _test_mongoc_scram_saslprep_auth_no_icu (false);
-   _test_mongoc_scram_saslprep_auth_no_icu (true);
-   _drop_saslprep_users ();
-}
-
 void
 test_scram_install (TestSuite *suite)
 {
@@ -679,6 +673,11 @@ test_scram_install (TestSuite *suite)
    TestSuite_Add (suite, "/scram/sasl_prep", test_mongoc_scram_sasl_prep);
    TestSuite_Add (
       suite, "/scram/iteration_count", test_mongoc_scram_iteration_count);
+   TestSuite_Add (
+      suite, "/scram/utf8_char_length", test_mongoc_utf8_char_length);
+   TestSuite_Add (
+      suite, "/scram/utf8_string_length", test_mongoc_utf8_string_length);
+   TestSuite_Add (suite, "/scram/utf8_to_unicode", test_mongoc_utf8_to_unicode);
 #endif
    TestSuite_AddFull (suite,
                       "/scram/auth_tests",
@@ -695,15 +694,5 @@ test_scram_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,
                       _skip_if_no_sha256,
-                      skip_if_no_icu,
-                      TestSuite_CheckLive);
-   TestSuite_AddFull (suite,
-                      "/scram/saslprep_auth_no_icu",
-                      test_mongoc_saslprep_auth_no_icu,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_auth,
-                      _skip_if_no_sha256,
-                      skip_if_icu,
                       TestSuite_CheckLive);
 }

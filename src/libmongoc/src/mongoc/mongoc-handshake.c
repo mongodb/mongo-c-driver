@@ -184,10 +184,6 @@ _mongoc_handshake_get_config_hex_string (void)
       _set_bit (bf, byte_count, MONGOC_MD_FLAG_TRACE);
    }
 
-#ifdef MONGOC_ENABLE_ICU
-   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_ICU);
-#endif
-
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION);
 #endif
@@ -693,7 +689,7 @@ _mongoc_handshake_parse_sasl_supported_mechs (
               find (keyWithType ("saslSupportedMechs", array),
                     visitEach (case (
                        when (strEqual ("SCRAM-SHA-256"),
-                             do(sasl_supported_mechs->scram_sha_256 = true)),
+                             do (sasl_supported_mechs->scram_sha_256 = true)),
                        when (strEqual ("SCRAM-SHA-1"),
-                             do(sasl_supported_mechs->scram_sha_1 = true))))));
+                             do (sasl_supported_mechs->scram_sha_1 = true))))));
 }

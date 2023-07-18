@@ -359,28 +359,6 @@ if (ENABLE_SHM_COUNTERS)
    endif ()
 endif ()
 
-if (NOT ENABLE_ICU MATCHES "AUTO|ON|OFF")
-   message (FATAL_ERROR, "ENABLE_ICU option must be AUTO, ON, or OFF")
-endif()
-
-if (NOT ENABLE_ICU STREQUAL OFF)
-   if (ENABLE_ICU STREQUAL ON)
-      # do not suppress log output if find_package cannot find ICU
-      find_package (ICU COMPONENTS uc)
-   elseif (ENABLE_ICU STREQUAL AUTO)
-      find_package (ICU QUIET COMPONENTS uc)
-   endif()
-   if (ICU_FOUND)
-      set (MONGOC_ENABLE_ICU 1)
-      include_directories ("${ICU_INCLUDE_DIR}")
-   elseif (ENABLE_ICU STREQUAL ON)
-      message (FATAL_ERROR "No ICU library found. If ICU is installed in a non-standard directory, define ICU_ROOT as the ICU installation path.")
-   elseif (ENABLE_ICU STREQUAL AUTO)
-      message (STATUS "No ICU library found, SASLPrep disabled for SCRAM-SHA-256 authentication.")
-      message (STATUS "If ICU is installed in a non-standard directory, define ICU_ROOT as the ICU installation path.")
-   endif()
-endif()
-
 # Configure In-Use Encryption
 set (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION 0)
 if (NOT ENABLE_CLIENT_SIDE_ENCRYPTION MATCHES "AUTO|ON|OFF")
@@ -686,11 +664,11 @@ endif ()
 
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
 add_library(_mongoc-dependencies INTERFACE)
@@ -701,7 +679,12 @@ set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependen
 
 # utf8proc configuration
 find_package(Utf8Proc REQUIRED)
+set(UTF8PROC_INCLUDE_DIRS, "")
 if (USE_BUNDLED_UTF8PROC)
+   set (
+      UTF8PROC_INCLUDE_DIRS
+      "${SOURCE_DIR}/src/utf8proc-2.8.0"
+   )
    list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
 else()
    target_link_libraries(_mongoc-dependencies INTERFACE utf8proc)
@@ -752,6 +735,7 @@ add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES} mongo::detail::c_dependencies)
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
+target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
@@ -768,6 +752,11 @@ target_compile_definitions (mongoc_shared
       ${KMS_MSG_DEFINITIONS}
       MCOMMON_NAME_PREFIX=_mongoc_mcommon
 )
+
+if (USE_BUNDLED_UTF8PROC)
+   target_compile_definitions (mongoc_shared PRIVATE UTF8PROC_STATIC)
+endif ()
+
 # Several directories in the source and build trees contain headers we would like
 # include via relative reference, but they all end up in the same install path
 target_include_directories (
@@ -802,6 +791,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-l${RESOLVE_LIB_NAME}")
    endif()
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
+   target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
@@ -815,6 +805,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          ${KMS_MSG_DEFINITIONS}
          MCOMMON_NAME_PREFIX=_mongoc_mcommon
    )
+   if (USE_BUNDLED_UTF8PROC)
+      target_compile_definitions (mongoc_static PRIVATE UTF8PROC_STATIC)
+   endif ()
    # Several directories in the source and build trees contain headers we would like
    # include via relative reference, but they all end up in the same install path
    target_include_directories (
@@ -1198,8 +1191,7 @@ endif ()
 if(TARGET mongoc_static)
    set(link_options
       ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${ZLIB_LIBRARIES}
-      ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
-      ${LIBMONGOCRYPT_LIBRARY})
+      ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY})
    # Replace all absolute paths with search-dir link-file options:
    list(TRANSFORM link_options
         REPLACE "^(.+)/lib([^/\\.]+)\\..+$"

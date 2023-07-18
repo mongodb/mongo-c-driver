@@ -14,7 +14,7 @@ COMPILE_MATRIX = [
 ]
 
 TEST_OPENSSL_MATRIX = [
-    ('ubuntu1804', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.0', '4.2', '4.4', '5.0', '6.0', 'latest']),
+    ('ubuntu1804', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.0', '4.2', '4.4', '5.0', '6.0', '7.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

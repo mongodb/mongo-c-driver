@@ -126,9 +126,6 @@ mongo_setting(
    ]]
 )
 
-mongo_setting(ENABLE_ICU "Enable ICU support, needed for non-ASCII usernames and passwords"
-              OPTIONS ON OFF AUTO
-              DEFAULT VALUE AUTO)
 mongo_setting(ENABLE_CLIENT_SIDE_ENCRYPTION "Enable In-Use Encryption support. Requires additional support libraries."
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)
@@ -465,8 +462,6 @@ if (ENABLE_MONGOC)
       ${SOURCE_DIR}/src/zlib-1.2.13/gzread.c
       ${SOURCE_DIR}/src/zlib-1.2.13/gzwrite.c
    )
-
-   set (MONGOC_ENABLE_ICU 0)
 
    set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 

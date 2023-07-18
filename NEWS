@@ -1,10 +1,28 @@
 libmongoc 1.25.0 (Unreleased)
 =============================
 
-* The source-distribution release archive tarball is no longer created as a
-  release artifact. Please instead use the per-release repository archive
-  attached to a GitHub release, or clone the repository at the desired release
-  tag.
+Improvements:
+
+  * Remove optional dependency of libicu.
+
+Other:
+
+  * The constructed source-distribution archive is no longer available as a
+    release artifact. Please instead use the per-release repository archive
+    attached to a GitHub release, or clone the repository at the desired release
+    tag.
+
+libmongoc 1.24.2
+================
+
+Fixes:
+
+  * Fix possible crash if thread creation fails.
+  * Fix possible assertion if `mongoc_cursor_new_from_command_reply_with_opts` is called with open cursor and no `serverId` option.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
 
 libmongoc 1.24.1
 ================

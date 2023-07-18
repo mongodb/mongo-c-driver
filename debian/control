@@ -11,9 +11,9 @@ Build-Depends: debhelper (>= 11),
                python3-sphinx,
                libmongocrypt-dev <!pkg.mongo-c-driver.no-libmongocrypt>,
                zlib1g-dev,
-               libicu-dev,
                libsasl2-dev,
                libsnappy-dev,
+               libutf8proc-dev,
                libzstd-dev
 Standards-Version: 4.6.2
 Section: libs
@@ -32,6 +32,7 @@ Depends: libmongoc-1.0-0 (= ${binary:Version}),
          zlib1g-dev,
          libsnappy-dev,
          libsasl2-dev,
+         libutf8proc-dev,
          libzstd-dev,
          ${misc:Depends}
 Description: MongoDB C client library - dev files

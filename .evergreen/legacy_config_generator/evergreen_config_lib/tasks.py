@@ -726,45 +726,53 @@ all_tasks = chain(
                 func("prepare-kerberos"),
                 func("run auth tests", ASAN="on"),
             ],
-        ),
-        PostCompileTask(
-            "test-versioned-api",
-            tags=["versioned-api"],
-            get_build="debug-compile-nosasl-openssl",
-            commands=[
-                func("fetch-det"),
-                func(
-                    "bootstrap-mongo-orchestration",
-                    TOPOLOGY="server",
-                    AUTH="auth",
-                    SSL="ssl",
-                    MONGODB_VERSION="5.0",
-                    REQUIRE_API_VERSION="true",
-                ),
-                func("run-simple-http-server"),
-                func("run-tests", MONGODB_API_VERSION=1, AUTH="auth", SSL="ssl"),
-            ],
-        ),
-        PostCompileTask(
-            "test-versioned-api-accept-version-two",
-            tags=["versioned-api"],
-            get_build="debug-compile-nosasl-nossl",
-            commands=[
-                func("fetch-det"),
-                func(
-                    "bootstrap-mongo-orchestration",
-                    TOPOLOGY="server",
-                    AUTH="noauth",
-                    SSL="nossl",
-                    MONGODB_VERSION="5.0",
-                    ORCHESTRATION_FILE="versioned-api-testing",
-                ),
-                func("run-simple-http-server"),
-                func("run-tests", MONGODB_API_VERSION=1, AUTH="noauth", SSL="nossl"),
-            ],
-        ),
+        )
     ],
 )
+
+# Add API version tasks.
+for server_version in [ "7.0", "6.0", "5.0"]:
+    all_tasks = chain(
+        all_tasks,
+        [
+            PostCompileTask(
+                "test-versioned-api-" + server_version,
+                tags=["versioned-api"],
+                get_build="debug-compile-nosasl-openssl",
+                commands=[
+                    func("fetch-det"),
+                    func(
+                        "bootstrap-mongo-orchestration",
+                        TOPOLOGY="server",
+                        AUTH="auth",
+                        SSL="ssl",
+                        MONGODB_VERSION=server_version,
+                        REQUIRE_API_VERSION="true",
+                    ),
+                    func("run-simple-http-server"),
+                    func("run-tests", MONGODB_API_VERSION=1, AUTH="auth", SSL="ssl"),
+                ],
+            ),
+            PostCompileTask(
+                "test-versioned-api-accept-version-two-" + server_version,
+                tags=["versioned-api"],
+                get_build="debug-compile-nosasl-nossl",
+                commands=[
+                    func("fetch-det"),
+                    func(
+                        "bootstrap-mongo-orchestration",
+                        TOPOLOGY="server",
+                        AUTH="noauth",
+                        SSL="nossl",
+                        MONGODB_VERSION=server_version,
+                        ORCHESTRATION_FILE="versioned-api-testing",
+                    ),
+                    func("run-simple-http-server"),
+                    func("run-tests", MONGODB_API_VERSION=1, AUTH="noauth", SSL="nossl"),
+                ],
+            )
+        ]
+    )
 
 
 class SSLTask(Task):
@@ -921,7 +929,7 @@ class AWSTestTask(MatrixTask):
     axes = OD(
         [
             ("testcase", ["regular", "ec2", "ecs", "lambda", "assume_role", "assume_role_with_web_identity"]),
-            ("version", ["latest", "5.0", "4.4"]),
+            ("version", ["latest", "7.0", "6.0", "5.0", "4.4"]),
         ]
     )
 
@@ -929,6 +937,10 @@ class AWSTestTask(MatrixTask):
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
         yield "debug-compile-aws"
+
+    def additional_tags(self) -> Iterable[str]:
+        yield from super().additional_tags()
+        yield f'test-aws'
 
     def post_commands(self) -> Iterable[Value]:
         return [
@@ -971,7 +983,7 @@ class OCSPTask(MatrixTask):
             ("delegate", ["delegate", "nodelegate"]),
             ("cert", ["rsa", "ecdsa"]),
             ("ssl", ["openssl", "openssl-1.0.1", "darwinssl", "winssl"]),
-            ("version", ["latest", "5.0", "4.4"]),
+            ("version", ["latest", "7.0", "6.0", "5.0", "4.4"]),
         ]
     )
 
@@ -1106,7 +1118,7 @@ class LoadBalancedTask(MatrixTask):
             # Whether tests are run with SSL connections.
             ("test_ssl", [True, False]),
             ("test_auth", [True, False]),
-            ("version", ["5.0", "latest"]),
+            ("version", ["7.0", "6.0", "5.0", "latest"]),
         ]
     )
 

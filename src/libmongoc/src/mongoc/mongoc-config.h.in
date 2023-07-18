@@ -373,15 +373,6 @@
 #define MONGOC_TRACE @MONGOC_TRACE@
 
 /*
- * Set if we have ICU support.
- */
-#define MONGOC_ENABLE_ICU @MONGOC_ENABLE_ICU@
-
-#if MONGOC_ENABLE_ICU != 1
-#  undef MONGOC_ENABLE_ICU
-#endif
-
-/*
  * Set if we have Client Side Encryption support.
  */
 
