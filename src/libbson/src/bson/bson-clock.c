@@ -16,7 +16,6 @@
 
 
 #ifdef __APPLE__
-#include <sys/time.h>
 #endif
 
 
