@@ -501,7 +501,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    size_t first_digit = 0;           /* The index of the first non-zero digit */
    size_t last_digit = 0;            /* The index of the last digit */
 
-   int32_t exponent = 0;
+   int64_t exponent = 0;
    uint64_t significand_high = 0; /* The high 17 digits of the significand */
    uint64_t significand_low = 0;  /* The low 17 digits of the significand */
    uint16_t biased_exponent = 0;  /* The biased exponent */
@@ -581,10 +581,12 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
 #else
 #define SSCANF sscanf
 #endif
-      int read_exponent = SSCANF (++str_read, "%d%n", &exponent, &nread);
+      int read_exponent =
+         SSCANF (++str_read, "%" PRId64 "%n", &exponent, &nread);
       str_read += nread;
 
-      if (!read_exponent || nread == 0) {
+      if (!read_exponent || nread == 0 || exponent > 2147483647 ||
+          exponent < -2147483648) {
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
