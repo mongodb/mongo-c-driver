@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-
-#ifdef __APPLE__
-#endif
-
-
 #include "bson-config.h"
 #include "bson-compat.h"
 
