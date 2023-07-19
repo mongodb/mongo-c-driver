@@ -3556,7 +3556,7 @@ test_bson_as_json_with_opts_all_types (void)
 }
 
 static void
-test_CDRIVER4662 (void)
+test_overflowing_exponent (void)
 {
    {
       bson_decimal128_t decimal128;
@@ -3828,5 +3828,6 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/all_types",
                   test_bson_as_json_with_opts_all_types);
-   TestSuite_Add (suite, "/bson/CDRIVER-4662", test_CDRIVER4662);
+   TestSuite_Add (
+      suite, "/bson/test_overflowing_exponent", test_overflowing_exponent);
 }
