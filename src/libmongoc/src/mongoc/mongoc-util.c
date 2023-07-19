@@ -692,14 +692,7 @@ bool
 _mongoc_setenv (const char *name, const char *value)
 {
 #ifdef _WIN32
-   char *envstring;
-
-   envstring = bson_strdup_printf ("%s=%s", name, value);
-   if (0 != _putenv (envstring)) {
-      return false;
-   }
-
-   return true;
+   return SetEnvironmentVariableA(name, value) != 0;
 #else
 
    if (0 != setenv (name, value, 1)) {
