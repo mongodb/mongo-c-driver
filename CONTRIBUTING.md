@@ -296,7 +296,12 @@ Specification tests may be filtered by their description:
 
 * `MONGOC_JSON_SUBTEST=<string>`
 
-This can be useful in debugging a specific test case in a spec test file with multiple tests.
+This can be useful in debugging a specific test case in a spec test file with multiple tests. Example:
+
+```sh
+MONGOC_JSON_SUBTEST="Insert with randomized encryption, then find it" \
+  ./cmake-build/src/libmongoc/test-libmongoc -l "/client_side_encryption/legacy/basic"
+```
 
 To test with a declared API version, you can pass the API version using an environment variable:
 
