@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "bson.h"
+#include <stdint.h>
 #include <mongoc/mongoc.h>
 #ifdef _POSIX_VERSION
 #include <sys/utsname.h>
@@ -43,6 +45,13 @@ _reset_handshake (void)
    _mongoc_handshake_cleanup ();
    _mongoc_handshake_init ();
 }
+
+static const char *default_appname = "testapp";
+static const char *default_driver_name = "php driver";
+static const char *default_driver_version = "version abc";
+static const char *default_platform = "./configure -nottoomanyflags";
+static const int32_t default_timeout_sec = 60;
+static const int32_t default_memory_mb = 1024;
 
 static void
 test_mongoc_handshake_appname_in_uri (void)
@@ -157,72 +166,51 @@ _check_os_version_valid (const char *os_version)
 }
 
 static void
-test_mongoc_handshake_data_append_success (void)
+_handshake_check_application (bson_t *doc)
 {
-   mock_server_t *server;
-   mongoc_uri_t *uri;
-   mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
-   request_t *request;
-   const bson_t *request_doc;
-   bson_iter_t iter;
    bson_iter_t md_iter;
    bson_iter_t inner_iter;
    const char *val;
 
-   const char *driver_name = "php driver";
-   const char *driver_version = "version abc";
-   const char *platform = "./configure -nottoomanyflags";
-
-   _reset_handshake ();
-   /* Make sure setting the handshake works */
-   ASSERT (
-      mongoc_handshake_data_append (driver_name, driver_version, platform));
-
-   server = mock_server_new ();
-   mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
-
-   /* Force topology scanner to start */
-   client = mongoc_client_pool_pop (pool);
-
-   request = mock_server_receives_any_hello (server);
-   ASSERT (request);
-   request_doc = request_get_doc (request, 0);
-   ASSERT (request_doc);
-   ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD));
-
-   ASSERT (bson_iter_init_find (&iter, request_doc, HANDSHAKE_FIELD));
-   ASSERT (bson_iter_recurse (&iter, &md_iter));
-
-   ASSERT (bson_iter_find (&md_iter, "application"));
+   ASSERT (bson_iter_init_find (&md_iter, doc, "application"));
    ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
    ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
    ASSERT (bson_iter_find (&inner_iter, "name"));
    val = bson_iter_utf8 (&inner_iter, NULL);
    ASSERT (val);
-   ASSERT_CMPSTR (val, "testapp");
+   ASSERT_CMPSTR (val, default_appname);
+}
 
-   /* Make sure driver.name and driver.version and platform are all right */
-   ASSERT (bson_iter_find (&md_iter, "driver"));
+static void
+_handshake_check_driver (bson_t *doc)
+{
+   bson_iter_t md_iter;
+   bson_iter_t inner_iter;
+   const char *val;
+   ASSERT (bson_iter_init_find (&md_iter, doc, "driver"));
    ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
    ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
    ASSERT (bson_iter_find (&inner_iter, "name"));
    ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
    val = bson_iter_utf8 (&inner_iter, NULL);
    ASSERT (val);
-   ASSERT (strstr (val, driver_name) != NULL);
-
+   ASSERT (strstr (val, default_driver_name) != NULL);
    ASSERT (bson_iter_find (&inner_iter, "version"));
    ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
    val = bson_iter_utf8 (&inner_iter, NULL);
    ASSERT (val);
-   ASSERT (strstr (val, driver_version));
+   ASSERT (strstr (val, default_driver_version));
+}
+
+static void
+_handshake_check_os (bson_t *doc)
+{
+   bson_iter_t md_iter;
+   bson_iter_t inner_iter;
+   const char *val;
 
    /* Check os type not empty */
-   ASSERT (bson_iter_find (&md_iter, "os"));
+   ASSERT (bson_iter_init_find (&md_iter, doc, "os"));
    ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
    ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
 
@@ -246,32 +234,93 @@ test_mongoc_handshake_data_append_success (void)
    _check_arch_string_valid (val);
 
    /* Not checking os_name, as the spec says it can be NULL. */
+}
 
-   /* Check platform field ok */
-   ASSERT (bson_iter_find (&md_iter, "platform"));
+static void
+_handshake_check_env (bson_t *doc,
+                      int expected_memory_mb,
+                      int expected_timeout_sec,
+                      const char *expected_region)
+{
+   bson_iter_t md_iter;
+   bson_iter_t inner_iter;
+   const char *name;
+   ASSERT (bson_iter_init_find (&md_iter, doc, "env"));
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
+   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
+
+   ASSERT (bson_iter_find (&inner_iter, "name"));
+   name = bson_iter_utf8 (&inner_iter, NULL);
+
+   bool is_aws = strstr (name, "aws.lambda") == name;
+   bool is_azure = strstr (name, "azure.func") == name;
+   bool is_gcp = strstr (name, "gcp.func") == name;
+   bool is_vercel = strstr (name, "vercel") == name;
+   ASSERT (is_aws || is_azure || is_gcp || is_vercel);
+
+   if (expected_timeout_sec) {
+      ASSERT (bson_iter_find (&inner_iter, "timeout_sec"));
+      ASSERT (BSON_ITER_HOLDS_INT32 (&inner_iter));
+      ASSERT_CMPINT32 (bson_iter_int32 (&inner_iter), ==, expected_timeout_sec);
+   }
+
+   if (expected_memory_mb) {
+      ASSERT (bson_iter_find (&inner_iter, "memory_mb"));
+      ASSERT (BSON_ITER_HOLDS_INT32 (&inner_iter));
+      ASSERT_CMPINT32 (bson_iter_int32 (&inner_iter), ==, expected_memory_mb);
+   }
+
+   if (expected_region) {
+      ASSERT (bson_iter_find (&inner_iter, "region"));
+      ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+      ASSERT_CMPSTR (bson_iter_utf8 (&inner_iter, NULL), expected_region);
+   }
+}
+
+static void
+_handshake_check_platform (bson_t *doc)
+{
+   bson_iter_t md_iter;
+   const char *val;
+   ASSERT (bson_iter_init_find (&md_iter, doc, "platform"));
    ASSERT (BSON_ITER_HOLDS_UTF8 (&md_iter));
    val = bson_iter_utf8 (&md_iter, NULL);
    ASSERT (val);
    if (strlen (val) <
        250) { /* standard val are < 100, may be truncated on some platform */
-      ASSERT (strstr (val, platform) != NULL);
+      ASSERT (strstr (val, default_platform) != NULL);
    }
-
-   reply_to_request_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
-   request_destroy (request);
-
-   /* Cleanup */
-   mongoc_client_pool_push (pool, client);
-   mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
-   mock_server_destroy (server);
-
-   _reset_handshake ();
 }
 
+static void
+_handshake_check_env_name (bson_t *doc, const char *expected)
+{
+   bson_iter_t md_iter;
+   bson_iter_t inner_iter;
+   ASSERT (bson_iter_init_find (&md_iter, doc, "env"));
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
+   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
+   const char *name;
+
+   ASSERT (bson_iter_find (&inner_iter, "name"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   name = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (name);
+   ASSERT_CMPSTR (name, expected);
+}
 
 static void
-test_mongoc_handshake_data_append_null_args (void)
+_handshake_check_required_fields (bson_t *doc)
+{
+   _handshake_check_application (doc);
+   _handshake_check_driver (doc);
+   _handshake_check_os (doc);
+   _handshake_check_platform (doc);
+}
+
+// Start a mock server, get the driver's handshake doc, and clean up
+static bson_t *
+_get_handshake_document (bool default_append)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -280,18 +329,17 @@ test_mongoc_handshake_data_append_null_args (void)
    request_t *request;
    const bson_t *request_doc;
    bson_iter_t iter;
-   bson_iter_t md_iter;
-   bson_iter_t inner_iter;
-   const char *val;
 
-   _reset_handshake ();
    /* Make sure setting the handshake works */
-   ASSERT (mongoc_handshake_data_append (NULL, NULL, NULL));
+   if (default_append) {
+      ASSERT (mongoc_handshake_data_append (
+         default_driver_name, default_driver_version, default_platform));
+   }
 
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
+   mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, default_appname);
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
    /* Force topology scanner to start */
@@ -304,15 +352,296 @@ test_mongoc_handshake_data_append_null_args (void)
    ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD));
 
    ASSERT (bson_iter_init_find (&iter, request_doc, HANDSHAKE_FIELD));
-   ASSERT (bson_iter_recurse (&iter, &md_iter));
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
 
-   ASSERT (bson_iter_find (&md_iter, "application"));
-   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
-   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
-   ASSERT (bson_iter_find (&inner_iter, "name"));
-   val = bson_iter_utf8 (&inner_iter, NULL);
-   ASSERT (val);
-   ASSERT_CMPSTR (val, "testapp");
+   uint32_t len;
+   const uint8_t *data;
+   bson_iter_document (&iter, &len, &data);
+   bson_t *handshake_doc = bson_new_from_data (data, len);
+
+   reply_to_request_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
+   request_destroy (request);
+
+   /* Cleanup */
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+
+   return handshake_doc;
+}
+
+// erase all FaaS variables used in testing
+static void
+clear_faas_env (void)
+{
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", ""));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_RUNTIME_API", ""));
+   ASSERT (_mongoc_setenv ("AWS_REGION", ""));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", ""));
+   ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", ""));
+   ASSERT (_mongoc_setenv ("K_SERVICE", ""));
+   ASSERT (_mongoc_setenv ("FUNCTION_MEMORY_MB", ""));
+   ASSERT (_mongoc_setenv ("FUNCTION_TIMEOUT_SEC", ""));
+   ASSERT (_mongoc_setenv ("FUNCTION_REGION", ""));
+   ASSERT (_mongoc_setenv ("VERCEL", ""));
+   ASSERT (_mongoc_setenv ("VERCEL_REGION", ""));
+}
+
+static void
+test_mongoc_handshake_data_append_success (void)
+{
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   bson_iter_t md_iter;
+   bson_iter_init (&md_iter, doc);
+   _handshake_check_application (doc);
+   _handshake_check_driver (doc);
+   _handshake_check_os (doc);
+   _handshake_check_platform (doc);
+
+   bson_destroy (doc);
+   _reset_handshake ();
+}
+
+static void
+test_valid_aws_lambda (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_RUNTIME_API", "foo"));
+   ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
+   _handshake_check_env_name (doc, "aws.lambda");
+
+   bson_iter_t iter;
+   ASSERT (bson_iter_init_find (&iter, doc, "env"));
+   bson_iter_t inner_iter;
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   bson_iter_recurse (&iter, &inner_iter);
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_valid_aws_and_vercel (void *test_ctx)
+{
+   // Test that Vercel takes precedence over AWS. From the specification:
+   // > When variables for multiple ``client.env.name`` values are present,
+   // > ``vercel`` takes precedence over ``aws.lambda``
+
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
+
+   ASSERT (_mongoc_setenv ("VERCEL", "1"));
+   ASSERT (_mongoc_setenv ("VERCEL_REGION", "cdg1"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env (doc, 0, 0, "cdg1");
+   _handshake_check_env_name (doc, "vercel");
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_valid_aws (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
+   _handshake_check_env_name (doc, "aws.lambda");
+
+   bson_iter_t iter;
+   ASSERT (bson_iter_init_find (&iter, doc, "env"));
+   bson_iter_t inner_iter;
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   bson_iter_recurse (&iter, &inner_iter);
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_valid_azure (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", "node"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env (doc, 0, 0, NULL);
+   _handshake_check_env_name (doc, "azure.func");
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_valid_gcp (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("K_SERVICE", "servicename"));
+   ASSERT (_mongoc_setenv ("FUNCTION_MEMORY_MB", "1024"));
+   ASSERT (_mongoc_setenv ("FUNCTION_TIMEOUT_SEC", "60"));
+   ASSERT (_mongoc_setenv ("FUNCTION_REGION", "us-central1"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env (
+      doc, default_memory_mb, default_timeout_sec, "us-central1");
+   _handshake_check_env_name (doc, "gcp.func");
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_valid_vercel (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("VERCEL", "1"));
+   ASSERT (_mongoc_setenv ("VERCEL_REGION", "cdg1"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env (doc, 0, 0, "cdg1");
+   _handshake_check_env_name (doc, "vercel");
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_multiple_faas (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   // Multiple FaaS variables must cause the entire env field to be omitted
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", "node"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+
+   ASSERT (!bson_has_field (doc, "env"));
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_truncate_region (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   const size_t region_len = 512;
+   char long_region[512];
+   memset (&long_region, 'a', region_len - 1);
+   long_region[region_len - 1] = '\0';
+   ASSERT (_mongoc_setenv ("AWS_REGION", long_region));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env_name (doc, "aws.lambda");
+
+   bson_iter_t iter;
+   ASSERT (bson_iter_init_find (&iter, doc, "env"));
+   bson_iter_t inner_iter;
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   bson_iter_recurse (&iter, &inner_iter);
+   ASSERT (!bson_iter_find (&inner_iter, "memory_mb"));
+   ASSERT (!bson_iter_find (&inner_iter, "timeout_sec"));
+   ASSERT (!bson_iter_find (&inner_iter, "region"));
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+
+static void
+test_wrong_types (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "big"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+   _handshake_check_env_name (doc, "aws.lambda");
+
+   bson_iter_t iter;
+   ASSERT (bson_iter_init_find (&iter, doc, "env"));
+   bson_iter_t inner_iter;
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   bson_iter_recurse (&iter, &inner_iter);
+   ASSERT (!bson_iter_find (&iter, "memory_mb"));
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_aws_not_lambda (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   // Entire env field must be omitted with non-lambda AWS
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "EC2"));
+
+   _reset_handshake ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+
+   ASSERT (!bson_has_field (doc, "env"));
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_mongoc_handshake_data_append_null_args (void)
+{
+   bson_iter_t md_iter;
+   bson_iter_t inner_iter;
+   const char *val;
+
+   /* Make sure setting the handshake works */
+   ASSERT (mongoc_handshake_data_append (NULL, NULL, NULL));
+
+   _reset_handshake ();
+   bson_t *handshake_doc = _get_handshake_document (false);
+   bson_iter_init (&md_iter, handshake_doc);
+   _handshake_check_application (handshake_doc);
 
    /* Make sure driver.name and driver.version and platform are all right */
    ASSERT (bson_iter_find (&md_iter, "driver"));
@@ -367,16 +696,7 @@ test_mongoc_handshake_data_append_null_args (void)
       ASSERT (strstr (val, "null") == NULL);
    }
 
-   reply_to_request_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
-   request_destroy (request);
-
-   /* Cleanup */
-   mongoc_client_pool_push (pool, client);
-   mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
-   mock_server_destroy (server);
-
-   _reset_handshake ();
+   bson_destroy (handshake_doc);
 }
 
 
@@ -386,10 +706,8 @@ _test_platform (bool platform_oversized)
    mongoc_handshake_t *md;
    size_t platform_len;
    const char *platform_suffix = "b";
-   bson_t doc = BSON_INITIALIZER;
 
-   _mongoc_handshake_cleanup ();
-   _mongoc_handshake_init ();
+   _reset_handshake ();
 
    md = _mongoc_handshake_get ();
 
@@ -419,10 +737,12 @@ _test_platform (bool platform_oversized)
    /* returns true, but ignores the suffix; there's no room */
    ASSERT (mongoc_handshake_data_append (NULL, NULL, platform_suffix));
    ASSERT (!strstr (md->platform, "b"));
-   ASSERT (_mongoc_handshake_build_doc_with_application (&doc, "my app"));
-   ASSERT_CMPUINT32 (doc.len, ==, (uint32_t) HANDSHAKE_MAX_SIZE);
 
-   bson_destroy (&doc);
+   bson_t *doc;
+   ASSERT (doc = _mongoc_handshake_build_doc_with_application ("my app"));
+   ASSERT_CMPUINT32 (doc->len, ==, (uint32_t) HANDSHAKE_MAX_SIZE);
+
+   bson_destroy (doc);
    _reset_handshake (); /* frees the strings created above */
 }
 
@@ -556,76 +876,88 @@ static void
 test_mongoc_platform_truncate (int drop)
 {
    mongoc_handshake_t *md;
-   bson_t doc = BSON_INITIALIZER;
    bson_iter_t iter;
 
    char *undropped;
    char *expected;
    char big_string[HANDSHAKE_MAX_SIZE];
+   memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
+   big_string[HANDSHAKE_MAX_SIZE - 1] = '\0';
 
    /* Need to know how much space storing fields in our BSON will take
     * so that we can make our platform string the correct length here */
-   const size_t handshake_bson_size = 163;
    _reset_handshake ();
-
-   md = _mongoc_handshake_get ();
 
    /* we manually bypass the defaults of the handshake to ensure an exceedingly
     * long field does not cause our test to incorrectly fail */
+   md = _mongoc_handshake_get ();
    bson_free (md->os_type);
    md->os_type = bson_strdup ("test_a");
    bson_free (md->os_name);
    md->os_name = bson_strdup ("test_b");
-   bson_free (md->os_version);
-   md->os_version = bson_strdup ("test_c");
    bson_free (md->os_architecture);
    md->os_architecture = bson_strdup ("test_d");
    bson_free (md->driver_name);
    md->driver_name = bson_strdup ("test_e");
    bson_free (md->driver_version);
    md->driver_version = bson_strdup ("test_f");
+
+   // Set all fields used to generate the platform string to empty
+   bson_free (md->platform);
+   md->platform = bson_strdup ("");
+   bson_free (md->compiler_info);
+   md->compiler_info = bson_strdup ("");
+   bson_free (md->flags);
+   md->flags = bson_strdup ("");
+
+   // Set os_version to a long string to force drop all os fields except name
+   bson_free (md->os_version);
+   md->os_version = big_string;
+
+   bson_t *handshake_no_platform =
+      _mongoc_handshake_build_doc_with_application (default_appname);
+   size_t handshake_remaining_space =
+      HANDSHAKE_MAX_SIZE - handshake_no_platform->len;
+   bson_destroy (handshake_no_platform);
+
+   md->os_version = bson_strdup ("test_c");
    bson_free (md->compiler_info);
    md->compiler_info = bson_strdup ("test_g");
    bson_free (md->flags);
    md->flags = bson_strdup ("test_h");
 
-   size_t handshake_remaining_space =
-      (size_t) HANDSHAKE_MAX_SIZE -
-      (strlen (md->os_type) + strlen (md->os_name) + strlen (md->os_version) +
-       strlen (md->os_architecture) + strlen (md->driver_name) +
-       strlen (md->driver_version) + strlen (md->compiler_info) +
-       strlen (md->flags) + handshake_bson_size);
-
    /* adjust remaining space depending on which combination of
     * flags/compiler_info we want to test dropping */
    if (drop == 2) {
-      handshake_remaining_space +=
-         strlen (md->flags) + strlen (md->compiler_info);
       undropped = bson_strdup_printf ("%s", "");
    } else if (drop == 1) {
-      handshake_remaining_space += strlen (md->flags);
+      handshake_remaining_space -= strlen (md->compiler_info);
       undropped = bson_strdup_printf ("%s", md->compiler_info);
    } else {
+      handshake_remaining_space -=
+         strlen (md->flags) + strlen (md->compiler_info);
       undropped = bson_strdup_printf ("%s%s", md->compiler_info, md->flags);
    }
 
-   memset (big_string, 'a', handshake_remaining_space + 1u);
-   big_string[handshake_remaining_space + 1u] = '\0';
-
+   big_string[handshake_remaining_space] = '\0';
    ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
-   ASSERT (_mongoc_handshake_build_doc_with_application (&doc, "my app"));
+
+   bson_t *doc;
+   ASSERT (doc =
+              _mongoc_handshake_build_doc_with_application (default_appname));
 
    /* doc.len being strictly less than HANDSHAKE_MAX_SIZE proves that we have
     * dropped the flags correctly, instead of truncating anything
     */
-   ASSERT_CMPUINT32 (doc.len, <, (uint32_t) HANDSHAKE_MAX_SIZE);
-   bson_iter_init_find (&iter, &doc, "platform");
+
+   ASSERT_CMPUINT32 (doc->len, <=, (uint32_t) HANDSHAKE_MAX_SIZE);
+   ASSERT (bson_iter_init_find (&iter, doc, "platform"));
    expected = bson_strdup_printf ("%s%s", big_string, undropped);
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), expected);
 
    bson_free (expected);
    bson_free (undropped);
-   bson_destroy (&doc);
+   bson_destroy (doc);
    /* So later tests don't have "aaaaa..." as the md platform string */
    _reset_handshake ();
 }
@@ -655,19 +987,18 @@ test_mongoc_handshake_cannot_send (void)
    const char *const server_reply = "{'ok': 1, 'isWritablePrimary': true}";
    const bson_t *request_doc;
    char big_string[HANDSHAKE_MAX_SIZE];
-   mongoc_handshake_t *md;
 
    _reset_handshake ();
    capture_logs (true);
 
-   /* Mess with our global handshake struct so the handshake doc will be
-    * way too big */
    memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
    big_string[HANDSHAKE_MAX_SIZE - 1] = '\0';
 
-   md = _mongoc_handshake_get ();
-   bson_free (md->os_name);
-   md->os_name = bson_strdup (big_string);
+   /* The handshake cannot be built if a field that cannot be dropped
+    * (os.type) is set to a very long string */
+   mongoc_handshake_t *md = _mongoc_handshake_get ();
+   bson_free (md->os_type);
+   md->os_type = bson_strdup (big_string);
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -901,13 +1232,10 @@ test_handshake_platform_config (void)
 /* Called by a single thread in test_mongoc_handshake_race_condition */
 static BSON_THREAD_FUN (handshake_append_worker, data)
 {
-   const char *driver_name = "php driver";
-   const char *driver_version = "version abc";
-   const char *platform = "./configure -nottoomanyflags";
-
    BSON_UNUSED (data);
 
-   mongoc_handshake_data_append (driver_name, driver_version, platform);
+   mongoc_handshake_data_append (
+      default_driver_name, default_driver_version, default_platform);
 
    BSON_THREAD_RETURN;
 }
@@ -975,4 +1303,64 @@ test_handshake_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/MongoDB/handshake/race_condition",
                   test_mongoc_handshake_race_condition);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_aws",
+                      test_valid_aws,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_azure",
+                      test_valid_azure,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_gcp",
+                      test_valid_gcp,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_aws_lambda",
+                      test_valid_aws_lambda,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_aws_and_vercel",
+                      test_valid_aws_and_vercel,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_vercel",
+                      test_valid_vercel,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/multiple",
+                      test_multiple_faas,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/truncate_region",
+                      test_truncate_region,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/wrong_types",
+                      test_wrong_types,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/aws_not_lambda",
+                      test_aws_not_lambda,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
 }

@@ -361,6 +361,7 @@ bson_copy_to_excluding_noinit_va (const bson_t *src,
                                   const char *first_exclude,
                                   va_list args);
 
+
 /**
  * bson_destroy:
  * @bson: A bson_t.

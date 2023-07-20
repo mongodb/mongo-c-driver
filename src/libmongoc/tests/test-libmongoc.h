@@ -61,8 +61,6 @@ bool
 test_framework_getenv_bool (const char *name);
 int64_t
 test_framework_getenv_int64 (const char *name, int64_t default_value);
-bool
-test_framework_setenv (const char *name, const char *value);
 char *
 test_framework_get_host (void);
 uint16_t

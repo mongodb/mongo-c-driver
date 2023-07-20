@@ -106,13 +106,13 @@ test_obtain_credentials_from_env (void *unused)
    BSON_UNUSED (unused);
 
    /* "clear" environment variables by setting them to the empty string. */
-   test_framework_setenv ("AWS_ACCESS_KEY_ID", "");
-   test_framework_setenv ("AWS_SECRET_ACCESS_KEY", "");
-   test_framework_setenv ("AWS_SESSION_TOKEN", "");
+   _mongoc_setenv ("AWS_ACCESS_KEY_ID", "");
+   _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "");
+   _mongoc_setenv ("AWS_SESSION_TOKEN", "");
 
    /* Environment variables are used if username/password is not set. */
-   test_framework_setenv ("AWS_ACCESS_KEY_ID", "access_key_id");
-   test_framework_setenv ("AWS_SECRET_ACCESS_KEY", "secret_access_key");
+   _mongoc_setenv ("AWS_ACCESS_KEY_ID", "access_key_id");
+   _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "secret_access_key");
    uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    ASSERT_OR_PRINT (ret, error);
@@ -123,8 +123,8 @@ test_obtain_credentials_from_env (void *unused)
    mongoc_uri_destroy (uri);
 
    /* Omitting one of the required environment variables is an error. */
-   test_framework_setenv ("AWS_ACCESS_KEY_ID", "access_key_id");
-   test_framework_setenv ("AWS_SECRET_ACCESS_KEY", "");
+   _mongoc_setenv ("AWS_ACCESS_KEY_ID", "access_key_id");
+   _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "");
    uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
@@ -137,8 +137,8 @@ test_obtain_credentials_from_env (void *unused)
    mongoc_uri_destroy (uri);
 
    /* Omitting one of the required environment variables is an error. */
-   test_framework_setenv ("AWS_ACCESS_KEY_ID", "");
-   test_framework_setenv ("AWS_SECRET_ACCESS_KEY", "secret_access_key");
+   _mongoc_setenv ("AWS_ACCESS_KEY_ID", "");
+   _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "secret_access_key");
    uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
@@ -151,9 +151,9 @@ test_obtain_credentials_from_env (void *unused)
    mongoc_uri_destroy (uri);
 
    /* Only specifying the token is an error. */
-   test_framework_setenv ("AWS_ACCESS_KEY_ID", "");
-   test_framework_setenv ("AWS_SECRET_ACCESS_KEY", "");
-   test_framework_setenv ("AWS_SESSION_TOKEN", "token");
+   _mongoc_setenv ("AWS_ACCESS_KEY_ID", "");
+   _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "");
+   _mongoc_setenv ("AWS_SESSION_TOKEN", "token");
    uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
@@ -166,9 +166,9 @@ test_obtain_credentials_from_env (void *unused)
    mongoc_uri_destroy (uri);
 
    /* But a session token in the environment is picked up. */
-   test_framework_setenv ("AWS_ACCESS_KEY_ID", "access_key_id");
-   test_framework_setenv ("AWS_SECRET_ACCESS_KEY", "secret_access_key");
-   test_framework_setenv ("AWS_SESSION_TOKEN", "token");
+   _mongoc_setenv ("AWS_ACCESS_KEY_ID", "access_key_id");
+   _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "secret_access_key");
+   _mongoc_setenv ("AWS_SESSION_TOKEN", "token");
    uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    ASSERT_OR_PRINT (ret, error);
@@ -179,9 +179,9 @@ test_obtain_credentials_from_env (void *unused)
    mongoc_uri_destroy (uri);
 
    /* "clear" environment variables by setting them to the empty string. */
-   test_framework_setenv ("AWS_ACCESS_KEY_ID", "");
-   test_framework_setenv ("AWS_SECRET_ACCESS_KEY", "");
-   test_framework_setenv ("AWS_SESSION_TOKEN", "");
+   _mongoc_setenv ("AWS_ACCESS_KEY_ID", "");
+   _mongoc_setenv ("AWS_SECRET_ACCESS_KEY", "");
+   _mongoc_setenv ("AWS_SESSION_TOKEN", "");
 }
 
 static void
