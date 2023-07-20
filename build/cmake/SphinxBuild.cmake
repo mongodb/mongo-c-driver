@@ -21,14 +21,13 @@ function (sphinx_build_html target_name doc_dir)
    ProcessorCount (NPROCS)
 
    set (SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/html")
+   set (doctrees_dir "${SPHINX_HTML_DIR}.doctrees")
 
-   file (GLOB doc_rsts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rst)
-
-   foreach (rst IN LISTS doc_rsts)
-      # Every .rst builds a corresponding .html
-      string (REGEX REPLACE "^([^.]+)\.rst$" "html/\\1.html" html ${rst})
-      list (APPEND doc_htmls ${html})
-   endforeach ()
+   file (GLOB_RECURSE doc_rsts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS *.rst)
+   # Every .rst builds a corresponding .html
+   list (TRANSFORM doc_rsts
+         REPLACE "^(.+)\\.rst$" "html/\\1.html"
+         OUTPUT_VARIABLE doc_htmls)
 
    # Set PYTHONDONTWRITEBYTECODE to prevent .pyc clutter in the source directory
    add_custom_command (OUTPUT ${doc_htmls}
@@ -37,12 +36,14 @@ function (sphinx_build_html target_name doc_dir)
       ${CMAKE_COMMAND} -E env
          "PYTHONDONTWRITEBYTECODE=1"
       ${SPHINX_EXECUTABLE}
-         -qEnW -b html
+         -qnW -b html
+         -j "${NPROCS}"
          -c "${CMAKE_CURRENT_SOURCE_DIR}"
+         -d "${doctrees_dir}"
          "${CMAKE_CURRENT_SOURCE_DIR}"
          "${SPHINX_HTML_DIR}"
       COMMAND
-      rm -rf "${SPHINX_HTML_DIR}/.doctrees" "${SPHINX_HTML_DIR}/.buildinfo"
+         ${CMAKE_COMMAND} -E rm "${SPHINX_HTML_DIR}/.buildinfo"
       DEPENDS
       ${doc_rsts}
       COMMENT
@@ -100,15 +101,17 @@ function (sphinx_build_man target_name)
    ProcessorCount (NPROCS)
 
    set (SPHINX_MAN_DIR "${CMAKE_CURRENT_BINARY_DIR}/man")
+   set (doctrees_dir "${SPHINX_MAN_DIR}.doctrees")
 
-   file (GLOB doc_rsts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rst)
+   file (GLOB_RECURSE doc_rsts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS *.rst)
 
+   set (doc_mans)
    foreach (rst IN LISTS doc_rsts)
       # Only those with the :man_page: tag at the beginning build man pages
-      file (READ ${rst} rst_head LIMIT 256)
+      file (READ "${rst}" rst_head LIMIT 256)
       string (FIND "${rst_head}" ":man_page: " man_tag_pos)
-      # GREATER_EQUAL not in CMake until 3.7.
-      if (NOT man_tag_pos LESS "0")
+      if (man_tag_pos GREATER_EQUAL "0")
+         list (APPEND man_doc_rsts "${rst}")
          string (REGEX REPLACE
             "^.*:man_page: +([a-z0-9_]+).*$" "man\/\\1.3"
             man
@@ -124,12 +127,12 @@ function (sphinx_build_man target_name)
       ${CMAKE_COMMAND} -E env
          "PYTHONDONTWRITEBYTECODE=1"
       ${SPHINX_EXECUTABLE}
-         -qEW -b man
+         -qW -b man
+         -j "${NPROCS}"
          -c "${CMAKE_CURRENT_SOURCE_DIR}"
+         -d "${doctrees_dir}"
          "${CMAKE_CURRENT_SOURCE_DIR}"
          "${SPHINX_MAN_DIR}"
-      COMMAND
-      rm -rf "${SPHINX_MAN_DIR}/.doctrees" "${SPHINX_MAN_DIR}/.buildinfo"
       DEPENDS
       ${doc_rsts}
       COMMENT
