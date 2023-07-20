@@ -613,7 +613,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
          break;                                                                \
       }                                                                        \
       bson_t inner;                                                            \
-      bson_init_static (&inner, data, len);                                    \
+      BSON_ASSERT (bson_init_static (&inner, data, len));                      \
       _bsonVisitEach (inner, __VA_ARGS__);                                     \
    } while (0);                                                                \
    _bsonDSL_end
@@ -633,7 +633,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
          break;                                                           \
       }                                                                   \
       bson_t inner;                                                       \
-      bson_init_static (&inner, data, len);                               \
+      BSON_ASSERT (bson_init_static (&inner, data, len));                 \
       _bsonParse (inner, __VA_ARGS__);                                    \
    } while (0);
 
@@ -1072,7 +1072,7 @@ _bson_dsl_iter_as_doc (bson_t *into, const bson_iter_t *it)
       bson_iter_document (it, &len, &dataptr);
    }
    if (dataptr) {
-      bson_init_static (into, dataptr, len);
+      BSON_ASSERT (bson_init_static (into, dataptr, len));
    }
 }
 
