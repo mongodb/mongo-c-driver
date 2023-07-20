@@ -1404,7 +1404,7 @@ _mongoc_collection_create_index_if_not_exists (mongoc_collection_t *collection,
       }
 
       bson_iter_document (&iter, &data_len, &data);
-      bson_init_static (&inner_doc, data, data_len);
+      BSON_ASSERT (bson_init_static (&inner_doc, data, data_len));
 
       if (_mongoc_collection_index_keys_equal (keys, &inner_doc)) {
          index_exists = true;

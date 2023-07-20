@@ -1053,7 +1053,8 @@ _prep_for_auto_encryption (const mongoc_cmd_t *cmd, bson_t *out)
 {
    /* If there is no type=1 payload, return the command unchanged. */
    if (!cmd->payload || !cmd->payload_size) {
-      bson_init_static (out, bson_get_data (cmd->command), cmd->command->len);
+      BSON_ASSERT (bson_init_static (
+         out, bson_get_data (cmd->command), cmd->command->len));
       return;
    }
 

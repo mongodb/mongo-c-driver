@@ -2204,7 +2204,7 @@ mongoc_topology_description_handle_hello (
       uint32_t len;
 
       bson_iter_document (&iter, &len, &bytes);
-      bson_init_static (&incoming_topology_version, bytes, len);
+      BSON_ASSERT (bson_init_static (&incoming_topology_version, bytes, len));
 
       if (mongoc_server_description_topology_version_cmp (
              &sd->topology_version, &incoming_topology_version) == 1) {
