@@ -405,8 +405,9 @@ test_mongoc_handshake_data_append_success (void)
 }
 
 static void
-test_valid_aws_lambda (void)
+test_valid_aws_lambda (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_RUNTIME_API", "foo"));
    ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
@@ -429,12 +430,13 @@ test_valid_aws_lambda (void)
 }
 
 static void
-test_valid_aws_and_vercel (void)
+test_valid_aws_and_vercel (void *test_ctx)
 {
    // Test that Vercel takes precedence over AWS. From the specification:
    // > When variables for multiple ``client.env.name`` values are present,
    // > ``vercel`` takes precedence over ``aws.lambda``
 
+   BSON_UNUSED (test_ctx);
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
    ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
@@ -454,8 +456,9 @@ test_valid_aws_and_vercel (void)
 }
 
 static void
-test_valid_aws (void)
+test_valid_aws (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
    ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
@@ -478,8 +481,9 @@ test_valid_aws (void)
 }
 
 static void
-test_valid_azure (void)
+test_valid_azure (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
    ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", "node"));
 
    _reset_handshake ();
@@ -494,8 +498,9 @@ test_valid_azure (void)
 }
 
 static void
-test_valid_gcp (void)
+test_valid_gcp (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
    ASSERT (_mongoc_setenv ("K_SERVICE", "servicename"));
    ASSERT (_mongoc_setenv ("FUNCTION_MEMORY_MB", "1024"));
    ASSERT (_mongoc_setenv ("FUNCTION_TIMEOUT_SEC", "60"));
@@ -514,8 +519,9 @@ test_valid_gcp (void)
 }
 
 static void
-test_valid_vercel (void)
+test_valid_vercel (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
    ASSERT (_mongoc_setenv ("VERCEL", "1"));
    ASSERT (_mongoc_setenv ("VERCEL_REGION", "cdg1"));
 
@@ -531,8 +537,9 @@ test_valid_vercel (void)
 }
 
 static void
-test_multiple_faas (void)
+test_multiple_faas (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
    // Multiple FaaS variables must cause the entire env field to be omitted
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
    ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", "node"));
@@ -549,8 +556,9 @@ test_multiple_faas (void)
 }
 
 static void
-test_truncate_region (void)
+test_truncate_region (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
    const size_t region_len = 512;
    char long_region[512];
@@ -579,8 +587,9 @@ test_truncate_region (void)
 
 
 static void
-test_wrong_types (void)
+test_wrong_types (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "big"));
 
@@ -602,8 +611,9 @@ test_wrong_types (void)
 }
 
 static void
-test_aws_not_lambda (void)
+test_aws_not_lambda (void *test_ctx)
 {
+   BSON_UNUSED (test_ctx);
    // Entire env field must be omitted with non-lambda AWS
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "EC2"));
 
@@ -1297,23 +1307,64 @@ test_handshake_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/MongoDB/handshake/race_condition",
                   test_mongoc_handshake_race_condition);
-   TestSuite_Add (suite, "/MongoDB/handshake/faas/valid_aws", test_valid_aws);
-   TestSuite_Add (
-      suite, "/MongoDB/handshake/faas/valid_azure", test_valid_azure);
-   TestSuite_Add (suite, "/MongoDB/handshake/faas/valid_gcp", test_valid_gcp);
-   TestSuite_Add (
-      suite, "/MongoDB/handshake/faas/valid_aws_lambda", test_valid_aws_lambda);
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/faas/valid_aws_and_vercel",
-                  test_valid_aws_and_vercel);
-   TestSuite_Add (
-      suite, "/MongoDB/handshake/faas/valid_vercel", test_valid_vercel);
-   TestSuite_Add (
-      suite, "/MongoDB/handshake/faas/multiple", test_multiple_faas);
-   TestSuite_Add (
-      suite, "/MongoDB/handshake/faas/truncate_region", test_truncate_region);
-   TestSuite_Add (
-      suite, "/MongoDB/handshake/faas/wrong_types", test_wrong_types);
-   TestSuite_Add (
-      suite, "/MongoDB/handshake/faas/aws_not_lambda", test_aws_not_lambda);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_aws",
+                      test_valid_aws,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_azure",
+                      test_valid_azure,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_gcp",
+                      test_valid_gcp,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_aws_lambda",
+                      test_valid_aws_lambda,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_aws_and_vercel",
+                      test_valid_aws_and_vercel,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/valid_vercel",
+                      test_valid_vercel,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/multiple",
+                      test_multiple_faas,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/truncate_region",
+                      test_truncate_region,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/wrong_types",
+                      test_wrong_types,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/aws_not_lambda",
+                      test_aws_not_lambda,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
 }
