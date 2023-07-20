@@ -539,9 +539,6 @@ bson_copy_to_including_noinit (const bson_t *src,
    BSON_ASSERT_PARAM (src);
    BSON_ASSERT_PARAM (dst);
    BSON_ASSERT_PARAM (first_include);
-   BSON_ASSERT (src);
-   BSON_ASSERT (dst);
-   BSON_ASSERT (first_include);
 
    va_list args;
    va_start (args, first_include);

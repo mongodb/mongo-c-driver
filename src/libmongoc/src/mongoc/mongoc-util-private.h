@@ -177,13 +177,13 @@ _mongoc_getenv (const char *name);
 bool
 _mongoc_setenv (const char *name, const char *value);
 
-BSON_EXPORT (void)
+void
 bson_copy_to_including_noinit (const bson_t *src,
                                bson_t *dst,
                                const char *first_include,
                                ...) BSON_GNUC_NULL_TERMINATED;
 
-BSON_EXPORT (void)
+void
 bson_copy_to_including_noinit_va (const bson_t *src,
                                   bson_t *dst,
                                   const char *first_include,
