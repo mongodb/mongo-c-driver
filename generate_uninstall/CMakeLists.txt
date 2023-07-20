@@ -3,6 +3,10 @@
 
 set (UNINSTALL_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
+# When added as a subdirectory in the mongocxx driver, there is a conflict in
+# the `uninstall` target causing the `make uninstall` command to fail. By
+# defining the uninstall target as a variable, the C++ driver is able to rename
+# this target in order to avoid the conflict.
 if (NOT DEFINED MONGOC_UNINSTALL_TARGET)
    set(MONGOC_UNINSTALL_TARGET uninstall)
 endif()
