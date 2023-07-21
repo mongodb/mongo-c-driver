@@ -576,20 +576,22 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    /* Read exponent if exists */
    if (*str_read == 'e' || *str_read == 'E') {
       int nread = 0;
-#ifdef _MSC_VER
-#define SSCANF sscanf_s
-#else
-#define SSCANF sscanf
-#endif
       int64_t temp_exponent = 0;
-      int read_exponent =
-         SSCANF (++str_read, "%" SCNd64 "%n", &temp_exponent, &nread);
+      int read_exponent = 0;
+#ifdef _MSC_VER
+      read_exponent = sscanf_s (++str_read, "%I64d%n", &temp_exponent, &nread);
+#else
+      read_exponent =
+         sscanf (++str_read, "%" SCNd64 "%n", &temp_exponent, &nread);
+#endif
       str_read += nread;
-
 
       if (!read_exponent || nread == 0 || temp_exponent > 2147483647 ||
           temp_exponent < -2147483648) {
-         printf ("592 error");
+         printf ("read exponent = %d\n", read_exponent);
+         printf ("nread = %d\n", nread);
+         printf ("max = %d\n", temp_exponent > 2147483647);
+         printf ("min = %d\n", temp_exponent < -2147483648);
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
@@ -600,7 +602,6 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    }
 
    if ((len == -1 || str_read < string + len) && *str_read) {
-      printf ("603 error");
       BSON_DECIMAL128_SET_NAN (*dec);
       return false;
    }
@@ -653,7 +654,6 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
             exponent = BSON_DECIMAL128_EXPONENT_MAX;
             break;
          }
-         printf ("656 error");
          /* Overflow is not permitted, error. */
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
@@ -670,7 +670,6 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
             exponent = BSON_DECIMAL128_EXPONENT_MIN;
             break;
          }
-         printf ("673 error");
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
@@ -685,7 +684,6 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
          ndigits--; /* adjust to match digits not stored */
       } else {
          if (digits[last_digit] != 0) {
-            printf ("688 error");
             /* Inexact rounding is not allowed. */
             BSON_DECIMAL128_SET_NAN (*dec);
             return false;
@@ -698,7 +696,6 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
       if (exponent < BSON_DECIMAL128_EXPONENT_MAX) {
          exponent++;
       } else {
-         printf ("701 error");
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
@@ -716,7 +713,6 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
          '0';
 
       if (round_digit != 0) {
-         printf ("719 error");
          /* Inexact (non-zero) rounding is not allowed */
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
