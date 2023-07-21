@@ -114,6 +114,10 @@ export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
 export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
 export UBSAN_OPTIONS="print_stacktrace=1 abort_on_error=1"
 
+echo -e "\n\n\nDiagnose environment begin"
+env
+echo -e "Diagnose environment begin end\n\n\n"
+
 declare -a test_args=(
   "-d"
   "-F"
