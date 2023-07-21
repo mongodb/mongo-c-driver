@@ -586,9 +586,10 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
          SSCANF (++str_read, "%" SCNd64 "%n", &temp_exponent, &nread);
       str_read += nread;
 
-      printf ("%" SCNd64 "\n", temp_exponent);
+
       if (!read_exponent || nread == 0 || temp_exponent > 2147483647 ||
           temp_exponent < -2147483648) {
+         printf ("592 error");
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
@@ -599,6 +600,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    }
 
    if ((len == -1 || str_read < string + len) && *str_read) {
+      printf ("603 error");
       BSON_DECIMAL128_SET_NAN (*dec);
       return false;
    }
@@ -651,7 +653,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
             exponent = BSON_DECIMAL128_EXPONENT_MAX;
             break;
          }
-
+         printf ("656 error");
          /* Overflow is not permitted, error. */
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
@@ -668,7 +670,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
             exponent = BSON_DECIMAL128_EXPONENT_MIN;
             break;
          }
-
+         printf ("673 error");
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
@@ -683,6 +685,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
          ndigits--; /* adjust to match digits not stored */
       } else {
          if (digits[last_digit] != 0) {
+            printf ("688 error");
             /* Inexact rounding is not allowed. */
             BSON_DECIMAL128_SET_NAN (*dec);
             return false;
@@ -695,6 +698,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
       if (exponent < BSON_DECIMAL128_EXPONENT_MAX) {
          exponent++;
       } else {
+         printf ("701 error");
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
@@ -712,6 +716,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
          '0';
 
       if (round_digit != 0) {
+         printf ("719 error");
          /* Inexact (non-zero) rounding is not allowed */
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
