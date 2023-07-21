@@ -166,6 +166,14 @@ _check_os_version_valid (const char *os_version)
 }
 
 static void
+print_doc (bson_t *doc)
+{
+   char *s = bson_as_json (doc, NULL);
+   printf ("%s\n", s);
+   bson_free (s);
+}
+
+static void
 _handshake_check_application (bson_t *doc)
 {
    bson_iter_t md_iter;
@@ -465,6 +473,9 @@ test_valid_aws (void *test_ctx)
 
    _reset_handshake ();
    bson_t *doc = _get_handshake_document (true);
+   printf ("\n\n\nAWS handshake:");
+   print_doc (doc);
+
    _handshake_check_required_fields (doc);
    _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
    _handshake_check_env_name (doc, "aws.lambda");
