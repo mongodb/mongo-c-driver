@@ -583,7 +583,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
 #endif
       int64_t temp_exponent = 0;
       int read_exponent =
-         SSCANF (++str_read, "%" PRId64 "%n", &temp_exponent, &nread);
+         SSCANF (++str_read, "%" SCNd64 "%n", &temp_exponent, &nread);
       str_read += nread;
 
       if (!read_exponent || nread == 0 || temp_exponent > 2147483647 ||
