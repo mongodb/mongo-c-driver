@@ -3,14 +3,6 @@
 
 set (UNINSTALL_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-# When added as a subdirectory in the mongocxx driver, there is a conflict in
-# the `uninstall` target causing the `make uninstall` command to fail. By
-# defining the uninstall target as a variable, the C++ driver is able to rename
-# this target in order to avoid the conflict.
-if (NOT DEFINED MONGOC_UNINSTALL_TARGET)
-   set(MONGOC_UNINSTALL_TARGET uninstall)
-endif()
-
 if (WIN32)
    string (REPLACE "/" "\\\\" CMAKE_INSTALL_PREFIX_WIN32
       "${CMAKE_INSTALL_PREFIX}"
@@ -36,9 +28,11 @@ if (WIN32)
    ")
    install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}" DESTINATION "${UNINSTALL_PROG_DIR}" PERMISSIONS ${UNINSTALL_PERMISSIONS})
 
-   add_custom_target (${MONGOC_UNINSTALL_TARGET}
-      COMMAND call "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}"
-   )
+   if ("${CMAKE_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+       add_custom_target (uninstall
+          COMMAND call "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}"
+       )
+   endif ()
 else ()
    install (CODE "
       string(REPLACE \";\" \"\\n\" MONGOC_INSTALL_MANIFEST_CONTENT
@@ -58,7 +52,9 @@ else ()
    ")
    install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}" DESTINATION "${UNINSTALL_PROG_DIR}" PERMISSIONS ${UNINSTALL_PERMISSIONS})
 
-   add_custom_target (${MONGOC_UNINSTALL_TARGET}
-      COMMAND sh "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}"
-   )
+   if ("${CMAKE_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+       add_custom_target (uninstall
+           COMMAND sh "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}"
+       )
+   endif ()
 endif ()
