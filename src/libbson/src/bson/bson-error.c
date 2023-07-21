@@ -109,14 +109,11 @@ bson_strerror_r (int err_code,  /* IN */
    if (strerror_s (buf, buflen, err_code) != 0) {
       ret = buf;
    }
-#elif defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 600 && !defined(_GNU_SOURCE)
-   // The presence of _GNU_SOURCE determines whether the POSIX
-   // XSI-conforming version or the GNU extension is available.
+#elif defined(BSON_HAVE_XSI_STRERROR_R)
    if (strerror_r (err_code, buf, buflen) == 0) {
       ret = buf;
    }
 #elif defined(_GNU_SOURCE)
-   // Fallback to GNU extension.
    ret = strerror_r (err_code, buf, buflen);
 #else
    #error "Unable to find a supported strerror_r candidate"
