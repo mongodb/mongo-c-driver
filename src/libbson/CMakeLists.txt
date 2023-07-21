@@ -120,16 +120,17 @@ else ()
 endif ()
 
 # 1. Normally, `defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 600` should be enough
-#    to detect if XSI-compliant strerror_r is available.
-# 2. However, GNU provides an incompatible strerror_r as an extension, requiring
-#    an additional test for `defined(_GNU_SOURCE)`.
+#    to detect if an XSI-compliant `strerror_r` is available.
+# 2. However, GNU provides an incompatible `strerror_r` as an extension,
+#    requiring an additional test for `!defined(_GNU_SOURCE)`.
 # 3. However, musl does not support the GNU extension even when `_GNU_SOURCE` is
-#    defined, preventing `defined(_GNU_SOURCE)` as a XSI-compliance test.
+#    defined, preventing `!defined(_GNU_SOURCE)` from being a portable
+#    XSI-compliance test.
 # 4. However, musl does not provide a feature test macro to detect compilation
 #    with musl, and workarounds that use internal glibc feature test macros such
-#    as `__USE_GNU` are explicitly forbidden by glibc documentation.
-# 5. Therefore, give up on using feature test macros: instead, use
-#    CheckCSourceCompiles to test if the current `strerror_r` is XSI-compliant.
+#    as `defined(__USE_GNU)` are explicitly forbidden by glibc documentation.
+# 5. Therefore, give up on using feature test macros: use `CheckCSourceCompiles`
+#    to test if the current `strerror_r` is XSI-compliant if present.
 if (NOT WIN32)
    CHECK_C_SOURCE_COMPILES(
       [[
