@@ -7,6 +7,8 @@ from docutils import nodes
 from docutils.nodes import Node, document
 
 from sphinx.application import Sphinx
+from sphinx.application import logger as sphinx_log
+from sphinx.builders.dirhtml import DirectoryHTMLBuilder
 from sphinx.config import Config
 from sphinx.project import Project
 from sphinx.util.docutils import SphinxDirective
@@ -135,8 +137,28 @@ class VersionList(SphinxDirective):
         return [header, blist]
 
 
+def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: dict[str, Any], doctree: Any) -> None:
+    builder = app.builder
+    if not isinstance(builder, DirectoryHTMLBuilder) or "writing-redirect" in context:
+        return
+    if page == "index" or page.endswith(".index"):
+        return
+    path = app.project.doc2path(page, basedir=False)
+    out_index_html = Path(builder.get_outfilename(page))
+    slug = out_index_html.parent.name
+    redirect_file = out_index_html.parent.parent / f"{slug}.html"
+    builder.handle_page(
+        f"redirect-for-{page}",
+        {"target": page, "writing-redirect": 1},
+        str(Path(__file__).parent.resolve() / "redirect.t.html"),
+        str(redirect_file),
+    )
+    sphinx_log.debug(f"Wrote redirect: {path} -> {page}")
+
+
 def mongoc_common_setup(app: Sphinx):
     app.connect("config-inited", _collect_man)
+    app.connect("html-page-context", generate_html_redirs)
     app.connect("html-page-context", add_ga_javascript)
     # Run sphinx-build -D analytics=1 to enable Google Analytics.
     app.add_config_value("analytics", False, "html")

@@ -24,9 +24,9 @@ function (sphinx_build_html target_name doc_dir)
    set (doctrees_dir "${SPHINX_HTML_DIR}.doctrees")
 
    file (GLOB_RECURSE doc_rsts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS *.rst)
-   # Every .rst builds a corresponding .html
+   # Every .rst builds two corresponding .html files:
    list (TRANSFORM doc_rsts
-         REPLACE "^(.+)\\.rst$" "html/\\1.html"
+         REPLACE "^(.+)\\.rst$" "html/\\1.html;html/\\1/index.html"
          OUTPUT_VARIABLE doc_htmls)
 
    # Set PYTHONDONTWRITEBYTECODE to prevent .pyc clutter in the source directory
@@ -36,14 +36,12 @@ function (sphinx_build_html target_name doc_dir)
       ${CMAKE_COMMAND} -E env
          "PYTHONDONTWRITEBYTECODE=1"
       ${SPHINX_EXECUTABLE}
-         -qnW -b html
+         -qnW -b dirhtml
          -j "${NPROCS}"
          -c "${CMAKE_CURRENT_SOURCE_DIR}"
          -d "${doctrees_dir}"
          "${CMAKE_CURRENT_SOURCE_DIR}"
          "${SPHINX_HTML_DIR}"
-      COMMAND
-         ${CMAKE_COMMAND} -E rm "${SPHINX_HTML_DIR}/.buildinfo"
       DEPENDS
       ${doc_rsts}
       COMMENT

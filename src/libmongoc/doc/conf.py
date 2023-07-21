@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import os.path
 import sys
+from typing import Any
+
+from sphinx.application import Sphinx
 
 # Ensure we can import "mongoc" extension module.
 this_path = os.path.dirname(__file__)
@@ -71,8 +74,8 @@ rst_prolog = """
 """
 
 
-def add_canonical_link(app, pagename, templatename, context, doctree):
-    link = '<link rel="canonical"' ' href="https://www.mongoc.org/libmongoc/current/%s.html"/>' % pagename
+def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: dict[str, Any], doctree: Any):
+    link = f'<link rel="canonical" href="https://www.mongoc.org/libmongoc/current/{pagename}/"/>'
 
     context["metatags"] = context.get("metatags", "") + link
 
