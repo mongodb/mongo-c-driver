@@ -586,13 +586,12 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
 #endif
       str_read += nread;
 
-      if (!read_exponent || nread == 0 ||
-          temp_exponent > __INT64_C (2147483647) ||
-          temp_exponent < __INT64_C (-2147483648)) {
+      if (!read_exponent || nread == 0 || temp_exponent > 2147483647ll ||
+          temp_exponent < -2147483648ll) {
          printf ("read exponent = %d\n", read_exponent);
          printf ("nread = %d\n", nread);
-         printf ("max = %d\n", temp_exponent > 2147483647);
-         printf ("min = %d\n", temp_exponent < -2147483648);
+         printf ("max = %d\n", temp_exponent > 2147483647ll);
+         printf ("min = %d\n", temp_exponent < -2147483648ll);
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
