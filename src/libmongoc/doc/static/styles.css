@@ -1,0 +1,13 @@
+code.bolded-name.literal>span.pre {
+  font-weight: bold;
+}
+
+p>code.bolded-name.literal>span.pre {
+  font-size: 110%;
+}
+
+p .sign-inline,
+p code.literal {
+  /* Prevent work breaks within inline code, which makes it very difficult to read */
+  white-space: pre-line;
+}

@@ -288,21 +288,39 @@ To use the driver libraries in your program, see :doc:`visual-studio-guide`.
 Generating the documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Install `Sphinx <http://www.sphinx-doc.org/>`_, then:
+This documentation is rendered using Sphinx__. To easily ensure that all tooling
+matches expected versions, it is recommended to use Poetry__ to install and
+run the required tools.
 
-.. code-block:: none
+__ https://www.sphinx-doc.org
+__ https://python-poetry.org
 
-  $ cmake -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON ..
-  $ cmake --build . --target mongoc-doc
+Poetry itself may be installed externally, but can also be automatically managed
+using the included wrapping scripts from Bash (At ``tools/poetry.sh``) or
+PowerShell (at ``tools/poetry.ps1``). These scripts can stand in for ``poetry``
+in any command line.
 
-To build only the libbson documentation:
+To install the required tooling, use the ``poetry install`` command, enabling
+documentation dependencies:
 
-.. code-block:: none
+.. code-block:: sh
 
-  $ cmake -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON ..
-  $ cmake --build . --target bson-doc
+  $ poetry install --with=docs
 
-The ``-DENABLE_MAN_PAGES=ON`` and ``-DENABLE_HTML_DOCS=ON`` can also be added as options to a normal build from a release tarball or from git so that the documentation is built at the same time as other components.
+The installed tools include Sphinx itself, which can be executed directly using
+``poetry run``. For example, to render the libmongoc HTML documentation:
+
+.. code-block:: sh
+
+  $ poetry run sphinx-build -b html src/libmongoc/docs/ _build/docs/libmongoc/html
+
+To quickly view the rendered HTML pages, Python's built-in ``http.server``
+module can be used to spawn a local HTTP server:
+
+.. code-block:: sh
+
+  $ poetry run python -m http.server --directory=_build/docs/libmongoc/html
+
 
 Uninstalling the installed components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

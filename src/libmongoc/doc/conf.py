@@ -15,6 +15,7 @@ from mongoc_common import *
 extensions = [
     "mongoc",
     "sphinx.ext.intersphinx",
+    "sphinxcontrib.moderncmakedomain",
 ]
 
 # General information about the project.
@@ -30,6 +31,7 @@ version = open(version_path).read().strip()
 language = "en"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 master_doc = "index"
+html_static_path = ["static"]
 
 # Set an empty list of disabled reftypes.
 # Sphinx 5.0 disables "std:doc" by default.
@@ -40,6 +42,7 @@ intersphinx_disabled_reftypes = []
 # Fedora package builds must work offline - maintain a recent copy here
 intersphinx_mapping = {
     "bson": ("https://www.mongoc.org/libbson/current", "libbson-objects.inv"),
+    "cmake": ("https://cmake.org/cmake/help/latest", None),
 }
 
 # -- Options for HTML output ----------------------------------------------
@@ -49,7 +52,7 @@ html_title = html_shorttitle = "libmongoc %s" % version
 # html_favicon = None
 html_use_index = False
 
-rst_prolog = """
+rst_prolog = rf"""
 .. |qenc:is-experimental| replace::
 
     is part of the experimental
@@ -71,6 +74,35 @@ rst_prolog = """
 .. _the findAndModify command:
     https://www.mongodb.com/docs/manual/reference/command/findAndModify/
 
+.. |version| replace:: {version}
+.. |version.pre| replace:: ``{version}``
+.. |vversion| replace:: ``v{version}``
+
+.. role:: bash(code)
+    :language: bash
+
+.. role:: bolded-name(literal)
+    :class: bolded-name
+
+.. |libbson| replace:: :bolded-name:`libbson`
+.. |libmongoc| replace:: :bolded-name:`libmongoc`
+.. |mongo-c-driver| replace:: :bolded-name:`mongo-c-driver`
+
+.. The CMake inventory mangles the names of its custom domain objects, for some reason?
+   Offer these substitutions for simpler variable references:
+
+.. |cmvar:CMAKE_BUILD_TYPE| replace::
+    :external+cmake:cmake:variable:`CMAKE_BUILD_TYPE <variable:CMAKE_BUILD_TYPE>`
+
+.. |cmvar:CMAKE_INSTALL_PREFIX| replace::
+    :external+cmake:cmake:variable:`CMAKE_INSTALL_PREFIX <variable:CMAKE_INSTALL_PREFIX>`
+
+.. |cmvar:CMAKE_PREFIX_PATH| replace::
+    :external+cmake:cmake:variable:`CMAKE_PREFIX_PATH <variable:CMAKE_PREFIX_PATH>`
+
+.. |cmcmd:find_package| replace::
+    :external+cmake:cmake:command:`find_package() <command:find_package>`
+
 """
 
 
@@ -80,6 +112,7 @@ def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: d
     context["metatags"] = context.get("metatags", "") + link
 
 
-def setup(app):
+def setup(app: Sphinx):
     mongoc_common_setup(app)
     app.connect("html-page-context", add_canonical_link)
+    app.add_css_file("styles.css")

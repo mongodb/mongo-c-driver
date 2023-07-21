@@ -13,36 +13,15 @@ It depends on :doc:`libbson <bson:index>` to generate and parse BSON documents, 
 .. toctree::
    :maxdepth: 2
 
+   learn/index
+
+.. toctree::
+   :maxdepth: 2
+
    installing
-
-.. toctree::
-   :maxdepth: 2
-
    tutorial
-
-.. toctree::
-   :maxdepth: 2
-
    authentication
-
-.. toctree::
-   :maxdepth: 2
-
    basic-troubleshooting
-
-.. toctree::
-   :maxdepth: 2
-
    guides
-
-.. toctree::
-   :titlesonly:
-   :maxdepth: 2
-
    api
-
-.. toctree::
-   :titlesonly:
-   :maxdepth: 2
-
    application-performance-monitoring
