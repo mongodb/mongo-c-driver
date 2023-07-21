@@ -576,28 +576,23 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    /* Read exponent if exists */
    if (*str_read == 'e' || *str_read == 'E') {
       int nread = 0;
-      int64_t temp_exponent = 0;
-      int read_exponent = 0;
 #ifdef _MSC_VER
-      read_exponent = sscanf_s (++str_read, "%I64d%n", &temp_exponent, &nread);
+#define SSCANF sscanf_s
 #else
-      read_exponent =
-         sscanf (++str_read, "%" SCNd64 "%n", &temp_exponent, &nread);
+#define SSCANF sscanf
 #endif
+      int64_t temp_exponent = 0;
+      int read_exponent =
+         SSCANF (++str_read, "%" SCNd64 "%n", &temp_exponent, &nread);
       str_read += nread;
 
-      if (!read_exponent || nread == 0 || temp_exponent > 2147483647ll ||
-          temp_exponent < -2147483648ll) {
-         printf ("read exponent = %d\n", read_exponent);
-         printf ("nread = %d\n", nread);
-         printf ("max = %d\n", temp_exponent > 2147483647ll);
-         printf ("min = %d\n", temp_exponent < -2147483648ll);
+      if (!read_exponent || nread == 0 || temp_exponent > (int64_t) INT32_MAX ||
+          temp_exponent < (int64_t) INT32_MIN) {
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
 
       exponent = (int32_t) temp_exponent;
-
 #undef SSCANF
    }
 
