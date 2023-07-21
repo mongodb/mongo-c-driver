@@ -649,6 +649,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
             exponent = BSON_DECIMAL128_EXPONENT_MAX;
             break;
          }
+
          /* Overflow is not permitted, error. */
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
@@ -665,6 +666,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
             exponent = BSON_DECIMAL128_EXPONENT_MIN;
             break;
          }
+
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
