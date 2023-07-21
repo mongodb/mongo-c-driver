@@ -1,8 +1,8 @@
 .SILENT:
-.PHONY: docs docs-server poetry-install libbson-docs libmongoc-docs
+.PHONY: poetry-install libbson-docs libmongoc-docs
 
 SPHINX_JOBS ?= 12
-SPHINX_ARGS := -n -j "$(SPHINX_JOBS)" -T
+SPHINX_ARGS := -n -j "$(SPHINX_JOBS)" -T -b dirhtml
 POETRY := bash tools/poetry.sh
 SPHINX_BUILD := $(POETRY) run sphinx-build $(SPHINX_ARGS)
 SPHINX_AUTOBUILD := $(POETRY) run sphinx-autobuild $(SPHINX_ARGS)

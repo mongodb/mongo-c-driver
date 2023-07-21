@@ -27,7 +27,7 @@ master_doc = "index"
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = "nature"
+html_theme = "furo"
 html_title = html_shorttitle = "libbson %s" % version
 # html_favicon = None
 

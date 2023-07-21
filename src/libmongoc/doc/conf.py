@@ -44,7 +44,7 @@ intersphinx_mapping = {
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = "nature"
+html_theme = "furo"
 html_title = html_shorttitle = "libmongoc %s" % version
 # html_favicon = None
 html_use_index = False

@@ -18,6 +18,7 @@ optional = true
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^7.0.1"
+furo = "^2023.5.20"
 
 [tool.poetry.group.dev]
 optional = true
