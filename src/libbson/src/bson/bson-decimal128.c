@@ -581,15 +581,18 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
 #else
 #define SSCANF sscanf
 #endif
+      int64_t temp_exponent = 0;
       int read_exponent =
-         SSCANF (++str_read, "%" PRId64 "%n", &exponent, &nread);
+         SSCANF (++str_read, "%" PRId64 "%n", &temp_exponent, &nread);
       str_read += nread;
 
-      if (!read_exponent || nread == 0 || exponent > 2147483647 ||
-          exponent < -2147483648) {
+      if (!read_exponent || nread == 0 || temp_exponent > 2147483647 ||
+          temp_exponent < -2147483648) {
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
+
+      exponent = (int32_t) temp_exponent;
 
 #undef SSCANF
    }
