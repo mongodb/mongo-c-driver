@@ -480,6 +480,73 @@ _mongoc_validate_update (const bson_t *update,
    return true;
 }
 
+
+static bool
+should_include (const char *first_include, va_list args, const char *name)
+{
+   bool ret = false;
+   const char *include = first_include;
+   va_list args_copy;
+
+   va_copy (args_copy, args);
+
+   do {
+      if (!strcmp (name, include)) {
+         ret = true;
+         break;
+      }
+   } while ((include = va_arg (args_copy, const char *)));
+
+   va_end (args_copy);
+
+   return ret;
+}
+
+
+void
+bson_copy_to_including_noinit_va (const bson_t *src,
+                                  bson_t *dst,
+                                  const char *first_include,
+                                  va_list args)
+{
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (first_include);
+   bson_iter_t iter;
+
+   if (bson_iter_init (&iter, src)) {
+      while (bson_iter_next (&iter)) {
+         if (should_include (first_include, args, bson_iter_key (&iter))) {
+            if (!bson_append_iter (dst, NULL, 0, &iter)) {
+               /*
+                * This should not be able to happen since we are copying
+                * from within a valid bson_t.
+                */
+               BSON_ASSERT (false);
+               return;
+            }
+         }
+      }
+   }
+}
+
+void
+bson_copy_to_including_noinit (const bson_t *src,
+                               bson_t *dst,
+                               const char *first_include,
+                               ...)
+{
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
+   BSON_ASSERT_PARAM (first_include);
+
+   va_list args;
+   va_start (args, first_include);
+   bson_copy_to_including_noinit_va (src, dst, first_include, args);
+   va_end (args);
+}
+
+
 void
 mongoc_lowercase (const char *src, char *buf /* OUT */)
 {
@@ -687,6 +754,22 @@ _mongoc_getenv (const char *name)
 
 #endif
 }
+
+bool
+_mongoc_setenv (const char *name, const char *value)
+{
+#ifdef _WIN32
+   return SetEnvironmentVariableA (name, value) != 0;
+#else
+
+   if (0 != setenv (name, value, 1)) {
+      return false;
+   }
+
+   return true;
+#endif
+}
+
 
 /* Nearly Divisionless (Algorithm 5): https://arxiv.org/abs/1805.10941 */
 static uint32_t

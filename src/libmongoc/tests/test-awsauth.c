@@ -118,29 +118,6 @@ creds_eq (_mongoc_aws_credentials_t *a, _mongoc_aws_credentials_t *b)
    return true;
 }
 
-// _mongoc_setenv sets an environment variable. Returns false on failure.
-static bool
-_mongoc_setenv (const char *name, const char *value)
-{
-#ifdef _WIN32
-   char *envstring;
-
-   envstring = bson_strdup_printf ("%s=%s", name, value);
-   if (0 != _putenv (envstring)) {
-      return false;
-   }
-
-   return true;
-#else
-
-   if (0 != setenv (name, value, 1)) {
-      return false;
-   }
-
-   return true;
-#endif
-}
-
 // clear_env sets all AWS environment variables to empty strings.
 static void
 clear_env (void)

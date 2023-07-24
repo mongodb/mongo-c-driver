@@ -274,29 +274,6 @@ test_framework_getenv_required (const char *name)
    return ret;
 }
 
-/* Returns false if unable to set environment variable. Which may occur if
- * test-libmongoc lacks permissions to do so. */
-bool
-test_framework_setenv (const char *name, const char *value)
-{
-#ifdef _WIN32
-   char *envstring;
-
-   envstring = bson_strdup_printf ("%s=%s", name, value);
-   if (0 != _putenv (envstring)) {
-      return false;
-   }
-
-   return true;
-#else
-
-   if (0 != setenv (name, value, 1)) {
-      return false;
-   }
-
-   return true;
-#endif
-}
 
 /*
  *--------------------------------------------------------------------------
@@ -2528,7 +2505,7 @@ int
 test_framework_skip_if_no_setenv (void)
 {
    char *value;
-   if (!test_framework_setenv ("MONGOC_TEST_CANARY", "VALUE")) {
+   if (!_mongoc_setenv ("MONGOC_TEST_CANARY", "VALUE")) {
       return 0; /* do not proceed. */
    }
    value = test_framework_getenv ("MONGOC_TEST_CANARY");
