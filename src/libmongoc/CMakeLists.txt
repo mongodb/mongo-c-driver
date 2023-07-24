@@ -44,13 +44,6 @@ if (NOT ENABLE_ZSTD MATCHES "ON|AUTO|OFF")
    message (FATAL_ERROR "ENABLE_ZSTD option must be ON, AUTO, or OFF")
 endif ()
 
-# Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
-# will look for zconf.h in that location.
-configure_file (
-   "${SOURCE_DIR}/src/zlib-1.2.13/zconf.h.in"
-   "${CMAKE_BINARY_DIR}/src/zlib-1.2.13/zconf.h"
-   COPYONLY
-)
 set (ZLIB_INCLUDE_DIRS "")
 if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
    message (STATUS "Searching for zlib CMake packages")
@@ -366,28 +359,6 @@ if (ENABLE_SHM_COUNTERS)
    endif ()
 endif ()
 
-if (NOT ENABLE_ICU MATCHES "AUTO|ON|OFF")
-   message (FATAL_ERROR, "ENABLE_ICU option must be AUTO, ON, or OFF")
-endif()
-
-if (NOT ENABLE_ICU STREQUAL OFF)
-   if (ENABLE_ICU STREQUAL ON)
-      # do not suppress log output if find_package cannot find ICU
-      find_package (ICU COMPONENTS uc)
-   elseif (ENABLE_ICU STREQUAL AUTO)
-      find_package (ICU QUIET COMPONENTS uc)
-   endif()
-   if (ICU_FOUND)
-      set (MONGOC_ENABLE_ICU 1)
-      include_directories ("${ICU_INCLUDE_DIR}")
-   elseif (ENABLE_ICU STREQUAL ON)
-      message (FATAL_ERROR "No ICU library found. If ICU is installed in a non-standard directory, define ICU_ROOT as the ICU installation path.")
-   elseif (ENABLE_ICU STREQUAL AUTO)
-      message (STATUS "No ICU library found, SASLPrep disabled for SCRAM-SHA-256 authentication.")
-      message (STATUS "If ICU is installed in a non-standard directory, define ICU_ROOT as the ICU installation path.")
-   endif()
-endif()
-
 # Configure In-Use Encryption
 set (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION 0)
 if (NOT ENABLE_CLIENT_SIDE_ENCRYPTION MATCHES "AUTO|ON|OFF")
@@ -693,11 +664,11 @@ endif ()
 
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
 add_library(_mongoc-dependencies INTERFACE)
@@ -781,6 +752,11 @@ target_compile_definitions (mongoc_shared
       ${KMS_MSG_DEFINITIONS}
       MCOMMON_NAME_PREFIX=_mongoc_mcommon
 )
+
+if (USE_BUNDLED_UTF8PROC)
+   target_compile_definitions (mongoc_shared PRIVATE UTF8PROC_STATIC)
+endif ()
+
 # Several directories in the source and build trees contain headers we would like
 # include via relative reference, but they all end up in the same install path
 target_include_directories (
@@ -829,6 +805,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          ${KMS_MSG_DEFINITIONS}
          MCOMMON_NAME_PREFIX=_mongoc_mcommon
    )
+   if (USE_BUNDLED_UTF8PROC)
+      target_compile_definitions (mongoc_static PRIVATE UTF8PROC_STATIC)
+   endif ()
    # Several directories in the source and build trees contain headers we would like
    # include via relative reference, but they all end up in the same install path
    target_include_directories (
@@ -1213,8 +1192,7 @@ endif ()
 if(TARGET mongoc_static)
    set(link_options
       ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${ZLIB_LIBRARIES}
-      ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
-      ${LIBMONGOCRYPT_LIBRARY})
+      ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY})
    # Replace all absolute paths with search-dir link-file options:
    list(TRANSFORM link_options
         REPLACE "^(.+)/lib([^/\\.]+)\\..+$"
@@ -1304,24 +1282,3 @@ if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
       $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:mongoc-html>
    )
 endif ()
-
-add_subdirectory (build)
-# sub-directory 'doc' was already included above
-add_subdirectory (examples)
-add_subdirectory (src)
-add_subdirectory (tests)
-
-set_local_dist (src_libmongoc_DIST_local
-   CMakeLists.txt
-   THIRD_PARTY_NOTICES
-)
-
-set (src_libmongoc_DIST
-   ${src_libmongoc_DIST_local}
-   ${src_libmongoc_build_DIST}
-   ${src_libmongoc_doc_DIST}
-   ${src_libmongoc_examples_DIST}
-   ${src_libmongoc_src_DIST}
-   ${src_libmongoc_tests_DIST}
-   PARENT_SCOPE
-)

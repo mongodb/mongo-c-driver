@@ -14,12 +14,14 @@ include (MongoC-Warnings)
 
 set (BSON_OUTPUT_BASENAME "bson" CACHE STRING "Output bson library base name")
 
+include (CheckCSourceCompiles)
 include (CheckFunctionExists)
 include (CheckIncludeFile)
+include (CheckIncludeFiles)
 include (CheckStructHasMember)
 include (CheckSymbolExists)
-include (TestBigEndian)
 include (InstallRequiredSystemLibraries)
+include (TestBigEndian)
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
@@ -83,8 +85,6 @@ else ()
    set (BSON_OS 1)
 endif ()
 
-include (CheckIncludeFiles)
-
 CHECK_INCLUDE_FILE (strings.h BSON_HAVE_STRINGS_H)
 if (NOT BSON_HAVE_STRINGS_H)
    set (BSON_HAVE_STRINGS_H 0)
@@ -117,6 +117,38 @@ if (BSON_BIG_ENDIAN)
    set (BSON_BYTE_ORDER 4321)
 else ()
    set (BSON_BYTE_ORDER 1234)
+endif ()
+
+# 1. Normally, `defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 600` should be enough
+#    to detect if an XSI-compliant `strerror_r` is available.
+# 2. However, GNU provides an incompatible `strerror_r` as an extension,
+#    requiring an additional test for `!defined(_GNU_SOURCE)`.
+# 3. However, musl does not support the GNU extension even when `_GNU_SOURCE` is
+#    defined, preventing `!defined(_GNU_SOURCE)` from being a portable
+#    XSI-compliance test.
+# 4. However, musl does not provide a feature test macro to detect compilation
+#    with musl, and workarounds that use internal glibc feature test macros such
+#    as `defined(__USE_GNU)` are explicitly forbidden by glibc documentation.
+# 5. Therefore, give up on using feature test macros: use `CheckCSourceCompiles`
+#    to test if the current `strerror_r` is XSI-compliant if present.
+if (NOT WIN32)
+   CHECK_C_SOURCE_COMPILES(
+      [[
+         #include <string.h>
+         int test(int errnum, char *buf, size_t buflen) {
+            return strerror_r (errnum, buf, buflen);
+         }
+         int main(void) {}
+      ]]
+      BSON_HAVE_XSI_STRERROR_R
+      FAIL_REGEX "int-conversion"
+   )
+endif ()
+
+if (BSON_HAVE_XSI_STRERROR_R)
+   set(BSON_HAVE_XSI_STRERROR_R 1)
+else()
+   set(BSON_HAVE_XSI_STRERROR_R 0)
 endif ()
 
 configure_file (
@@ -451,27 +483,3 @@ if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
       $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:bson-html>
    )
 endif ()
-
-add_subdirectory (build)
-# sub-directory 'doc' was already included above
-add_subdirectory (examples)
-add_subdirectory (fuzz)
-add_subdirectory (src)
-add_subdirectory (tests)
-
-set_local_dist (src_libbson_DIST_local
-   CMakeLists.txt
-   NEWS
-   THIRD_PARTY_NOTICES
-)
-
-set (src_libbson_DIST
-   ${src_libbson_DIST_local}
-   ${src_libbson_build_DIST}
-   ${src_libbson_doc_DIST}
-   ${src_libbson_examples_DIST}
-   ${src_libbson_fuzz_DIST}
-   ${src_libbson_src_DIST}
-   ${src_libbson_tests_DIST}
-   PARENT_SCOPE
-)

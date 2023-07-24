@@ -97,7 +97,6 @@ test_mongoc_scram_iteration_count (void)
 static void
 test_mongoc_scram_sasl_prep (void)
 {
-#ifdef MONGOC_ENABLE_ICU
    int i, ntests;
    char *normalized;
    bson_error_t err;
@@ -143,7 +142,6 @@ test_mongoc_scram_sasl_prep (void)
          BSON_ASSERT (normalized == NULL);
       }
    }
-#endif
 }
 
 static void
@@ -318,8 +316,7 @@ _check_mechanism (bool pooled,
 typedef enum {
    MONGOC_TEST_NO_ERROR,
    MONGOC_TEST_USER_NOT_FOUND_ERROR,
-   MONGOC_TEST_AUTH_ERROR,
-   MONGOC_TEST_NO_ICU_ERROR
+   MONGOC_TEST_AUTH_ERROR
 } test_error_t;
 
 void
@@ -347,11 +344,6 @@ _check_error (const bson_error_t *error, test_error_t expected_error)
       domain = MONGOC_ERROR_CLIENT;
       code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
       message = "Could not find user";
-      break;
-   case MONGOC_TEST_NO_ICU_ERROR:
-      domain = MONGOC_ERROR_SCRAM;
-      code = MONGOC_ERROR_SCRAM_PROTOCOL_ERROR;
-      message = "SCRAM Failure: ICU required to SASLPrep password";
       break;
    case MONGOC_TEST_NO_ERROR:
    default:
@@ -527,22 +519,6 @@ _skip_if_no_sha256 (void)
 #define ROMAN_NUMERAL_NINE "\xE2\x85\xA8"
 #define ROMAN_NUMERAL_FOUR "\xE2\x85\xA3"
 
-static int
-skip_if_no_icu (void)
-{
-#ifdef MONGOC_ENABLE_ICU
-   return true;
-#else
-   return false;
-#endif
-}
-
-static int
-skip_if_icu (void)
-{
-   return !skip_if_no_icu ();
-}
-
 static void
 _clear_saslprep_users (void)
 {
@@ -687,32 +663,6 @@ test_mongoc_saslprep_auth (void *ctx)
    _drop_saslprep_users ();
 }
 
-
-static void
-_test_mongoc_scram_saslprep_auth_no_icu (bool pooled)
-{
-   _try_auth (pooled, "IX", "IX", NULL, MONGOC_TEST_NO_ERROR);
-   _try_auth (pooled, "IX", ROMAN_NUMERAL_NINE, NULL, MONGOC_TEST_NO_ICU_ERROR);
-   _try_auth (pooled, ROMAN_NUMERAL_NINE, "IV", NULL, MONGOC_TEST_NO_ERROR);
-   _try_auth (pooled,
-              ROMAN_NUMERAL_NINE,
-              ROMAN_NUMERAL_FOUR,
-              NULL,
-              MONGOC_TEST_NO_ICU_ERROR);
-}
-
-static void
-test_mongoc_saslprep_auth_no_icu (void *ctx)
-{
-   BSON_UNUSED (ctx);
-
-   _clear_saslprep_users ();
-   _create_saslprep_users ();
-   _test_mongoc_scram_saslprep_auth_no_icu (false);
-   _test_mongoc_scram_saslprep_auth_no_icu (true);
-   _drop_saslprep_users ();
-}
-
 void
 test_scram_install (TestSuite *suite)
 {
@@ -744,15 +694,5 @@ test_scram_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,
                       _skip_if_no_sha256,
-                      skip_if_no_icu,
-                      TestSuite_CheckLive);
-   TestSuite_AddFull (suite,
-                      "/scram/saslprep_auth_no_icu",
-                      test_mongoc_saslprep_auth_no_icu,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_auth,
-                      _skip_if_no_sha256,
-                      skip_if_icu,
                       TestSuite_CheckLive);
 }

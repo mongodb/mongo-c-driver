@@ -258,23 +258,20 @@ _build_handshake_cmd (const bson_t *basis_cmd,
                       bool is_loadbalanced)
 {
    bson_t *doc = bson_copy (basis_cmd);
-   bson_t subdoc;
    bson_iter_t iter;
    const bson_t *compressors;
-   bool subdoc_okay;
    bson_array_builder_t *subarray;
 
    BSON_ASSERT (doc);
+   bson_t *handshake_doc =
+      _mongoc_handshake_build_doc_with_application (appname);
 
-   BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
-   subdoc_okay =
-      _mongoc_handshake_build_doc_with_application (&subdoc, appname);
-   bson_append_document_end (doc, &subdoc);
-
-   if (!subdoc_okay) {
+   if (!handshake_doc) {
       bson_destroy (doc);
       return NULL;
    }
+   bson_append_document (doc, HANDSHAKE_FIELD, -1, handshake_doc);
+   bson_destroy (handshake_doc);
 
    BSON_APPEND_ARRAY_BUILDER_BEGIN (doc, "compression", &subarray);
    if (uri) {

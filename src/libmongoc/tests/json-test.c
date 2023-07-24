@@ -1824,6 +1824,7 @@ run_json_general_test (const json_test_config_t *config)
          bson_free (selected_test);
          continue;
       }
+      bson_free (selected_test);
 
       if (bson_has_field (&test, "skipReason")) {
          fprintf (stderr,
@@ -1861,8 +1862,6 @@ run_json_general_test (const json_test_config_t *config)
             continue;
          }
       }
-
-      bson_free (selected_test);
 
       uri = (config->uri_str != NULL) ? mongoc_uri_new (config->uri_str)
                                       : test_framework_get_uri ();

@@ -1242,7 +1242,7 @@ _client_second (mongoc_cluster_t *cluster,
       AUTH_ERROR_AND_FAIL ("Failed to parse server nonce");
    }
 
-   if (!kms_request_append_payload (request, body, -1)) {
+   if (!kms_request_append_payload (request, body, strlen(body))) {
       AUTH_ERROR_AND_FAIL ("Failed to append payload");
    }
 

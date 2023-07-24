@@ -1,6 +1,6 @@
---- mongo-c-driver.spec.orig	2021-11-04 16:34:50.350572049 -0400
-+++ mongo-c-driver.spec	2021-11-04 16:37:54.962271319 -0400
-@@ -10,17 +10,17 @@
+--- mongo-c-driver.spec
++++ mongo-c-driver.spec
+@@ -10,7 +10,7 @@
  %global gh_project   mongo-c-driver
  %global libname      libmongoc
  %global libver       1.0
@@ -9,14 +9,28 @@
  #global up_prever    rc0
  # disabled as require a MongoDB server
  %bcond_with          tests
- 
- # disable for bootstrap (libmongocrypt needs libbson)
- %bcond_without       libmongocrypt
+@@ -20,7 +20,7 @@
  
  Name:      mongo-c-driver
  Summary:   Client library written in C for MongoDB
 -Version:   %{up_version}%{?up_prever:~%{up_prever}}
-+Version:   %{up_version}%{up_prever}
++Version:   %{up_version}%{?up_prever}
  Release:   1%{?dist}
  # See THIRD_PARTY_NOTICES
  License:   Apache-2.0 AND ISC AND MIT AND Zlib
+@@ -37,7 +37,6 @@ BuildRequires: openssl-devel
+ BuildRequires: pkgconfig(libsasl2)
+ BuildRequires: pkgconfig(zlib)
+ BuildRequires: pkgconfig(snappy)
+-BuildRequires: pkgconfig(icu-uc)
+ BuildRequires: pkgconfig(libzstd)
+ %if %{with tests}
+ BuildRequires: mongodb-server
+@@ -123,7 +122,6 @@ Documentation: http://mongoc.org/libbson/%{version}/
+     -DENABLE_SSL:STRING=OPENSSL \
+     -DENABLE_SASL:STRING=CYRUS \
+     -DENABLE_MONGODB_AWS_AUTH:STRING=ON \
+-    -DENABLE_ICU:STRING=ON \
+     -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
+     -DENABLE_CRYPTO_SYSTEM_PROFILE:BOOL=ON \
+     -DENABLE_MAN_PAGES:BOOL=ON \

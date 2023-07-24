@@ -4,7 +4,6 @@ project (mongo-c-driver C)
 
 list (APPEND CMAKE_MODULE_PATH
       "${PROJECT_SOURCE_DIR}/build/cmake"
-      "${PROJECT_SOURCE_DIR}/build/cmake/make_dist"
       )
 
 include (MongoSettings)
@@ -127,9 +126,6 @@ mongo_setting(
    ]]
 )
 
-mongo_setting(ENABLE_ICU "Enable ICU support, needed for non-ASCII usernames and passwords"
-              OPTIONS ON OFF AUTO
-              DEFAULT VALUE AUTO)
 mongo_setting(ENABLE_CLIENT_SIDE_ENCRYPTION "Enable In-Use Encryption support. Requires additional support libraries."
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)
@@ -354,12 +350,7 @@ if (USE_SYSTEM_LIBBSON)
    set (BSON_STATIC_LIBRARIES mongo::bson_static)
 endif ()
 
-unset (dist_generated CACHE)
-unset (dist_generated_depends CACHE)
-
 set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
-
-include (MakeDistFiles)
 
 # Enable CTest
 include (CTest)
@@ -403,7 +394,7 @@ endif ()
 # Enable POSIX features up to POSIX.1-2008 plus the XSI extension and BSD-derived definitions.
 # Both _BSD_SOURCE and _DEFAULT_SOURCE are defined for backwards-compatibility with glibc 2.19 and earlier.
 # _BSD_SOURCE and _DEFAULT_SOURCE are required by `getpagesize`, `h_errno`, etc.
-# _XOPEN_SOURCE=700 is required by `strnlen`, etc.
+# _XOPEN_SOURCE=700 is required by `strnlen`, `strerror_r`, etc.
 add_definitions (-D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE)
 list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE)
 
@@ -471,8 +462,6 @@ if (ENABLE_MONGOC)
       ${SOURCE_DIR}/src/zlib-1.2.13/gzread.c
       ${SOURCE_DIR}/src/zlib-1.2.13/gzwrite.c
    )
-
-   set (MONGOC_ENABLE_ICU 0)
 
    set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 
@@ -549,95 +538,11 @@ if (ENABLE_MONGOC)
       )
    endif ()
 
-   # Implement 'dist' and 'distcheck' targets
-   #
-   # CMake does not implement anything like 'dist' and 'distcheck' from autotools.
-   # This implementation is based on the one in GnuCash.
-
-   add_subdirectory (build)
    # sub-directory 'doc' was already included above
-   add_subdirectory (orchestration_configs)
    add_subdirectory (src)
    # 'src/libbson' was already included, so 'src' will not include it directly
    # 'src/kms-message' was already included if appropriate
    # 'src/libmongoc' was already included, so 'src' will not include it directly
-
-   set (PACKAGE_PREFIX "mongo-c-driver-${MONGOC_DIST_VERSION}")
-   set (DIST_FILE "${PACKAGE_PREFIX}.tar.gz")
-
-   set (top_DIST_local
-      CMakeLists.txt
-      CONTRIBUTING.md
-      COPYING
-      NEWS
-      README.rst
-      THIRD_PARTY_NOTICES
-      VERSION_CURRENT
-      # This sub-directory is added later, so manually include here
-      generate_uninstall/CMakeLists.txt
-   )
-
-   set_local_dist (top_DIST ${top_DIST_local})
-
-   set (ALL_DIST
-      ${top_DIST}
-      ${build_DIST}
-      ${orchestration_configs_DIST}
-      ${src_DIST}
-      ${src_libbson_DIST}
-      ${src_libmongoc_DIST}
-   )
-
-   # Write a dist manifest
-   string (REPLACE ";" "\n" ALL_DIST_LINES "${ALL_DIST}")
-   file (WRITE ${CMAKE_BINARY_DIR}/dist_manifest.txt ${ALL_DIST_LINES})
-
-   # This is the command that produces the distribution tarball
-   add_custom_command (OUTPUT ${DIST_FILE}
-      COMMAND ${CMAKE_COMMAND}
-         -D CMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/build/cmake/make_dist
-         -D PACKAGE_PREFIX=${PACKAGE_PREFIX}
-         -D MONGOC_SOURCE_DIR=${CMAKE_SOURCE_DIR}
-         -D BUILD_SOURCE_DIR=${BUILD_SOURCE_DIR}
-         -D SHELL=${SHELL}
-         "-Ddist_generated=\"${dist_generated}\""
-         -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDist.cmake
-
-      DEPENDS
-         ${ALL_DIST} ${dist_generated_depends}
-   )
-
-   if (NOT USE_SYSTEM_LIBBSON AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
-      # Since our 'dist' implementation does not add top-level targets for every
-      # file to be included, we declare a dependency on the 'mongo-doc' target so
-      # that documentation is built before the distribution tarball is generated.
-      add_custom_target (dist DEPENDS doc ${DIST_FILE})
-
-      add_custom_target (distcheck DEPENDS dist
-         COMMAND ${CMAKE_COMMAND}
-            -D CMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/build/cmake/make_dist
-            -D CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
-            -D PACKAGE_PREFIX=${PACKAGE_PREFIX}
-            -D CMAKE_C_FLAGS=${CMAKE_C_FLAGS}
-            -D CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-            -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDistCheck.cmake
-      )
-   else ()
-      string (CONCAT DISTERRMSG
-         "The dist and distcheck targets are disabled. Set USE_SYSTEM_LIBBSON=OFF, "
-         "ENABLE_MAN_PAGES=ON, ENABLE_HTML_DOCS=ON, and generate VERSION_CURRENT "
-         "to enable."
-      )
-
-      add_custom_target (dist
-         COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
-      )
-
-      add_custom_target (distcheck
-         COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
-      )
-   endif ()
-
 endif ()
 
 install (FILES COPYING NEWS README.rst THIRD_PARTY_NOTICES

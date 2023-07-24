@@ -57,13 +57,13 @@ if [ ! -x /usr/bin/gbp ]; then
   exit 1
 fi
 
-changelog_package=$(dpkg-parsechangelog | sed -n 's/^Source: //p')
+changelog_package=$(dpkg-parsechangelog -SSource)
 if [ "${package}" != "${changelog_package}" ]; then
   echo "This script is configured to create snapshots for ${package} but you are trying to create a snapshot for ${changelog_package}"
   exit 1
 fi
 
-bare_upstream_version=$(sed -E 's/([^-]+).*/\1/' VERSION_CURRENT)
+bare_upstream_version=$(dpkg-parsechangelog -SVersion | sed -r 's/-[^-]+$//')
 echo "Found bare upstream version: ${bare_upstream_version}"
 snapshot_version="${bare_upstream_version}-0+$(date +%Y%m%d)+git$(git rev-parse --short HEAD)"
 echo "Upstream snapshot version: ${snapshot_version}"

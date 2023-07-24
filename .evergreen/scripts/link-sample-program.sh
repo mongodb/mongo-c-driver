@@ -17,12 +17,6 @@ DIR=$(dirname $0)
 CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
 
-if command -v gtar 2>/dev/null; then
-  TAR=gtar
-else
-  TAR=tar
-fi
-
 # Get the kernel name, lowercased
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
@@ -38,17 +32,20 @@ else
 fi
 
 SRCROOT=`pwd`
+SCRATCH_DIR=$(pwd)/.scratch
+rm -rf "$SCRATCH_DIR"
+mkdir -p "$SCRATCH_DIR"
+cp -r -- "$SRCROOT"/* "$SCRATCH_DIR"
 
-BUILD_DIR=$(pwd)/build-dir
+BUILD_DIR=$SCRATCH_DIR/build-dir
 rm -rf $BUILD_DIR
 mkdir $BUILD_DIR
 
-INSTALL_DIR=$(pwd)/install-dir
+INSTALL_DIR=$SCRATCH_DIR/install-dir
 rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
 
 cd $BUILD_DIR
-$TAR xf ../../mongoc.tar.gz -C . --strip-components=1
 
 if [ "$ENABLE_SNAPPY" ]; then
   SNAPPY_CMAKE_OPTION="-DENABLE_SNAPPY=ON"
@@ -75,9 +72,9 @@ fi
 
 ZSTD="AUTO"
 
-$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD .
-$CMAKE --build .
-$CMAKE --build . --target install
+$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"
+$CMAKE --build . --parallel
+$CMAKE --build . --parallel --target install
 
 ls -l $INSTALL_DIR/lib
 

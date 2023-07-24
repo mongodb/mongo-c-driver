@@ -34,13 +34,6 @@ class FetchSource(Function):
         ),
         expansions_update(command_type=command_type,
                           file='mongoc/expansion.yml'),
-        bash_exec(
-            command_type=command_type,
-            script='''\
-                rm -f *.tar.gz
-                curl --retry 5 --output mongoc.tar.gz -sS --max-time 120 https://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
-            '''
-        ),
         # Scripts may not be executable on Windows.
         bash_exec(
             command_type=EvgCommandType.SETUP,

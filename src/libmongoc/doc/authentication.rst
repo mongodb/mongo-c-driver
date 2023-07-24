@@ -49,21 +49,6 @@ Alternatively, SCRAM-SHA-256 can be explicitly specified as an authMechanism.
 
   mongoc_client_t *client =  mongoc_client_new ("mongodb://user:password@localhost/?authMechanism=SCRAM-SHA-256&authSource=mydb");
 
-Passwords for SCRAM-SHA-256 undergo the preprocessing step known as SASLPrep
-specified in `RFC 4013 <https://tools.ietf.org/html/rfc4013>`_. SASLPrep will
-only be performed for passwords containing non-ASCII characters.  SASLPrep
-requires libicu. If libicu is not available, attempting to authenticate over
-SCRAM-SHA-256 with non-ASCII passwords will result in error.
-
-Usernames *never* undergo SASLPrep.
-
-By default, when building the C driver libicu is linked if available. This can
-be changed with the ``ENABLE_ICU`` cmake option. To specify an installation
-path of libicu, specify ``ICU_ROOT`` as a cmake option. See the
-`FindICU <https://cmake.org/cmake/help/v3.7/module/FindICU.html>`_ documentation
-for more information.
-
-
 .. _authentication_scram_sha_1:
 
 Basic Authentication (SCRAM-SHA-1)

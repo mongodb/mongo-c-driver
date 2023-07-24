@@ -14,15 +14,6 @@
  * limitations under the License.
  */
 
-
-#ifdef __APPLE__
-#include <mach/clock.h>
-#include <mach/mach.h>
-#include <mach/mach_time.h>
-#include <sys/time.h>
-#endif
-
-
 #include "bson-config.h"
 #include "bson-compat.h"
 
@@ -33,7 +24,6 @@
 #endif
 
 #include "bson-clock.h"
-
 
 /*
  *--------------------------------------------------------------------------
@@ -125,9 +115,6 @@ bson_get_monotonic_time (void)
     * int64_t to avoid truncation. */
    clock_gettime (CLOCK_MONOTONIC, &ts);
    return (((int64_t) ts.tv_sec * 1000000) + (ts.tv_nsec / 1000));
-#elif defined(__APPLE__)
-   const uint64_t nsec = clock_gettime_nsec_np (CLOCK_UPTIME_RAW);
-   return (int64_t) (nsec / 1000u);
 #elif defined(_WIN32)
    /* Despite it's name, this is in milliseconds! */
    int64_t ticks = GetTickCount64 ();

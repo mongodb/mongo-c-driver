@@ -2296,7 +2296,6 @@ bson_copy_to_excluding_noinit (const bson_t *src,
    va_end (args);
 }
 
-
 void
 bson_destroy (bson_t *bson)
 {

@@ -1701,7 +1701,7 @@ _find_topology_version (const bson_t *reply, bson_t *topology_version)
       return;
    }
    bson_iter_document (&iter, &len, &bytes);
-   bson_init_static (topology_version, bytes, len);
+   BSON_ASSERT (bson_init_static (topology_version, bytes, len));
 }
 
 

@@ -1961,13 +1961,11 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: make-release-archive
+  - name: make-docs
     commands:
-      - func: release-archive
+      - func: make-docs
       - func: upload-docs
       - func: upload-man-pages
-      - func: upload-build
-      - func: upload-release
   - name: mock-server-test
     run_on: ubuntu2204-small
     commands:

@@ -78,7 +78,6 @@ typedef enum {
    MONGOC_MD_FLAG_HAVE_SCHED_GETCPU,
    MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS,
    MONGOC_MD_FLAG_TRACE,
-   MONGOC_MD_FLAG_ENABLE_ICU,
    MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION,
    MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH,
    MONGOC_MD_FLAG_ENABLE_SRV,
@@ -86,6 +85,18 @@ typedef enum {
    LAST_MONGOC_MD_FLAG
 } mongoc_handshake_config_flag_bit_t;
 
+typedef enum {
+   MONGOC_HANDSHAKE_ENV_NONE,
+   MONGOC_HANDSHAKE_ENV_AWS,
+   MONGOC_HANDSHAKE_ENV_VERCEL,
+   MONGOC_HANDSHAKE_ENV_GCP,
+   MONGOC_HANDSHAKE_ENV_AZURE
+} mongoc_handshake_env_t;
+
+typedef struct _optional_int32 {
+   bool set;
+   int32_t value;
+} optional_int32;
 
 typedef struct _mongoc_handshake_t {
    char *os_type;
@@ -98,6 +109,11 @@ typedef struct _mongoc_handshake_t {
    char *platform;
    char *compiler_info;
    char *flags;
+   
+   mongoc_handshake_env_t env;
+   optional_int32 env_timeout_sec;
+   optional_int32 env_memory_mb;
+   char *env_region;
 
    bool frozen;
 } mongoc_handshake_t;
@@ -108,8 +124,8 @@ _mongoc_handshake_init (void);
 void
 _mongoc_handshake_cleanup (void);
 
-bool
-_mongoc_handshake_build_doc_with_application (bson_t *doc,
+bson_t *
+_mongoc_handshake_build_doc_with_application (
                                               const char *application);
 
 void

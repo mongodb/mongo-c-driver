@@ -23,7 +23,7 @@ mkdir %INSTALL_DIR%
 set PATH=%PATH%;%INSTALL_DIR%\bin
 
 cd %BUILD_DIR%
-%TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
+robocopy "%SRCROOT%" "%BUILD_DIR%" /E /XD ".git" "%BUILD_DIR%" "_build" "cmake-build" /NP /NFL /NDL
 
 rem Build libmongoc, with flags that the downstream R driver mongolite uses
 %CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DENABLE_STATIC=ON .

@@ -728,7 +728,8 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          }
 
          bson_iter_document (&iter, &len, &bytes);
-         bson_init_static (&incoming_topology_version, bytes, len);
+         BSON_ASSERT (
+            bson_init_static (&incoming_topology_version, bytes, len));
          mongoc_server_description_set_topology_version (
             sd, &incoming_topology_version);
          bson_destroy (&incoming_topology_version);

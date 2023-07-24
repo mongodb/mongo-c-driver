@@ -35,7 +35,6 @@ configure_flags_append "-DCMAKE_SKIP_RPATH=TRUE" # Avoid hardcoding absolute pat
 configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
 configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
-configure_flags_append "-DENABLE_ICU=OFF"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 configure_flags_append "-DENABLE_SASL=OFF"
 configure_flags_append "-DENABLE_SNAPPY=OFF"
