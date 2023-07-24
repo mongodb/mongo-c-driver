@@ -3840,6 +3840,6 @@ test_json_install (TestSuite *suite)
                   "/bson/as_json_with_opts/all_types",
                   test_bson_as_json_with_opts_all_types);
    TestSuite_Add (suite,
-                  "/bson/test_decimal128_overflowing_exponent",
+                  "/bson/decimal128_overflowing_exponent",
                   test_decimal128_overflowing_exponent);
 }
