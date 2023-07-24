@@ -1124,9 +1124,9 @@ _bson_json_read_string (bson_json_reader_t *reader, /* IN */
       } break;
       case BSON_JSON_LF_DECIMAL128: {
          bson_decimal128_t decimal128;
-         bson_decimal128_from_string (val_w_null, &decimal128);
 
-         if (bson->read_state == BSON_JSON_IN_BSON_TYPE) {
+         if (bson_decimal128_from_string (val_w_null, &decimal128) &&
+             bson->read_state == BSON_JSON_IN_BSON_TYPE) {
             bson->bson_type_data.v_decimal128.value = decimal128;
          } else {
             goto BAD_PARSE;
