@@ -3,12 +3,12 @@ Author: Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>
 Forwarded: not-needed
 --- a/src/libmongoc/doc/conf.py
 +++ b/src/libmongoc/doc/conf.py
-@@ -14,6 +14,8 @@ extensions = [
-     'sphinx.ext.intersphinx',
+@@ -17,6 +17,8 @@ extensions = [
+     "sphinx.ext.intersphinx",
  ]
 
 +mathjax_path = "file:///usr/share/javascript/mathjax/MathJax.js"
 +
  # General information about the project.
- project = 'libmongoc'
- copyright = '2017-present, MongoDB, Inc'
+ project = "libmongoc"
+ copyright = "2017-present, MongoDB, Inc"

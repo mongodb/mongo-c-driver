@@ -1,4 +1,4 @@
-:man_page: mongoc_client_encryption_rewrap_many_datakey_result_new 
+:man_page: mongoc_client_encryption_rewrap_many_datakey_result_new
 
 mongoc_client_encryption_rewrap_many_datakey_result_new()
 =========================================================
