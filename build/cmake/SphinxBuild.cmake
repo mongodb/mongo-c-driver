@@ -48,13 +48,10 @@ function (sphinx_build_html target_name doc_dir)
       "Building HTML documentation with Sphinx"
    )
 
-   foreach (html IN LISTS doc_htmls)
-      install (FILES
-         ${CMAKE_CURRENT_BINARY_DIR}/${html}
-         DESTINATION
-         ${CMAKE_INSTALL_DOCDIR}/${doc_dir}/html
-      )
-   endforeach ()
+   # Install all HTML files
+   install (DIRECTORY "${SPHINX_HTML_DIR}/"
+            DESTINATION "${CMAKE_INSTALL_DOCDIR}/${doc_dir}/html"
+            FILES_MATCHING PATTERN "*.html")
 
    # Ensure additional Sphinx-generated content gets installed
    install (FILES
