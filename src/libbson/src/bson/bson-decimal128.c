@@ -581,14 +581,18 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
 #else
 #define SSCANF sscanf
 #endif
-      int read_exponent = SSCANF (++str_read, "%d%n", &exponent, &nread);
+      int64_t temp_exponent = 0;
+      int read_exponent =
+         SSCANF (++str_read, "%" SCNd64 "%n", &temp_exponent, &nread);
       str_read += nread;
 
-      if (!read_exponent || nread == 0) {
+      if (!read_exponent || nread == 0 ||
+          !bson_in_range_int32_t_signed (temp_exponent)) {
          BSON_DECIMAL128_SET_NAN (*dec);
          return false;
       }
 
+      exponent = (int32_t) temp_exponent;
 #undef SSCANF
    }
 

@@ -10,8 +10,8 @@ CMAKE=$(find_cmake_latest)
 grep "á" NEWS > /dev/null || (echo "NEWS file appears to have lost its UTF-8 encoding?" || exit 1)
 
 debug "Calculating release version..."
-python build/calc_release_version.py -d >VERSION_CURRENT
-python build/calc_release_version.py -d -p >VERSION_RELEASED
+python build/calc_release_version.py >VERSION_CURRENT
+python build/calc_release_version.py -p >VERSION_RELEASED
 
 build_dir=$MONGOC_DIR/_build/for-docs
 "$CMAKE" -S "$MONGOC_DIR" -B "$build_dir" \
