@@ -1297,7 +1297,7 @@ _bson_json_read_code_or_scope_key (bson_json_reader_bson_t *bson,
          /* save the key, e.g. {"key": {"$code": "return x", "$scope":{"x":1}}},
           * in case it is overwritten while parsing scope sub-object */
          _bson_json_buf_set (
-            &bson->code_data.key_buf, bson->key_buf.buf, bson->key_buf.len);
+            &bson->code_data.key_buf, bson->key, bson->key_buf.len);
       }
 
       if (is_scope) {
@@ -1401,7 +1401,7 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
       {
          /* start parsing "key": {"$dbPointer": {...}}, save "key" for later */
          _bson_json_buf_set (
-            &bson->dbpointer_key, bson->key_buf.buf, bson->key_buf.len);
+            &bson->dbpointer_key, bson->key, bson->key_buf.len);
 
          bson->bson_type = BSON_TYPE_DBPOINTER;
          bson->read_state = BSON_JSON_IN_BSON_TYPE_DBPOINTER_STARTMAP;
