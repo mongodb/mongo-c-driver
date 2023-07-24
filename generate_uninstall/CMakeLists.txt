@@ -28,9 +28,12 @@ if (WIN32)
    ")
    install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}" DESTINATION "${UNINSTALL_PROG_DIR}" PERMISSIONS ${UNINSTALL_PERMISSIONS})
 
-   add_custom_target (uninstall
-      COMMAND call "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}"
-   )
+   if ("${CMAKE_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+      # Define the `uninstall` target if the C driver is the top-level project.
+       add_custom_target (uninstall
+          COMMAND call "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}"
+       )
+   endif ()
 else ()
    install (CODE "
       string(REPLACE \";\" \"\\n\" MONGOC_INSTALL_MANIFEST_CONTENT
@@ -50,7 +53,10 @@ else ()
    ")
    install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}" DESTINATION "${UNINSTALL_PROG_DIR}" PERMISSIONS ${UNINSTALL_PERMISSIONS})
 
-   add_custom_target (uninstall
-      COMMAND sh "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}"
-   )
+   if ("${CMAKE_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+      # Define the `uninstall` target if the C driver is the top-level project.
+       add_custom_target (uninstall
+           COMMAND sh "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}"
+       )
+   endif ()
 endif ()
