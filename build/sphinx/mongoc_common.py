@@ -13,7 +13,7 @@ from sphinx.config import Config
 from sphinx.project import Project
 from sphinx.util.docutils import SphinxDirective
 
-needs_sphinx = "1.6"
+needs_sphinx = "6.0"
 author = "MongoDB, Inc"
 
 # -- Options for HTML output ----------------------------------------------
