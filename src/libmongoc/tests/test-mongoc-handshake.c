@@ -220,12 +220,14 @@ _handshake_check_os (bson_t *doc)
    ASSERT (val);
    ASSERT (strlen (val) > 0);
 
+   /* Check os version valid */
    ASSERT (bson_iter_find (&inner_iter, "version"));
    ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
    val = bson_iter_utf8 (&inner_iter, NULL);
    _check_os_version_valid (val);
 
-   bson_iter_find (&inner_iter, "architecture");
+   /* Check os arch is valid */
+   ASSERT (bson_iter_find (&inner_iter, "architecture"));
    ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
    val = bson_iter_utf8 (&inner_iter, NULL);
    ASSERT (val);
