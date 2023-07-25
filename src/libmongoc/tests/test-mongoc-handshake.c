@@ -371,6 +371,31 @@ _get_handshake_document (bool default_append)
    return handshake_doc;
 }
 
+/* Override host info with plausible but short strings to avoid any
+ * truncation */
+static void
+_override_host_platform_os (void)
+{
+   _reset_handshake ();
+   mongoc_handshake_t *md = _mongoc_handshake_get ();
+   bson_free (md->os_type);
+   md->os_type = bson_strdup ("Linux");
+   bson_free (md->os_name);
+   md->os_name = bson_strdup ("mongoc");
+   bson_free (md->os_architecture);
+   md->os_architecture = bson_strdup ("x86_64");
+   bson_free (md->driver_name);
+   md->driver_name = bson_strdup ("test_e");
+   bson_free (md->driver_version);
+   md->driver_version = bson_strdup ("1.25.0");
+   bson_free (md->platform);
+   md->platform = bson_strdup ("posix=1234");
+   bson_free (md->compiler_info);
+   md->compiler_info = bson_strdup ("CC=GCC");
+   bson_free (md->flags);
+   md->flags = bson_strdup ("CFLAGS=\"-fPIE\"");
+}
+
 // erase all FaaS variables used in testing
 static void
 clear_faas_env (void)
@@ -391,7 +416,7 @@ clear_faas_env (void)
 static void
 test_mongoc_handshake_data_append_success (void)
 {
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    bson_iter_t md_iter;
    bson_iter_init (&md_iter, doc);
@@ -412,7 +437,7 @@ test_valid_aws_lambda (void *test_ctx)
    ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
    _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
@@ -444,7 +469,7 @@ test_valid_aws_and_vercel (void *test_ctx)
    ASSERT (_mongoc_setenv ("VERCEL", "1"));
    ASSERT (_mongoc_setenv ("VERCEL_REGION", "cdg1"));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
    _handshake_check_env (doc, 0, 0, "cdg1");
@@ -463,8 +488,9 @@ test_valid_aws (void *test_ctx)
    ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
+
    _handshake_check_required_fields (doc);
    _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
    _handshake_check_env_name (doc, "aws.lambda");
@@ -486,7 +512,7 @@ test_valid_azure (void *test_ctx)
    BSON_UNUSED (test_ctx);
    ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", "node"));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
    _handshake_check_env (doc, 0, 0, NULL);
@@ -506,7 +532,7 @@ test_valid_gcp (void *test_ctx)
    ASSERT (_mongoc_setenv ("FUNCTION_TIMEOUT_SEC", "60"));
    ASSERT (_mongoc_setenv ("FUNCTION_REGION", "us-central1"));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
    _handshake_check_env (
@@ -525,7 +551,7 @@ test_valid_vercel (void *test_ctx)
    ASSERT (_mongoc_setenv ("VERCEL", "1"));
    ASSERT (_mongoc_setenv ("VERCEL_REGION", "cdg1"));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
    _handshake_check_env (doc, 0, 0, "cdg1");
@@ -544,7 +570,7 @@ test_multiple_faas (void *test_ctx)
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
    ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", "node"));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
 
@@ -566,7 +592,7 @@ test_truncate_region (void *test_ctx)
    long_region[region_len - 1] = '\0';
    ASSERT (_mongoc_setenv ("AWS_REGION", long_region));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
    _handshake_check_env_name (doc, "aws.lambda");
@@ -593,7 +619,7 @@ test_wrong_types (void *test_ctx)
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "big"));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
    _handshake_check_env_name (doc, "aws.lambda");
@@ -617,7 +643,7 @@ test_aws_not_lambda (void *test_ctx)
    // Entire env field must be omitted with non-lambda AWS
    ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "EC2"));
 
-   _reset_handshake ();
+   _override_host_platform_os ();
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
 
