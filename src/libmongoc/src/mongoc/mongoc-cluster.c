@@ -3580,6 +3580,7 @@ _mongoc_cluster_run_opmsg_send (mongoc_cluster_t *cluster,
 
    size_t num_iovecs = 0u;
    mongoc_iovec_t *const iovecs = mcd_rpc_message_to_iovecs (rpc, &num_iovecs);
+   BSON_ASSERT (iovecs);
 
    mcd_rpc_message_egress (rpc);
    const bool res = _mongoc_stream_writev_full (server_stream->stream,
