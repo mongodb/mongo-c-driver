@@ -14,7 +14,7 @@ with_transaction_fail_transient_txn (mongoc_client_session_t *session,
                                      bson_t **reply,
                                      bson_error_t *error)
 {
-   bson_t labels;
+   bson_array_builder_t *labels;
 
    BSON_UNUSED (ctx);
    BSON_UNUSED (error);
@@ -22,8 +22,9 @@ with_transaction_fail_transient_txn (mongoc_client_session_t *session,
    _mongoc_usleep (session->with_txn_timeout_ms * 1000);
 
    *reply = bson_new ();
-   BSON_APPEND_ARRAY_BEGIN (*reply, "errorLabels", &labels);
-   BSON_APPEND_UTF8 (&labels, "0", TRANSIENT_TXN_ERR);
+   BSON_APPEND_ARRAY_BUILDER_BEGIN (*reply, "errorLabels", &labels);
+   bson_array_builder_append_utf8 (labels, TRANSIENT_TXN_ERR, -1);
+   bson_append_array_builder_end (*reply, labels);
 
    return false;
 }

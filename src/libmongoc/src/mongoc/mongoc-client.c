@@ -2283,12 +2283,12 @@ _mongoc_client_prepare_killcursors_command (int64_t cursor_id,
                                             const char *collection,
                                             bson_t *command)
 {
-   bson_t child;
+   bson_array_builder_t *child;
 
    bson_append_utf8 (command, "killCursors", 11, collection, -1);
-   bson_append_array_begin (command, "cursors", 7, &child);
-   bson_append_int64 (&child, "0", 1, cursor_id);
-   bson_append_array_end (command, &child);
+   bson_append_array_builder_begin (command, "cursors", 7, &child);
+   bson_array_builder_append_int64 (child, cursor_id);
+   bson_append_array_builder_end (command, child);
 }
 
 
@@ -2387,7 +2387,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (
 {
    mongoc_client_t *client;
    bson_t doc;
-   bson_t cursors_unknown;
+   bson_array_builder_t *cursors_unknown;
    mongoc_apm_command_succeeded_t event;
 
    ENTRY;
@@ -2401,9 +2401,10 @@ _mongoc_client_monitor_op_killcursors_succeeded (
    /* fake server reply to killCursors command: {ok: 1, cursorsUnknown: [42]} */
    bson_init (&doc);
    bson_append_int32 (&doc, "ok", 2, 1);
-   bson_append_array_begin (&doc, "cursorsUnknown", 14, &cursors_unknown);
-   bson_append_int64 (&cursors_unknown, "0", 1, cursor_id);
-   bson_append_array_end (&doc, &cursors_unknown);
+   bson_append_array_builder_begin (
+      &doc, "cursorsUnknown", 14, &cursors_unknown);
+   bson_array_builder_append_int64 (cursors_unknown, cursor_id);
+   bson_append_array_builder_end (&doc, cursors_unknown);
 
    mongoc_apm_command_succeeded_init (&event,
                                       duration,

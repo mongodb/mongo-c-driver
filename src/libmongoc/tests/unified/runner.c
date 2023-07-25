@@ -1468,19 +1468,13 @@ append_bson_array (bson_t *doc, const char *key, const mongoc_array_t *array)
       bson_t **const begin = array->data;
       bson_t **const end = begin + array->len;
 
-      bson_t elements;
+      bson_array_builder_t *elements;
 
-      uint32_t index = 0u;
-      char buffer[16] = {0};
-      const char *index_key = NULL;
-
-      BSON_ASSERT (BSON_APPEND_ARRAY_BEGIN (doc, key, &elements));
+      BSON_ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (doc, key, &elements));
       for (bson_t **iter = begin; iter != end; ++iter) {
-         BSON_ASSERT (bson_uint32_to_string (
-            index++, &index_key, buffer, sizeof (buffer)));
-         BSON_ASSERT (BSON_APPEND_DOCUMENT (&elements, index_key, *iter));
+         BSON_ASSERT (bson_array_builder_append_document (elements, *iter));
       }
-      BSON_ASSERT (bson_append_array_end (doc, &elements));
+      BSON_ASSERT (bson_append_array_builder_end (doc, elements));
    }
 }
 

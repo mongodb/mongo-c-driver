@@ -6,6 +6,7 @@ API Reference
   :maxdepth: 2
 
   bson_t
+  bson_array_builder_t
   bson_context_t
   bson_decimal128_t
   bson_error_t

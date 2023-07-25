@@ -1073,10 +1073,7 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
    bson_t doc;
    const uint8_t *pos;
    const char *field_name;
-   bson_t bson;
-   char str[16];
-   const char *key;
-   uint32_t i;
+   bson_array_builder_t *bson;
 
    BSON_ASSERT (cmd->payload && cmd->payload_size);
 
@@ -1084,22 +1081,19 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
     * "update", or "delete" command. */
    field_name = _mongoc_get_documents_field_name (cmd->command_name);
    BSON_ASSERT (field_name);
-   BSON_ASSERT (BSON_APPEND_ARRAY_BEGIN (out, field_name, &bson));
+   BSON_ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (out, field_name, &bson));
 
    pos = cmd->payload;
-   i = 0;
    while (pos < cmd->payload + cmd->payload_size) {
       memcpy (&doc_len, pos, sizeof (doc_len));
       doc_len = BSON_UINT32_FROM_LE (doc_len);
       BSON_ASSERT (bson_init_static (&doc, pos, (size_t) doc_len));
-      bson_uint32_to_string (i, &key, str, sizeof (str));
-      BSON_APPEND_DOCUMENT (&bson, key, &doc);
+      bson_array_builder_append_document (bson, &doc);
 
       pos += doc_len;
-      i++;
    }
 
-   bson_append_array_end (out, &bson);
+   bson_append_array_builder_end (out, bson);
 }
 
 /*--------------------------------------------------------------------------

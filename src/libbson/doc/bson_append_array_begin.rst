@@ -32,8 +32,14 @@ The :symbol:`bson_append_array_begin()` function shall begin appending an array 
 
 For generating array element keys, see :symbol:`bson_uint32_to_string`.
 
+Consider using :symbol:`bson_array_builder_t` to append an array without needing to generate array element keys.
+
 Returns
 -------
 
 Returns ``true`` if the operation was applied successfully. The function will fail if appending the array grows ``bson`` larger than INT32_MAX.
+
+.. seealso::
+
+  | :symbol:`bson_array_builder_t`
 

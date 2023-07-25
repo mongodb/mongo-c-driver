@@ -138,7 +138,10 @@ static const char *gUint32Strs[] = {
  *       @size: Size of @str.
  *
  * Returns:
- *       The number of bytes in the resulting string.
+ *       The number of bytes in the resulting string excluding the NULL
+ *       terminator. If the output requires more than @size bytes, then @size
+ *       bytes are written and the result is the number of bytes required
+ *       (excluding the NULL terminator)
  *
  * Side effects:
  *       None.

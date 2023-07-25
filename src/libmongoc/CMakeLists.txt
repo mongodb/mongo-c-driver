@@ -1143,6 +1143,7 @@ if (ENABLE_EXAMPLES)
 
    # examples/tutorial
    mongoc_add_example (executing ${PROJECT_SOURCE_DIR}/examples/tutorial/executing.c)
+   mongoc_add_example (appending ${PROJECT_SOURCE_DIR}/examples/tutorial/appending.c)
 endif ()
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)

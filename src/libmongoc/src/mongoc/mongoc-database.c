@@ -466,7 +466,7 @@ mongoc_database_add_user (mongoc_database_t *database,
                           bson_error_t *error)
 {
    bson_t cmd;
-   bson_t ar;
+   bson_array_builder_t *ar;
    bool ret = false;
 
    ENTRY;
@@ -484,8 +484,8 @@ mongoc_database_add_user (mongoc_database_t *database,
    if (roles) {
       BSON_APPEND_ARRAY (&cmd, "roles", roles);
    } else {
-      bson_append_array_begin (&cmd, "roles", 5, &ar);
-      bson_append_array_end (&cmd, &ar);
+      bson_append_array_builder_begin (&cmd, "roles", 5, &ar);
+      bson_append_array_builder_end (&cmd, ar);
    }
 
    ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);

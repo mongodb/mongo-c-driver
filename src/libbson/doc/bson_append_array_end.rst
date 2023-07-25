@@ -26,3 +26,7 @@ Returns
 -------
 
 Returns ``true`` if successful.
+
+.. seealso::
+
+  | :symbol:`bson_array_builder_t`

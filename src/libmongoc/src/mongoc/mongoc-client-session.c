@@ -1254,13 +1254,14 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
 
    /* For testing only, mock out certain kinds of errors. */
    if (session->fail_commit_label) {
-      bson_t labels;
+      bson_array_builder_t *labels;
 
       BSON_ASSERT (reply);
 
       bson_init (reply);
-      BSON_APPEND_ARRAY_BEGIN (reply, "errorLabels", &labels);
-      BSON_APPEND_UTF8 (&labels, "0", session->fail_commit_label);
+      BSON_APPEND_ARRAY_BUILDER_BEGIN (reply, "errorLabels", &labels);
+      bson_array_builder_append_utf8 (labels, session->fail_commit_label, -1);
+      bson_append_array_builder_end (reply, labels);
 
       /* Waste the test timeout, if there is one set. */
       if (session->with_txn_timeout_ms) {

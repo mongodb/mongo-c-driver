@@ -304,7 +304,7 @@ convert_bulk_write_result (const bson_t *doc, bson_t *r)
       } else if (BSON_ITER_IS_KEY (&iter, "upsertedCount")) {
          BSON_APPEND_VALUE (r, "nUpserted", bson_iter_value (&iter));
       } else if (BSON_ITER_IS_KEY (&iter, "upsertedIds")) {
-         bson_t upserted;
+         bson_array_builder_t *upserted;
          bson_iter_t inner;
          uint32_t i = 0;
 
@@ -317,26 +317,22 @@ convert_bulk_write_result (const bson_t *doc, bson_t *r)
          }
 
          if (i) {
-            i = 0;
             ASSERT (bson_iter_recurse (&iter, &inner));
-            BSON_APPEND_ARRAY_BEGIN (r, "upserted", &upserted);
+            BSON_APPEND_ARRAY_BUILDER_BEGIN (r, "upserted", &upserted);
 
             while (bson_iter_next (&inner)) {
                bson_t upsert;
-               const char *keyptr = NULL;
-               char key[12];
                int64_t index;
 
-               bson_uint32_to_string (i++, &keyptr, key, sizeof key);
                index = bson_ascii_strtoll (bson_iter_key (&inner), NULL, 10);
 
-               BSON_APPEND_DOCUMENT_BEGIN (&upserted, keyptr, &upsert);
+               bson_array_builder_append_document_begin (upserted, &upsert);
                BSON_APPEND_INT32 (&upsert, "index", (int32_t) index);
                BSON_APPEND_VALUE (&upsert, "_id", bson_iter_value (&inner));
-               bson_append_document_end (&upserted, &upsert);
+               bson_array_builder_append_document_end (upserted, &upsert);
             }
 
-            bson_append_array_end (r, &upserted);
+            bson_append_array_builder_end (r, upserted);
          }
       } else if (BSON_ITER_IS_KEY (&iter, "insertedIds")) {
          /* tests expect insertedIds, but they're optional and we omit them */
