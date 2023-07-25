@@ -1,6 +1,7 @@
 mongo-c-driver (1.24.2-2) UNRELEASED; urgency=medium
 
   * use system utf8proc, ensure bundled source is not in .orig.tar.gz
+  * debian/copyright: remove entries related to removed upstream sources
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 10 Jul 2023 14:04:12 -0400
 
