@@ -180,7 +180,6 @@ mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
       &req, opt_imds_host, opt_port, opt_extra_headers);
 
    if (!_mongoc_http_send (&req.req, 3 * 1000, false, NULL, &resp, error)) {
-      _mongoc_http_response_cleanup (&resp);
       goto fail;
    }
 
