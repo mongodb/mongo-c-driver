@@ -2135,6 +2135,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
 
    size_t iovcnt;
    mongoc_iovec_t *const iov = mcd_rpc_message_to_iovecs (rpc, &iovcnt);
+   BSON_ASSERT (iov);
 
    size_t expected = 0;
    for (size_t i = 0u; i < iovcnt; i++) {
