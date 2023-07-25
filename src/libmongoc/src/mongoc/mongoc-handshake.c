@@ -614,7 +614,7 @@ _get_subdoc_static (bson_t *doc, char *subdoc_name, bson_t *out)
       uint32_t len;
       const uint8_t *data;
       bson_iter_document (&iter, &len, &data);
-      bson_init_static (out, data, len);
+      BSON_ASSERT (bson_init_static (out, data, len));
 
       return true;
    }
