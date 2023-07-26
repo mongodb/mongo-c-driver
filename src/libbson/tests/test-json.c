@@ -3774,7 +3774,7 @@ test_parse_array (void)
          ASSERT_OR_PRINT (b2, error);
       }
 
-      ASSERT (bson_equal (b1, b2)); // Fails.
+      ASSERT (bson_equal (b1, b2));
       bson_destroy (b2);
       bson_destroy (b1);
    }
