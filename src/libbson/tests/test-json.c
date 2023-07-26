@@ -3602,6 +3602,140 @@ test_decimal128_overflowing_exponent (void)
    }
 }
 
+static void
+test_parse_array (void)
+{
+   {
+      bson_t *b1;
+      {
+         const char *json = BSON_STR ([ {"$code" : "A"} ]);
+         bson_error_t error;
+         b1 = bson_new_from_json ((const uint8_t *) json, -1, &error);
+         ASSERT_OR_PRINT (b1, error);
+      }
+
+      bson_t *b2;
+      {
+         const char *json = BSON_STR ({"0" : {"$code" : "A"}});
+         bson_error_t error;
+         b2 = bson_new_from_json ((const uint8_t *) json, -1, &error);
+         ASSERT_OR_PRINT (b2, error);
+      }
+
+      ASSERT (bson_equal (b1, b2));
+      bson_destroy (b2);
+      bson_destroy (b1);
+   }
+
+   {
+      bson_t *b1;
+      {
+         const char *json = BSON_STR ([ {"$code" : "A"}, {"$code" : "B"} ]);
+         bson_error_t error;
+         b1 = bson_new_from_json ((const uint8_t *) json, -1, &error);
+         ASSERT_OR_PRINT (b1, error);
+      }
+
+      bson_t *b2;
+      {
+         const char *json =
+            BSON_STR ({"0" : {"$code" : "A"}}, {"1" : {"$code" : "B"}});
+         bson_error_t error;
+         b2 = bson_new_from_json ((const uint8_t *) json, -1, &error);
+         ASSERT_OR_PRINT (b2, error);
+      }
+
+      ASSERT (bson_equal (b1, b2));
+      bson_destroy (b2);
+      bson_destroy (b1);
+   }
+
+   {
+      bson_t *b1;
+      {
+         const char *json = BSON_STR ([ {
+            "$dbPointer" :
+               {"$ref" : "foo",
+                "$id" : {"$oid" : "01234567890abcdef0123456"}}
+         } ]);
+         bson_error_t error;
+         b1 = bson_new_from_json ((const uint8_t *) json, -1, &error);
+         ASSERT_OR_PRINT (b1, error);
+      }
+
+      bson_t *b2;
+      {
+         const char *json = BSON_STR ({
+            "0" : {
+               "$dbPointer" : {
+                  "$ref" : "foo",
+                  "$id" : {"$oid" : "01234567890abcdef0123456"}
+               }
+            }
+         });
+         bson_error_t error;
+         b2 = bson_new_from_json ((const uint8_t *) json, -1, &error);
+         ASSERT_OR_PRINT (b2, error);
+      }
+
+      ASSERT (bson_equal (b1, b2));
+      bson_destroy (b2);
+      bson_destroy (b1);
+   }
+
+   {
+      bson_t *b1;
+      {
+         const char *json = BSON_STR ([
+            {
+               "$dbPointer" : {
+                  "$ref" : "foo",
+                  "$id" : {"$oid" : "01234567890abcdef0123456"}
+               }
+            },
+            {
+               "$dbPointer" : {
+                  "$ref" : "foo",
+                  "$id" : {"$oid" : "01234567890abcdef0123456"}
+               }
+            }
+         ]);
+         bson_error_t error;
+         b1 = bson_new_from_json ((const uint8_t *) json, -1, &error);
+         ASSERT_OR_PRINT (b1, error);
+      }
+
+      bson_t *b2;
+      {
+         const char *json = BSON_STR (
+            {
+               "0" : {
+                  "$dbPointer" : {
+                     "$ref" : "foo",
+                     "$id" : {"$oid" : "01234567890abcdef0123456"}
+                  }
+               }
+            },
+            {
+               "1" : {
+                  "$dbPointer" : {
+                     "$ref" : "foo",
+                     "$id" : {"$oid" : "01234567890abcdef0123456"}
+                  }
+               }
+            });
+
+         bson_error_t error;
+         b2 = bson_new_from_json ((const uint8_t *) json, -1, &error);
+         ASSERT_OR_PRINT (b2, error);
+      }
+
+      ASSERT (bson_equal (b1, b2));
+      bson_destroy (b2);
+      bson_destroy (b1);
+   }
+}
+
 void
 test_json_install (TestSuite *suite)
 {
@@ -3791,6 +3925,7 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/all_types",
                   test_bson_as_json_with_opts_all_types);
+   TestSuite_Add (suite, "/bson/parse_array", test_parse_array);
    TestSuite_Add (suite,
                   "/bson/decimal128_overflowing_exponent",
                   test_decimal128_overflowing_exponent);
