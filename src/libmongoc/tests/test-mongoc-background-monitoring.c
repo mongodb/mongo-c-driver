@@ -407,6 +407,7 @@ test_connect_faas_use_polling (void)
    OBSERVE (tf, !tf->observations->awaited);
 
    tf_destroy (tf);
+   md->env = MONGOC_HANDSHAKE_ENV_NONE;
 }
 
 void
