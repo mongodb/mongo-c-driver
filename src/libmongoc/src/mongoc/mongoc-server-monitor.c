@@ -1076,6 +1076,9 @@ _server_monitor_check_server (
 
    if (!bson_empty (&previous_description->topology_version) &&
        _mongoc_handshake_get ()->env == MONGOC_HANDSHAKE_ENV_NONE) {
+       // Use stream monitoring if:
+       // - Server supports stream monitoring (indicated by `topologyVersion`).
+       // - Application is not in an FaaS environment (e.g. AWS Lambda).
       awaited = true;
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "awaitable hello");
