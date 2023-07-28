@@ -1094,7 +1094,10 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
    {
       node->has_auth = false;
       bson_reinit (&node->speculative_auth_response);
-      node->scram.step = 0;
+#ifdef MONGOC_ENABLE_CRYPTO
+      // Destroy and zero `node->scram`.
+      _mongoc_scram_destroy (&node->scram);
+#endif
       memset (
          &node->sasl_supported_mechs, 0, sizeof (node->sasl_supported_mechs));
       node->negotiated_sasl_supported_mechs = false;

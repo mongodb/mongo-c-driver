@@ -4225,6 +4225,42 @@ test_mongoc_client_resends_handshake_on_network_error (void)
    mock_server_destroy (server);
 }
 
+// test_failure_to_auth is a regression test for the leak reported in
+// CDRIVER-4699.
+static void
+test_failure_to_auth (void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new_for_host_port ("localhost", 12345);
+   mongoc_uri_set_username (uri, "foo");
+   mongoc_uri_set_password (uri, "bar");
+   mongoc_uri_set_option_as_bool (
+      uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
+   // Set a shorter serverSelectionTimeoutMS for a faster test.
+   // serverSelectionTimeoutMS must be long enough to require a second attempt
+   // of authentication. Experimentally: 100ms appears long enough to reproduce
+   // leak reported in CDRIVER-4699.
+   mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 100);
+   mongoc_client_t *client = mongoc_client_new_from_uri (uri);
+
+   // Override minHeartbeatFrequencyMS to reduce the time between server checks.
+   client->topology->min_heartbeat_frequency_msec = 1;
+
+   // Disable the cooldown period to reduce the time between server checks.
+   // Single threaded clients wait for a default 5 second cooldown period after
+   // failing to connect to a server before making another attempt.
+   _mongoc_topology_bypass_cooldown (client->topology);
+
+   bool ok = mongoc_client_command_simple (client,
+                                           "admin",
+                                           tmp_bson ("{'ping': 1}"),
+                                           NULL /* read prefs */,
+                                           NULL /* reply */,
+                                           NULL /* error */);
+   ASSERT_WITH_MSG (!ok, "expected command to fail, got success");
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+}
 void
 test_client_install (TestSuite *suite)
 {
@@ -4538,4 +4574,5 @@ test_client_install (TestSuite *suite)
       suite,
       "/Client/resends_handshake_on_network_error",
       test_mongoc_client_resends_handshake_on_network_error);
+   TestSuite_Add (suite, "/Client/failure_to_auth", test_failure_to_auth);
 }
