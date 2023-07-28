@@ -1,4 +1,4 @@
-// example-manage-search-index creates, lists, updates, and deletes an Atlas
+// example-manage-search-indexes creates, lists, updates, and deletes an Atlas
 // search index from the `test.test` collection.
 
 #include <mongoc/mongoc.h>
@@ -54,25 +54,56 @@ main (int argc, char *argv[])
       HANDLE_ERROR ("Failed to create client: %s", error.message);
    }
 
-   coll = mongoc_client_get_collection (client, "test", "test");
+   // Create a random collection name.
+   char collname[25];
+   {
+      // There is a server-side limitation that prevents multiple search indexes
+      // from being created with the same name, definition and collection name.
+      // Atlas search index management operations are asynchronous. Dropping a
+      // collection may not result in the index being dropped immediately. Use a
+      // randomly generated collection name to avoid errors.
+      bson_oid_t oid;
+      bson_oid_init (&oid, NULL);
+      bson_oid_to_string (&oid, collname);
+   }
+
+   // Create collection object.
+   {
+      // Create the collection server-side to avoid the server error:
+      // "Collection 'test.<collname>' does not exist."
+      mongoc_database_t *db = mongoc_client_get_database (client, "test");
+      coll = mongoc_database_create_collection (
+         db, collname, NULL /* options */, &error);
+      if (!coll) {
+         mongoc_database_destroy (db);
+         HANDLE_ERROR ("Failed to create collection: %s", error.message);
+      }
+      mongoc_database_destroy (db);
+   }
 
    {
       // Create an Atlas Search Index ... begin
-      const char *cmd_str = BSON_STR ({
-         "createSearchIndexes" : "test",
-         "indexes" : [ {
-            "definition" : {"mappings" : {"dynamic" : true}},
-            "name" : "test index"
-         } ]
-      });
       bson_t cmd;
-      ASSERT (bson_init_from_json (&cmd, cmd_str, -1, &error));
+      // Create command.
+      {
+         char *cmd_str = bson_strdup_printf (
+            BSON_STR ({
+               "createSearchIndexes" : "%s",
+               "indexes" : [ {
+                  "definition" : {"mappings" : {"dynamic" : false}},
+                  "name" : "test-index"
+               } ]
+            }),
+            collname);
+         ASSERT (bson_init_from_json (&cmd, cmd_str, -1, &error));
+         bson_free (cmd_str);
+      }
       if (!mongoc_collection_command_simple (
              coll, &cmd, NULL /* read_prefs */, NULL /* reply */, &error)) {
          bson_destroy (&cmd);
          HANDLE_ERROR ("Failed to run createSearchIndexes: %s", error.message);
       }
-      printf ("Created index: \"test index\"\n");
+      printf ("Created index: \"test-index\"\n");
       bson_destroy (&cmd);
       // Create an Atlas Search Index ... end
    }
@@ -108,37 +139,56 @@ main (int argc, char *argv[])
 
    {
       // Update an Atlas Search Index ... begin
-      const char *cmd_str = BSON_STR ({
-         "updateSearchIndex" : "test",
-         "definition" : {},
-         "name" : "test index"
-      });
       bson_t cmd;
-      ASSERT (bson_init_from_json (&cmd, cmd_str, -1, &error));
+      // Create command.
+      {
+         char *cmd_str = bson_strdup_printf (
+            BSON_STR ({
+               "updateSearchIndex" : "%s",
+               "definition" : {"mappings" : {"dynamic" : true}},
+               "name" : "test-index"
+            }),
+            collname);
+         ASSERT (bson_init_from_json (&cmd, cmd_str, -1, &error));
+         bson_free (cmd_str);
+      }
       if (!mongoc_collection_command_simple (
              coll, &cmd, NULL /* read_prefs */, NULL /* reply */, &error)) {
          bson_destroy (&cmd);
          HANDLE_ERROR ("Failed to run updateSearchIndex: %s", error.message);
       }
-      printf ("Updated index: \"test index\"\n");
+      printf ("Updated index: \"test-index\"\n");
       bson_destroy (&cmd);
       // Update an Atlas Search Index ... end
    }
 
    {
       // Drop an Atlas Search Index ... begin
-      const char *cmd_str =
-         BSON_STR ({"dropSearchIndex" : "test", "name" : "test index"});
       bson_t cmd;
-      ASSERT (bson_init_from_json (&cmd, cmd_str, -1, &error));
+      // Create command.
+      {
+         char *cmd_str = bson_strdup_printf (
+            BSON_STR ({"dropSearchIndex" : "%s", "name" : "test-index"}),
+            collname);
+         ASSERT (bson_init_from_json (&cmd, cmd_str, -1, &error));
+         bson_free (cmd_str);
+      }
       if (!mongoc_collection_command_simple (
              coll, &cmd, NULL /* read_prefs */, NULL /* reply */, &error)) {
          bson_destroy (&cmd);
          HANDLE_ERROR ("Failed to run dropSearchIndex: %s", error.message);
       }
-      printf ("Dropped index: \"test index\"\n");
+      printf ("Dropped index: \"test-index\"\n");
       bson_destroy (&cmd);
       // Drop an Atlas Search Index ... end
+   }
+
+   // Drop created collection.
+   {
+      if (!mongoc_collection_drop (coll, &error)) {
+         HANDLE_ERROR (
+            "Failed to drop collection '%s': %s", collname, error.message);
+      }
    }
 
    ok = true;
