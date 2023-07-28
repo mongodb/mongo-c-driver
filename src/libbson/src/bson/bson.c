@@ -3675,7 +3675,7 @@ bson_array_builder_new (void)
        * With the NULL terminator, 11 is expected maximum number of           \
        * characters.  */                                                      \
       BSON_ASSERT (key_length < sizeof buf);                                  \
-      bool ok = append_fn (&bab->bson, key, key_length, __VA_ARGS__);         \
+      bool ok = append_fn (&bab->bson, key, (int) key_length, __VA_ARGS__);   \
       if (ok) {                                                               \
          bab->index += 1;                                                     \
       }                                                                       \
@@ -3694,7 +3694,7 @@ bson_array_builder_new (void)
        * With the NULL terminator, 11 is expected maximum number of           \
        * characters.  */                                                      \
       BSON_ASSERT (key_length < sizeof buf);                                  \
-      bool ok = append_fn (&bab->bson, key, key_length);                      \
+      bool ok = append_fn (&bab->bson, key, (int) key_length);                \
       if (ok) {                                                               \
          bab->index += 1;                                                     \
       }                                                                       \
