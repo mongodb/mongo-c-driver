@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "bson.h"
 #include <stdint.h>
+#include <bson/bson.h>
 #include <mongoc/mongoc.h>
 #ifdef _POSIX_VERSION
 #include <sys/utsname.h>
