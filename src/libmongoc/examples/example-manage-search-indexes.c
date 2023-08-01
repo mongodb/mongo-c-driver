@@ -82,6 +82,34 @@ main (int argc, char *argv[])
       mongoc_database_destroy (db);
    }
 
+   // Check that $listSearchIndexes pipeline stage is supported.
+   // This is intended to check that a MongoDB Atlas cluster is used.
+   {
+      const char *pipeline_str =
+         BSON_STR ({"pipeline" : [ {"$listSearchIndexes" : {}} ]});
+      bson_t pipeline;
+      ASSERT (bson_init_from_json (&pipeline, pipeline_str, -1, &error));
+      mongoc_cursor_t *cursor =
+         mongoc_collection_aggregate (coll,
+                                      MONGOC_QUERY_NONE,
+                                      &pipeline,
+                                      NULL /* opts */,
+                                      NULL /* read_prefs */);
+      const bson_t *got;
+      while (mongoc_cursor_next (cursor, &got))
+         ;
+      if (mongoc_cursor_error (cursor, &error)) {
+         bson_destroy (&pipeline);
+         mongoc_cursor_destroy (cursor);
+         HANDLE_ERROR ("Failed to run $listSearchIndexes with error: %s\n"
+                       "Does the URI point to a MongoDB Atlas cluster? %s",
+                       error.message,
+                       uri_string);
+      }
+      bson_destroy (&pipeline);
+      mongoc_cursor_destroy (cursor);
+   }
+
    {
       // Create an Atlas Search Index ... begin
       bson_t cmd;
@@ -102,10 +130,7 @@ main (int argc, char *argv[])
       if (!mongoc_collection_command_simple (
              coll, &cmd, NULL /* read_prefs */, NULL /* reply */, &error)) {
          bson_destroy (&cmd);
-         HANDLE_ERROR ("Failed to run createSearchIndexes: %s.\n"
-                       "The URI '%s' must refer to a MongoDB Atlas cluster.",
-                       error.message,
-                       uri_string);
+         HANDLE_ERROR ("Failed to run createSearchIndexes: %s", error.message);
       }
       printf ("Created index: \"test-index\"\n");
       bson_destroy (&cmd);
