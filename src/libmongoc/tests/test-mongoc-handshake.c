@@ -382,8 +382,6 @@ _override_host_platform_os (void)
    md->os_type = bson_strdup ("Linux");
    bson_free (md->os_name);
    md->os_name = bson_strdup ("mongoc");
-   bson_free (md->os_architecture);
-   md->os_architecture = bson_strdup ("x86_64");
    bson_free (md->driver_name);
    md->driver_name = bson_strdup ("test_e");
    bson_free (md->driver_version);
