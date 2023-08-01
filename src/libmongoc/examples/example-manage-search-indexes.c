@@ -1,5 +1,6 @@
 // example-manage-search-indexes creates, lists, updates, and deletes an Atlas
 // search index from the `test.test` collection.
+// Example is expected to be run against a MongoDB Atlas cluster.
 
 #include <mongoc/mongoc.h>
 #include <stdlib.h> // abort
