@@ -73,6 +73,7 @@ mongoc_topology_reconcile (const mongoc_topology_t *topology,
    mongoc_server_description_t *sd;
    mongoc_topology_scanner_node_t *ele, *tmp;
 
+   BSON_ASSERT (topology->single_threaded);
    servers = mc_tpld_servers (td);
    /* Add newly discovered nodes */
    for (size_t i = 0u; i < servers->items_len; i++) {
@@ -124,6 +125,7 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
 {
    mongoc_topology_t *topology = BSON_ASSERT_PTR_INLINE (data);
 
+   BSON_ASSERT (topology->single_threaded);
    if (_mongoc_topology_get_type (topology) == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* In load balanced mode, scanning is only for connection establishment.
        * It must not modify the topology description. */
@@ -161,6 +163,7 @@ _mongoc_topology_scanner_cb (uint32_t id,
    mongoc_server_description_t *sd;
    mc_tpld_modification tdmod;
 
+   BSON_ASSERT (topology->single_threaded);
    if (_mongoc_topology_get_type (topology) == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* In load balanced mode, scanning is only for connection establishment.
        * It must not modify the topology description. */
@@ -882,6 +885,7 @@ static void
 mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
 {
    mc_tpld_modification tdmod;
+   BSON_ASSERT (topology->single_threaded);
    if (mongoc_topology_should_rescan_srv (topology)) {
       /* Prior to scanning hosts, update the list of SRV hosts, if applicable.
        */
@@ -920,6 +924,7 @@ void
 _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
                                    bson_error_t *error)
 {
+   BSON_ASSERT (topology->single_threaded);
    _mongoc_handshake_freeze ();
 
    mongoc_topology_scan_once (topology, true /* obey cooldown */);
