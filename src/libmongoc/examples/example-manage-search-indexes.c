@@ -102,7 +102,10 @@ main (int argc, char *argv[])
       if (!mongoc_collection_command_simple (
              coll, &cmd, NULL /* read_prefs */, NULL /* reply */, &error)) {
          bson_destroy (&cmd);
-         HANDLE_ERROR ("Failed to run createSearchIndexes: %s", error.message);
+         HANDLE_ERROR ("Failed to run createSearchIndexes: %s.\n"
+                       "The URI '%s' must refer to a MongoDB Atlas cluster.",
+                       error.message,
+                       uri_string);
       }
       printf ("Created index: \"test-index\"\n");
       bson_destroy (&cmd);
