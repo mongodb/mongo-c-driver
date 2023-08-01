@@ -28,3 +28,40 @@ To drop an index, use :symbol:`mongoc_collection_drop_index_with_opts`. The inde
    :dedent: 6
 
 For a full example, see `example-manage-collection-indexes.c <https://github.com/mongodb/mongo-c-driver/blob/master/src/libmongoc/examples/example-manage-collection-indexes.c>`_.
+
+Manage Atlas Search Indexes
+---------------------------
+
+To create an Atlas Search Index, use the ``createSearchIndexes`` command:
+
+.. literalinclude:: ../examples/example-manage-search-indexes.c
+   :language: c
+   :start-after: // Create an Atlas Search Index ... begin
+   :end-before: // Create an Atlas Search Index ... end
+   :dedent: 6
+
+To list Atlas Search Indexes, use the ``$listSearchIndexes`` aggregation stage:
+
+.. literalinclude:: ../examples/example-manage-search-indexes.c
+   :language: c
+   :start-after: // List Atlas Search Indexes ... begin
+   :end-before: // List Atlas Search Indexes ... end
+   :dedent: 6
+
+To update an Atlas Search Index, use the ``updateSearchIndex`` command:
+
+.. literalinclude:: ../examples/example-manage-search-indexes.c
+   :language: c
+   :start-after: // Update an Atlas Search Index ... begin
+   :end-before: // Update an Atlas Search Index ... end
+   :dedent: 6
+
+To drop an Atlas Search Index, use the ``dropSearchIndex`` command:
+
+.. literalinclude:: ../examples/example-manage-search-indexes.c
+   :language: c
+   :start-after: // Drop an Atlas Search Index ... begin
+   :end-before: // Drop an Atlas Search Index ... end
+   :dedent: 6
+
+For a full example, see `example-manage-search-indexes.c <https://github.com/mongodb/mongo-c-driver/blob/master/src/libmongoc/examples/example-manage-search-indexes.c>`_.

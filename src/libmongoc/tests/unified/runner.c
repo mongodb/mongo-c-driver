@@ -1875,4 +1875,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR, "retryable_reads/unified");
 
    run_unified_tests (suite, JSON_DIR, "retryable_writes/unified");
+
+   run_unified_tests (suite, JSON_DIR, "index-management");
 }
