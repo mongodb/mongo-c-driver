@@ -99,8 +99,7 @@ _mongoc_sched_getcpu (void)
 {
    volatile uint32_t rax, rdx, rcx;
    __asm__ volatile ("rdtscp\n" : "=a"(rax), "=d"(rdx), "=c"(rcx) : :);
-   unsigned node_id, core_id;
-   // node_id = (rcx & 0xFFF000)>>12;  // node_id is unused
+   unsigned core_id;
    core_id = rcx & 0xFFF;
    return core_id;
 }
