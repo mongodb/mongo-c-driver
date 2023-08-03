@@ -14,11 +14,11 @@ It depends on :doc:`libbson <bson:index>` to generate and parse BSON documents, 
    :maxdepth: 2
 
    learn/index
+   ref/index
 
 .. toctree::
    :maxdepth: 2
 
-   installing
    tutorial
    authentication
    basic-troubleshooting

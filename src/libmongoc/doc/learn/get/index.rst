@@ -8,3 +8,4 @@ There are a few methods of obtaining the ``mongo-c-driver`` codebase:
 
     from-source
     installing
+    docs

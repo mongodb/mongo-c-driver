@@ -166,7 +166,8 @@ the command line::
 
 .. important::
 
-  A CMake of version 3.15 *or newer* is **required** for building the source.
+  A CMake of version 3.15 *or newer* is **required** for building
+  |mongo-c-driver| from source.
 
 .. note::
 
@@ -317,6 +318,11 @@ CMake variable. Re-run CMake again, but set `ENABLE_MONGOC` to `TRUE`::
 If the above command succeeds, then the project has been reconfigured to build
 with |libmongoc|. Follow the process at :ref:`learn.get.build` and
 :ref:`learn.get.install` again to build and install |libmongoc|.
+
+.. TODO:
+
+  Add a guide on installing with the additional option features, which requires
+  additional packages be available for the build.
 
 
 .. rubric:: Footnotes
