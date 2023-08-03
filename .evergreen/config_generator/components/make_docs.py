@@ -17,7 +17,8 @@ class MakeDocs(Function):
             script="""\
                 set -o errexit
                 bash tools/poetry.sh install --with=docs
-                bash tools/poetry.sh run bash .evergreen/scripts/build-docs.sh
+                # See SphinxBuild.cmake for EVG_DOCS_BUILD reasoning
+                bash tools/poetry.sh run env EVG_DOCS_BUILD=1 bash .evergreen/scripts/build-docs.sh
                 """,
         ),
     ]
