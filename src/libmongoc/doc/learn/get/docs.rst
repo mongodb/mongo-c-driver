@@ -38,7 +38,7 @@ Running Sphinx
 
 Poetry can be used to execute the `sphinx-build` command::
 
-  $ poetry run sphinx-build -b dirhtml "./src/libmongoc/docs" "./_build/docs/html"
+  $ poetry run sphinx-build -b dirhtml "./src/libmongoc/doc" "./_build/docs/html"
 
 This command will generate the HTML documentation in the `_build/docs/html`
 subdirectory.

@@ -11,16 +11,18 @@ The easiest way to obtain the source is to download it from
 
 __ https://github.com/mongodb/mongo-c-driver
 
-.. note::
-
-  In the following examples, `$SOURCE_DIR` refers to the directory in which you
-  will be placing the |mongo-c-driver| source code, and `$VERSION` refers to the
-  version of the C driver that you are. The current version written for this
-  documentation is |version.pre|.
-
 It is **highly recommended** that new users use a stable released version of the
 driver, rather than building from a development branch.
 
+.. note::
+
+  In the following examples, `$SOURCE` refers to the directory in which you will
+  be placing the |mongo-c-driver| source code, and `$VERSION` refers to the
+  version of the C driver that you are. The current version written for this
+  documentation is |version.pre|.
+
+.. seealso::
+  For the list of supported platforms, refer to the :doc:`/ref/platforms` page.
 
 Obtaining the Source
 ********************
@@ -54,7 +56,7 @@ versions are named after the version for which they correspond (e.g.
 "|version.pre|"). To clone the repository using the command line, the following
 command may be used::
 
-  $ git clone https://github.com/mongodb/mongo-c-driver.git --branch="$VERSION" "$SOURCE_DIR"
+  $ git clone https://github.com/mongodb/mongo-c-driver.git --branch="$VERSION" "$SOURCE"
 
 
 .. _learn.obtaining.archive:

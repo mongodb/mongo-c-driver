@@ -44,7 +44,7 @@ intersphinx_disabled_reftypes = []
 # Fedora package builds must work offline - maintain a recent copy here
 intersphinx_mapping = {
     "bson": ("https://www.mongoc.org/libbson/current", "libbson-objects.inv"),
-    # NOTE: Pinned to CMake version hear, but is safe to update as new CMake is released.
+    # NOTE: Pinned to CMake version here, but is safe to update as new CMake is released.
     # This pin version ensures that documentation labels remain stable between builds.
     # When updating, fix any moved/renamed references as applicable.
     "cmake": ("https://cmake.org/cmake/help/v3.27", None),
