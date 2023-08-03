@@ -122,13 +122,4 @@
 # undef BSON_HAVE_STRLCPY
 #endif
 
-
-/*
- * Define to 1 if you have an XSI-compliant strerror_r on your platform.
- */
-#define BSON_HAVE_XSI_STRERROR_R @BSON_HAVE_XSI_STRERROR_R@
-#if BSON_HAVE_XSI_STRERROR_R != 1
-# undef BSON_HAVE_XSI_STRERROR_R
-#endif
-
 #endif /* BSON_CONFIG_H */
