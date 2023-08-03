@@ -143,6 +143,7 @@ bson_strerror_r (int err_code,                    /* IN */
    // Unlikely, but continue supporting use of GNU extension in cases where the
    // C Driver is being built without _XOPEN_SOURCE=700.
    ret = strerror_r (err_code, buf, buflen);
+#else
 #error "Unable to find a supported strerror_r candidate"
 #endif
 
