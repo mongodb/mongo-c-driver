@@ -394,7 +394,7 @@ endif ()
 # Enable POSIX features up to POSIX.1-2008 plus the XSI extension and BSD-derived definitions.
 # Both _BSD_SOURCE and _DEFAULT_SOURCE are defined for backwards-compatibility with glibc 2.19 and earlier.
 # _BSD_SOURCE and _DEFAULT_SOURCE are required by `getpagesize`, `h_errno`, etc.
-# _XOPEN_SOURCE=700 is required by `strnlen`, `strerror_r`, etc.
+# _XOPEN_SOURCE=700 is required by `strnlen`, `strerror_l`, etc.
 add_definitions (-D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE)
 list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_XOPEN_SOURCE=700 -D_BSD_SOURCE -D_DEFAULT_SOURCE)
 
