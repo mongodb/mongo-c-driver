@@ -6,5 +6,5 @@ There are a few methods of obtaining the ``mongo-c-driver`` codebase:
 .. toctree::
     :maxdepth: 1
 
-    building
+    from-source
     installing

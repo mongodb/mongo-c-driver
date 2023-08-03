@@ -17,9 +17,10 @@ python = "^3.8"
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-sphinx = "^7.0.1"
+sphinx = "^7.1.1"
 furo = "^2023.5.20"
 sphinxcontrib-moderncmakedomain = "^3.27.0"
+sphinx-design = "^0.5.0"
 
 [tool.poetry.group.dev]
 optional = true
@@ -29,6 +30,7 @@ clang-format = "16"
 sphinx-autobuild = "^2021.3.14"
 shrub-py = "3.0.4"
 yamlordereddictloader = "^0.4.0"
+types-docutils = "^0.20.0.1"
 
 [build-system]
 requires = ["poetry-core"]

@@ -70,29 +70,41 @@ necessary to build the driver binaries.
 __ https://github.com/mongodb/mongo-c-driver/releases
 
 The archive can be downloaded and extracted from a command line using one of
-several tools, depending on what is available::
+several tools, depending on what is available.
 
-  ## Using wget:
-  $ wget "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.tar.gz" --output-document="mongo-c-driver-$VERSION.tar.gz"
-  ## Extract using tar:
-  $ tar -x -f "mongo-c-driver-$VERSION.tar.gz"
+.. tab-set::
 
-::
+  .. tab-item:: Using ``wget`` + ``tar``
 
-  ## Using curl:
-  $ curl "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.tar.gz" --output="mongo-c-driver-$VERSION.tar.gz"
-  ## Extract using tar:
-  $ tar -x -f "mongo-c-driver-$VERSION.tar.gz"
+    ::
 
-.. code-block:: pwsh
+      ## Download using wget:
+      $ wget "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.tar.gz" \
+          --output-document="mongo-c-driver-$VERSION.tar.gz"
+      ## Extract using tar:
+      $ tar -x -f "mongo-c-driver-$VERSION.tar.gz"
 
-  ## Using PowerShell:
-  Invoke-WebRequest `
-      -UseBasicParsing `
-      -Uri "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.zip" `
-      -OutFile "mongo-c-driver-$VERSION.zip"
-  ## Extract using Expand-Archive:
-  Expand-Archive mongo-c-driver-$VERSION.zip
+  .. tab-item:: Using ``curl`` + ``tar``
+
+    ::
+
+      ## Using curl:
+      $ curl "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.tar.gz" \
+          --output="mongo-c-driver-$VERSION.tar.gz"
+      ## Extract using tar:
+      $ tar -x -f "mongo-c-driver-$VERSION.tar.gz"
+
+  .. tab-item:: Using PowerShell
+
+    .. code-block:: pwsh
+
+      ## Use Invoke-WebRequest:
+      Invoke-WebRequest `
+          -UseBasicParsing `
+          -Uri "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.zip" `
+          -OutFile "mongo-c-driver-$VERSION.zip"
+      ## Extract using Expand-Archive:
+      Expand-Archive mongo-c-driver-$VERSION.zip
 
 The above commands will create a new directory `mongo-c-driver-$VERSION` within
 the directory in which you ran the `tar`/`Expand-Archive` command (**note**:
@@ -114,7 +126,33 @@ __ https://cmake.org
 .. note::
 
   It is *highly recommended* -- but not *required* -- that you download the
-  latest stable CMake available for your platform. [#cmake]_
+  latest stable CMake available for your platform.
+
+.. dropdown:: Getting the Latest CMake …
+  :class-container: admonition hint
+  :class-title: admonition-title
+
+  A new stable release of CMake can be obtained from
+  `the CMake downloads page`__.
+
+  __ https://cmake.org/download/#latest
+
+
+  For Windows and macOS, simply download the CMake `.msi`/`.dmg` (not the
+  `.zip`/`.tar.gz`) and use it to install CMake.
+
+  On Linux, download the self-extracting shell script (ending with `.sh`) and
+  execute it using the `sh` utility, passing the appropriate arguments to
+  perform the install. For example, with the CMake 3.27.0 on the `x86_64`
+  platform, the following command can be used on the
+  `cmake-3.27.0-linux-x86_64.sh` script::
+
+    $ sh cmake-3.27.0-linux-x86_64.sh --prefix="$HOME/.local" --exclude-subdir --skip-license
+
+  Assuming that `$HOME/.local/bin` is on your `$PATH` list, the `cmake` command
+  for 3.27.0 will then become available.
+
+  The `--help` option can be passed to the shell script for more information.
 
 For the remainder of this page, it will be assumed that `cmake` is available as
 a command on your `PATH` environment variable and can be executed as "`cmake`"
@@ -130,18 +168,13 @@ the command line::
 
   A CMake of version 3.15 *or newer* is **required** for building the source.
 
-If you intend to build |libbson| *only*, then CMake is sufficient for the build.
-To build the full C driver, additional packages are required on some platforms:
-
-- On Linux, OpenSSL/LibreSSL development components are required.
-- On Linux, Cyrus SASL development components are required.
-
 .. note::
 
-  Additional C driver features may require additional external dependencies be
-  installed, but we will not worry about them here.
+  If you intend to build |libbson| *only*, then CMake is sufficient for the
+  build. Additional C driver features may require additional external
+  dependencies be installed, but we will not worry about them here.
 
-.. note::
+.. XXX: Additional note for installing dependencies
 
   The Linux dependencies of sufficient version are likely available using the
   system package manager. For example, on **Debian**/**Ubuntu** based systems,
@@ -157,10 +190,10 @@ To build the full C driver, additional packages are required on some platforms:
   Package names may vary between distributions.
 
 
-.. _learn.obtaining.configuring:
+.. _learn.get.configure:
 
-Configuring the Project
-***********************
+Configuring for |libbson|
+*************************
 
 .. important::
 
@@ -168,11 +201,8 @@ Configuring the Project
   may need to execute CMake from within a special environment in which the
   resepective toolchain is available.
 
-Going forward, the name `$BUILD` refers to an ephemeral directory which will
-contain the intermediate files for the build. It is *highly* recommended to use
-a separate directory from `$SOURCE` for `$BUILD`. A reasonable default would be
-`$SOURCE/_build`, which would place all build results in the `_build/`
-subdirectory of `$SOURCE`.
+Let the name `$BUILD` be the path `$SOURCE/_build`. This will be the directory
+where our built files will be written by CMake.
 
 With the source directory for |mongo-c-driver| at `$SOURCE` and build directory
 `$BUILD`, the following command can be executed from a command-line to configure
@@ -181,13 +211,9 @@ the project with both |libbson| and |libmongoc|::
   $ cmake -S $SOURCE -B $BUILD \
     -D ENABLE_EXTRA_ALIGNMENT=FALSE \
     -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=FALSE \
-    -D CMAKE_BUILD_TYPE=RelWithDebInfo
+    -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+    -D ENABLE_MONGOC=FALSE
 
-.. note::
-
-  To configure the project without |libmongoc| (and only configure |libbson|),
-  pass the additional command-line arguments "`-D ENABLE_MONGOC=FALSE`" with the
-  above command.
 
 If all dependencies are satisfied, the above command should succeed and end
 with::
@@ -200,20 +226,18 @@ with::
 If configuration failed with an error, refer to the CMake output for error
 messages and information. Ensure that configuration succeeds before proceeding.
 
-.. note::
+.. dropdown:: Aside: What do these CMake arguments mean?
+  :class-container: admonition hint
+  :class-title: admonition-title
+  :animate: fade-in
 
-  If you attempt to change the `-G` option, then CMake will fail to configure.
-  Run with `--fresh`__ to clean out the configuration when using `-G` (`--fresh`
-  is only available in CMake 3.24 or newer).
+  The `ENABLE_EXTRA_ALIGNMENT` and `ENABLE_AUTOMATIC_INIT_AND_CLEANUP` are part
+  of |mongo-c-driver|, and correspond to deprecated features that are only
+  enabled for compatibility purposes. It is highly recommended to disable these
+  features whenever possible.
 
-  __ https://cmake.org/cmake/help/latest/manual/cmake.1.html#cmdoption-cmake-fresh
-
-.. note::
-
-  The `ENABLE_EXTRA_ALIGNMENT` and `ENABLE_AUTOMATIC_INIT_AND_CLEANUP`
-  correspond to deprecated features that are only enabled for compatibility
-  purposes. It is highly recommended to disable these features whenever
-  possible.
+  The `ENABLE_MONGOC=FALSE` argument disabled building |libmongoc|. We'll build
+  that in the next section.
 
   The |cmvar:CMAKE_BUILD_TYPE| setting tells CMake what variant of code will be
   generated. In the case of `RelWithDebInfo`, optimized binaries will be
@@ -223,11 +247,14 @@ messages and information. Ensure that configuration succeeds before proceeding.
 
 .. _CMAKE_BUILD_TYPE: https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html
 
+
+.. _learn.get.build:
+
 Building the Project
 ********************
 
-After a successful :ref:`configuration <learn.obtaining.configuring>`, the
-build can be executed using CMake to launch the underlying build tool::
+After successfully configuring the project, the build can be executed by using
+CMake::
 
   $ cmake --build $BUILD --config RelWithDebInfo --parallel
 
@@ -237,78 +264,62 @@ above command fails, then there is likely an error with your environment, or you
 are using an unsupported/untested platform. Refer to the build tool output for
 more information.
 
-.. note::
+.. dropdown:: Aside: The ``--config`` option
+  :class-container: admonition hint
+  :class-title: admonition-title
+  :animate: fade-in
 
   The :option:`--config <cmake--build.--config>` option is used to set the build
   configuration to use in the case of Multi-Config generators (i.e. Visual
   Studio). It has no effect on other generators, which instead use
   |cmvar:CMAKE_BUILD_TYPE|.
 
+.. _learn.get.install:
 
 Installing the Built Results
 ****************************
 
-To use the built C driver in another project, it is required that the build
-results are installed in a directory that is visible to the consuming projects.
-The actual directory used for the install is not significant, but should be
-known and specified explicitly. The recommended way to do this is to set the
-|cmvar:CMAKE_INSTALL_PREFIX| variable.
+Let `$PREFIX` be the path `$SOURCE/_install`. We can use CMake to install the
+built results::
 
-Let `$PREFIX` be the absolute path to a directory that we will use for the
-installation. For simplicity, we'll set this to `$SOURCE/_install`. Invoke
-`cmake` again and set the |cmvar:CMAKE_INSTALL_PREFIX| option::
+  $ cmake --install $BUILD --prefix "$PREFIX" --config RelWithDebInfo
 
-  $ cmake -D CMAKE_INSTALL_PREFIX=$PREFIX $BUILD
-  ## … (Lines of output) …
-  -- Generating done
-  -- Build files have been written to: $BUILD
+This command will install the |mongo-c-driver| build results into the `$PREFIX`
+directory.
 
-We can now install the built results::
-
-  $ cmake --install $BUILD --config RelWithDebInfo
-
-.. note::
+.. dropdown:: Aside: The ``--config`` option
+  :class-container: admonition hint
+  :class-title: admonition-title
+  :animate: fade-in
 
   The :external:option:`--config <cmake--install.--config>` option is only used
   for Multi-Config generators (i.e. Visual Studio) and is otherwise ignored. The
   value given for `--config` must be the same as was given for
   :external:option:`--config <cmake--build.--config>` with `cmake --build`.
 
-
-This will now install the |mongo-c-driver| build results into the directory
-specified by |cmvar:CMAKE_INSTALL_PREFIX|, ready to be imported into downstream
-projects.
-
-.. important::
-
+.. TODO note:
   Unless certain special values of |cmvar:CMAKE_INSTALL_PREFIX| were used,
   downstream projects will want to specify |cmvar:CMAKE_PREFIX_PATH| to include
   the value of `$PREFIX` when configuring. This will allow |cmcmd:find_package|
   to find |libmongoc| and |libbson|.
 
+
+Configuring with |libmongoc|
+****************************
+
+If you followed the above steps starting from :ref:`learn.get.configure`, your
+final result with only contain |libbson| and not the full C database driver
+library. Building of |libmongoc| is enabled/disabled using the `ENABLE_MONGOC`
+CMake variable. Re-run CMake again, but set `ENABLE_MONGOC` to `TRUE`::
+
+  $ cmake -D ENABLE_MONGOC=TRUE $BUILD
+
+If the above command succeeds, then the project has been reconfigured to build
+with |libmongoc|. Follow the process at :ref:`learn.get.build` and
+:ref:`learn.get.install` again to build and install |libmongoc|.
+
+
 .. rubric:: Footnotes
-
-.. [#cmake]
-
-  A new stable release of CMake can be obtained from
-  `the CMake downloads page`__.
-
-  __ https://cmake.org/download/#latest
-
-  For Windows and macOS, simply download the CMake `.msi`/`.dmg` (not the
-  `.zip`/`.tar.gz`) and use it to install CMake.
-
-  On Linux, download the self-extracting shell script (ending with `.sh`) and
-  execute it using the `sh` utility, passing the appropriate arguments to
-  perform the install. For example, with the CMake 3.27.0 on the `x86_64`
-  platform, the following command can be used on the
-  `cmake-3.27.0-linux-x86_64.sh` script::
-
-    $ sh cmake-3.27.0-linux-x86_64.sh --prefix="$HOME/.local" --exclude-subdir --skip-license
-
-  Assuming that `$HOME/.local/bin` is on your `$PATH` list, the `cmake` command
-  for 3.27.0 will then become available. The `--help` option can be passed to
-  the shell script for more information.
 
 .. [#xcode_env]
 

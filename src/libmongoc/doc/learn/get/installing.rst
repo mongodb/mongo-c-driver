@@ -17,18 +17,18 @@ management repositories of `common Linux distributions <linux_>`_ and
 .. note::
 
   For Windows, it is recommended to instead
-  :doc:`build the libraries from source <building>`, for maximum compatibility
-  with the local toolchain.
+  :doc:`build the libraries from source <from-source>`, for maximum
+  compatibility with the local toolchain.
 
 .. caution::
 
   If you install and use prebuilt binaries from a third-party packager, it is
-  likely that it lags behind the version of the libraries described in these
+  possible that it lags behind the version of the libraries described in these
   documentation pages (|version|). Note the version that you install and keep it
   in mind when reading these pages.
 
   For the most up-to-date versions of the C driver libraries, prefer to instead
-  :doc:`build from source <building>`.
+  :doc:`build from source <from-source>`.
 
 
 .. _linux:

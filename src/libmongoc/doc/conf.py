@@ -16,6 +16,8 @@ extensions = [
     "mongoc",
     "sphinx.ext.intersphinx",
     "sphinxcontrib.moderncmakedomain",
+    "sphinx_design",
+    "sphinx.ext.mathjax",
 ]
 
 # General information about the project.
@@ -42,7 +44,10 @@ intersphinx_disabled_reftypes = []
 # Fedora package builds must work offline - maintain a recent copy here
 intersphinx_mapping = {
     "bson": ("https://www.mongoc.org/libbson/current", "libbson-objects.inv"),
-    "cmake": ("https://cmake.org/cmake/help/latest", None),
+    # NOTE: Pinned to CMake version hear, but is safe to update as new CMake is released.
+    # This pin version ensures that documentation labels remain stable between builds.
+    # When updating, fix any moved/renamed references as applicable.
+    "cmake": ("https://cmake.org/cmake/help/v3.27", None),
 }
 
 # -- Options for HTML output ----------------------------------------------
@@ -80,6 +85,15 @@ rst_prolog = rf"""
 
 .. role:: bash(code)
     :language: bash
+
+.. role:: batch(code)
+    :language: batch
+
+.. role:: c(code)
+    :language: c
+
+.. role:: cpp(code)
+    :language: c++
 
 .. role:: bolded-name(literal)
     :class: bolded-name

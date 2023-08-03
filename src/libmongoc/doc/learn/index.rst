@@ -1,3 +1,4 @@
+###########################
 Getting Started & Tutorials
 ###########################
 
@@ -7,4 +8,4 @@ the C driver.
 .. toctree::
   :maxdepth: 2
 
-  obtaining
+  get/index
