@@ -125,6 +125,19 @@ bson_strerror_r (int err_code,                    /* IN */
    // string even when `strerror_r` fails.
    (void) strerror_r (err_code, buf, buflen);
 #elif defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700
+   // The behavior (of `strerror_l`) is undefined if the locale argument to
+   // `strerror_l()` is the special locale object LC_GLOBAL_LOCALE or is not a
+   // valid locale object handle.
+   locale_t locale = uselocale ((locale_t) 0);
+   // No need to test for error (it can only be [EINVAL]).
+   if (locale == LC_GLOBAL_LOCALE) {
+      // Only use our own locale if a thread-local locale was not already set.
+      // This is just to satisfy `strerror_l`. We do NOT want to unconditionally
+      // set a thread-local locale.
+      locale = newlocale (LC_MESSAGES_MASK, "C", (locale_t) 0);
+   }
+   BSON_ASSERT (locale != LC_GLOBAL_LOCALE);
+
    // Avoid `strerror_r` compatibility headaches with GNU extensions and the
    // musl library by using `strerror_l` instead. Furthermore, `strerror_r` is
    // scheduled to be marked as obsolete in favor of `strerror_l` in the
@@ -134,10 +147,18 @@ bson_strerror_r (int err_code,                    /* IN */
    // POSIX Spec: since strerror_l() is required to return a string for some
    // errors, an application wishing to check for all error situations should
    // set errno to 0, then call strerror_l(), then check errno.
-   errno = 0;
-   ret = strerror_l (err_code, uselocale ((locale_t) 0));
-   if (errno != 0) {
-      ret = NULL;
+   if (locale != (locale_t) 0) {
+      errno = 0;
+      ret = strerror_l (err_code, locale);
+
+      if (errno != 0) {
+         ret = NULL;
+      }
+
+      freelocale (locale);
+   } else {
+      // Could not obtain a valid `locale_t` object to satisfy `strerror_l`.
+      // Fallback to `bson_strncpy` below.
    }
 #elif defined(_GNU_SOURCE)
    // Unlikely, but continue supporting use of GNU extension in cases where the
