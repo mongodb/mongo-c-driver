@@ -305,6 +305,15 @@ directory.
   to find |libmongoc| and |libbson|.
 
 
+.. seealso::
+
+   The above snippet simply installs |mongo-c-driver| in a subdirectory of the
+   source directory itself, but this is not a normal workflow. Once you feel
+   compfortable about configuring and building |mongo-c-driver|, the page
+   :doc:`/howto/source-install` will do a deeper dive on from-source
+   installation options.
+
+
 Configuring with |libmongoc|
 ****************************
 
