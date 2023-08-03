@@ -4,8 +4,12 @@ project (libmongoc C)
 
 include (MongoC-Warnings)
 
-include (InstallRequiredSystemLibraries)
+include (CheckSchedGetCPU)
 include (CheckStructHasMember)
+include (CheckSymbolExists)
+include (CheckTypeSize)
+include (CMakePushCheckState)
+include (InstallRequiredSystemLibraries)
 
 message (STATUS "libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
 
@@ -187,14 +191,6 @@ if (OPENSSL_FOUND)
       message (WARNING "Building with OpenSSL but OPENSSL_ROOT_DIR not defined. If build fails to link"
          " to OpenSSL, define OPENSSL_ROOT_DIR as the path to the OpenSSL installation directory.")
    endif ()
-   include (CheckLibraryExists)
-   # Check for newer OpenSSL string function.
-   check_library_exists ("${OPENSSL_CRYPTO_LIBRARY}"
-      ASN1_STRING_get0_data "openssl/asn1.h" HAVE_ASN1_STRING_GET0_DATA
-   )
-   if (HAVE_ASN1_STRING_GET0_DATA)
-      set (MONGOC_HAVE_ASN1_STRING_GET0_DATA 1)
-   endif ()
    set (MONGOC_ENABLE_SSL 1)
    set (MONGOC_ENABLE_SSL_OPENSSL 1)
    set (MONGOC_ENABLE_CRYPTO 1)
@@ -257,7 +253,6 @@ else ()
    set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
 endif ()
 
-include (CheckTypeSize)
 if (WIN32)
    SET (CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
 else ()
@@ -276,8 +271,6 @@ endif ()
 
 # Find name resolution libaries. Also sets definitions used in configure_file():
 include(ResSearch)
-
-include (CheckSchedGetCPU)
 
 function (mongoc_get_accept_args ARG2 ARG3)
    SET (VAR 0)
@@ -415,22 +408,6 @@ else ()
    set (MONGOC_HAVE_SS_FAMILY 1)
 endif ()
 
-configure_file (
-   "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
-   "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
-)
-
-configure_file (
-   "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version.h.in"
-   "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h"
-)
-
-if (ENABLE_APPLE_FRAMEWORK)
-   configure_file (
-      "${PROJECT_SOURCE_DIR}/src/mongoc/modules/module.modulemap.in"
-      "${PROJECT_BINARY_DIR}/src/mongoc/modules/module.modulemap"
-   )
-endif ()
 
 set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
@@ -644,6 +621,36 @@ if (NOT ENABLE_SSL STREQUAL OFF)
 else ()
    message (STATUS "SSL disabled")
 endif () # ENABLE_SSL
+
+# Check for newer OpenSSL string function.
+cmake_push_check_state()
+list(APPEND CMAKE_REQUIRED_LIBRARIES ${SSL_LIBRARIES})
+check_symbol_exists (
+   ASN1_STRING_get0_data
+   "openssl/asn1.h"
+   HAVE_ASN1_STRING_GET0_DATA
+)
+cmake_pop_check_state()
+if (HAVE_ASN1_STRING_GET0_DATA)
+   set (MONGOC_HAVE_ASN1_STRING_GET0_DATA 1)
+endif ()
+
+configure_file (
+   "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
+   "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
+)
+
+configure_file (
+   "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version.h.in"
+   "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h"
+)
+
+if (ENABLE_APPLE_FRAMEWORK)
+   configure_file (
+      "${PROJECT_SOURCE_DIR}/src/mongoc/modules/module.modulemap.in"
+      "${PROJECT_BINARY_DIR}/src/mongoc/modules/module.modulemap"
+   )
+endif ()
 
 if (MONGOC_ENABLE_SASL)
    set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
