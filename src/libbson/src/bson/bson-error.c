@@ -121,8 +121,10 @@ bson_strerror_r (int err_code,                    /* IN */
    // the XSI-compliant `strerror_r`, but only when compiling with Apple Clang.
    // GNU extensions may still be a problem if we are being compiled with GCC on
    // Apple. Avoid the compatibility headaches with GNU extensions and the musl
-   // library by assuming QoI will not cause UB when reading the error message
-   // string even when `strerror_r` fails.
+   // library by assuming the implementation will not cause UB when reading the
+   // error message string even when `strerror_r` fails, as encouraged (but not
+   // required) by the POSIX spec (see:
+   // https://pubs.opengroup.org/onlinepubs/9699919799/functions/strerror.html#tag_16_574_08).
    (void) strerror_r (err_code, buf, buflen);
 #elif defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700
    // The behavior (of `strerror_l`) is undefined if the locale argument to
