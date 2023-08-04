@@ -62,10 +62,12 @@ details.sd-dropdown.sd-card.admonition {
   padding: 0;
   /* Override the border: none for closed dropdowns */
   border-left: 0.2rem solid var(--admon-title-color) !important;
+  /* Inset dropdowns to visually distinguish them from regular admonitions */
+  margin: 0 1rem;
 }
 
 details.sd-dropdown.admonition>summary.sd-summary-title {
-  padding: 0.5rem 1rem 0.5rem 2rem;
+  padding: 0.5rem 2rem;
 }
 
 details.sd-dropdown.admonition>summary.sd-summary-title>div:is(.sd-summary-down, .sd-summary-up) {
@@ -97,7 +99,7 @@ details.sd-dropdown>.sd-card-body.sd-summary-content {
   cursor: initial;
 }
 
-/* Fix: Furo doesn't intend footnote elements other than 'p' */
+/* Fix: Furo doesn't indent footnote elements other than 'p' */
 aside.footnote> :not(:first-child) {
   margin-left: 2rem;
 }
@@ -105,6 +107,4 @@ aside.footnote> :not(:first-child) {
 /* Pygments does not set an .nv color for body[data-theme="light"], which makes them a bit indistinguishable. */
 body[data-theme="light"] .highlight .nv {
   color: #0004ff;
-}
-
 }

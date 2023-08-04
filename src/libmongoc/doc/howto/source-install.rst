@@ -1,6 +1,6 @@
-############################################
-Installing |libbson|/|libmongoc| from Source
-############################################
+#################################################
+How to: Install |libbson|/|libmongoc| from Source
+#################################################
 
 .. |pkg-config| replace:: :bolded-name:`pkg-config`
 .. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
@@ -13,37 +13,43 @@ Installing |libbson|/|libmongoc| from Source
 .. important::
 
   This page assumes that you can successfully configure and build the components
-  that you wish to install. To learn that aspect, refer to
-  :doc:`/learn/get/from-source`.
+  that you wish to install, which is detailed and explained on the
+  :doc:`/learn/get/from-source` tutorial page. Wheras that tutorial walks
+  through getting the sources built and a minimal install working, this page
+  will offer deeper guidance on the nuance and available options for installing
+  the |mongo-c-driver| libraries from such a from-source build.
 
 |mongo-c-driver| uses CMake to generate its installation rules, and installs a
 variety of artifacts of interest. For integration with downstream programs, the
 :external+cmake:ref:`config file packages` and |pkg-config|_ files would be of
 particular interest.
 
-If you are intending to import |libbson| or |libmongoc| in via CMake or
-pkg-config, it can be helpful to be aware of how the respective tool searches
-for package metadata.
+If you are intending to import |libbson| or |libmongoc| via CMake or pkg-config,
+it can be helpful to be aware of how the respective tool searches for package
+metadata.
 
 .. tab-set::
 
   .. tab-item:: CMake Package Lookup
-    :sync: cmake
 
     CMake builds a set of search paths based on a set of prefixes, which are read
     from both the environment and from configure-time CMake settings.
 
-    In particular, the ``PATH`` environment variable will be used to construct
+    In particular, the `$PATH` environment variable will be used to construct
     the standard prefixes for the system. For each directory :math:`D` in
-    ``PATH``:
+    `$PATH`:
 
     1. If the final path component of :math:`D` is "``bin``" or "``sbin``",
        :math:`D` is replaced with the parent path of :math:`D`.
     2. :math:`D` is added as a search prefix.
 
-    This has the effect that common Unix-specific directories on ``PATH``, such
+    This has the effect that common Unix-specific directories on `$PATH`, such
     as ``/usr/bin`` and ``/usr/local/bin`` will end up causing CMake to search
-    in ``/usr`` and ``/usr/local`` is prefixes, respectively.
+    in ``/usr`` and ``/usr/local`` is prefixes, respectively. If you have the
+    directory `$HOME/.local/bin` on your `$PATH`, then the `$HOME/.local`
+    directory will also be added to the search path. Having `$HOME/.local/bin`
+    on `$PATH` is an increasingly common pattern for many Unix shells, and is
+    recommended if you intend to use a per-user-prefix_ for your installion.
 
     Additionally, the :any:`CMAKE_PREFIX_PATH <envvar:CMAKE_PREFIX_PATH>`
     *environment variable* will be used to construct a list of paths. By
@@ -62,19 +68,18 @@ for package metadata.
       :external+cmake:ref:`search procedure` section for full details.
 
   .. tab-item:: pkg-config Package Lookup
-    :sync: pkg-config
 
     The |pkg-config| command-line tool looks for ``.pc`` files in various
     directories, by default relative to the path of the |pkg-config| tool
-    itself. To get the list of directories that your |pkg-config| will search
-    by default, use the following command:
+    itself. To get the list of directories that your |pkg-config| will search by
+    default, use the following command:
 
     .. code-block::
       :caption: Ask |pkg-config| what directories it will search by default
 
       $ pkg-config "pkg-config" --variable="pc_path"
 
-    Additional directories can be specified using the ``PKG_CONFIG_PATH``
+    Additional directories can be specified using the `$PKG_CONFIG_PATH`
     environment variable. Such paths will be searched *before* the default
     |pkg-config| paths.
 
@@ -93,6 +98,8 @@ for package metadata.
 
        __ https://linux.die.net/man/1/pkg-config
 
+
+.. _howto.source-install.choosing-a-prefix:
 
 Choosing a Prefix
 *****************
@@ -136,19 +143,22 @@ unprivileged filesystem location particular to the user account.
     originates in the `XDG base directory`_ specification and the
     `systemd file-hierarchy`_
 
+    Because of its wide-spread use and support in many other tools, this guide
+    recommends using `$HOME/.local` as a user-local installation prefix.
+
   .. tab-item:: Windows
 
     On Windows, there exists a dedicated directory for user-local files in
-    ``~\AppData\Local``. To reference it, expand the :batch:`%LocalAppData%`
-    environment variable. (**Do not** use the :batch:`%AppData%` environment
-    variable.)
+    :batch:`%UserProfile%\\AppData\\Local`. To reference it, expand the
+    :batch:`%LocalAppData%` environment variable. (**Do not** use the
+    :batch:`%AppData%` environment variable!)
 
     Despite this directory existing, it has no prescribed structure that suites
-    our purposes. As with macOS, the choice of user-local installation prefix is
-    arbitrary. This guide *strongly disrecommends* creating additional files and
-    directories directly within the user's home directory.
+    our purposes. The choice of user-local installation prefix is arbitrary.
+    This guide *strongly discourages* creating additional files and directories
+    directly within the user's home directory.
 
-    Consider using :batch:`%LOCALAPPDATA%\\MongoDB` as a prefix for the purposes
+    Consider using :batch:`%LocalAppData%\\MongoDB` as a prefix for the purposes
     of manually installed components.
 
 
@@ -158,7 +168,7 @@ Selecting a System-Wide Installation Prefix
 ===========================================
 
 If you wish to install the |mongo-c-driver| libraries in a directory that is
-visible to all users, there are a few very standard options.
+visible to all users, there are a few standard options.
 
 .. tab-set::
 
@@ -181,7 +191,7 @@ visible to all users, there are a few very standard options.
 
   .. tab-item:: Windows
 
-    It is **discrecommended** to manually install software system-wide on
+    It is **strongly discouraged** to manually install software system-wide on
     Windows. Prefer instead to
     :ref:`use a per-user unprivileged installation prefix <per-user-prefix>`.
 
@@ -197,11 +207,11 @@ Installing with CMake
 After you have successfully configured and built the libraries and have selected
 a suitable `$PREFIX`, you can install the built results. Let the name `$BUILD`
 refer to the directory where you executed the build (this is the directory that
-contains ``CMakeCache.txt``, amongst many other files).
+contains ``CMakeCache.txt``, among many other files).
 
 From a command line, the installation into your chosen `$PREFIX` can be run via
 CMake using the
-:option:`cmake --install subcommand <cmake.--install>`::
+:external:option:`cmake --install subcommand <cmake.--install>`::
 
   $ cmake --install "$BUILD" --prefix "$PREFIX"
 
@@ -209,17 +219,22 @@ CMake using the
 
   If you configured the libraries while using a *multi-config generator* (e.g
   Visual Studio, Xcode), then you will also need to pass the
-  :option:`--config <cmake--install.--config>` command-line option, and must
-  pass the same value for the build configuration which you wish to install.
+  :external:option:`--config <cmake--install.--config>` command-line option, and
+  must pass the value for the build configuration that you wish to install. For
+  any chosen value of `--config` used for installation, you must also have
+  previously executed a :external:option:`cmake --build <cmake.--build>` within
+  that directory with that same `--config` value.
 
 .. note::
 
   If you chose to use a system-wide installation `$PREFIX`, it is possible that
-  you will need to execute the installation as a privileged user.
+  you will need to execute the installation as a privileged user. If you *cannot
+  run* or *do not want to run* the installation as a privileged user, you should
+  instead `use a per-user installation prefix <per-user-prefix_>`_.
 
 .. hint::
 
   It is not necessary to set a |cmvar:CMAKE_INSTALL_PREFIX| if you use the
-  :option:`--prefix <cmake--install.--prefix>` command-line option with
+  :external:option:`--prefix <cmake--install.--prefix>` command-line option with
   `cmake --install`. The `--prefix` option will override whatever was specified
   by |cmvar:CMAKE_INSTALL_PREFIX| when the project was configured.

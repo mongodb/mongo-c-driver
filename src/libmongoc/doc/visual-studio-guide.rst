@@ -24,8 +24,8 @@ Right-click on your console application in the Solution Explorer and select "Pro
   static/msvc-add-include-directories.png
 
 (If you chose a different ``$PREFIX``
-:doc:`when you installed mongo-c-driver </howto/source-install>`, your include
-paths will be different.)
+:ref:`when you installed mongo-c-driver <howto.source-install.choosing-a-prefix>`,
+your include paths will be different.)
 
 Also in the Properties dialog, expand the "Linker" options and choose "Input", and add to the "Additional Dependencies" these libraries:
 

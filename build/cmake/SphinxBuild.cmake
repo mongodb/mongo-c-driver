@@ -33,7 +33,7 @@ function (sphinx_build_html target_name doc_dir)
       set (builder dirhtml)
    else()
       # We use the regular html builder here. This is only used to support file browsing
-      # were "autoindex" semantics are not supplied by the HTTP server
+      # where "autoindex" semantics are not supplied by the HTTP server
       list (TRANSFORM doc_rsts
             REPLACE "^(.+)\\.rst$" "html/\\1.html"
             OUTPUT_VARIABLE doc_htmls)

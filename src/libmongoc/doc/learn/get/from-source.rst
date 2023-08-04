@@ -11,8 +11,12 @@ The easiest way to obtain the source is to download it from
 
 __ https://github.com/mongodb/mongo-c-driver
 
-It is **highly recommended** that new users use a stable released version of the
-driver, rather than building from a development branch.
+.. important::
+
+  It is **highly recommended** that new users use a stable released version of
+  the driver, rather than building from a development branch. When you
+  `git clone` or download an archive of the repository, be sure to specify a
+  release tag (i.e. with Git's `--branch` argument).
 
 .. note::
 
@@ -130,7 +134,7 @@ __ https://cmake.org
   It is *highly recommended* -- but not *required* -- that you download the
   latest stable CMake available for your platform.
 
-.. dropdown:: Getting the Latest CMake …
+.. dropdown:: Getting the Latest CMake
   :class-container: admonition hint
   :class-title: admonition-title
 
@@ -229,7 +233,7 @@ with::
 If configuration failed with an error, refer to the CMake output for error
 messages and information. Ensure that configuration succeeds before proceeding.
 
-.. dropdown:: Aside: What do these CMake arguments mean?
+.. dropdown:: What do these CMake arguments mean?
   :class-container: admonition hint
   :class-title: admonition-title
   :animate: fade-in
@@ -267,7 +271,7 @@ above command fails, then there is likely an error with your environment, or you
 are using an unsupported/untested platform. Refer to the build tool output for
 more information.
 
-.. dropdown:: Aside: The ``--config`` option
+.. dropdown:: The ``--config`` option
   :class-container: admonition hint
   :class-title: admonition-title
   :animate: fade-in
@@ -290,7 +294,7 @@ built results::
 This command will install the |mongo-c-driver| build results into the `$PREFIX`
 directory.
 
-.. dropdown:: Aside: The ``--config`` option
+.. dropdown:: The ``--config`` option
   :class-container: admonition hint
   :class-title: admonition-title
   :animate: fade-in
