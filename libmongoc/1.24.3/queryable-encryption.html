@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-7301842-14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-7301842-14');
+</script>
+<!--  NPS survey -->
+<script type="text/javascript">
+  !function(e,t,r,n,a){if(!e[a]){for(var i=e[a]=[],s=0;s<r.length;s++){var c=r[s];i[c]=i[c]||function(e){return function(){var t=Array.prototype.slice.call(arguments);i.push([e,t])}}(c)}i.SNIPPET_VERSION="1.0.1";var o=t.createElement("script");o.type="text/javascript",o.async=!0,o.src="https://d2yyd1h5u9mauk.cloudfront.net/integrations/web/v1/library/"+n+"/"+a+".js";var l=t.getElementsByTagName("script")[0];l.parentNode.insertBefore(o,l)}}(window,document,["survey","reset","config","init","set","get","event","identify","track","page","screen","group","alias"],"Dk30CC86ba0nATlK","delighted");
+
+  delighted.survey();
+</script>
+<link rel="canonical" href="https://www.mongoc.org/libmongoc/current/queryable-encryption.html"/>
+    <title>Queryable Encryption &#8212; libmongoc 1.24.3</title>
+    <link rel="stylesheet" href="_static/readable.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/readable.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/sphinx_highlight.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api.html" />
+    <link rel="prev" title="Client-Side Field Level Encryption" href="client-side-field-level-encryption.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head><body>
+  
+  
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="api.html" title="API Reference"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="client-side-field-level-encryption.html" title="Client-Side Field Level Encryption"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">libmongoc 1.24.3</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="guides.html" >Guides</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="in-use-encryption.html" accesskey="U">In-Use Encryption</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="queryable-encryption">
+<h1>Queryable Encryption<a class="headerlink" href="#queryable-encryption" title="Permalink to this heading">¶</a></h1>
+<p>Using Queryable Encryption requires MongoDB Server 7.0 or higher.</p>
+<p>See the MongoDB Manual for <a class="reference external" href="https://www.mongodb.com/docs/manual/core/queryable-encryption/">Queryable Encryption</a> for more
+information about the feature.</p>
+<p>API related to the “rangePreview” algorithm is still experimental and subject to breaking changes!</p>
+<section id="queryable-encryption-in-older-mongodb-server-versions">
+<h2>Queryable Encryption in older MongoDB Server versions<a class="headerlink" href="#queryable-encryption-in-older-mongodb-server-versions" title="Permalink to this heading">¶</a></h2>
+<p>MongoDB Server 6.0 introduced Queryable Encryption as a Public Technical
+Preview. MongoDB Server 7.0 includes backwards breaking changes to the Queryable
+Encryption protocol.</p>
+<p>The backwards breaking changes are applied in the client protocol in
+libmongocrypt 1.8.0. libmongoc 1.24.0 requires libmongocrypt 1.8.0 or newer.
+libmongoc 1.24.0 no longer supports Queryable Encryption in MongoDB Server &lt;7.0.
+Using Queryable Encryption libmongoc 1.24.0 and higher requires MongoDB Server
+&gt;=7.0.</p>
+<p>Using Queryable Encryption with libmongocrypt&lt;1.8.0 on a MongoDB Server&gt;=7.0, or
+using libmongocrypt&gt;=1.8.0 on a MongoDB Server&lt;6.0 will result in a server error
+when using the incompatible protocol.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<div class="line-block">
+<div class="line">The MongoDB Manual for <a class="reference external" href="https://www.mongodb.com/docs/manual/core/queryable-encryption/">Queryable Encryption</a></div>
+</div>
+</div>
+</section>
+</section>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver (libmongoc) and BSON library (libbson)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="guides.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="configuring_tls.html">Configuring TLS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc-common-task-examples.html">Common Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced-connections.html">Advanced Connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="connection-pooling.html">Connection Pooling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cursors.html">Cursors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bulk.html">Bulk Write Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregate.html">Aggregation Framework Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distinct-mapreduce.html">“distinct” and “mapReduce”</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visual-studio-guide.html">Using libmongoc in a Microsoft Visual Studio project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manage-collection-indexes.html">Manage Collection Indexes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging.html">Aids for Debugging</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="in-use-encryption.html">In-Use Encryption</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a></li>
+</ul>
+<!-- Because full_index.rst includes everything that index.rst includes, we have to exclude index.rst from the table-of-contents. This page is simply a link forced into the sidebar (in conf.py) to avoid including full_index.rst in the ToC. -->
+<ul><li class='toctree-l1'><a href="full_index.html">Index</a></li></ul>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    &copy; Copyright 2017-present, MongoDB, Inc.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.3.0.
+  </div>
+  
+  </body>
+</html>
