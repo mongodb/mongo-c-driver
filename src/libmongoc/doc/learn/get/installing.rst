@@ -98,7 +98,7 @@ Debian-based Systems
 
 In Debian-based Linux distributions, including Ubuntu and Ubuntu derivatives,
 |libbson| and |libmongoc| are available in the distribution repositories via
-APT, and can be installed as `libbson-dev` and `libmongoc-dev`, resepectively::
+APT, and can be installed as `libbson-dev` and `libmongoc-dev`, respectively::
 
   ## Update repository information, if necessary:
   # apt update

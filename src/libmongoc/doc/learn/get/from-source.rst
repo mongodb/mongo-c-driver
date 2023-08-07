@@ -22,8 +22,8 @@ __ https://github.com/mongodb/mongo-c-driver
 
   In the following examples, `$SOURCE` refers to the directory in which you will
   be placing the |mongo-c-driver| source code, and `$VERSION` refers to the
-  version of the C driver that you are. The current version written for this
-  documentation is |version.pre|.
+  version of the C driver that you are building. The current version written for
+  this documentation is |version.pre|.
 
 .. seealso::
   For the list of supported platforms, refer to the :doc:`/ref/platforms` page.
@@ -88,7 +88,7 @@ several tools, depending on what is available.
       $ wget "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.tar.gz" \
           --output-document="mongo-c-driver-$VERSION.tar.gz"
       ## Extract using tar:
-      $ tar -x -f "mongo-c-driver-$VERSION.tar.gz"
+      $ tar xf "mongo-c-driver-$VERSION.tar.gz"
 
   .. tab-item:: Using ``curl`` + ``tar``
 
@@ -98,7 +98,7 @@ several tools, depending on what is available.
       $ curl "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.tar.gz" \
           --output="mongo-c-driver-$VERSION.tar.gz"
       ## Extract using tar:
-      $ tar -x -f "mongo-c-driver-$VERSION.tar.gz"
+      $ tar xf "mongo-c-driver-$VERSION.tar.gz"
 
   .. tab-item:: Using PowerShell
 
@@ -240,8 +240,8 @@ messages and information. Ensure that configuration succeeds before proceeding.
 
   The `ENABLE_EXTRA_ALIGNMENT` and `ENABLE_AUTOMATIC_INIT_AND_CLEANUP` are part
   of |mongo-c-driver|, and correspond to deprecated features that are only
-  enabled for compatibility purposes. It is highly recommended to disable these
-  features whenever possible.
+  enabled by default for ABI compatibility purposes. It is highly recommended to
+  disable these features whenever possible.
 
   The `ENABLE_MONGOC=FALSE` argument disabled building |libmongoc|. We'll build
   that in the next section.

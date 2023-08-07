@@ -52,7 +52,7 @@ module can be used to spawn a local HTTP server:
 
 .. code-block:: sh
 
-  $ poetry run python -m http.server --directory=_build/docs/libmongoc/html
+  $ poetry run python -m http.server --directory=_build/docs/html
 
 By default, this will serve the documentation at http://127.0.0.1:8000, which
 you can open in any web browser to see the rendered pages.

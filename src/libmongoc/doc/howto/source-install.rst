@@ -49,7 +49,7 @@ metadata.
     directory `$HOME/.local/bin` on your `$PATH`, then the `$HOME/.local`
     directory will also be added to the search path. Having `$HOME/.local/bin`
     on `$PATH` is an increasingly common pattern for many Unix shells, and is
-    recommended if you intend to use a per-user-prefix_ for your installion.
+    recommended if you intend to do use a per-user-prefix_ for your installion.
 
     Additionally, the :any:`CMAKE_PREFIX_PATH <envvar:CMAKE_PREFIX_PATH>`
     *environment variable* will be used to construct a list of paths. By

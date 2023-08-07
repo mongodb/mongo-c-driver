@@ -27,7 +27,7 @@ The following operating systems are continually tested with |mongo-c-driver|:
     - Versions **16.04**, **18.04**, and **20.04**. Subsequent minor releases
       are also supported. Ubuntu **22.04** and newer is not yet tested. Ubuntu
       derivatives based on supported Ubuntu versions are also supported.
-  - - ArchLinux
+  - - Arch Linux
     -
   - - macOS
     - Versions **10.14** and **11.0**
