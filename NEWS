@@ -1,3 +1,19 @@
+libmongoc 1.24.3
+================
+
+Fixes:
+
+  * Fix possible memory leak on SCRAM authentication failure.
+  * Fix possible recursive lock on network error in single-threaded client.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Jeremy Mikola
+  * Roberto C. Sánchez
+
+
+
 libmongoc 1.24.2
 ================
 

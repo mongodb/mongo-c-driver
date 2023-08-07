@@ -1,3 +1,19 @@
+libbson 1.24.3
+==============
+
+Fixes:
+
+  * Fix parsing of `[ { $code: ... } ]` or `[{$dbPointer: ...}]`.
+  * Improve detection Fix use of `strerror_l` 
+  * Fix possible overflow parsing Decimal128 in extJSON with very large exponents
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Joshua Siegel
+  * Ezra Chung
+
+
+
 libbson 1.24.2
 ==============
 
