@@ -24,20 +24,30 @@ function (sphinx_build_html target_name doc_dir)
    set (doctrees_dir "${SPHINX_HTML_DIR}.doctrees")
 
    file (GLOB_RECURSE doc_rsts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS *.rst)
+
+   # Select a builder: The Sphinx `dirhtml` builder will result in "prettier" URLs,
+   # as each page is an `index.html` within a directory. This relies on "autoindex"-style
+   # static file URL resolution in the HTTP server, which is extremely common. For
+   # EVG, however, we host build results on a server that does not support this,
+   # so instead use the traditional HTML builder so that the built documentation
+   # artifact can be easily viewed in a web browser
    set(is_evg_docs_build "$ENV{EVG_DOCS_BUILD}")
    if(NOT is_evg_docs_build)
-      # Every .rst builds two corresponding .html files:
+      set (builder dirhtml)
+      # We have an extension in place that generates stub page redirects for
+      # old HTML file URLs that now point to the auto-index URL for the
+      # corresponding page. As such, every .rst builds two corresponding .html
+      # files:
       list (TRANSFORM doc_rsts
             REPLACE "^(.+)\\.rst$" "html/\\1.html;html/\\1/index.html"
             OUTPUT_VARIABLE doc_htmls)
-      set (builder dirhtml)
    else()
-      # We use the regular html builder here. This is only used to support file browsing
-      # where "autoindex" semantics are not supplied by the HTTP server
+      set (builder html)
+      # We use the regular html builder in this case, which generates exactly
+      # one HTML page for each input rST file
       list (TRANSFORM doc_rsts
             REPLACE "^(.+)\\.rst$" "html/\\1.html"
             OUTPUT_VARIABLE doc_htmls)
-      set (builder html)
    endif()
 
    # Set PYTHONDONTWRITEBYTECODE to prevent .pyc clutter in the source directory
