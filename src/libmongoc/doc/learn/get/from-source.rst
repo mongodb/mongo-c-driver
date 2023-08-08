@@ -62,6 +62,10 @@ command may be used::
 
   $ git clone https://github.com/mongodb/mongo-c-driver.git --branch="$VERSION" "$SOURCE"
 
+.. hint::
+
+  Despite the name, `git-clone`\ 's `--branch` argument may also be used to
+  clone from repository *tags*.
 
 .. _learn.obtaining.archive:
 
@@ -206,7 +210,7 @@ Configuring for |libbson|
 
   If you are building with Xcode [#xcode_env]_ or Visual Studio [#vs_env]_, you
   may need to execute CMake from within a special environment in which the
-  resepective toolchain is available.
+  respective toolchain is available.
 
 Let the name `$BUILD` be the path `$SOURCE/_build`. This will be the directory
 where our built files will be written by CMake.

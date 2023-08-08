@@ -177,7 +177,7 @@ visible to all users, there are a few standard options.
     Using an install `$PREFIX` of ``/usr/local/`` is the primary recommendation
     for all Unix platforms, but this may vary on some obscure systems.
 
-    .. important::
+    .. warning::
 
       **DO NOT** use ``/usr/`` nor ``/`` (the root directory) as a prefix: These
       directories are designed to be carefully managed by the system. The
@@ -191,9 +191,11 @@ visible to all users, there are a few standard options.
 
   .. tab-item:: Windows
 
-    It is **strongly discouraged** to manually install software system-wide on
-    Windows. Prefer instead to
-    :ref:`use a per-user unprivileged installation prefix <per-user-prefix>`.
+    .. warning::
+
+       It is **strongly discouraged** to manually install software system-wide
+       on Windows. Prefer instead to
+       :ref:`use a per-user unprivileged installation prefix <per-user-prefix>`.
 
     If you wish to perform a system-wide installation on Windows, prefer to use
     a named subdirectory of :batch:`%ProgramData%`, which does not require

@@ -39,15 +39,19 @@ html_static_path = ["static"]
 # Sphinx 5.0 disables "std:doc" by default.
 # Many documentation references use :doc:
 intersphinx_disabled_reftypes = []
+# Give the peer 30sec to give us the inventory:
+intersphinx_timeout = 30
 
-# don't fetch libbson's inventory from mongoc.org during build - Debian and
-# Fedora package builds must work offline - maintain a recent copy here
 intersphinx_mapping = {
+    # don't fetch libbson's inventory from mongoc.org during build - Debian and
+    # Fedora package builds must work offline - maintain a recent copy here
     "bson": ("https://www.mongoc.org/libbson/current", "libbson-objects.inv"),
-    # NOTE: Pinned to CMake version here, but is safe to update as new CMake is released.
+    # NOTE: Using a CMake version here, but is safe to update as new CMake is released.
     # This pin version ensures that documentation labels remain stable between builds.
     # When updating, fix any moved/renamed references as applicable.
     "cmake": ("https://cmake.org/cmake/help/v3.27", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master", None),
+    "python": ("https://docs.python.org/3", None),
 }
 
 # -- Options for HTML output ----------------------------------------------
