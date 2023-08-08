@@ -1526,6 +1526,23 @@ mongoc_uri_finalize_directconnection (mongoc_uri_t *uri, bson_error_t *error)
    return true;
 }
 
+static void
+mongoc_uri_check_for_genuine_hosts (const char *hosts)
+{
+   char *hosts_lowercase = lowercase_str_new (hosts);
+
+   if (strstr (hosts_lowercase, ".cosmos.azure.com")) {
+      MONGOC_INFO ("Azure Cosmos DB is not genuine");
+   }
+
+   if (strstr (hosts_lowercase, ".docdb.amazonaws.com") ||
+       strstr (hosts_lowercase, ".docdb-elastic.amazonaws.com")) {
+      MONGOC_INFO ("Amazon DocumentDB is not genuine");
+   }
+
+   bson_free (hosts_lowercase);
+}
+
 static bool
 mongoc_uri_parse_before_slash (mongoc_uri_t *uri,
                                const char *before_slash,
@@ -1550,6 +1567,8 @@ mongoc_uri_parse_before_slash (mongoc_uri_t *uri,
    } else {
       hosts = before_slash;
    }
+
+   mongoc_uri_check_for_genuine_hosts (hosts);
 
    if (uri->is_srv) {
       if (!mongoc_uri_parse_srv (uri, hosts, error)) {

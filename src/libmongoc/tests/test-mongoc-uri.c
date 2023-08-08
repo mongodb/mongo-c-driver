@@ -2740,6 +2740,72 @@ test_casing_options (void)
    mongoc_uri_destroy (uri);
 }
 
+
+static void
+test_check_for_genuine_hosts (void)
+{
+   mongoc_uri_t *uri;
+   int i;
+
+   const char *cosmos_hosts[] = {
+      "mongodb://x:y@compass-serverless.mongo.cosmos.azure.com:19555/"
+      "?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@compass-"
+      "serverless@",
+      "mongodb://x:y@compass.mongo.cosmos.azure.com:19555/"
+      "?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@compass@",
+      "mongodb+srv://x:y@compass-vcore.mongocluster.cosmos.azure.com/"
+      "?retrywrites=false&maxIdleTimeMS=120000",
+   };
+
+   const char *docdb_hosts[] = {
+      "mongodb://"
+      "x:y@docdb-2001-01-01-01-01-01.cluster-abc.eu-central-1.docdb.amazonaws."
+      "com:27017/"
+      "?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false",
+      "mongodb://"
+      "x:y@elastic-docdb-123456789.eu-central-1.docdb-elastic.amazonaws.com:"
+      "27017",
+   };
+
+   const char *genuine_hosts[] = {
+      "mongodb://"
+      "mongodb0.example.com:27017,mongodb1.example.com:27017,mongodb2.example."
+      "com:27017/?replicaSet=myRepl",
+      "mongodb+srv://server.example.com/",
+      "mongodb://xyz456-shard-00-00.ab123.mongodb.net:27017",
+      "mongodb+srv://xyz456.ab123.mongodb.net",
+   };
+
+   for (i = 0; i < sizeof (cosmos_hosts) / sizeof (const char *); i++) {
+      capture_logs (true);
+      uri = mongoc_uri_new (cosmos_hosts[i]);
+      ASSERT (uri);
+      ASSERT_CAPTURED_LOG ("mongoc_uri_check_for_genuine_hosts",
+                           MONGOC_LOG_LEVEL_INFO,
+                           "Azure Cosmos DB is not genuine");
+      mongoc_uri_destroy (uri);
+   }
+
+   for (i = 0; i < sizeof (docdb_hosts) / sizeof (const char *); i++) {
+      capture_logs (true);
+      uri = mongoc_uri_new (docdb_hosts[i]);
+      ASSERT (uri);
+      ASSERT_CAPTURED_LOG ("mongoc_uri_check_for_genuine_hosts",
+                           MONGOC_LOG_LEVEL_INFO,
+                           "Amazon DocumentDB is not genuine");
+      mongoc_uri_destroy (uri);
+   }
+
+   for (i = 0; i < sizeof (genuine_hosts) / sizeof (const char *); i++) {
+      capture_logs (true);
+      uri = mongoc_uri_new (genuine_hosts[i]);
+      ASSERT (uri);
+      ASSERT_NO_CAPTURED_LOGS ("mongoc_uri_check_for_genuine_hosts");
+      mongoc_uri_destroy (uri);
+   }
+}
+
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -2774,4 +2840,6 @@ test_uri_install (TestSuite *suite)
                   "/Uri/one_tls_option_enables_tls",
                   test_one_tls_option_enables_tls);
    TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
+   TestSuite_Add (
+      suite, "/Uri/check_for_genuine_hosts", test_check_for_genuine_hosts);
 }
