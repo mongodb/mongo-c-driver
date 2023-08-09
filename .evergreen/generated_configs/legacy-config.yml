@@ -14655,8 +14655,6 @@ buildvariants:
   - name: rpm-package-build
     distros:
     - rhel90-arm64-small
-  tags:
-  - pr-merge-gate
 - name: versioned-api
   display_name: Versioned API Tests
   run_on: ubuntu1804-test
