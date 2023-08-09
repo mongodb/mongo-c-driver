@@ -3,9 +3,7 @@ Author: Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>
 Forwarded: not-needed
 --- a/src/libmongoc/doc/conf.py
 +++ b/src/libmongoc/doc/conf.py
-@@ -17,6 +17,8 @@ extensions = [
-     "sphinx.ext.intersphinx",
- ]
+@@ -30,4 +30,6 @@ ]
 
 +mathjax_path = "file:///usr/share/javascript/mathjax/MathJax.js"
 +
