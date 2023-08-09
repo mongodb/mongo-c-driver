@@ -60,7 +60,10 @@ kms_encrypt_request_new (const uint8_t *plaintext,
    payload = kms_request_str_new ();
    kms_request_str_appendf (
       payload, "{\"Plaintext\": \"%s\", \"KeyId\": \"%s\"}", b64, key_id);
-   kms_request_append_payload (request, payload->str, payload->len);
+   if (!kms_request_append_payload (request, payload->str, payload->len)) {
+      KMS_ERROR (request, "Could not append payload");
+      goto done;
+   }
 
 done:
    free (b64);

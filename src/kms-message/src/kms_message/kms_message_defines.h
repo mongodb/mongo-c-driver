@@ -63,4 +63,10 @@ typedef SSIZE_T ssize_t;
 #pragma warning(default : 4142)
 #endif
 
+#if defined(_MSC_VER)
+#define KMS_MSG_INLINE __inline
+#else
+#define KMS_MSG_INLINE __inline__
+#endif
+
 #endif /* KMS_MESSAGE_DEFINES_H */

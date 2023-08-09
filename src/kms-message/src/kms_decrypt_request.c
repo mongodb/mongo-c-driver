@@ -59,7 +59,10 @@ kms_decrypt_request_new (const uint8_t *ciphertext_blob,
 
    payload = kms_request_str_new ();
    kms_request_str_appendf (payload, "{\"CiphertextBlob\": \"%s\"}", b64);
-   kms_request_append_payload (request, payload->str, payload->len);
+   if (!kms_request_append_payload (request, payload->str, payload->len)) {
+      KMS_ERROR (request, "Could not append payload");
+      goto done;
+   }
 
 done:
    free (b64);
