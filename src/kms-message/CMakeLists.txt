@@ -15,6 +15,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_message/kms_b64.h
    src/hexlify.c
    src/hexlify.h
+   src/kms_azure_request.c
    src/kms_crypto.h
    src/kms_crypto_none.c
    src/kms_crypto_windows.c
@@ -23,13 +24,20 @@ set (KMS_MESSAGE_SOURCES
    src/kms_caller_identity_request.c
    src/kms_decrypt_request.c
    src/kms_encrypt_request.c
+   src/kms_gcp_request.c
+   src/kms_kmip_reader_writer.c
+   src/kms_kmip_request.c
+   src/kms_kmip_response.c
+   src/kms_kmip_response_parser.c
    src/kms_kv_list.c
    src/kms_kv_list.h
    src/kms_message.c
    src/kms_port.c
+   src/kms_message/kms_azure_request.h
    src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
    src/kms_message/kms_encrypt_request.h
+   src/kms_message/kms_gcp_request.h
    src/kms_message/kms_message.h
    src/kms_message/kms_request.h
    src/kms_message/kms_request_opt.h
@@ -63,6 +71,24 @@ else()
          "KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO")
 endif()
 
+include (CheckSymbolExists)
+CHECK_SYMBOL_EXISTS (gmtime_r time.h KMS_MESSAGE_HAVE_GMTIME_R)
+if (KMS_MESSAGE_HAVE_GMTIME_R)
+   set (KMS_MESSAGE_DEFINITIONS
+         ${KMS_MESSAGE_DEFINITIONS}
+         "KMS_MESSAGE_HAVE_GMTIME_R")
+endif ()
+
+include (TestBigEndian)
+TEST_BIG_ENDIAN (KMS_BIG_ENDIAN)
+if (KMS_BIG_ENDIAN)
+   message ("Detected byte order: big endian")
+   set (KMS_MESSAGE_DEFINITIONS ${KMS_MESSAGE_DEFINITIONS} "KMS_MESSAGE_BIG_ENDIAN")
+else ()
+   message ("Detected byte order: little endian")
+   set (KMS_MESSAGE_DEFINITIONS ${KMS_MESSAGE_DEFINITIONS} "KMS_MESSAGE_LITTLE_ENDIAN")
+endif ()
+
 add_library (
    kms_message SHARED
    ${KMS_MESSAGE_SOURCES}
@@ -73,17 +99,26 @@ add_library (
    ${KMS_MESSAGE_SOURCES}
 )
 
+string(FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
+if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
+   target_compile_options (kms_message_static PUBLIC -fPIC)
+   message ("Adding -fPIC to compilation of kms_message_static components")
+endif ()
+
 add_library (
    kms_message_obj OBJECT
    ${KMS_MESSAGE_SOURCES}
 )
 
+target_compile_definitions (kms_message_obj PRIVATE ${KMS_MESSAGE_DEFINITIONS})
+
 if (NOT DISABLE_NATIVE_CRYPTO)
    if (WIN32)
-      target_link_libraries(kms_message "bcrypt")
-      target_link_libraries(kms_message_static "bcrypt")
+      target_link_libraries(kms_message "bcrypt" "crypt32")
+      target_link_libraries(kms_message_static "bcrypt" "crypt32")
    elseif (APPLE)
-      # Nothing
+      target_link_libraries (kms_message "-framework Security -framework CoreFoundation")
+      target_link_libraries (kms_message_static "-framework Security -framework CoreFoundation")
    else()
       include (FindOpenSSL)
       target_link_libraries(kms_message "${OPENSSL_LIBRARIES}")
@@ -94,12 +129,12 @@ if (NOT DISABLE_NATIVE_CRYPTO)
 endif ()
 
 if ( CMAKE_COMPILER_IS_GNUCC )
-    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -Wsign-compare -Werror")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wno-unused-function -Wsign-compare")
 endif()
 if ( MSVC )
     # W4273 - inconsistent dll linkage
     # W4996 - POSIX name for this item is deprecated
-    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4273 /wd4996 /D_CRT_SECURE_NO_WARNINGS /WX")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} /W3 /wd4273 /wd4996 /D_CRT_SECURE_NO_WARNINGS")
 endif()
 
 set_target_properties (kms_message PROPERTIES
@@ -144,12 +179,17 @@ install (
 
 install (
    FILES
+   src/kms_message/kms_azure_request.h
    src/kms_message/kms_b64.h
    src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
    src/kms_message/kms_encrypt_request.h
+   src/kms_message/kms_gcp_request.h
    src/kms_message/kms_message.h
    src/kms_message/kms_message_defines.h
+   src/kms_message/kms_kmip_request.h
+   src/kms_message/kms_kmip_response.h
+   src/kms_message/kms_kmip_response_parser.h
    src/kms_message/kms_request.h
    src/kms_message/kms_request_opt.h
    src/kms_message/kms_response.h
@@ -211,17 +251,63 @@ if (NOT DISABLE_NATIVE_CRYPTO)
       test_kms_request
       ${KMS_MESSAGE_SOURCES}
       test/test_kms_request.c
+      test/test_kmip_reader_writer.c
+      test/test_kms_util.c
+      test/test_kms_kmip_request.c
+      test/test_kms_kmip_response_parser.c
+      test/test_kms_kmip_response.c
    )
-   target_include_directories(test_kms_request PRIVATE  ${PROJECT_SOURCE_DIR})
+   target_include_directories(test_kms_request PRIVATE ${PROJECT_SOURCE_DIR}/src)
    target_compile_definitions(test_kms_request PRIVATE ${KMS_MESSAGE_DEFINITIONS})
 
    if (WIN32)
-      target_link_libraries(test_kms_request "bcrypt")
+      target_link_libraries(test_kms_request "bcrypt" "crypt32")
    elseif (APPLE)
-      # Nothing
+      target_link_libraries (test_kms_request "-framework Security -framework CoreFoundation")
    else()
       include (FindOpenSSL)
       target_link_libraries(test_kms_request "${OPENSSL_LIBRARIES}")
       target_include_directories(test_kms_request SYSTEM PRIVATE "${OPENSSL_INCLUDE_DIR}")
    endif()
+
+   add_test (
+      NAME test_kms_request
+      COMMAND test_kms_request
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+   )
+endif ()
+
+# build online_tests if OpenSSL is available (to create TLS connections).
+if(DISABLE_NATIVE_CRYPTO)
+   message ("test_kms_azure_online target disabled: Not building with native crypto.")
+elseif(ENABLE_ONLINE_TESTS)
+   add_executable(test_kms_azure_online test/test_kms_azure_online.c test/test_kms_util.c test/test_kms_online_util.c)
+   target_include_directories(test_kms_azure_online PRIVATE ${PROJECT_SOURCE_DIR}/src)
+   target_compile_definitions(test_kms_azure_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})
+   target_link_libraries(test_kms_azure_online _mongocrypt::mongoc)
+   target_link_libraries(test_kms_azure_online kms_message_static)
+   add_test (
+      NAME test_kms_azure_online
+      COMMAND test_kms_azure_online
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+   )
+
+   add_executable(test_kms_gcp_online test/test_kms_gcp_online.c test/test_kms_util.c test/test_kms_online_util.c)
+   target_include_directories(test_kms_gcp_online PRIVATE ${PROJECT_SOURCE_DIR}/src)
+   target_compile_definitions(test_kms_gcp_online PRIVATE ${KMS_MESSAGE_DEFINITIONS})
+   target_link_libraries(test_kms_gcp_online _mongocrypt::mongoc)
+   target_link_libraries(test_kms_gcp_online kms_message_static)
+   add_test (
+      NAME test_kms_gcp_online
+      COMMAND test_kms_gcp_online
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+   )
+   set_tests_properties (
+      test_kms_gcp_online test_kms_azure_online
+      PROPERTIES
+      SKIP_REGULAR_EXPRESSION "@@ctest-skip@@"
+      # Older CMake (<3.16) does not support skipping via regex, so we'll use the
+      # less-expressive skip-retcode.
+      SKIP_RETURN_CODE 2
+   )
 endif ()

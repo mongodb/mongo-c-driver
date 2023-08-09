@@ -41,12 +41,13 @@
  */
 
 #include <ctype.h>
-#include "kms_message/kms_message.h"
-#include "kms_message/kms_b64.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define Assert(Cond) \
-   if (!(Cond))      \
-   abort ()
+#include "kms_message/kms_b64.h"
+#include "kms_message/kms_message.h"
+#include "kms_message_private.h"
 
 static const char Base64[] =
    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -132,13 +133,13 @@ kms_message_b64_ntop (uint8_t const *src,
       srclength -= 3;
 
       output[0] = input[0] >> 2;
-      output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
-      output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
+      output[1] = (uint8_t) (((input[0] & 0x03) << 4) + (input[1] >> 4));
+      output[2] = (uint8_t) (((input[1] & 0x0f) << 2) + (input[2] >> 6));
       output[3] = input[2] & 0x3f;
-      Assert (output[0] < 64);
-      Assert (output[1] < 64);
-      Assert (output[2] < 64);
-      Assert (output[3] < 64);
+      KMS_ASSERT (output[0] < 64);
+      KMS_ASSERT (output[1] < 64);
+      KMS_ASSERT (output[2] < 64);
+      KMS_ASSERT (output[3] < 64);
 
       if (datalength + 4 > targsize) {
          return -1;
@@ -158,11 +159,11 @@ kms_message_b64_ntop (uint8_t const *src,
          input[i] = *src++;
       }
       output[0] = input[0] >> 2;
-      output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
-      output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
-      Assert (output[0] < 64);
-      Assert (output[1] < 64);
-      Assert (output[2] < 64);
+      output[1] = (uint8_t) (((input[0] & 0x03) << 4) + (input[1] >> 4));
+      output[2] = (uint8_t) (((input[1] & 0x0f) << 2) + (input[2] >> 6));
+      KMS_ASSERT (output[0] < 64);
+      KMS_ASSERT (output[1] < 64);
+      KMS_ASSERT (output[2] < 64);
 
       if (datalength + 4 > targsize) {
          return -1;
@@ -263,7 +264,7 @@ static const uint8_t b64rmap_invalid = 0xff;
 void
 kms_message_b64_initialize_rmap (void)
 {
-   int i;
+   uint16_t i;
    unsigned char ch;
 
    /* Null: end of string, stop parsing */
@@ -284,7 +285,7 @@ kms_message_b64_initialize_rmap (void)
 
    /* Fill reverse mapping for base64 chars */
    for (i = 0; Base64[i] != '\0'; ++i)
-      b64rmap[(uint8_t) Base64[i]] = i;
+      b64rmap[(uint8_t) Base64[i]] = (uint8_t) i;
 }
 
 static int
@@ -315,14 +316,14 @@ b64_pton_do (char const *src, uint8_t *target, size_t targsize)
       case 0:
          if ((size_t) tarindex >= targsize)
             return (-1);
-         target[tarindex] = ofs << 2;
+         target[tarindex] = (uint8_t) (ofs << 2);
          state = 1;
          break;
       case 1:
          if ((size_t) tarindex + 1 >= targsize)
             return (-1);
          target[tarindex] |= ofs >> 4;
-         target[tarindex + 1] = (ofs & 0x0f) << 4;
+         target[tarindex + 1] = (uint8_t) ((ofs & 0x0f) << 4);
          tarindex++;
          state = 2;
          break;
@@ -330,7 +331,7 @@ b64_pton_do (char const *src, uint8_t *target, size_t targsize)
          if ((size_t) tarindex + 1 >= targsize)
             return (-1);
          target[tarindex] |= ofs >> 2;
-         target[tarindex + 1] = (ofs & 0x03) << 6;
+         target[tarindex + 1] = (uint8_t) ((ofs & 0x03) << 6);
          tarindex++;
          state = 3;
          break;
@@ -504,4 +505,150 @@ kms_message_b64_pton (char const *src, uint8_t *target, size_t targsize)
       return b64_pton_do (src, target, targsize);
    else
       return b64_pton_len (src);
+}
+
+int
+kms_message_b64_to_b64url (const char *src,
+                           size_t srclength,
+                           char *target,
+                           size_t targsize)
+{
+   size_t i;
+
+   for (i = 0; i < srclength; i++) {
+      if (i >= targsize) {
+         return -1;
+      }
+
+      target[i] = src[i];
+      if (target[i] == '+') {
+         target[i] = '-';
+      } else if (target[i] == '/') {
+         target[i] = '_';
+      }
+   }
+
+   /* NULL terminate if room. */
+   if (i < targsize) {
+      target[i] = '\0';
+   }
+
+   return (int) i;
+}
+
+int
+kms_message_b64url_to_b64 (const char *src,
+                           size_t srclength,
+                           char *target,
+                           size_t targsize)
+{
+   size_t i;
+   size_t boundary;
+
+   for (i = 0; i < srclength; i++) {
+      if (i >= targsize) {
+         return -1;
+      }
+
+      target[i] = src[i];
+      if (target[i] == '-') {
+         target[i] = '+';
+      } else if (target[i] == '_') {
+         target[i] = '/';
+      }
+   }
+
+   /* Pad to four byte boundary. */
+   boundary = 4 * ((i + 3) / 4);
+   for (; i < boundary; i++) {
+      if (i >= targsize) {
+         return -1;
+      }
+      target[i] = '=';
+   }
+
+   /* NULL terminate if room. */
+   if (i < targsize) {
+      target[i] = '\0';
+   }
+
+   return (int) i;
+}
+
+char *
+kms_message_raw_to_b64 (const uint8_t *raw, size_t raw_len)
+{
+   char *b64;
+   size_t b64_len;
+
+   b64_len = (raw_len / 3 + 1) * 4 + 1;
+   b64 = malloc (b64_len);
+   memset (b64, 0, b64_len);
+   if (-1 == kms_message_b64_ntop (raw, raw_len, b64, b64_len)) {
+      free (b64);
+      return NULL;
+   }
+   return b64;
+}
+
+uint8_t *
+kms_message_b64_to_raw (const char *b64, size_t *out)
+{
+   uint8_t *raw;
+   int ret;
+   size_t b64len;
+
+   b64len = strlen (b64);
+   raw = (uint8_t *) malloc (b64len + 1);
+   memset (raw, 0, b64len + 1);
+   ret = kms_message_b64_pton (b64, raw, b64len);
+   if (ret > 0) {
+      *out = (size_t) ret;
+      return raw;
+   }
+   free (raw);
+   return NULL;
+}
+
+char *
+kms_message_raw_to_b64url (const uint8_t *raw, size_t raw_len)
+{
+   char *b64;
+   size_t b64len;
+
+   b64 = kms_message_raw_to_b64 (raw, raw_len);
+   if (!b64) {
+      return NULL;
+   }
+
+   b64len = strlen (b64);
+   if (-1 == kms_message_b64_to_b64url (b64, b64len, b64, b64len)) {
+      free (b64);
+      return NULL;
+   }
+
+   return b64;
+}
+
+uint8_t *
+kms_message_b64url_to_raw (const char *b64url, size_t *out)
+{
+   char *b64;
+   size_t capacity;
+   uint8_t *raw;
+   size_t b64urllen;
+
+   b64urllen = strlen(b64url);
+   /* Add four for padding '=' characters. */
+   capacity = b64urllen + 4;
+   b64 = malloc (capacity);
+   memset (b64, 0, capacity);
+   if (-1 ==
+       kms_message_b64url_to_b64 (b64url, b64urllen, b64, capacity)) {
+      free (b64);
+      return NULL;
+   }
+   raw = kms_message_b64_to_raw (b64, out);
+   free (b64);
+   return raw;
 }
