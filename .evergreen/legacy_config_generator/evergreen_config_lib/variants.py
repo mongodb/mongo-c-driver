@@ -482,9 +482,7 @@ all_variants = [
             OD([("name", "rpm-package-build"), ("distros", ["rhel90-arm64-small"])]),
         ],
         {},
-        # TODO: These tasks are disabled as a PR gate, pending upstream packages of sphinxcontrib-moderncmakedomain,
-        # TODO: which is used in the documentation build.
-        # tags=["pr-merge-gate"],
+        tags=["pr-merge-gate"],
     ),
     Variant(
         "versioned-api",
