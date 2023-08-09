@@ -19,7 +19,6 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 sphinx = "^7.1.1"
 furo = "^2023.5.20"
-sphinxcontrib-moderncmakedomain = "^3.27.0"
 sphinx-design = "^0.5.0"
 
 [tool.poetry.group.dev]

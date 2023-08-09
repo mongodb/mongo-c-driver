@@ -15,7 +15,13 @@ from mongoc_common import *
 extensions = [
     "mongoc",
     "sphinx.ext.intersphinx",
-    "sphinxcontrib.moderncmakedomain",
+    # NOTE: We use our own "minimal" CMake domain that lets us refer to external
+    # objects from the CMake inventory, but provides no other features. The
+    # build *could* otherwise use sphinxcontrib-moderncmakedomain, which is
+    # more full-featured, but it is not (currently) available in repositories for
+    # package building.
+    # "sphinxcontrib.moderncmakedomain",
+    "cmakerefdomain",
     "sphinx_design",
     "sphinx.ext.mathjax",
 ]
