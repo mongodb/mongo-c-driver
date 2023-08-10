@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
+import http.client
 import os.path
 import sys
+import urllib.request
+from pathlib import Path
 from typing import Any
 
 from sphinx.application import Sphinx
+from sphinx.application import logger as sphinx_log
+from sphinx.config import Config
 
 # Ensure we can import "mongoc" extension module.
 this_path = os.path.dirname(__file__)
@@ -49,16 +54,49 @@ intersphinx_disabled_reftypes = []
 intersphinx_timeout = 30
 
 intersphinx_mapping = {
-    # don't fetch libbson's inventory from mongoc.org during build - Debian and
-    # Fedora package builds must work offline - maintain a recent copy here
-    "bson": ("https://www.mongoc.org/libbson/current", "libbson-objects.inv"),
-    # NOTE: Using a CMake version here, but is safe to update as new CMake is released.
-    # This pin version ensures that documentation labels remain stable between builds.
-    # When updating, fix any moved/renamed references as applicable.
-    "cmake": ("https://cmake.org/cmake/help/v3.27", None),
-    "sphinx": ("https://www.sphinx-doc.org/en/master", None),
-    "python": ("https://docs.python.org/3", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master", "includes/sphinx.inv"),
+    "python": ("https://docs.python.org/3", "includes/python.inv"),
+    "bson": ("https://www.mongoc.org/libbson/current", "includes/libbson.inv"),
+    "cmake": ("https://cmake.org/cmake/help/latest", "includes/cmake.inv"),
 }
+
+_UPDATE_KEY = "update_external_inventories"
+
+
+def _maybe_update_inventories(app: Sphinx, config: Config):
+    """
+    We save Sphinx inventories for external projects saved within our own project
+    so that we can support fully-offline builds. This is a convenience function
+    to update those inventories automatically.
+
+    This function will only have an effect if the appropriate command-line config
+    value is defined.
+    """
+    prefix = "[libmongoc/doc/conf.py]"
+    if not config[_UPDATE_KEY]:
+        sphinx_log.info(
+            "%s Using existing intersphinx inventories. Refresh by running with ‘-D %s=1’",
+            prefix,
+            _UPDATE_KEY,
+        )
+        return
+    for name, tup in intersphinx_mapping.items():
+        urlbase, filename = tup
+        url = f"{urlbase}/objects.inv"
+        sphinx_log.info("%s Downloading external inventory for %s from [%s]", prefix, name, url)
+        with urllib.request.urlopen(url) as req:
+            req: http.client.HTTPResponse = req
+            dest = Path(app.srcdir) / filename
+            sphinx_log.info("%s Saving inventory [%s] to file [%s]", prefix, url, dest)
+            with dest.open("wb") as out:
+                while buf := req.read(1024 * 4):
+                    out.write(buf)
+        sphinx_log.info(
+            "%s Inventory file [%s] was updated. Commit the result to save it for subsequent builds.",
+            prefix,
+            dest,
+        )
+
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -140,3 +178,6 @@ def setup(app: Sphinx):
     mongoc_common_setup(app)
     app.connect("html-page-context", add_canonical_link)
     app.add_css_file("styles.css")
+    app.connect("config-inited", _maybe_update_inventories)
+    app.add_config_value(_UPDATE_KEY, default=False, rebuild=True, types=[bool])
+
