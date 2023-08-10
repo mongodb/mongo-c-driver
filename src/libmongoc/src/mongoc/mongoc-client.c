@@ -1212,7 +1212,9 @@ mongoc_client_destroy (mongoc_client_t *client)
 #ifdef MONGOC_ENABLE_SSL
       _mongoc_ssl_opts_cleanup (&client->ssl_opts, true);
 #endif
-
+      if (client->scram_cache) {
+         _mongoc_scram_cache_destroy_v2 (client->scram_cache);
+      }
       bson_free (client);
 
       mongoc_counter_clients_active_dec ();

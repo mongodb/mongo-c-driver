@@ -689,6 +689,12 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
          mc_tpld_unsafe_get_const (topology));
    }
 
+   bson_shared_mutex_lock (&topology->scram_cache_rw_lock);
+   if (topology->scram_cache) {
+      _mongoc_scram_cache_destroy_v2 (topology->scram_cache);
+   }
+   bson_shared_mutex_unlock (&topology->scram_cache_rw_lock);
+
    mongoc_uri_destroy (topology->uri);
    mongoc_shared_ptr_reset_null (&topology->_shared_descr_._sptr_);
    mongoc_topology_scanner_destroy (topology->scanner);

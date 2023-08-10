@@ -4291,10 +4291,6 @@ test_scram_cache (void)
    ASSERT (client_a->scram_cache->iterations ==
            client_b->scram_cache->iterations);
 
-   _mongoc_scram_cache_destroy_v2 (client_a->scram_cache);
-   _mongoc_scram_cache_destroy_v2 (client_b->scram_cache);
-   _mongoc_scram_cache_destroy_v2 (topology_a->scram_cache);
-
    mongoc_client_pool_push (pool, client_a);
    mongoc_client_pool_push (pool, client_b);
    mongoc_client_pool_destroy (pool);
@@ -4318,22 +4314,19 @@ static void
 test_scram_cache_check_iterations (void)
 {
    mongoc_client_pool_t *pool;
-   pthread_t threads[100];
+   pthread_t threads[99];
    void *ret;
 
    pool = test_framework_new_default_client_pool ();
 
-   for (int i = 0; i < 100; ++i) {
+   for (int i = 0; i < 99; ++i) {
       pthread_create (&threads[i], NULL, thread_get_cache, pool);
    }
 
-   for (int i = 0; i < 100; ++i) {
+   for (int i = 0; i < 99; ++i) {
       pthread_join (threads[i], &ret);
    }
 
-   mongoc_client_t *client = mongoc_client_pool_pop (pool);
-   _mongoc_scram_cache_destroy_v2 (client->topology->scram_cache);
-   mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
 }
 
