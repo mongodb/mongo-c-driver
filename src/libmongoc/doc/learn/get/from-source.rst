@@ -5,28 +5,44 @@ Building the C Driver Libraries from Source
 .. highlight:: shell-session
 .. default-role:: bash
 
-To build the C driver from source, one first needs to obtain the source code.
-The easiest way to obtain the source is to download it from
-`the official GitHub repository`__.
+This page details how to download, unpack, configure, and build |libbson| and
+|libmongoc| from their original source-code form.
 
-__ https://github.com/mongodb/mongo-c-driver
+.. ad-dropdown:: Extra information
+  :admonition: hint
+  :open:
 
-.. important::
+  Dropdowns (like this one) contain extra information and explanatory details
+  that are not required to complete the tutorial, but may be helpful for curious
+  readers, and more advanced users that want an explanation of the meaning of
+  certain tutorial steps.
 
-  It is **highly recommended** that new users use a stable released version of
-  the driver, rather than building from a development branch. When you
-  `git clone` or download an archive of the repository, be sure to specify a
-  release tag (i.e. with Git's `--branch` argument).
-
-.. note::
-
-  In the following examples, `$SOURCE` refers to the directory in which you will
-  be placing the |mongo-c-driver| source code, and `$VERSION` refers to the
-  version of the C driver that you are building. The current version written for
-  this documentation is |version.pre|.
+The following page uses a few named "variables" that you must decide up-front.
+When you see such a value referrenced in a tutorial step, you should substitute
+the value into that step.
 
 .. seealso::
-  For the list of supported platforms, refer to the :doc:`/ref/platforms` page.
+
+  Before building, you may want to check that you are running on a supported
+  platform. For the list of supported platforms, refer to the
+  :doc:`/ref/platforms` page.
+
+
+Choose a Version
+****************
+
+Before we begin, know what version of |mongo-c-driver| you will be downloading.
+A list of available versions can be found on
+`the GitHub repository tags page`__. (The current version written for this
+documentation is |version.pre|.)
+
+__ https://github.com/mongodb/mongo-c-driver/tags
+
+For the remainder of this page, `$VERSION` will refer to the version number of
+|mongo-c-driver| that you will be building for this tutorial.
+
+
+.. _get-src:
 
 Obtaining the Source
 ********************
@@ -34,20 +50,18 @@ Obtaining the Source
 There are two primary recommended methods of obtaining the |mongo-c-driver|
 source code:
 
-1. Clone the repository using `git`. :ref:`(See below) <learn.obtaining.git>`
-
-   - This is useful if you wish to view the version history, test unreleased
-     features/fixes, or contribute to the codebase.
-   - This is straightforward and an equivalent process across all platforms.
+1. Clone the repository using `git` (recommended).
+   :ref:`(See below) <learn.obtaining.git>`
 
 2. Download a source archive at a specific version.
    :ref:`(See below) <learn.obtaining.archive>`
 
-   - This is useful without needing to have `git` available and can be done
-     using only built-in programs that ship with most major operating systems,
-     but requires a slightly different process between platforms.
-   - The download is smaller and stored in a single file.
+.. important::
 
+  It is **highly recommended** that new users use a stable released version of
+  the driver, rather than building from a development branch. When you
+  `git clone` or download an archive of the repository, be sure to specify a
+  release tag (e.g. with Git's `--branch` argument).
 
 .. _learn.obtaining.git:
 
@@ -55,14 +69,13 @@ Downloading Using Git
 =====================
 
 Using Git, the C driver repository can be cloned from the GitHub URL
-``https://github.com/mongodb/mongo-c-driver.git``. Git tags for released
-versions are named after the version for which they correspond (e.g.
-"|version.pre|"). To clone the repository using the command line, the following
-command may be used::
+https://github.com/mongodb/mongo-c-driver.git. Git tags for released versions
+are named after the version for which they correspond (e.g. "|version.pre|"). To
+clone the repository using the command line, the following command may be used::
 
   $ git clone https://github.com/mongodb/mongo-c-driver.git --branch="$VERSION" "$SOURCE"
 
-.. hint::
+.. tip::
 
   Despite the name, `git-clone`\ 's `--branch` argument may also be used to
   clone from repository *tags*.
@@ -74,17 +87,13 @@ Downloading a Release Archive
 
 An archived snapshot of the repository can be obtained from the
 `GitHub Releases Page`__. The ``mongo-c-driver-x.y.z.tar.gz`` archive attached
-to any release contains a minimal version of the repository with only the files
-necessary to build the driver binaries.
+to any release contains the minimal set of files that you'll need for the build.
 
 __ https://github.com/mongodb/mongo-c-driver/releases
 
-The archive can be downloaded and extracted from a command line using one of
-several tools, depending on what is available.
-
 .. tab-set::
 
-  .. tab-item:: Using ``wget`` + ``tar``
+  .. tab-item:: ``wget`` + ``tar``
 
     ::
 
@@ -94,7 +103,7 @@ several tools, depending on what is available.
       ## Extract using tar:
       $ tar xf "mongo-c-driver-$VERSION.tar.gz"
 
-  .. tab-item:: Using ``curl`` + ``tar``
+  .. tab-item:: ``curl`` + ``tar``
 
     ::
 
@@ -104,7 +113,7 @@ several tools, depending on what is available.
       ## Extract using tar:
       $ tar xf "mongo-c-driver-$VERSION.tar.gz"
 
-  .. tab-item:: Using PowerShell
+  .. tab-item:: PowerShell
 
     .. code-block:: pwsh
 
@@ -138,9 +147,8 @@ __ https://cmake.org
   It is *highly recommended* -- but not *required* -- that you download the
   latest stable CMake available for your platform.
 
-.. dropdown:: Getting the Latest CMake
-  :class-container: admonition hint
-  :class-title: admonition-title
+.. ad-dropdown:: Getting the Latest CMake
+  :admonition: hint
 
   A new stable release of CMake can be obtained from
   `the CMake downloads page`__.
@@ -218,6 +226,7 @@ the project with both |libbson| and |libmongoc|::
     -D ENABLE_EXTRA_ALIGNMENT=OFF \
     -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
     -D CMAKE_BUILD_TYPE=RelWithDebInfo \
+    -D BUILD_VERSION="$VERSION" \
     -D ENABLE_MONGOC=OFF
 
 
@@ -232,10 +241,12 @@ with::
 If configuration failed with an error, refer to the CMake output for error
 messages and information. Ensure that configuration succeeds before proceeding.
 
-.. dropdown:: What do these CMake arguments mean?
-  :class-container: admonition hint
-  :class-title: admonition-title
-  :animate: fade-in
+.. ad-dropdown:: What do these CMake arguments mean?
+  :admonition: hint
+
+  The `BUILD_VERSION` sets the version number that will be included in the build
+  results. This should be set to the same value as the version of the source
+  driver that was downloaded in :ref:`get-src`.
 
   The `ENABLE_EXTRA_ALIGNMENT` and `ENABLE_AUTOMATIC_INIT_AND_CLEANUP` are part
   of |mongo-c-driver|, and correspond to deprecated features that are only
@@ -270,9 +281,8 @@ above command fails, then there is likely an error with your environment, or you
 are using an unsupported/untested platform. Refer to the build tool output for
 more information.
 
-.. dropdown:: The ``--config`` option
-  :class-container: admonition hint
-  :class-title: admonition-title
+.. ad-dropdown:: The ``--config`` option
+  :admonition: hint
   :animate: fade-in
 
   The :option:`--config <cmake--build.--config>` option is used to set the build
@@ -293,9 +303,8 @@ built results::
 This command will install the |mongo-c-driver| build results into the `$PREFIX`
 directory.
 
-.. dropdown:: The ``--config`` option
-  :class-container: admonition hint
-  :class-title: admonition-title
+.. ad-dropdown:: The ``--config`` option
+  :admonition: hint
   :animate: fade-in
 
   The :external:option:`--config <cmake--install.--config>` option is only used

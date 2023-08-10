@@ -6,9 +6,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log
 from sphinx.config import Config
+from sphinx_design.dropdown import DropdownDirective
 
 # Ensure we can import "mongoc" extension module.
 this_path = os.path.dirname(__file__)
@@ -174,10 +176,23 @@ def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: d
     context["metatags"] = context.get("metatags", "") + link
 
 
+class AdDropdown(DropdownDirective):
+    """A sphinx-design dropdown that can also be an admonition."""
+
+    option_spec = DropdownDirective.option_spec | {"admonition": directives.unchanged_required}
+
+    def run(self):
+        adm = self.options.get("admonition")
+        if adm is not None:
+            self.options.setdefault("class-container", []).extend(("admonition", adm))
+            self.options.setdefault("class-title", []).append(f"admonition-title")
+        return super().run()
+
+
 def setup(app: Sphinx):
     mongoc_common_setup(app)
+    app.add_directive("ad-dropdown", AdDropdown)
     app.connect("html-page-context", add_canonical_link)
     app.add_css_file("styles.css")
     app.connect("config-inited", _maybe_update_inventories)
     app.add_config_value(_UPDATE_KEY, default=False, rebuild=True, types=[bool])
-
