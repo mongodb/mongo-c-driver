@@ -118,6 +118,8 @@ struct _mongoc_client_t {
    unsigned int csid_rand_seed;
 
    uint32_t generation;
+
+   mongoc_scram_cache_v2_t *scram_cache;
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read
@@ -238,6 +240,22 @@ mongoc_client_uses_server_api (const mongoc_client_t *client);
  * false. */
 bool
 mongoc_client_uses_loadbalanced (const mongoc_client_t *client);
+
+// The workflow is designed to be as follows:
+// 1. Client has it's own copy of the scram cache. It wants to get the "main"
+// copy from topology.
+// 2. The client calls get_cache_v2
+// 3. If the cache isn't set on the topology, the client will set the cache and
+// then copy it over to its own copy of the scram cache. Ideally this will only
+// happen once.
+// 4. If the cache is set on the topology, simply copy it over to the client's
+// copy of the scram cache.
+
+void
+_mongoc_scram_cache_destroy_v2 (mongoc_scram_cache_v2_t *cache);
+
+void
+_mongoc_scram_get_cache_v2 (mongoc_client_t *client);
 
 BSON_END_DECLS
 

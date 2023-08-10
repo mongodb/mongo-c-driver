@@ -426,6 +426,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
                                    topology->connect_timeout_msec);
 
    bson_mutex_init (&topology->tpld_modification_mtx);
+   bson_shared_mutex_init (&topology->scram_cache_rw_lock);
    mongoc_cond_init (&topology->cond_client);
 
    if (single_threaded) {
@@ -697,7 +698,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
 
    mongoc_cond_destroy (&topology->cond_client);
    bson_mutex_destroy (&topology->tpld_modification_mtx);
-
+   bson_shared_mutex_destroy (&topology->scram_cache_rw_lock);
    bson_destroy (topology->encrypted_fields_map);
 
    bson_free (topology);

@@ -4261,6 +4261,82 @@ test_failure_to_auth (void)
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
 }
+
+static void
+test_scram_cache (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client_a;
+   mongoc_client_t *client_b;
+   mongoc_topology_t *topology_a;
+   mongoc_topology_t *topology_b;
+
+   /* create two clients through a client pool */
+   pool = test_framework_new_default_client_pool ();
+   client_a = mongoc_client_pool_pop (pool);
+   client_b = mongoc_client_pool_pop (pool);
+   BSON_ASSERT (client_a);
+   BSON_ASSERT (client_b);
+
+   /* ensure that they are using the same topology */
+   topology_a = client_a->topology;
+   topology_b = client_b->topology;
+   BSON_ASSERT (topology_a);
+   BSON_ASSERT (topology_a == topology_b);
+
+   _mongoc_scram_get_cache_v2 (client_a);
+   _mongoc_scram_get_cache_v2 (client_b);
+
+   ASSERT (client_a->scram_cache->iterations == 0);
+   ASSERT (client_a->scram_cache->iterations ==
+           client_b->scram_cache->iterations);
+
+   _mongoc_scram_cache_destroy_v2 (client_a->scram_cache);
+   _mongoc_scram_cache_destroy_v2 (client_b->scram_cache);
+   _mongoc_scram_cache_destroy_v2 (topology_a->scram_cache);
+
+   mongoc_client_pool_push (pool, client_a);
+   mongoc_client_pool_push (pool, client_b);
+   mongoc_client_pool_destroy (pool);
+}
+
+static void *
+thread_get_cache (void *data)
+{
+   mongoc_client_pool_t *pool = data;
+   mongoc_client_t *client;
+
+   client = mongoc_client_pool_pop (pool);
+   _mongoc_scram_get_cache_v2 (client);
+   printf ("Iterations: %d\n", client->scram_cache->iterations);
+   mongoc_client_pool_push (pool, client);
+
+   return NULL;
+}
+
+static void
+test_scram_cache_check_iterations (void)
+{
+   mongoc_client_pool_t *pool;
+   pthread_t threads[100];
+   void *ret;
+
+   pool = test_framework_new_default_client_pool ();
+
+   for (int i = 0; i < 100; ++i) {
+      pthread_create (&threads[i], NULL, thread_get_cache, pool);
+   }
+
+   for (int i = 0; i < 100; ++i) {
+      pthread_join (threads[i], &ret);
+   }
+
+   mongoc_client_t *client = mongoc_client_pool_pop (pool);
+   _mongoc_scram_cache_destroy_v2 (client->topology->scram_cache);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -4575,4 +4651,8 @@ test_client_install (TestSuite *suite)
       "/Client/resends_handshake_on_network_error",
       test_mongoc_client_resends_handshake_on_network_error);
    TestSuite_Add (suite, "/Client/failure_to_auth", test_failure_to_auth);
+   TestSuite_AddLive (suite, "/Client/scram_cache", test_scram_cache);
+   TestSuite_AddLive (suite,
+                      "/Client/scram_cache_check_iterations",
+                      test_scram_cache_check_iterations);
 }

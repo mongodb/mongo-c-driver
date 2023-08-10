@@ -104,6 +104,19 @@ typedef union mc_shared_tpld {
 /** A null-pointer initializer for an `mc_shared_tpld` */
 #define MC_SHARED_TPLD_NULL ((mc_shared_tpld){._sptr_ = MONGOC_SHARED_PTR_NULL})
 
+typedef struct _mongoc_scram_cache_v2_t {
+   /* pre-secrets */
+   char *hashed_password;
+   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
+   uint32_t iterations;
+   /* secrets */
+   uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t server_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t salted_password[MONGOC_SCRAM_HASH_MAX_SIZE];
+
+
+} mongoc_scram_cache_v2_t;
+
 typedef struct _mongoc_topology_t {
    /**
     * @brief The topology description. Do not access directly. Instead, use
@@ -212,6 +225,9 @@ typedef struct _mongoc_topology_t {
     * topology. This could occur if the URI is invalid.
     * An invalid topology does not monitor servers. */
    bool valid;
+
+   mongoc_scram_cache_v2_t *scram_cache;
+   bson_shared_mutex_t scram_cache_rw_lock;
 } mongoc_topology_t;
 
 mongoc_topology_t *

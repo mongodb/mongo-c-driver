@@ -3234,3 +3234,80 @@ mongoc_client_uses_loadbalanced (const mongoc_client_t *client)
 
    return mongoc_topology_uses_loadbalanced (client->topology);
 }
+
+static int cache_num = 0;
+
+// Not making this thread safe because of the case where we want to destroy
+// the scram cache that belongs to the client (no locking available or
+// necessary)
+void
+_mongoc_scram_cache_destroy_v2 (mongoc_scram_cache_v2_t *cache)
+{
+   BSON_ASSERT (cache);
+
+   if (cache->hashed_password) {
+      bson_zero_free (cache->hashed_password, strlen (cache->hashed_password));
+   }
+
+   bson_free (cache);
+}
+
+mongoc_scram_cache_v2_t *
+_mongoc_scram_cache_copy_v2 (const mongoc_scram_cache_v2_t *cache)
+{
+   mongoc_scram_cache_v2_t *ret = NULL;
+
+   if (cache) {
+      ret = (mongoc_scram_cache_v2_t *) bson_malloc0 (sizeof (*ret));
+      ret->hashed_password = bson_strdup (cache->hashed_password);
+      memcpy (
+         ret->decoded_salt, cache->decoded_salt, sizeof (ret->decoded_salt));
+      ret->iterations = cache->iterations;
+      memcpy (ret->client_key, cache->client_key, sizeof (ret->client_key));
+      memcpy (ret->server_key, cache->server_key, sizeof (ret->server_key));
+      memcpy (ret->salted_password,
+              cache->salted_password,
+              sizeof (ret->salted_password));
+   }
+
+   return ret;
+}
+
+void
+_generate_fake_credentials (mongoc_topology_t *topology)
+{
+   mongoc_scram_cache_v2_t *cache;
+   cache = (mongoc_scram_cache_v2_t *) bson_malloc0 (sizeof (*cache));
+   cache->hashed_password = bson_strdup ("fake hashed password");
+   // Increment this so we can ensure that credentials are being cached
+   // somewhere and not regenerated for every client
+   cache->iterations = cache_num++;
+   topology->scram_cache = cache;
+}
+
+void
+_mongoc_scram_get_cache_v2 (mongoc_client_t *client)
+{
+   mongoc_topology_t *topology = client->topology;
+   bson_shared_mutex_lock_shared (&topology->scram_cache_rw_lock);
+   if (!topology->scram_cache) {
+      printf ("generate topology\n");
+      bson_shared_mutex_unlock_shared (&topology->scram_cache_rw_lock);
+      bson_shared_mutex_lock (&topology->scram_cache_rw_lock);
+      // TODO: generate credentials, save to topology scram cache. For now, we
+      // will generate fake credentials.
+      _generate_fake_credentials (topology);
+      bson_shared_mutex_unlock (&topology->scram_cache_rw_lock);
+      bson_shared_mutex_lock_shared (&topology->scram_cache_rw_lock);
+   }
+
+   BSON_ASSERT (topology->scram_cache);
+
+   if (client->scram_cache) {
+      _mongoc_scram_cache_destroy_v2 (client->scram_cache);
+   }
+
+   client->scram_cache = _mongoc_scram_cache_copy_v2 (topology->scram_cache);
+
+   bson_shared_mutex_unlock_shared (&topology->scram_cache_rw_lock);
+}
