@@ -1,3 +1,6 @@
 # Non-minified versions are available in separate files in the same directory
 mongo-c-driver source: source-is-missing [build/sphinx/basic/static/underscore.js]
 mongo-c-driver source: source-is-missing [build/sphinx/basic/static/jquery.js]
+
+# Poetry is not used for building debian packages
+mongo-c-driver source: missing-prerequisite-for-pyproject-backend
