@@ -452,6 +452,7 @@ if (ENABLE_MONGOC)
       ${SOURCE_DIR}/src/kms-message/src/kms_crypto_windows.c
       ${SOURCE_DIR}/src/kms-message/src/kms_decrypt_request.c
       ${SOURCE_DIR}/src/kms-message/src/kms_encrypt_request.c
+      ${SOURCE_DIR}/src/kms-message/src/kms_kmip_response_parser.c
       ${SOURCE_DIR}/src/kms-message/src/kms_kv_list.c
       ${SOURCE_DIR}/src/kms-message/src/kms_message.c
       ${SOURCE_DIR}/src/kms-message/src/kms_port.c
