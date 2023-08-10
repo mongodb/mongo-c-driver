@@ -93,7 +93,7 @@ __ https://github.com/mongodb/mongo-c-driver/releases
 
 .. tab-set::
 
-  .. tab-item:: ``wget`` + ``tar``
+  .. tab-item:: Using ``wget`` + ``tar``
 
     ::
 
@@ -103,7 +103,7 @@ __ https://github.com/mongodb/mongo-c-driver/releases
       ## Extract using tar:
       $ tar xf "mongo-c-driver-$VERSION.tar.gz"
 
-  .. tab-item:: ``curl`` + ``tar``
+  .. tab-item:: Using ``curl`` + ``tar``
 
     ::
 
@@ -115,15 +115,14 @@ __ https://github.com/mongodb/mongo-c-driver/releases
 
   .. tab-item:: PowerShell
 
-    .. code-block:: pwsh
+    .. code-block:: pwsh-session
 
       ## Use Invoke-WebRequest:
-      Invoke-WebRequest `
-          -UseBasicParsing `
-          -Uri "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.zip" `
-          -OutFile "mongo-c-driver-$VERSION.zip"
+      PS> $url = "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/$VERSION.zip"
+      PS> $file = "mongo-c-driver-$VERSION.zip"
+      PS> Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $file
       ## Extract using Expand-Archive:
-      Expand-Archive mongo-c-driver-$VERSION.zip
+      PS> Expand-Archive mongo-c-driver-$VERSION.zip
 
 The above commands will create a new directory `mongo-c-driver-$VERSION` within
 the directory in which you ran the `tar`/`Expand-Archive` command (**note**:
