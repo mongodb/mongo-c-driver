@@ -14,7 +14,7 @@ How to: Install |libbson|/|libmongoc| from Source
 
   This page assumes that you can successfully configure and build the components
   that you wish to install, which is detailed and explained on the
-  :doc:`/learn/get/from-source` tutorial page. Wheras that tutorial walks
+  :doc:`/learn/get/from-source` tutorial page. Whereas that tutorial walks
   through getting the sources built and a minimal install working, this page
   will offer deeper guidance on the nuance and available options for installing
   the |mongo-c-driver| libraries from such a from-source build.
@@ -153,7 +153,7 @@ unprivileged filesystem location particular to the user account.
     :batch:`%LocalAppData%` environment variable. (**Do not** use the
     :batch:`%AppData%` environment variable!)
 
-    Despite this directory existing, it has no prescribed structure that suites
+    Despite this directory existing, it has no prescribed structure that suits
     our purposes. The choice of user-local installation prefix is arbitrary.
     This guide *strongly discourages* creating additional files and directories
     directly within the user's home directory.

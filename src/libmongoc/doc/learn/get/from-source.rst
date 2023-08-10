@@ -174,11 +174,6 @@ the command line::
 
   CMake suite maintained and supported by Kitware (kitware.com/cmake).
 
-.. important::
-
-  A CMake of version 3.15 *or newer* is **required** for building
-  |mongo-c-driver| from source.
-
 .. note::
 
   If you intend to build |libbson| *only*, then CMake is sufficient for the
@@ -293,7 +288,7 @@ Installing the Built Results
 Let `$PREFIX` be the path `$SOURCE/_install`. We can use CMake to install the
 built results::
 
-  $ cmake --install $BUILD --prefix "$PREFIX" --config RelWithDebInfo
+  $ cmake --install "$BUILD" --prefix "$PREFIX" --config RelWithDebInfo
 
 This command will install the |mongo-c-driver| build results into the `$PREFIX`
 directory.
@@ -307,13 +302,6 @@ directory.
   for Multi-Config generators (i.e. Visual Studio) and is otherwise ignored. The
   value given for `--config` must be the same as was given for
   :external:option:`--config <cmake--build.--config>` with `cmake --build`.
-
-.. TODO note:
-  Unless certain special values of |cmvar:CMAKE_INSTALL_PREFIX| were used,
-  downstream projects will want to specify |cmvar:CMAKE_PREFIX_PATH| to include
-  the value of `$PREFIX` when configuring. This will allow |cmcmd:find_package|
-  to find |libmongoc| and |libbson|.
-
 
 .. seealso::
 

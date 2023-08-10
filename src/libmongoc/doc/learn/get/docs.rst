@@ -30,7 +30,7 @@ documentation dependencies::
 
 This will create a user-local Python virtualenv that contains the necessary
 tools for building this documentation. The `poetry install` command only needs
-to be run when the `pyprojct.toml` file is changed.
+to be run when the `pyproject.toml` file is changed.
 
 
 Running Sphinx
