@@ -220,10 +220,10 @@ With the source directory for |mongo-c-driver| at `$SOURCE` and build directory
 the project with both |libbson| and |libmongoc|::
 
   $ cmake -S $SOURCE -B $BUILD \
-    -D ENABLE_EXTRA_ALIGNMENT=FALSE \
-    -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=FALSE \
+    -D ENABLE_EXTRA_ALIGNMENT=OFF \
+    -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
     -D CMAKE_BUILD_TYPE=RelWithDebInfo \
-    -D ENABLE_MONGOC=FALSE
+    -D ENABLE_MONGOC=OFF
 
 
 If all dependencies are satisfied, the above command should succeed and end
@@ -247,7 +247,7 @@ messages and information. Ensure that configuration succeeds before proceeding.
   enabled by default for ABI compatibility purposes. It is highly recommended to
   disable these features whenever possible.
 
-  The `ENABLE_MONGOC=FALSE` argument disabled building |libmongoc|. We'll build
+  The `ENABLE_MONGOC=OFF` argument disabled building |libmongoc|. We'll build
   that in the next section.
 
   The |cmvar:CMAKE_BUILD_TYPE| setting tells CMake what variant of code will be
@@ -332,7 +332,7 @@ final result with only contain |libbson| and not the full C database driver
 library. Building of |libmongoc| is enabled/disabled using the `ENABLE_MONGOC`
 CMake variable. Re-run CMake again, but set `ENABLE_MONGOC` to `TRUE`::
 
-  $ cmake -D ENABLE_MONGOC=TRUE $BUILD
+  $ cmake -D ENABLE_MONGOC=ON $BUILD
 
 If the above command succeeds, then the project has been reconfigured to build
 with |libmongoc|. Follow the process at :ref:`learn.get.build` and
