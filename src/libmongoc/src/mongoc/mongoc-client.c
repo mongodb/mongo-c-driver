@@ -3237,11 +3237,6 @@ mongoc_client_uses_loadbalanced (const mongoc_client_t *client)
    return mongoc_topology_uses_loadbalanced (client->topology);
 }
 
-static int cache_num = 0;
-
-// Not making this thread safe because of the case where we want to destroy
-// the scram cache that belongs to the client (no locking available or
-// necessary)
 void
 _mongoc_scram_cache_destroy_v2 (mongoc_scram_cache_v2_t *cache)
 {
@@ -3275,6 +3270,8 @@ _mongoc_scram_cache_copy_v2 (const mongoc_scram_cache_v2_t *cache)
    return ret;
 }
 
+static int cache_num = 0;
+
 void
 _generate_fake_credentials (mongoc_topology_t *topology)
 {
@@ -3287,6 +3284,11 @@ _generate_fake_credentials (mongoc_topology_t *topology)
    topology->scram_cache = cache;
 }
 
+// Note: Ideally the SCRAM cache generation will only happen once in topology,
+// although with multithreading we cannot be certain of this. This can be
+// changed with more locking in get_cache_v2, but we opted to try to do as
+// minimal of locking as possible. As long as it's not generating the cache
+// everytime, we should theoretically save time.
 void
 _mongoc_scram_get_cache_v2 (mongoc_client_t *client)
 {

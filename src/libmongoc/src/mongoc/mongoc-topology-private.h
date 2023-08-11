@@ -113,8 +113,6 @@ typedef struct _mongoc_scram_cache_v2_t {
    uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t server_key[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t salted_password[MONGOC_SCRAM_HASH_MAX_SIZE];
-
-
 } mongoc_scram_cache_v2_t;
 
 typedef struct _mongoc_topology_t {

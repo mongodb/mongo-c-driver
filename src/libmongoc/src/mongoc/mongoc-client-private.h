@@ -241,19 +241,6 @@ mongoc_client_uses_server_api (const mongoc_client_t *client);
 bool
 mongoc_client_uses_loadbalanced (const mongoc_client_t *client);
 
-// The workflow is designed to be as follows:
-// 1. Client has it's own copy of the scram cache. It wants to get the "main"
-// copy from topology.
-// 2. The client calls get_cache_v2
-// 3. If the cache isn't set on the topology, the client will set the cache on
-// its topology and then copy it over to its own copy of the scram cache.
-// Ideally this will only happen once, although with multithreading we cannot be
-// certain of this. This can be changes with more locking in get_cache_v2, but
-// we opted to try to do as minimal of locking as possible. As long as it's not
-// generating the cache everytime, we should theoretically save time.
-// 4. If the cache is set on the topology, simply copy it over to the client's
-// copy of the scram cache.
-
 void
 _mongoc_scram_cache_destroy_v2 (mongoc_scram_cache_v2_t *cache);
 
