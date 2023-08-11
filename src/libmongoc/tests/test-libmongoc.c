@@ -2679,7 +2679,7 @@ test_libmongoc_init (TestSuite *suite,
 
    bson_mutex_init (&captured_logs_mutex);
    _mongoc_array_init (&captured_logs, sizeof (log_entry_t *));
-   mongoc_log_set_handler (log_handler, (void *) &suite);
+   mongoc_log_set_handler (log_handler, (void *) suite);
 
 #ifdef MONGOC_ENABLE_SSL
    test_framework_global_ssl_opts_init ();
