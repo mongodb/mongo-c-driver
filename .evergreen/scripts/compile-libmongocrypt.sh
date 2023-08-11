@@ -5,6 +5,10 @@ compile_libmongocrypt() {
   declare -r mongoc_dir="${2:?}"
   declare -r install_dir="${3:?}"
 
+  # When updating libmongocrypt, consider also updating the copy of
+  # libmongocrypt's kms-message in `src/kms-message`. Run
+  # `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no
+  # divergence in the copied files.
   git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.8.0 || return
 
   # Remove this workaround once fcf2b5b5 is included in the minimum libmongocrypt commit.
