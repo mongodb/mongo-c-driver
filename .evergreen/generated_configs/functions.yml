@@ -230,6 +230,15 @@ functions:
             for file in $(find .evergreen/scripts -type f); do
                 chmod +rx "$file" || exit
             done
+  kms-divergence-check:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        args:
+          - -c
+          - .evergreen/scripts/kms-divergence-check.sh
   make-docs:
     - command: subprocess.exec
       type: test
