@@ -31,6 +31,11 @@ shrub-py = "3.0.4"
 yamlordereddictloader = "^0.4.0"
 types-docutils = "^0.20.0.1"
 
+# XXX: These dependencies are only to force certain versions of transitive requirements,
+# but are not required otherwise.
+[tool.poetry.group.ext.dependencies]
+pyyaml = "<5.4"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
