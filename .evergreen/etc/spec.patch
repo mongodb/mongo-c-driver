@@ -18,12 +18,13 @@
  Release:   1%{?dist}
  # See THIRD_PARTY_NOTICES
  License:   Apache-2.0 AND ISC AND MIT AND Zlib
-@@ -37,7 +37,6 @@ BuildRequires: openssl-devel
+@@ -37,7 +37,7 @@ BuildRequires: openssl-devel
  BuildRequires: pkgconfig(libsasl2)
  BuildRequires: pkgconfig(zlib)
  BuildRequires: pkgconfig(snappy)
 -BuildRequires: pkgconfig(icu-uc)
  BuildRequires: pkgconfig(libzstd)
++BuildRequires: python-sphinx-design
  %if %{with tests}
  BuildRequires: mongodb-server
 @@ -123,7 +122,6 @@ Documentation: http://mongoc.org/libbson/%{version}/

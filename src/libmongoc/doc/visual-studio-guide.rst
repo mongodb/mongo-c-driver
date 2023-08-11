@@ -1,7 +1,9 @@
 Using libmongoc in a Microsoft Visual Studio project
 ====================================================
 
-:ref:`Download and install libmongoc on your system <build-on-windows>`, then open Visual Studio, select "File |rarrow| New |rarrow| Project...", and create a new Win32 Console Application.
+:doc:`Download and install libmongoc on your system </learn/get/from-source>`,
+then open Visual Studio, select "File |rarrow| New |rarrow| Project...", and
+create a new Win32 Console Application.
 
 .. image::
   static/msvc-create-project.png
@@ -21,7 +23,9 @@ Right-click on your console application in the Solution Explorer and select "Pro
 .. image::
   static/msvc-add-include-directories.png
 
-(If you chose a different ``CMAKE_INSTALL_PREFIX`` :ref:`when you ran CMake <build-on-windows>`, your include paths will be different.)
+(If you chose a different ``$PREFIX``
+:ref:`when you installed mongo-c-driver <howto.source-install.choosing-a-prefix>`,
+your include paths will be different.)
 
 Also in the Properties dialog, expand the "Linker" options and choose "Input", and add to the "Additional Dependencies" these libraries:
 
