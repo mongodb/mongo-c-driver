@@ -624,6 +624,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       if (!found_nongenuine_host &&
           (found_nongenuine_host = _is_nongenuine_host (elem->host))) {
+         /* TODO: the final copy for this log message is TBD */
          MONGOC_INFO ("Nongenuine host detected");
       }
    }
