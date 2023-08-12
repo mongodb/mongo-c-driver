@@ -546,6 +546,39 @@ bson_copy_to_including_noinit (const bson_t *src,
    va_end (args);
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_ends_with --
+ *
+ *       Return true if str ends with suffix.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+mongoc_ends_with (const char *str, const char *suffix)
+{
+   size_t str_len = strlen (str);
+   size_t suffix_len = strlen (suffix);
+   const char *s1, *s2;
+
+   if (str_len < suffix_len) {
+      return false;
+   }
+
+   /* start at the ends of both strings */
+   s1 = str + str_len;
+   s2 = suffix + suffix_len;
+
+   /* until either pointer reaches start of its string, compare the pointers */
+   for (; s1 >= str && s2 >= suffix; s1--, s2--) {
+      if (*s1 != *s2) {
+         return false;
+      }
+   }
+
+   return true;
+}
 
 void
 mongoc_lowercase (const char *src, char *buf /* OUT */)

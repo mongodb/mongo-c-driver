@@ -312,6 +312,24 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
    return hl_array;
 }
 
+static bool
+_is_nongenuine_host (const char *host)
+{
+   char *host_lowercase = bson_strdup (host);
+
+   mongoc_lowercase (host, host_lowercase);
+
+   if (mongoc_ends_with (host_lowercase, ".cosmos.azure.com") ||
+       mongoc_ends_with (host_lowercase, ".docdb.amazonaws.com") ||
+       mongoc_ends_with (host_lowercase, ".docdb-elastic.amazonaws.com")) {
+      bson_free (host_lowercase);
+      return true;
+   }
+
+   bson_free (host_lowercase);
+   return false;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -338,6 +356,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    mongoc_rr_data_t rr_data;
    bool has_directconnection;
    bool directconnection;
+   bool found_nongenuine_host = false;
 
    BSON_ASSERT (uri);
 
@@ -602,6 +621,11 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       mongoc_topology_description_add_server (td, elem->host_and_port, &id);
       mongoc_topology_scanner_add (topology->scanner, elem, id, false);
+
+      if (!found_nongenuine_host &&
+          (found_nongenuine_host = _is_nongenuine_host (elem->host))) {
+         MONGOC_INFO ("Nongenuine host detected");
+      }
    }
 
    bson_free ((void *) hl_array);

@@ -2675,6 +2675,63 @@ test_failure_to_setup_after_retry (void)
    mock_server_destroy (server);
 }
 
+static void
+test_detect_nongenuine_hosts (void)
+{
+   mongoc_uri_t *uri;
+   mongoc_topology_t *topology;
+   int i;
+
+   const char *nongenuine_uris[] = {
+      "mongodb://a.mongo.cosmos.azure.com:19555/",
+      "mongodb://a.docdb.amazonaws.com:27017/",
+      "mongodb://a.docdb-elastic.amazonaws.com:27017/",
+      /* Test case-insensitive matching */
+      "mongodb://a.MONGO.COSMOS.AZURE.COM:19555/",
+      "mongodb://a.DOCDB.AMAZONAWS.COM:27017/",
+      "mongodb://a.DOCDB-ELASTIC.AMAZONAWS.COM:27017/",
+      /* Mixing genuine and non-genuine hosts (unlikely in practice) */
+      "mongodb://a.example.com:27017,b.mongo.cosmos.azure.com:19555/",
+      "mongodb://a.example.com:27017,b.docdb.amazonaws.com:27017/",
+      "mongodb://a.example.com:27017,b.docdb-elastic.amazonaws.com:27017/",
+      /* Note: SRV connection strings are intentionally untested, since initial
+       * lookup responses cannot be easily mocked. */
+   };
+
+   const char *genuine_uris[] = {
+      "mongodb://a.example.com:27017,b.example.com:27017/",
+      "mongodb://a.mongodb.net:27017",
+      /* Host names do not end with expected suffix */
+      "mongodb://a.mongo.cosmos.azure.com.tld:19555/",
+      "mongodb://a.docdb.amazonaws.com.tld:27017/",
+      "mongodb://a.docdb-elastic.amazonaws.com.tld:27017/",
+   };
+
+   for (i = 0; i < sizeof (nongenuine_uris) / sizeof (const char *); i++) {
+      capture_logs (true);
+      uri = mongoc_uri_new (nongenuine_uris[i]);
+      ASSERT (uri);
+      topology = mongoc_topology_new (uri, true);
+      ASSERT (topology);
+      ASSERT_CAPTURED_LOG ("nongenuine host should log",
+                           MONGOC_LOG_LEVEL_INFO,
+                           "Nongenuine host detected");
+      mongoc_topology_destroy (topology);
+      mongoc_uri_destroy (uri);
+   }
+
+   for (i = 0; i < sizeof (genuine_uris) / sizeof (const char *); i++) {
+      capture_logs (true);
+      uri = mongoc_uri_new (genuine_uris[i]);
+      ASSERT (uri);
+      topology = mongoc_topology_new (uri, true);
+      ASSERT (topology);
+      ASSERT_NO_CAPTURED_LOGS ("genuine host should not log");
+      mongoc_topology_destroy (topology);
+      mongoc_uri_destroy (uri);
+   }
+}
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -2842,4 +2899,6 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/failure_to_setup_after_retry",
                                 test_failure_to_setup_after_retry);
+   TestSuite_Add (
+      suite, "/Topology/detect_nongenuine_hosts", test_detect_nongenuine_hosts);
 }
