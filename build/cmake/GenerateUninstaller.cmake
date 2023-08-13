@@ -60,12 +60,6 @@ if(NOT DEFINED UNINSTALL_WRITE_FILE)
     message(FATAL_ERROR "Expected a variable “UNINSTALL_WRITE_FILE” to be defined")
 endif()
 
-# Use a matching newline in the generated scripts:
-set(__nl "\n")
-if(UNINSTALL_IS_WIN32)
-    set(__nl "\r\n")
-endif()
-
 # Clear out the uninstall script before we begin writing:
 file(WRITE "${UNINSTALL_WRITE_FILE}" "")
 
@@ -73,7 +67,7 @@ file(WRITE "${UNINSTALL_WRITE_FILE}" "")
 # and an appropriate newline will be added.
 function(append_line line)
     string(REPLACE "'" "\"" line "${line}")
-    file(APPEND "${UNINSTALL_WRITE_FILE}" "${line}${__nl}")
+    file(APPEND "${UNINSTALL_WRITE_FILE}" "${line}\n")
 endfunction()
 
 # The copyright header:
@@ -103,25 +97,35 @@ set(bat_preamble [[
 call :init
 
 :print
-<nul set /p_=%1
+<nul set /p_=%~1
 exit /b
 
 :rmfile
-call print "Remove file %1"
+call :print "Remove file %~1 "
 set f=%__prefix%\%~1
-if EXIST "%f" (
+if EXIST "%f%" (
     del /Q /F "%f%" || exit /b %errorlevel%
-    echo " - ok"
+    call :print " - ok"
 ) else (
-    echo " - not present"
+    call :print " - skipped: not present"
 )
+echo(
 exit /b
 
 :rmdir
-call print "Remove directory: %1"
+call :print "Remove directory: %~1 "
 set f=%__prefix%\%~1
-rmdir /Q "%f" || (echo " - skipped (nonempty?)" && exit /b 0)
-echo " - ok"
+if EXIST "%f%" (
+    rmdir /Q "%f%" 2>nul
+    if ERRORLEVEL 0 (
+        call :print "- ok"
+    ) else (
+        call :print "- skipped (non-empty?)"
+    )
+) else (
+    call :print " - skipped: not present"
+)
+echo(
 exit /b
 
 :init
@@ -164,13 +168,18 @@ __rmdir() {
 # Convert the install prefix to an absolute path with the native path format:
 get_filename_component(install_prefix "${CMAKE_INSTALL_PREFIX}" ABSOLUTE)
 file(TO_NATIVE_PATH "${install_prefix}" install_prefix)
+# Handling DESTDIR requires careful handling of root path redirection:
+set(root_path)
+set(relative_prefix "${install_prefix}")
+if(COMMAND cmake_path)
+    cmake_path(GET install_prefix ROOT_PATH root_path)
+    cmake_path(GET install_prefix RELATIVE_PART relative_prefix)
+endif()
 
 # The first lines that will be written to the script:
 set(init_lines)
 
 if(UNINSTALL_IS_WIN32)
-    # Give bat the proper line endings:
-    string(REPLACE "\n" "\r\n" bat_preamble "${bat_preamble}")
     # Comment the header:
     list(TRANSFORM header_lines PREPEND "rem ")
     # Add the preamble
@@ -178,7 +187,12 @@ if(UNINSTALL_IS_WIN32)
         "@echo off"
         "${header_lines}"
         "${bat_preamble}"
-        "set __prefix=%DESTDIR%${install_prefix}"
+        "setlocal EnableDelayedExpansion"
+        "if \"%DESTDIR%\"==\"\" ("
+        "  set __prefix=${install_prefix}"
+        ") else ("
+        "  set __prefix=!DESTDIR!\\${relative_prefix}"
+        ")"
         "")
     set(__rmfile "call :rmfile")
     set(__rmdir "call :rmdir")
@@ -197,7 +211,7 @@ else()
 endif()
 
 # Add the first lines to the file:
-string(REPLACE ";" "${__nl}" init "${init_lines}")
+string(REPLACE ";" "\n" init "${init_lines}")
 append_line("${init}")
 
 # Generate a "remove a file" command
@@ -220,8 +234,11 @@ foreach(installed IN LISTS CMAKE_INSTALL_MANIFEST_FILES)
     add_rmfile("${relpath}")
     # Climb the path and collect directories:
     while("1")
+        message(STATUS "Walking up: ${installed}")
         get_filename_component(installed "${installed}" DIRECTORY)
+        file(TO_NATIVE_PATH "${installed}" installed)
         get_filename_component(parent "${installed}" DIRECTORY)
+        file(TO_NATIVE_PATH "${parent}" parent)
         # Don't account for the prefix or directly children of the prefix:
         if(installed STREQUAL install_prefix OR parent STREQUAL install_prefix)
             break()
