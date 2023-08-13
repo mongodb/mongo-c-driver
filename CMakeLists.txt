@@ -550,26 +550,16 @@ install (FILES COPYING NEWS README.rst THIRD_PARTY_NOTICES
 )
 
 if (ENABLE_UNINSTALL)
-   if (WIN32)
-      if (ENABLE_MONGOC)
-         set (UNINSTALL_PROG "uninstall.cmd")
-      else ()
-         set (UNINSTALL_PROG "uninstall-bson.cmd")
-      endif ()
-   else ()
-      if (ENABLE_MONGOC)
-         set (UNINSTALL_PROG "uninstall.sh")
-      else ()
-         set (UNINSTALL_PROG "uninstall-bson.sh")
-      endif ()
-   endif ()
-   set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver")
-
    # Create uninstall program and associated uninstall target
    #
    # This needs to be last (after all other add_subdirectory calls) to ensure that
    # the generated uninstall program is complete and correct
-   add_subdirectory (generate_uninstall)
+   if (NOT ENABLE_MONGOC)
+      # Generate a different script name for uninstalling libbson only:
+      set (UNINSTALL_SCRIPT_NAME "uninstall-bson")
+   endif ()
+   set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver")
+   include (GenerateUninstaller)
 endif ()
 
 # Spit out some information regarding the generated build system
