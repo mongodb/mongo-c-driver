@@ -139,7 +139,8 @@ __rmfile() {
     set -eu
     abs=$__prefix/$1
     printf "Remove file %s: " "$abs"
-    if test -f "$abs"; then
+    if test -f "$abs"
+    then
         rm -- "$abs"
         echo "ok"
     else
@@ -151,9 +152,11 @@ __rmdir() {
     set -eu
     abs=$__prefix/$1
     printf "Remove directory %s: " "$abs"
-    if test -d "$abs"; then
+    if test -d "$abs"
+    then
         list=$(ls --almost-all "$abs")
-        if test "$list" = ""; then
+        if test "$list" = ""
+        then
             rmdir -- "$abs"
             echo "ok"
         else
