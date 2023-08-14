@@ -26,6 +26,7 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     function(__generate_uninstall)
         set(UNINSTALL_IS_WIN32 "@WIN32@")
         set(UNINSTALL_WRITE_FILE "@_uninstaller_script@")
+        set(UNINSTALL_SCRIPT_SELF "@UNINSTALL_PROG_DIR@/@_script_filename@")
         include("@CMAKE_CURRENT_LIST_FILE@")
     endfunction()
     __generate_uninstall()
@@ -94,6 +95,8 @@ string(REPLACE "\n" ";" header_lines "${header}")
 
 # Prefix for Batch script:
 set(bat_preamble [[
+setlocal EnableDelayedExpansion
+setlocal EnableExtensions
 call :init
 
 :print
@@ -129,6 +132,13 @@ echo(
 exit /b
 
 :init
+
+if /i "%~dp0" NEQ "%TEMP%" (
+    set tmpfile=%TEMP\mongoc-%~nx0
+    copy "%~f0" "%tmpfile%" >nul
+    call "%tmpfile%" & del "%tmpfile%"
+    exit /b
+)
 ]])
 
 # Prefix for shell script:
@@ -190,7 +200,6 @@ if(UNINSTALL_IS_WIN32)
         "@echo off"
         "${header_lines}"
         "${bat_preamble}"
-        "setlocal EnableDelayedExpansion"
         "if \"%DESTDIR%\"==\"\" ("
         "  set __prefix=${install_prefix}"
         ") else ("
@@ -229,8 +238,9 @@ function(add_rmdir dirname)
     append_line("${__rmdir} '${native}'")
 endfunction()
 
+set(script_self "${install_prefix}/${UNINSTALL_SCRIPT_SELF}")
 set(dirs_to_remove)
-foreach(installed IN LISTS CMAKE_INSTALL_MANIFEST_FILES)
+foreach(installed IN LISTS CMAKE_INSTALL_MANIFEST_FILES script_self)
     # Get the relative path from the prefix (the uninstaller with fix it up)
     file(RELATIVE_PATH relpath "${install_prefix}" "${installed}")
     # Add a removal:
