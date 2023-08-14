@@ -312,22 +312,38 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
    return hl_array;
 }
 
-static bool
-_is_nongenuine_host (const char *host)
+static void
+_detect_nongenuine_hosts (const mongoc_host_list_t *hosts)
 {
-   char *host_lowercase = bson_strdup (host);
+   const mongoc_host_list_t *iter;
 
-   mongoc_lowercase (host, host_lowercase);
+   LL_FOREACH (hosts, iter)
+   {
+      char *host_lowercase = bson_strdup (iter->host);
 
-   if (mongoc_ends_with (host_lowercase, ".cosmos.azure.com") ||
-       mongoc_ends_with (host_lowercase, ".docdb.amazonaws.com") ||
-       mongoc_ends_with (host_lowercase, ".docdb-elastic.amazonaws.com")) {
+      mongoc_lowercase (iter->host, host_lowercase);
+
+      if (mongoc_ends_with (host_lowercase, ".cosmos.azure.com")) {
+         MONGOC_INFO (
+            "You appear to be connected to a CosmosDB cluster. For more "
+            "information regarding feature compatibility and support please "
+            "visit https://www.mongodb.com/supportability/cosmosdb");
+         bson_free (host_lowercase);
+         return;
+      }
+
+      if (mongoc_ends_with (host_lowercase, ".docdb.amazonaws.com") ||
+          mongoc_ends_with (host_lowercase, ".docdb-elastic.amazonaws.com")) {
+         MONGOC_INFO (
+            "You appear to be connected to a DoumentDB cluster. For more "
+            "information regarding feature compatibility and support please "
+            "visit https://www.mongodb.com/supportability/documentdb");
+         bson_free (host_lowercase);
+         return;
+      }
+
       bson_free (host_lowercase);
-      return true;
    }
-
-   bson_free (host_lowercase);
-   return false;
 }
 
 /*
@@ -356,7 +372,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    mongoc_rr_data_t rr_data;
    bool has_directconnection;
    bool directconnection;
-   bool found_nongenuine_host = false;
 
    BSON_ASSERT (uri);
 
@@ -621,13 +636,9 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       mongoc_topology_description_add_server (td, elem->host_and_port, &id);
       mongoc_topology_scanner_add (topology->scanner, elem, id, false);
-
-      if (!found_nongenuine_host &&
-          (found_nongenuine_host = _is_nongenuine_host (elem->host))) {
-         /* TODO: the final copy for this log message is TBD */
-         MONGOC_INFO ("Nongenuine host detected");
-      }
    }
+
+   _detect_nongenuine_hosts (*hl_array);
 
    bson_free ((void *) hl_array);
 

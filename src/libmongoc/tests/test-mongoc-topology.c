@@ -2682,20 +2682,23 @@ test_detect_nongenuine_hosts (void)
    mongoc_topology_t *topology;
    int i;
 
-   const char *nongenuine_uris[] = {
+   const char *cosmos_uris[] = {
       "mongodb://a.mongo.cosmos.azure.com:19555/",
-      "mongodb://a.docdb.amazonaws.com:27017/",
-      "mongodb://a.docdb-elastic.amazonaws.com:27017/",
       /* Test case-insensitive matching */
       "mongodb://a.MONGO.COSMOS.AZURE.COM:19555/",
-      "mongodb://a.DOCDB.AMAZONAWS.COM:27017/",
-      "mongodb://a.DOCDB-ELASTIC.AMAZONAWS.COM:27017/",
       /* Mixing genuine and non-genuine hosts (unlikely in practice) */
       "mongodb://a.example.com:27017,b.mongo.cosmos.azure.com:19555/",
-      "mongodb://a.example.com:27017,b.docdb.amazonaws.com:27017/",
-      "mongodb://a.example.com:27017,b.docdb-elastic.amazonaws.com:27017/",
       /* Note: SRV connection strings are intentionally untested, since initial
        * lookup responses cannot be easily mocked. */
+   };
+
+   const char *docdb_uris[] = {
+      "mongodb://a.docdb.amazonaws.com:27017/",
+      "mongodb://a.docdb-elastic.amazonaws.com:27017/",
+      "mongodb://a.DOCDB.AMAZONAWS.COM:27017/",
+      "mongodb://a.DOCDB-ELASTIC.AMAZONAWS.COM:27017/",
+      "mongodb://a.example.com:27017,b.docdb.amazonaws.com:27017/",
+      "mongodb://a.example.com:27017,b.docdb-elastic.amazonaws.com:27017/",
    };
 
    const char *genuine_uris[] = {
@@ -2707,15 +2710,34 @@ test_detect_nongenuine_hosts (void)
       "mongodb://a.docdb-elastic.amazonaws.com.tld:27017/",
    };
 
-   for (i = 0; i < sizeof (nongenuine_uris) / sizeof (const char *); i++) {
+   for (i = 0; i < sizeof (cosmos_uris) / sizeof (const char *); i++) {
       capture_logs (true);
-      uri = mongoc_uri_new (nongenuine_uris[i]);
+      uri = mongoc_uri_new (cosmos_uris[i]);
       ASSERT (uri);
       topology = mongoc_topology_new (uri, true);
       ASSERT (topology);
-      ASSERT_CAPTURED_LOG ("nongenuine host should log",
-                           MONGOC_LOG_LEVEL_INFO,
-                           "Nongenuine host detected");
+      ASSERT_CAPTURED_LOG (
+         "nongenuine host should log",
+         MONGOC_LOG_LEVEL_INFO,
+         "You appear to be connected to a CosmosDB cluster. For more "
+         "information regarding feature compatibility and support please visit "
+         "https://www.mongodb.com/supportability/cosmosdb");
+      mongoc_topology_destroy (topology);
+      mongoc_uri_destroy (uri);
+   }
+
+   for (i = 0; i < sizeof (docdb_uris) / sizeof (const char *); i++) {
+      capture_logs (true);
+      uri = mongoc_uri_new (docdb_uris[i]);
+      ASSERT (uri);
+      topology = mongoc_topology_new (uri, true);
+      ASSERT (topology);
+      ASSERT_CAPTURED_LOG (
+         "nongenuine host should log",
+         MONGOC_LOG_LEVEL_INFO,
+         "You appear to be connected to a DoumentDB cluster. For more "
+         "information regarding feature compatibility and support please visit "
+         "https://www.mongodb.com/supportability/documentdb");
       mongoc_topology_destroy (topology);
       mongoc_uri_destroy (uri);
    }
