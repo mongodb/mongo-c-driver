@@ -10,7 +10,7 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     if(NOT UNINSTALL_PROG_DIR)
         message(SEND_ERROR "We require an UNINSTALL_PROG_DIR to be defined")
     endif()
-    # Platform dependence:
+    # Platform dependent values:
     if(WIN32)
         set(_script_ext "cmd")
         set(_script_runner cmd.exe /c)
@@ -39,7 +39,8 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
         PERMISSIONS
             OWNER_READ OWNER_WRITE OWNER_EXECUTE
             GROUP_READ GROUP_EXECUTE
-            WORLD_READ WORLD_EXECUTE)
+            WORLD_READ WORLD_EXECUTE
+        )
 
     # If applicable, generate an "uninstall" target to run the uninstaller:
     if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR OR PROJECT_IS_TOP_LEVEL)
@@ -88,15 +89,12 @@ distributed under the License is distributed on an \"AS IS\" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
 ]])
 string(STRIP header "${header}")
 string(REPLACE "\n" ";" header_lines "${header}")
 
-# Prefix for Batch script:
+# Prefix for the Batch script:
 set(bat_preamble [[
-setlocal EnableDelayedExpansion
-setlocal EnableExtensions
 call :init
 
 :print
@@ -142,7 +140,7 @@ if /i "%~dp0" NEQ "%TEMP%\" (
 )
 ]])
 
-# Prefix for shell script:
+# Prefix for the shell script:
 set(sh_preamble [[
 set -eu
 
@@ -211,7 +209,7 @@ if(UNINSTALL_IS_WIN32)
     set(__rmdir "call :rmdir")
 else()
     # Comment the header:
-    list(TRANSFORM header_lines PREPEND "# ")
+    list(TRANSFORM header_lines PREPEND "# * ")
     # Add the preamble
     list(APPEND init_lines
         "#!/bin/sh"
@@ -242,7 +240,7 @@ endfunction()
 set(script_self "${install_prefix}/${UNINSTALL_SCRIPT_SELF}")
 set(dirs_to_remove)
 foreach(installed IN LISTS CMAKE_INSTALL_MANIFEST_FILES script_self)
-    # Get the relative path from the prefix (the uninstaller with fix it up)
+    # Get the relative path from the prefix (the uninstaller will fix it up later)
     file(RELATIVE_PATH relpath "${install_prefix}" "${installed}")
     # Add a removal:
     add_rmfile("${relpath}")
