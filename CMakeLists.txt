@@ -95,6 +95,8 @@ mongo_bool_setting(ENABLE_MAN_PAGES "Build the manual pages" DEFAULT VALUE OFF)
 mongo_bool_setting(ENABLE_HTML_DOCS "Build the HTML documentation" DEFAULT VALUE OFF)
 mongo_bool_setting(ENABLE_UNINSTALL "Generate an 'uninstall' script and an 'uninstall' build target")
 mongo_bool_setting(ENABLE_SRV "Enable support for mongodb+srv URIs.")
+mongo_bool_setting(ENABLE_GRPC "Enable support for gRPC." DEFAULT VALUE OFF)
+mongo_bool_setting(ENABLE_GRPC_FIND_PACKAGE "Use FindPackage for gRPC dependency." DEFAULT VALUE OFF)
 
 # Optional features that are ENABLED when necessary dependencies are found:
 mongo_setting(ENABLE_SNAPPY "Enable Snappy compression support"
@@ -103,19 +105,32 @@ mongo_setting(ENABLE_SNAPPY "Enable Snappy compression support"
 mongo_setting(ENABLE_ZSTD "Enable zstd compression support"
               OPTIONS ON OFF AUTO
               DEFAULT VALUE AUTO)
-mongo_setting(ENABLE_ZLIB "Enable zlib compression support"
-              OPTIONS BUNDLED SYSTEM OFF
-              DEFAULT VALUE BUNDLED)
+mongo_setting(
+   ENABLE_ZLIB "Enable zlib compression support"
+   OPTIONS BUNDLED SYSTEM GRPC OFF
+   DEFAULT VALUE BUNDLED
+   VALIDATE CODE [[
+      if(ENABLE_GRPC AND NOT ENABLE_ZLIB STREQUAL "GRPC")
+         message(FATAL_ERROR "ENABLE_GRPC=ON requires ENABLE_ZLIB=GRPC")
+      endif()
+   ]]
+)
 mongo_bool_setting(USE_BUNDLED_UTF8PROC "Enable building with utf8proc. Needed for SCRAM-SHA-256 authentication with non-ASCII passwords"
                    ADVANCED)
 mongo_setting(
    ENABLE_SSL [[Enable TLS connection and SCRAM authentication.]]
-   OPTIONS WINDOWS DARWIN OPENSSL LIBRESSL OFF AUTO
+   OPTIONS WINDOWS DARWIN OPENSSL LIBRESSL GRPC OFF AUTO
    DEFAULT VALUE AUTO
    VALIDATE CODE [[
+      if(ENABLE_GRPC AND NOT ENABLE_SSL STREQUAL "GRPC")
+         message(FATAL_ERROR "ENABLE_GRPC=ON requires ENABLE_SSL=GRPC")
+      endif ()
+
       if(ENABLE_SSL STREQUAL "DARWIN" AND NOT APPLE)
          message(WARNING "ENABLE_SSL=DARWIN is only supported on Apple platforms")
-      elseif(ENABLE_SSL STREQUAL "WINDOWS" AND NOT WIN32)
+      endif()
+
+      if(ENABLE_SSL STREQUAL "WINDOWS" AND NOT WIN32)
          message(WARNING "ENABLE_SSL=WINDOWS is only supported on Windows platforms")
       endif()
    ]]
@@ -438,9 +453,9 @@ if (ENABLE_MONGOC)
       message (FATAL_ERROR "ENABLE_TESTS requires ENABLE_STATIC or ENABLE_STATIC_BUILD")
    endif ()
 
-   if (NOT ENABLE_SSL MATCHES "DARWIN|WINDOWS|OPENSSL|LIBRESSL|AUTO|OFF")
+   if (NOT ENABLE_SSL MATCHES "DARWIN|WINDOWS|OPENSSL|LIBRESSL|GRPC|AUTO|OFF")
       message (FATAL_ERROR
-               "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, LIBRESSL, AUTO, or OFF")
+               "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, LIBRESSL, GRPC, AUTO, or OFF")
    endif ()
 
    set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")

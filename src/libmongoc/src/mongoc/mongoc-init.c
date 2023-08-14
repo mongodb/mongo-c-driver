@@ -45,6 +45,10 @@
 #include "mongoc-ocsp-cache-private.h"
 #endif
 
+#ifdef MONGOC_ENABLE_GRPC
+#include <grpc/grpc.h>
+#endif
+
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
 #pragma message( \
    "Configure the driver with ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF.\
@@ -99,7 +103,10 @@ static BSON_ONCE_FUN (_mongoc_do_init)
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    int status;
 #endif
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+
+#if defined(MONGOC_ENABLE_GRPC)
+   grpc_init ();
+#elif defined(MONGOC_ENABLE_SSL_OPENSSL)
    _mongoc_openssl_init ();
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
    tls_init ();
@@ -162,7 +169,9 @@ mongoc_init (void)
 
 static BSON_ONCE_FUN (_mongoc_do_cleanup)
 {
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_GRPC)
+   grpc_shutdown ();
+#elif defined(MONGOC_ENABLE_SSL_OPENSSL)
    _mongoc_openssl_cleanup ();
 #endif
 

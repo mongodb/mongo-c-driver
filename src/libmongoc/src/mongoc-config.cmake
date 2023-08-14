@@ -10,3 +10,8 @@ if(NOT _mongoc_built_with_bundled_utf8proc AND NOT TARGET PkgConfig::PC_UTF8PROC
   find_dependency(PkgConfig)
   pkg_check_modules(PC_UTF8PROC REQUIRED libutf8proc IMPORTED_TARGET GLOBAL)
 endif()
+
+if(@ENABLE_GRPC@ AND NOT TARGET gRPC::grpc)
+  find_dependency(protobuf) # Workaround.
+  find_dependency(gRPC)
+endif()

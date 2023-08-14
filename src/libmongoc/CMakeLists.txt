@@ -17,6 +17,7 @@ include (CheckStructHasMember)
 include (CheckSymbolExists)
 include (CheckTypeSize)
 include (CMakePushCheckState)
+include (FetchContent)
 include (InstallRequiredSystemLibraries)
 
 message (STATUS "libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
@@ -41,14 +42,17 @@ set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
+set (SOURCES "")
+set (HEADERS "")
+
 # Definition for mongoc-config.h:
 _mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
 
 set (MONGOC_OUTPUT_BASENAME "mongoc" CACHE STRING "Output mongoc library base name")
 
-if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
+if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|GRPC|OFF")
    message (FATAL_ERROR
-      "ENABLE_ZLIB option must be SYSTEM, BUNDLED, AUTO, or OFF"
+      "ENABLE_ZLIB option must be SYSTEM, BUNDLED, GRPC, AUTO, or OFF"
       )
 endif ()
 
@@ -74,10 +78,20 @@ if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
       endif ()
       set (ZLIB_LIBRARIES "")
    endif ()
+elseif (ENABLE_ZLIB MATCHES "GRPC")
+   if (WIN32)
+      # We will use our own bundled zlib; gRPC will use its own zlib module.
+   else ()
+      message(STATUS "Enabling zlib compression (gRPC)")
+      find_package(ZLIB REQUIRED)
+   endif ()
 endif ()
 
-if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
-   OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
+if (
+   (ENABLE_ZLIB STREQUAL "BUNDLED")
+      OR (ENABLE_ZLIB STREQUAL "GRPC" AND NOT ZLIB_FOUND)
+      OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND)
+)
    message (STATUS "Enabling zlib compression (bundled)")
    add_library (zlib_obj OBJECT "${ZLIB_SOURCES}")
    set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
@@ -89,7 +103,7 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    )
    # Disable all warnings for compiling Zlib
    target_compile_options (zlib_obj PRIVATE -w)
-   set (SOURCES ${SOURCES} $<TARGET_OBJECTS:zlib_obj>)
+   list (APPEND SOURCES $<TARGET_OBJECTS:zlib_obj>)
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
@@ -152,6 +166,15 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       include (FindOpenSSL)
    endif ()
 
+   if (ENABLE_SSL STREQUAL "GRPC")
+      if (APPLE)
+         # We will use Secure Transport; gRPC will use its own SSL module.
+         set (SECURE_TRANSPORT 1)
+      else ()
+         find_package(OpenSSL REQUIRED)
+      endif ()
+   endif ()
+
    if (ENABLE_SSL STREQUAL LIBRESSL)
       include (FindPkgConfig)
       message (STATUS " Searching for LibreSSL/libtls")
@@ -188,6 +211,9 @@ if (NOT ENABLE_SSL STREQUAL OFF)
    if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT AND NOT SECURE_CHANNEL AND NOT LIBRESSL)
       if (ENABLE_SSL STREQUAL AUTO)
          set (ENABLE_SSL OFF)
+      elseif (ENABLE_GRPC)
+         # Authentication is not required for gRPC POC.
+         message (STATUS "Disabling SSL for gRPC POC")
       else ()
          message (FATAL_ERROR "No SSL library found")
       endif ()
@@ -406,7 +432,7 @@ else ()
 endif ()
 
 
-set (SOURCES ${SOURCES}
+list (APPEND SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-rpc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
@@ -563,7 +589,7 @@ set (HEADERS_FORWARDING
 )
 
 if (NOT ENABLE_SSL STREQUAL OFF)
-   set (SOURCES ${SOURCES}
+   list (APPEND SOURCES
       ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
       ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-scram.c
       ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls.c
@@ -572,7 +598,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
 
    if (OPENSSL_FOUND)
       message (STATUS "Compiling against OpenSSL")
-      set (SOURCES ${SOURCES}
+      list (APPEND SOURCES
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
@@ -589,7 +615,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       endif ()
    elseif (SECURE_TRANSPORT)
       message (STATUS "Compiling against Secure Transport")
-      set (SOURCES ${SOURCES}
+      list (APPEND SOURCES
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-common-crypto.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-common-crypto.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-transport.c
@@ -598,7 +624,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       set (SSL_LIBRARIES "-framework CoreFoundation -framework Security")
    elseif (SECURE_CHANNEL)
       message (STATUS "Compiling against Secure Channel")
-      set (SOURCES ${SOURCES}
+      list (APPEND SOURCES
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-cng.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-cng.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-channel.c
@@ -607,7 +633,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       set (SSL_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib)
    elseif (LIBRESSL)
       message (STATUS "Compiling against LibreSSL")
-      set (SOURCES ${SOURCES}
+      list (APPEND SOURCES
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
@@ -632,6 +658,8 @@ if (HAVE_ASN1_STRING_GET0_DATA)
    set (MONGOC_HAVE_ASN1_STRING_GET0_DATA 1)
 endif ()
 
+include (FindOrFetchGRPC)
+
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -650,16 +678,16 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 if (MONGOC_ENABLE_SASL)
-   set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
+   list (APPEND SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
    if (MONGOC_ENABLE_SASL_CYRUS)
       message (STATUS "Compiling against Cyrus SASL")
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-cyrus.c)
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c)
+      list (APPEND SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-cyrus.c)
+      list (APPEND SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c)
       include_directories (${SASL_INCLUDE_DIRS})
    elseif (MONGOC_ENABLE_SASL_SSPI)
       message (STATUS "Compiling against Windows SSPI")
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
-      set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
+      list (APPEND SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
+      list (APPEND SOURCES ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
       set (SASL_LIBRARIES secur32.lib crypt32.lib Shlwapi.lib)
    endif ()
 else ()
@@ -705,7 +733,7 @@ endif()
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    # Disable warnings on bundled kms_message source files.
    set_source_files_properties (${KMS_MSG_SOURCES} PROPERTIES COMPILE_FLAGS -w)
-   set (SOURCES ${SOURCES} ${KMS_MSG_SOURCES})
+   list (APPEND SOURCES ${KMS_MSG_SOURCES})
 
    set (KMS_MSG_DEFINITIONS KMS_MSG_STATIC KMS_MESSAGE_ENABLE_CRYPTO)
    include (TestBigEndian)
@@ -717,11 +745,11 @@ if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    endif ()
 
    if (MONGOC_ENABLE_CRYPTO_CNG)
-      set (KMS_MSG_DEFINITIONS ${KMS_MSG_DEFINITIONS} KMS_MESSAGE_ENABLE_CRYPTO_CNG)
+      list (APPEND KMS_MSG_DEFINITIONS KMS_MESSAGE_ENABLE_CRYPTO_CNG)
    elseif (MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO)
-      set (KMS_MSG_DEFINITIONS ${KMS_MSG_DEFINITIONS} KMS_MESSAGE_ENABLE_CRYPTO_COMMON_CRYPTO)
+      list (APPEND KMS_MSG_DEFINITIONS KMS_MESSAGE_ENABLE_CRYPTO_COMMON_CRYPTO)
    elseif(MONGOC_ENABLE_CRYPTO_LIBCRYPTO)
-      set (KMS_MSG_DEFINITIONS ${KMS_MSG_DEFINITIONS} KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO)
+      list (APPEND KMS_MSG_DEFINITIONS KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO)
    else ()
       message (FATAL_ERROR "MONGODB-AWS requires a crypto library")
    endif()
@@ -736,6 +764,25 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    endif ()
    target_compile_definitions (mcd_rpc PUBLIC ${BSON_STATIC_PUBLIC_DEFINITIONS})
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
+endif ()
+
+if (ENABLE_GRPC)
+   # Consistency with gRPC.
+   target_include_directories (_mongoc-dependencies SYSTEM INTERFACE ${OPENSSL_INCLUDE_DIR})
+   if (TARGET OpenSSL::SSL)
+      target_link_libraries (_mongoc-dependencies INTERFACE OpenSSL::SSL OpenSSL::Crypto)
+   else ()
+      target_link_libraries (_mongoc-dependencies INTERFACE ${OPENSSL_LIBRARIES})
+   endif ()
+
+   target_include_directories (_mongoc-dependencies SYSTEM INTERFACE ${ZLIB_INCLUDE_DIRS})
+   if (TARGET ZLIB::ZLIB)
+      target_link_libraries (_mongoc-dependencies INTERFACE ZLIB::ZLIB)
+   else ()
+      target_link_libraries (_mongoc-dependencies INTERFACE ${ZLIB_LIBRARIES})
+   endif ()
+
+   target_link_libraries(_mongoc-dependencies INTERFACE gRPC::grpc)
 endif ()
 
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})

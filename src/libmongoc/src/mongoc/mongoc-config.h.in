@@ -419,6 +419,12 @@ enum {
    MONGOC_SRV_ENABLED = MONGOC_ENABLE_SRV,
 };
 
+#define MONGOC_ENABLE_GRPC @MONGOC_ENABLE_GRPC@
+
+#if MONGOC_ENABLE_GRPC != 1
+#undef MONGOC_ENABLE_GRPC
+#endif
+
 /* clang-format on */
 
 #endif /* MONGOC_CONFIG_H */
