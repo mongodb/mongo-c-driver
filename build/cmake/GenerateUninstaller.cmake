@@ -104,8 +104,8 @@ call :init
 exit /b
 
 :rmfile
-call :print "Remove file %~1 "
 set f=%__prefix%\%~1
+call :print "Remove file %f% "
 if EXIST "%f%" (
     del /Q /F "%f%" || exit /b %errorlevel%
     call :print " - ok"
@@ -116,8 +116,8 @@ echo(
 exit /b
 
 :rmdir
-call :print "Remove directory: %~1 "
 set f=%__prefix%\%~1
+call :print "Remove directory: %f% "
 if EXIST "%f%" (
     rmdir /Q "%f%" 2>nul
     if ERRORLEVEL 0 (
@@ -132,11 +132,12 @@ echo(
 exit /b
 
 :init
-
-if /i "%~dp0" NEQ "%TEMP%" (
-    set tmpfile=%TEMP\mongoc-%~nx0
-    copy "%~f0" "%tmpfile%" >nul
-    call "%tmpfile%" & del "%tmpfile%"
+setlocal EnableDelayedExpansion
+setlocal EnableExtensions
+if /i "%~dp0" NEQ "%TEMP%\" (
+    set tmpfile=%TEMP%\mongoc-%~nx0
+    copy "%~f0" "!tmpfile!" >nul
+    call "!tmpfile!" & del "!tmpfile!"
     exit /b
 )
 ]])
@@ -247,7 +248,6 @@ foreach(installed IN LISTS CMAKE_INSTALL_MANIFEST_FILES script_self)
     add_rmfile("${relpath}")
     # Climb the path and collect directories:
     while("1")
-        message(STATUS "Walking up: ${installed}")
         get_filename_component(installed "${installed}" DIRECTORY)
         file(TO_NATIVE_PATH "${installed}" installed)
         get_filename_component(parent "${installed}" DIRECTORY)
