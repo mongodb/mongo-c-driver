@@ -148,7 +148,7 @@ __rmfile() {
     set -eu
     abs=$__prefix/$1
     printf "Remove file %s: " "$abs"
-    if test -f "$abs"
+    if test -f "$abs" || test -L "$abs"
     then
         rm -- "$abs"
         echo "ok"
