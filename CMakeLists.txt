@@ -1,10 +1,23 @@
 cmake_minimum_required (VERSION 3.15)
 
-project (mongo-c-driver C)
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
+# Defines BUILD_VERSION, which we use throughout:
+include (BuildVersion)
 
-list (APPEND CMAKE_MODULE_PATH
-      "${PROJECT_SOURCE_DIR}/build/cmake"
-      )
+project (
+   mongo-c-driver
+   LANGUAGES C
+   # BUILD_VERSION_SIMPLE is a CMake-compatible version number that omits suffixes
+   VERSION "${BUILD_VERSION_SIMPLE}"
+)
+
+# Set MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, etc.
+include (ParseVersion)
+ParseVersion ("${BUILD_VERSION}" MONGOC)
+# Defines additional similar variables:
+include (LoadVersion)
+file (WRITE VERSION_CURRENT "${BUILD_VERSION}")
+LoadVersion (VERSION_CURRENT MONGOC)
 
 include (MongoSettings)
 include (MongoPlatform)
@@ -263,52 +276,6 @@ include (CCache)
 if (NOT MSVC)
    include (LLDLinker)
 endif ()
-
-set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
-
-include (ParseVersion)
-
-# Set MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, etc.
-if (BUILD_VERSION STREQUAL "0.0.0")
-   if (EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT)
-      file (STRINGS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT BUILD_VERSION)
-      message (STATUS "file VERSION_CURRENT contained BUILD_VERSION ${BUILD_VERSION}")
-   else ()
-      find_package (PythonInterp)
-      if (PYTHONINTERP_FOUND)
-         execute_process (
-            COMMAND ${PYTHON_EXECUTABLE} build/calc_release_version.py
-            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-            OUTPUT_VARIABLE CALC_RELEASE_VERSION
-            RESULT_VARIABLE CALC_RELEASE_VERSION_RESULT
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-         )
-         if (NOT CALC_RELEASE_VERSION_RESULT STREQUAL 0)
-            # If python failed above, stderr would tell the user about it
-            message (FATAL_ERROR
-               "BUILD_VERSION not specified and could not be calculated\
- (script invocation failed); specify in CMake command, -DBUILD_VERSION=<version>"
-            )
-         else ()
-            set (BUILD_VERSION ${CALC_RELEASE_VERSION})
-            message (STATUS "calculated BUILD_VERSION ${BUILD_VERSION}")
-         endif ()
-      else ()
-         message (FATAL_ERROR
-            "BUILD_VERSION not specified and could not be calculated\
- (Python was not found on the system); specify in CMake command, -DBUILD_VERSION=<version>"
-         )
-      endif ()
-      message (STATUS "storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
-      file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
-   endif ()
-else ()
-   message (STATUS "storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
-   file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
-endif ()
-
-include (LoadVersion)
-LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
 
 if ( (ENABLE_BUILD_DEPENDECIES STREQUAL OFF) AND (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) )
    set (ENABLE_BUILD_DEPENDECIES ON)
