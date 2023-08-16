@@ -3,7 +3,7 @@ include_guard(GLOBAL)
 include(MongoSettings)
 
 # We use Python to calculate the BUILD_VERSION value
-find_package(Python3 COMPONENTS Interpreter)
+find_package(Python COMPONENTS Interpreter)
 
 set(_CALC_VERSION_PY "${CMAKE_CURRENT_LIST_DIR}/../calc_release_version.py")
 
@@ -25,12 +25,12 @@ function(compute_build_version outvar)
         return()
     endif()
     # Otherwise, we require Python:
-    if(NOT TARGET Python3::Interpreter)
+    if(NOT TARGET Python::Interpreter)
         message(WARNING "No default build version could be calculated (Python was not found)")
         set("${outvar}" "0.0.0-unknown+no-python-found")
         return()
     endif()
-    get_target_property(py Python3::Interpreter IMPORTED_LOCATION)
+    get_target_property(py Python::Interpreter IMPORTED_LOCATION)
     message(STATUS "Computing the current release version...")
     execute_process(
         COMMAND "${py}" "${_CALC_VERSION_PY}"
