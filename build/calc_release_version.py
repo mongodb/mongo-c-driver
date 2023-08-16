@@ -22,6 +22,7 @@ branch and/or recent tags in history) to assign to a tarball generated from the
 current Git commit.
 """
 
+
 # XXX NOTE XXX NOTE XXX NOTE XXX
 # After modifying this script it is advisable to execute the self-test.
 #
@@ -34,10 +35,13 @@ current Git commit.
 # of each command is desired, then add the -x option to the bash invocation.
 # XXX NOTE XXX NOTE XXX NOTE XXX
 
+from __future__ import annotations
+
 import datetime
 import re
 import subprocess
 import sys
+import argparse
 
 try:
     # Prefer newer `packaging` over deprecated packages.
@@ -46,21 +50,35 @@ try:
 except ImportError:
     # Fallback to deprecated pkg_resources.
     try:
-        from pkg_resources.extern.packaging.version import Version
+        from pkg_resources.extern.packaging.version import Version  # type: ignore
         from pkg_resources import parse_version
     except ImportError:
         # Fallback to deprecated distutils.
         from distutils.version import LooseVersion as Version
         from distutils.version import LooseVersion as parse_version
 
-DEBUG = len(sys.argv) > 1 and '-d' in sys.argv
-if DEBUG:
-    print('Debugging output enabled.')
+parser = argparse.ArgumentParser()
+parser.add_argument("--debug", "-d", action="store_true", help="Enable debug output")
+parser.add_argument("--previous", "-p", action="store_true", help="Calculate the previous version, not the current")
+parser.add_argument("--next-minor", action="store_true", help="Calculate the next minor release instead of the current")
+args = parser.parse_args()
+
+_DEBUG: bool = args.debug
+
+
+def debug(msg: str) -> None:
+    if _DEBUG:
+        print(msg, file=sys.stderr, flush=True)
+
+
+debug("Debugging output enabled.")
+
+# fmt: off
 
 # This option indicates we are to determine the previous release version
-PREVIOUS = len(sys.argv) > 1 and '-p' in sys.argv
+PREVIOUS: bool = args.previous
 # This options indicates to output the next minor release version
-NEXT_MINOR = len(sys.argv) > 1 and '--next-minor' in sys.argv
+NEXT_MINOR: bool = args.next_minor
 
 PREVIOUS_TAG_RE = re.compile('(?P<ver>(?P<vermaj>[0-9]+)\\.(?P<vermin>[0-9]+)'
                              '\\.(?P<verpatch>[0-9]+)(?:-(?P<verpre>.*))?)')
@@ -69,11 +87,12 @@ RELEASE_TAG_RE = re.compile('(?P<ver>(?P<vermaj>[0-9]+)\\.(?P<vermin>[0-9]+)'
 RELEASE_BRANCH_RE = re.compile('(?:(?:refs/remotes/)?origin/)?(?P<brname>r'
                                '(?P<vermaj>[0-9]+)\\.(?P<vermin>[0-9]+))')
 
-def check_output(args):
+def check_output(args: list[str]) -> str:
     """
     Delegates to subprocess.check_output() if it is available, otherwise
     provides a reasonable facsimile.
     """
+    debug(f'Run command: {args}')
     if 'check_output' in dir(subprocess):
         out = subprocess.check_output(args)
     else:
@@ -81,17 +100,16 @@ def check_output(args):
         out, err = proc.communicate()
         ret = proc.poll()
         if ret:
-            raise subprocess.CalledProcessError(ret, args[0], output=out)
+            raise subprocess.CalledProcessError(ret, args[0], output=out, stderr=err)
 
-    if type(out) is bytes:
-        # git isn't guaranteed to always return UTF-8, but for our purposes
-        # this should be fine as tags and hashes should be ASCII only.
-        out = out.decode('utf-8')
+    # git isn't guaranteed to always return UTF-8, but for our purposes
+    # this should be fine as tags and hashes should be ASCII only.
+    out = out.decode('utf-8')
 
     return out
 
 
-def check_head_tag():
+def check_head_tag() -> str | None:
     """
     Checks the current HEAD to see if it has been tagged with a tag that matches
     the pattern for a release tag.  Returns release version calculated from the
@@ -115,21 +133,19 @@ def check_head_tag():
     if release_tag_match:
         new_version_str = release_tag_match.group('ver')
         new_version_parsed = parse_version(new_version_str)
-        if new_version_parsed > version_parsed:
-            if DEBUG:
-                print('HEAD release tag: ' + new_version_str)
+        if new_version_parsed > version_parsed: # type: ignore
+            debug('HEAD release tag: ' + new_version_str)
             version_str = new_version_str
             version_parsed = new_version_parsed
             found_tag = True
 
     if found_tag:
-        if DEBUG:
-            print('Calculated version: ' + version_str)
+        debug('Calculated version: ' + version_str)
         return version_str
 
     return None
 
-def get_next_minor(prerelease_marker):
+def get_next_minor(prerelease_marker: str):
     """
     get_next_minor does the following:
         - Inspect the branches that fit the convention for a release branch.
@@ -157,16 +173,15 @@ def get_next_minor(prerelease_marker):
                               str(version_new['patch']) + '-' + \
                               version_new['prerelease']
             new_version_parsed = parse_version(new_version_str)
-            if new_version_parsed > version_parsed:
+            if new_version_parsed > version_parsed: # type: ignore
                 version_str = new_version_str
                 version_parsed = new_version_parsed
-                if DEBUG:
-                    print('Found new best version "' + version_str \
+                debug('Found new best version "' + version_str \
                             + '" based on branch "' \
                             + release_branch_match.group('brname') + '"')
     return version_str
 
-def get_branch_tags(active_branch_name):
+def get_branch_tags(active_branch_name: str):
     """
     Returns the tag or tags (as a single string with newlines between tags)
     corresponding to the current branch, which must not be master.  If the
@@ -199,7 +214,7 @@ def get_branch_tags(active_branch_name):
 
     return tags
 
-def process_and_sort_tags(tags):
+def process_and_sort_tags(tags: str):
     """
     Given a string (as returned from get_branch_tags), return a sorted list of
     zero or more tags (sorted based on the Version comparison) which meet
@@ -209,7 +224,7 @@ def process_and_sort_tags(tags):
           1.x.y-preX iff 1.x.y does not already exist)
     """
 
-    processed_and_sorted_tags = []
+    processed_and_sorted_tags: list[str] = []
     if not tags or len(tags) == 0:
         return processed_and_sorted_tags
 
@@ -225,7 +240,7 @@ def process_and_sort_tags(tags):
         tag_parts = tag.split('-')
         if len(tag_parts) >= 2 and tag_parts[0] not in processed_and_sorted_tags:
             processed_and_sorted_tags.append(tag)
-    processed_and_sorted_tags.sort(key=Version)
+    processed_and_sorted_tags.sort(key=Version)  # type: ignore
 
     return processed_and_sorted_tags
 
@@ -254,8 +269,7 @@ def main():
             + '+git' + head_commit_short
 
     if NEXT_MINOR:
-        if DEBUG:
-            print('Calculating next minor release')
+        debug('Calculating next minor release')
         return get_next_minor(prerelease_marker)
 
     head_tag_ver = check_head_tag()
@@ -264,8 +278,7 @@ def main():
 
     active_branch_name = check_output(['git', 'rev-parse',
                                        '--abbrev-ref', 'HEAD']).strip()
-    if DEBUG:
-        print('Calculating release version for branch: ' + active_branch_name)
+    debug('Calculating release version for branch: ' + active_branch_name)
     if active_branch_name == 'master':
         return get_next_minor(prerelease_marker)
 
@@ -287,22 +300,20 @@ def main():
                           str(version_new['patch']) + '-' + \
                           version_new['prerelease']
         new_version_parsed = parse_version(new_version_str)
-        if new_version_parsed > version_parsed:
+        if new_version_parsed > version_parsed: # type: ignore
             version_str = new_version_str
             version_parsed = new_version_parsed
-            if DEBUG:
-                print('Found new best version "' + version_str \
+            debug('Found new best version "' + version_str \
                         + '" from tag "' + release_tag_match.group('ver') + '"')
 
     return version_str
 
-def previous(rel_ver):
+def previous(rel_ver: str):
     """
     Given a release version, find the previous version based on the latest Git
     tag that is strictly a lower version than the given release version.
     """
-    if DEBUG:
-        print('Calculating previous release version (option -p was specified).')
+    debug('Calculating previous release version (option -p was specified).')
     version_str = '0.0.0'
     version_parsed = parse_version(version_str)
     rel_ver_str = rel_ver
@@ -323,17 +334,15 @@ def previous(rel_ver):
             if version_new['prerelease'] is not None:
                 new_version_str += '-' + version_new['prerelease']
             new_version_parsed = parse_version(new_version_str)
-            if new_version_parsed < rel_ver_parsed and new_version_parsed > version_parsed:
+            if new_version_parsed < rel_ver_parsed and new_version_parsed > version_parsed: # type: ignore
                 version_str = new_version_str
                 version_parsed = new_version_parsed
-                if DEBUG:
-                    print('Found new best version "' + version_str \
+                debug('Found new best version "' + version_str \
                             + '" from tag "' + tag + '"')
 
     return version_str
 
 RELEASE_VER = previous(main()) if PREVIOUS else main()
 
-if DEBUG:
-    print('Final calculated release version:')
+debug('Final calculated release version:')
 print(RELEASE_VER)

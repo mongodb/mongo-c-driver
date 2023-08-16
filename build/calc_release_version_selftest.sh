@@ -40,9 +40,9 @@ cp calc_release_version.py calc_release_version_test.py
 echo "Test a tagged commit ... begin"
 {
     git checkout 1.23.4 --quiet
-    got=$("${PYTHON_INTERP}" calc_release_version_test.py)
+    got=$("${PYTHON_INTERP}" calc_release_version_test.py --debug)
     assert_eq "$got" "1.23.4"
-    got=$("${PYTHON_INTERP}" calc_release_version_test.py -p)
+    got=$("${PYTHON_INTERP}" calc_release_version_test.py --debug -p)
     assert_eq "$got" "1.23.3"
     git checkout - --quiet
 }
@@ -53,9 +53,9 @@ echo "Test an untagged commit ... begin"
 {
     # 42a818429d6d586a6abf22367ac6fea1e9ce3f2c is commit before 1.23.4
     git checkout 42a818429d6d586a6abf22367ac6fea1e9ce3f2c --quiet
-    got=$("${PYTHON_INTERP}" calc_release_version_test.py)
+    got=$("${PYTHON_INTERP}" calc_release_version_test.py --debug)
     assert_eq "$got" "1.23.4-$DATE+git42a818429d"
-    got=$("${PYTHON_INTERP}" calc_release_version_test.py -p)
+    got=$("${PYTHON_INTERP}" calc_release_version_test.py --debug -p)
     assert_eq "$got" "1.23.4"
     git checkout - --quiet
 }
@@ -64,14 +64,14 @@ echo "Test an untagged commit ... end"
 echo "Test next minor version ... begin"
 {
     CURRENT_SHORTREF=$(git rev-parse --revs-only --short=10 HEAD)
-    got=$("${PYTHON_INTERP}" calc_release_version_test.py --next-minor)
+    got=$("${PYTHON_INTERP}" calc_release_version_test.py --debug --next-minor)
     # XXX NOTE XXX NOTE XXX
     # If you find yourself looking at this line because the assertion below
     # failed, then it is probably because a new major/minor release was made.
     # Update the expected output to represent the correct next version.
     # XXX NOTE XXX NOTE XXX
     assert_eq "$got" "1.25.0-$DATE+git$CURRENT_SHORTREF"
-    got=$("${PYTHON_INTERP}" calc_release_version_test.py --next-minor -p)
+    got=$("${PYTHON_INTERP}" calc_release_version_test.py --debug --next-minor -p)
     # XXX NOTE XXX NOTE XXX
     # If you find yourself looking at this line because the assertion below
     # failed, then it is probably because a new major/minor release was made.
