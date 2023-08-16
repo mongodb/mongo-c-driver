@@ -232,7 +232,7 @@ def iter_tag_lines():
     output = check_output(['git', 'tag', '--list', '1.*', '--format=%(*objectname)|%(tag)'])
     lines = output.splitlines()
     for l in lines:
-        obj, tag = l.split('|', maxsplit=1)
+        obj, tag = l.split('|', 1)
         if tag:
             yield obj, tag
 
