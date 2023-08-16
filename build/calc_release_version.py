@@ -181,40 +181,62 @@ def get_next_minor(prerelease_marker: str):
                             + release_branch_match.group('brname') + '"')
     return version_str
 
-def get_branch_tags(active_branch_name: str):
+def get_branch_tags(active_branch_name: str) -> list[str]:
     """
-    Returns the tag or tags (as a single string with newlines between tags)
-    corresponding to the current branch, which must not be master.  If the
-    specified branch is a release branch then return all tags based on the
-    major/minor X.Y release version.  If the specified branch is neither master
-    nor a release branch, then walk backwards in history until the first tag
-    matching the glob '1.*' and return that tag.
+    Returns a list of tags corresponding to the current branch, which must not
+    be master.  If the specified branch is a release branch then return all tags
+    based on the major/minor X.Y release version.  If the specified branch is
+    neither master nor a release branch, then walk backwards in history until
+    the first tag matching the glob '1.*' and return that tag.
     """
 
     if active_branch_name == 'master':
         raise Exception('this method is not meant to be called while on "master"')
-    tags = ''
+
     release_branch_match = RELEASE_BRANCH_RE.match(active_branch_name)
     if release_branch_match:
         # This is a release branch, so look for tags only on this branch
         tag_glob = release_branch_match.group('vermaj') + '.' \
                 + release_branch_match.group('vermin') + '.*'
-        tags = check_output(['git', 'tag', '--list', tag_glob])
-    else:
-        # Not a release branch, so look for the most recent tag in history
-        commits = check_output(['git', 'log', '--pretty=format:%H',
-                                '--no-merges'])
-        if len(commits) > 0:
-            for commit in commits.splitlines():
-                tags = check_output(['git', 'tag', '--points-at',
-                                     commit, '--list', '1.*'])
-                if len(tags) > 0:
-                    # found a tag, we should be done
-                    break
+        return check_output(['git', 'tag', '--list', tag_glob]).splitlines()
 
-    return tags
+    # Not a release branch, so look for the most recent tag in history
+    commits = check_output(['git', 'log', '--pretty=format:%H', '--no-merges'])
+    tags_by_obj = get_object_tags()
+    for commit in commits.splitlines():
+        got = tags_by_obj.get(commit)
+        if got:
+            return got
+    # No tags
+    return []
 
-def process_and_sort_tags(tags: str):
+
+def iter_tag_lines():
+    """
+    Generate a list of pairs of strings, where the first is a commit hash, and
+    the second is a tag that is associated with that commit. Duplicate commits
+    are possible.
+    """
+    output = check_output(['git', 'tag', '--list', '1.*', '--format=%(*objectname)|%(tag)'])
+    lines = output.splitlines()
+    for l in lines:
+        obj, tag = l.split('|', maxsplit=1)
+        if tag:
+            yield obj, tag
+
+
+def get_object_tags() -> dict[str, list[str]]:
+    """
+    Obtain a mapping between commit hashes and a list of tags that point to
+    that commit. Untagged commits will not be included in the resulting map.
+    """
+    ret: dict[str, list[str]] = {}
+    for obj, tag in iter_tag_lines():
+        ret.setdefault(obj, []).append(tag)
+    return ret
+
+
+def process_and_sort_tags(tags: list[str]):
     """
     Given a string (as returned from get_branch_tags), return a sorted list of
     zero or more tags (sorted based on the Version comparison) which meet
@@ -228,15 +250,14 @@ def process_and_sort_tags(tags: str):
     if not tags or len(tags) == 0:
         return processed_and_sorted_tags
 
-    raw_tags = tags.splitlines()
     # find all the final release tags
-    for tag in raw_tags:
+    for tag in tags:
         release_tag_match = RELEASE_TAG_RE.match(tag)
         if release_tag_match and not release_tag_match.group('verpre'):
             processed_and_sorted_tags.append(tag)
     # collect together final release tags and pre-release tags for
     # versions that have not yet had a final release
-    for tag in raw_tags:
+    for tag in tags:
         tag_parts = tag.split('-')
         if len(tag_parts) >= 2 and tag_parts[0] not in processed_and_sorted_tags:
             processed_and_sorted_tags.append(tag)
@@ -318,7 +339,7 @@ def previous(rel_ver: str):
     version_parsed = parse_version(version_str)
     rel_ver_str = rel_ver
     rel_ver_parsed = parse_version(rel_ver_str)
-    tags = check_output(['git', 'tag', '--list', '1.*'])
+    tags = check_output(['git', 'tag', '--list', '1.*']).splitlines()
     processed_and_sorted_tags = process_and_sort_tags(tags)
     for tag in processed_and_sorted_tags:
         previous_tag_match = PREVIOUS_TAG_RE.match(tag)
