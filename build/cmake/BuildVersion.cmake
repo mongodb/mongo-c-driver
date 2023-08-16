@@ -46,13 +46,8 @@ function(compute_build_version outvar)
     set("${outvar}" "${output}" PARENT_SCOPE)
 endfunction()
 
-# Define the BUILD_VERSION setting:
-mongo_setting(
-   BUILD_VERSION "Library version (for both libbson and libmongoc)"
-   DEFAULT EVAL [[
-      compute_build_version(DEFAULT)
-   ]]
-)
+# Define the BUILD_VERSION:
+compute_build_version(BUILD_VERSION)
 
 # Set a BUILD_VERSION_SIMPLE, which is just a three-number-triple that CMake understands
 string (REGEX REPLACE "([0-9]+\\.[0-9]+\\.[0-9]+).*$" "\\1" BUILD_VERSION_SIMPLE "${BUILD_VERSION}")
