@@ -250,7 +250,7 @@ foreach(installed IN LISTS CMAKE_INSTALL_MANIFEST_FILES script_self)
         file(TO_NATIVE_PATH "${installed}" installed)
         get_filename_component(parent "${installed}" DIRECTORY)
         file(TO_NATIVE_PATH "${parent}" parent)
-        # Don't account for the prefix or directly children of the prefix:
+        # Don't account for the prefix or direct children of the prefix:
         if(installed STREQUAL install_prefix OR parent STREQUAL install_prefix)
             break()
         endif()
@@ -261,7 +261,7 @@ endforeach()
 
 # Now generate commands to remove (empty) directories:
 list(REMOVE_DUPLICATES dirs_to_remove)
-# Order them in descending so that we remove subdirectories before their parents:
+# Order them by depth so that we remove subdirectories before their parents:
 list(SORT dirs_to_remove ORDER DESCENDING)
 foreach(dir IN LISTS dirs_to_remove)
     file(RELATIVE_PATH relpath "${install_prefix}" "${dir}")
