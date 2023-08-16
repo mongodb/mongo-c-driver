@@ -367,11 +367,6 @@ install (
    INCLUDES DESTINATION ${BSON_HEADER_INSTALL_DIR}
    FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-set_target_properties(${TARGETS_TO_INSTALL} PROPERTIES
-   pkg_config_NAME libbson
-   pkg_config_DESCRIPTION "The libbson BSON serialization library."
-   pkg_config_VERSION "${BSON_VERSION}"
-)
 set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${BSON_HEADER_INSTALL_DIR}")
 
 install (
