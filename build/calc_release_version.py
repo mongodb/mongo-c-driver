@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 #
 # Copyright 2018-present MongoDB, Inc.
@@ -20,8 +21,10 @@
 A script that calculates the release version number (based on the current Git
 branch and/or recent tags in history) to assign to a tarball generated from the
 current Git commit.
-"""
 
+This script needs to remain compatible with its target platforms, which currently
+includes RHEL 6, which uses Python 2.6!
+"""
 
 # XXX NOTE XXX NOTE XXX NOTE XXX
 # After modifying this script it is advisable to execute the self-test.
@@ -35,13 +38,14 @@ current Git commit.
 # of each command is desired, then add the -x option to the bash invocation.
 # XXX NOTE XXX NOTE XXX NOTE XXX
 
-from __future__ import annotations
+# pyright: reportTypeCommentUsage=false
 
 import datetime
+import errno
 import re
 import subprocess
+import optparse  # No 'argparse' on Python 2.6
 import sys
-import argparse
 
 try:
     # Prefer newer `packaging` over deprecated packages.
@@ -57,28 +61,32 @@ except ImportError:
         from distutils.version import LooseVersion as Version
         from distutils.version import LooseVersion as parse_version
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--debug", "-d", action="store_true", help="Enable debug output")
-parser.add_argument("--previous", "-p", action="store_true", help="Calculate the previous version, not the current")
-parser.add_argument("--next-minor", action="store_true", help="Calculate the next minor release instead of the current")
-args = parser.parse_args()
+parser = optparse.OptionParser(description=__doc__)
+parser.add_option("--debug", "-d", action="store_true", help="Enable debug output")
+parser.add_option("--previous", "-p", action="store_true", help="Calculate the previous version instead of the current")
+parser.add_option("--next-minor", action="store_true", help="Calculate the next minor version instead of the current")
+args, pos = parser.parse_args()
+assert not pos, "No positional arguments are expected"
 
-_DEBUG: bool = args.debug
+
+_DEBUG = args.debug  # type: bool
 
 
-def debug(msg: str) -> None:
+def debug(msg):  # type: (str) -> None
     if _DEBUG:
-        print(msg, file=sys.stderr, flush=True)
+        sys.stderr.write(msg)
+        sys.stderr.write("\n")
+        sys.stderr.flush()
 
 
 debug("Debugging output enabled.")
 
-# fmt: off
-
 # This option indicates we are to determine the previous release version
-PREVIOUS: bool = args.previous
+PREVIOUS = args.previous  # type: bool
 # This options indicates to output the next minor release version
-NEXT_MINOR: bool = args.next_minor
+NEXT_MINOR = args.next_minor  # type: bool
+
+# fmt: off
 
 PREVIOUS_TAG_RE = re.compile('(?P<ver>(?P<vermaj>[0-9]+)\\.(?P<vermin>[0-9]+)'
                              '\\.(?P<verpatch>[0-9]+)(?:-(?P<verpre>.*))?)')
@@ -87,20 +95,24 @@ RELEASE_TAG_RE = re.compile('(?P<ver>(?P<vermaj>[0-9]+)\\.(?P<vermin>[0-9]+)'
 RELEASE_BRANCH_RE = re.compile('(?:(?:refs/remotes/)?origin/)?(?P<brname>r'
                                '(?P<vermaj>[0-9]+)\\.(?P<vermin>[0-9]+))')
 
-def check_output(args: list[str]) -> str:
+
+def check_output(args):  # type: (list[str]) -> str
     """
     Delegates to subprocess.check_output() if it is available, otherwise
     provides a reasonable facsimile.
     """
-    debug(f'Run command: {args}')
-    if 'check_output' in dir(subprocess):
-        out = subprocess.check_output(args)
-    else:
+    debug('Run command: {0}'.format(args))
+    try:
         proc = subprocess.Popen(args, stdout=subprocess.PIPE)
-        out, err = proc.communicate()
-        ret = proc.poll()
-        if ret:
-            raise subprocess.CalledProcessError(ret, args[0], output=out, stderr=err)
+    except OSError as e:
+        suppl = ''
+        if e.errno == errno.ENOENT:
+            suppl = 'Does the executable “{0}” not exist?'.format(args[0])
+        raise RuntimeError("Failed to execute subprocess {0}: {1} [{2}]".format(args, e, suppl))
+    out = proc.communicate()[0]
+    ret = proc.poll()
+    if ret:
+        raise subprocess.CalledProcessError(ret, args[0])
 
     # git isn't guaranteed to always return UTF-8, but for our purposes
     # this should be fine as tags and hashes should be ASCII only.
@@ -109,7 +121,7 @@ def check_output(args: list[str]) -> str:
     return out
 
 
-def check_head_tag() -> str | None:
+def check_head_tag():  # type: () -> str | None
     """
     Checks the current HEAD to see if it has been tagged with a tag that matches
     the pattern for a release tag.  Returns release version calculated from the
@@ -145,7 +157,7 @@ def check_head_tag() -> str | None:
 
     return None
 
-def get_next_minor(prerelease_marker: str):
+def get_next_minor(prerelease_marker):  # type: (str) -> str
     """
     get_next_minor does the following:
         - Inspect the branches that fit the convention for a release branch.
@@ -181,7 +193,7 @@ def get_next_minor(prerelease_marker: str):
                             + release_branch_match.group('brname') + '"')
     return version_str
 
-def get_branch_tags(active_branch_name: str) -> list[str]:
+def get_branch_tags(active_branch_name):  # type: (str) -> list[str]
     """
     Returns a list of tags corresponding to the current branch, which must not
     be master.  If the specified branch is a release branch then return all tags
@@ -225,18 +237,18 @@ def iter_tag_lines():
             yield obj, tag
 
 
-def get_object_tags() -> dict[str, list[str]]:
+def get_object_tags():  # type: () -> dict[str, list[str]]
     """
     Obtain a mapping between commit hashes and a list of tags that point to
     that commit. Untagged commits will not be included in the resulting map.
     """
-    ret: dict[str, list[str]] = {}
+    ret = {}  # type: dict[str, list[str]]
     for obj, tag in iter_tag_lines():
         ret.setdefault(obj, []).append(tag)
     return ret
 
 
-def process_and_sort_tags(tags: list[str]):
+def process_and_sort_tags(tags):  # type: (list[str]) -> list[str]
     """
     Given a string (as returned from get_branch_tags), return a sorted list of
     zero or more tags (sorted based on the Version comparison) which meet
@@ -246,7 +258,7 @@ def process_and_sort_tags(tags: list[str]):
           1.x.y-preX iff 1.x.y does not already exist)
     """
 
-    processed_and_sorted_tags: list[str] = []
+    processed_and_sorted_tags = []  # type: list[str]
     if not tags or len(tags) == 0:
         return processed_and_sorted_tags
 
@@ -329,7 +341,7 @@ def main():
 
     return version_str
 
-def previous(rel_ver: str):
+def previous(rel_ver):  # type: (str) -> str
     """
     Given a release version, find the previous version based on the latest Git
     tag that is strictly a lower version than the given release version.
