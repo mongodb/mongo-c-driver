@@ -19,7 +19,7 @@
 #include <signal.h>
 #endif
 
-#include <bson/bson-dsl.h>
+#include <bson-dsl.h>
 
 #include "mongoc.h"
 #include "mongoc-client-private.h"

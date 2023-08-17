@@ -25,7 +25,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-error-private.h"
 
-#include <bson/bson-dsl.h>
+#include <bson-dsl.h>
 
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
 
