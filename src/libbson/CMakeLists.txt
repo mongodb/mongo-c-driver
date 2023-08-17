@@ -20,8 +20,6 @@ if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC_BUILD)
    )
 endif ()
 
-include (MongoC-Warnings)
-
 set (BSON_OUTPUT_BASENAME "bson" CACHE STRING "Output bson library base name")
 
 include (CheckFunctionExists)

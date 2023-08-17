@@ -12,8 +12,6 @@ project (libmongoc
 set(libmongoc_VERSION_PRERELEASE ${mongo-c-driver_VERSION_PRERELEASE})
 set(libmongoc_VERSION_FULL ${mongo-c-driver_VERSION_FULL})
 
-include (MongoC-Warnings)
-
 include (CheckSchedGetCPU)
 include (CheckStructHasMember)
 include (CheckSymbolExists)
