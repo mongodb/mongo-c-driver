@@ -276,3 +276,27 @@ function(_mongo_eval_cmake get_variables code)
         endif()
     endforeach()
 endfunction()
+
+#[[
+    mongo_bool01(<var> [cond...])
+
+Evaluate a condition and store the boolean result as a "0" or a "1".
+
+Parameters:
+
+<var>
+    - The name of the variable to define in the caller's scope.
+
+[cond ...]
+    - `...cond` The condition to evaluate. All arguments after `var` are treated
+      as arguments to an `if()` command, following the same syntax and parsing
+      rules thereof.
+
+]]
+macro(mongo_bool01 var)
+    if(${ARGN})
+        set(${var} 1)
+    else()
+        set(${var} 0)
+    endif()
+endmacro()
