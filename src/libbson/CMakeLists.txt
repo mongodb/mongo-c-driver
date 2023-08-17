@@ -42,14 +42,6 @@ set (BSON_API_VERSION 1.0)
 include (CPack)
 TEST_BIG_ENDIAN (BSON_BIG_ENDIAN)
 
-#librt needed on linux for clock_gettime
-find_library (RT_LIBRARY rt)
-if (RT_LIBRARY)
-   #set required libraries for CHECK_FUNCTION_EXISTS
-   set (CMAKE_REQUIRED_LIBRARIES ${RT_LIBRARY})
-   set (BSON_LIBRARIES ${BSON_LIBRARIES} ${RT_LIBRARY})
-endif ()
-
 # See https://public.kitware.com/Bug/view.php?id=15659
 check_symbol_exists (snprintf stdio.h BSON_HAVE_SNPRINTF)
 mongo_bool01 (BSON_HAVE_SNPRINTF BSON_HAVE_SNPRINTF)

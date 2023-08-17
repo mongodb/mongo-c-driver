@@ -222,6 +222,31 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 mongo_platform_use_target(Threads::Threads)
 
+if(WIN32)
+   # Required for gethostbyname on Windows:
+   mongo_platform_link_libraries(ws2_32)
+endif()
+
+# librt needed on linux for clock_gettime
+find_library(RT_LIBRARY rt PATHS /usr/lib32)
+if(RT_LIBRARY)
+   mongo_platform_link_libraries(${RT_LIBRARY})
+   # Set required libraries for CHECK_FUNCTION_EXISTS
+   list(APPEND CMAKE_REQUIRED_LIBRARIES "${RT_LIBRARY}")
+endif()
+
+# On macOS Big Sur, libm resolves to the SDK's tbd file, like:
+# /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libm.tbd
+# Not all consumers can easily link to a tbd file (notably golang will reject a tbd suffix by default)
+# macOS includes libm as part of libSystem (along with libc).
+# It does not need to be explicitly linked.
+if(NOT APPLE)
+   find_library(M_LIBRARY m)
+   if(M_LIBRARY)
+      mongo_platform_link_libraries(${M_LIBRARY})
+   endif()
+endif()
+
 # Optionally enable C++ to do some C++-specific tests
 include (CheckLanguage)
 check_language (CXX)
