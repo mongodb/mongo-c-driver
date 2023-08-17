@@ -36,7 +36,7 @@
 #include "mongoc-version.h"
 #include "mongoc-util-private.h"
 
-#include <bson/bson-dsl.h>
+#include <bson-dsl.h>
 
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init
