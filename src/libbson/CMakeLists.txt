@@ -246,31 +246,51 @@ endif () # ENABLE_EXAMPLES
 set (BSON_HEADER_INSTALL_DIR
    "${CMAKE_INSTALL_INCLUDEDIR}/libbson-${BSON_API_VERSION}"
 )
+function(install_export_target target)
+   set_property(TARGET ${target} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${BSON_HEADER_INSTALL_DIR}")
+   install(
+      TARGETS "${target}"
+      EXPORT "${target}-targets"
+      LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+      ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+      RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+      INCLUDES DESTINATION "${BSON_HEADER_INSTALL_DIR}"
+      FRAMEWORK DESTINATION "${CMAKE_INSTALL_BINDIR}"
+   )
+   install(
+      EXPORT "${target}-targets"
+      NAMESPACE mongo::
+      FILE "${target}-targets.cmake"
+      DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}"
+   )
+endfunction()
 
-if (MONGOC_ENABLE_STATIC_INSTALL)
-   set (TARGETS_TO_INSTALL bson_shared bson_static)
-else ()
-   set (TARGETS_TO_INSTALL bson_shared)
-endif ()
-install (
-   TARGETS ${TARGETS_TO_INSTALL} ${EXAMPLES}
-   EXPORT bson-targets
-   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-   INCLUDES DESTINATION ${BSON_HEADER_INSTALL_DIR}
-   FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-set_property(TARGET ${TARGETS_TO_INSTALL} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${BSON_HEADER_INSTALL_DIR}")
+set(installed_targets)
+if(ENABLE_STATIC_LIBBSON_INSTALL AND TARGET bson_static)
+   install_export_target(bson_static)
+   list(APPEND installed_targets bson_static)
+   mongo_generate_pkg_config(bson_static FILENAME libbson-static-1.0.pc INSTALL)
+endif()
+if(ENABLE_SHARED_LIBBSON_INSTALL AND TARGET bson_shared)
+   install_export_target(bson_shared)
+   list(APPEND installed_targets bson_shared)
+   mongo_generate_pkg_config (bson_shared FILENAME libbson-1.0.pc INSTALL)
+endif()
 
-install (
-   FILES ${HEADERS}
+
+install(
+   DIRECTORY
+      # Trailing "/" requests directory contents, not the dir itself:
+      src/bson/
+      ${PROJECT_BINARY_DIR}/src/bson/
    DESTINATION "${BSON_HEADER_INSTALL_DIR}/bson"
-)
-install (
-   FILES ${HEADERS_FORWARDING}
-   DESTINATION "${BSON_HEADER_INSTALL_DIR}"
-)
+   FILES_MATCHING
+      PATTERN "*.h"
+      PATTERN "*-private.h" EXCLUDE
+      PATTERN "forwarding" EXCLUDE
+      PATTERN "modules" EXCLUDE
+   )
+install(FILES src/bson/forwarding/bson.h DESTINATION "${BSON_HEADER_INSTALL_DIR}")
 
 if (ENABLE_APPLE_FRAMEWORK)
    install (
