@@ -30,7 +30,13 @@ include (TestBigEndian)
 include (InstallRequiredSystemLibraries)
 include (CheckIncludeFiles)
 
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
+# Control over what components are installed:
+mongo_bool_setting(
+   ENABLE_STATIC_LIBBSON_INSTALL "Install static libbson"
+   VISIBLE_IF ENABLE_STATIC)
+mongo_bool_setting(
+   ENABLE_SHARED_LIBBSON_INSTALL "Install shared libbson"
+   VISIBLE_IF ENABLE_SHARED)
 
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)

@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.15)
 
-list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
+list (INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
 # Defines BUILD_VERSION, which we use throughout:
 include (BuildVersion)
 
@@ -47,12 +47,16 @@ if(ENABLE_BSON STREQUAL "SYSTEM" AND NOT USE_SYSTEM_LIBBSON)
    message(FATAL_ERROR "ENABLE_BSON=SYSTEM is no longer supported. Use USE_SYSTEM_LIBBSON=ON for the same effect.")
 endif()
 
-# Static libraries:
+# Toggle static libraries:
 mongo_setting(
    ENABLE_STATIC "Enable building and installing static library archive artifacts"
    OPTIONS ON OFF BUILD_ONLY
    DEFAULT VALUE "ON"
 )
+# Toggle dynamic libraries:
+mongo_bool_setting(ENABLE_SHARED "Enable building and installing dynamic library artifacts")
+
+# Toggle PIC
 if(NOT WIN32)
    mongo_bool_setting(ENABLE_PIC "Enable position-independent code when building static libraries (Not applicable on Windows)")
 elseif(DEFINED ENABLE_PIC)

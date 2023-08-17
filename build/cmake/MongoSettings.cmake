@@ -18,6 +18,7 @@ Define a new configure-time build setting::
         [DEFAULT [[DEVEL] [VALUE <value> | EVAL <code>]] ...]
         [OPTIONS [<opts> ...]]
         [VALIDATE [CODE <code>]]
+        [VISIBLE_IF <cond>]
         [ADVANCED]
     )
 
@@ -64,6 +65,13 @@ VALIDATE [CODE <code>]
 ADVANCED
     - If specified, the cache variable will be marked as an advanced setting
 
+VISIBLE_IF <cond>
+    - If specified, then `<cond>` should be a quoted CMake condition (e.g.
+      [[FOO AND NOT BAR]]). If the condition evaluates to a false value, then
+      the setting will be hidden from the user. NOTE that the setting will still
+      retain its original value and be available as a variable in the CMake
+      code!
+
 ]==]
 function(mongo_setting setting_NAME setting_DOC)
     list(APPEND CMAKE_MESSAGE_CONTEXT mongo setting "${setting_NAME}")
@@ -76,7 +84,7 @@ function(mongo_setting setting_NAME setting_DOC)
     cmake_parse_arguments(
         PARSE_ARGV 2 setting
         "ADVANCED"
-        "TYPE"
+        "TYPE;VISIBLE_IF"
         "OPTIONS;DEFAULT;VALIDATE")
     # Check for unknown arguments:
     foreach(arg IN LISTS setting_UNPARSED_ARGUMENTS)
@@ -176,6 +184,19 @@ function(mongo_setting setting_NAME setting_DOC)
         endif()
         if(validate_UNPARSED_ARGUMENTS)
             message(FATAL_ERROR "Unrecognized VALIDATE options: ${validate_UNPARSED_ARGUMENTS}")
+        endif()
+    endif()
+
+    if(DEFINED setting_AVAILABLE_IF)
+        string(JOIN "\n" code
+            "set(avail FALSE)"
+            "if(${setting_AVAILABLE_IF})"
+            "  set(avail TRUE)"
+            "endif()")
+        _mongo_eval_cmake(avail "${code}")
+        if(NOT avail)
+            # Hide the option by making it INTERNAL
+            set_property(CACHE "${setting_NAME}" PROPERTY TYPE INTERNAL)
         endif()
     endif()
 endfunction()
