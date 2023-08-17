@@ -307,11 +307,6 @@ write_basic_package_version_file (
    COMPATIBILITY AnyNewerVersion
 )
 
-export (EXPORT bson-targets
-   NAMESPACE mongo::
-   FILE "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-targets.cmake"
-)
-
 configure_file (src/bson-config.cmake
    "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config.cmake"
    COPYONLY

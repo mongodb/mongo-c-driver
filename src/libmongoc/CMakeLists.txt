@@ -1236,20 +1236,6 @@ write_basic_package_version_file (
    COMPATIBILITY AnyNewerVersion
 )
 
-export (EXPORT mongoc-targets
-   NAMESPACE mongo::
-   FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-targets.cmake"
-)
-
-if (TARGET mcd_rpc)
-   # Note: the (mongo::)bson_static target must be included separately via find_package or include.
-   export (
-      TARGETS mcd_rpc
-      NAMESPACE mongo::
-      FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mcd-rpc-targets.cmake"
-   )
-endif ()
-
 configure_file (src/mongoc-config.cmake
    "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"
    @ONLY
