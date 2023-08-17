@@ -100,100 +100,107 @@ if (APPLE)
    cmake_policy (SET CMP0042 OLD)
 endif ()
 
-set (SOURCES
-   ${PROJECT_SOURCE_DIR}/src/bson/bcon.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-atomic.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-clock.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-context.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-decimal128.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-error.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-iso8601.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-iter.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-json.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-keys.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-md5.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-memory.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-oid.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-reader.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-string.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-timegm.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-utf8.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-value.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-version-functions.c
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-writer.c
-   ${PROJECT_SOURCE_DIR}/src/jsonsl/jsonsl.c
-   ${PROJECT_SOURCE_DIR}/../../src/common/common-b64.c
-   ${PROJECT_SOURCE_DIR}/../../src/common/common-md5.c
-   ${PROJECT_SOURCE_DIR}/../../src/common/common-thread.c
+# Base INTERFACE library propagates in-build-tree requirements for using libbson
+add_library(_libbson_build_interface INTERFACE)
+# Header directories required for libbson in-source
+target_include_directories(_libbson_build_interface INTERFACE
+   # The default src/
+   src/
+   # The generated src/
+   ${PROJECT_BINARY_DIR}/src/
+   # The source directories of the common lib:
+   ${mongo-c-driver_SOURCE_DIR}/src/common/
+   # Generated:
+   ${mongo-c-driver_BINARY_DIR}/src/common/
+   )
+target_link_libraries(_libbson_build_interface INTERFACE mongo::detail::c_platform)
+
+# Collect all source files
+file(GLOB_RECURSE all_sources CONFIGURE_DEPENDS
+   src/*.c src/*.h
+   # Include common library source files within libbson itself (names
+   # will be mangled with MCOMMON_NAME_PREFIX)
+   "${mongo-c-driver_SOURCE_DIR}/src/common/*.c"
+   )
+
+# The default object library for all libbson translation units:
+add_library(bson_obj OBJECT EXCLUDE_FROM_ALL ${all_sources})
+
+# The libbson object libraries that we will build
+set(bson_obj_libs bson_obj)
+
+if(ENABLE_PIC OR WIN32)
+   # User wants (or platform requires) static libs to use PIC code. Since we
+   # already need PIC for the dynamic library, we can consolidate things and
+   # use a single object library for both the static and the shared library.
+   # No duplicate compilations necessary!
+   set_property(TARGET bson_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   # The bson_obj_pic is just an alias of the base library:
+   add_library(bson_obj_pic ALIAS bson_obj)
+else()
+   # User does not want PIC in the static library. In that case, we just need a second object
+   # library that has PIC enabled so it can be used in creating the dynamic library.
+   add_library(bson_obj_pic OBJECT EXCLUDE_FROM_ALL ${all_sources})
+   set_property(TARGET bson_obj_pic PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   list(APPEND bson_obj_libs bson_obj_pic)
+endif()
+
+# Set target properties for the object libraries.
+mongo_target_requirements(
+   ${bson_obj_libs}
+   LINK_LIBRARIES
+      PUBLIC
+         _libbson_build_interface
+   COMPILE_DEFINITIONS
+      PRIVATE
+         # Tell headers that they are part of compilation:
+         BSON_COMPILATION
+         # Enable NaN parsing in jsonsl
+         JSONSL_PARSE_NAN
+         # Set the name mangling scheme for the common libraries
+         MCOMMON_NAME_PREFIX=_bson_mcommon
+   COMPILE_OPTIONS
+      PRIVATE
+         # Macro constant INFINITY triggers constant arithmetic overflow warnings in
+         # VS 2013, but VS 2013 doesn't support inline warning suppression.
+         # Remove once support for VS 2013 is dropped.
+         $<$<AND:$<C_COMPILER_ID:MSVC>,$<VERSION_LESS:${MSVC_VERSION},1900>>:/wd4756>
 )
 
-set (HEADERS
-   ${PROJECT_BINARY_DIR}/src/bson/bson-config.h
-   ${PROJECT_BINARY_DIR}/src/bson/bson-version.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bcon.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-atomic.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-clock.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-cmp.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-compat.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-context.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-decimal128.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-endian.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-error.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-iter.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-json.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-keys.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-macros.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-md5.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-memory.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-oid.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-prelude.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-reader.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-string.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-types.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-utf8.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-value.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-version-functions.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-writer.h
-)
+# List of the primary BSON library targets that we are building
+set(bson_libs)
 
-set (HEADERS_FORWARDING
-   ${PROJECT_SOURCE_DIR}/src/bson/forwarding/bson.h
-)
+if(ENABLE_STATIC)
+   add_library(bson_static STATIC)
+   target_link_libraries(bson_static PRIVATE $<BUILD_INTERFACE:bson_obj>)
+   list(APPEND bson_libs bson_static)
+endif()
 
-add_library (bson_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
-   message (STATUS "Disabling warning C4756 for VS 2013 and older")
-   # Macro constant INFINITY triggers constant arithmetic overflow warnings in
-   # VS 2013, but VS 2013 doesn't support inline warning suppression.
-   # Remove once support for VS 2013 is dropped.
-   target_compile_options(bson_shared PRIVATE /wd4756)
-endif ()
-set (CMAKE_CXX_VISIBILITY_PRESET hidden)
-target_compile_definitions (bson_shared
-   PRIVATE
-      BSON_COMPILATION
-      JSONSL_PARSE_NAN
-      MCOMMON_NAME_PREFIX=_bson_mcommon
+if(ENABLE_SHARED)
+   add_library(bson_shared SHARED)
+   target_link_libraries(bson_shared PRIVATE $<BUILD_INTERFACE:bson_obj_pic>)
+   list(APPEND bson_libs bson_shared)
+endif()
+
+if(NOT bson_libs)
+   message(FATAL_ERROR "Neither bson_shared nor bson_static is going to be built. Did you mean to enable at least one of them?")
+endif()
+
+mongo_target_requirements(
+   ${bson_libs} LINK_LIBRARIES PUBLIC
+   # Build-local requirements:
+   $<BUILD_INTERFACE:_libbson_build_interface>
+   # Include in the install interface explicitly:
+   mongo::detail::c_platform
 )
-# Several directories in the source and build trees contain headers we would like
-# include via relative reference, but they all end up in the same install path
-target_include_directories (
-   bson_shared
-   PUBLIC
-      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
-      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/bson>
-      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/bson>
-      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
-      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
-      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+set_target_properties(${bson_libs} PROPERTIES
+   VERSION "0.0.0"
+   SOVERSION "0"
+   OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}"
 )
-set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
-set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}")
-target_link_libraries (bson_shared PUBLIC mongo::detail::c_platform)
-mongo_generate_pkg_config (bson_shared FILENAME libbson-1.0.pc INSTALL)
+if(TARGET bson_static)
+   set_property(TARGET bson_static PROPERTY OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")
+endif()
 
 if (ENABLE_APPLE_FRAMEWORK)
    set_target_properties(bson_shared PROPERTIES
@@ -206,88 +213,19 @@ if (ENABLE_APPLE_FRAMEWORK)
    )
 endif ()
 
-if (RT_LIBRARY)
-   target_link_libraries (bson_shared PRIVATE ${RT_LIBRARY})
-endif ()
-
-# On macOS Big Sur, libm resolves to the SDK's tbd file, like:
-# /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libm.tbd
-# Not all consumers can easily link to a tbd file (notably golang will reject a tbd suffix by default)
-# macOS includes libm as part of libSystem (along with libc).
-# It does not need to be explicitly linked.
-if (!APPLE)
-   find_library (M_LIBRARY m)
-   if (M_LIBRARY)
-      target_link_libraries (bson_shared PRIVATE ${M_LIBRARY})
-      set (BSON_LIBRARIES ${BSON_LIBRARIES} ${M_LIBRARY})
-   endif ()
-endif ()
-
-if (WIN32)
-   # gethostbyname
-   target_link_libraries (bson_shared PRIVATE ws2_32)
-endif ()
-
-if (MONGOC_ENABLE_STATIC_BUILD)
-   add_library (bson_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   if (MSVC AND MSVC_VERSION VERSION_LESS 1900)
-      message (STATUS "Disabling warning C4756 for VS 2013 and older")
-      # Macro constant INFINITY triggers constant arithmetic overflow warnings in
-      # VS 2013, but VS 2013 doesn't support inline warning suppression.
-      # Remove once support for VS 2013 is dropped.
-      target_compile_options(bson_static PRIVATE /wd4756)
-   endif ()
-   target_compile_definitions (bson_static
-      PUBLIC
-         BSON_STATIC
-      PRIVATE
-         BSON_COMPILATION
-         JSONSL_PARSE_NAN
-         MCOMMON_NAME_PREFIX=_bson_mcommon
-   )
-   target_link_libraries(bson_static PUBLIC mongo::detail::c_platform)
-   if (NOT WIN32 AND ENABLE_PIC)
-      target_compile_options (bson_static PUBLIC -fPIC)
-      message (STATUS "Adding -fPIC to compilation of bson_static components")
-   endif ()
-   # Several directories in the source and build trees contain headers we would like
-   # include via relative reference, but they all end up in the same install path
-   target_include_directories (
-      bson_static
-      PUBLIC
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/bson>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/bson>
-         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
-         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
-   )
-   set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
-   set_target_properties (bson_static PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")
-   if (RT_LIBRARY)
-      target_link_libraries (bson_static PUBLIC ${RT_LIBRARY})
-   endif ()
-   if (M_LIBRARY)
-      target_link_libraries (bson_static PUBLIC ${M_LIBRARY})
-   endif ()
-   if (NOT UNIX)
-      # gethostbyname
-      target_link_libraries (bson_static PUBLIC ws2_32)
-   endif ()
-   if(MONGOC_ENABLE_STATIC_INSTALL)
-      mongo_generate_pkg_config(bson_static FILENAME libbson-static-1.0.pc INSTALL)
-   endif()
-endif ()
 
 function (add_example bin src)
    set (BSON_EXAMPLE_SOURCES ${PROJECT_SOURCE_DIR}/${src})
    add_executable (${bin} ${BSON_EXAMPLE_SOURCES})
 
    # Link against the shared lib like normal apps
-   target_link_libraries (${bin} bson_shared)
-
-   set (EXAMPLES ${EXAMPLES} ${bin})
+   if(TARGET bson_shared)
+      target_link_libraries (${bin} bson_shared)
+   elseif(TARGET bson_static)
+      target_link_libraries (${bin} bson_static)
+   else()
+      return()
+   endif()
 endfunction ()
 
 if (ENABLE_EXAMPLES)
