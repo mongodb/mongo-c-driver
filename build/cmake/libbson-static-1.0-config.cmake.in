@@ -13,7 +13,7 @@
 # limitations under the License.
 
 if(NOT libbson-static-1.0_FIND_QUIETLY)
-    message(WARNING "This CMake package is deprected. Prefer instead to use the \"bson-1.0\" package and link to mongo::bson_static.")
+    message(WARNING "This CMake package is deprecated. Prefer instead to use the \"bson-1.0\" package and link to mongo::bson_static.")
 endif()
 
 set (BSON_STATIC_MAJOR_VERSION @libbson_VERSION_MAJOR@)

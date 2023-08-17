@@ -13,7 +13,7 @@
 # limitations under the License.
 
 if(NOT libmongoc-1.0_FIND_QUIETLY)
-    message(WARNING "This CMake package is deprected. Prefer instead to use the \"mongoc-1.0\" package and link to mongo::mongoc_shared.")
+    message(WARNING "This CMake package is deprecated. Prefer instead to use the \"mongoc-1.0\" package and link to mongo::mongoc_shared.")
 endif()
 
 set (MONGOC_MAJOR_VERSION @libmongoc_VERSION_MAJOR@)
