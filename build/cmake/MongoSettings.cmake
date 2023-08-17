@@ -321,3 +321,45 @@ macro(mongo_bool01 var)
         set(${var} 0)
     endif()
 endmacro()
+
+#[==[
+Append usage requirement properties to a set of targets.
+
+    mongo_target_requirements(
+        [<target> [...]]
+        [INCLUDE_DIRECTORIES [spec...]]
+        [LINK_LIBRARIES [spec...]]
+        [COMPILE_DEFINITIONS [spec...]]
+        [COMPILE_OPTIONS [spec...]]
+        [LINK_OPTIONS [spec...]]
+        [SOURCES [spec...]]
+    )
+
+]==]
+function(mongo_target_requirements)
+    set(properties
+        INCLUDE_DIRECTORIES LINK_LIBRARIES COMPILE_DEFINITIONS
+        COMPILE_OPTIONS LINK_OPTIONS SOURCES
+    )
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "" "${properties}")
+    foreach(target IN LISTS ARG_UNPARSED_ARGUMENTS)
+        if(ARG_INCLUDE_DIRECTORIES)
+            target_include_directories("${target}" ${ARG_INCLUDE_DIRECTORIES})
+        endif()
+        if(ARG_LINK_LIBRARIES)
+            target_link_libraries("${target}" ${ARG_LINK_LIBRARIES})
+        endif()
+        if(ARG_COMPILE_OPTIONS)
+            target_compile_definitions("${target}" ${ARG_COMPILE_DEFINITIONS})
+        endif()
+        if(ARG_COMPILE_OPTIONS)
+            target_compile_options("${target}" ${ARG_COMPILE_OPTIONS})
+        endif()
+        if(ARG_LINK_OPTIONS)
+            target_link_options("${target}" ${ARG_LINK_OPTIONS})
+        endif()
+        if(ARG_SOURCES)
+            target_sources("${target}" ${ARG_SOURCES})
+        endif()
+    endforeach()
+endfunction()
