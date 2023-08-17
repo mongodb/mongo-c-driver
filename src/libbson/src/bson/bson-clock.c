@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "bson-config.h"
-#include "bson-compat.h"
+#include <bson/bson-config.h>
+#include <bson/bson-compat.h>
 
 
 #if defined(BSON_HAVE_CLOCK_GETTIME)
@@ -23,7 +23,7 @@
 #include <sys/time.h>
 #endif
 
-#include "bson-clock.h"
+#include <bson/bson-clock.h>
 
 /*
  *--------------------------------------------------------------------------

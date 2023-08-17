@@ -18,12 +18,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "bson-compat.h"
-#include "bson-config.h"
-#include "bson-error.h"
-#include "bson-memory.h"
-#include "bson-string.h"
-#include "bson-types.h"
+#include <bson/bson-compat.h>
+#include <bson/bson-config.h>
+#include <bson/bson-error.h>
+#include <bson/bson-memory.h>
+#include <bson/bson-string.h>
+#include <bson/bson-types.h>
 
 // See `bson_strerror_r()` definition below.
 #if !defined(_WIN32) && !defined(__APPLE__)
