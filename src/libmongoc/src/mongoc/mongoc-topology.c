@@ -335,7 +335,7 @@ _detect_nongenuine_hosts (const mongoc_host_list_t *hosts)
       if (mongoc_ends_with (host_lowercase, ".docdb.amazonaws.com") ||
           mongoc_ends_with (host_lowercase, ".docdb-elastic.amazonaws.com")) {
          MONGOC_INFO (
-            "You appear to be connected to a DoumentDB cluster. For more "
+            "You appear to be connected to a DocumentDB cluster. For more "
             "information regarding feature compatibility and support please "
             "visit https://www.mongodb.com/supportability/documentdb");
          bson_free (host_lowercase);

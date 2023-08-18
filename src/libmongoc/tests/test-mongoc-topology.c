@@ -2735,7 +2735,7 @@ test_detect_nongenuine_hosts (void)
       ASSERT_CAPTURED_LOG (
          "nongenuine host should log",
          MONGOC_LOG_LEVEL_INFO,
-         "You appear to be connected to a DoumentDB cluster. For more "
+         "You appear to be connected to a DocumentDB cluster. For more "
          "information regarding feature compatibility and support please visit "
          "https://www.mongodb.com/supportability/documentdb");
       mongoc_topology_destroy (topology);
