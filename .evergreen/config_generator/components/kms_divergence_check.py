@@ -22,7 +22,7 @@ class KmsDivergenceCheck(Function):
 
 
 def functions():
-    return KmsDivergenceCheck.defn(),
+    return KmsDivergenceCheck.defn()
 
 
 def tasks():
