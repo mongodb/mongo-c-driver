@@ -2678,10 +2678,6 @@ test_failure_to_setup_after_retry (void)
 static void
 test_detect_nongenuine_hosts (void)
 {
-   mongoc_uri_t *uri;
-   mongoc_topology_t *topology;
-   int i;
-
    const char *cosmos_uris[] = {
       "mongodb://a.mongo.cosmos.azure.com:19555/",
       /* Test case-insensitive matching */
@@ -2710,11 +2706,11 @@ test_detect_nongenuine_hosts (void)
       "mongodb://a.docdb-elastic.amazonaws.com.tld:27017/",
    };
 
-   for (i = 0; i < sizeof (cosmos_uris) / sizeof (const char *); i++) {
+   for (size_t i = 0u; i < sizeof (cosmos_uris) / sizeof (*cosmos_uris); ++i) {
       capture_logs (true);
-      uri = mongoc_uri_new (cosmos_uris[i]);
+      mongoc_uri_t *const uri = mongoc_uri_new (cosmos_uris[i]);
       ASSERT (uri);
-      topology = mongoc_topology_new (uri, true);
+      mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
       ASSERT (topology);
       ASSERT_CAPTURED_LOG (
          "nongenuine host should log",
@@ -2726,11 +2722,11 @@ test_detect_nongenuine_hosts (void)
       mongoc_uri_destroy (uri);
    }
 
-   for (i = 0; i < sizeof (docdb_uris) / sizeof (const char *); i++) {
+   for (size_t i = 0u; i < sizeof (docdb_uris) / sizeof (*docdb_uris); ++i) {
       capture_logs (true);
-      uri = mongoc_uri_new (docdb_uris[i]);
+      mongoc_uri_t *const uri = mongoc_uri_new (docdb_uris[i]);
       ASSERT (uri);
-      topology = mongoc_topology_new (uri, true);
+      mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
       ASSERT (topology);
       ASSERT_CAPTURED_LOG (
          "nongenuine host should log",
@@ -2742,11 +2738,11 @@ test_detect_nongenuine_hosts (void)
       mongoc_uri_destroy (uri);
    }
 
-   for (i = 0; i < sizeof (genuine_uris) / sizeof (const char *); i++) {
+   for (size_t i = 0u; i < sizeof (genuine_uris) / sizeof (*genuine_uris); ++i) {
       capture_logs (true);
-      uri = mongoc_uri_new (genuine_uris[i]);
+      mongoc_uri_t *const uri = mongoc_uri_new (genuine_uris[i]);
       ASSERT (uri);
-      topology = mongoc_topology_new (uri, true);
+      mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
       ASSERT (topology);
       ASSERT_NO_CAPTURED_LOGS ("genuine host should not log");
       mongoc_topology_destroy (topology);
