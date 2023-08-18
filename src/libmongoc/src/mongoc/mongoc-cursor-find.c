@@ -47,10 +47,7 @@ _prime (mongoc_cursor_t *cursor)
    /* set all mongoc_impl_t function pointers. */
    if (
       /* Server version 5.1 and newer do not support OP_QUERY. */
-      wire_version > WIRE_VERSION_5_0 ||
-      /* Fallback to legacy OP_QUERY wire protocol messages if exhaust cursor
-         requested. */
-      !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
+      wire_version > WIRE_VERSION_5_0) {
       _mongoc_cursor_impl_find_cmd_init (cursor, &data->filter /* stolen */);
    } else {
       _mongoc_cursor_impl_find_opquery_init (cursor,

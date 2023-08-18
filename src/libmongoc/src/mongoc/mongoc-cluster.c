@@ -19,6 +19,7 @@
 
 #include <string.h>
 
+#include "mcd-rpc.h"
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-client-side-encryption-private.h"
@@ -893,7 +894,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       if (negotiate_sasl_supported_mechs) {
          bsonParse (reply,
                     find (allOf (key ("ok"), isFalse), //
-                          do ({
+                          do({
                              /* hello response returned ok: 0. According to
                               * auth spec: "If the hello of the MongoDB
                               * Handshake fails with an error, drivers MUST
@@ -3512,9 +3513,10 @@ _mongoc_cluster_run_opmsg_send (mongoc_cluster_t *cluster,
 
    mongoc_server_stream_t *const server_stream = cmd->server_stream;
 
-   const uint32_t flags = cmd->is_acknowledged
-                             ? MONGOC_OP_MSG_FLAG_NONE
-                             : MONGOC_OP_MSG_FLAG_MORE_TO_COME;
+   const uint32_t flags =
+      (cmd->is_acknowledged ? MONGOC_OP_MSG_FLAG_NONE
+                            : MONGOC_OP_MSG_FLAG_MORE_TO_COME) |
+      cmd->query_flags;
 
    {
       int32_t message_length = 0;
@@ -3764,6 +3766,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    bool ret = false;
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
+   // mcd_rpc_op_msg_set_flag_bits (rpc, cmd->query_flags);
 
    if (!_mongoc_cluster_run_opmsg_send (cluster, cmd, rpc, reply, error)) {
       goto done;

@@ -217,6 +217,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor);
 bool
 _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
                               mongoc_server_stream_t *stream,
+                              bool op_msg,
                               int32_t *flags /* OUT */);
 void
 _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,

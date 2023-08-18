@@ -15,6 +15,7 @@
  */
 
 
+#include "mcd-rpc.h"
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
@@ -368,6 +369,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
 
       td_type = _mongoc_topology_get_type (client->topology);
 
+      // TODO no longer true with 7.1
       if (td_type == MONGOC_TOPOLOGY_SHARDED) {
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
@@ -885,6 +887,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
                               mongoc_server_stream_t *stream,
+                              bool op_msg,
                               int32_t *flags /* OUT */)
 {
    bson_iter_t iter;
@@ -903,28 +906,36 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
 
-      if (!strcmp (key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
-         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_PARTIAL);
-      } else if (!strcmp (key, MONGOC_CURSOR_AWAIT_DATA)) {
-         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_AWAIT_DATA);
-      } else if (!strcmp (key, MONGOC_CURSOR_EXHAUST)) {
-         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_EXHAUST);
-      } else if (!strcmp (key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT)) {
-         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT);
-      } else if (!strcmp (key, MONGOC_CURSOR_OPLOG_REPLAY)) {
-         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY);
-      } else if (!strcmp (key, MONGOC_CURSOR_TAILABLE)) {
-         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
+      if (op_msg) {
+         if (!strcmp (key, "exhaust")) {
+            ADD_FLAG (flags, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED);
+         }
+      } else {
+         if (!strcmp (key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
+            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_PARTIAL);
+         } else if (!strcmp (key, MONGOC_CURSOR_AWAIT_DATA)) {
+            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_AWAIT_DATA);
+         } else if (!strcmp (key, MONGOC_CURSOR_EXHAUST)) {
+            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_EXHAUST);
+         } else if (!strcmp (key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT)) {
+            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT);
+         } else if (!strcmp (key, MONGOC_CURSOR_OPLOG_REPLAY)) {
+            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY);
+         } else if (!strcmp (key, MONGOC_CURSOR_TAILABLE)) {
+            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
+         }
       }
    }
 
-   if (cursor->secondary_ok) {
-      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
-   } else if (cursor->server_id &&
-              (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
-               stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
-              stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
-      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
+   if (!op_msg) {
+      if (cursor->secondary_ok) {
+         *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
+      } else if (cursor->server_id &&
+                 (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
+                  stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
+                 stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
+         *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
+      }
    }
 
    return true;
@@ -939,6 +950,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 {
    mongoc_server_stream_t *server_stream;
    bson_iter_t iter;
+   // TODO contains mongoc_query_flags that are OP_QUERY specific
+   // okay so far since OP_MSG flags are not implemented
    mongoc_cmd_parts_t parts;
    const char *cmd_name;
    bool is_primary;
@@ -1014,22 +1027,15 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    db = bson_strndup (cursor->ns, cursor->dblen);
    parts.assembled.db_name = db;
 
-   {
-      int32_t flags;
-      if (!_mongoc_cursor_opts_to_flags (cursor, server_stream, &flags)) {
-         _mongoc_bson_init_if_set (reply);
-         GOTO (done);
-      }
-      parts.user_query_flags = (mongoc_query_flags_t) flags;
-   }
 
    /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.
     * user_query_flags is unused in OP_MSG, so this technically has no effect,
     * but is done anyways to ensure the query flags match handling of options.
     */
-   if (parts.user_query_flags & MONGOC_QUERY_EXHAUST) {
-      parts.user_query_flags ^= MONGOC_QUERY_EXHAUST;
-   }
+   // use MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED from mcd-rpc.h
+   // if (parts.user_query_flags & MONGOC_QUERY_EXHAUST) {
+   //    parts.user_query_flags ^= MONGOC_QUERY_EXHAUST;
+   // }
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
     * read preference, so the secondary rejects the read. same if we have a
@@ -1038,6 +1044,18 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
     * $readPreference.
     */
    cmd_name = _mongoc_get_command_name (command);
+   bool is_op_msg = !strcmp (cmd_name, "find");
+
+   {
+      int32_t flags;
+      if (!_mongoc_cursor_opts_to_flags (
+             cursor, server_stream, is_op_msg, &flags)) {
+         _mongoc_bson_init_if_set (reply);
+         GOTO (done);
+      }
+      parts.user_query_flags = (mongoc_query_flags_t) flags;
+   }
+
    is_primary =
       !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
 
