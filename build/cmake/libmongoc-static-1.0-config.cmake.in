@@ -23,7 +23,7 @@ set (MONGOC_STATIC_VERSION @libmongoc_VERSION@)
 set (MONGOC_STATIC_VERSION_FULL @libmongoc_VERSION_FULL@)
 
 include(CMakeFindDependencyMacro)
-find_dependency (mongoc-1.0 "@libmongoc_VERSION_MAJOR@.@libmongoc_VERSION_MINOR@")
+find_dependency (mongoc-1.0)
 
 set(MONGOC_STATIC_LIBRARY mongo::mongoc_static)
 set(MONGOC_STATIC_LIBRARIES mongo::mongoc_static)

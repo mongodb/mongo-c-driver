@@ -23,7 +23,7 @@ set (MONGOC_VERSION @libmongoc_VERSION@)
 set (MONGOC_VERSION_FULL @libmongoc_VERSION_FULL@)
 
 include(CMakeFindDependencyMacro)
-find_dependency (mongoc-1.0 "@libmongoc_VERSION_MAJOR@.@libmongoc_VERSION_MINOR@")
+find_dependency (mongoc-1.0)
 
 set(MONGOC_LIBRARY mongo::mongoc_shared)
 set(MONGOC_LIBRARIES mongo::mongoc_shared)
