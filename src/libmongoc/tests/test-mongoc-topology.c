@@ -2738,7 +2738,8 @@ test_detect_nongenuine_hosts (void)
       mongoc_uri_destroy (uri);
    }
 
-   for (size_t i = 0u; i < sizeof (genuine_uris) / sizeof (*genuine_uris); ++i) {
+   for (size_t i = 0u; i < sizeof (genuine_uris) / sizeof (*genuine_uris);
+        ++i) {
       capture_logs (true);
       mongoc_uri_t *const uri = mongoc_uri_new (genuine_uris[i]);
       ASSERT (uri);
