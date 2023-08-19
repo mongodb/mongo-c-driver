@@ -1,3 +1,16 @@
+
+#  .d8888b.           888
+# d88P  Y88b          888
+# Y88b.               888
+#  "Y888b.    .d88b.  888888 888  888 88888b.
+#     "Y88b. d8P  Y8b 888    888  888 888 "88b
+#       "888 88888888 888    888  888 888  888
+# Y88b  d88P Y8b.     Y88b.  Y88b 888 888 d88P
+#  "Y8888P"   "Y8888   "Y888  "Y88888 88888P"
+#                                     888
+#                                     888
+#                                     888
+
 cmake_minimum_required (VERSION 3.15)
 
 project (libbson
@@ -12,24 +25,39 @@ project (libbson
 set(libbson_VERSION_PRERELEASE ${mongo-c-driver_VERSION_PRERELEASE})
 set(libbson_VERSION_FULL ${mongo-c-driver_VERSION_FULL})
 
-# In the future we may need to check whether static dependencies are
-# available. For now, AUTO means ON.
-if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC_BUILD)
-   message (FATAL_ERROR
-      "-DENABLE_STATIC=OFF and -DENABLE_STATIC_BUILD=OFF also requires -DENABLE_TESTS=OFF"
-   )
+# Don't export symbols implicitly
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+
+# A tag attached to libbson artifacts, denoting the *major* API version, used to
+# potentially co-locate additional future major versions.
+set (BSON_API_VERSION 1.0)
+
+if (APPLE)
+   cmake_policy (SET CMP0042 OLD)
 endif ()
 
-set (BSON_OUTPUT_BASENAME "bson" CACHE STRING "Output bson library base name")
 
-include (CheckFunctionExists)
-include (CheckIncludeFile)
-include (CheckStructHasMember)
-include (CheckSymbolExists)
-include (TestBigEndian)
-include (InstallRequiredSystemLibraries)
-include (CheckIncludeFiles)
+#  .d8888b.           888    888    d8b
+# d88P  Y88b          888    888    Y8P
+# Y88b.               888    888
+#  "Y888b.    .d88b.  888888 888888 888 88888b.   .d88b.  .d8888b
+#     "Y88b. d8P  Y8b 888    888    888 888 "88b d88P"88b 88K
+#       "888 88888888 888    888    888 888  888 888  888 "Y8888b.
+# Y88b  d88P Y8b.     Y88b.  Y88b.  888 888  888 Y88b 888      X88
+#  "Y8888P"   "Y8888   "Y888  "Y888 888 888  888  "Y88888  88888P'
+#                                                     888
+#                                                Y8b d88P
+#                                                 "Y88P"
 
+# libbson-specific configuration settings. Note that we inherit all settings
+# from the parent!
+
+mongo_setting(
+   BSON_OUTPUT_BASENAME "Set the output basename for the libbson library"
+   TYPE STRING
+   DEFAULT VALUE "bson"
+)
 # Control over what components are installed:
 mongo_bool_setting(
    ENABLE_STATIC_LIBBSON_INSTALL "Install static libbson"
@@ -38,13 +66,28 @@ mongo_bool_setting(
    ENABLE_SHARED_LIBBSON_INSTALL "Install shared libbson"
    VISIBLE_IF ENABLE_SHARED)
 
-set(CMAKE_C_VISIBILITY_PRESET hidden)
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-set (BSON_API_VERSION 1.0)
+#  .d8888b.  888                        888
+# d88P  Y88b 888                        888
+# 888    888 888                        888
+# 888        88888b.   .d88b.   .d8888b 888  888 .d8888b
+# 888        888 "88b d8P  Y8b d88P"    888 .88P 88K
+# 888    888 888  888 88888888 888      888888K  "Y8888b.
+# Y88b  d88P 888  888 Y8b.     Y88b.    888 "88b      X88
+#  "Y8888P"  888  888  "Y8888   "Y8888P 888  888  88888P'
 
-include (CPack)
-TEST_BIG_ENDIAN (BSON_BIG_ENDIAN)
+# Configure-time platform checks. These start as regular CMake booleans, but are
+# converted to 0/1 values (with mongo_bool01) so that they can be inserted into
+# bson-config.h as preprocessor values. We cannot use #cmakedefine01, as we need
+# to keep compatibility with an external Autotools-generated library configuration
+
+include (CheckFunctionExists)
+include (CheckIncludeFile)
+include (CheckStructHasMember)
+include (CheckSymbolExists)
+include (TestBigEndian)
+include (InstallRequiredSystemLibraries)
+include (CheckIncludeFiles)
 
 # See https://public.kitware.com/Bug/view.php?id=15659
 check_symbol_exists (snprintf stdio.h BSON_HAVE_SNPRINTF)
@@ -65,6 +108,7 @@ check_symbol_exists (clock_gettime time.h BSON_HAVE_CLOCK_GETTIME)
 mongo_bool01 (BSON_HAVE_CLOCK_GETTIME BSON_HAVE_CLOCK_GETTIME)
 check_symbol_exists (strnlen string.h BSON_HAVE_STRNLEN)
 mongo_bool01 (BSON_HAVE_STRNLEN BSON_HAVE_STRNLEN)
+test_big_endian (BSON_BIG_ENDIAN)
 
 if (WIN32)
    set (BSON_OS 2)
@@ -95,10 +139,14 @@ if (ENABLE_APPLE_FRAMEWORK)
    )
 endif ()
 
-
-if (APPLE)
-   cmake_policy (SET CMP0042 OLD)
-endif ()
+# 8888888b.            .d888 d8b          d8b 888    d8b
+# 888  "Y88b          d88P"  Y8P          Y8P 888    Y8P
+# 888    888          888                     888
+# 888    888  .d88b.  888888 888 88888b.  888 888888 888  .d88b.  88888b.  .d8888b
+# 888    888 d8P  Y8b 888    888 888 "88b 888 888    888 d88""88b 888 "88b 88K
+# 888    888 88888888 888    888 888  888 888 888    888 888  888 888  888 "Y8888b.
+# 888  .d88P Y8b.     888    888 888  888 888 Y88b.  888 Y88..88P 888  888      X88
+# 8888888P"   "Y8888  888    888 888  888 888  "Y888 888  "Y88P"  888  888  88888P'
 
 # Base INTERFACE library propagates in-build-tree requirements for using libbson
 add_library(_libbson_build_interface INTERFACE)
@@ -214,6 +262,18 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 
+# 8888888888                                          888
+# 888                                                 888
+# 888                                                 888
+# 8888888    888  888  8888b.  88888b.d88b.  88888b.  888  .d88b.  .d8888b
+# 888        `Y8bd8P'     "88b 888 "888 "88b 888 "88b 888 d8P  Y8b 88K
+# 888          X88K   .d888888 888  888  888 888  888 888 88888888 "Y8888b.
+# 888        .d8""8b. 888  888 888  888  888 888 d88P 888 Y8b.          X88
+# 8888888888 888  888 "Y888888 888  888  888 88888P"  888  "Y8888   88888P'
+#                                            888
+#                                            888
+#                                            888
+
 function (add_example bin src)
    set (BSON_EXAMPLE_SOURCES ${PROJECT_SOURCE_DIR}/${src})
    add_executable (${bin} ${BSON_EXAMPLE_SOURCES})
@@ -243,13 +303,26 @@ if (ENABLE_EXAMPLES)
    add_example (creating examples/creating.c)
 endif () # ENABLE_EXAMPLES
 
+
+# 8888888                   888             888 888
+#   888                     888             888 888
+#   888                     888             888 888
+#   888   88888b.  .d8888b  888888  8888b.  888 888
+#   888   888 "88b 88K      888        "88b 888 888
+#   888   888  888 "Y8888b. 888    .d888888 888 888
+#   888   888  888      X88 Y88b.  888  888 888 888
+# 8888888 888  888  88888P'  "Y888 "Y888888 888 888
+
 set (BSON_HEADER_INSTALL_DIR
    "${CMAKE_INSTALL_INCLUDEDIR}/libbson-${BSON_API_VERSION}"
 )
 function(install_export_target target)
+   # Tell pkg-config where the headers are going:
    set_property(TARGET ${target} APPEND PROPERTY pkg_config_INCLUDE_DIRECTORIES "${BSON_HEADER_INSTALL_DIR}")
+   # Install the target:
    install(
       TARGETS "${target}"
+      # Important: We generate a unique export set for this target alone.
       EXPORT "${target}-targets"
       LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
       ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -257,6 +330,9 @@ function(install_export_target target)
       INCLUDES DESTINATION "${BSON_HEADER_INSTALL_DIR}"
       FRAMEWORK DESTINATION "${CMAKE_INSTALL_BINDIR}"
    )
+   # Install the unique export set into a file that is qualified by the name of
+   # the target itself. The main config-file package will search for the
+   # possibly-installed exported targets for the known targets. See: bson-config.cmake
    install(
       EXPORT "${target}-targets"
       NAMESPACE mongo::
@@ -265,31 +341,34 @@ function(install_export_target target)
    )
 endfunction()
 
-set(installed_targets)
 if(ENABLE_STATIC_LIBBSON_INSTALL AND TARGET bson_static)
    install_export_target(bson_static)
-   list(APPEND installed_targets bson_static)
    mongo_generate_pkg_config(bson_static FILENAME libbson-static-1.0.pc INSTALL)
 endif()
 if(ENABLE_SHARED_LIBBSON_INSTALL AND TARGET bson_shared)
    install_export_target(bson_shared)
-   list(APPEND installed_targets bson_shared)
-   mongo_generate_pkg_config (bson_shared FILENAME libbson-1.0.pc INSTALL)
+   mongo_generate_pkg_config(bson_shared FILENAME libbson-1.0.pc INSTALL)
 endif()
 
-
+# Install all headers by doing a recursive directory-install.
 install(
    DIRECTORY
       # Trailing "/" requests directory contents, not the dir itself:
       src/bson/
+      # Also get the generated dir:
       ${PROJECT_BINARY_DIR}/src/bson/
    DESTINATION "${BSON_HEADER_INSTALL_DIR}/bson"
+   # Only grab the *public* headers.
    FILES_MATCHING
       PATTERN "*.h"
       PATTERN "*-private.h" EXCLUDE
+      # Installed separately below:
       PATTERN "forwarding" EXCLUDE
+      # Don't generate an empty "modules" directory
       PATTERN "modules" EXCLUDE
    )
+
+# The forwarding header is for compatibility with `#include <bson.h>`, so it goes at the top-level:
 install(FILES src/bson/forwarding/bson.h DESTINATION "${BSON_HEADER_INSTALL_DIR}")
 
 if (ENABLE_APPLE_FRAMEWORK)
@@ -299,8 +378,8 @@ if (ENABLE_APPLE_FRAMEWORK)
    )
 endif ()
 
+# Generate the config-file package
 include (CMakePackageConfigHelpers)
-
 write_basic_package_version_file (
    "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config-version.cmake"
    VERSION ${BSON_VERSION}
@@ -310,12 +389,6 @@ write_basic_package_version_file (
 configure_file (src/bson-config.cmake
    "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config.cmake"
    COPYONLY
-)
-
-install (EXPORT bson-targets
-   NAMESPACE mongo::
-   FILE bson-targets.cmake
-   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}
 )
 
 install (
@@ -328,15 +401,32 @@ install (
       Devel
 )
 
-include (LegacyPackage)
+# Install the base targets. (Prior targets were installed above)
+install (EXPORT bson-targets
+   NAMESPACE mongo::
+   FILE bson-targets.cmake
+   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}
+)
 
-if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
+include (LegacyPackage)
+include (CPack)
+
+# 8888888b.
+# 888  "Y88b
+# 888    888
+# 888    888  .d88b.   .d8888b .d8888b
+# 888    888 d88""88b d88P"    88K
+# 888    888 888  888 888      "Y8888b.
+# 888  .d88P Y88..88P Y88b.         X88
+# 8888888P"   "Y88P"   "Y8888P  88888P'
+
+if (ENABLE_MAN_PAGES OR ENABLE_HTML_DOCS)
    find_package (Sphinx REQUIRED)
    add_subdirectory (doc)
    add_custom_target (bson-doc
       ALL
       DEPENDS
-      $<$<STREQUAL:"${ENABLE_MAN_PAGES}","ON">:bson-man>
-      $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:bson-html>
+      $<$<BOOL:${ENABLE_MAN_PAGES}>:bson-man>
+      $<$<BOOL:${ENABLE_HTML_DOCS}>:bson-html>
    )
 endif ()

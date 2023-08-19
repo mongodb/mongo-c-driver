@@ -237,6 +237,9 @@ if(RT_LIBRARY)
    mongo_platform_link_libraries(${RT_LIBRARY})
    # Set required libraries for CHECK_FUNCTION_EXISTS
    list(APPEND CMAKE_REQUIRED_LIBRARIES "${RT_LIBRARY}")
+   # Export the rt linkage as a pkg-config property:
+   get_filename_component(rt_dir "${RT_LIBRARY}" DIRECTORY)
+   set_property(DIRECTORY APPEND PROPERTY pkg_config_LIBS "-L${rt_dir}" -lrt)
 endif()
 
 # On macOS Big Sur, libm resolves to the SDK's tbd file, like:
