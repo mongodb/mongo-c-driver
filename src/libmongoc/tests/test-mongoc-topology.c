@@ -2682,7 +2682,7 @@ test_detect_nongenuine_hosts (void)
       "mongodb://a.mongo.cosmos.azure.com:19555/",
       /* Test case-insensitive matching */
       "mongodb://a.MONGO.COSMOS.AZURE.COM:19555/",
-      /* Mixing genuine and non-genuine hosts (unlikely in practice) */
+      /* Mixing genuine and nongenuine hosts (unlikely in practice) */
       "mongodb://a.example.com:27017,b.mongo.cosmos.azure.com:19555/",
       /* Note: SRV connection strings are intentionally untested, since initial
        * lookup responses cannot be easily mocked. */
