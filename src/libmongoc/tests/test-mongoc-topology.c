@@ -2675,6 +2675,82 @@ test_failure_to_setup_after_retry (void)
    mock_server_destroy (server);
 }
 
+static void
+test_detect_nongenuine_hosts (void)
+{
+   const char *cosmos_uris[] = {
+      "mongodb://a.mongo.cosmos.azure.com:19555/",
+      /* Test case-insensitive matching */
+      "mongodb://a.MONGO.COSMOS.AZURE.COM:19555/",
+      /* Mixing genuine and nongenuine hosts (unlikely in practice) */
+      "mongodb://a.example.com:27017,b.mongo.cosmos.azure.com:19555/",
+      /* Note: SRV connection strings are intentionally untested, since initial
+       * lookup responses cannot be easily mocked. */
+   };
+
+   const char *docdb_uris[] = {
+      "mongodb://a.docdb.amazonaws.com:27017/",
+      "mongodb://a.docdb-elastic.amazonaws.com:27017/",
+      "mongodb://a.DOCDB.AMAZONAWS.COM:27017/",
+      "mongodb://a.DOCDB-ELASTIC.AMAZONAWS.COM:27017/",
+      "mongodb://a.example.com:27017,b.docdb.amazonaws.com:27017/",
+      "mongodb://a.example.com:27017,b.docdb-elastic.amazonaws.com:27017/",
+   };
+
+   const char *genuine_uris[] = {
+      "mongodb://a.example.com:27017,b.example.com:27017/",
+      "mongodb://a.mongodb.net:27017",
+      /* Host names do not end with expected suffix */
+      "mongodb://a.mongo.cosmos.azure.com.tld:19555/",
+      "mongodb://a.docdb.amazonaws.com.tld:27017/",
+      "mongodb://a.docdb-elastic.amazonaws.com.tld:27017/",
+   };
+
+   for (size_t i = 0u; i < sizeof (cosmos_uris) / sizeof (*cosmos_uris); ++i) {
+      capture_logs (true);
+      mongoc_uri_t *const uri = mongoc_uri_new (cosmos_uris[i]);
+      ASSERT (uri);
+      mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
+      ASSERT (topology);
+      ASSERT_CAPTURED_LOG (
+         "nongenuine host should log",
+         MONGOC_LOG_LEVEL_INFO,
+         "You appear to be connected to a CosmosDB cluster. For more "
+         "information regarding feature compatibility and support please visit "
+         "https://www.mongodb.com/supportability/cosmosdb");
+      mongoc_topology_destroy (topology);
+      mongoc_uri_destroy (uri);
+   }
+
+   for (size_t i = 0u; i < sizeof (docdb_uris) / sizeof (*docdb_uris); ++i) {
+      capture_logs (true);
+      mongoc_uri_t *const uri = mongoc_uri_new (docdb_uris[i]);
+      ASSERT (uri);
+      mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
+      ASSERT (topology);
+      ASSERT_CAPTURED_LOG (
+         "nongenuine host should log",
+         MONGOC_LOG_LEVEL_INFO,
+         "You appear to be connected to a DocumentDB cluster. For more "
+         "information regarding feature compatibility and support please visit "
+         "https://www.mongodb.com/supportability/documentdb");
+      mongoc_topology_destroy (topology);
+      mongoc_uri_destroy (uri);
+   }
+
+   for (size_t i = 0u; i < sizeof (genuine_uris) / sizeof (*genuine_uris);
+        ++i) {
+      capture_logs (true);
+      mongoc_uri_t *const uri = mongoc_uri_new (genuine_uris[i]);
+      ASSERT (uri);
+      mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
+      ASSERT (topology);
+      ASSERT_NO_CAPTURED_LOGS ("genuine host should not log");
+      mongoc_topology_destroy (topology);
+      mongoc_uri_destroy (uri);
+   }
+}
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -2842,4 +2918,6 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/failure_to_setup_after_retry",
                                 test_failure_to_setup_after_retry);
+   TestSuite_Add (
+      suite, "/Topology/detect_nongenuine_hosts", test_detect_nongenuine_hosts);
 }

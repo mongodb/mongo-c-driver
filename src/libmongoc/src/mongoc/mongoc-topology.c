@@ -312,6 +312,40 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
    return hl_array;
 }
 
+static void
+_detect_nongenuine_hosts (const mongoc_host_list_t *hosts)
+{
+   const mongoc_host_list_t *iter;
+
+   LL_FOREACH (hosts, iter)
+   {
+      char *host_lowercase = bson_strdup (iter->host);
+
+      mongoc_lowercase (iter->host, host_lowercase);
+
+      if (mongoc_ends_with (host_lowercase, ".cosmos.azure.com")) {
+         MONGOC_INFO (
+            "You appear to be connected to a CosmosDB cluster. For more "
+            "information regarding feature compatibility and support please "
+            "visit https://www.mongodb.com/supportability/cosmosdb");
+         bson_free (host_lowercase);
+         return;
+      }
+
+      if (mongoc_ends_with (host_lowercase, ".docdb.amazonaws.com") ||
+          mongoc_ends_with (host_lowercase, ".docdb-elastic.amazonaws.com")) {
+         MONGOC_INFO (
+            "You appear to be connected to a DocumentDB cluster. For more "
+            "information regarding feature compatibility and support please "
+            "visit https://www.mongodb.com/supportability/documentdb");
+         bson_free (host_lowercase);
+         return;
+      }
+
+      bson_free (host_lowercase);
+   }
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -603,6 +637,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       mongoc_topology_description_add_server (td, elem->host_and_port, &id);
       mongoc_topology_scanner_add (topology->scanner, elem, id, false);
    }
+
+   _detect_nongenuine_hosts (*hl_array);
 
    bson_free ((void *) hl_array);
 

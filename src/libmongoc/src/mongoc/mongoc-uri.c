@@ -84,9 +84,6 @@ _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
                                             int64_t value,
                                             bson_error_t *error);
 
-static bool
-ends_with (const char *str, const char *suffix);
-
 static void
 mongoc_uri_do_unescape (char **str)
 {
@@ -168,7 +165,7 @@ mongoc_uri_validate_srv_result (const mongoc_uri_t *uri,
       VALIDATE_SRV_ERR ();
    }
 
-   if (!ends_with (host, srv_host)) {
+   if (!mongoc_ends_with (host, srv_host)) {
       VALIDATE_SRV_ERR ();
    }
 
@@ -280,41 +277,6 @@ scan_to_unichar (const char *str,
    }
 
    return NULL;
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * ends_with --
- *
- *       Return true if str ends with suffix.
- *
- *--------------------------------------------------------------------------
- */
-static bool
-ends_with (const char *str, const char *suffix)
-{
-   size_t str_len = strlen (str);
-   size_t suffix_len = strlen (suffix);
-   const char *s1, *s2;
-
-   if (str_len < suffix_len) {
-      return false;
-   }
-
-   /* start at the ends of both strings */
-   s1 = str + str_len;
-   s2 = suffix + suffix_len;
-
-   /* until either pointer reaches start of its string, compare the pointers */
-   for (; s1 >= str && s2 >= suffix; s1--, s2--) {
-      if (*s1 != *s2) {
-         return false;
-      }
-   }
-
-   return true;
 }
 
 
