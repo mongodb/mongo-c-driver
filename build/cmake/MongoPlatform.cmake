@@ -17,7 +17,12 @@ users).
 ]]
 
 add_library(_mongo-platform INTERFACE)
-add_library(mongo::detail::c_platform ALIAS _mongo-platform)
+if (NOT USE_SYSTEM_LIBBSON)
+    add_library(mongo::detail::c_platform ALIAS _mongo-platform)
+else ()
+   # The system libbson exports the `mongo::detail::c_platform` target.
+   # Do not define the `mongo::detail::c_platform` target, to prevent an "already defined" error.
+endif ()
 set_property(TARGET _mongo-platform PROPERTY EXPORT_NAME detail::c_platform)
 install(TARGETS _mongo-platform EXPORT bson-targets)
 
