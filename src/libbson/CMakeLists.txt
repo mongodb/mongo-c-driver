@@ -222,6 +222,9 @@ if(ENABLE_STATIC)
    add_library(bson_static STATIC)
    target_link_libraries(bson_static PRIVATE $<BUILD_INTERFACE:bson_obj>)
    list(APPEND bson_libs bson_static)
+   # When consumers link against bson_static, suppress the annotation __declspec(dllimport),
+   # since those symbols will be available immediately at the link step:
+   target_compile_definitions(bson_static INTERFACE BSON_STATIC)
 endif()
 
 if(ENABLE_SHARED)
