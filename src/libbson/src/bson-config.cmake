@@ -7,9 +7,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/bson-targets.cmake")
 # Now import the targets of each link-kind that's available. Only the targets of
 # libbson libraries that were actually installed alongside this file will be
 # imported.
-foreach(set IN ITEMS bson_shared bson_static)
-    set(inc "${CMAKE_CURRENT_LIST_DIR}/${set}-targets.cmake")
-    if(EXISTS "${inc}")
-        include("${inc}")
-    endif()
+file(GLOB target_files "${CMAKE_CURRENT_LIST_DIR}/bson_*-targets.cmake")
+foreach(inc IN LISTS target_files)
+    include("${inc}")
 endforeach()
