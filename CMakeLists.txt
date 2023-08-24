@@ -226,6 +226,11 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 mongo_platform_use_target(Threads::Threads)
 
+if(WIN32)
+   # Required for gethostbyname on Windows:
+   mongo_platform_link_libraries(ws2_32)
+endif()
+
 # librt needed on linux for clock_gettime
 find_library(RT_LIBRARY rt PATHS /usr/lib32)
 if(RT_LIBRARY)
