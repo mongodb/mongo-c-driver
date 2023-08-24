@@ -681,6 +681,11 @@ target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform)
 install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
 set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
 
+if(WIN32)
+   # Required for gethostbyname on Windows:
+   target_link_libraries(_mongoc-dependencies INTERFACE ws2_32)
+endif()
+
 # utf8proc configuration
 find_package(Utf8Proc REQUIRED)
 set(UTF8PROC_INCLUDE_DIRS, "")
