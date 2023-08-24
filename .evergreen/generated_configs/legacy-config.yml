@@ -1025,6 +1025,16 @@ tasks:
       script: |-
         set -o errexit
         bash ./.evergreen/scripts/build-and-test-with-toolchain.sh
+- name: install-libmongoc-after-libbson
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        bash ./.evergreen/scripts/install-libmongoc-after-libbson.sh
 - name: test-coverage-latest-replica-set-auth-sasl-openssl
   tags:
   - latest
@@ -14244,6 +14254,7 @@ buildvariants:
   - name: build-and-test-with-toolchain
     distros:
     - debian10-small
+  - install-libmongoc-after-libbson
   tags:
   - pr-merge-gate
 - name: clang34ubuntu
