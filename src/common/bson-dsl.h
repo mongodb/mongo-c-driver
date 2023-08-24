@@ -1,3 +1,5 @@
+#include "common-prelude.h"
+
 #ifndef BSON_BSON_DSL_H_INCLUDED
 #define BSON_BSON_DSL_H_INCLUDED
 
