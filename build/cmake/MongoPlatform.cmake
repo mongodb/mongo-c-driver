@@ -69,7 +69,7 @@ endfunction()
 #[[
 Add non-target link library as usage requirements for the current platform.
 
-This is intended for addling libraries that need to be linked. To add targets
+This is intended for adding libraries that need to be linked. To add targets
 as usage requirements, use mongo_platform_use_target. For adding link options,
 use mongo_platform_link_options.
 ]]

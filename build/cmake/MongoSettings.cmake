@@ -187,10 +187,10 @@ function(mongo_setting setting_NAME setting_DOC)
         endif()
     endif()
 
-    if(DEFINED setting_AVAILABLE_IF)
+    if(DEFINED setting_VISIBLE_IF)
         string(JOIN "\n" code
             "set(avail FALSE)"
-            "if(${setting_AVAILABLE_IF})"
+            "if(${setting_VISIBLE_IF})"
             "  set(avail TRUE)"
             "endif()")
         _mongo_eval_cmake(avail "${code}")
@@ -349,7 +349,7 @@ function(mongo_target_requirements)
         if(ARG_LINK_LIBRARIES)
             target_link_libraries("${target}" ${ARG_LINK_LIBRARIES})
         endif()
-        if(ARG_COMPILE_OPTIONS)
+        if(ARG_COMPILE_DEFINITIONS)
             target_compile_definitions("${target}" ${ARG_COMPILE_DEFINITIONS})
         endif()
         if(ARG_COMPILE_OPTIONS)
