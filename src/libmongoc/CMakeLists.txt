@@ -12,8 +12,6 @@ project (libmongoc
 set(libmongoc_VERSION_PRERELEASE ${mongo-c-driver_VERSION_PRERELEASE})
 set(libmongoc_VERSION_FULL ${mongo-c-driver_VERSION_FULL})
 
-include (MongoC-Warnings)
-
 include (CheckSchedGetCPU)
 include (CheckStructHasMember)
 include (CheckSymbolExists)
@@ -349,15 +347,7 @@ if (SNAPPY_INCLUDE_DIRS)
    include_directories ("${SNAPPY_INCLUDE_DIRS}")
 endif ()
 
-set (MONGOC_ENABLE_SHM_COUNTERS 0)
-
-if (ENABLE_SHM_COUNTERS)
-   set (MONGOC_ENABLE_SHM_COUNTERS 1)
-   find_library(RT_LIBRARY rt HINTS /usr/lib32)
-   if (RT_LIBRARY)
-      set (SHM_LIBRARIES rt)
-   endif ()
-endif ()
+mongo_bool01 (MONGOC_ENABLE_SHM_COUNTERS ENABLE_SHM_COUNTERS)
 
 # Configure In-Use Encryption
 set (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION 0)
@@ -677,11 +667,11 @@ else ()
 endif ()
 
 set (LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES}
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES} ${SHM_LIBRARIES}
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
@@ -711,10 +701,6 @@ if(ENABLE_SRV)
    endif()
    target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_resolve)
 endif()
-
-if (WIN32)
-   set (LIBRARIES ${LIBRARIES} ws2_32)
-endif ()
 
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    # Disable warnings on bundled kms_message source files.
@@ -1213,7 +1199,7 @@ endif ()
 # Collect link items for the static library to be inserted into the pkg-config
 if(TARGET mongoc_static)
    set(link_options
-      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${ZLIB_LIBRARIES}
+      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${ZLIB_LIBRARIES}
       ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY})
    # Replace all absolute paths with search-dir link-file options:
    list(TRANSFORM link_options
@@ -1249,20 +1235,6 @@ write_basic_package_version_file (
    VERSION ${MONGOC_VERSION}
    COMPATIBILITY AnyNewerVersion
 )
-
-export (EXPORT mongoc-targets
-   NAMESPACE mongo::
-   FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-targets.cmake"
-)
-
-if (TARGET mcd_rpc)
-   # Note: the (mongo::)bson_static target must be included separately via find_package or include.
-   export (
-      TARGETS mcd_rpc
-      NAMESPACE mongo::
-      FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mcd-rpc-targets.cmake"
-   )
-endif ()
 
 configure_file (src/mongoc-config.cmake
    "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"

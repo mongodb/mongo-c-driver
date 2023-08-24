@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "bson-prelude.h"
+#include <bson/bson-prelude.h>
 
 
 #ifndef BSON_MACROS_H
@@ -27,7 +27,7 @@
 #include <algorithm>
 #endif
 
-#include "bson-config.h"
+#include <bson/bson-config.h>
 
 
 #if BSON_OS == 1
@@ -82,9 +82,9 @@
 #ifdef BSON_STATIC
 #define BSON_API
 #elif defined(BSON_COMPILATION)
-#define BSON_API __declspec(dllexport)
+#define BSON_API __declspec (dllexport)
 #else
-#define BSON_API __declspec(dllimport)
+#define BSON_API __declspec (dllimport)
 #endif
 #define BSON_CALL __cdecl
 
@@ -142,14 +142,14 @@
 #endif
 
 #if defined(__cplusplus) && (__cplusplus >= 201103L || defined(_MSVC_LANG))
-#define BSON_ALIGNOF(expr) alignof(expr)
+#define BSON_ALIGNOF(expr) alignof (expr)
 #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-#define BSON_ALIGNOF(expr) _Alignof(expr)
+#define BSON_ALIGNOF(expr) _Alignof (expr)
 #else
 #if defined(_MSC_VER)
-#define BSON_ALIGNOF(expr) __alignof(expr)
+#define BSON_ALIGNOF(expr) __alignof (expr)
 #else
-#define BSON_ALIGNOF(expr) __alignof__(expr)
+#define BSON_ALIGNOF(expr) __alignof__ (expr)
 #endif
 #endif // __STDC_VERSION__ >= 201112L
 
@@ -166,7 +166,7 @@
 
 #ifdef BSON_EXTRA_ALIGN
 #if defined(_MSC_VER)
-#define BSON_ALIGNED_BEGIN(_N) __declspec(align (_N))
+#define BSON_ALIGNED_BEGIN(_N) __declspec (align (_N))
 #define BSON_ALIGNED_END(_N)
 #else
 #define BSON_ALIGNED_BEGIN(_N)
@@ -174,7 +174,7 @@
 #endif
 #else
 #if defined(_MSC_VER)
-#define BSON_ALIGNED_BEGIN(_N) __declspec(align (BSON_ALIGN_OF_PTR))
+#define BSON_ALIGNED_BEGIN(_N) __declspec (align (BSON_ALIGN_OF_PTR))
 #define BSON_ALIGNED_END(_N)
 #else
 #define BSON_ALIGNED_BEGIN(_N)
@@ -323,7 +323,7 @@
 #define BSON_ENSURE_ARRAY_PARAM_SIZE(_n)
 #define BSON_TYPEOF decltype
 #else
-#define BSON_ENSURE_ARRAY_PARAM_SIZE(_n) static(_n)
+#define BSON_ENSURE_ARRAY_PARAM_SIZE(_n) static (_n)
 #define BSON_TYPEOF typeof
 #endif
 

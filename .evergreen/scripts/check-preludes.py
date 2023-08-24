@@ -35,7 +35,7 @@ checks = [
             MONGOC_PREFIX / "mongoc-prelude.h",
             MONGOC_PREFIX / "mongoc.h",
         ],
-        "include": "#include \"mongoc-prelude.h\""
+        "include": '#include "mongoc-prelude.h"',
     },
     {
         "name": "libbson",
@@ -45,13 +45,13 @@ checks = [
             BSON_PREFIX / "bson-prelude.h",
             BSON_PREFIX / "bson.h",
         ],
-        "include": "#include \"bson-prelude.h\""
+        "include": "#include <bson/bson-prelude.h>",
     },
     {
         "name": "common",
         "headers": list(COMMON_PREFIX.glob("*.h")),
         "exclusions": [COMMON_PREFIX / "common-prelude.h"],
-        "include": "#include \"common-prelude.h\""
+        "include": '#include "common-prelude.h"',
     },
 ]
 
@@ -63,7 +63,7 @@ for check in checks:
         if header in check["exclusions"]:
             continue
         lines = Path(header).read_text(encoding="utf-8").splitlines()
-        if check['include'] not in lines:
+        if check["include"] not in lines:
             print(f"{header} did not include prelude")
             sys.exit(1)
 

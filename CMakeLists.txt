@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.15)
 
-list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
+list (INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
 # Defines BUILD_VERSION, which we use throughout:
 include (BuildVersion)
 
@@ -47,12 +47,16 @@ if(ENABLE_BSON STREQUAL "SYSTEM" AND NOT USE_SYSTEM_LIBBSON)
    message(FATAL_ERROR "ENABLE_BSON=SYSTEM is no longer supported. Use USE_SYSTEM_LIBBSON=ON for the same effect.")
 endif()
 
-# Static libraries:
+# Toggle static libraries:
 mongo_setting(
    ENABLE_STATIC "Enable building and installing static library archive artifacts"
    OPTIONS ON OFF BUILD_ONLY
    DEFAULT VALUE "ON"
 )
+# Toggle dynamic libraries:
+mongo_bool_setting(ENABLE_SHARED "Enable building and installing dynamic library artifacts")
+
+# Toggle PIC
 if(NOT WIN32)
    mongo_bool_setting(ENABLE_PIC "Enable position-independent code when building static libraries (Not applicable on Windows)")
 elseif(DEFINED ENABLE_PIC)
@@ -221,6 +225,34 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 mongo_platform_use_target(Threads::Threads)
+
+if(WIN32)
+   # Required for gethostbyname on Windows:
+   mongo_platform_link_libraries(ws2_32)
+endif()
+
+# librt needed on linux for clock_gettime
+find_library(RT_LIBRARY rt PATHS /usr/lib32)
+if(RT_LIBRARY)
+   mongo_platform_link_libraries(${RT_LIBRARY})
+   # Set required libraries for CHECK_FUNCTION_EXISTS
+   list(APPEND CMAKE_REQUIRED_LIBRARIES "${RT_LIBRARY}")
+   # Export the rt linkage as a pkg-config property:
+   get_filename_component(rt_dir "${RT_LIBRARY}" DIRECTORY)
+   set_property(DIRECTORY APPEND PROPERTY pkg_config_LIBS "-L${rt_dir}" -lrt)
+endif()
+
+# On macOS Big Sur, libm resolves to the SDK's tbd file, like:
+# /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libm.tbd
+# Not all consumers can easily link to a tbd file (notably golang will reject a tbd suffix by default)
+# macOS includes libm as part of libSystem (along with libc).
+# It does not need to be explicitly linked.
+if(NOT APPLE)
+   find_library(M_LIBRARY m)
+   if(M_LIBRARY)
+      mongo_platform_link_libraries(${M_LIBRARY})
+   endif()
+endif()
 
 # Optionally enable C++ to do some C++-specific tests
 include (CheckLanguage)

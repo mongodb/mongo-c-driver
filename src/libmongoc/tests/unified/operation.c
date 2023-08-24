@@ -23,7 +23,7 @@
 #include "test-libmongoc.h"
 #include "util.h"
 #include "utlist.h"
-#include "bson-dsl.h"
+#include <bson/bson-dsl.h>
 
 typedef struct {
    char *name;

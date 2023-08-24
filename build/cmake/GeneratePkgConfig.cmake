@@ -280,7 +280,7 @@ function(_generate_pkg_config_content out)
         "-L\${libdir}"
         "-l$<TARGET_PROPERTY:OUTPUT_NAME>"
         $<GENEX_EVAL:$<TARGET_PROPERTY:pkg_config_LIBS>>
-        $<TARGET_PROPERTY:INTERFACE_LINK_OPTIONS>
+        $<REMOVE_DUPLICATES:$<TARGET_PROPERTY:INTERFACE_LINK_OPTIONS>>
         )
     string(APPEND libs "$<JOIN:${gx_libs};${gx_linkopts}, >")
 
