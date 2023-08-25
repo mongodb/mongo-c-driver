@@ -2612,7 +2612,7 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
    stack_frame.AddrStack.Mode = AddrModeFlat;
 
    SYMBOL_INFO *symbol;
-   symbol = calloc (sizeof (SYMBOL_INFO) + 256, 1);
+   symbol = bson_malloc0 (sizeof (SYMBOL_INFO) + 256);
    symbol->MaxNameLen = 255;
    symbol->SizeOfStruct = sizeof (SYMBOL_INFO);
 

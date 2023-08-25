@@ -315,7 +315,7 @@ _V_TestSuite_AddFull (TestSuite *suite,
       return NULL;
    }
 
-   test = (Test *) calloc (1, sizeof *test);
+   test = (Test *) bson_malloc0 (sizeof *test);
    test->name = bson_strdup (name);
    test->func = func;
    test->num_checks = 0;
@@ -395,7 +395,7 @@ _TestSuite_TestFnCtxDtor (void *ctx)
    if (dtor) {
       dtor (ctx);
    }
-   free (ctx);
+   bson_free (ctx);
 }
 
 
@@ -1003,7 +1003,7 @@ _process_skip_file (const char *filename, mongoc_array_t *skips)
          continue; /* Comment line or blank line */
       }
 
-      skip = (TestSkip *) calloc (1, sizeof *skip);
+      skip = (TestSkip *) bson_malloc0 (sizeof *skip);
       if (buffer[buflen - 1] == '\n')
          buflen--;
       test_name_end = buffer + buflen;
@@ -1166,8 +1166,8 @@ TestSuite_Destroy (TestSuite *suite)
       if (test->dtor) {
          test->dtor (test->ctx);
       }
-      free (test->name);
-      free (test);
+      bson_free (test->name);
+      bson_free (test);
    }
 
    if (suite->outfile) {
@@ -1178,9 +1178,9 @@ TestSuite_Destroy (TestSuite *suite)
       bson_string_free (suite->mock_server_log_buf, true);
    }
 
-   free (suite->name);
-   free (suite->prgname);
-   free (suite->ctest_run);
+   bson_free (suite->name);
+   bson_free (suite->prgname);
+   bson_free (suite->ctest_run);
    for (size_t i = 0u; i < suite->match_patterns.len; i++) {
       char *val = _mongoc_array_index (&suite->match_patterns, char *, i);
       bson_free (val);
