@@ -152,7 +152,7 @@ bson_malloc0 (size_t num_bytes) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * bson_aligned_malloc --
+ * bson_aligned_alloc --
  *
  *       Allocates @num_bytes of memory with an alignment of @alignment and
  *       returns a pointer to it.  If malloc failed to allocate the memory,
