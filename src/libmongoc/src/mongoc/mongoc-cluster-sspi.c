@@ -71,7 +71,7 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri,
    service_ascii_len = strlen (service_ascii);
 
    /* this is donated to the sspi */
-   service = calloc (service_ascii_len + 1, sizeof (WCHAR));
+   service = bson_malloc0 ((service_ascii_len + 1) * sizeof (WCHAR));
    service_len = MultiByteToWideChar (CP_UTF8,
                                       0,
                                       service_ascii,
@@ -85,7 +85,7 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri,
       tmp_creds_len = strlen (state->sasl.pass);
 
       /* this is donated to the sspi */
-      pass = calloc (tmp_creds_len + 1, sizeof (WCHAR));
+      pass = bson_malloc0 ((tmp_creds_len + 1) * sizeof (WCHAR));
       pass_len = MultiByteToWideChar (CP_UTF8,
                                       0,
                                       state->sasl.pass,
@@ -99,7 +99,7 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri,
       tmp_creds_len = strlen (state->sasl.user);
 
       /* this is donated to the sspi */
-      user = calloc (tmp_creds_len + 1, sizeof (WCHAR));
+      user = bson_malloc0 ((tmp_creds_len + 1) * sizeof (WCHAR));
       user_len = MultiByteToWideChar (CP_UTF8,
                                       0,
                                       state->sasl.user,

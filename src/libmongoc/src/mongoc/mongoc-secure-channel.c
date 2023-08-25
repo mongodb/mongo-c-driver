@@ -756,7 +756,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
       _mongoc_secure_channel_init_sec_buffer (
          &inbuf[0],
          SECBUFFER_TOKEN,
-         malloc (secure_channel->encdata_offset),
+         bson_malloc (secure_channel->encdata_offset),
          (unsigned long) (secure_channel->encdata_offset &
                           (size_t) 0xFFFFFFFFUL));
       _mongoc_secure_channel_init_sec_buffer (
@@ -802,7 +802,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
                                     &secure_channel->ctxt->time_stamp);
 
       /* free buffer for received handshake data */
-      free (inbuf[0].pvBuffer);
+      bson_free (inbuf[0].pvBuffer);
 
       /* check if the handshake was incomplete */
       if (sspi_status == SEC_E_INCOMPLETE_MESSAGE) {
