@@ -60,3 +60,10 @@ sudo chroot ./unstable-chroot /bin/bash -c "(\
 
 [ -e ./unstable-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
 (cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
+
+# Build a second time, to ensure a "double build" works
+sudo chroot ./unstable-chroot /bin/bash -c "(\
+  cd /tmp/mongoc && \
+  rm -f example-client && \
+  git status --ignored && \
+  dpkg-buildpackage -b && dpkg-buildpackage -S )"
