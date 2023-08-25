@@ -40,7 +40,8 @@ cd ..
 
 git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.git
 export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
-sudo -E ./debootstrap.git/debootstrap unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
+# revert trixie -> unstable once Debian bug #1050439 is fixed
+sudo -E ./debootstrap.git/debootstrap trixie ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c "(\
   apt-get install -y build-essential git-buildpackage fakeroot debhelper cmake libssl-dev pkg-config python3-sphinx python3-sphinx-design zlib1g-dev libsasl2-dev libsnappy-dev libzstd-dev libmongocrypt-dev libjs-mathjax libutf8proc-dev furo && \
