@@ -49,7 +49,7 @@ CONTAINER_RUN_DISTROS = [
 
 
 def tasks() -> list[Task]:
-    return [EarthlyTask(suffix="build-and-test", target="test-example")]
+    return [EarthlyTask(suffix="build-check", target="test-example")]
 
 
 def variants() -> list[BuildVariant]:
