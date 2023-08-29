@@ -142,17 +142,17 @@ main (int argc, char *argv[])
       case 'h':
          fprintf (
             stdout, "Usage: %s [-s SERVER_NAME] [-p PORT_NUM]\n", argv[0]);
-         free (hostname);
-         free (port);
+         bson_free (hostname);
+         bson_free (port);
          return EXIT_SUCCESS;
       case 'p':
-         free (port);
-         port = (char *) malloc (strlen (optarg) + 1);
+         bson_free (port);
+         port = (char *) bson_malloc (strlen (optarg) + 1);
          strcpy (port, optarg);
          break;
       case 's':
-         free (hostname);
-         hostname = (char *) malloc (strlen (optarg) + 1);
+         bson_free (hostname);
+         hostname = (char *) bson_malloc (strlen (optarg) + 1);
          strcpy (hostname, optarg);
          break;
       default:
@@ -167,8 +167,8 @@ main (int argc, char *argv[])
     */
    fd = bson_streaming_remote_open (hostname, port);
    if (fd == -1) {
-      free (hostname);
-      free (port);
+      bson_free (hostname);
+      bson_free (port);
       return EXIT_FAILURE;
    }
 
@@ -185,7 +185,7 @@ main (int argc, char *argv[])
     * destruction.
     */
    bson_reader_destroy (reader);
-   free (hostname);
-   free (port);
+   bson_free (hostname);
+   bson_free (port);
    return EXIT_SUCCESS;
 }

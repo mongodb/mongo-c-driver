@@ -16,11 +16,11 @@
 
 
 #include "bson.h"
-#include "bson-config.h"
-#include "bson-private.h"
-#include "bson-json-private.h"
-#include "bson-string.h"
-#include "bson-iso8601-private.h"
+#include <bson/bson-config.h>
+#include <bson/bson-private.h>
+#include <bson/bson-json-private.h>
+#include <bson/bson-string.h>
+#include <bson/bson-iso8601-private.h>
 
 #include "common-b64-private.h"
 
@@ -2185,7 +2185,7 @@ bson_copy_to (const bson_t *src, bson_t *dst)
    if ((src->flags & BSON_FLAG_INLINE)) {
 #ifdef BSON_MEMCHECK
       dst->len = src->len;
-      dst->canary = malloc (1);
+      dst->canary = bson_malloc (1);
       memcpy (dst->padding, src->padding, sizeof dst->padding);
 #else
       memcpy (dst, src, sizeof *dst);

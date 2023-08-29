@@ -2573,6 +2573,184 @@ test_hello_ok_pooled (void)
    _test_hello_ok (true);
 }
 
+// initiator_fail is a stream initiator that always fails.
+static mongoc_stream_t *
+initiator_fail (const mongoc_uri_t *uri,
+                const mongoc_host_list_t *host,
+                void *user_data,
+                bson_error_t *error)
+{
+   bson_set_error (error,
+                   MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_CONNECT,
+                   "failing in initiator");
+   printf ("failing in initiator\n");
+   return false;
+}
+
+// Test failure in `mongoc_topology_scanner_node_setup` during retry of scanning
+// a known server. This is a regression test of CDRIVER-4666.
+static void
+test_failure_to_setup_after_retry (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   future_t *future;
+   bson_error_t error;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   client = mongoc_client_new_from_uri_with_error (uri, &error);
+   ASSERT_OR_PRINT (client, error);
+
+   // Override the heartbeatFrequencyMS (default 60 seconds) and
+   // minHeartbeatFrequencyMS (default 500ms) to speed up the test.
+   const int64_t overridden_heartbeat_ms = 1;
+   {
+      mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+      tdmod.new_td->heartbeat_msec = overridden_heartbeat_ms;
+      mc_tpld_modify_commit (tdmod);
+      client->topology->min_heartbeat_frequency_msec = overridden_heartbeat_ms;
+   }
+
+   future = future_client_command_simple (
+      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+   // The first command starts the first topology scan.
+   // Expect legacy hello with handshake.
+   {
+      request_t *request = mock_server_receives_legacy_hello (server, "{}");
+      char *reply = bson_strdup_printf ("{'ok': 1,"
+                                        " 'minWireVersion': %d,"
+                                        " 'maxWireVersion': %d }",
+                                        WIRE_VERSION_MIN,
+                                        WIRE_VERSION_MAX);
+
+      reply_to_request_simple (request, reply);
+      bson_free (reply);
+      request_destroy (request);
+   }
+
+   // Expect "ping" command.
+   {
+      request_t *request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
+      reply_to_request_with_ok_and_destroy (request);
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+   }
+
+   // Wait until ready for next topology scan.
+   _mongoc_usleep (overridden_heartbeat_ms * 1000);
+
+   // Send another command.
+   future = future_client_command_simple (
+      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+   // Expect legacy hello with handshake.
+   {
+      request_t *request = mock_server_receives_legacy_hello (server, "{}");
+      // Set the initiator to fail.
+      mongoc_client_set_stream_initiator (client, initiator_fail, NULL);
+      // A network error on a previously known server triggers the retry.
+      reply_to_request_with_hang_up (request);
+      request_destroy (request);
+   }
+
+   // The initiator fails in `mongoc_topology_scanner_node_setup`. Causes a
+   // deadlock similar to that observed in CDRIVER-4666.
+   // Test fails on macOS due to deadlock with "future_get_bool timed out".
+
+   ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "No suitable servers found");
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+static void
+test_detect_nongenuine_hosts (void)
+{
+   const char *cosmos_uris[] = {
+      "mongodb://a.mongo.cosmos.azure.com:19555/",
+      /* Test case-insensitive matching */
+      "mongodb://a.MONGO.COSMOS.AZURE.COM:19555/",
+      /* Mixing genuine and nongenuine hosts (unlikely in practice) */
+      "mongodb://a.example.com:27017,b.mongo.cosmos.azure.com:19555/",
+      /* Note: SRV connection strings are intentionally untested, since initial
+       * lookup responses cannot be easily mocked. */
+   };
+
+   const char *docdb_uris[] = {
+      "mongodb://a.docdb.amazonaws.com:27017/",
+      "mongodb://a.docdb-elastic.amazonaws.com:27017/",
+      "mongodb://a.DOCDB.AMAZONAWS.COM:27017/",
+      "mongodb://a.DOCDB-ELASTIC.AMAZONAWS.COM:27017/",
+      "mongodb://a.example.com:27017,b.docdb.amazonaws.com:27017/",
+      "mongodb://a.example.com:27017,b.docdb-elastic.amazonaws.com:27017/",
+   };
+
+   const char *genuine_uris[] = {
+      "mongodb://a.example.com:27017,b.example.com:27017/",
+      "mongodb://a.mongodb.net:27017",
+      /* Host names do not end with expected suffix */
+      "mongodb://a.mongo.cosmos.azure.com.tld:19555/",
+      "mongodb://a.docdb.amazonaws.com.tld:27017/",
+      "mongodb://a.docdb-elastic.amazonaws.com.tld:27017/",
+   };
+
+   for (size_t i = 0u; i < sizeof (cosmos_uris) / sizeof (*cosmos_uris); ++i) {
+      capture_logs (true);
+      mongoc_uri_t *const uri = mongoc_uri_new (cosmos_uris[i]);
+      ASSERT (uri);
+      mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
+      ASSERT (topology);
+      ASSERT_CAPTURED_LOG (
+         "nongenuine host should log",
+         MONGOC_LOG_LEVEL_INFO,
+         "You appear to be connected to a CosmosDB cluster. For more "
+         "information regarding feature compatibility and support please visit "
+         "https://www.mongodb.com/supportability/cosmosdb");
+      mongoc_topology_destroy (topology);
+      mongoc_uri_destroy (uri);
+   }
+
+   for (size_t i = 0u; i < sizeof (docdb_uris) / sizeof (*docdb_uris); ++i) {
+      capture_logs (true);
+      mongoc_uri_t *const uri = mongoc_uri_new (docdb_uris[i]);
+      ASSERT (uri);
+      mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
+      ASSERT (topology);
+      ASSERT_CAPTURED_LOG (
+         "nongenuine host should log",
+         MONGOC_LOG_LEVEL_INFO,
+         "You appear to be connected to a DocumentDB cluster. For more "
+         "information regarding feature compatibility and support please visit "
+         "https://www.mongodb.com/supportability/documentdb");
+      mongoc_topology_destroy (topology);
+      mongoc_uri_destroy (uri);
+   }
+
+   for (size_t i = 0u; i < sizeof (genuine_uris) / sizeof (*genuine_uris);
+        ++i) {
+      capture_logs (true);
+      mongoc_uri_t *const uri = mongoc_uri_new (genuine_uris[i]);
+      ASSERT (uri);
+      mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
+      ASSERT (topology);
+      ASSERT_NO_CAPTURED_LOGS ("genuine host should not log");
+      mongoc_topology_destroy (topology);
+      mongoc_uri_destroy (uri);
+   }
+}
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -2737,4 +2915,9 @@ test_topology_install (TestSuite *suite)
       suite, "/Topology/hello_ok/single", test_hello_ok_single);
    TestSuite_AddMockServerTest (
       suite, "/Topology/hello_ok/pooled", test_hello_ok_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/failure_to_setup_after_retry",
+                                test_failure_to_setup_after_retry);
+   TestSuite_Add (
+      suite, "/Topology/detect_nongenuine_hosts", test_detect_nongenuine_hosts);
 }

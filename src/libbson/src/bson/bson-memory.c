@@ -20,9 +20,9 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "bson-atomic.h"
-#include "bson-config.h"
-#include "bson-memory.h"
+#include <bson/bson-atomic.h>
+#include <bson/bson-config.h>
+#include <bson/bson-memory.h>
 
 
 // Ensure size of exported structs are stable.
@@ -152,7 +152,7 @@ bson_malloc0 (size_t num_bytes) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * bson_aligned_malloc --
+ * bson_aligned_alloc --
  *
  *       Allocates @num_bytes of memory with an alignment of @alignment and
  *       returns a pointer to it.  If malloc failed to allocate the memory,

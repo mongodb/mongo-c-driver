@@ -70,3 +70,18 @@ function(mongo_platform_use_target)
         endif()
     endforeach()
 endfunction()
+
+#[[
+Add non-target link library as usage requirements for the current platform.
+
+This is intended for adding libraries that need to be linked. To add targets
+as usage requirements, use mongo_platform_use_target. For adding link options,
+use mongo_platform_link_options.
+]]
+function(mongo_platform_link_libraries)
+    list(APPEND CMAKE_MESSAGE_CONTEXT ${CMAKE_CURRENT_FUNCTION})
+    foreach(item IN LISTS ARGN)
+        message(DEBUG "Add platform-support link library: ${item}")
+        target_link_libraries(_mongo-platform INTERFACE "${item}")
+    endforeach()
+endfunction()

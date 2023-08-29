@@ -1302,7 +1302,7 @@ fail:
    bson_destroy (&client_command);
    bson_destroy (&server_reply);
    kms_request_destroy (request);
-   free (signature);
+   bson_free (signature);
    bson_free (server_nonce_str);
    return ret;
 }

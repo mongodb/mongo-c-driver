@@ -26,13 +26,13 @@
 #     • The default full path to the Poetry that will be installed and run by
 #       this script (not present until after ensure-poetry or run-poetry is
 #       executed).
-# * WANT_POETRY_VERSION (overridable) (default 1.4.2)
+# * WANT_POETRY_VERSION (overridable) (default 1.5.1)
 #     • The version of Poetry that will be installed by run-poetry when executed.
 
 # Load vars and utils:
 . "$(dirname "${BASH_SOURCE[0]}")/use.sh" python paths base with_lock download
 
-: "${WANT_POETRY_VERSION:=1.4.2}"
+: "${WANT_POETRY_VERSION:=1.5.1}"
 declare -r -x POETRY_HOME=${FORCE_POETRY_HOME:-"$BUILD_CACHE_DIR/poetry-$WANT_POETRY_VERSION"}
 declare -r POETRY_EXE=$POETRY_HOME/bin/poetry$EXE_SUFFIX
 

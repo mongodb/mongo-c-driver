@@ -40,15 +40,15 @@ _mongoc_sspi_destroy_sspi_client_state (mongoc_sspi_client_state_t *state)
       state->haveCred = 0;
    }
    if (state->spn != NULL) {
-      free (state->spn);
+      bson_free (state->spn);
       state->spn = NULL;
    }
    if (state->response != NULL) {
-      free (state->response);
+      bson_free (state->response);
       state->response = NULL;
    }
    if (state->username != NULL) {
-      free (state->username);
+      bson_free (state->username);
       state->username = NULL;
    }
 }
@@ -86,7 +86,7 @@ _mongoc_sspi_base64_encode (const SEC_CHAR *value, DWORD vlen)
                              CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF,
                              NULL,
                              &len)) {
-      out = (SEC_CHAR *) malloc (sizeof (SEC_CHAR) * len);
+      out = (SEC_CHAR *) bson_malloc (sizeof (SEC_CHAR) * len);
       if (out) {
          /* Encode to the out buffer. */
          if (CryptBinaryToStringA ((BYTE *) value,
@@ -96,7 +96,7 @@ _mongoc_sspi_base64_encode (const SEC_CHAR *value, DWORD vlen)
                                    &len)) {
             return out;
          } else {
-            free (out);
+            bson_free (out);
          }
       }
    }
@@ -111,7 +111,7 @@ _mongoc_sspi_base64_decode (const SEC_CHAR *value, DWORD *rlen)
    /* Get the correct size for the out buffer. */
    if (CryptStringToBinaryA (
           value, 0, CRYPT_STRING_BASE64, NULL, rlen, NULL, NULL)) {
-      out = (SEC_CHAR *) malloc (sizeof (SEC_CHAR) * *rlen);
+      out = (SEC_CHAR *) bson_malloc (sizeof (SEC_CHAR) * *rlen);
       if (out) {
          /* Decode to the out buffer. */
          if (CryptStringToBinaryA (value,
@@ -123,7 +123,7 @@ _mongoc_sspi_base64_decode (const SEC_CHAR *value, DWORD *rlen)
                                    NULL)) {
             return out;
          } else {
-            free (out);
+            bson_free (out);
          }
       }
    }
@@ -137,11 +137,11 @@ _mongoc_sspi_wide_to_utf8 (WCHAR *value)
    CHAR *out;
    int len = WideCharToMultiByte (CP_UTF8, 0, value, -1, NULL, 0, NULL, NULL);
    if (len) {
-      out = (CHAR *) malloc (sizeof (CHAR) * len);
+      out = (CHAR *) bson_malloc (sizeof (CHAR) * len);
       if (WideCharToMultiByte (CP_UTF8, 0, value, -1, out, len, NULL, NULL)) {
          return out;
       } else {
-         free (out);
+         bson_free (out);
       }
    }
    _mongoc_sspi_set_gsserror (GetLastError (), "WideCharToMultiByte");
@@ -234,7 +234,7 @@ _mongoc_sspi_auth_sspi_client_step (mongoc_sspi_client_state_t *state,
    DWORD len;
 
    if (state->response != NULL) {
-      free (state->response);
+      bson_free (state->response);
       state->response = NULL;
    }
 
@@ -319,7 +319,7 @@ _mongoc_sspi_auth_sspi_client_step (mongoc_sspi_client_state_t *state,
    }
 done:
    if (inBufs[0].pvBuffer) {
-      free (inBufs[0].pvBuffer);
+      bson_free (inBufs[0].pvBuffer);
    }
    if (outBufs[0].pvBuffer) {
       FreeContextBuffer (outBufs[0].pvBuffer);
@@ -340,7 +340,7 @@ _mongoc_sspi_auth_sspi_client_unwrap (mongoc_sspi_client_state_t *state,
    wrapBufDesc.pBuffers = wrapBufs;
 
    if (state->response != NULL) {
-      free (state->response);
+      bson_free (state->response);
       state->response = NULL;
       state->qop = SECQOP_WRAP_NO_ENCRYPT;
    }
@@ -377,7 +377,7 @@ _mongoc_sspi_auth_sspi_client_unwrap (mongoc_sspi_client_state_t *state,
    }
 done:
    if (wrapBufs[0].pvBuffer) {
-      free (wrapBufs[0].pvBuffer);
+      bson_free (wrapBufs[0].pvBuffer);
    }
    return status;
 }
@@ -402,7 +402,7 @@ _mongoc_sspi_auth_sspi_client_wrap (mongoc_sspi_client_state_t *state,
    ULONG plaintextMessageSize;
 
    if (state->response != NULL) {
-      free (state->response);
+      bson_free (state->response);
       state->response = NULL;
    }
 
@@ -428,9 +428,9 @@ _mongoc_sspi_auth_sspi_client_wrap (mongoc_sspi_client_state_t *state,
 
    inbufSize =
       sizes.cbSecurityTrailer + plaintextMessageSize + sizes.cbBlockSize;
-   inbuf = (SEC_CHAR *) malloc (inbufSize);
+   inbuf = (SEC_CHAR *) bson_malloc (inbufSize);
    if (inbuf == NULL) {
-      free (decodedData);
+      bson_free (decodedData);
       return MONGOC_SSPI_AUTH_GSS_ERROR;
    }
 
@@ -453,7 +453,7 @@ _mongoc_sspi_auth_sspi_client_wrap (mongoc_sspi_client_state_t *state,
                 inbufSize - sizes.cbSecurityTrailer,
                 decodedData,
                 plaintextMessageSize);
-      free (decodedData);
+      bson_free (decodedData);
    }
 
    wrapBufDesc.cBuffers = 3;
@@ -476,14 +476,14 @@ _mongoc_sspi_auth_sspi_client_wrap (mongoc_sspi_client_state_t *state,
    status = EncryptMessage (
       &state->ctx, protect ? 0 : SECQOP_WRAP_NO_ENCRYPT, &wrapBufDesc, 0);
    if (status != SEC_E_OK) {
-      free (inbuf);
+      bson_free (inbuf);
       _mongoc_sspi_set_gsserror (status, "EncryptMessage");
       return MONGOC_SSPI_AUTH_GSS_ERROR;
    }
 
    outbufSize =
       wrapBufs[0].cbBuffer + wrapBufs[1].cbBuffer + wrapBufs[2].cbBuffer;
-   outbuf = (SEC_CHAR *) malloc (sizeof (SEC_CHAR) * outbufSize);
+   outbuf = (SEC_CHAR *) bson_malloc (sizeof (SEC_CHAR) * outbufSize);
    memcpy_s (outbuf, outbufSize, wrapBufs[0].pvBuffer, wrapBufs[0].cbBuffer);
    memcpy_s (outbuf + wrapBufs[0].cbBuffer,
              outbufSize - wrapBufs[0].cbBuffer,
@@ -499,8 +499,8 @@ _mongoc_sspi_auth_sspi_client_wrap (mongoc_sspi_client_state_t *state,
    } else {
       status = MONGOC_SSPI_AUTH_GSS_COMPLETE;
    }
-   free (inbuf);
-   free (outbuf);
+   bson_free (inbuf);
+   bson_free (outbuf);
    return status;
 }
 

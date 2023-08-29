@@ -708,7 +708,7 @@ bson_parser_parse (bson_parser_t *parser, bson_t *in, bson_error_t *error)
    {
       if (!entry->optional && !entry->set) {
          test_set_error (error,
-                         "Required field %s was not found parsing: %s",
+                         "Required field '%s' was not found parsing: %s",
                          entry->key,
                          tmp_json (in));
          return false;

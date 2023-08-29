@@ -206,7 +206,7 @@ log_handler (mongoc_log_level_t log_level,
 
    suite = (TestSuite *) user_data;
 
-   if (log_level < MONGOC_LOG_LEVEL_INFO) {
+   if (log_level <= MONGOC_LOG_LEVEL_INFO) {
       bson_mutex_lock (&captured_logs_mutex);
       if (capturing_logs) {
          log_entry = log_entry_create (log_level, message);
@@ -2612,7 +2612,7 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
    stack_frame.AddrStack.Mode = AddrModeFlat;
 
    SYMBOL_INFO *symbol;
-   symbol = calloc (sizeof (SYMBOL_INFO) + 256, 1);
+   symbol = bson_malloc0 (sizeof (SYMBOL_INFO) + 256);
    symbol->MaxNameLen = 255;
    symbol->SizeOfStruct = sizeof (SYMBOL_INFO);
 
@@ -2679,7 +2679,7 @@ test_libmongoc_init (TestSuite *suite,
 
    bson_mutex_init (&captured_logs_mutex);
    _mongoc_array_init (&captured_logs, sizeof (log_entry_t *));
-   mongoc_log_set_handler (log_handler, (void *) &suite);
+   mongoc_log_set_handler (log_handler, (void *) suite);
 
 #ifdef MONGOC_ENABLE_SSL
    test_framework_global_ssl_opts_init ();

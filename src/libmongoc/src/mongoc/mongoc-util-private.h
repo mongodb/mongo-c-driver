@@ -125,6 +125,9 @@ _mongoc_validate_update (const bson_t *update,
                          bson_validate_flags_t vflags,
                          bson_error_t *error);
 
+bool
+mongoc_ends_with (const char *str, const char *suffix);
+
 void
 mongoc_lowercase (const char *src, char *buf /* OUT */);
 

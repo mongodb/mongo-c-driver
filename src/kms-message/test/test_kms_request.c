@@ -17,8 +17,8 @@
 /* Needed for strptime */
 #define _GNU_SOURCE
 
-#include "src/kms_message/kms_message.h"
-#include "src/kms_message_private.h"
+#include "kms_message/kms_message.h"
+#include "kms_message_private.h"
 
 #ifndef _WIN32
 #include <dirent.h>
@@ -32,35 +32,14 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <src/kms_message/kms_b64.h>
-#include <src/hexlify.h>
-#include <src/kms_request_str.h>
-#include <src/kms_kv_list.h>
-#include <src/kms_port.h>
+#include "kms_message/kms_azure_request.h"
+#include "kms_message/kms_b64.h"
+#include "hexlify.h"
+#include "kms_request_str.h"
+#include "kms_kv_list.h"
+#include "kms_port.h"
 
-#define ASSERT_CONTAINS(_a, _b)                                              \
-   do {                                                                      \
-      kms_request_str_t *_a_str = kms_request_str_new_from_chars ((_a), -1); \
-      kms_request_str_t *_b_str = kms_request_str_new_from_chars ((_b), -1); \
-      kms_request_str_t *_a_lower = kms_request_str_new ();                  \
-      kms_request_str_t *_b_lower = kms_request_str_new ();                  \
-      kms_request_str_append_lowercase (_a_lower, (_a_str));                 \
-      kms_request_str_append_lowercase (_b_lower, (_b_str));                 \
-      if (NULL == strstr ((_a_lower->str), (_b_lower->str))) {               \
-         fprintf (stderr,                                                    \
-                  "%s:%d %s(): [%s] does not contain [%s]\n",                \
-                  __FILE__,                                                  \
-                  __LINE__,                                                  \
-                  __FUNCTION__,                                              \
-                  _a,                                                        \
-                  _b);                                                       \
-         abort ();                                                           \
-      }                                                                      \
-      kms_request_str_destroy (_a_str);                                      \
-      kms_request_str_destroy (_b_str);                                      \
-      kms_request_str_destroy (_a_lower);                                    \
-      kms_request_str_destroy (_b_lower);                                    \
-   } while (0)
+#include "test_kms_assert.h"
 
 const char *aws_test_suite_dir = "aws-sig-v4-test-suite";
 
@@ -299,9 +278,10 @@ read_req (const char *path)
          /* end of header */
          break;
       } else if (line_len > 2) {
-         /* continuing a multiline header from previous line */
-         /* TODO: is this a test quirk or HTTP specified behavior? */
-         kms_request_append_header_field_value (request, "\n", 1);
+         /* continuing a multiline header value from previous line */
+         /* Header line folding is deprecated by RFC 7230 section 3.2. */
+         /* get-header-value-multiline tests this behavior. */
+         kms_request_append_header_field_value (request, "\r\n", 2);
          /* omit this line's newline */
          kms_request_append_header_field_value (
             request, line, (size_t) (line_len - 1));
@@ -309,7 +289,7 @@ read_req (const char *path)
    }
 
    while ((line_len = test_getline (&line, &len, f)) != -1) {
-      kms_request_append_payload (request, line, (size_t) line_len);
+      KMS_ASSERT (kms_request_append_payload (request, line, (size_t) line_len));
    }
 
    fclose (f);
@@ -323,57 +303,6 @@ read_req (const char *path)
    return request;
 }
 
-ssize_t
-first_non_matching (const char *x, const char *y)
-{
-   size_t len = strlen (x) > strlen (y) ? strlen (x) : strlen (y);
-   size_t i;
-
-   for (i = 0; i < len; i++) {
-      if (x[i] != y[i]) {
-         return i;
-      }
-   }
-
-   if (strlen (x) > strlen (y)) {
-      return strlen (y) + 1;
-   }
-
-   if (strlen (y) > strlen (x)) {
-      return strlen (x) + 1;
-   }
-
-   /* the strings match */
-   return -1;
-}
-
-void
-compare_strs (const char *test_name, const char *expect, const char *actual)
-{
-   if (0 != strcmp (actual, expect)) {
-      fprintf (stderr,
-               "%s failed, mismatch starting at %zd\n"
-               "--- Expect (%zu chars) ---\n%s\n"
-               "--- Actual (%zu chars) ---\n%s\n",
-               test_name,
-               first_non_matching (expect, actual),
-               strlen (expect),
-               expect,
-               strlen (actual),
-               actual);
-
-      abort ();
-   }
-}
-
-#define ASSERT_CMPSTR(_a, _b) compare_strs (__FUNCTION__, (_a), (_b))
-
-#define ASSERT(stmt)                                    \
-   if (!(stmt)) {                                       \
-      fprintf (stderr, "statement failed %s\n", #stmt); \
-      abort ();                                         \
-   }
-
 void
 test_compare (kms_request_t *request,
               char *(*func) (kms_request_t *),
@@ -385,8 +314,15 @@ test_compare (kms_request_t *request,
    char *actual;
 
    expect = read_test (dir_path, suffix);
+   if (0 == strcmp (suffix, "sreq")) {
+      /* The final signed request is an HTTP request.
+       * The expected output must contain \r\n, not \n. */
+      char* tmp = replace_all (expect, "\n", "\r\n");
+      free (expect);
+      expect = tmp;
+   }
    actual = func (request);
-   compare_strs (test_name, expect, actual);
+   ASSERT_CMPSTR (expect, actual);
    free (actual);
    free (expect);
    free (test_name);
@@ -503,7 +439,7 @@ example_signature_test (void)
 
    KMS_ASSERT (kms_request_get_signing_key (request, signing));
    sig = hexlify (signing, 32);
-   compare_strs (__FUNCTION__, expect, sig);
+   ASSERT_CMPSTR (expect, sig);
    free (sig);
    kms_request_destroy (request);
 }
@@ -557,7 +493,7 @@ path_normalization_test (void)
       in = kms_request_str_new_from_chars (test[0], -1);
       out = test[1];
       norm = kms_request_str_path_normalized (in);
-      compare_strs (__FUNCTION__, out, norm->str);
+      ASSERT_CMPSTR (out, norm->str);
       kms_request_str_destroy (in);
       kms_request_str_destroy (norm);
    }
@@ -590,7 +526,7 @@ content_length_test (void)
 {
    const char *payload = "foo-payload";
    kms_request_t *request = make_test_request ();
-   kms_request_append_payload (request, payload, strlen (payload));
+   KMS_ASSERT (kms_request_append_payload (request, payload, strlen (payload)));
    test_compare_sreq (request, "test/content_length");
    kms_request_destroy (request);
 }
@@ -775,37 +711,42 @@ b64_test (void)
 }
 
 void
+b64_b64url_test (void)
+{
+   char base64_data[64];
+   char base64url_data[64];
+   int ret;
+
+   memset (base64_data, 0, sizeof (base64_data));
+   memset (base64url_data, 0, sizeof (base64url_data));
+   strcpy (base64_data, "PDw/Pz8+Pg==");
+   ret = kms_message_b64_to_b64url (base64_data,
+                                    strlen (base64_data),
+                                    base64url_data,
+                                    sizeof (base64url_data));
+   ASSERT (ret == 12);
+   ASSERT_CMPSTR (base64url_data, "PDw_Pz8-Pg==");
+
+   memset (base64_data, 0, sizeof (base64_data));
+   ret = kms_message_b64url_to_b64 (base64url_data,
+                                    strlen (base64url_data),
+                                    base64_data,
+                                    sizeof (base64_data));
+   ASSERT (ret == 12);
+   ASSERT_CMPSTR (base64_data, "PDw/Pz8+Pg==");
+
+   /* Convert to base64url in-place. */
+   ret = kms_message_b64_to_b64url (
+      base64_data, strlen (base64_data), base64_data, sizeof (base64_data));
+   ASSERT (ret == 12);
+   ASSERT_CMPSTR (base64_data, "PDw_Pz8-Pg==");
+}
+
+void
 kms_response_parser_test (void)
 {
-   FILE *response_file;
    kms_response_parser_t *parser = kms_response_parser_new ();
-   uint8_t buf[512] = {0};
-   int bytes_to_read = 0;
    kms_response_t *response;
-
-   response_file = fopen ("./test/example-response.bin", "rb");
-   ASSERT (response_file);
-
-   while ((bytes_to_read = kms_response_parser_wants_bytes (parser, 512)) > 0) {
-      size_t ret = fread (buf, 1, (size_t) bytes_to_read, response_file);
-
-      ASSERT (kms_response_parser_feed (parser, buf, (int) ret));
-   }
-
-   fclose (response_file);
-
-   response = kms_response_parser_get_response (parser);
-
-   ASSERT (response->status == 200);
-   ASSERT_CMPSTR (response->body->str,
-                  "{\"CiphertextBlob\":\"AQICAHifzrL6n/"
-                  "3uqZyz+z1bJj80DhqPcSAibAaIoYc+HOVP6QEplwbM0wpvU5zsQG/"
-                  "1SBKvAAAAZDBiBgkqhkiG9w0BBwagVTBTAgEAME4GCSqGSIb3DQEHATAeBgl"
-                  "ghkgBZQMEAS4wEQQM5syMJE7RodxDaqYqAgEQgCHMFCnFso4Lih0CNbLT1ki"
-                  "ET0hQyzjgoa9733353GQkGlM=\",\"KeyId\":\"arn:aws:kms:us-east-"
-                  "1:524754917239:key/bd05530b-0a7f-4fbd-8362-ab3667370db0\"}");
-
-   kms_response_destroy (response);
 
    /* the parser resets after returning a response. */
    ASSERT (
@@ -932,6 +873,83 @@ kms_response_parser_test (void)
    kms_response_parser_destroy (parser);
 }
 
+typedef struct {
+   const char *filepath;
+   const char *expected_body;
+   int max_to_read;
+   int expected_status;
+} parser_testcase_t;
+
+/* File should have \r\n line endings (use /etc/rewrite.py) */
+static void
+parser_testcase_run (parser_testcase_t *testcase)
+{
+   FILE *response_file;
+   kms_response_parser_t *parser;
+   kms_response_t *response;
+   uint8_t buf[512] = {0};
+   int bytes_to_read;
+
+   response_file = fopen (testcase->filepath, "rb");
+   ASSERT (response_file);
+
+   parser = kms_response_parser_new ();
+
+   while ((bytes_to_read = kms_response_parser_wants_bytes (
+              parser, testcase->max_to_read)) > 0) {
+      if (bytes_to_read > testcase->max_to_read) {
+         bytes_to_read = testcase->max_to_read;
+      }
+      size_t ret = fread (buf, 1, (size_t) bytes_to_read, response_file);
+
+      if (!kms_response_parser_feed (parser, buf, (int) ret)) {
+         printf ("feed error: %s\n", parser->error);
+         ASSERT (false);
+      }
+   }
+
+   fclose (response_file);
+
+   ASSERT (0 == kms_response_parser_wants_bytes (parser, 123));
+   response = kms_response_parser_get_response (parser);
+   ASSERT_CMPSTR (testcase->expected_body, response->body->str);
+   ASSERT (response->status == testcase->expected_status);
+
+   kms_response_parser_destroy (parser);
+   kms_response_destroy (response);
+}
+
+static void
+kms_response_parser_files (void)
+{
+   const char *body = "{\"CiphertextBlob\":\"AQICAHifzrL6n/"
+                      "3uqZyz+z1bJj80DhqPcSAibAaIoYc+HOVP6QEplwbM0wpvU5zsQG/"
+                      "1SBKvAAAAZDBiBgkqhkiG9w0BBwagVTBTAgEAME4GCSqGSIb3DQEHATA"
+                      "eBglghkgBZQMEAS4wEQQM5syMJE7RodxDaqYqAgEQgCHMFCnFso4Lih0"
+                      "CNbLT1kiET0hQyzjgoa9733353GQkGlM=\",\"KeyId\":\"arn:aws:"
+                      "kms:us-east-1:524754917239:key/"
+                      "bd05530b-0a7f-4fbd-8362-ab3667370db0\"}";
+   const char *chunked_body =
+      "{\"access_token\":"
+      "\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\","
+      "\"expires_in\":3599,\"token_type\":\"Bearer\"}";
+   parser_testcase_t tests[] = {
+      {"./test/example-response.bin", body, 512, 200},
+      {"./test/example-response.bin", body, 1, 200},
+      {"./test/example-chunked-response.bin", chunked_body, 512, 200},
+      {"./test/example-chunked-response.bin", chunked_body, 1, 200},
+      {"./test/example-multi-chunked-response.bin", chunked_body, 512, 200},
+      {"./test/example-multi-chunked-response.bin", chunked_body, 1, 200}};
+   size_t i;
+
+   for (i = 0; i < sizeof (tests) / sizeof (tests[0]); i++) {
+      printf (" parser testcase: %d\n", (int) i);
+      parser_testcase_run (tests + i);
+   }
+}
+
 #define CLEAR(_field)                   \
    do {                                 \
       kms_request_str_destroy (_field); \
@@ -993,6 +1011,189 @@ kms_request_validate_test (void)
    kms_request_destroy (request);
 }
 
+/* Test private key signing.
+ *
+ * private_key_b64 was generated by taking the base64 data out of
+ * test-private-key.pem generated as follows: openssl genpkey -out
+ * test-private-key.pem -algorithm RSA -pkeyopt rsa_keygen_bits:2048
+ *
+ * It was used to generate a test signature of the string "data to sign" with:
+ * openssl dgst -sign test-private-key.pem -sha256 signme.txt | base64
+ */
+static void
+kms_signature_test (void)
+{
+   const char *private_key_b64 =
+      "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC4JOyv5z05cL18ztpknRC7"
+      "CFY2gYol4DAKerdVUoDJxCTmFMf39dVUEqD0WDiw/qcRtSO1/"
+      "FRut08PlSPmvbyKetsLoxlpS8lukSzEFpFK7+L+R4miFOl6HvECyg7lbC1H/"
+      "WGAhIz9yZRlXhRo9qmO/"
+      "fB6PV9IeYtU+"
+      "1xYuXicjCDPp36uuxBAnCz7JfvxJ3mdVc0vpSkbSb141nWuKNYR1mgyvvL6KzxO6mYsCo4hR"
+      "AdhuizD9C4jDHk0V2gDCFBk0h8SLEdzStX8L0jG90/Og4y7J1b/cPo/"
+      "kbYokkYisxe8cPlsvGBf+rZex7XPxc1yWaP080qeABJb+S88O//"
+      "LAgMBAAECggEBAKVxP1m3FzHBUe2NZ3fYCc0Qa2zjK7xl1KPFp2u4CU+"
+      "9sy0oZJUqQHUdm5CMprqWwIHPTftWboFenmCwrSXFOFzujljBO7Z3yc1WD3NJl1ZNepLcsRJ"
+      "3WWFH5V+NLJ8Bdxlj1DMEZCwr7PC5+vpnCuYWzvT0qOPTl9RNVaW9VVjHouJ9Fg+"
+      "s2DrShXDegFabl1iZEDdI4xScHoYBob06A5lw0WOCTayzw0Naf37lM8Y4psRAmI46XLiF/"
+      "Vbuorna4hcChxDePlNLEfMipICcuxTcei1RBSlBa2t1tcnvoTy6cuYDqqImRYjp1KnMKlKQB"
+      "nQ1NjS2TsRGm+F0FbreVCECgYEA4IDJlm8q/hVyNcPe4OzIcL1rsdYN3bNm2Y2O/"
+      "YtRPIkQ446ItyxD06d9VuXsQpFp9jNACAPfCMSyHpPApqlxdc8z/"
+      "xATlgHkcGezEOd1r4E7NdTpGg8y6Rj9b8kVlED6v4grbRhKcU6moyKUQT3+"
+      "1B6ENZTOKyxuyDEgTwZHtFECgYEA0fqdv9h9s77d6eWmIioP7FSymq93pC4umxf6TVicpjpM"
+      "ErdD2ZfJGulN37dq8FOsOFnSmFYJdICj/PbJm6p1i8O21lsFCltEqVoVabJ7/"
+      "0alPfdG2U76OeBqI8ZubL4BMnWXAB/"
+      "VVEYbyWCNpQSDTjHQYs54qa2I0dJB7OgJt1sCgYEArctFQ02/"
+      "7H5Rscl1yo3DBXO94SeiCFSPdC8f2Kt3MfOxvVdkAtkjkMACSbkoUsgbTVqTYSEOEc2jTgR3"
+      "iQ13JgpHaFbbsq64V0QP3TAxbLIQUjYGVgQaF1UfLOBv8hrzgj45z/ST/"
+      "G80lOl595+0nCUbmBcgG1AEWrmdF0/"
+      "3RmECgYAKvIzKXXB3+19vcT2ga5Qq2l3TiPtOGsppRb2XrNs9qKdxIYvHmXo/"
+      "9QP1V3SRW0XoD7ez8FpFabp42cmPOxUNk3FK3paQZABLxH5pzCWI9PzIAVfPDrm+"
+      "sdnbgG7vAnwfL2IMMJSA3aDYGCbF9EgefG+"
+      "STcpfqq7fQ6f5TBgLFwKBgCd7gn1xYL696SaKVSm7VngpXlczHVEpz3kStWR5gfzriPBxXgM"
+      "VcWmcbajRser7ARpCEfbxM1UJyv6oAYZWVSNErNzNVb4POqLYcCNySuC6xKhs9FrEQnyKjyk"
+      "8wI4VnrEMGrQ8e+qYSwYk9Gh6dKGoRMAPYVXQAO0fIsHF/T0a";
+   const char *data_to_sign = "data to sign";
+   const char *expected_signature =
+      "VocBRhpMmQ2XCzVehWSqheQLnU889gf3dhU4AnVnQTJjsKx/CM23qKDPkZDd2A/"
+      "BnQsp99SN7ksIX5Raj0TPwyN5OCN/YrNFNGoOFlTsGhgP/"
+      "hyE8X3Duiq6sNO0SMvRYNPFFGlJFsp1Fw3Z94eYMg4/Wpw5s4+Jo5Zm/"
+      "qY7aTJIqDKDQ3CNHLeJgcMUOc9sz01/"
+      "GzoUYKDVODHSxrYEk5ireFJFz9vP8P7Ha+"
+      "VDUZuQIQdXer9NBbGFtYmWprY3nn4D3Dw93Sn0V0dIqYeIo91oKyslvMebmUM95S2PyIJdEp"
+      "Pb2DJDxjvX/0LLwSWlSXRWy9gapWoBkb4ynqZBsg==";
+   uint8_t *private_key_raw;
+   size_t private_key_len;
+   unsigned char *signature_raw;
+   bool ret;
+   char *signature_b64;
+
+   private_key_raw = kms_message_b64_to_raw (private_key_b64, &private_key_len);
+   signature_raw = malloc (256);
+
+   ret = kms_sign_rsaes_pkcs1_v1_5 (NULL /* unused ctx */,
+                                    (const char *) private_key_raw,
+                                    private_key_len,
+                                    data_to_sign,
+                                    strlen (data_to_sign),
+                                    signature_raw);
+   KMS_ASSERT (ret);
+   signature_b64 = kms_message_raw_to_b64 (signature_raw, 256);
+
+   if (0 != strcmp (signature_b64, expected_signature)) {
+      printf ("generated signature: %s\n", signature_b64);
+      printf ("but expected signature: %s\n", expected_signature);
+      abort ();
+   }
+
+   /* Test with an invalid key. */
+   ret = kms_sign_rsaes_pkcs1_v1_5 (
+      NULL, "blah", 4, data_to_sign, strlen (data_to_sign), signature_raw);
+
+   free (private_key_raw);
+   free (signature_raw);
+   free (signature_b64);
+
+   KMS_ASSERT (!ret);
+}
+
+static void
+kms_request_kmip_prohibited_test (void)
+{
+   kms_request_opt_t *opt;
+   kms_request_t *req;
+
+   opt = kms_request_opt_new ();
+   kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_KMIP);
+   req = kms_request_new ("method", "path_and_query", opt);
+   ASSERT_REQUEST_ERROR (req, "Function not applicable to KMIP");
+   kms_request_destroy (req);
+   kms_request_opt_destroy (opt);
+}
+
+static int
+count_substrings (const char *big, const char *little)
+{
+   char *iter;
+   int count = 0;
+
+   iter = strstr (big, little);
+   while (iter != NULL) {
+      count += 1;
+      iter += strlen (little);
+      iter = strstr (iter, little);
+   }
+   return count;
+}
+
+/* Test that outgoing HTTP requests use \r\n line delimitters, not \n.
+ * This is a regression test for MONGOCRYPT-457. */
+static void
+test_request_newlines (void)
+{
+   bool ok;
+   kms_request_t *req;
+   kms_request_opt_t *opt;
+   uint8_t example_data[] = {0x01, 0x02, 0x03, 0x04};
+
+   // Test kms_request_to_string.
+   {
+      opt = kms_request_opt_new ();
+      kms_request_opt_set_connection_close (opt, true);
+      ASSERT (kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE));
+      req = kms_azure_request_wrapkey_new ("example-host",
+                                           "example-access-token",
+                                           "example-key-name",
+                                           "example-key-version",
+                                           example_data,
+                                           sizeof (example_data),
+                                           opt);
+      ASSERT_REQUEST_OK (req);
+      char *req_str = kms_request_to_string (req);
+      ASSERT_REQUEST_OK (req);
+      ASSERT (req_str);
+      /* Check that all \n have a \r. */
+      int n = count_substrings (req_str, "\n");
+      int rn = count_substrings (req_str, "\r\n");
+      ASSERT_CMPINT (n, ==, rn);
+      ASSERT_CMPINT (rn, ==, 8);
+      free (req_str);
+      kms_request_opt_destroy (opt);
+      kms_request_destroy (req);
+   }
+
+   // Test kms_request_get_signed.
+   {
+      opt = kms_request_opt_new ();
+      kms_request_opt_set_connection_close (opt, true);
+      req = kms_caller_identity_request_new (opt);
+      ASSERT_REQUEST_OK (req);
+      ok = kms_request_set_region (req, "example-region");
+      ASSERT_REQUEST_OK (req);
+      ASSERT (ok);
+      ok = kms_request_set_service (req, "example-service");
+      ASSERT_REQUEST_OK (req);
+      ASSERT (ok);
+      ok = kms_request_set_access_key_id (req, "example-access-key-id");
+      ASSERT_REQUEST_OK (req);
+      ASSERT (ok);
+      ok = kms_request_set_secret_key (req, "example-secret-key");
+      ASSERT_REQUEST_OK (req);
+      ASSERT (ok);
+      char *req_str = kms_request_get_signed (req);
+      ASSERT_REQUEST_OK (req);
+      ASSERT (req_str);
+      /* Check that all \n have a \r. */
+      int n = count_substrings (req_str, "\n");
+      int rn = count_substrings (req_str, "\r\n");
+      ASSERT_CMPINT (n, ==, rn);
+      ASSERT_CMPINT (rn, ==, 8);
+      free (req_str);
+      kms_request_opt_destroy (opt);
+      kms_request_destroy (req);
+   }
+}
+
 #define RUN_TEST(_func)                                          \
    do {                                                          \
       if (!selector || 0 == kms_strcasecmp (#_func, selector)) { \
@@ -1001,6 +1202,25 @@ kms_request_validate_test (void)
          ran_tests = true;                                       \
       }                                                          \
    } while (0)
+
+extern void kms_kmip_writer_test (void);
+extern void kms_kmip_reader_test (void);
+extern void kms_kmip_reader_negative_int_test (void);
+extern void kms_kmip_reader_find_test (void);
+extern void kms_kmip_reader_find_and_recurse_test (void);
+extern void kms_kmip_reader_find_and_read_enum_test (void);
+extern void kms_kmip_reader_find_and_read_bytes_test (void);
+extern void kms_kmip_request_register_secretdata_test (void);
+extern void kms_kmip_request_register_secretdata_invalid_test (void);
+extern void kms_kmip_request_get_test (void);
+extern void kms_kmip_request_activate_test (void);
+extern void kms_kmip_response_parser_test (void);
+extern void kms_kmip_response_get_unique_identifier_test (void);
+extern void kms_kmip_response_get_secretdata_test (void);
+extern void kms_kmip_response_get_secretdata_notfound_test (void);
+extern void kms_kmip_response_parser_reuse_test (void);
+extern void kms_kmip_response_parser_excess_test (void);
+extern void kms_kmip_response_parser_notenough_test (void);
 
 int
 main (int argc, char *argv[])
@@ -1037,11 +1257,38 @@ main (int argc, char *argv[])
    RUN_TEST (encrypt_request_test);
    RUN_TEST (kv_list_del_test);
    RUN_TEST (b64_test);
+   RUN_TEST (b64_b64url_test);
 
    ran_tests |= all_aws_sig_v4_tests (aws_test_suite_dir, selector);
 
    RUN_TEST (kms_response_parser_test);
+   RUN_TEST (kms_response_parser_files);
    RUN_TEST (kms_request_validate_test);
+
+   RUN_TEST (kms_signature_test);
+
+   RUN_TEST (kms_kmip_writer_test);
+   RUN_TEST (kms_kmip_reader_test);
+   RUN_TEST (kms_kmip_reader_negative_int_test);
+   RUN_TEST (kms_kmip_reader_test);
+   RUN_TEST (kms_kmip_reader_find_and_recurse_test);
+   RUN_TEST (kms_kmip_reader_find_and_read_enum_test);
+   RUN_TEST (kms_kmip_reader_find_and_read_bytes_test);
+   RUN_TEST (kms_kmip_request_register_secretdata_test);
+   RUN_TEST (kms_kmip_request_register_secretdata_invalid_test);
+   RUN_TEST (kms_kmip_request_get_test);
+   RUN_TEST (kms_kmip_request_activate_test);
+   RUN_TEST (kms_request_kmip_prohibited_test);
+   RUN_TEST (kms_kmip_response_parser_test);
+   RUN_TEST (kms_kmip_response_get_unique_identifier_test);
+   RUN_TEST (kms_kmip_response_get_secretdata_test);
+   RUN_TEST (kms_kmip_response_get_secretdata_notfound_test);
+   RUN_TEST (kms_kmip_response_parser_reuse_test);
+   RUN_TEST (kms_kmip_response_parser_excess_test);
+   RUN_TEST (kms_kmip_response_parser_notenough_test);
+   RUN_TEST (test_request_newlines);
+   RUN_TEST (test_kms_util);
+
 
    if (!ran_tests) {
       KMS_ASSERT (argc == 2);

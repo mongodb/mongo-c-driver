@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "bson-prelude.h"
+#include <bson/bson-prelude.h>
 
 
 #ifndef BSON_TYPES_H
@@ -24,10 +24,10 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-#include "bson-macros.h"
-#include "bson-config.h"
-#include "bson-compat.h"
-#include "bson-endian.h"
+#include <bson/bson-macros.h>
+#include <bson/bson-config.h>
+#include <bson/bson-compat.h>
+#include <bson/bson-endian.h>
 
 BSON_BEGIN_DECLS
 
@@ -273,6 +273,7 @@ typedef enum {
    BSON_SUBTYPE_MD5 = 0x05,
    BSON_SUBTYPE_ENCRYPTED = 0x06,
    BSON_SUBTYPE_COLUMN = 0x07,
+   BSON_SUBTYPE_SENSITIVE = 0x08,
    BSON_SUBTYPE_USER = 0x80,
 } bson_subtype_t;
 

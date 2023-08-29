@@ -23,6 +23,7 @@
 #include "test-libmongoc.h"
 #include "util.h"
 #include "utlist.h"
+#include <bson/bson-dsl.h>
 
 typedef struct {
    char *name;
@@ -3524,6 +3525,230 @@ done:
    return ret;
 }
 
+static bool
+operation_createSearchIndex (test_t *test,
+                             operation_t *op,
+                             result_t *result,
+                             bson_error_t *error)
+{
+   bool ret = false;
+   bson_parser_t *bp = bson_parser_new ();
+   bson_t *model = NULL;
+   mongoc_collection_t *coll = NULL;
+   bson_error_t op_error;
+   bson_t op_reply = BSON_INITIALIZER;
+   bson_t *cmd = bson_new ();
+
+   // Parse arguments.
+   bson_parser_doc (bp, "model", &model);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
+   }
+
+   // Build command.
+   bsonBuildAppend (*cmd,
+                    kv ("createSearchIndexes", cstr (coll->collection)),
+                    kv ("indexes", array (bson (*model))));
+   ASSERT (!bsonBuildError);
+
+   mongoc_collection_command_simple (
+      coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
+   result_from_val_and_reply (result, NULL, &op_reply, &op_error);
+   ret = true;
+done:
+   bson_destroy (cmd);
+   bson_parser_destroy_with_parsed_fields (bp);
+   bson_destroy (&op_reply);
+   return ret;
+}
+
+static bool
+operation_createSearchIndexes (test_t *test,
+                               operation_t *op,
+                               result_t *result,
+                               bson_error_t *error)
+{
+   bool ret = false;
+   bson_parser_t *bp = bson_parser_new ();
+   bson_t *models = NULL;
+   mongoc_collection_t *coll = NULL;
+   bson_error_t op_error;
+   bson_t op_reply = BSON_INITIALIZER;
+   bson_t *cmd = bson_new ();
+
+   // Parse arguments.
+   bson_parser_array (bp, "models", &models);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
+   }
+
+   // Build command.
+   bsonBuildAppend (*cmd,
+                    kv ("createSearchIndexes", cstr (coll->collection)),
+                    kv ("indexes", bsonArray (*models)));
+   ASSERT (!bsonBuildError);
+
+   mongoc_collection_command_simple (
+      coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
+   result_from_val_and_reply (result, NULL, &op_reply, &op_error);
+   ret = true;
+done:
+   bson_destroy (cmd);
+   bson_parser_destroy_with_parsed_fields (bp);
+   bson_destroy (&op_reply);
+   return ret;
+}
+
+static bool
+operation_dropSearchIndex (test_t *test,
+                           operation_t *op,
+                           result_t *result,
+                           bson_error_t *error)
+{
+   bool ret = false;
+   bson_parser_t *bp = bson_parser_new ();
+   char *name = NULL;
+   mongoc_collection_t *coll = NULL;
+   bson_error_t op_error;
+   bson_t op_reply = BSON_INITIALIZER;
+   bson_t *cmd = bson_new ();
+
+   // Parse arguments.
+   bson_parser_utf8 (bp, "name", &name);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
+   }
+
+   // Build command.
+   bsonBuildAppend (*cmd,
+                    kv ("dropSearchIndex", cstr (coll->collection)),
+                    kv ("name", cstr (name)));
+   ASSERT (!bsonBuildError);
+
+   mongoc_collection_command_simple (
+      coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
+   result_from_val_and_reply (result, NULL, &op_reply, &op_error);
+   ret = true;
+done:
+   bson_destroy (cmd);
+   bson_parser_destroy_with_parsed_fields (bp);
+   bson_destroy (&op_reply);
+   return ret;
+}
+
+static bool
+operation_listSearchIndexes (test_t *test,
+                             operation_t *op,
+                             result_t *result,
+                             bson_error_t *error)
+{
+   bool ret = false;
+   bson_parser_t *bp = bson_parser_new ();
+   bson_t *aggregateOptions = NULL;
+   char *name = NULL;
+   mongoc_collection_t *coll = NULL;
+   bson_t *pipeline = bson_new ();
+   mongoc_cursor_t *cursor = NULL;
+
+   // Parse arguments.
+   if (op->arguments) {
+      bson_parser_utf8_optional (bp, "name", &name);
+      bson_parser_doc_optional (bp, "aggregationOptions", &aggregateOptions);
+      if (!bson_parser_parse (bp, op->arguments, error)) {
+         goto done;
+      }
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
+   }
+
+   // Build command.
+   bsonBuildAppend (
+      *pipeline,
+      kv ("pipeline",
+          array (doc (kv ("$listSearchIndexes",
+                          if (name != NULL,
+                              then (doc (kv ("name", cstr (name)))),
+                              else (doc ())))))));
+   ASSERT (!bsonBuildError);
+
+   cursor = mongoc_collection_aggregate (coll,
+                                         MONGOC_QUERY_NONE,
+                                         pipeline,
+                                         aggregateOptions /* opts */,
+                                         NULL /* read_prefs */);
+
+   result_from_cursor (result, cursor);
+   ret = true;
+done:
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (pipeline);
+   bson_parser_destroy_with_parsed_fields (bp);
+   return ret;
+}
+
+static bool
+operation_updateSearchIndex (test_t *test,
+                             operation_t *op,
+                             result_t *result,
+                             bson_error_t *error)
+{
+   bool ret = false;
+   bson_parser_t *bp = bson_parser_new ();
+   bson_t *definition = NULL;
+   char *name = NULL;
+   mongoc_collection_t *coll = NULL;
+   bson_error_t op_error;
+   bson_t op_reply = BSON_INITIALIZER;
+   bson_t *cmd = bson_new ();
+
+   // Parse arguments.
+   bson_parser_doc (bp, "definition", &definition);
+   bson_parser_utf8_optional (bp, "name", &name);
+   if (!bson_parser_parse (bp, op->arguments, error)) {
+      goto done;
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
+   }
+
+   // Build command.
+   bsonBuildAppend (*cmd,
+                    kv ("updateSearchIndex", cstr (coll->collection)),
+                    kv ("definition", bson (*definition)),
+                    if (name != NULL, then (kv ("name", cstr (name)))));
+   ASSERT (!bsonBuildError);
+
+   mongoc_collection_command_simple (
+      coll, cmd, NULL /* read_prefs */, NULL /* reply */, &op_error);
+   result_from_val_and_reply (result, NULL, &op_reply, &op_error);
+   ret = true;
+done:
+   bson_destroy (cmd);
+   bson_parser_destroy_with_parsed_fields (bp);
+   bson_destroy (&op_reply);
+   return ret;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -3581,6 +3806,11 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"updateOne", operation_update_one},
       {"updateMany", operation_update_many},
       {"rename", operation_rename},
+      {"createSearchIndex", operation_createSearchIndex},
+      {"createSearchIndexes", operation_createSearchIndexes},
+      {"dropSearchIndex", operation_dropSearchIndex},
+      {"listSearchIndexes", operation_listSearchIndexes},
+      {"updateSearchIndex", operation_updateSearchIndex},
 
       /* Change stream and cursor operations */
       {"iterateUntilDocumentOrError",

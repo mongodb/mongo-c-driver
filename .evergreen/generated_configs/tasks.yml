@@ -1961,6 +1961,9 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: kms-divergence-check
+    commands:
+      - func: kms-divergence-check
   - name: make-docs
     commands:
       - func: make-docs

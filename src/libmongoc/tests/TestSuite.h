@@ -757,19 +757,19 @@ void
 _TestSuite_TestFnCtxDtor (void *ctx);
 #define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
    _TestSuite_AddFull (_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
-#define TestSuite_AddFullWithTestFn(                \
-   _suite, _name, _func, _dtor, _test_fn, ...)      \
-   do {                                             \
-      TestFnCtx *ctx = malloc (sizeof (TestFnCtx)); \
-      ctx->test_fn = (TestFunc) (_test_fn);         \
-      ctx->dtor = _dtor;                            \
-      _TestSuite_AddFull (_suite,                   \
-                          _name,                    \
-                          _func,                    \
-                          _TestSuite_TestFnCtxDtor, \
-                          ctx,                      \
-                          __VA_ARGS__,              \
-                          NULL);                    \
+#define TestSuite_AddFullWithTestFn(                     \
+   _suite, _name, _func, _dtor, _test_fn, ...)           \
+   do {                                                  \
+      TestFnCtx *ctx = bson_malloc (sizeof (TestFnCtx)); \
+      ctx->test_fn = (TestFunc) (_test_fn);              \
+      ctx->dtor = _dtor;                                 \
+      _TestSuite_AddFull (_suite,                        \
+                          _name,                         \
+                          _func,                         \
+                          _TestSuite_TestFnCtxDtor,      \
+                          ctx,                           \
+                          __VA_ARGS__,                   \
+                          NULL);                         \
    } while (0)
 int
 TestSuite_Run (TestSuite *suite);

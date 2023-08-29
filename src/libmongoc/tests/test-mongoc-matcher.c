@@ -61,7 +61,7 @@ test_mongoc_matcher_basic (void)
    {
       char *out = bson_as_canonical_extended_json(&matcher_query, NULL);
       fprintf(stderr, "bson: %s\n", out);
-      free(out);
+      bson_free(out);
    }
 #endif
 

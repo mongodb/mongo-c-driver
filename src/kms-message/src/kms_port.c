@@ -15,11 +15,9 @@
  */
 
 #include "kms_port.h"
-
+#if defined(_WIN32)
 #include <stdlib.h>
 #include <string.h>
-
-#if defined(_WIN32)
 char *
 kms_strndup (const char *src, size_t len)
 {

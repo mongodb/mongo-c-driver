@@ -98,9 +98,8 @@ static BSON_INLINE unsigned
 _mongoc_sched_getcpu (void)
 {
    volatile uint32_t rax, rdx, rcx;
-   __asm__ volatile("rdtscp\n" : "=a"(rax), "=d"(rdx), "=c"(rcx) : :);
-   unsigned node_id, core_id;
-   // node_id = (rcx & 0xFFF000)>>12;  // node_id is unused
+   __asm__ volatile ("rdtscp\n" : "=a"(rax), "=d"(rdx), "=c"(rcx) : :);
+   unsigned core_id;
    core_id = rcx & 0xFFF;
    return core_id;
 }
@@ -114,7 +113,7 @@ _mongoc_sched_getcpu (void)
    unsigned core_id;
    /* Get the current thread ID, not the core ID.
     * Getting the core ID requires privileged execution. */
-   __asm__ volatile("mrs %x0, tpidrro_el0" : "=r"(tls));
+   __asm__ volatile ("mrs %x0, tpidrro_el0" : "=r"(tls));
    /* In ARM, only 8 cores are manageable. */
    core_id = tls & 0x07u;
    return core_id;

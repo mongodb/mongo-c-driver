@@ -7,8 +7,6 @@ This guide offers a brief introduction to the MongoDB C Driver.
 
 For more information on the C API, please refer to the :doc:`api`.
 
-.. contents::
-  :depth: 2
 
 Installing
 ----------

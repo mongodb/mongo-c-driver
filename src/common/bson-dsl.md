@@ -804,7 +804,7 @@ user_info get_user(const bson_t* data) {
                       else(do(ret.age = bsonAs(int32))))),
             else(error("The 'age' property is missing")));
   if (bsonParseError) {
-    free(ret.name);
+    bson_free(ret.name);
     fprintf(stderr, "Error while reading user_info from bson: %s\n", bsonParseError);
     return {0};
   }

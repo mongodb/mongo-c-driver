@@ -111,6 +111,7 @@ All named parameters accept generator expressions.
 
 ]==]
 function(mongo_generate_pkg_config target)
+    list(APPEND CMAKE_MESSAGE_CONTEXT "mongo_generate_pkg_config" "${target}")
     # Collect some target properties:
     # The name:
     _genex_escape(proj_name "${PROJECT_NAME}")
@@ -148,17 +149,20 @@ function(mongo_generate_pkg_config target)
             set(ARG_FILENAME "$<TARGET_FILE_BASE_NAME:${target}>.pc")
         endif()
     endif()
+    message(DEBUG "FILENAME: ${ARG_FILENAME}")
 
     # The defalut CONDITION is just "1" (true)
     if(NOT DEFINED ARG_CONDITION)
         set(ARG_CONDITION 1)
     endif()
+    message(DEBUG "CONDITION: ${ARG_CONDITION}")
     _bind_genex_to_target(gx_cond ${target} "${ARG_CONDITION}")
 
     # The default LIBDIR comes from GNUInstallDirs.cmake
     if(NOT ARG_LIBDIR)
         set(ARG_LIBDIR "${CMAKE_INSTALL_LIBDIR}")
     endif()
+    message(DEBUG "LIBDIR: ${ARG_LIBDIR}")
     _bind_genex_to_target(gx_libdir ${target} "${ARG_LIBDIR}")
 
     # Evaluate the filename genex in the context of the target:
@@ -168,6 +172,7 @@ function(mongo_generate_pkg_config target)
     else()
         get_filename_component(gx_output "${CMAKE_CURRENT_BINARY_DIR}/${gx_filename}" ABSOLUTE)
     endif()
+    message(DEBUG "Generating build-tree file: ${gx_output}")
 
     # Generate the content of the file:
     _generate_pkg_config_content(content
@@ -187,6 +192,7 @@ function(mongo_generate_pkg_config target)
          CONDITION "${gx_cond}")
     if(NOT "INSTALL" IN_LIST ARGN)
         # Nothing more to do here.
+        message(DEBUG "(Not installing)")
         return()
     endif()
 
@@ -194,6 +200,7 @@ function(mongo_generate_pkg_config target)
     # Use file(GENERATE) to generate a temporary file to be picked up at install-time.
     # (For some reason, injecting the content directly into install(CODE) fails in corner cases)
     set(gx_tmpfile "${CMAKE_CURRENT_BINARY_DIR}/_pkgconfig/${target}-$<LOWER_CASE:$<CONFIG>>-for-install.txt")
+    message(DEBUG "Generate for-install: ${gx_tmpfile}")
     file(GENERATE OUTPUT "${gx_tmpfile}"
          CONTENT "${gx_content}"
          CONDITION "${gx_cond}")
@@ -206,6 +213,8 @@ function(mongo_generate_pkg_config target)
     if(NOT DEFINED inst_RENAME)
         set(inst_RENAME "${ARG_FILENAME}")
     endif()
+    message(DEBUG "INSTALL DESTINATION: ${inst_DESTINATION}")
+    message(DEBUG "INSTALL RENAME: ${inst_RENAME}")
     # install(CODE) will write a simple temporary file:
     set(inst_tmp "${CMAKE_CURRENT_BINARY_DIR}/${target}-pkg-config-tmp.txt")
     _genex_escape(esc_cond "${ARG_CONDITION}")
@@ -226,7 +235,13 @@ function(mongo_generate_pkg_config target)
     ]==] code @ONLY)
     install(CODE "${code}")
     _bind_genex_to_target(gx_dest ${target} "${inst_DESTINATION}")
-    _bind_genex_to_target(gx_rename ${target} "${inst_RENAME}")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+        _bind_genex_to_target(gx_rename ${target} "${inst_RENAME}")
+    else()
+        # Note: CMake 3.20 is required for using generator expresssions in install(RENAME).
+        # if we are older than that, just treat RENAME as a plain value.
+        set(gx_rename "${inst_RENAME}")
+    endif()
     # Wrap the filename to install with the same condition used to generate it. If the condition
     # is not met, then the FILES list will be empty, and nothing will be installed.
     install(FILES "$<${gx_cond}:${inst_tmp}>"
@@ -265,7 +280,7 @@ function(_generate_pkg_config_content out)
         "-L\${libdir}"
         "-l$<TARGET_PROPERTY:OUTPUT_NAME>"
         $<GENEX_EVAL:$<TARGET_PROPERTY:pkg_config_LIBS>>
-        $<TARGET_PROPERTY:INTERFACE_LINK_OPTIONS>
+        $<REMOVE_DUPLICATES:$<TARGET_PROPERTY:INTERFACE_LINK_OPTIONS>>
         )
     string(APPEND libs "$<JOIN:${gx_libs};${gx_linkopts}, >")
 
