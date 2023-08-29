@@ -13,7 +13,7 @@
  * For more information about using this DSL, refer to `bson-dsl.md`.
  */
 
-#include "bson.h"
+#include "bson/bson.h"
 
 enum {
    /// Toggle this value to enable/disable debug output for all bsonDSL
