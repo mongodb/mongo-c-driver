@@ -468,6 +468,7 @@ list (APPEND SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-flags.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-generation-map.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-grpc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-bucket.c
@@ -1042,6 +1043,12 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/unified/test-diagnostics.c
    ${PROJECT_SOURCE_DIR}/tests/unified/util.c
 )
+
+if (ENABLE_GRPC)
+   list (APPEND test-libmongoc-sources
+      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-grpc.c
+   )
+endif ()
 
 if (MONGOC_ENABLE_SSL)
    set (test-libmongoc-sources ${test-libmongoc-sources}
