@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Used to workaround curl certificate validation failures on certain distros.
-. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" platform
+. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" platform download
 
 # Create a temporary directory in the existing directory $1.
 make_tmpdir_in() {
@@ -168,19 +168,13 @@ find_cmake_version() {
   *) ;; # Build from source.
   esac
 
-  declare -a curl_args
-  curl_args=(
-    "--retry" "5"
-    "-sS"
-    "--max-time" "120"
-    "--fail"
-  )
+  declare -a download_args=(--out="cmake.${extension}")
 
   # TODO: remove once BUILD-16817 is resolved.
   # Workaround SSL certificate validation failures on certain distros.
   case "$OS_SHORTNAME-$ARCHNAME" in
     ubuntu14-*|ubuntu16-ppc|RedHat7-ppc)
-      curl_args+=("-k")
+      download_args+=(--no-tls-verify)
       ;;
   esac
 
@@ -196,13 +190,14 @@ find_cmake_version() {
   if [[ -n "${platform:-}" ]]; then
     cmake_download_binary() (
       declare -r cmake_url="https://cmake.org/files/v${major}.${minor}/cmake-${version}-${platform}.${extension}"
+      download_args+=(--uri="${cmake_url}")
 
       echo "Downloading cmake-${version}-${platform}..."
 
       cd "${tmp_cmake_dir}" || return
 
       # Allow download to fail and fallback to building from source.
-      if curl "${curl_args[@]}" "${cmake_url}" --output "cmake.${extension}"; then
+      if download-file "${download_args[@]}"; then
         "${decompressor}" "${decompressor_args[@]}" "cmake.${extension}" || return
 
         cmake_replace_version "${cache_dir}" "$(pwd)/${root_dir}" "${version}" || return

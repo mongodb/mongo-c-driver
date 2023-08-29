@@ -42,6 +42,7 @@ download-file() {
     done
     if ! is-set uri || ! is-set out; then
         fail "download-file requires --uri=<uri> and --out=<filepath> arguments"
+        return
     fi
     debug "Download [$uri] to [$out]"
 
@@ -60,7 +61,7 @@ download-file() {
         fi
         curl_argv+=(-- "$uri")
         debug "Execute curl command: [curl ${curl_argv[*]}]"
-        output=$(curl "${curl_argv[@]}") || fail "$output"
+        output=$(curl "${curl_argv[@]}") || fail "$output" || return
         debug "$output"
     elif have-command wget; then
         wget_argv=(
@@ -73,10 +74,10 @@ download-file() {
         fi
         wget_argv+=(-- "$uri")
         debug "Execute wget command: [wget ${wget_argv[*]}]"
-        output=$(wget "${wget_argv[@]}" 2>&1) || fail "wget failed: $output"
+        output=$(wget "${wget_argv[@]}" 2>&1) || fail "wget failed: $output" || return
         debug "$output"
     else
-        fail "This script requires wither curl or wget to be available"
+        fail "This script requires either curl or wget to be available" || return
     fi
     debug "Download [$uri] to [$out] - Done"
 }
