@@ -17,7 +17,7 @@
 #include "json-test.h"
 #include "test-libmongoc.h"
 
-#include "bson/bson-dsl.h"
+#include "bson-dsl.h"
 
 #include "common-b64-private.h"
 

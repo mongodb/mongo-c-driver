@@ -41,7 +41,7 @@
 #include "mongoc-error-private.h"
 #include "mongoc-database-private.h"
 
-#include <bson/bson-dsl.h>
+#include <bson-dsl.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"

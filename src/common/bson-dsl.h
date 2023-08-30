@@ -1,3 +1,5 @@
+#include "common-prelude.h"
+
 #ifndef BSON_BSON_DSL_H_INCLUDED
 #define BSON_BSON_DSL_H_INCLUDED
 
@@ -11,7 +13,7 @@
  * For more information about using this DSL, refer to `bson-dsl.md`.
  */
 
-#include "bson.h"
+#include "bson/bson.h"
 
 enum {
    /// Toggle this value to enable/disable debug output for all bsonDSL

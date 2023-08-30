@@ -410,6 +410,10 @@ all_tasks = [
             shell_mongoc("bash ./.evergreen/scripts/build-and-test-with-toolchain.sh"),
         ],
     ),
+    NamedTask(
+        "install-libmongoc-after-libbson",
+        commands=[shell_mongoc("bash ./.evergreen/scripts/install-libmongoc-after-libbson.sh"),],
+    ),
 ]
 
 

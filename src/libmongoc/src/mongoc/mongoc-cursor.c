@@ -30,7 +30,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-aggregate-private.h"
 
-#include <bson/bson-dsl.h>
+#include <bson-dsl.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cursor"

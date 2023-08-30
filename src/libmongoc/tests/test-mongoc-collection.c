@@ -1,5 +1,5 @@
 #include <bson/bcon.h>
-#include <bson/bson-dsl.h>
+#include <bson-dsl.h>
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cursor-private.h>

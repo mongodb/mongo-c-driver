@@ -25,7 +25,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-compression-private.h"
 
-#include <bson/bson-dsl.h>
+#include <bson-dsl.h>
 
 #include <stdio.h>
 

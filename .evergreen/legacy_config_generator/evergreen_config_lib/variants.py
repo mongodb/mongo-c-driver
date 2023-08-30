@@ -72,6 +72,7 @@ all_variants = [
             OD([("name", "install-uninstall-check-msvc"), ("distros", ["windows-vsCurrent-large"])]),
             "debug-compile-with-warnings",
             OD([("name", "build-and-test-with-toolchain"), ("distros", ["debian10-small"])]),
+            "install-libmongoc-after-libbson",
         ],
         {
             # Disable the MongoDB legacy shell download, which is not available in 5.0 for u22
