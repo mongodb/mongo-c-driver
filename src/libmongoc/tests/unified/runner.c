@@ -321,6 +321,7 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner,
                "Unexpected error running killAllSessions on server (%d): %s",
                (int) server_id,
                cmd_error.message);
+            _mongoc_array_destroy (&server_ids);
             goto done;
          }
       }
