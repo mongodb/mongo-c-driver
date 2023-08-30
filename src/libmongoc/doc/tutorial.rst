@@ -109,7 +109,7 @@ At the start of an application, call :symbol:`mongoc_init` before any other libm
 
 The example below establishes a connection to a standalone server on ``localhost``, registers the client application as "connect-example," and performs a simple command.
 
-More information about database operations can be found in the :ref:`CRUD Operations <tutorial_crud_operations>` and :ref:`Executing Commands <tutorial_executing_commands>` sections. Examples of connecting to replica sets and sharded clusters can be found on the :doc:`Advanced Connections <advanced-connections>` page.
+More information about database operations can be found in the :ref:`CRUD Operations <tutorial_crud_operations>` and :ref:`Executing Commands <tutorial_executing_commands>` sections. Examples of connecting to replica sets and sharded clusters can be found in the :doc:`Advanced Connections <advanced-connections>` page, while examples of data compression can be found in the :doc:`Data Compression <data-compression>` page.
 
 .. literalinclude:: ../examples/hello_mongoc.c
   :caption: hello_mongoc.c

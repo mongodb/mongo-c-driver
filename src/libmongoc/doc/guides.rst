@@ -11,6 +11,7 @@ Guides
    mongoc-common-task-examples
    advanced-connections
    connection-pooling
+   data-compression
    cursors
    bulk
    aggregate
