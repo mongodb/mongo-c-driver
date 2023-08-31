@@ -37,7 +37,7 @@
 #include "mongoc-compression-private.h"
 #include "utlist.h"
 
-#include <bson/bson-dsl.h>
+#include <bson-dsl.h>
 
 struct _mongoc_uri_t {
    char *str;

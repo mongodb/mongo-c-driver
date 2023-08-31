@@ -1,6 +1,6 @@
 # Using `bson-dsl.h`
 
-The header `<bson/bson-dsl.h>` exposes an embedded domain-specific language
+The header `<bson-dsl.h>` exposes an embedded domain-specific language
 (DSL) built upon the C99 preprocessor. The DSL emits valid C99 and C++03 code
 that can be used to inspect and construct `bson_t` objects.
 

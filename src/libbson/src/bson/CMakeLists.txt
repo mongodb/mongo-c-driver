@@ -6,7 +6,6 @@ set (src_libbson_src_bson_DIST_hs
    bson-compat.h
    bson-context.h
    bson-decimal128.h
-   bson-dsl.h
    bson-endian.h
    bson-error.h
    bson-iter.h

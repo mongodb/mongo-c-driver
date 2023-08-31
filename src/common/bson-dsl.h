@@ -1,3 +1,5 @@
+#include "common-prelude.h"
+
 #ifndef BSON_BSON_DSL_H_INCLUDED
 #define BSON_BSON_DSL_H_INCLUDED
 
@@ -22,10 +24,10 @@ enum {
 };
 
 #define _bson_thread_local \
-   BSON_IF_GNU_LIKE (__thread) BSON_IF_MSVC (__declspec(thread))
+   BSON_IF_GNU_LIKE (__thread) BSON_IF_MSVC (__declspec (thread))
 
-#define _bson_comdat                       \
-   BSON_IF_WINDOWS (__declspec(selectany)) \
+#define _bson_comdat                        \
+   BSON_IF_WINDOWS (__declspec (selectany)) \
    BSON_IF_POSIX (__attribute__ ((weak)))
 
 #ifdef __GNUC__
@@ -89,7 +91,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define _bsonDSL_end   \
    --_bson_dsl_indent; \
    }                   \
-   else((void) 0)
+   else ((void) 0)
 
 /**
  * @brief Expands to a call to bson_append_{Kind}, with the three first
@@ -286,7 +288,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    const bool _bvHalt = false; /* Required for _bsonVisitEach() */           \
    _bsonVisitEach (                                                          \
       OtherBSON,                                                             \
-      if (Pred, then (do(_bsonDocOperation_iterElement (bsonVisitIter)))));  \
+      if (Pred, then (do (_bsonDocOperation_iterElement (bsonVisitIter))))); \
    _bsonDSL_end
 
 #define _bsonDocOperation_insertFromIter(Iter, Pred)                   \
@@ -312,16 +314,16 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 
 /// Insert the given BSON document into the parent array. Keys of the given
 /// document are discarded and it is treated as an array of values.
-#define _bsonArrayOperation_insert(OtherArr, Pred)                          \
-   _bsonDSL_begin ("Insert other array: [%s]", _bsonDSL_str (OtherArr));    \
-   _bsonVisitEach (                                                         \
-      OtherArr,                                                             \
-      if (Pred, then (do(_bsonArrayOperation_iterValue (bsonVisitIter))))); \
+#define _bsonArrayOperation_insert(OtherArr, Pred)                           \
+   _bsonDSL_begin ("Insert other array: [%s]", _bsonDSL_str (OtherArr));     \
+   _bsonVisitEach (                                                          \
+      OtherArr,                                                              \
+      if (Pred, then (do (_bsonArrayOperation_iterValue (bsonVisitIter))))); \
    _bsonDSL_end
 
 #define _bsonArrayAppendValue(ValueOperation)               \
    _bsonDSL_begin ("[%d] => [%s]",                          \
-                  (int) bsonBuildContext.index,                  \
+                   (int) bsonBuildContext.index,            \
                    _bsonDSL_strElide (30, ValueOperation)); \
    /* Set the doc key to the array index as a string: */    \
    _bsonBuild_setKeyToArrayIndex (bsonBuildContext.index);  \
@@ -396,9 +398,11 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       _bsonValueOperationIf_##Else;                                     \
    }
 
-#define _bsonBuild_setKeyToArrayIndex(Idx)                                    \
-   _bbCtx.key_len = bson_snprintf (                                           \
-      _bbCtx.index_key_str, sizeof _bbCtx.index_key_str, "%d",(int) _bbCtx.index); \
+#define _bsonBuild_setKeyToArrayIndex(Idx)                      \
+   _bbCtx.key_len = bson_snprintf (_bbCtx.index_key_str,        \
+                                   sizeof _bbCtx.index_key_str, \
+                                   "%d",                        \
+                                   (int) _bbCtx.index);         \
    _bbCtx.key = _bbCtx.index_key_str
 
 /// Handle an element of array()
@@ -716,19 +720,19 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    (NthInt < _bpNumVisitBitInts &&              \
     (_bpVisitBits[NthInt] & (UINT64_C (1) << NthBit)))
 
-#define _bsonParseOperation_find(Predicate, ...)                   \
-   _bsonDSL_begin ("find(%s)", _bsonDSL_str (Predicate));          \
-   _bpFoundElement = false;                                        \
-   _bsonVisitEach (                                                \
-      *_bpDoc,                                                     \
-      if (Predicate,                                               \
-          then (do(_bsonParseMarkVisited (bsonVisitContext.index); \
-                   _bpFoundElement = true),                        \
-                __VA_ARGS__,                                       \
-                break)));                                          \
-   if (!_bpFoundElement && !bsonParseError) {                      \
-      _bsonDSLDebug ("[not found]");                               \
-   }                                                               \
+#define _bsonParseOperation_find(Predicate, ...)                    \
+   _bsonDSL_begin ("find(%s)", _bsonDSL_str (Predicate));           \
+   _bpFoundElement = false;                                         \
+   _bsonVisitEach (                                                 \
+      *_bpDoc,                                                      \
+      if (Predicate,                                                \
+          then (do (_bsonParseMarkVisited (bsonVisitContext.index); \
+                    _bpFoundElement = true),                        \
+                __VA_ARGS__,                                        \
+                break)));                                           \
+   if (!_bpFoundElement && !bsonParseError) {                       \
+      _bsonDSLDebug ("[not found]");                                \
+   }                                                                \
    _bsonDSL_end
 
 #define _bsonParseOperation_require(Predicate, ...)                      \
@@ -737,8 +741,8 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonVisitEach (                                                      \
       *_bpDoc,                                                           \
       if (Predicate,                                                     \
-          then (do(_bsonParseMarkVisited (bsonVisitContext.index);       \
-                   _bpFoundElement = true),                              \
+          then (do (_bsonParseMarkVisited (bsonVisitContext.index);      \
+                    _bpFoundElement = true),                             \
                 __VA_ARGS__,                                             \
                 break)));                                                \
    if (!_bpFoundElement && !bsonParseError) {                            \
@@ -1140,7 +1144,7 @@ _bson_dsl_dupPath (char **into)
       char *prev = acc;
       if (ctx->parent && BSON_ITER_HOLDS_ARRAY (&ctx->parent->iter)) {
          // We're an array element
-         acc = bson_strdup_printf ("[%d]%s", (int)ctx->index, prev);
+         acc = bson_strdup_printf ("[%d]%s", (int) ctx->index, prev);
       } else {
          // We're a document element
          acc = bson_strdup_printf (".%s%s", bson_iter_key (&ctx->iter), prev);
