@@ -53,7 +53,6 @@ BUILD_AND_INSTALL:
     RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
         -D ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
         -D ENABLE_MAINTAINER_FLAGS=ON \
-        -D ENABLE_RDTSCP=ON \
         -D ENABLE_SHM_COUNTERS=ON \
         -D ENABLE_EXTRA_ALIGNMENT=OFF \
         -D ENABLE_SASL=CYRUS \
