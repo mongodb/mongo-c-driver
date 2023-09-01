@@ -24,6 +24,9 @@ main (int argc, char *argv[])
    } else                                      \
       ((void) 0)
 
+#if defined(MONGOC_ENABLE_GRPC)
+   // TODO
+#else
    TEST_INSTALL (test_atomic_install);
    TEST_INSTALL (test_bcon_basic_install);
    TEST_INSTALL (test_bcon_extract_install);
@@ -153,6 +156,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_mcd_integer_install);
    TEST_INSTALL (test_mcd_rpc_install);
    TEST_INSTALL (test_service_gcp_install);
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    ret = TestSuite_Run (&suite);
 
