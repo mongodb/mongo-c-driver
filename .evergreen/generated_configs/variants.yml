@@ -20,6 +20,24 @@ buildvariants:
       DEBUG: "ON"
     tasks:
       - name: .cse-matrix-winssl
+  - name: earthly-alpine3.18
+    display_name: Alpine 3.18
+    expansions:
+      MONGOC_EARTHLY_ENV: alpine3.18
+    tasks:
+      - name: .earthly
+  - name: earthly-archlinux
+    display_name: Arch Linux
+    expansions:
+      MONGOC_EARTHLY_ENV: archlinux
+    tasks:
+      - name: .earthly
+  - name: earthly-u22
+    display_name: Ubuntu 22.04
+    expansions:
+      MONGOC_EARTHLY_ENV: u22
+    tasks:
+      - name: .earthly
   - name: mock-server-test
     display_name: Mock Server Test
     expansions:

@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
 find_cmake_latest() {
-  # shellcheck source=.evergreen/scripts/env-var-utils.sh
-  . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
-  . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
+  . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths || return
 
   declare script_dir
   script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")" || return
