@@ -2496,7 +2496,7 @@ test_framework_skip_if_no_aws (void)
 #ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH
    return 1; /* proceed. */
 #else
-   return 0;    /* do not proceed. */
+   return 0; /* do not proceed. */
 #endif
 }
 
