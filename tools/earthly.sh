@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 . "$(dirname "${BASH_SOURCE[0]}")/use.sh" paths platform
 
