@@ -26,6 +26,7 @@ main (int argc, char *argv[])
 
 #if defined(MONGOC_ENABLE_GRPC)
    TEST_INSTALL (test_grpc_install);
+   TEST_INSTALL (test_install_unified);
 #else
    TEST_INSTALL (test_atomic_install);
    TEST_INSTALL (test_bcon_basic_install);

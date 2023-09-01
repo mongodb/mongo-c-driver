@@ -27,6 +27,9 @@
 /* test_runner_t, test_file_t, and test_t model the types described in the "Test
  * Runner Implementation" section of the Unified Test Format specification. */
 typedef struct {
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_client_pool_t *internal_pool;
+#endif // defined(MONGOC_ENABLE_GRPC)
    mongoc_client_t *internal_client;
    semver_t server_version;
    /* topology_type may be "single", "replicaset", "sharded",

@@ -495,10 +495,19 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
    mongoc_topology_t *const topology = BSON_ASSERT_PTR_INLINE (pool)->topology;
    mc_tpld_modification tdmod;
 
+#if defined(MONGOC_ENABLE_GRPC)
+   // gRPC POC: allow `entity_map_disable_event_listeners()` to clear APM
+   // callbacks without error.
+   if (callbacks && pool->apm_callbacks_set) {
+      MONGOC_ERROR ("Can only set callbacks once");
+      return false;
+   }
+#else
    if (pool->apm_callbacks_set) {
       MONGOC_ERROR ("Can only set callbacks once");
       return false;
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    tdmod = mc_tpld_modify_begin (topology);
 

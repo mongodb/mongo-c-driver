@@ -365,8 +365,13 @@ test_runner_new (void)
    {
       mongoc_uri_t *const uri = test_framework_get_uri ();
 
+#if defined(MONGOC_ENABLE_GRPC)
+      test_runner->internal_pool =
+         test_framework_client_pool_new_from_uri (uri, NULL);
+#else
       test_runner->internal_client =
          test_framework_client_new_from_uri (uri, NULL);
+#endif // defined(MONGOC_ENABLE_GRPC)
 
       /* In load balanced mode, the internal client must use the
        * SINGLE_LB_MONGOS_URI. */
@@ -384,15 +389,28 @@ test_runner_new (void)
    {
       mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new ();
       mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
+#if defined(MONGOC_ENABLE_GRPC)
+      mongoc_client_pool_set_apm_callbacks (
+         test_runner->internal_pool, callbacks, test_runner);
+#else
       mongoc_client_set_apm_callbacks (
          test_runner->internal_client, callbacks, test_runner);
+#endif // defined(MONGOC_ENABLE_GRPC)
       mongoc_apm_callbacks_destroy (callbacks);
    }
 
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_client_pool_set_error_api (test_runner->internal_pool,
+                                     MONGOC_ERROR_API_VERSION_2);
+
+   test_runner->internal_client =
+      mongoc_client_pool_pop (test_runner->internal_pool);
+#else
    test_framework_set_ssl_opts (test_runner->internal_client);
 
    mongoc_client_set_error_api (test_runner->internal_client,
                                 MONGOC_ERROR_API_VERSION_2);
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    test_runner->topology_type =
       get_topology_type (test_runner->internal_client);
@@ -400,10 +418,15 @@ test_runner_new (void)
 
    test_runner->is_serverless = test_framework_is_serverless ();
 
+#if defined(MONGOC_ENABLE_GRPC)
+   // gRPC POC: Atlas Proxy: avoid error `(Unauthorized) not authorized on admin
+   // to execute command`.
+#else
    /* Terminate any possible open transactions. */
    if (!test_runner_terminate_open_transactions (test_runner, &error)) {
       test_error ("error terminating transactions: %s", error.message);
    }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
    {
       bson_t reply;
@@ -428,7 +451,13 @@ test_runner_new (void)
 static void
 test_runner_destroy (test_runner_t *test_runner)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_client_pool_push (test_runner->internal_pool,
+                            test_runner->internal_client);
+   mongoc_client_pool_destroy (test_runner->internal_pool);
+#else
    mongoc_client_destroy (test_runner->internal_client);
+#endif // defined(MONGOC_ENABLE_GRPC)
    _mongoc_array_destroy (&test_runner->server_ids);
    bson_destroy (test_runner->server_parameters);
    bson_free (test_runner);
@@ -1774,12 +1803,17 @@ done:
    if (!cleanup_failpoints (test, &nonfatal_error)) {
       MONGOC_DEBUG ("error cleaning up failpoints: %s", nonfatal_error.message);
    }
+#if defined(MONGOC_ENABLE_GRPC)
+   // gRPC POC: Atlas Proxy: avoid error `(Unauthorized) not authorized on admin
+   // to execute command`.
+#else
    /* always terminate transactions, even on test failure. */
    if (!test_runner_terminate_open_transactions (test_runner,
                                                  &nonfatal_error)) {
       MONGOC_DEBUG ("error terminating transactions: %s",
                     nonfatal_error.message);
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
    bson_free (subtest_selector);
    return ret;
 }

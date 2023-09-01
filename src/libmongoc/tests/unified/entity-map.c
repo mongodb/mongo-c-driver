@@ -36,6 +36,13 @@
 #define REDUCED_HEARTBEAT_FREQUENCY_MS 500
 #define REDUCED_MIN_HEARTBEAT_FREQUENCY_MS 50
 
+#if defined(MONGOC_ENABLE_GRPC)
+typedef struct _pooled_client_t {
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+} pooled_client_t;
+#endif // defined(MONGOC_ENABLE_GRPC)
+
 struct _entity_findcursor_t {
    const bson_t *first_result;
    mongoc_cursor_t *cursor;
@@ -614,6 +621,9 @@ entity_t *
 entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 {
    entity_t *entity = NULL;
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_client_pool_t *pool = NULL;
+#endif // defined(MONGOC_ENABLE_GRPC)
    mongoc_client_t *client = NULL;
    mongoc_uri_t *uri = NULL;
    bool ret = false;
@@ -808,11 +818,26 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
          uri, MONGOC_URI_HEARTBEATFREQUENCYMS, REDUCED_HEARTBEAT_FREQUENCY_MS);
    }
 
+#if defined(MONGOC_ENABLE_GRPC)
+   pool = test_framework_client_pool_new_from_uri (uri, api);
+   mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, entity);
+   client = mongoc_client_pool_pop (pool);
+   {
+      pooled_client_t *const value = bson_malloc (sizeof (pooled_client_t));
+      *value = (pooled_client_t){
+         .pool = pool,
+         .client = client,
+      };
+      entity->value = value;
+   }
+#else
    client = test_framework_client_new_from_uri (uri, api);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;
    mongoc_client_set_apm_callbacks (client, callbacks, entity);
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec =
@@ -1286,7 +1311,12 @@ entity_client_encryption_new (entity_map_t *entity_map,
             goto ce_opts_done;
          }
 
+#if defined(MONGOC_ENABLE_GRPC)
+         BSON_ASSERT (
+            (client = ((pooled_client_t *) client_entity->value)->client));
+#else
          BSON_ASSERT ((client = (mongoc_client_t *) client_entity->value));
+#endif // defined(MONGOC_ENABLE_GRPC)
 
          mongoc_client_encryption_opts_set_keyvault_client (ce_opts, client);
       }
@@ -1421,7 +1451,11 @@ entity_database_new (entity_map_t *entity_map,
       goto done;
    }
 
+#if defined(MONGOC_ENABLE_GRPC)
+   client = ((pooled_client_t *) client_entity->value)->client;
+#else
    client = (mongoc_client_t *) client_entity->value;
+#endif // defined(MONGOC_ENABLE_GRPC)
    db = mongoc_client_get_database (client, database_name);
    entity->value = (void *) db;
 
@@ -1613,7 +1647,11 @@ entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    if (!client_entity) {
       goto done;
    }
+#if defined(MONGOC_ENABLE_GRPC)
+   client = ((pooled_client_t *) client_entity->value)->client;
+#else
    client = (mongoc_client_t *) client_entity->value;
+#endif defined(MONGOC_ENABLE_GRPC)
    if (!client) {
       goto done;
    }
@@ -1802,10 +1840,17 @@ entity_destroy (entity_t *entity)
    BSON_ASSERT (entity->type);
 
    if (0 == strcmp ("client", entity->type)) {
+#if defined(MONGOC_ENABLE_GRPC)
+      pooled_client_t *const value = entity->value;
+      mongoc_client_pool_push (value->pool, value->client);
+      mongoc_client_pool_destroy (value->pool);
+      bson_free (value);
+#else
       mongoc_client_t *client = NULL;
 
       client = (mongoc_client_t *) entity->value;
       mongoc_client_destroy (client);
+#endif defined(MONGOC_ENABLE_GRPC)
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
       mongoc_client_encryption_t *ce = NULL;
 
@@ -1815,11 +1860,19 @@ entity_destroy (entity_t *entity)
       mongoc_database_t *db = NULL;
 
       db = (mongoc_database_t *) entity->value;
+#if defined(MONGOC_ENABLE_GRPC)
+      // gRPC POC: Atlas Proxy: avoid hitting limits.
+      (void) mongoc_database_drop (db, NULL);
+#endif // defined(MONGOC_ENABLE_GRPC)
       mongoc_database_destroy (db);
    } else if (0 == strcmp ("collection", entity->type)) {
       mongoc_collection_t *coll = NULL;
 
       coll = (mongoc_collection_t *) entity->value;
+#if defined(MONGOC_ENABLE_GRPC)
+      // gRPC POC: Atlas Proxy: avoid hitting limits.
+      (void) mongoc_collection_drop (coll, NULL);
+#endif // defined(MONGOC_ENABLE_GRPC)
       mongoc_collection_destroy (coll);
    } else if (0 == strcmp ("session", entity->type)) {
       mongoc_client_session_t *sess = NULL;
@@ -1942,7 +1995,11 @@ entity_map_get_client (entity_map_t *entity_map,
    if (!entity) {
       return NULL;
    }
+#if defined(MONGOC_ENABLE_GRPC)
+   return ((pooled_client_t *) entity->value)->client;
+#else
    return (mongoc_client_t *) entity->value;
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 mongoc_client_encryption_t *
@@ -2396,9 +2453,14 @@ entity_map_disable_event_listeners (entity_map_t *em)
    LL_FOREACH (em->entities, eiter)
    {
       if (0 == strcmp (eiter->type, "client")) {
+#if defined(MONGOC_ENABLE_GRPC)
+         pooled_client_t *const value = eiter->value;
+         mongoc_client_pool_set_apm_callbacks (value->pool, NULL, NULL);
+#else
          mongoc_client_t *client = (mongoc_client_t *) eiter->value;
 
          mongoc_client_set_apm_callbacks (client, NULL, NULL);
+#endif // defined(MONGOC_ENABLE_GRPC)
       }
    }
 }

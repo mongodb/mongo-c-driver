@@ -864,9 +864,17 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
    char *password;
    char *uri_str;
    mongoc_uri_t *uri;
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_client_pool_t *pool;
+#endif // defined(MONGOC_ENABLE_GRPC)
    mongoc_client_t *client;
    bson_error_t error;
 
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_UNUSED (user);
+   BSON_UNUSED (password);
+   uri_str = bson_strdup_printf ("mongodb://%s", host_and_port);
+#else
    if (test_framework_get_user_password (&user, &password)) {
       uri_str =
          bson_strdup_printf ("mongodb://%s:%s@%s%s",
@@ -882,6 +890,7 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
                              host_and_port,
                              test_framework_get_ssl () ? "/?ssl=true" : "");
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    uri = mongoc_uri_new (uri_str);
    BSON_ASSERT (uri);
@@ -901,11 +910,16 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
       mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
    }
 
+#if defined(MONGOC_ENABLE_GRPC)
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   client = mongoc_client_pool_pop (pool);
+#else
    client = test_framework_client_new_from_uri (uri, NULL);
 
 #ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client);
 #endif
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    if (!mongoc_client_command_simple (
           client, "admin", tmp_bson ("{'hello': 1}"), NULL, reply, &error)) {
@@ -925,7 +939,12 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
       }
    }
 
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+#else
    mongoc_client_destroy (client);
+#endif // defined(MONGOC_ENABLE_GRPC)
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
 }
@@ -1226,12 +1245,21 @@ test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri,
    /* TODO Once CDRIVER-3285 is resolved, update this to no longer hardcode the
     * hosts. */
    if (use_multi) {
+#if defined(MONGOC_ENABLE_GRPC)
+      // gRPC POC: Atlas Proxy: hard-coded a single mongos to test against.
+      // There are also mongos on 9911 and 9921, but ignore them for now.
+      if (!mongoc_uri_upsert_host_and_port (
+             uri, "host9.local.10gen.cc:9901", error)) {
+         goto done;
+      }
+#else
       if (!mongoc_uri_upsert_host_and_port (uri, "localhost:27017", error)) {
          goto done;
       }
       if (!mongoc_uri_upsert_host_and_port (uri, "localhost:27018", error)) {
          goto done;
       }
+#endif // defined(MONGOC_ENABLE_GRPC)
    } else {
       const mongoc_host_list_t *hosts;
 
@@ -1322,6 +1350,7 @@ test_framework_replset_name (void)
 size_t
 test_framework_replset_member_count (void)
 {
+   mongoc_client_pool_t *pool;
    mongoc_client_t *client;
    bson_t reply;
    bson_error_t error;
@@ -1329,7 +1358,12 @@ test_framework_replset_member_count (void)
    bson_iter_t iter, array;
    size_t count = 0;
 
+#if defined(MONGOC_ENABLE_GRPC)
+   pool = test_framework_new_default_client_pool ();
+   client = mongoc_client_pool_pop (pool);
+#else
    client = test_framework_new_default_client ();
+#endif // defined(MONGOC_ENABLE_GRPC)
    r = mongoc_client_command_simple (client,
                                      "admin",
                                      tmp_bson ("{'replSetGetStatus': 1}"),
@@ -1353,7 +1387,12 @@ test_framework_replset_member_count (void)
    }
 
    bson_destroy (&reply);
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+#else
    mongoc_client_destroy (client);
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    return count;
 }
