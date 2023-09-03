@@ -180,7 +180,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
    }
 
    int32_t flags;
-   if (!_mongoc_cursor_opts_to_flags (cursor, server_stream, false, &flags)) {
+   if (!_mongoc_cursor_opts_to_flags (cursor, server_stream, &flags)) {
       GOTO (fail);
    }
    mongoc_cluster_t *const cluster = &cursor->client->cluster;
@@ -472,7 +472,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
       }
    }
 
-   if (!_mongoc_cursor_opts_to_flags (cursor, stream, false, flags)) {
+   if (!_mongoc_cursor_opts_to_flags (cursor, stream, flags)) {
       /* cursor->error is set */
       return NULL;
    }

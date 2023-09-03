@@ -218,7 +218,7 @@ else ()
 endif ()
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-   set (CMAKE_BUILD_TYPE "RelWithDebInfo")
+   set (CMAKE_BUILD_TYPE "Debug")
    message (
       STATUS "No CMAKE_BUILD_TYPE selected, defaulting to ${CMAKE_BUILD_TYPE}"
    )

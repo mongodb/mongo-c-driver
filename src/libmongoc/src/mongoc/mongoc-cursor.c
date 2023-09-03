@@ -887,7 +887,6 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
                               mongoc_server_stream_t *stream,
-                              bool op_msg,
                               int32_t *flags /* OUT */)
 {
    bson_iter_t iter;
@@ -905,37 +904,28 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
-
-      if (op_msg) {
-         if (!strcmp (key, "exhaust")) {
-            ADD_FLAG (flags, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED);
-         }
-      } else {
-         if (!strcmp (key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
-            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_PARTIAL);
-         } else if (!strcmp (key, MONGOC_CURSOR_AWAIT_DATA)) {
-            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_AWAIT_DATA);
-         } else if (!strcmp (key, MONGOC_CURSOR_EXHAUST)) {
-            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_EXHAUST);
-         } else if (!strcmp (key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT)) {
-            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT);
-         } else if (!strcmp (key, MONGOC_CURSOR_OPLOG_REPLAY)) {
-            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY);
-         } else if (!strcmp (key, MONGOC_CURSOR_TAILABLE)) {
-            ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
-         }
+      if (!strcmp (key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_PARTIAL);
+      } else if (!strcmp (key, MONGOC_CURSOR_AWAIT_DATA)) {
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_AWAIT_DATA);
+      } else if (!strcmp (key, MONGOC_CURSOR_EXHAUST)) {
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_EXHAUST);
+      } else if (!strcmp (key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT)) {
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT);
+      } else if (!strcmp (key, MONGOC_CURSOR_OPLOG_REPLAY)) {
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY);
+      } else if (!strcmp (key, MONGOC_CURSOR_TAILABLE)) {
+         ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
       }
    }
 
-   if (!op_msg) {
-      if (cursor->secondary_ok) {
-         *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
-      } else if (cursor->server_id &&
-                 (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
-                  stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
-                 stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
-         *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
-      }
+   if (cursor->secondary_ok) {
+      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
+   } else if (cursor->server_id &&
+              (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
+               stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
+              stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
+      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
    }
 
    return true;
@@ -988,11 +978,11 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
-      if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
-         MONGOC_WARNING (
-            "exhaust cursors not supported with OP_MSG, using normal "
-            "cursor instead");
-      }
+      // if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
+      //    MONGOC_WARNING (
+      //       "exhaust cursors not supported with OP_MSG, using normal "
+      //       "cursor instead");
+      // }
    }
 
    if (parts.assembled.session) {
@@ -1027,6 +1017,15 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    db = bson_strndup (cursor->ns, cursor->dblen);
    parts.assembled.db_name = db;
 
+   {
+      int32_t flags;
+      if (!_mongoc_cursor_opts_to_flags (cursor, server_stream, &flags)) {
+         _mongoc_bson_init_if_set (reply);
+         GOTO (done);
+      }
+      parts.user_query_flags = (mongoc_query_flags_t) flags;
+   }
+
 
    /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.
     * user_query_flags is unused in OP_MSG, so this technically has no effect,
@@ -1045,15 +1044,9 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
     */
    cmd_name = _mongoc_get_command_name (command);
    bool is_op_msg = !strcmp (cmd_name, "find");
-
-   {
-      int32_t flags;
-      if (!_mongoc_cursor_opts_to_flags (
-             cursor, server_stream, is_op_msg, &flags)) {
-         _mongoc_bson_init_if_set (reply);
-         GOTO (done);
-      }
-      parts.user_query_flags = (mongoc_query_flags_t) flags;
+   if (is_op_msg &&
+       _mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
+      parts.assembled.op_msg_is_exhaust = true;
    }
 
    is_primary =
@@ -1746,9 +1739,16 @@ _mongoc_cursor_response_refresh (mongoc_cursor_t *cursor,
    /* server replies to find / aggregate with {cursor: {id: N, firstBatch: []}},
     * to getMore command with {cursor: {id: N, nextBatch: []}}. */
    if (_mongoc_cursor_run_command (
-          cursor, command, opts, &response->reply, false) &&
-       _mongoc_cursor_start_reading_response (cursor, response)) {
-      return;
+          cursor, command, opts, &response->reply, false)) {
+      if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
+         cursor->in_exhaust = true;
+         cursor->client->in_exhaust = true;
+      }
+      if (_mongoc_cursor_start_reading_response (cursor, response)) {
+         // TODO here or in above function: read moreToCome bit from server
+         // set cursor->in_exhaust and cursor->client->in_exhaust accordingly
+         return;
+      }
    }
    if (!cursor->error.domain) {
       bson_set_error (&cursor->error,

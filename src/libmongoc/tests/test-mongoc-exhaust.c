@@ -777,22 +777,19 @@ test_exhaust_install (TestSuite *suite)
                       test_exhaust_cursor_single,
                       NULL,
                       NULL,
-                      skip_if_mongos,
-                      test_framework_skip_if_no_legacy_opcodes);
+                      NULL);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/pool",
                       test_exhaust_cursor_pool,
                       NULL,
                       NULL,
-                      skip_if_mongos,
-                      test_framework_skip_if_no_legacy_opcodes);
+                      skip_if_mongos);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/batches",
                       test_exhaust_cursor_multi_batch,
                       NULL,
                       NULL,
-                      skip_if_mongos,
-                      test_framework_skip_if_no_legacy_opcodes);
+                      skip_if_mongos);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/fallback",
                       test_exhaust_cursor_fallback,

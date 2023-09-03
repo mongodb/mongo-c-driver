@@ -76,6 +76,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_6_0 17
 /* version corresponding to server 7.0 release */
 #define WIRE_VERSION_7_0 21
+/* version corresponding to server 7.1 release */
+#define WIRE_VERSION_7_1 22
 
 /* Range of wire protocol versions this driver supports. Bumping
  * WIRE_VERSION_MAX must be accompanied by an update to

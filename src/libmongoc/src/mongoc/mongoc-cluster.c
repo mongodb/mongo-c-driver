@@ -3516,7 +3516,7 @@ _mongoc_cluster_run_opmsg_send (mongoc_cluster_t *cluster,
    const uint32_t flags =
       (cmd->is_acknowledged ? MONGOC_OP_MSG_FLAG_NONE
                             : MONGOC_OP_MSG_FLAG_MORE_TO_COME) |
-      cmd->query_flags;
+      (cmd->op_msg_is_exhaust ? MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED : 0);
 
    {
       int32_t message_length = 0;

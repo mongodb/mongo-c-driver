@@ -54,6 +54,7 @@ typedef enum {
 typedef struct _mongoc_cmd_t {
    const char *db_name;
    mongoc_query_flags_t query_flags;
+   bool op_msg_is_exhaust;
    const bson_t *command;
    const char *command_name;
    const uint8_t *payload;
