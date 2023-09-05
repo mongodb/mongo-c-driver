@@ -16,8 +16,6 @@
 
 #include "mongoc/mongoc-config.h"
 
-#ifdef MONGOC_ENABLE_GRPC
-
 #include "mongoc/mcd-rpc.h"
 #include "mongoc/mongoc-array-private.h"
 #include "mongoc/mongoc-cluster-private.h"
@@ -1203,5 +1201,3 @@ done:
 
    return ret;
 }
-
-#endif // MONGOC_ENABLE_GRPC
