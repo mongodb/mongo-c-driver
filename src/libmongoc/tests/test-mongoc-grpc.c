@@ -77,7 +77,6 @@
          "op_ingress_compressed: expected %" PRId32 ", got %" PRId32,          \
          expected_op_ingress_compressed,                                       \
          actual_op_ingress_compressed);                                        \
-      /* gRPC POC: should always be zero. */                                   \
       ASSERT_WITH_MSG (actual_op_egress_query == 0,                            \
                        "op_egress_query: expected %" PRId32 ", got %" PRId32,  \
                        0,                                                      \
@@ -112,7 +111,7 @@
    } else                                                       \
       (void) 0
 
-// gRPC POC: hard-coded constants specific to gRPC POC or Atlas Proxy.
+// gRPC POC: Atlas Proxy: hard-coded constants.
 static const char *const poc_atlas_target = "host9.local.10gen.cc:9901";
 static const char *const poc_atlas_legacy = "host9.local.10gen.cc:9900";
 

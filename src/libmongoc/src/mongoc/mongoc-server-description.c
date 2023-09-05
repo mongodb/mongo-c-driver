@@ -70,7 +70,13 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
    sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
    sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
+#if defined(MONGOC_ENABLE_GRPC)
+   // gRPC Protocol: Clients MUST use the following constants when serializing
+   // commands to OP_MSG. Equivalent to MONGOC_DEFAULT_WRITE_BATCH_SIZE.
+   sd->max_write_batch_size = 100000;
+#else
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
+#endif // defined(MONGOC_ENABLE_GRPC)
    sd->session_timeout_minutes = MONGOC_NO_SESSIONS;
    sd->last_write_date_ms = -1;
    sd->hello_ok = false;

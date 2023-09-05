@@ -77,11 +77,11 @@ handle_event (mongoc_grpc_t *grpc, grpc_event event, bson_error_t *error);
 
 
 // gRPC Protocol: Clients MUST use the following constants when serializing
-// commands to OP_MSG.
+// commands to OP_MSG. Equivalent to MONGOC_DEFAULT_MAX_MSG_SIZE.
 static int max_message_size_bytes = 48000000;
 
 
-// gRPC POC: hard-coded constants specific to gRPC POC or Atlas Proxy.
+// gRPC POC: Atlas Proxy: hard-coded constants for testing.
 const char *const poc_atlas_target = "host9.local.10gen.cc:9901";
 const char *const poc_atlas_authority = "host.local.10gen.cc";
 const char *const poc_atlas_method =
@@ -539,7 +539,7 @@ send_message_data_new (mongoc_grpc_t *grpc,
    void *compressed_data = NULL;
    size_t compressed_data_len = 0u;
 
-   // gRPC POC: Atlas Proxy does not support OP_COMPRESSED.
+   // gRPC POC: Atlas Proxy: OP_COMPRESSED is not supported.
    // if (compressor_id != -1 && !mcd_rpc_message_compress (rpc,
    //                                                       compressor_id,
    //                                                       compression_level,
@@ -663,7 +663,7 @@ done:
 static grpc_channel *
 create_channel (void)
 {
-   // Authentication is not required for gRPC POC.
+   // gRPC POC: authentication is not required.
    grpc_channel_credentials *const creds =
       grpc_insecure_credentials_create (); // Experimental API!
 
@@ -862,11 +862,17 @@ start_send_initial_metadata (mongoc_grpc_t *grpc, bson_error_t *error)
       .key = grpc_slice_from_static_string (KEY),     \
       .value = grpc_slice_from_static_string (VALUE), \
    }
-      // Most of these fields are hard-coded for gRPC POC.
+      // gRPC POC: a client MUST set the mongodb-wireVersion field in the RPC
+      // request’s metadata to what it currently believes the server’s
+      // maxWireVersion is. If the client does not know what the maxWireVersion
+      // of the server is, it MUST set the mongodb-wireVersion metadata field to
+      // value that is at least "18".
+      METADATA_ENTRY ("mongodb-wireversion", "18"),
+
+      // gRPC POC: Atlas Proxy: satisfy testing requirements.
       METADATA_ENTRY ("security-uuid", "uuid"),
       METADATA_ENTRY ("username", "user"),
       METADATA_ENTRY ("servername", "host.local.10gen.cc"),
-      METADATA_ENTRY ("mongodb-wireversion", "18"),
       METADATA_ENTRY ("x-forwarded-for", "127.0.0.1:9901"),
 #undef METADATA_ENTRY
    };

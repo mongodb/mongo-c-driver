@@ -128,6 +128,12 @@ int32_t
 mongoc_server_stream_max_write_batch_size (
    mongoc_server_stream_t *server_stream)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   // gRPC Protocol: Clients MUST use the following constants when serializing
+   // commands to OP_MSG. Equivalent to MONGOC_DEFAULT_WRITE_BATCH_SIZE.
+   return COALESCE (server_stream->sd->max_write_batch_size, 100000);
+#else
    return COALESCE (server_stream->sd->max_write_batch_size,
                     MONGOC_DEFAULT_WRITE_BATCH_SIZE);
+#endif // defined(MONGOC_ENABLE_GRPC)
 }

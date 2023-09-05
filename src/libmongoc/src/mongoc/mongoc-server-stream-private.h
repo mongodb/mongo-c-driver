@@ -40,7 +40,7 @@ typedef struct _mongoc_server_stream_t {
 #if defined(MONGOC_ENABLE_GRPC)
    struct _mongoc_grpc_t *grpc; // borrowed
 #else
-   mongoc_stream_t *stream; // gRPC POC: not used.
+   mongoc_stream_t *stream; // borrowed
 #endif // defined(MONGOC_ENABLE_GRPC)
    // If the stream was created in a way that may have overwritten the user's
    // readPreference, we need to know if server selection forced that change.
