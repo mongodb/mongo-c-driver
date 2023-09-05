@@ -603,7 +603,7 @@ recv_message_to_reply (mongoc_grpc_t *grpc,
    }
 
    mcd_rpc_message *const rpc = grpc->rpc;
-   mcd_rpc_message_reset (grpc->rpc);
+   mcd_rpc_message_reset (rpc);
 
    mongoc_array_t bytes = byte_buffer_to_array (recv_message);
 
@@ -612,6 +612,7 @@ recv_message_to_reply (mongoc_grpc_t *grpc,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "invalid reply from server: malformed message");
+      _mongoc_array_destroy (&bytes);
       goto fail;
    }
 
@@ -626,6 +627,7 @@ recv_message_to_reply (mongoc_grpc_t *grpc,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "invalid reply from server: decompression failure");
+      _mongoc_array_destroy (&bytes);
       goto fail;
    }
 
