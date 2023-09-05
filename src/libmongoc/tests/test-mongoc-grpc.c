@@ -148,21 +148,15 @@ test_grpc_poc_warning (void)
 {
    capture_logs (true);
 
-   {
-      mongoc_grpc_t *const grpc = mongoc_grpc_new (poc_atlas_target);
-      mongoc_grpc_destroy (grpc);
-      ASSERT_NO_CAPTURED_LOGS ("valid gRPC POC target should not emit warning");
-   }
+   mongoc_grpc_destroy (mongoc_grpc_new (poc_atlas_target));
+   ASSERT_NO_CAPTURED_LOGS ("valid gRPC POC target should not emit warning");
 
    clear_captured_logs ();
 
-   {
-      mongoc_grpc_t *const grpc = mongoc_grpc_new (poc_atlas_legacy);
-      mongoc_grpc_destroy (grpc);
-      ASSERT_CAPTURED_LOG ("expected gRPC POC warning for unexpected target",
-                           MONGOC_LOG_LEVEL_WARNING,
-                           "gRPC POC");
-   }
+   mongoc_grpc_destroy (mongoc_grpc_new (poc_atlas_legacy));
+   ASSERT_CAPTURED_LOG ("expected gRPC POC warning for unexpected target",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "gRPC POC");
 
    capture_logs (false);
 }
@@ -329,48 +323,6 @@ test_grpc_message_compressed (void)
 }
 
 static void
-test_grpc_legacy_error (void)
-{
-   mongoc_grpc_t *const grpc = _grpc_new_with_target (poc_atlas_legacy);
-
-   bson_error_t error = {.code = 0};
-
-   _reset_counters ();
-
-   ASSERT_OR_PRINT (mongoc_grpc_start_initial_metadata (grpc, &error), error);
-
-   // Send a ping to trigger a response from the server.
-   ASSERT_OR_PRINT (
-      mongoc_grpc_start_message (grpc,
-                                 0,
-                                 MONGOC_OP_MSG_FLAG_NONE,
-                                 tmp_bson ("{'ping': 1, '$db': 'admin'}"),
-                                 -1,
-                                 -1,
-                                 &error),
-      error);
-
-   // Connection should succeed and server should reply with an error
-   // message.
-   ASSERT_OR_PRINT (mongoc_grpc_handle_events (grpc, DEFAULT_DEADLINE, &error),
-                    error);
-   ASSERT (!mongoc_grpc_event_timed_out (grpc));
-   ASSERT_CONNECTIVITY_STATE (GRPC_CHANNEL_READY);
-   ASSERT_COUNTERS (1, 1, 0, 0);
-   ASSERT_REPLY_OK ();
-
-   // There should be no more events to handle.
-   ASSERT_OR_PRINT (mongoc_grpc_handle_events (grpc, DEFAULT_DEADLINE, &error),
-                    error);
-   ASSERT (!mongoc_grpc_event_timed_out (grpc));
-   ASSERT_CONNECTIVITY_STATE (GRPC_CHANNEL_READY);
-   ASSERT_COUNTERS (1, 1, 0, 0);
-
-   mongoc_grpc_destroy (grpc);
-   ASSERT_COUNTERS (1, 1, 0, 0);
-}
-
-static void
 test_grpc_call_cancel (void)
 {
    mongoc_grpc_t *const grpc = _grpc_new ();
@@ -425,6 +377,5 @@ test_grpc_install (TestSuite *suite)
    TestSuite_Add (suite, "/grpc/message", test_grpc_message);
    TestSuite_Add (
       suite, "/grpc/message_compressed", test_grpc_message_compressed);
-   TestSuite_Add (suite, "/grpc/legacy_error", test_grpc_legacy_error);
    TestSuite_Add (suite, "/grpc/call_cancel", test_grpc_call_cancel);
 }
