@@ -1,3 +1,15 @@
+libmongoc 1.24.4
+================
+
+Fixes:
+  * Fix build failure caused by missing `bson-dsl.h` install in libbson.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libmongoc 1.24.3
 ================
 
