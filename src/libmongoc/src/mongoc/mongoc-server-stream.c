@@ -19,9 +19,35 @@
 #include "mongoc-server-stream-private.h"
 #include "mongoc-util-private.h"
 
+#if defined(MONGOC_ENABLE_GRPC)
+#include "mongoc-grpc-private.h"
+#endif // defined(MONGOC_ENABLE_GRPC)
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "server-stream"
 
+#if defined(MONGOC_ENABLE_GRPC)
+mongoc_server_stream_t *
+mongoc_server_stream_new (const mongoc_topology_description_t *td,
+                          mongoc_server_description_t *sd,
+                          mongoc_grpc_t *grpc)
+{
+   BSON_ASSERT_PARAM (td);
+   BSON_ASSERT_PARAM (sd);
+   BSON_ASSERT_PARAM (grpc);
+
+   mongoc_server_stream_t *const server_stream =
+      BSON_ALIGNED_ALLOC (mongoc_server_stream_t);
+   server_stream->topology_type = td->type;
+   bson_copy_to (&td->cluster_time, &server_stream->cluster_time);
+   server_stream->sd = sd;     // becomes owned
+   server_stream->grpc = grpc; // merely borrowed
+   server_stream->must_use_primary = false;
+   server_stream->retry_attempted = false;
+
+   return server_stream;
+}
+#else
 mongoc_server_stream_t *
 mongoc_server_stream_new (const mongoc_topology_description_t *td,
                           mongoc_server_description_t *sd,
@@ -42,6 +68,7 @@ mongoc_server_stream_new (const mongoc_topology_description_t *td,
 
    return server_stream;
 }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
 void
 mongoc_server_stream_cleanup (mongoc_server_stream_t *server_stream)

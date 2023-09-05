@@ -61,6 +61,16 @@ _run_command (mongoc_cluster_t *cluster,
               bson_t *reply,
               bson_error_t *error)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_ASSERT (false && "gRPC POC: unsupported code path");
+   BSON_UNUSED (cluster);
+   BSON_UNUSED (stream);
+   BSON_UNUSED (sd);
+   BSON_UNUSED (command);
+   BSON_UNUSED (reply);
+   BSON_UNUSED (error);
+   return false;
+#else
    mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream;
    bool ret;
@@ -80,6 +90,7 @@ _run_command (mongoc_cluster_t *cluster,
       cluster, server_stream, &parts, reply, error);
    mongoc_server_stream_cleanup (server_stream);
    return ret;
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 /*

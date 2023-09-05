@@ -41,9 +41,16 @@
 
 BSON_BEGIN_DECLS
 
+#if defined(MONGOC_ENABLE_GRPC)
+struct _mongoc_grpc_t;
+#endif // defined(MONGOC_ENABLE_GRPC)
 
 typedef struct _mongoc_cluster_node_t {
+#if defined(MONGOC_ENABLE_GRPC)
+   struct _mongoc_grpc_t *grpc;
+#else
    mongoc_stream_t *stream;
+#endif // defined(MONGOC_ENABLE_GRPC)
    char *connection_address;
    /* handshake_sd is a server description created from the handshake on the
     * stream. */
@@ -224,10 +231,17 @@ _mongoc_cluster_build_sasl_continue (bson_t *cmd,
 int
 _mongoc_cluster_get_conversation_id (const bson_t *reply);
 
+#if defined(MONGOC_ENABLE_GRPC)
+mongoc_server_stream_t *
+_mongoc_cluster_create_server_stream (const mongoc_topology_description_t *td,
+                                      const mongoc_server_description_t *sd,
+                                      struct _mongoc_grpc_t *grpc);
+#else
 mongoc_server_stream_t *
 _mongoc_cluster_create_server_stream (const mongoc_topology_description_t *td,
                                       const mongoc_server_description_t *sd,
                                       mongoc_stream_t *stream);
+#endif // defined(MONGOC_ENABLE_GRPC)
 
 bool
 _mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri,

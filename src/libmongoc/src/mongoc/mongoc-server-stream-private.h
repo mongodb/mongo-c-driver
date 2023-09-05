@@ -29,11 +29,19 @@
 
 BSON_BEGIN_DECLS
 
+#if defined(MONGOC_ENABLE_GRPC)
+struct _mongoc_grpc_t;
+#endif // defined(MONGOC_ENABLE_GRPC)
+
 typedef struct _mongoc_server_stream_t {
    mongoc_topology_description_type_t topology_type;
    mongoc_server_description_t *sd; // owned
    bson_t cluster_time;             // owned
-   mongoc_stream_t *stream;         // borrowed
+#if defined(MONGOC_ENABLE_GRPC)
+   struct _mongoc_grpc_t *grpc; // borrowed
+#else
+   mongoc_stream_t *stream; // gRPC POC: not used.
+#endif // defined(MONGOC_ENABLE_GRPC)
    // If the stream was created in a way that may have overwritten the user's
    // readPreference, we need to know if server selection forced that change.
    bool must_use_primary;
@@ -44,10 +52,17 @@ typedef struct _mongoc_server_stream_t {
 } mongoc_server_stream_t;
 
 
+#if defined(MONGOC_ENABLE_GRPC)
+mongoc_server_stream_t *
+mongoc_server_stream_new (const mongoc_topology_description_t *td,
+                          mongoc_server_description_t *sd,
+                          struct _mongoc_grpc_t *grpc);
+#else
 mongoc_server_stream_t *
 mongoc_server_stream_new (const mongoc_topology_description_t *td,
                           mongoc_server_description_t *sd,
                           mongoc_stream_t *stream);
+#endif // defined(MONGOC_ENABLE_GRPC)
 
 int32_t
 mongoc_server_stream_max_bson_obj_size (mongoc_server_stream_t *server_stream);

@@ -56,6 +56,10 @@
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-error-private.h"
 
+#if defined(MONGOC_ENABLE_GRPC)
+#include "mongoc-grpc-private.h"
+#endif // defined(MONGOC_ENABLE_GRPC)
+
 #include <bson-dsl.h>
 
 #include <inttypes.h>
@@ -130,9 +134,16 @@ _handle_network_error (mongoc_cluster_t *cluster,
    topology = cluster->client->topology;
    server_id = server_stream->sd->id;
    type = MONGOC_SDAM_APP_ERROR_NETWORK;
+
+#if defined(MONGOC_ENABLE_GRPC)
+   if (mongoc_grpc_event_timed_out (server_stream->grpc)) {
+      type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
+   }
+#else
    if (mongoc_stream_timed_out (server_stream->stream)) {
       type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    _mongoc_topology_handle_app_error (topology,
                                       server_id,
@@ -150,12 +161,14 @@ _handle_network_error (mongoc_cluster_t *cluster,
 }
 
 
+#if !defined(MONGOC_ENABLE_GRPC)
 static int32_t
 _int32_from_le (const void *data)
 {
    BSON_ASSERT_PARAM (data);
    return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
 }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
 
 static int32_t
@@ -243,6 +256,7 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
    } while (0)
 
 
+#if !defined(MONGOC_ENABLE_GRPC)
 // msgHeader consists of four int32 fields.
 static const int32_t message_header_length = 4u * sizeof (int32_t);
 
@@ -491,6 +505,7 @@ done:
 
    RETURN (ret);
 }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
 bool
 _in_sharded_txn (const mongoc_client_session_t *session)
@@ -681,12 +696,14 @@ fail_no_events:
 }
 
 
+#if !defined(MONGOC_ENABLE_GRPC)
 static bool
 _should_use_op_msg (const mongoc_cluster_t *cluster)
 {
    return mongoc_cluster_uses_server_api (cluster) ||
           mongoc_cluster_uses_loadbalanced (cluster);
 }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
 
 /*
@@ -730,6 +747,9 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
 
    server_stream = cmd->server_stream;
 
+#if defined(MONGOC_ENABLE_GRPC)
+   retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
+#else
    if (_should_use_op_msg (cluster) ||
        server_stream->sd->max_wire_version >= WIRE_VERSION_MIN) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
@@ -737,6 +757,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
       retval =
          mongoc_cluster_run_command_opquery (cluster, cmd, -1, reply, error);
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    _handle_not_primary_error (cluster, server_stream, reply);
 
@@ -791,6 +812,87 @@ mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
    return ret;
 }
 
+#if defined(MONGOC_ENABLE_GRPC)
+static mongoc_server_description_t *
+_stream_run_hello (mongoc_cluster_t *cluster,
+                   mongoc_grpc_t *grpc,
+                   const char *connection_address,
+                   uint32_t server_id,
+                   bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (cluster);
+   BSON_ASSERT_PARAM (grpc);
+   BSON_ASSERT_PARAM (connection_address);
+   BSON_ASSERT_PARAM (error);
+
+   mongoc_server_description_t *ret = NULL;
+
+   mc_shared_tpld td =
+      mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
+
+   bson_t handshake_command;
+   _mongoc_topology_dup_handshake_cmd (cluster->client->topology,
+                                       &handshake_command);
+
+   const int64_t start = bson_get_monotonic_time ();
+
+   // Does CDRIVER-3654 still apply?
+   mongoc_server_stream_t *server_stream;
+   {
+      mongoc_server_description_t empty_sd;
+      mongoc_server_description_init (&empty_sd, connection_address, server_id);
+      server_stream =
+         _mongoc_cluster_create_server_stream (td.ptr, &empty_sd, grpc);
+      mongoc_server_description_cleanup (&empty_sd);
+   }
+
+   /* We're using OP_MSG, and require some additional doctoring: */
+   bson_append_utf8 (&handshake_command, "$db", 3, "admin", 5);
+
+   mongoc_cmd_t hello_cmd = {
+      .db_name = "admin",
+      .command = &handshake_command,
+      .command_name = _mongoc_get_command_name (&handshake_command),
+      .server_stream = server_stream,
+      .is_acknowledged = true,
+   };
+
+   bson_t reply;
+   if (!mongoc_cluster_run_command_private (
+          cluster, &hello_cmd, &reply, error)) {
+      mongoc_server_stream_cleanup (server_stream);
+      goto done;
+   }
+
+   const int64_t rtt_msec = (bson_get_monotonic_time () - start) / 1000;
+
+   ret = BSON_ALIGNED_ALLOC (mongoc_server_description_t);
+
+   mongoc_server_description_init (ret, connection_address, server_id);
+   /* send the error from run_command IN to handle_hello */
+   mongoc_server_description_handle_hello (ret, &reply, rtt_msec, error);
+
+   // Note: this call will render our copy of the topology description stale.
+   if (!_mongoc_topology_update_from_handshake (cluster->client->topology,
+                                                ret)) {
+      mongoc_server_description_reset (ret);
+      bson_set_error (&ret->error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                      "\"%s\" removed from topology",
+                      connection_address);
+   }
+
+   mongoc_server_stream_cleanup (server_stream);
+
+done:
+   bson_destroy (&reply);
+   bson_destroy (&handshake_command);
+   mc_tpld_drop_ref (&td);
+
+   return ret;
+}
+#else
 /*
  *--------------------------------------------------------------------------
  *
@@ -944,6 +1046,7 @@ done:
 
    RETURN (ret_handshake_sd);
 }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
 /*
  *--------------------------------------------------------------------------
@@ -971,6 +1074,32 @@ _cluster_run_hello (mongoc_cluster_t *cluster,
                     bson_t *speculative_auth_response /* OUT */,
                     bson_error_t *error /* OUT */)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   ENTRY;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (node);
+   BSON_ASSERT (node->grpc);
+
+   mongoc_server_description_t *const sd = _stream_run_hello (
+      cluster, node->grpc, node->connection_address, server_id, error);
+
+   if (!sd) {
+      return NULL;
+   }
+
+   if (sd->type == MONGOC_SERVER_UNKNOWN) {
+      memcpy (error, &sd->error, sizeof (bson_error_t));
+      mongoc_server_description_destroy (sd);
+      return NULL;
+   }
+
+   BSON_UNUSED (scram_cache);
+   BSON_UNUSED (scram);
+   BSON_UNUSED (speculative_auth_response);
+
+   return sd;
+#else
    mongoc_server_description_t *sd;
 
    ENTRY;
@@ -1000,9 +1129,11 @@ _cluster_run_hello (mongoc_cluster_t *cluster,
    }
 
    return sd;
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 
+#if !defined(MONGOC_ENABLE_GRPC)
 /*
  *--------------------------------------------------------------------------
  *
@@ -1393,6 +1524,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    return ret;
 #endif
 }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
 bool
 mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster)
@@ -1408,6 +1540,7 @@ mongoc_cluster_uses_loadbalanced (const mongoc_cluster_t *cluster)
    return mongoc_client_uses_loadbalanced (cluster->client);
 }
 
+#if !defined(MONGOC_ENABLE_GRPC)
 #ifdef MONGOC_ENABLE_CRYPTO
 void
 _mongoc_cluster_init_scram (const mongoc_cluster_t *cluster,
@@ -1968,6 +2101,7 @@ _mongoc_cluster_auth_node (
 
    RETURN (ret);
 }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
 
 /*
@@ -2008,7 +2142,11 @@ static void
 _mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
 {
    /* Failure, or Replica Set reconfigure without this node */
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_grpc_destroy (node->grpc);
+#else
    mongoc_stream_failed (node->stream);
+#endif // defined(MONGOC_ENABLE_GRPC)
    bson_free (node->connection_address);
    mongoc_server_description_destroy (node->handshake_sd);
 
@@ -2025,6 +2163,23 @@ _mongoc_cluster_node_dtor (void *data_, void *ctx_)
    _mongoc_cluster_node_destroy (node);
 }
 
+#if defined(MONGOC_ENABLE_GRPC)
+static mongoc_cluster_node_t *
+_mongoc_cluster_node_new (const char *connection_address)
+{
+   BSON_ASSERT_PARAM (connection_address);
+
+   mongoc_cluster_node_t *const ret = bson_malloc (sizeof (*ret));
+
+   *ret = (mongoc_cluster_node_t){
+      .grpc = mongoc_grpc_new (connection_address),
+      .connection_address = bson_strdup (connection_address),
+      .handshake_sd = NULL,
+   };
+
+   return ret;
+}
+#else
 static mongoc_cluster_node_t *
 _mongoc_cluster_node_new (mongoc_stream_t *stream,
                           const char *connection_address)
@@ -2114,6 +2269,7 @@ _mongoc_cluster_finish_speculative_auth (
 
    return ret;
 }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
 /*
  *--------------------------------------------------------------------------
@@ -2158,6 +2314,17 @@ _cluster_add_node (mongoc_cluster_t *cluster,
 
    TRACE ("Adding new server to cluster: %s", host->host_and_port);
 
+#if defined(MONGOC_ENABLE_GRPC)
+   cluster_node = _mongoc_cluster_node_new (host->host_and_port);
+
+   if (!mongoc_grpc_start_initial_metadata (cluster_node->grpc, error)) {
+      MONGOC_WARNING (
+         "Failed connection to %s (%s)", host->host_and_port, error->message);
+      GOTO (error);
+   }
+
+   BSON_UNUSED (stream);
+#else
    stream = _mongoc_client_create_stream (cluster->client, host, error);
 
    if (!stream) {
@@ -2171,6 +2338,7 @@ _cluster_add_node (mongoc_cluster_t *cluster,
 
    /* take critical fields from a fresh hello */
    cluster_node = _mongoc_cluster_node_new (stream, host->host_and_port);
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    handshake_sd = _cluster_run_hello (cluster,
                                       cluster_node,
@@ -2183,6 +2351,9 @@ _cluster_add_node (mongoc_cluster_t *cluster,
       GOTO (error);
    }
 
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_UNUSED (sasl_supported_mechs);
+#else
    _mongoc_handshake_parse_sasl_supported_mechs (
       &handshake_sd->last_hello_response, &sasl_supported_mechs);
 
@@ -2208,6 +2379,7 @@ _cluster_add_node (mongoc_cluster_t *cluster,
          GOTO (error);
       }
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    /* Transfer ownership of the server description into the cluster node. */
    cluster_node->handshake_sd = handshake_sd;
@@ -2271,6 +2443,7 @@ node_not_found (const mongoc_topology_description_t *td,
 }
 
 
+#if !defined(MONGOC_ENABLE_GRPC)
 static void
 stream_not_found (const mongoc_topology_description_t *td,
                   uint32_t server_id,
@@ -2293,6 +2466,7 @@ stream_not_found (const mongoc_topology_description_t *td,
       }
    }
 }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
 static mongoc_server_stream_t *
 _try_get_server_stream (mongoc_cluster_t *cluster,
@@ -2459,6 +2633,15 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                               bool reconnect_ok,
                               bson_error_t *error /* OUT */)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_ASSERT (false && "gRPC POC: unsupported code path");
+   BSON_UNUSED (cluster);
+   BSON_UNUSED (td);
+   BSON_UNUSED (server_id);
+   BSON_UNUSED (reconnect_ok);
+   BSON_UNUSED (error);
+   return NULL;
+#else
    mongoc_server_description_t *handshake_sd;
    mongoc_topology_scanner_node_t *scanner_node;
    char *address;
@@ -2565,6 +2748,7 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    handshake_sd->generation = _mongoc_topology_get_connection_pool_generation (
       td, server_id, &handshake_sd->service_id);
    return mongoc_server_stream_new (td, handshake_sd, scanner_node->stream);
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 
@@ -2601,10 +2785,17 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
 
    tmp_stream = mongoc_cluster_stream_for_server (
       cluster, server_stream->sd->id, false, NULL, NULL, NULL);
+#if defined(MONGOC_ENABLE_GRPC)
+   if (!tmp_stream || tmp_stream->grpc != server_stream->grpc) {
+      /* stream was freed, or has changed. */
+      goto done;
+   }
+#else
    if (!tmp_stream || tmp_stream->stream != server_stream->stream) {
       /* stream was freed, or has changed. */
       goto done;
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    /* Check that the server stream is still valid for the given server, and that
     * the server is still registered. */
@@ -2625,6 +2816,20 @@ done:
    return ret;
 }
 
+#if defined(MONGOC_ENABLE_GRPC)
+mongoc_server_stream_t *
+_mongoc_cluster_create_server_stream (
+   mongoc_topology_description_t const *td,
+   const mongoc_server_description_t *handshake_sd,
+   mongoc_grpc_t *grpc)
+{
+   mongoc_server_description_t *const sd =
+      mongoc_server_description_new_copy (handshake_sd);
+   /* can't just use mongoc_topology_server_by_id(), since we must hold the
+    * lock while copying topology->shared_descr.ptr->logical_time below */
+   return mongoc_server_stream_new (td, sd, grpc);
+}
+#else
 mongoc_server_stream_t *
 _mongoc_cluster_create_server_stream (
    mongoc_topology_description_t const *td,
@@ -2637,6 +2842,7 @@ _mongoc_cluster_create_server_stream (
     * lock while copying topology->shared_descr.ptr->logical_time below */
    return mongoc_server_stream_new (td, sd, stream);
 }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
 
 static mongoc_server_stream_t *
@@ -2659,6 +2865,29 @@ _cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
    }
 
    if (cluster_node) {
+#if defined(MONGOC_ENABLE_GRPC)
+      BSON_ASSERT (cluster_node->grpc);
+
+      const uint32_t connection_pool_generation =
+         _mongoc_topology_get_connection_pool_generation (
+            td, server_id, &cluster_node->handshake_sd->service_id);
+
+      if (!has_server_description ||
+          cluster_node->handshake_sd->generation < connection_pool_generation) {
+         /* Since the stream was created, connections to this server were
+          * invalidated.
+          * This may have happened if:
+          * - A background scan removed the server description.
+          * - A network error or a "not primary"/"node is recovering" error
+          *   occurred on an app connection.
+          * - A network error occurred on the monitor connection.
+          */
+         mongoc_cluster_disconnect_node (cluster, server_id);
+      } else {
+         return _mongoc_cluster_create_server_stream (
+            td, cluster_node->handshake_sd, cluster_node->grpc);
+      }
+#else
       uint32_t connection_pool_generation = 0;
       BSON_ASSERT (cluster_node->stream);
 
@@ -2681,6 +2910,7 @@ _cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
          return _mongoc_cluster_create_server_stream (
             td, cluster_node->handshake_sd, cluster_node->stream);
       }
+#endif // defined(MONGOC_ENABLE_GRPC)
    }
 
    /* no node, or out of date */
@@ -2691,8 +2921,13 @@ _cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
 
    cluster_node = _cluster_add_node (cluster, td, server_id, error);
    if (cluster_node) {
+#if defined(MONGOC_ENABLE_GRPC)
+      return _mongoc_cluster_create_server_stream (
+         td, cluster_node->handshake_sd, cluster_node->grpc);
+#else
       return _mongoc_cluster_create_server_stream (
          td, cluster_node->handshake_sd, cluster_node->stream);
+#endif // defined(MONGOC_ENABLE_GRPC)
    } else {
       return NULL;
    }
@@ -3175,6 +3410,11 @@ mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster)
 bool
 mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_UNUSED (cluster);
+   BSON_UNUSED (server_id);
+   return true;
+#else
    mongoc_cmd_parts_t parts;
    mongoc_topology_t *topology;
    mongoc_topology_scanner_node_t *scanner_node;
@@ -3266,6 +3506,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
    }
 
    return r;
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 
@@ -3276,6 +3517,14 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
    mongoc_server_stream_t *server_stream,
    bson_error_t *error)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_ASSERT (false && "gRPC POC: unsupported code path");
+   BSON_UNUSED (cluster);
+   BSON_UNUSED (rpc);
+   BSON_UNUSED (server_stream);
+   BSON_UNUSED (error);
+   return false;
+#else
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (server_stream);
@@ -3350,6 +3599,7 @@ done:
    bson_free (compressed_data);
 
    RETURN (ret);
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 
@@ -3360,6 +3610,15 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                          mongoc_server_stream_t *server_stream,
                          bson_error_t *error)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_ASSERT (false && "gRPC POC: unsupported code path");
+   BSON_UNUSED (cluster);
+   BSON_UNUSED (rpc);
+   BSON_UNUSED (buffer);
+   BSON_UNUSED (server_stream);
+   BSON_UNUSED (error);
+   return false;
+#else
    BSON_ASSERT_PARAM (cluster);
    BSON_ASSERT_PARAM (rpc);
    BSON_ASSERT_PARAM (server_stream);
@@ -3454,6 +3713,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
 done:
 
    return ret;
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 
@@ -3512,6 +3772,41 @@ _mongoc_cluster_run_opmsg_send (mongoc_cluster_t *cluster,
 
    mongoc_server_stream_t *const server_stream = cmd->server_stream;
 
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_ASSERT (server_stream);
+
+   const uint32_t flags = cmd->is_acknowledged
+                             ? MONGOC_OP_MSG_FLAG_NONE
+                             : MONGOC_OP_MSG_FLAG_MORE_TO_COME;
+
+   const int32_t compressor_id =
+      mongoc_cmd_is_compressible (cmd)
+         ? mongoc_server_description_compressor_id (server_stream->sd)
+         : -1;
+   const int32_t compression_level =
+      compressor_id == -1
+         ? -1
+         : _compression_level_from_uri (compressor_id, cluster->uri);
+
+   if (!mongoc_grpc_start_message_with_payload (server_stream->grpc,
+                                                ++cluster->request_id,
+                                                flags,
+                                                cmd->command,
+                                                cmd->payload_identifier,
+                                                cmd->payload,
+                                                cmd->payload_size,
+                                                compressor_id,
+                                                compression_level,
+                                                error)) {
+      RUN_CMD_ERR_DECORATE;
+      _handle_network_error (cluster, server_stream, error);
+      server_stream->grpc = NULL;
+      network_error_reply (reply, cmd);
+      return false;
+   }
+
+   return true;
+#else
    const uint32_t flags = cmd->is_acknowledged
                              ? MONGOC_OP_MSG_FLAG_NONE
                              : MONGOC_OP_MSG_FLAG_MORE_TO_COME;
@@ -3600,6 +3895,7 @@ _mongoc_cluster_run_opmsg_send (mongoc_cluster_t *cluster,
    bson_free (compressed_data);
 
    return res;
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 static bool
@@ -3615,6 +3911,36 @@ _mongoc_cluster_run_opmsg_recv (mongoc_cluster_t *cluster,
    BSON_ASSERT_PARAM (reply);
    BSON_ASSERT_PARAM (error);
 
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_server_stream_t *const server_stream = cmd->server_stream;
+   BSON_ASSERT (server_stream);
+
+   const gpr_timespec deadline = gpr_time_add (
+      gpr_now (GPR_CLOCK_REALTIME),
+      gpr_time_from_millis (cluster->sockettimeoutms, GPR_TIMESPAN));
+
+   if (!mongoc_grpc_handle_events (server_stream->grpc, deadline, error)) {
+      RUN_CMD_ERR_DECORATE;
+      _handle_network_error (cluster, server_stream, error);
+      server_stream->grpc = NULL;
+      network_error_reply (reply, cmd);
+      return false;
+   }
+
+   mongoc_grpc_steal_reply (server_stream->grpc, reply);
+
+   _mongoc_topology_update_cluster_time (cluster->client->topology, reply);
+
+   const bool ret =
+      _mongoc_cmd_check_ok (reply, cluster->client->error_api_version, error);
+
+   if (cmd->session) {
+      _mongoc_client_session_handle_reply (
+         cmd->session, cmd->is_acknowledged, cmd->command_name, reply);
+   }
+
+   return ret;
+#else
    bool ret = false;
 
    mongoc_server_stream_t *const server_stream = cmd->server_stream;
@@ -3730,6 +4056,7 @@ done:
    _mongoc_buffer_destroy (&buffer);
 
    return ret;
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 static bool

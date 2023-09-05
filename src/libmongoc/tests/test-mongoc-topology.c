@@ -135,6 +135,7 @@ heartbeat_callbacks (void)
    return callbacks;
 }
 
+#if !defined(MONGOC_ENABLE_GRPC)
 static void
 test_topology_client_creation (void)
 {
@@ -196,6 +197,7 @@ test_topology_client_creation (void)
    mongoc_client_destroy (client_b);
    mongoc_uri_destroy (uri);
 }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
 static void
 assert_topology_state (mongoc_topology_t *topology,
@@ -609,7 +611,11 @@ test_invalid_cluster_node (void *ctx)
 
    cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (cluster->nodes, id);
    BSON_ASSERT (cluster_node);
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_ASSERT (cluster_node->grpc);
+#else
    BSON_ASSERT (cluster_node->stream);
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    td = mc_tpld_take_ref (client->topology);
    sd = mongoc_topology_description_server_by_id_const (td.ptr, id, &error);
@@ -2754,8 +2760,10 @@ test_detect_nongenuine_hosts (void)
 void
 test_topology_install (TestSuite *suite)
 {
+#if !defined(MONGOC_ENABLE_GRPC)
    TestSuite_AddLive (
       suite, "/Topology/client_creation", test_topology_client_creation);
+#endif // !defined(MONGOC_ENABLE_GRPC)
    TestSuite_AddLive (suite,
                       "/Topology/client_pool_creation",
                       test_topology_client_pool_creation);

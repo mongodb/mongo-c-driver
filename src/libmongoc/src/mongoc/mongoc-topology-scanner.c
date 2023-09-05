@@ -173,6 +173,14 @@ _mongoc_topology_scanner_add_speculative_authentication (
    mongoc_scram_cache_t *scram_cache,
    mongoc_scram_t *scram /* OUT */)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_ASSERT (false && "gRPC POC: unsupported code path");
+   BSON_UNUSED (cmd);
+   BSON_UNUSED (uri);
+   BSON_UNUSED (ssl_opts);
+   BSON_UNUSED (scram_cache);
+   BSON_UNUSED (scram);
+#else
    bson_t auth_cmd;
    bson_error_t error;
    bool has_auth = false;
@@ -226,6 +234,7 @@ _mongoc_topology_scanner_add_speculative_authentication (
       BSON_APPEND_DOCUMENT (cmd, "speculativeAuthenticate", &auth_cmd);
       bson_destroy (&auth_cmd);
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 void
