@@ -26,6 +26,10 @@
 #include "mongoc/mongoc-topology-private.h"
 #include "mongoc/mongoc-trace-private.h"
 
+#if defined(MONGOC_ENABLE_GRPC)
+#include "mongoc/mongoc-grpc-private.h"
+#endif // defined(MONGOC_ENABLE_GRPC)
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "monitor"
 
@@ -82,7 +86,11 @@ struct _mongoc_server_monitor_t {
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
 
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_grpc_t *grpc;
+#else
    mongoc_stream_t *stream;
+#endif // defined(MONGOC_ENABLE_GRPC)
    bool more_to_come;
    mongoc_server_description_t *description;
    uint32_t server_id;
@@ -211,12 +219,14 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
    mc_tpld_drop_ref (&td);
 }
 
+#if !defined(MONGOC_ENABLE_GRPC)
 static int32_t
 _int32_from_le (const void *data)
 {
    BSON_ASSERT_PARAM (data);
    return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
 }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
 static bool
 _server_monitor_send_and_recv_hello_opmsg (
@@ -225,6 +235,42 @@ _server_monitor_send_and_recv_hello_opmsg (
    bson_t *reply,
    bson_error_t *error)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_ASSERT_PARAM (server_monitor);
+   BSON_ASSERT_PARAM (cmd);
+   BSON_ASSERT_PARAM (reply);
+   BSON_ASSERT_PARAM (error);
+
+   MONITOR_LOG (server_monitor,
+                "sending with timeout %" PRId64,
+                server_monitor->connect_timeout_ms);
+
+   const gpr_timespec deadline = gpr_time_add (
+      gpr_now (GPR_CLOCK_REALTIME),
+      gpr_time_from_millis (server_monitor->connect_timeout_ms, GPR_TIMESPAN));
+
+   if (!mongoc_grpc_start_message (server_monitor->grpc,
+                                   server_monitor->request_id++,
+                                   MONGOC_OP_MSG_FLAG_NONE,
+                                   cmd,
+                                   -1, // No compression.
+                                   -1, // No compression.
+                                   error)) {
+      goto fail;
+   }
+
+   if (!mongoc_grpc_handle_events (server_monitor->grpc, deadline, error)) {
+      goto fail;
+   }
+
+   mongoc_grpc_steal_reply (server_monitor->grpc, reply);
+
+   return true;
+
+fail:
+   bson_init (reply);
+   return false;
+#else
    bool ret = false;
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
@@ -351,8 +397,10 @@ fail:
    mcd_rpc_message_destroy (rpc);
 
    return ret;
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
+#if !defined(MONGOC_ENABLE_GRPC)
 static bool
 _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
                                        const bson_t *cmd,
@@ -479,6 +527,7 @@ fail:
 
    return ret;
 }
+#endif // !defined(MONGOC_ENABLE_GRPC)
 
 static bool
 _server_monitor_send_and_recv (mongoc_server_monitor_t *server_monitor,
@@ -486,6 +535,13 @@ _server_monitor_send_and_recv (mongoc_server_monitor_t *server_monitor,
                                bson_t *reply,
                                bson_error_t *error)
 {
+#if defined(MONGOC_ENABLE_GRPC)
+   // OP_MSG requires a "db" parameter.
+   bson_append_utf8 (cmd, "$db", 3, "admin", 5);
+
+   return _server_monitor_send_and_recv_hello_opmsg (
+      server_monitor, cmd, reply, error);
+#else
    if (mongoc_topology_uses_server_api (server_monitor->topology) ||
        mongoc_topology_uses_loadbalanced (server_monitor->topology)) {
       /* OP_MSG requires a "db" parameter: */
@@ -497,6 +553,7 @@ _server_monitor_send_and_recv (mongoc_server_monitor_t *server_monitor,
       return _server_monitor_send_and_recv_opquery (
          server_monitor, cmd, reply, error);
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 }
 
 static bool
@@ -522,6 +579,7 @@ _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
    return ret;
 }
 
+#if !defined(MONGOC_ENABLE_GRPC)
 static bool
 _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
                                       bson_t *cmd,
@@ -858,6 +916,7 @@ fail:
    bson_destroy (&cmd);
    return ret;
 }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
 /* Update the topology description with a reply or an error.
  *
@@ -964,6 +1023,23 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
 
    ENTRY;
 
+#if defined(MONGOC_ENABLE_GRPC)
+   BSON_ASSERT (!server_monitor->grpc);
+   bson_init (hello_response);
+
+   server_monitor->more_to_come = false;
+
+   server_monitor->grpc =
+      mongoc_grpc_new (server_monitor->description->host.host_and_port);
+
+   if (!server_monitor->grpc) {
+      GOTO (fail);
+   }
+
+   if (!mongoc_grpc_start_initial_metadata (server_monitor->grpc, error)) {
+      GOTO (fail);
+   }
+#else
    BSON_ASSERT (!server_monitor->stream);
    bson_init (hello_response);
 
@@ -995,6 +1071,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    if (!server_monitor->stream) {
       GOTO (fail);
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    /* Update the start time just before the handshake. */
    *start_us = _now_us ();
@@ -1054,6 +1131,16 @@ _server_monitor_check_server (
       server_monitor->description->id);
    start_us = _now_us ();
 
+#if defined(MONGOC_ENABLE_GRPC)
+   if (!server_monitor->grpc) {
+      MONITOR_LOG (server_monitor, "setting up connection");
+      awaited = false;
+      _server_monitor_heartbeat_started (server_monitor, awaited);
+      ret = _server_monitor_setup_connection (
+         server_monitor, &hello_response, &start_us, &error);
+      GOTO (exit);
+   }
+#else
    if (!server_monitor->stream) {
       MONITOR_LOG (server_monitor, "setting up connection");
       awaited = false;
@@ -1062,8 +1149,12 @@ _server_monitor_check_server (
          server_monitor, &hello_response, &start_us, &error);
       GOTO (exit);
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
 
    if (server_monitor->more_to_come) {
+#if defined(MONGOC_ENABLE_GRPC)
+      BSON_ASSERT (false && "gRPC POC: unsupported code path");
+#else
       awaited = true;
       /* Publish a heartbeat started for each additional response read. */
       _server_monitor_heartbeat_started (server_monitor, awaited);
@@ -1071,9 +1162,13 @@ _server_monitor_check_server (
       ret = _server_monitor_awaitable_hello_recv (
          server_monitor, &hello_response, cancelled, &error);
       GOTO (exit);
+#endif // defined(MONGOC_ENABLE_GRPC)
    }
 
    if (!bson_empty (&previous_description->topology_version)) {
+#if defined(MONGOC_ENABLE_GRPC)
+      BSON_ASSERT (false && "gRPC POC: unsupported code path");
+#else
       awaited = true;
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "awaitable hello");
@@ -1083,6 +1178,7 @@ _server_monitor_check_server (
                                              cancelled,
                                              &error);
       GOTO (exit);
+#endif // defined(MONGOC_ENABLE_GRPC)
    }
 
    MONITOR_LOG (server_monitor, "polling hello");
@@ -1123,10 +1219,17 @@ exit:
       }
    } else if (*cancelled) {
       MONITOR_LOG (server_monitor, "server monitor cancelled");
+#if defined(MONGOC_ENABLE_GRPC)
+      if (server_monitor->grpc) {
+         mongoc_grpc_destroy (server_monitor->grpc);
+      }
+      server_monitor->grpc = NULL;
+#else
       if (server_monitor->stream) {
          mongoc_stream_destroy (server_monitor->stream);
       }
       server_monitor->stream = NULL;
+#endif // defined(MONGOC_ENABLE_GRPC)
       server_monitor->more_to_come = false;
       _server_monitor_heartbeat_failed (
          server_monitor, &description->error, duration_us, awaited);
@@ -1143,10 +1246,17 @@ exit:
    }
 
    if (command_or_network_error) {
+#if defined(MONGOC_ENABLE_GRPC)
+      if (server_monitor->grpc) {
+         mongoc_grpc_destroy (server_monitor->grpc);
+      }
+      server_monitor->grpc = NULL;
+#else
       if (server_monitor->stream) {
          mongoc_stream_failed (server_monitor->stream);
       }
       server_monitor->stream = NULL;
+#endif // defined(MONGOC_ENABLE_GRPC)
       server_monitor->more_to_come = false;
       tdmod = mc_tpld_modify_begin (server_monitor->topology);
       /* clear_connection_pool() is a no-op if 'description->id' was already
@@ -1322,6 +1432,24 @@ _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
 
    *rtt_ms = MONGOC_RTT_UNSET;
 
+#if defined(MONGOC_ENABLE_GRPC)
+   if (!server_monitor->grpc) {
+      MONITOR_LOG (server_monitor, "rtt setting up connection");
+      ret = _server_monitor_setup_connection (
+         server_monitor, &hello_response, &start_us, &error);
+      bson_destroy (&hello_response);
+   }
+
+   if (server_monitor->grpc) {
+      MONITOR_LOG (server_monitor, "rtt polling hello");
+      ret = _server_monitor_polling_hello (
+         server_monitor, hello_ok, &hello_response, &error);
+      if (ret) {
+         *rtt_ms = (_now_us () - start_us) / 1000;
+      }
+      bson_destroy (&hello_response);
+   }
+#else
    if (!server_monitor->stream) {
       MONITOR_LOG (server_monitor, "rtt setting up connection");
       ret = _server_monitor_setup_connection (
@@ -1338,6 +1466,7 @@ _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
       }
       bson_destroy (&hello_response);
    }
+#endif // defined(MONGOC_ENABLE_GRPC)
    return ret;
 }
 
@@ -1512,7 +1641,11 @@ mongoc_server_monitor_destroy (mongoc_server_monitor_t *server_monitor)
    BSON_ASSERT (server_monitor->shared.state == MONGOC_THREAD_OFF);
 
    mongoc_server_description_destroy (server_monitor->description);
+#if defined(MONGOC_ENABLE_GRPC)
+   mongoc_grpc_destroy (server_monitor->grpc);
+#else
    mongoc_stream_destroy (server_monitor->stream);
+#endif // defined(MONGOC_ENABLE_GRPC)
    mongoc_uri_destroy (server_monitor->uri);
    mongoc_cond_destroy (&server_monitor->shared.cond);
    bson_mutex_destroy (&server_monitor->shared.mutex);
