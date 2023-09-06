@@ -157,6 +157,10 @@ mongo_setting(
    OPTIONS CYRUS SSPI OFF AUTO
    DEFAULT VALUE AUTO
    VALIDATE CODE [[
+      if(ENABLE_GRPC AND NOT ENABLE_SASL STREQUAL "AUTO" AND NOT ENABLE_SASL STREQUAL "OFF")
+         message(FATAL_ERROR "ENABLE_GRPC=ON requires ENABLE_SASL=(AUTO|OFF)")
+      endif()
+
       if(ENABLE_SASL STREQUAL "SSPI" AND NOT WIN32)
          message(WARNING "ENABLE_SASL=SSPI is only supported on Windows platforms")
       endif()
