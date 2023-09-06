@@ -49,12 +49,15 @@ _getmore_type (mongoc_cursor_t *cursor)
    wire_version = server_stream->sd->max_wire_version;
    mongoc_server_stream_cleanup (server_stream);
 
+   const bool sharded = _mongoc_topology_get_type (cursor->client->topology) ==
+                        MONGOC_TOPOLOGY_SHARDED;
    const bool is_exhaust =
       _mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST);
    const bool server_supports_getmore_no_exhaust =
-      wire_version > WIRE_VERSION_5_0;
+      wire_version >= WIRE_VERSION_3_6;
    const bool server_supports_getmore_exhaust =
-      wire_version >= WIRE_VERSION_7_1;
+      sharded ? wire_version >= WIRE_VERSION_MONGOS_EXHAUST
+              : wire_version >= WIRE_VERSION_5_0;
    if ((is_exhaust && server_supports_getmore_exhaust) ||
        (!is_exhaust && server_supports_getmore_no_exhaust)) {
       data->getmore_type = GETMORE_CMD;
