@@ -1651,7 +1651,7 @@ entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    client = ((pooled_client_t *) client_entity->value)->client;
 #else
    client = (mongoc_client_t *) client_entity->value;
-#endif defined(MONGOC_ENABLE_GRPC)
+#endif // defined(MONGOC_ENABLE_GRPC)
    if (!client) {
       goto done;
    }
@@ -1850,7 +1850,7 @@ entity_destroy (entity_t *entity)
 
       client = (mongoc_client_t *) entity->value;
       mongoc_client_destroy (client);
-#endif defined(MONGOC_ENABLE_GRPC)
+#endif // defined(MONGOC_ENABLE_GRPC)
    } else if (0 == strcmp ("clientEncryption", entity->type)) {
       mongoc_client_encryption_t *ce = NULL;
 
