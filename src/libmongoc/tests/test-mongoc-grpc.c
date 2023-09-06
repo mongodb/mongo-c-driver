@@ -6,10 +6,9 @@
 #include <mongoc/mongoc-grpc-private.h>
 #include <mongoc/mongoc-compression-private.h>
 
-#ifndef MONGOC_ENABLE_SHM_COUNTERS
-#error "gRPC POC tests require ENABLE_SHM_COUNTERS=ON"
-#endif
+#if defined(MONGOC_ENABLE_SHM_COUNTERS)
 #include <mongoc/mongoc-counters-private.h>
+#endif // defined(MONGOC_ENABLE_SHM_COUNTERS)
 
 #include <grpc/support/time.h>
 
@@ -34,6 +33,7 @@
    } else                                                     \
       (void) 0
 
+#if defined(MONGOC_ENABLE_SHM_COUNTERS)
 #define ASSERT_COUNTERS(expected_op_egress_msg,                                \
                         expected_op_ingress_msg,                               \
                         expected_op_egress_compressed,                         \
@@ -95,6 +95,13 @@
                        actual_op_ingress_total);                               \
    } else                                                                      \
       (void) 0
+#else
+#define ASSERT_COUNTERS(expected_op_egress_msg,         \
+                        expected_op_ingress_msg,        \
+                        expected_op_egress_compressed,  \
+                        expected_op_ingress_compressed) \
+   (void) 0
+#endif // defined(MONGOC_ENABLE_SHM_COUNTERS)
 
 #define ASSERT_REPLY_OK()                                       \
    if (1) {                                                     \
@@ -133,6 +140,7 @@ _grpc_new (void)
 static void
 _reset_counters (void)
 {
+#if defined(MONGOC_ENABLE_SHM_COUNTERS)
    mongoc_counter_op_egress_msg_reset ();
    mongoc_counter_op_ingress_msg_reset ();
    mongoc_counter_op_egress_compressed_reset ();
@@ -141,6 +149,7 @@ _reset_counters (void)
    mongoc_counter_op_ingress_reply_reset ();
    mongoc_counter_op_egress_total_reset ();
    mongoc_counter_op_ingress_total_reset ();
+#endif // defined(MONGOC_ENABLE_SHM_COUNTERS)
 }
 
 static void
