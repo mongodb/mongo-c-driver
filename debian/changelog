@@ -1,4 +1,4 @@
-mongo-c-driver (1.24.4-1) UNRELEASED; urgency=medium
+mongo-c-driver (1.24.4-1) unstable; urgency=medium
 
   [ Roberto C. Sanchez ]
   * use system utf8proc, ensure bundled source is not in .orig.tar.gz
@@ -8,7 +8,7 @@ mongo-c-driver (1.24.4-1) UNRELEASED; urgency=medium
   [ Kyle Kloberdanz ]
   * New upstream release
 
- -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Wed, 06 Sep 2023 13:24:07 +0000
+ -- Kyle Kloberdanz <kyle.kloberdanz@mongodb.com>  Wed, 06 Sep 2023 13:31:03 +0000
 
 mongo-c-driver (1.24.3-1) unstable; urgency=medium
 
