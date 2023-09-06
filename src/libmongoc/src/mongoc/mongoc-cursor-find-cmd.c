@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "bson.h"
 #include "mongoc.h"
+#include "mongoc-cluster-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
 
@@ -36,7 +38,6 @@ _prime (mongoc_cursor_t *cursor)
    _mongoc_cursor_response_refresh (
       cursor, &find_cmd, &cursor->opts, &data->response);
    bson_destroy (&find_cmd);
-   // TODO set in_exhaust somewhere
    return IN_BATCH;
 }
 
@@ -63,20 +64,10 @@ _get_next_batch (mongoc_cursor_t *cursor)
    if (!cursor->cursor_id) {
       return DONE;
    }
-   if (cursor->in_exhaust) {
-      // TODO receive next exhaust message with mongo_cluster_run_opmsg_recv
-      mcd_rpc_message *const rpc = mcd_rpc_message_new ();
-
-      if (!_mongoc_cluster_run_opmsg_recv (
-             cursor->client->cluster, cursor->cmd, rpc, reply, error)) {
-         return DONE;
-      }
-   } else {
-      _mongoc_cursor_prepare_getmore_command (cursor, &getmore_cmd);
-      _mongoc_cursor_response_refresh (
-         cursor, &getmore_cmd, NULL /* opts */, &data->response);
-      bson_destroy (&getmore_cmd);
-   }
+   _mongoc_cursor_prepare_getmore_command (cursor, &getmore_cmd);
+   _mongoc_cursor_response_refresh (
+      cursor, &getmore_cmd, NULL /* opts */, &data->response);
+   bson_destroy (&getmore_cmd);
    return IN_BATCH;
 }
 

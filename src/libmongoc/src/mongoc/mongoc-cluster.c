@@ -3705,6 +3705,9 @@ _mongoc_cluster_run_opmsg_recv (mongoc_cluster_t *cluster,
 
    bson_t body;
 
+   uint32_t op_msg_flags = mcd_rpc_op_msg_get_flag_bits (rpc);
+   cluster->client->in_exhaust = op_msg_flags & MONGOC_OP_MSG_FLAG_MORE_TO_COME;
+
    if (!mcd_rpc_message_get_body (rpc, &body)) {
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
                    MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -3754,11 +3757,11 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       return false;
    }
 
-   if (cluster->client->in_exhaust) {
+   if (!cmd->op_msg_is_exhaust && cluster->client->in_exhaust) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_IN_EXHAUST,
-                      "a cursor derived from this client is in exhaust");
+                      "another cursor derived from this client is in exhaust");
       bson_init (reply);
       return false;
    }
@@ -3766,9 +3769,9 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    bool ret = false;
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
-   // mcd_rpc_op_msg_set_flag_bits (rpc, cmd->query_flags);
 
-   if (!_mongoc_cluster_run_opmsg_send (cluster, cmd, rpc, reply, error)) {
+   if (!cluster->client->in_exhaust &&
+       !_mongoc_cluster_run_opmsg_send (cluster, cmd, rpc, reply, error)) {
       goto done;
    }
 

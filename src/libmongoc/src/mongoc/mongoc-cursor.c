@@ -15,7 +15,6 @@
  */
 
 
-#include "mcd-rpc.h"
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
@@ -31,7 +30,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-aggregate-private.h"
 
-#include <bson/bson-dsl.h>
+#include <bson-dsl.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cursor"
@@ -368,9 +367,11 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       }
 
       td_type = _mongoc_topology_get_type (client->topology);
+      mongoc_server_stream_t *server_stream =
+         _mongoc_cursor_fetch_stream (cursor);
 
-      // TODO no longer true with 7.1
-      if (td_type == MONGOC_TOPOLOGY_SHARDED) {
+      if (td_type == MONGOC_TOPOLOGY_SHARDED &&
+          server_stream->sd->max_wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
@@ -904,6 +905,7 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
+
       if (!strcmp (key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
          ADD_FLAG (flags, MONGOC_OP_QUERY_FLAG_PARTIAL);
       } else if (!strcmp (key, MONGOC_CURSOR_AWAIT_DATA)) {
@@ -940,8 +942,6 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 {
    mongoc_server_stream_t *server_stream;
    bson_iter_t iter;
-   // TODO contains mongoc_query_flags that are OP_QUERY specific
-   // okay so far since OP_MSG flags are not implemented
    mongoc_cmd_parts_t parts;
    const char *cmd_name;
    bool is_primary;
@@ -978,11 +978,6 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
-      // if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
-      //    MONGOC_WARNING (
-      //       "exhaust cursors not supported with OP_MSG, using normal "
-      //       "cursor instead");
-      // }
    }
 
    if (parts.assembled.session) {
@@ -1026,12 +1021,10 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       parts.user_query_flags = (mongoc_query_flags_t) flags;
    }
 
-
    /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.
     * user_query_flags is unused in OP_MSG, so this technically has no effect,
     * but is done anyways to ensure the query flags match handling of options.
     */
-   // use MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED from mcd-rpc.h
    // if (parts.user_query_flags & MONGOC_QUERY_EXHAUST) {
    //    parts.user_query_flags ^= MONGOC_QUERY_EXHAUST;
    // }
@@ -1044,8 +1037,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
     */
    cmd_name = _mongoc_get_command_name (command);
    bool is_op_msg = !strcmp (cmd_name, "find");
-   if (is_op_msg &&
-       _mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
+   if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
       parts.assembled.op_msg_is_exhaust = true;
    }
 
@@ -1740,13 +1732,10 @@ _mongoc_cursor_response_refresh (mongoc_cursor_t *cursor,
     * to getMore command with {cursor: {id: N, nextBatch: []}}. */
    if (_mongoc_cursor_run_command (
           cursor, command, opts, &response->reply, false)) {
-      if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
-         cursor->in_exhaust = true;
-         cursor->client->in_exhaust = true;
-      }
       if (_mongoc_cursor_start_reading_response (cursor, response)) {
          // TODO here or in above function: read moreToCome bit from server
          // set cursor->in_exhaust and cursor->client->in_exhaust accordingly
+         cursor->in_exhaust = cursor->client->in_exhaust;
          return;
       }
    }
