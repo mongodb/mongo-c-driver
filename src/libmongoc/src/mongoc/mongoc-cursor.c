@@ -369,9 +369,11 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       td_type = _mongoc_topology_get_type (client->topology);
       mongoc_server_stream_t *server_stream =
          _mongoc_cursor_fetch_stream (cursor);
+      int wire_version = server_stream->sd->max_wire_version;
+      mongoc_server_stream_cleanup (server_stream);
 
       if (td_type == MONGOC_TOPOLOGY_SHARDED &&
-          server_stream->sd->max_wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
+          wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
