@@ -1025,9 +1025,6 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
     * user_query_flags is unused in OP_MSG, so this technically has no effect,
     * but is done anyways to ensure the query flags match handling of options.
     */
-   // if (parts.user_query_flags & MONGOC_QUERY_EXHAUST) {
-   //    parts.user_query_flags ^= MONGOC_QUERY_EXHAUST;
-   // }
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
     * read preference, so the secondary rejects the read. same if we have a
@@ -1036,7 +1033,6 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
     * $readPreference.
     */
    cmd_name = _mongoc_get_command_name (command);
-   bool is_op_msg = !strcmp (cmd_name, "find");
    if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
       parts.assembled.op_msg_is_exhaust = true;
    }
