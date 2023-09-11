@@ -17,13 +17,15 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "exhaust-test"
 
-int
-skip_if_mongos (void)
+static int
+skip_if_no_exhaust (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
-   return test_framework_is_mongos () ? 0 : 1;
+   return test_framework_is_mongos ()
+             ? test_framework_skip_if_max_wire_version_less_than_22 ()
+             : test_framework_skip_if_max_wire_version_less_than_8 ();
 }
 
 
@@ -671,19 +673,19 @@ test_exhaust_install (TestSuite *suite)
                       test_exhaust_cursor_single,
                       NULL,
                       NULL,
-                      NULL);
+                      skip_if_no_exhaust);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/pool",
                       test_exhaust_cursor_pool,
                       NULL,
                       NULL,
-                      skip_if_mongos);
+                      skip_if_no_exhaust);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/batches",
                       test_exhaust_cursor_multi_batch,
                       NULL,
                       NULL,
-                      skip_if_mongos);
+                      skip_if_no_exhaust);
    TestSuite_AddLive (suite,
                       "/Client/set_max_await_time_ms",
                       test_cursor_set_max_await_time_ms);
