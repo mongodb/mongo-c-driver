@@ -1961,7 +1961,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: earthly-build-and-test
+  - name: earthly-build-check
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
