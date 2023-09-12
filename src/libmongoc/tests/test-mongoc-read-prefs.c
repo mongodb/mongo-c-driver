@@ -656,29 +656,23 @@ test_read_prefs_mongos_hedged_reads (void)
 
    mongoc_read_prefs_set_hedge (prefs, &hedge_doc);
 
-   /* exhaust cursor is required so the driver downgrades the OP_QUERY find
-    * command to an OP_QUERY legacy find */
    cursor = mongoc_collection_find_with_opts (
       collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (
+   request = mock_server_receives_msg (
       server,
-      "test.test",
-      MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
-      0,
-      0,
-      "{'$query': {'a': 1},"
-      " '$readPreference': {'mode': 'secondaryPreferred',"
-      "                     'hedge': {'enabled': true}}}",
-      "{}");
-
-   reply_to_find_request (request,
-                          MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
-                          0,
-                          1,
-                          "test.test",
-                          "{}",
-                          false);
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'find': 'test',"
+                " 'filter': {'a': {'$numberInt': '1'}},"
+                " '$readPreference': {'mode': 'secondaryPreferred',"
+                "                     'hedge': {'enabled': true}}}"));
+   reply_to_request_simple (request,
+                            "{'ok': 1,"
+                            " 'cursor': {"
+                            "    'id': {'$numberLong': '0'},"
+                            "    'ns': 'db.collection',"
+                            "    'firstBatch': [{}]}}");
+   mock_server_auto_endsessions (server);
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));

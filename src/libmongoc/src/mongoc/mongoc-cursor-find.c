@@ -53,7 +53,7 @@ _prime (mongoc_cursor_t *cursor)
       wire_version >= WIRE_VERSION_3_6;
    const bool server_supports_getmore_exhaust =
       sharded ? wire_version >= WIRE_VERSION_MONGOS_EXHAUST
-              : wire_version >= WIRE_VERSION_5_0;
+              : wire_version >= WIRE_VERSION_4_2;
    if ((is_exhaust && server_supports_getmore_exhaust) ||
        (!is_exhaust && server_supports_getmore_no_exhaust)) {
       _mongoc_cursor_impl_find_cmd_init (cursor, &data->filter /* stolen */);
