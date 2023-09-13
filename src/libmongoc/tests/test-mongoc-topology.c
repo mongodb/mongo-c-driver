@@ -2713,7 +2713,7 @@ test_detect_nongenuine_hosts (void)
       mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
       ASSERT (topology);
       ASSERT_CAPTURED_LOG (
-         "nongenuine host should log",
+         cosmos_uris[i],
          MONGOC_LOG_LEVEL_INFO,
          "You appear to be connected to a CosmosDB cluster. For more "
          "information regarding feature compatibility and support please visit "
@@ -2729,7 +2729,7 @@ test_detect_nongenuine_hosts (void)
       mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
       ASSERT (topology);
       ASSERT_CAPTURED_LOG (
-         "nongenuine host should log",
+         docdb_uris[i],
          MONGOC_LOG_LEVEL_INFO,
          "You appear to be connected to a DocumentDB cluster. For more "
          "information regarding feature compatibility and support please visit "
@@ -2745,7 +2745,7 @@ test_detect_nongenuine_hosts (void)
       ASSERT (uri);
       mongoc_topology_t *const topology = mongoc_topology_new (uri, true);
       ASSERT (topology);
-      ASSERT_NO_CAPTURED_LOGS ("genuine host should not log");
+      ASSERT_NO_CAPTURED_LOGS (genuine_uris[i]);
       mongoc_topology_destroy (topology);
       mongoc_uri_destroy (uri);
    }
