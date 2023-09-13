@@ -312,6 +312,39 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
    return hl_array;
 }
 
+// `_detect_nongenuine_host` logs if the host string suggests use of CosmosDB or
+// DocumentDB. See DRIVERS-2583 for behavior requirements. Returns true if a
+// CosmosDB or DocumentDB host is detected.
+static bool
+_detect_nongenuine_host (const char *host)
+{
+   char *host_lowercase = bson_strdup (host);
+
+   mongoc_lowercase (host, host_lowercase);
+
+   if (mongoc_ends_with (host_lowercase, ".cosmos.azure.com")) {
+      MONGOC_INFO (
+         "You appear to be connected to a CosmosDB cluster. For more "
+         "information regarding feature compatibility and support please "
+         "visit https://www.mongodb.com/supportability/cosmosdb");
+      bson_free (host_lowercase);
+      return true;
+   }
+
+   if (mongoc_ends_with (host_lowercase, ".docdb.amazonaws.com") ||
+       mongoc_ends_with (host_lowercase, ".docdb-elastic.amazonaws.com")) {
+      MONGOC_INFO (
+         "You appear to be connected to a DocumentDB cluster. For more "
+         "information regarding feature compatibility and support please "
+         "visit https://www.mongodb.com/supportability/documentdb");
+      bson_free (host_lowercase);
+      return true;
+   }
+
+   bson_free (host_lowercase);
+   return false;
+}
+
 static void
 _detect_nongenuine_hosts (const mongoc_host_list_t *hosts)
 {
@@ -319,30 +352,9 @@ _detect_nongenuine_hosts (const mongoc_host_list_t *hosts)
 
    LL_FOREACH (hosts, iter)
    {
-      char *host_lowercase = bson_strdup (iter->host);
-
-      mongoc_lowercase (iter->host, host_lowercase);
-
-      if (mongoc_ends_with (host_lowercase, ".cosmos.azure.com")) {
-         MONGOC_INFO (
-            "You appear to be connected to a CosmosDB cluster. For more "
-            "information regarding feature compatibility and support please "
-            "visit https://www.mongodb.com/supportability/cosmosdb");
-         bson_free (host_lowercase);
+      if (_detect_nongenuine_host (iter->host)) {
          return;
       }
-
-      if (mongoc_ends_with (host_lowercase, ".docdb.amazonaws.com") ||
-          mongoc_ends_with (host_lowercase, ".docdb-elastic.amazonaws.com")) {
-         MONGOC_INFO (
-            "You appear to be connected to a DocumentDB cluster. For more "
-            "information regarding feature compatibility and support please "
-            "visit https://www.mongodb.com/supportability/documentdb");
-         bson_free (host_lowercase);
-         return;
-      }
-
-      bson_free (host_lowercase);
    }
 }
 
