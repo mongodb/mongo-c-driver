@@ -42,7 +42,7 @@ set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
 # Definition for mongoc-config.h:
-_mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
+mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
 
 set (MONGOC_OUTPUT_BASENAME "mongoc" CACHE STRING "Output mongoc library base name")
 
