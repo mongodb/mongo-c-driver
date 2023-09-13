@@ -892,6 +892,7 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
                               mongoc_server_stream_t *stream,
                               int32_t *flags /* OUT */)
 {
+   /* TODO (CDRIVER-4722) these flags are only used in legacy OP_QUERY */
    bson_iter_t iter;
    const char *key;
 
@@ -933,6 +934,15 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
    }
 
    return true;
+}
+
+bool
+_mongoc_cursor_use_op_msg (const mongoc_cursor_t *cursor, int32_t wire_version)
+{
+   /* TODO (CDRIVER-4722) always true once 4.2 is the minimum supported
+      No check needed for 3.6 as it's the current minimum */
+   return !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST) ||
+          wire_version >= WIRE_VERSION_4_2;
 }
 
 bool
@@ -1023,10 +1033,18 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       parts.user_query_flags = (mongoc_query_flags_t) flags;
    }
 
-   /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.
-    * user_query_flags is unused in OP_MSG, so this technically has no effect,
-    * but is done anyways to ensure the query flags match handling of options.
-    */
+   if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
+      /* Fallback to non-exhaust cursor following
+         https://github.com/mongodb/specifications/blob/master/source/find_getmore_killcursors_commands.rst#exhaust
+         is required since mongos < 7.2 doesn't support exhaust cursors */
+      const bool sharded =
+         _mongoc_topology_get_type (cursor->client->topology) ==
+         MONGOC_TOPOLOGY_SHARDED;
+      const int32_t wire_version = server_stream->sd->max_wire_version;
+      parts.assembled.op_msg_is_exhaust =
+         sharded ? wire_version >= WIRE_VERSION_MONGOS_EXHAUST
+                 : wire_version >= WIRE_VERSION_4_2;
+   }
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
     * read preference, so the secondary rejects the read. same if we have a
@@ -1035,10 +1053,6 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
     * $readPreference.
     */
    cmd_name = _mongoc_get_command_name (command);
-   if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
-      parts.assembled.op_msg_is_exhaust = true;
-   }
-
    is_primary =
       !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
 

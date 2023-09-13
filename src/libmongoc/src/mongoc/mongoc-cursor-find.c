@@ -45,17 +45,8 @@ _prime (mongoc_cursor_t *cursor)
    mongoc_server_stream_cleanup (server_stream);
 
    /* set all mongoc_impl_t function pointers. */
-   const bool sharded = _mongoc_topology_get_type (cursor->client->topology) ==
-                        MONGOC_TOPOLOGY_SHARDED;
-   const bool is_exhaust =
-      _mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST);
-   const bool server_supports_getmore_no_exhaust =
-      wire_version >= WIRE_VERSION_3_6;
-   const bool server_supports_getmore_exhaust =
-      sharded ? wire_version >= WIRE_VERSION_MONGOS_EXHAUST
-              : wire_version >= WIRE_VERSION_4_2;
-   if ((is_exhaust && server_supports_getmore_exhaust) ||
-       (!is_exhaust && server_supports_getmore_no_exhaust)) {
+   /* TODO (CDRIVER-4722) always find_cmd when server >= 4.2 */
+   if (_mongoc_cursor_use_op_msg (cursor, wire_version)) {
       _mongoc_cursor_impl_find_cmd_init (cursor, &data->filter /* stolen */);
    } else {
       _mongoc_cursor_impl_find_opquery_init (cursor,
