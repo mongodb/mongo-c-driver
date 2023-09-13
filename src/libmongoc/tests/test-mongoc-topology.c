@@ -2711,7 +2711,7 @@ test_detect_nongenuine_hosts (void)
       /* Test genuine SRV URIs */
       "mongodb+srv://a.example.com/",
       "mongodb+srv://a.mongodb.net/",
-      /* Host names do not end with expected suffix */
+      /* SRV host names do not end with expected suffix */
       "mongodb+srv://a.mongo.cosmos.azure.com.tld/",
       "mongodb+srv://a.docdb.amazonaws.com.tld/",
       "mongodb+srv://a.docdb-elastic.amazonaws.com.tld/",
