@@ -387,6 +387,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    BSON_ASSERT (uri);
 
+   _detect_nongenuine_hosts (uri);
+
 #ifndef MONGOC_ENABLE_CRYPTO
    if (mongoc_uri_get_option_as_bool (
           uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
@@ -649,8 +651,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       mongoc_topology_description_add_server (td, elem->host_and_port, &id);
       mongoc_topology_scanner_add (topology->scanner, elem, id, false);
    }
-
-   _detect_nongenuine_hosts (uri);
 
    bson_free ((void *) hl_array);
 
