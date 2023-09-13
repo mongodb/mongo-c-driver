@@ -1,54 +1,74 @@
-include (CheckSymbolExists)
-include (CMakePushCheckState)
+#[[
 
-message (STATUS "Searching for sasl/sasl.h")
-find_path (
-    SASL_INCLUDE_DIRS NAMES sasl/sasl.h
-    PATHS /include /usr/include /usr/local/include /usr/share/include /opt/include c:/sasl/include
-    DOC "Searching for sasl/sasl.h")
+Searches for a Cyrus "libsasl2" library available on the system using
+pkg-config. The libsasl2.pc file must be available for pkg-config!
 
-if (SASL_INCLUDE_DIRS)
-    message (STATUS "  Found in ${SASL_INCLUDE_DIRS}")
-else ()
-    message (STATUS "  Not found (specify -DCMAKE_INCLUDE_PATH=/path/to/sasl/include for SASL support)")
-endif ()
+Upon success, Defines an imported target `SASL2::SASL2` that can be linked into
+other targts.
 
-message (STATUS "Searching for libsasl2")
-find_library (
-    SASL_LIBRARIES NAMES sasl2
-    PATHS /usr/lib /lib /usr/local/lib /usr/share/lib /opt/lib /opt/share/lib /var/lib c:/sasl/lib
-    DOC "Searching for libsasl2")
+]]
 
-if (SASL_LIBRARIES)
-    message (STATUS "  Found ${SASL_LIBRARIES}")
-else ()
-    message (STATUS "  Not found (specify -DCMAKE_LIBRARY_PATH=/path/to/sasl/lib for SASL support)")
-endif ()
+if(SASL2_FIND_COMPONENTS)
+    message(FATAL_ERROR "This find_package(SASL2) does not support package components (Got “${SASL2_FIND_COMPONENTS}”)")
+endif()
+set(_modspec "libsasl2")
+if(DEFINED SASL2_FIND_VERSION)
+    set(_modspec "libsasl2>=${SASL2_FIND_VERSION}")
+endif()
 
-if (SASL_INCLUDE_DIRS AND SASL_LIBRARIES)
-    set (SASL_FOUND 1)
+if(TARGET SASL2::SASL2)
+    message(DEBUG "SASL2 ${SASL2_VERSION} was already found")
+    # There is already a libsasl2 imported
+    if(NOT DEFINED SASL2_FIND_VERISON OR SASL2_FIND_VERSION VERSION_LESS_EQUAL SASL2_VERSION)
+        # Okay: We are satisfied by the version that has already been found
+        set(SASL2_FOUND TRUE)
+        return()
+    endif()
+    # Eh: The importer has requested a version of libsasl2 that is greater than the
+    # version of libsasl2 that we previously imported. The pkg-config invocation
+    # will likely fail, but we'll let it say that for itself.
+    message(DEBUG "Need to find SASL2 again: Version requirement increased ${SASL2_FIND_VERSION} > ${SASL2_VERSION}")
+endif()
 
-    cmake_push_check_state ()
-    list (APPEND CMAKE_REQUIRED_INCLUDES ${SASL_INCLUDE_DIRS})
-    list (APPEND CMAKE_REQUIRED_LIBRARIES ${SASL_LIBRARIES})
-    check_symbol_exists (
-        sasl_client_done
-        sasl/sasl.h
-        HAVE_SASL_CLIENT_DONE)
-    cmake_pop_check_state()
+# Upon early return, tell the caller that we don't have it:
+set(SASL2_FOUND FALSE)
 
-    if (HAVE_SASL_CLIENT_DONE)
-        set (MONGOC_HAVE_SASL_CLIENT_DONE 1)
-    else ()
-        set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
-    endif ()
-else ()
-    if (ENABLE_SASL STREQUAL AUTO)
-        set (SASL_FOUND 0)
-        set (SASL_INCLUDE_DIRS "")
-        set (SASL_LIBRARIES "")
-        set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
-    else ()
-        message (FATAL_ERROR "  SASL not found")
-    endif ()
-endif ()
+# Forward the QUIET+REQUIRED args to pkg-config
+set(_required)
+set(_quiet)
+if(SASL2_FIND_QUIETLY)
+    set(_quiet QUIET)
+endif()
+if(SASL2_FIND_REQUIRED)
+    set(_required REQUIRED)
+endif()
+
+# We use pkg-config to find libsasl2.
+find_package(PkgConfig ${_required} ${_quiet})
+if(NOT PkgConfig_FOUND)
+    # The find_package(PkgConfig) will have generated errors for us if we were REQUIRED,
+    # so we can just return without setting any message
+    set(SASL2_NOT_FOUND_MESSAGE [[No pkg-config executable was found]])
+    return()
+endif()
+
+# Now ask pkg-config to find libsasl2 for us
+message(DEBUG "Using pkg-config to search for module “${_modspec}”")
+pkg_check_modules(libsasl2 ${_required} ${_quiet} IMPORTED_TARGET "${_modspec}" GLOBAL)
+# Note: pkg_check_modules() does support static libs, but we don't use them here,
+# and static libsasl2 is uncommon.
+if(NOT libsasl2_FOUND)
+    # The pkg_check_modules() will have issued the error for us if we were REQUIRED.
+    set(SASL2_NOT_FOUND_MESSAGE [[pkg-config failed to find a libsasl2 (Cyrus) dynamic library package]])
+    return()
+endif()
+
+# Instead of using the PkgConfig-generated target directly, add a level of
+# indirection so that importers do not encode the dependency on the PkgConfig
+# behavior. Exported users will have a link to SASL2::SASL2, but not to the
+# PkgConfig target.
+set(SASL2_FOUND TRUE)
+add_library(SASL2::SASL2 IMPORTED INTERFACE GLOBAL)
+target_link_libraries(SASL2::SASL2 INTERFACE PkgConfig::libsasl2)
+
+set(SASL2_VERSION "${libsasl2_VERSION}" CACHE INTERNAL "")
