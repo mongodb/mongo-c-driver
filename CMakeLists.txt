@@ -24,6 +24,8 @@ LoadVersion (VERSION_CURRENT MONGOC)
 set(mongo-c-driver_VERSION_PRERELEASE ${MONGOC_PRERELEASE_VERSION})
 set(mongo-c-driver_VERSION_FULL ${MONGOC_VERSION})
 
+include(FeatureSummary)
+
 include (MongoSettings)
 include (MongoPlatform)
 include (GeneratePkgConfig)
@@ -620,3 +622,5 @@ endif ()
 if (CMAKE_GENERATOR STREQUAL "Ninja Multi-Config" AND PROJECT_IS_TOP_LEVEL)
    set (CMAKE_CROSS_CONFIGS "all")
 endif ()
+
+feature_summary(WHAT ENABLED_FEATURES DISABLED_FEATURES)

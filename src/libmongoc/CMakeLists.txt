@@ -284,6 +284,11 @@ _pick_sasl("${ENABLE_SASL}")
 # Variable is used here, as well as within the mongoc-config.cmake template:
 get_directory_property(SASL_BACKEND _mongoc-sasl-backend)
 message(STATUS "Using SASL backend : ${SASL_BACKEND}")
+set_package_properties(SASL2 PROPERTIES
+   DESCRIPTION "Cyrus implementation of SASL"
+   TYPE OPTIONAL
+   PURPOSE "Provides libmongoc SASL authentication support"
+   )
 
 if(SASL_BACKEND STREQUAL "Cyrus")
    cmake_push_check_state()
@@ -300,6 +305,7 @@ mongo_bool01(MONGOC_HAVE_SASL_CLIENT_DONE [[SASL2_HAVE_SASL_CLIENT_DONE]])
 mongo_bool01(MONGOC_ENABLE_SASL_SSPI [[SASL_BACKEND STREQUAL "SSPI"]])
 mongo_bool01(MONGOC_ENABLE_SASL_CYRUS [[SASL_BACKEND STREQUAL "Cyrus"]])
 mongo_bool01(MONGOC_ENABLE_SASL [[MONGOC_ENABLE_SASL_SSPI OR MONGOC_ENABLE_SASL_CYRUS]])
+add_feature_info("SASL Authentication" "${MONGOC_ENABLE_SASL}" "(${SASL_BACKEND})")
 
 if (ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
    set (MONGOC_NO_AUTOMATIC_GLOBALS 0)
