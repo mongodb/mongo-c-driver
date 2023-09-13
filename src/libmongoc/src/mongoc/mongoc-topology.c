@@ -348,6 +348,12 @@ _detect_nongenuine_host (const char *host)
 static void
 _detect_nongenuine_hosts (const mongoc_uri_t *uri)
 {
+   const char *srv_hostname = mongoc_uri_get_srv_hostname (uri);
+   if (srv_hostname) {
+      _detect_nongenuine_host (srv_hostname);
+      return;
+   }
+
    const mongoc_host_list_t *iter;
 
    LL_FOREACH (mongoc_uri_get_hosts (uri), iter)
