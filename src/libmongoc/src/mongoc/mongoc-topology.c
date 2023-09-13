@@ -346,11 +346,11 @@ _detect_nongenuine_host (const char *host)
 }
 
 static void
-_detect_nongenuine_hosts (const mongoc_host_list_t *hosts)
+_detect_nongenuine_hosts (const mongoc_uri_t *uri)
 {
    const mongoc_host_list_t *iter;
 
-   LL_FOREACH (hosts, iter)
+   LL_FOREACH (mongoc_uri_get_hosts (uri), iter)
    {
       if (_detect_nongenuine_host (iter->host)) {
          return;
@@ -650,7 +650,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       mongoc_topology_scanner_add (topology->scanner, elem, id, false);
    }
 
-   _detect_nongenuine_hosts (*hl_array);
+   _detect_nongenuine_hosts (uri);
 
    bson_free ((void *) hl_array);
 
