@@ -12,7 +12,7 @@ class PrepareKerberos(Function):
             working_dir='mongoc',
             silent=True,
             script='''\
-            if test "${keytab|}" && [[ -f /etc/krb5.conf ]]; then
+            if test "${keytab|}" && command -v kinit >/dev/null; then
                 echo "${keytab}" > /tmp/drivers.keytab.base64
                 base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
                 if touch /etc/krb5.conf 2>/dev/null; then

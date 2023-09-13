@@ -62,7 +62,7 @@ esac
 : "${test_gssapi:?}"
 : "${ip_addr:?}"
 
-if command -v kinit && [[ -f /tmp/drivers.keytab ]]; then
+if command -v kinit >/dev/null && [[ -f /tmp/drivers.keytab ]]; then
   kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC || true
 fi
 
