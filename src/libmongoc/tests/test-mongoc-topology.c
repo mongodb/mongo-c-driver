@@ -2684,8 +2684,10 @@ test_detect_nongenuine_hosts (void)
       "mongodb://a.MONGO.COSMOS.AZURE.COM:19555/",
       /* Mixing genuine and nongenuine hosts (unlikely in practice) */
       "mongodb://a.example.com:27017,b.mongo.cosmos.azure.com:19555/",
-      /* Note: SRV connection strings are intentionally untested, since initial
-       * lookup responses cannot be easily mocked. */
+      /* Test SRV matching */
+      "mongodb+srv://a.mongo.cosmos.azure.com/",
+      /* Test SRV case-insensitive matching */
+      "mongodb+srv://A.MONGO.COSMOS.AZURE.COM/",
    };
 
    const char *docdb_uris[] = {
@@ -2695,6 +2697,8 @@ test_detect_nongenuine_hosts (void)
       "mongodb://a.DOCDB-ELASTIC.AMAZONAWS.COM:27017/",
       "mongodb://a.example.com:27017,b.docdb.amazonaws.com:27017/",
       "mongodb://a.example.com:27017,b.docdb-elastic.amazonaws.com:27017/",
+      "mongodb+srv://a.DOCDB.AMAZONAWS.COM/",
+      "mongodb+srv://a.DOCDB-ELASTIC.AMAZONAWS.COM/",
    };
 
    const char *genuine_uris[] = {
@@ -2704,6 +2708,13 @@ test_detect_nongenuine_hosts (void)
       "mongodb://a.mongo.cosmos.azure.com.tld:19555/",
       "mongodb://a.docdb.amazonaws.com.tld:27017/",
       "mongodb://a.docdb-elastic.amazonaws.com.tld:27017/",
+      /* Test genuine SRV URIs */
+      "mongodb+srv://a.example.com/",
+      "mongodb+srv://a.mongodb.net/",
+      /* Host names do not end with expected suffix */
+      "mongodb+srv://a.mongo.cosmos.azure.com.tld/",
+      "mongodb+srv://a.docdb.amazonaws.com.tld/",
+      "mongodb+srv://a.docdb-elastic.amazonaws.com.tld/",
    };
 
    for (size_t i = 0u; i < sizeof (cosmos_uris) / sizeof (*cosmos_uris); ++i) {
