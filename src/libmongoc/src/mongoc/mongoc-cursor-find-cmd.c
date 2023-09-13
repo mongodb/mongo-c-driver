@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "bson.h"
 #include "mongoc.h"
-#include "mongoc-cluster-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
 

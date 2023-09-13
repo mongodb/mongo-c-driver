@@ -1731,8 +1731,6 @@ _mongoc_cursor_response_refresh (mongoc_cursor_t *cursor,
    if (_mongoc_cursor_run_command (
           cursor, command, opts, &response->reply, false)) {
       if (_mongoc_cursor_start_reading_response (cursor, response)) {
-         // TODO here or in above function: read moreToCome bit from server
-         // set cursor->in_exhaust and cursor->client->in_exhaust accordingly
          cursor->in_exhaust = cursor->client->in_exhaust;
          return;
       }
