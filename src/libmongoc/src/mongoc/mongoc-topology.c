@@ -318,7 +318,7 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
 static bool
 _detect_nongenuine_host (const char *host)
 {
-   char *host_lowercase = bson_strdup (host);
+   char *const host_lowercase = bson_strdup (host);
 
    mongoc_lowercase (host, host_lowercase);
 
