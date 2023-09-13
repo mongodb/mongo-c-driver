@@ -1044,6 +1044,13 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       parts.assembled.op_msg_is_exhaust =
          sharded ? wire_version >= WIRE_VERSION_MONGOS_EXHAUST
                  : wire_version >= WIRE_VERSION_4_2;
+      if (!parts.assembled.op_msg_is_exhaust) {
+         MONGOC_WARNING (
+            "exhaust cursors not supported with mongo%s wire version %d, "
+            "using normal cursor instead",
+            sharded ? "s" : "d",
+            wire_version);
+      }
    }
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
