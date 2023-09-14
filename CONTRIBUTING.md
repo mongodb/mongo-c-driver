@@ -139,7 +139,7 @@ $ mkdir db
 $ mongod --auth --setParameter enableTestCommands=1 --dbpath db/
 ```
 
-In another terminal, use the `mongo` shell to create a user:
+In another terminal, use the `mongosh` shell to create a user:
 
 ```
 $ mongosh --eval "db.createUser({user: 'admin', pwd: 'pass', roles: ['root']})" admin
