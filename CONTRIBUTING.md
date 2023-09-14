@@ -135,13 +135,14 @@ To run the entire test suite, including authentication and support for the
 enabled:
 
 ```
-$ mongod --auth --setParameter enableTestCommands=1
+$ mkdir db
+$ mongod --auth --setParameter enableTestCommands=1 --dbpath db/
 ```
 
 In another terminal, use the `mongo` shell to create a user:
 
 ```
-$ mongo --eval "db.createUser({user: 'admin', pwd: 'pass', roles: ['root']})" admin
+$ mongosh --eval "db.createUser({user: 'admin', pwd: 'pass', roles: ['root']})" admin
 ```
 
 Authentication in MongoDB 3.0 and later uses SCRAM-SHA-1, which in turn
