@@ -29,7 +29,7 @@ version-current:
     COPY --dir .git/ build/calc_release_version.py /s/
     # Calculate it:
     RUN cd /s/ && \
-        python calc_release_version.py > VERSION_CURRENT
+        python calc_release_version.py --next-minor > VERSION_CURRENT
     SAVE ARTIFACT /s/VERSION_CURRENT
 
 # BUILD_AND_INSTALL executes the mongo-c-driver build and installs it to a prefix
@@ -146,6 +146,44 @@ test-example:
             -D CMAKE_PREFIX_PATH=/opt/mongo-c-driver
     RUN cmake --build /bld
 
+# test-cxx-driver :
+#   Clone and build the mongo-cxx-driver project, using the current mongo-c-driver
+#   for the build.
+#
+#   The “--cxx_driver_ref” argument must be a clone-able Git ref. The driver source
+#   will be cloned at this point and built.
+#
+#   The “--cxx_version_current” argument will be inserted into the VERSION_CURRENT
+#   file for the cxx-driver build.
+test-cxx-driver:
+    ARG --required env
+    ARG --required cxx_driver_ref
+    ARG cxx_version_current=0.0.0
+    FROM +$env-build-env
+    COPY --pass-args +build/root /opt/mongo-c-driver
+    LET source=/opt/mongo-cxx-driver/src
+    LET build=/opt/mongo-cxx-driver/bld
+    GIT CLONE --branch=$cxx_driver_ref https://github.com/mongodb/mongo-cxx-driver.git $source
+    RUN echo $cxx_version_current > $source/build/VERSION_CURRENT
+    RUN cmake -S $source -B $build -G Ninja -D CMAKE_PREFIX_PATH=/opt/mongo-c-driver -D CMAKE_CXX_STANDARD=17
+    ENV CCACHE_HOME=/root/.cache/ccache
+    ENV CCACHE_BASE=$source
+    RUN --mount=type=cache,target=$CCACHE_HOME cmake --build $build
+
 # Simultaneously builds and tests multiple different platforms
 multibuild:
     BUILD --pass-args +test-example --env=u22 --env=archlinux --env=alpine3.18
+
+# run :
+#   Run one or more targets simultaneously.
+#
+#   The “--targets” argument should be a single string space-separated list of
+#   target names (not including a leading ‘+’) identifying targets to mark for
+#   execution. Targets will be executed concurrently. Other build arguments
+#   will be forwarded to the executed targets.
+run:
+    LOCALLY
+    ARG --required targets
+    FOR __target IN $targets
+        BUILD --pass-args +$__target
+    END
