@@ -168,16 +168,6 @@ find_cmake_version() {
   *) ;; # Build from source.
   esac
 
-  declare -a download_args=(--out="cmake.${extension}")
-
-  # TODO: remove once BUILD-16817 is resolved.
-  # Workaround SSL certificate validation failures on certain distros.
-  case "$OS_SHORTNAME-$ARCHNAME" in
-    ubuntu14-*|ubuntu16-ppc|RedHat7-ppc)
-      download_args+=(--no-tls-verify)
-      ;;
-  esac
-
   {
     # Doesn't matter who creates the cache directory so long as it exists.
     mkdir -p "${cache_dir}" || return
@@ -190,7 +180,20 @@ find_cmake_version() {
   if [[ -n "${platform:-}" ]]; then
     cmake_download_binary() (
       declare -r cmake_url="https://cmake.org/files/v${major}.${minor}/cmake-${version}-${platform}.${extension}"
-      download_args+=(--uri="${cmake_url}")
+
+      declare -a download_args
+      download_args=(
+        --out="cmake.${extension}"
+        --uri="${cmake_url}"
+      )
+
+      # TODO: remove once BUILD-16817 is resolved.
+      # Workaround SSL certificate validation failures on certain distros.
+      case "$OS_SHORTNAME-$ARCHNAME" in
+      ubuntu14-* | ubuntu16-ppc | RedHat7-ppc)
+        download_args+=(--no-tls-verify)
+        ;;
+      esac
 
       echo "Downloading cmake-${version}-${platform}..."
 
