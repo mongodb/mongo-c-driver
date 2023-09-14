@@ -1,4 +1,4 @@
-VERSION --arg-scope-and-set 0.7
+VERSION --arg-scope-and-set --pass-args 0.7
 LOCALLY
 
 # PREP_CMAKE "warms up" the CMake installation cache for the current environment
@@ -37,6 +37,7 @@ BUILD_AND_INSTALL:
     COMMAND
     ARG config=RelWithDebInfo
     ARG install_prefix=/opt/mongo-c-driver
+    ARG enable_sasl=CYRUS
     LET source_dir=/opt/mongoc/source
     LET build_dir=/opt/mongoc/build
     COPY --dir \
@@ -55,7 +56,7 @@ BUILD_AND_INSTALL:
         -D ENABLE_MAINTAINER_FLAGS=ON \
         -D ENABLE_SHM_COUNTERS=ON \
         -D ENABLE_EXTRA_ALIGNMENT=OFF \
-        -D ENABLE_SASL=CYRUS \
+        -D ENABLE_SASL=$enable_sasl \
         -D ENABLE_SNAPPY=ON \
         -D ENABLE_SRV=ON \
         -D ENABLE_ZLIB=BUNDLED \
@@ -75,11 +76,11 @@ alpine-base:
 
 alpine3.18-build-env:
     FROM +alpine-base --version=3.18
-    RUN apk add openssl-dev cyrus-sasl-dev snappy-dev
+    RUN apk add openssl-dev cyrus-sasl-dev snappy-dev ccache
 
 alpine3.18-test-env:
     FROM +alpine-base --version=3.18
-    RUN apk add libsasl snappy
+    RUN apk add libsasl snappy pkgconfig
 
 archlinux-base:
     FROM archlinux
@@ -121,7 +122,7 @@ build:
     # env is an argument
     ARG --required env
     FROM +$env-build-env
-    DO +BUILD_AND_INSTALL --config=RelWithDebInfo
+    DO --pass-args +BUILD_AND_INSTALL
     SAVE ARTIFACT /opt/mongoc/build/* /build-tree/
     SAVE ARTIFACT /opt/mongo-c-driver/* /root/
 
@@ -131,7 +132,7 @@ test-example:
     ARG --required env
     FROM +$env-test-env
     # Grab the built
-    COPY (+build/root --env=$env) /opt/mongo-c-driver
+    COPY --pass-args +build/root /opt/mongo-c-driver
     COPY --dir \
         src/libmongoc/examples/cmake \
         src/libmongoc/examples/cmake-deprecated \
@@ -146,4 +147,4 @@ test-example:
 
 # Simultaneously builds and tests multiple different platforms
 multibuild:
-    BUILD +test-example --env=u22 --env=archlinux --env=alpine3.18
+    BUILD --pass-args +test-example --env=u22 --env=archlinux --env=alpine3.18
