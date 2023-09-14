@@ -23,7 +23,7 @@ endif()
 # Find dependencies for SASL
 set(_sasl_backend [[@SASL_BACKEND@]])
 if(NOT TARGET _mongoc::detail::sasl AND _sasl_backend)
-  add_library(_mongoc::detail::sasl IMPORTED INTERFACE)
+  add_library(_mongoc::detail::sasl IMPORTED INTERFACE GLOBAL)
 endif()
 set(_sasl_sspi_libraries [[@SASL_SSPI_LIBRARIES@]])
 if(_sasl_backend STREQUAL "Cyrus")
