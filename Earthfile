@@ -89,6 +89,7 @@ archlinux-base:
 archlinux-build-env:
     FROM +archlinux-base
     DO +PREP_CMAKE
+    RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet pkgconf ccache
 
 archlinux-test-env:
     FROM +archlinux-base
@@ -104,7 +105,7 @@ u22-build-env:
     # Build dependencies:
     RUN apt-get update && apt-get -y install \
             ninja-build gcc ccache libssl-dev libsnappy-dev zlib1g-dev \
-            libsasl2-dev
+            libsasl2-dev pkg-config
     DO +PREP_CMAKE
 
 u22-test-env:
