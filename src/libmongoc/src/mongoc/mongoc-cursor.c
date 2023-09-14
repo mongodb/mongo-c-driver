@@ -367,9 +367,9 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       }
 
       td_type = _mongoc_topology_get_type (client->topology);
-      mongoc_server_stream_t *server_stream =
+      mongoc_server_stream_t *const server_stream =
          _mongoc_cursor_fetch_stream (cursor);
-      int wire_version = server_stream->sd->max_wire_version;
+      const int wire_version = server_stream->sd->max_wire_version;
       mongoc_server_stream_cleanup (server_stream);
 
       if (td_type == MONGOC_TOPOLOGY_SHARDED &&
@@ -1035,7 +1035,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 
    if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
       /* Fallback to non-exhaust cursor following
-         https://github.com/mongodb/specifications/blob/master/source/find_getmore_killcursors_commands.rst#exhaust
+         https://github.com/mongodb/specifications/blob/ddfc8b583d49aaf8c4c19fa01255afb66b36b92e/source/find_getmore_killcursors_commands.rst#exhaust
          is required since mongos < 7.2 doesn't support exhaust cursors */
       const bool sharded =
          _mongoc_topology_get_type (cursor->client->topology) ==

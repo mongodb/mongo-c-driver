@@ -49,7 +49,8 @@ _getmore_type (mongoc_cursor_t *cursor)
    wire_version = server_stream->sd->max_wire_version;
    mongoc_server_stream_cleanup (server_stream);
 
-   /* TODO (CDRIVER-4722) always GETMORE_CMD when server >= 4.2 */
+   // CDRIVER-4722: always GETMORE_CMD once WIRE_VERSION_MIN >=
+   // WIRE_VERSION_4_2.
    if (_mongoc_cursor_use_op_msg (cursor, wire_version)) {
       data->getmore_type = GETMORE_CMD;
    } else {
