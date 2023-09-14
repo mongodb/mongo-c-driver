@@ -1,6 +1,8 @@
 VERSION --arg-scope-and-set --pass-args 0.7
 LOCALLY
 
+# For target names, descriptions, and build options, run the "doc" Earthly subcommand.
+
 # PREP_CMAKE "warms up" the CMake installation cache for the current environment
 PREP_CMAKE:
     COMMAND
@@ -20,7 +22,8 @@ PREP_CMAKE:
     # Executing any CMake command will warm the cache:
     RUN cmake --version
 
-# version-current creates the VERSION_CURRENT file using Git. This file is exported as an artifact at /
+# version-current :
+#   Create the VERSION_CURRENT file using Git. This file is exported as an artifact at /
 version-current:
     # Run on Alpine, which does this work the fastest
     FROM alpine:3.18
@@ -74,18 +77,30 @@ alpine-base:
     FROM alpine:$version
     RUN apk add cmake ninja-is-really-ninja gcc musl-dev
 
-alpine3.18-build-env:
-    FROM +alpine-base --version=3.18
+alpine-build-env-base:
+    ARG --required version
+    FROM +alpine-base --version=$version
     RUN apk add openssl-dev cyrus-sasl-dev snappy-dev ccache
 
-alpine3.18-test-env:
-    FROM +alpine-base --version=3.18
+alpine-test-env-base:
+    ARG --required version
+    FROM +alpine-base --version=$version
     RUN apk add libsasl snappy pkgconfig
+
+# alpine3.18-build-env :
+#   A build environment based on Alpine Linux version 3.18
+alpine3.18-build-env:
+    FROM +alpine-build-env-base --version=3.18
+
+alpine3.18-test-env:
+    FROM +alpine-test-env-base --version=3.18
 
 archlinux-base:
     FROM archlinux
     RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet ninja gcc snappy
 
+# archlinux-build-env :
+#   A build environment based on Arch Linux
 archlinux-build-env:
     FROM +archlinux-base
     DO +PREP_CMAKE
@@ -100,6 +115,8 @@ ubuntu-base:
     FROM ubuntu:$version
     RUN apt-get update && apt-get -y install curl build-essential
 
+# u22-build-env :
+#   A build environment based on Ubuntu 22.04
 u22-build-env:
     FROM +ubuntu-base --version=22.04
     # Build dependencies:
@@ -113,16 +130,16 @@ u22-test-env:
     RUN apt-get update && apt-get -y install libsnappy1v5 libsasl2-2 ninja-build
     DO +PREP_CMAKE
 
-# build will build libmongoc and libbson using the specified environment.
+# build :
+#   Build libmongoc and libbson using the specified environment.
 #
-# The --env argument specifies the build environment, which must be one of:
-#   • u22 (Ubuntu 22.04)
-#   • archlinux
-#   • alpine3.18
+# The --env argument specifies the build environment, using “+${env}-build-env”
+# as the build environment target. Refer to the list of targets for a list of
+# available environments.
 build:
     # env is an argument
     ARG --required env
-    FROM +$env-build-env
+    FROM --pass-args +$env-build-env
     DO --pass-args +BUILD_AND_INSTALL
     SAVE ARTIFACT /opt/mongoc/build/* /build-tree/
     SAVE ARTIFACT /opt/mongo-c-driver/* /root/
@@ -131,7 +148,7 @@ build:
 # that comes from the +build target.
 test-example:
     ARG --required env
-    FROM +$env-test-env
+    FROM --pass-args +$env-test-env
     # Grab the built
     COPY --pass-args +build/root /opt/mongo-c-driver
     COPY --dir \
@@ -150,16 +167,16 @@ test-example:
 #   Clone and build the mongo-cxx-driver project, using the current mongo-c-driver
 #   for the build.
 #
-#   The “--cxx_driver_ref” argument must be a clone-able Git ref. The driver source
-#   will be cloned at this point and built.
+# The “--cxx_driver_ref” argument must be a clone-able Git ref. The driver source
+# will be cloned at this point and built.
 #
-#   The “--cxx_version_current” argument will be inserted into the VERSION_CURRENT
-#   file for the cxx-driver build.
+# The “--cxx_version_current” argument will be inserted into the VERSION_CURRENT
+# file for the cxx-driver build.
 test-cxx-driver:
     ARG --required env
     ARG --required cxx_driver_ref
     ARG cxx_version_current=0.0.0
-    FROM +$env-build-env
+    FROM --pass-args +$env-build-env
     COPY --pass-args +build/root /opt/mongo-c-driver
     LET source=/opt/mongo-cxx-driver/src
     LET build=/opt/mongo-cxx-driver/bld
@@ -177,10 +194,10 @@ multibuild:
 # run :
 #   Run one or more targets simultaneously.
 #
-#   The “--targets” argument should be a single string space-separated list of
-#   target names (not including a leading ‘+’) identifying targets to mark for
-#   execution. Targets will be executed concurrently. Other build arguments
-#   will be forwarded to the executed targets.
+# The “--targets” argument should be a single-string space-separated list of
+# target names (not including a leading ‘+’) identifying targets to mark for
+# execution. Targets will be executed concurrently. Other build arguments
+# will be forwarded to the executed targets.
 run:
     LOCALLY
     ARG --required targets
