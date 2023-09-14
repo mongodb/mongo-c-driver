@@ -1,3 +1,4 @@
+from typing import Iterable
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_task import EvgTaskRef
 from ..etc.utils import Task
@@ -7,7 +8,7 @@ _ENV_PARAM_NAME = "MONGOC_EARTHLY_ENV"
 
 
 class EarthlyTask(Task):
-    def __init__(self, *, suffix: str, target: str) -> None:
+    def __init__(self, *, suffix: str, target: str, sasl: str) -> None:
         super().__init__(
             name=f"earthly-{suffix}",
             commands=[
@@ -17,6 +18,7 @@ class EarthlyTask(Task):
                         "tools/earthly.sh",
                         f"+{target}",
                         f"--env=${{{_ENV_PARAM_NAME}}}",
+                        f"--enable_sasl={sasl}",
                     ],
                     working_dir="mongoc",
                     command_type=EvgCommandType.TEST,
@@ -47,9 +49,17 @@ CONTAINER_RUN_DISTROS = [
     "amazon2",
 ]
 
+# Other optoins: SSPI (Windows only), AUTO (not reliably test-able without more environments)
+_SASL_OPTIONS = ["CYRUS", "OFF"]
 
-def tasks() -> list[Task]:
-    return [EarthlyTask(suffix="build-check", target="test-example")]
+
+def tasks() -> Iterable[Task]:
+    for sasl in _SASL_OPTIONS:
+        yield EarthlyTask(
+            suffix=f"build-check-sasl:{sasl}".lower(),
+            target="test-example",
+            sasl=sasl,
+        )
 
 
 def variants() -> list[BuildVariant]:
