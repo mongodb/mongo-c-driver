@@ -75,7 +75,7 @@ BUILD_AND_INSTALL:
 alpine-base:
     ARG --required version
     FROM alpine:$version
-    RUN apk add cmake ninja-is-really-ninja gcc musl-dev
+    RUN apk add cmake ninja-is-really-ninja gcc musl-dev g++ cyrus-sasl-dev
 
 alpine-build-env-base:
     ARG --required version
@@ -113,7 +113,7 @@ archlinux-test-env:
 ubuntu-base:
     ARG --required version
     FROM ubuntu:$version
-    RUN apt-get update && apt-get -y install curl build-essential
+    RUN apt-get update && apt-get -y install curl build-essential libsasl2-dev
 
 # u22-build-env :
 #   A build environment based on Ubuntu 22.04
