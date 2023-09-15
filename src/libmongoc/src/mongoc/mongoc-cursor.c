@@ -365,21 +365,6 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                          "Cannot specify both 'exhaust' and 'limit'.");
          GOTO (finish);
       }
-
-      td_type = _mongoc_topology_get_type (client->topology);
-      mongoc_server_stream_t *const server_stream =
-         _mongoc_cursor_fetch_stream (cursor);
-      const int wire_version = server_stream->sd->max_wire_version;
-      mongoc_server_stream_cleanup (server_stream);
-
-      if (td_type == MONGOC_TOPOLOGY_SHARDED &&
-          wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_CURSOR,
-                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                         "Cannot use exhaust cursor with sharded cluster.");
-         GOTO (finish);
-      }
    }
 
    (void) _mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error);
@@ -892,7 +877,7 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
                               mongoc_server_stream_t *stream,
                               int32_t *flags /* OUT */)
 {
-   /* TODO (CDRIVER-4722) these flags are only used in legacy OP_QUERY */
+   /* CDRIVER-4722: these flags are only used in legacy OP_QUERY */
    bson_iter_t iter;
    const char *key;
 
@@ -939,7 +924,7 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_use_op_msg (const mongoc_cursor_t *cursor, int32_t wire_version)
 {
-   /* TODO (CDRIVER-4722) always true once 4.2 is the minimum supported
+   /* CDRIVER-4722: always true once 4.2 is the minimum supported
       No check needed for 3.6 as it's the current minimum */
    return !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST) ||
           wire_version >= WIRE_VERSION_4_2;
@@ -1041,16 +1026,14 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          _mongoc_topology_get_type (cursor->client->topology) ==
          MONGOC_TOPOLOGY_SHARDED;
       const int32_t wire_version = server_stream->sd->max_wire_version;
-      parts.assembled.op_msg_is_exhaust =
-         sharded ? wire_version >= WIRE_VERSION_MONGOS_EXHAUST
-                 : wire_version >= WIRE_VERSION_4_2;
-      if (!parts.assembled.op_msg_is_exhaust) {
-         MONGOC_WARNING (
-            "exhaust cursors not supported with mongo%s wire version %d, "
+      if (sharded && wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
+         MONGOC_ERROR (
+            "exhaust cursors not supported with mongos wire version %d, "
             "using normal cursor instead",
-            sharded ? "s" : "d",
             wire_version);
+         GOTO (done);
       }
+      parts.assembled.op_msg_is_exhaust = true;
    }
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no

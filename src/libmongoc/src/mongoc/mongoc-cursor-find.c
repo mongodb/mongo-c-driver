@@ -45,7 +45,7 @@ _prime (mongoc_cursor_t *cursor)
    mongoc_server_stream_cleanup (server_stream);
 
    /* set all mongoc_impl_t function pointers. */
-   /* TODO (CDRIVER-4722) always find_cmd when server >= 4.2 */
+   /* CDRIVER-4722: always find_cmd when server >= 4.2 */
    if (_mongoc_cursor_use_op_msg (cursor, wire_version)) {
       _mongoc_cursor_impl_find_cmd_init (cursor, &data->filter /* stolen */);
    } else {
