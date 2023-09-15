@@ -21,6 +21,9 @@ include (InstallRequiredSystemLibraries)
 
 message (STATUS "libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
 
+set (MONGOC_API_VERSION 1.0)
+set (MONGOC_TARGETS_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}")
+
 # Defaults.
 set (MONGOC_ENABLE_SSL 0)
 set (MONGOC_ENABLE_SSL_OPENSSL 0)
@@ -261,18 +264,19 @@ function(_pick_sasl sasl)
    endif()
 endfunction()
 
-set(SASL_SSPI_LIBRARIES secur32.lib crypt32.lib Shlwapi.lib)
-
 # Use the named SASL library. Must be either "CYRUS" or "SSPI"
 function(_use_sasl libname)
-   add_library(_mongoc::detail::sasl IMPORTED INTERFACE GLOBAL)
-   target_link_libraries(_mongoc-dependencies INTERFACE _mongoc::detail::sasl)
+   add_library(_mongoc-sasl_backend INTERFACE)
+   set_property(TARGET _mongoc-sasl_backend PROPERTY EXPORT_NAME detail::c_sasl_backend)
+   target_link_libraries(_mongoc-dependencies INTERFACE _mongoc-sasl_backend)
+   install(TARGETS _mongoc-sasl_backend EXPORT mongoc-targets)
    if(libname STREQUAL "SSPI")
-      target_link_libraries(_mongoc::detail::sasl INTERFACE ${SASL_SSPI_LIBRARIES})
+      target_link_libraries(_mongoc-sasl_backend INTERFACE secur32.lib crypt32.lib Shlwapi.lib)
       set(backend "SSPI")
    elseif(libname STREQUAL "CYRUS")
       find_package(SASL2 2.0 REQUIRED)
-      target_link_libraries(_mongoc::detail::sasl INTERFACE SASL2::SASL2)
+      target_link_libraries(_mongoc-sasl_backend INTERFACE SASL2::SASL2)
+      install(FILES "${mongo-c-driver_SOURCE_DIR}/build/cmake/FindSASL2.cmake" DESTINATION "${MONGOC_TARGETS_INSTALL_DIR}/3rdParty")
       set(backend "Cyrus")
    else()
       message(FATAL_ERROR "Unknown SASL backend “${libname}”")
@@ -379,8 +383,6 @@ set (MONGOC_SOCKET_ARG3 "socklen_t")
 if (NOT WIN32)
    mongoc_get_accept_args (MONGOC_SOCKET_ARG2 MONGOC_SOCKET_ARG3)
 endif ()
-
-set (MONGOC_API_VERSION 1.0)
 
 set (MONGOC_CC ${CMAKE_C_COMPILER})
 set (MONGOC_USER_SET_CFLAGS ${CMAKE_C_FLAGS})
@@ -1290,7 +1292,7 @@ configure_file (src/mongoc-config.cmake
 install (EXPORT mongoc-targets
    NAMESPACE mongo::
    FILE mongoc-targets.cmake
-   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}
+   DESTINATION ${MONGOC_TARGETS_INSTALL_DIR}
 )
 
 install (
@@ -1298,7 +1300,7 @@ install (
       "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"
       "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config-version.cmake"
    DESTINATION
-      ${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}
+      ${MONGOC_TARGETS_INSTALL_DIR}
    COMPONENT
       Devel
 )
