@@ -238,7 +238,6 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                               const mongoc_read_concern_t *read_concern)
 {
    mongoc_cursor_t *cursor;
-   mongoc_topology_description_type_t td_type;
    uint32_t server_id;
    mongoc_read_concern_t *read_concern_local = NULL;
    bson_error_t validate_err;
