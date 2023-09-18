@@ -24,6 +24,7 @@ find_path(
     DOC "Header include-directory for Cyrus libsasl2"
     HINTS ${SASL2_HINTS}
     PATHS ${SASL2_PREFIX} ${SASL2_ROOT_DIR} ${SASL2_PATHS}
+    PATH_SUFFIXES include
 )
 
 # Use the header path as a hint for the library path:
@@ -38,6 +39,7 @@ find_library(
     DOC "Library file for Cyrus libsasl2"
     HINTS ${_hint} ${SASL2_HINTS}
     PATHS ${SASL2_PREFIX} ${SASL2_ROOT_DIR} ${SASL2_PATHS}
+    PATH_SUFFIXES lib
 )
 
 if(SASL2_INCLUDE_DIR)
