@@ -49,7 +49,7 @@ CONTAINER_RUN_DISTROS = [
     "amazon2",
 ]
 
-# Other optoins: SSPI (Windows only), AUTO (not reliably test-able without more environments)
+# Other options: SSPI (Windows only), AUTO (not reliably test-able without more environments)
 _SASL_OPTIONS = ["CYRUS", "OFF"]
 
 
