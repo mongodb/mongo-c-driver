@@ -85,7 +85,7 @@ alpine-build-env-base:
 alpine-test-env-base:
     ARG --required version
     FROM +alpine-base --version=$version
-    RUN apk add libsasl snappy pkgconfig
+    RUN apk add snappy
 
 # alpine3.18-build-env :
 #   A build environment based on Alpine Linux version 3.18
@@ -104,7 +104,7 @@ archlinux-base:
 archlinux-build-env:
     FROM +archlinux-base
     DO +PREP_CMAKE
-    RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet pkgconf ccache
+    RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet ccache
 
 archlinux-test-env:
     FROM +archlinux-base
@@ -121,8 +121,7 @@ u22-build-env:
     FROM +ubuntu-base --version=22.04
     # Build dependencies:
     RUN apt-get update && apt-get -y install \
-            ninja-build gcc ccache libssl-dev libsnappy-dev zlib1g-dev \
-            libsasl2-dev pkg-config
+            ninja-build gcc ccache libssl-dev libsnappy-dev zlib1g-dev
     DO +PREP_CMAKE
 
 u22-test-env:
