@@ -16,11 +16,14 @@ if(SASL2_FIND_COMPONENTS)
     message(FATAL_ERROR "This find_package(SASL2) does not support package components (Got “${SASL2_FIND_COMPONENTS}”)")
 endif()
 
+list(APPEND SASL2_PATHS C:/sasl)
+
 # Search for the proper qualified path <sasl/sasl.h>, not sasl.h
 find_path(
     SASL2_INCLUDE_DIR "sasl/sasl.h"
     DOC "Header include-directory for Cyrus libsasl2"
-    PATHS ${SASL2_PREFIX} ${SASL2_ROOT_DIR}
+    HINTS ${SASL2_HINTS}
+    PATHS ${SASL2_PREFIX} ${SASL2_ROOT_DIR} ${SASL2_PATHS}
 )
 
 # Use the header path as a hint for the library path:
@@ -33,8 +36,8 @@ endif()
 find_library(
     SASL2_LIBRARY sasl2
     DOC "Library file for Cyrus libsasl2"
-    HINTS ${_hint}
-    PATHS ${SASL2_PREFIX} ${SASL2_ROOT_DIR}
+    HINTS ${_hint} ${SASL2_HINTS}
+    PATHS ${SASL2_PREFIX} ${SASL2_ROOT_DIR} ${SASL2_PATHS}
 )
 
 if(SASL2_INCLUDE_DIR)
