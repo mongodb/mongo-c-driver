@@ -270,10 +270,14 @@ function(mongo_bool_setting name doc)
 endfunction()
 
 # Set the variable named by 'out' to the 'if_true' or 'if_false' value based on 'cond'
-function(_mongo_pick out if_true if_false cond)
+function(mongo_pick out if_true if_false cond)
     string(REPLACE "'" "\"" cond "${cond}")
-    _mongo_eval_cmake("res" "set(res [[${if_false}]])\nif(${cond})\nset(res [[${if_true}]])\nendif()")
-    set("${out}" "${res}" PARENT_SCOPE)
+    mongo_bool01(b "${cond}")
+    if(b)
+        set("${out}" "${if_true}" PARENT_SCOPE)
+    else()
+        set("${out}" "${if_false}" PARENT_SCOPE)
+    endif()
 endfunction()
 
 # Evaluate CMake code <code>, and lift the given variables into the caller's scope.
@@ -298,8 +302,8 @@ function(_mongo_eval_cmake get_variables code)
     endforeach()
 endfunction()
 
-#[[
-    mongo_bool01(<var> [cond...])
+#[==[
+    mongo_bool01(<var> <cond>)
 
 Evaluate a condition and store the boolean result as a "0" or a "1".
 
@@ -308,19 +312,31 @@ Parameters:
 <var>
     - The name of the variable to define in the caller's scope.
 
-[cond ...]
-    - `...cond` The condition to evaluate. All arguments after `var` are treated
-      as arguments to an `if()` command, following the same syntax and parsing
-      rules thereof.
+<cond>
+    - `...cond` The condition to evaluate. It must be a single string that
+      contains wraps the syntax of a CMake `if()` command
 
-]]
-macro(mongo_bool01 var)
-    if(${ARGN})
-        set(${var} 1)
-    else()
-        set(${var} 0)
+Example: Evaluate Boolean Logic
+###############################
+
+    mongo_bool01(is_mingw [[WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"]])
+
+Note the quoting and use of [[]]-bracket strings
+
+]==]
+function(mongo_bool01 var code)
+    if(ARGN)
+        message(FATAL_ERROR "Too many arguments passed to mongo_bool01")
     endif()
-endmacro()
+    string(CONCAT fullcode
+        "if(${code})\n"
+        "  set(bool 1)\n"
+        "else()\n"
+        "  set(bool 0)\n"
+        "endif()\n")
+    _mongo_eval_cmake(bool "${fullcode}")
+    set("${var}" "${bool}" PARENT_SCOPE)
+endfunction()
 
 #[==[
 Append usage requirement properties to a set of targets.

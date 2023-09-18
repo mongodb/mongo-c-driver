@@ -21,6 +21,9 @@ include (InstallRequiredSystemLibraries)
 
 message (STATUS "libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
 
+set (MONGOC_API_VERSION 1.0)
+set (MONGOC_TARGETS_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}")
+
 # Defaults.
 set (MONGOC_ENABLE_SSL 0)
 set (MONGOC_ENABLE_SSL_OPENSSL 0)
@@ -42,7 +45,7 @@ set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
 # Definition for mongoc-config.h:
-_mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
+mongo_pick(MONGOC_ENABLE_SRV 1 0 ENABLE_SRV)
 
 set (MONGOC_OUTPUT_BASENAME "mongoc" CACHE STRING "Output mongoc library base name")
 
@@ -232,28 +235,81 @@ if (MONGOC_ENABLE_MONGODB_AWS_AUTH AND ENABLE_SSL STREQUAL OFF)
    message (FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH but no SSL library was found")
 endif ()
 
-# Defaults.
-set (MONGOC_ENABLE_SASL 0)
-set (MONGOC_ENABLE_SASL_CYRUS 0)
-set (MONGOC_ENABLE_SASL_SSPI 0)
-set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
+add_library(_mongoc-dependencies INTERFACE)
+add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
+target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform)
+install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
+set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
 
-if (NOT ENABLE_SASL STREQUAL OFF)
-   if ( (ENABLE_SASL MATCHES "SSPI|AUTO") AND WIN32)
-      set (MONGOC_ENABLE_SASL 1)
-      set (MONGOC_ENABLE_SASL_SSPI 1)
-   elseif (ENABLE_SASL MATCHES "AUTO|CYRUS")
-      # Sets SASL_LIBRARIES.
-      include (FindSASL2)
-      if (SASL_FOUND)
-         set (MONGOC_ENABLE_SASL 1)
-         set (MONGOC_ENABLE_SASL_CYRUS 1)
-      elseif (ENABLE_SASL STREQUAL "CYRUS")
-          message (FATAL_ERROR "ENABLE_SASL=CYRUS could not be satisfied")
+function(_pick_sasl sasl)
+   if(sasl STREQUAL "AUTO")
+      if(WIN32)
+         # On Windows: Use SSPI
+         _use_sasl("SSPI")
+      else()
+         # Other platforms: Use Cyrus (aka libsasl2)
+         find_package(SASL2 2.0)
+         if(SASL2_FOUND)
+            # Found it
+            _use_sasl("CYRUS")
+         else()
+            # Nope. That's okay, just turn SASL off
+            set_property(DIRECTORY PROPERTY _mongoc-sasl-backend NOTFOUND)
+         endif()
       endif()
-   endif ()
-endif ()
+   elseif(sasl)
+      _use_sasl("${sasl}")
+   else()
+      set_property(DIRECTORY PROPERTY _mongoc-sasl-backend OFF)
+   endif()
+endfunction()
 
+# Use the named SASL library. Must be either "CYRUS" or "SSPI"
+function(_use_sasl libname)
+   add_library(_mongoc-sasl_backend INTERFACE)
+   set_property(TARGET _mongoc-sasl_backend PROPERTY EXPORT_NAME detail::c_sasl_backend)
+   target_link_libraries(_mongoc-dependencies INTERFACE _mongoc-sasl_backend)
+   install(TARGETS _mongoc-sasl_backend EXPORT mongoc-targets)
+   if(libname STREQUAL "SSPI")
+      target_link_libraries(_mongoc-sasl_backend INTERFACE secur32.lib crypt32.lib Shlwapi.lib)
+      set(backend "SSPI")
+   elseif(libname STREQUAL "CYRUS")
+      find_package(SASL2 2.0 REQUIRED)
+      target_link_libraries(_mongoc-sasl_backend INTERFACE SASL2::SASL2)
+      install(FILES "${mongo-c-driver_SOURCE_DIR}/build/cmake/FindSASL2.cmake" DESTINATION "${MONGOC_TARGETS_INSTALL_DIR}/3rdParty")
+      set(backend "Cyrus")
+   else()
+      message(FATAL_ERROR "Unknown SASL backend “${libname}”")
+   endif()
+   set_property(DIRECTORY PROPERTY _mongoc-sasl-backend "${backend}")
+endfunction()
+
+_pick_sasl("${ENABLE_SASL}")
+# Variable is used here, as well as within the mongoc-config.cmake template:
+get_directory_property(SASL_BACKEND _mongoc-sasl-backend)
+message(STATUS "Using SASL backend : ${SASL_BACKEND}")
+set_package_properties(SASL2 PROPERTIES
+   DESCRIPTION "Cyrus implementation of SASL"
+   TYPE OPTIONAL
+   PURPOSE "Provides libmongoc SASL authentication support"
+   )
+
+if(SASL_BACKEND STREQUAL "Cyrus")
+   cmake_push_check_state()
+   list(APPEND CMAKE_REQUIRED_LIBRARIES SASL2::SASL2)
+   check_symbol_exists(
+      sasl_client_done
+      sasl/sasl.h
+      SASL2_HAVE_SASL_CLIENT_DONE
+   )
+   cmake_pop_check_state()
+endif()
+
+mongo_bool01(MONGOC_HAVE_SASL_CLIENT_DONE [[SASL2_HAVE_SASL_CLIENT_DONE]])
+mongo_bool01(MONGOC_ENABLE_SASL_SSPI [[SASL_BACKEND STREQUAL "SSPI"]])
+mongo_bool01(MONGOC_ENABLE_SASL_CYRUS [[SASL_BACKEND STREQUAL "Cyrus"]])
+mongo_bool01(MONGOC_ENABLE_SASL [[MONGOC_ENABLE_SASL_SSPI OR MONGOC_ENABLE_SASL_CYRUS]])
+add_feature_info("SASL Authentication" "${MONGOC_ENABLE_SASL}" "(${SASL_BACKEND})")
 
 if (ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
    set (MONGOC_NO_AUTOMATIC_GLOBALS 0)
@@ -327,8 +383,6 @@ set (MONGOC_SOCKET_ARG3 "socklen_t")
 if (NOT WIN32)
    mongoc_get_accept_args (MONGOC_SOCKET_ARG2 MONGOC_SOCKET_ARG3)
 endif ()
-
-set (MONGOC_API_VERSION 1.0)
 
 set (MONGOC_CC ${CMAKE_C_COMPILER})
 set (MONGOC_USER_SET_CFLAGS ${CMAKE_C_FLAGS})
@@ -655,31 +709,23 @@ if (MONGOC_ENABLE_SASL)
       message (STATUS "Compiling against Cyrus SASL")
       set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-cyrus.c)
       set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cyrus.c)
-      include_directories (${SASL_INCLUDE_DIRS})
    elseif (MONGOC_ENABLE_SASL_SSPI)
       message (STATUS "Compiling against Windows SSPI")
       set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
       set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
-      set (SASL_LIBRARIES secur32.lib crypt32.lib Shlwapi.lib)
    endif ()
 else ()
    message (STATUS "SASL disabled")
 endif ()
 
 set (LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES}
+   ${SSL_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES}
+   ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
-
-add_library(_mongoc-dependencies INTERFACE)
-add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
-target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform)
-install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
-set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
 
 # utf8proc configuration
 find_package(Utf8Proc REQUIRED)
@@ -796,6 +842,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    if(ENABLE_SRV AND RESOLVE_LIB_NAME)
       # The static library needs to link to the resolver in pkg-config:
       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-l${RESOLVE_LIB_NAME}")
+   endif()
+   if(SASL_BACKEND STREQUAL "Cyrus")
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lsasl2")
    endif()
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
@@ -1198,8 +1247,7 @@ endif ()
 
 # Collect link items for the static library to be inserted into the pkg-config
 if(TARGET mongoc_static)
-   set(link_options
-      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${ZLIB_LIBRARIES}
+   set(link_options ${SSL_LIBRARIES} ${ZLIB_LIBRARIES}
       ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY})
    # Replace all absolute paths with search-dir link-file options:
    list(TRANSFORM link_options
@@ -1244,7 +1292,7 @@ configure_file (src/mongoc-config.cmake
 install (EXPORT mongoc-targets
    NAMESPACE mongo::
    FILE mongoc-targets.cmake
-   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}
+   DESTINATION ${MONGOC_TARGETS_INSTALL_DIR}
 )
 
 install (
@@ -1252,7 +1300,7 @@ install (
       "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"
       "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config-version.cmake"
    DESTINATION
-      ${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}
+      ${MONGOC_TARGETS_INSTALL_DIR}
    COMPONENT
       Devel
 )
