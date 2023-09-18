@@ -41,32 +41,6 @@
  */
 
 static int
-skip_if_no_opmsg_exhaust (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-
-   int64_t max_wire_version;
-   test_framework_get_max_wire_version (&max_wire_version);
-
-   // mongos only supports exhaust cursors on server version 7.1+.
-   if (test_framework_is_mongos ()) {
-      if (max_wire_version >= WIRE_VERSION_MONGOS_EXHAUST) {
-         return 1;
-      }
-      return 0;
-   }
-
-   // mongod only supports exhaust cursors over OP_MSG on version >= 4.2.
-   if (max_wire_version >= WIRE_VERSION_4_2) {
-      return 1;
-   }
-
-   return 0;
-}
-
-static int
 skip_if_no_exhaust (void)
 {
    if (!TestSuite_CheckLive ()) {
