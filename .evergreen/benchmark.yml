@@ -18,10 +18,8 @@ variables:
 
   ## Common download urls (merge in as hashes)
   mongo_download_url_prefixes:
-    mongo_v44: &mongo_v44
-      mongo_url: "http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel62-v4.4-latest.tgz"
-    mongo_v50_ubuntu: &mongo_v50_ubuntu
-      mongo_url: "http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1804-5.0.2.tgz"
+    mongo_v60_perf: &mongo_v60_perf
+      mongo_url: "https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-rhel90-6.0.6.tgz"
 
 
   ## Common sets of CFLAGS
@@ -36,13 +34,11 @@ variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          . "./.evergreen/scripts/find-cmake.sh"
 
-          # Disable zstd. centos6-perf does not have libzstd installed.
-          $CMAKE -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DENABLE_ZSTD=OFF -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
+          cmake -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=mongoc -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF . && make -j8 && make install
           git clone git@github.com:mongodb/mongo-c-driver-performance.git
           cd mongo-c-driver-performance
-          $CMAKE -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=../mongoc . && make -j8
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=../mongoc . && make -j8
 
     mongodb:
       start_mongod_command: &start_mongod_command
@@ -142,9 +138,8 @@ functions:
 
         echo "Running Benchmark tests "
         start_time=$(date +%s)
-        # centos6-perf installs into lib64
-        # ubuntu1804-large installs into lib
-        LD_LIBRARY_PATH=`pwd`/mongoc/lib64:`pwd`/mongoc/lib:$LD_LIBRARY_PATH ./mongo-c-driver-performance/mongo-c-performance ./data
+        # rhel90 installs into lib64
+        LD_LIBRARY_PATH=`pwd`/mongoc/lib64:$LD_LIBRARY_PATH ./mongo-c-driver-performance/mongo-c-performance ./data
         set +o errexit
         result=$?
 
@@ -251,17 +246,6 @@ tasks:
         - func: "attach benchmark test results"
         - func: "send dashboard data"
 
-    - name: BenchMarkTestsUbuntu1804
-      depends_on:
-        - compile
-      commands:
-        - func: "fetch artifacts"
-        - func: "fetch mongodb"
-        - func: "fetch driver test data"
-        - func: "run benchmark tests"
-        - func: "attach benchmark test results"
-        - func: "send dashboard data"
-
 
 #######################################
 #           Buildvariants             #
@@ -272,30 +256,18 @@ buildvariants:
 - name: c-driver-benchmark-compile
   display_name: "C Driver Benchmark Compile"
   expansions:
-    <<: [ *cflags_64, *mongo_v44, *benchmark_common ]
-    file: c-binaries-centos6
+    <<: [ *cflags_64, *mongo_v60_perf, *benchmark_common ]
+    file: c-binaries-rhel90
   run_on:
-     - rhel62-small
+     - rhel90-dbx-perf-large
   tasks: *benchmark_compile
 
-- name: c-driver-benchmark-mongo44
-  display_name: "C Driver Benchmark Mongo 4.4"
+- name: c-driver-benchmark-mongo60_perf
+  display_name: "C Driver Benchmark Mongo 6.0"
   expansions:
-    <<: [ *cflags_64, *mongo_v44, *benchmark_common ]
-    file: c-binaries-centos6
+    <<: [ *cflags_64, *mongo_v60_perf, *benchmark_common ]
+    file: c-binaries-rhel90
     compile_variant: c-driver-benchmark-compile
   run_on:
-     - centos6-perf
+     - rhel90-dbx-perf-large
   tasks: *benchmark_tests
-
-- name: c-driver-benchmark-mongo50-ubuntu1804
-  display_name: "C Driver Benchmark Mongo 5.0 (Ubuntu 18.04)"
-  expansions:
-    <<: [ *cflags_64, *mongo_v50_ubuntu, *benchmark_common ]
-    file: c-binaries-ubuntu1804
-    compile_variant: c-driver-benchmark-mongo50-ubuntu1804
-  run_on:
-     - ubuntu1804-large
-  tasks:
-    - name: "compile"
-    - name: "BenchMarkTestsUbuntu1804"
