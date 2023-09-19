@@ -869,6 +869,462 @@ tasks:
   - name: check-headers
     commands:
       - func: check-headers
+  - name: "check\_:\_sasl:Cyrus,\_tls:LibreSSL,\_test_mongocxx_ref:master"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=master
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=master
+  - name: "check\_:\_sasl:Cyrus,\_tls:LibreSSL,\_test_mongocxx_ref:r3.8.0"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=r3.8.0
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=r3.8.0
+  - name: "check\_:\_sasl:Cyrus,\_tls:OpenSSL,\_test_mongocxx_ref:master"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+  - name: "check\_:\_sasl:Cyrus,\_tls:OpenSSL,\_test_mongocxx_ref:r3.8.0"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r3.8.0
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r3.8.0
+  - name: "check\_:\_sasl:Cyrus,\_tls:off,\_test_mongocxx_ref:master"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=master
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=master
+  - name: "check\_:\_sasl:Cyrus,\_tls:off,\_test_mongocxx_ref:r3.8.0"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=r3.8.0
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=r3.8.0
+  - name: "check\_:\_sasl:off,\_tls:LibreSSL,\_test_mongocxx_ref:master"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=master
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=master
+  - name: "check\_:\_sasl:off,\_tls:LibreSSL,\_test_mongocxx_ref:r3.8.0"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=r3.8.0
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=LibreSSL
+            - --test_mongocxx_ref=r3.8.0
+  - name: "check\_:\_sasl:off,\_tls:OpenSSL,\_test_mongocxx_ref:master"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+  - name: "check\_:\_sasl:off,\_tls:OpenSSL,\_test_mongocxx_ref:r3.8.0"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r3.8.0
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r3.8.0
+  - name: "check\_:\_sasl:off,\_tls:off,\_test_mongocxx_ref:master"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=master
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=master
+  - name: "check\_:\_sasl:off,\_tls:off,\_test_mongocxx_ref:r3.8.0"
+    run_on:
+      - ubuntu2204-small
+      - ubuntu2204-large
+      - ubuntu2004-small
+      - ubuntu2004
+      - ubuntu1804
+      - ubuntu1804-medium
+      - debian10
+      - debian11
+      - amazon2
+    tags: [earthly, pr-merge-gate, earthly-alpine3.18, earthly-archlinux, earthly-u22]
+    commands:
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +env-warmup
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=r3.8.0
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - tools/earthly.sh
+            - +run
+            - --targets=test-example test-cxx-driver
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=r3.8.0
   - name: cse-sasl-cyrus-darwinssl-macos-1100-clang-compile
     run_on: macos-1100
     tags: [cse-matrix-darwinssl, compile, macos-1100, clang, cse, sasl-cyrus]
@@ -1961,52 +2417,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: earthly-build-check-sasl:cyrus
-    run_on:
-      - ubuntu2204-small
-      - ubuntu2204-large
-      - ubuntu2004-small
-      - ubuntu2004
-      - ubuntu1804
-      - ubuntu1804-medium
-      - debian10
-      - debian11
-      - amazon2
-    tags: [earthly, pr-merge-gate]
-    commands:
-      - command: subprocess.exec
-        type: test
-        params:
-          binary: bash
-          working_dir: mongoc
-          args:
-            - tools/earthly.sh
-            - +test-example
-            - --env=${MONGOC_EARTHLY_ENV}
-            - --enable_sasl=CYRUS
-  - name: earthly-build-check-sasl:off
-    run_on:
-      - ubuntu2204-small
-      - ubuntu2204-large
-      - ubuntu2004-small
-      - ubuntu2004
-      - ubuntu1804
-      - ubuntu1804-medium
-      - debian10
-      - debian11
-      - amazon2
-    tags: [earthly, pr-merge-gate]
-    commands:
-      - command: subprocess.exec
-        type: test
-        params:
-          binary: bash
-          working_dir: mongoc
-          args:
-            - tools/earthly.sh
-            - +test-example
-            - --env=${MONGOC_EARTHLY_ENV}
-            - --enable_sasl=OFF
   - name: kms-divergence-check
     commands:
       - func: kms-divergence-check
