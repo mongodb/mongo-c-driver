@@ -145,7 +145,11 @@ mark_as_advanced(LIBRESSL_INCLUDE_DIR LIBRESSL_LIBRARIES LIBRESSL_CRYPTO_LIBRARY
 if(LIBRESSL_INCLUDE_DIR AND EXISTS "${LIBRESSL_INCLUDE_DIR}/openssl/opensslv.h")
 
     # Get Version From File
-    file(STRINGS "${LIBRESSL_INCLUDE_DIR}/openssl/opensslv.h" OPENSSLV.H REGEX "#define LIBRESSL_VERSION_TEXT[ ]+\".*\"")
+    file(STRINGS "${LIBRESSL_INCLUDE_DIR}/openssl/opensslv.h" OPENSSLV.H REGEX "#define LIBRESSL_VERSION_TEXT[ \t]+\".*\"")
+    # XXX: The above line differs from upstream FindLibreSSL, which does not contain the "\t" regex element.
+    #      Newer LibreSSL uses a tab character at this point in the file, which otherwise causes the above
+    #      regex to fail. Newer LibreSSL versions ship full config-file packages, with will remove the
+    #      need to use this file.
 
     # Match Version String
     string(REGEX REPLACE ".*\".*([0-9]+)\\.([0-9]+)\\.([0-9]+)\"" "\\1;\\2;\\3" LIBRESSL_VERSION_LIST "${OPENSSLV.H}")
