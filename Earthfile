@@ -94,7 +94,7 @@ alpine-base:
     IF str test "$sasl" -ieq "Cyrus"
         RUN apk add cyrus-sasl-dev
     END
-    IF str test "$tls" -ieq "LibreSSL"
+    IF str test "$tls" -ieq "LibreSSL" || str test $tls -ieq auto
         RUN apk add libressl-dev
     ELSE IF str test "$tls" -ieq "OpenSSL"
         RUN apk add openssl-dev
@@ -124,9 +124,10 @@ archlinux-base:
     DO +INIT
     ARG tls
     # We don't install libsasl2 here, because it's pre-installed on Arch
-    IF str test "$tls" -ieq "LibreSSL"
+    IF str test "$tls" -ieq "LibreSSL" || str test $tls -ieq auto
         RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet libressl
-    ELSE IF str test "$tls" -ieq "OpenSSL"
+    END
+    IF str test "$tls" -ieq "OpenSSL" || str test $tls -ieq auto
         RUN pacman --sync --refresh --sysupgrade --noconfirm --quiet openssl
     END
 
@@ -153,7 +154,7 @@ ubuntu-base:
     END
     IF str test "$tls" -ieq LibreSSL
         RUN echo "Ubuntu does not support LibreSSL" && exit 1
-    ELSE IF str test $tls -ieq OpenSSL
+    ELSE IF str test $tls -ieq OpenSSL || str test $tls -ieq auto
         RUN apt-get update && apt-get -y install libssl-dev
     END
 
