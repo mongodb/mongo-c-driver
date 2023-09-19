@@ -869,7 +869,7 @@ tasks:
   - name: check-headers
     commands:
       - func: check-headers
-  - name: "check\_:\_sasl:Cyrus,\_tls:LibreSSL,\_test_mongocxx_ref:master"
+  - name: "check\_:\_sasl:Cyrus\_\u2022\_tls:LibreSSL\_\u2022\_test_mongocxx_ref:master"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -907,7 +907,7 @@ tasks:
             - --sasl=Cyrus
             - --tls=LibreSSL
             - --test_mongocxx_ref=master
-  - name: "check\_:\_sasl:Cyrus,\_tls:LibreSSL,\_test_mongocxx_ref:r3.8.0"
+  - name: "check\_:\_sasl:Cyrus\_\u2022\_tls:LibreSSL\_\u2022\_test_mongocxx_ref:r3.8.0"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -945,7 +945,7 @@ tasks:
             - --sasl=Cyrus
             - --tls=LibreSSL
             - --test_mongocxx_ref=r3.8.0
-  - name: "check\_:\_sasl:Cyrus,\_tls:OpenSSL,\_test_mongocxx_ref:master"
+  - name: "check\_:\_sasl:Cyrus\_\u2022\_tls:OpenSSL\_\u2022\_test_mongocxx_ref:master"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -983,7 +983,7 @@ tasks:
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
-  - name: "check\_:\_sasl:Cyrus,\_tls:OpenSSL,\_test_mongocxx_ref:r3.8.0"
+  - name: "check\_:\_sasl:Cyrus\_\u2022\_tls:OpenSSL\_\u2022\_test_mongocxx_ref:r3.8.0"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -1021,7 +1021,7 @@ tasks:
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=r3.8.0
-  - name: "check\_:\_sasl:Cyrus,\_tls:off,\_test_mongocxx_ref:master"
+  - name: "check\_:\_sasl:Cyrus\_\u2022\_tls:off\_\u2022\_test_mongocxx_ref:master"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -1059,7 +1059,7 @@ tasks:
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=master
-  - name: "check\_:\_sasl:Cyrus,\_tls:off,\_test_mongocxx_ref:r3.8.0"
+  - name: "check\_:\_sasl:Cyrus\_\u2022\_tls:off\_\u2022\_test_mongocxx_ref:r3.8.0"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -1097,7 +1097,7 @@ tasks:
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=r3.8.0
-  - name: "check\_:\_sasl:off,\_tls:LibreSSL,\_test_mongocxx_ref:master"
+  - name: "check\_:\_sasl:off\_\u2022\_tls:LibreSSL\_\u2022\_test_mongocxx_ref:master"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -1135,7 +1135,7 @@ tasks:
             - --sasl=off
             - --tls=LibreSSL
             - --test_mongocxx_ref=master
-  - name: "check\_:\_sasl:off,\_tls:LibreSSL,\_test_mongocxx_ref:r3.8.0"
+  - name: "check\_:\_sasl:off\_\u2022\_tls:LibreSSL\_\u2022\_test_mongocxx_ref:r3.8.0"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -1173,7 +1173,7 @@ tasks:
             - --sasl=off
             - --tls=LibreSSL
             - --test_mongocxx_ref=r3.8.0
-  - name: "check\_:\_sasl:off,\_tls:OpenSSL,\_test_mongocxx_ref:master"
+  - name: "check\_:\_sasl:off\_\u2022\_tls:OpenSSL\_\u2022\_test_mongocxx_ref:master"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -1211,7 +1211,7 @@ tasks:
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
-  - name: "check\_:\_sasl:off,\_tls:OpenSSL,\_test_mongocxx_ref:r3.8.0"
+  - name: "check\_:\_sasl:off\_\u2022\_tls:OpenSSL\_\u2022\_test_mongocxx_ref:r3.8.0"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -1249,7 +1249,7 @@ tasks:
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=r3.8.0
-  - name: "check\_:\_sasl:off,\_tls:off,\_test_mongocxx_ref:master"
+  - name: "check\_:\_sasl:off\_\u2022\_tls:off\_\u2022\_test_mongocxx_ref:master"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large
@@ -1287,7 +1287,7 @@ tasks:
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=master
-  - name: "check\_:\_sasl:off,\_tls:off,\_test_mongocxx_ref:r3.8.0"
+  - name: "check\_:\_sasl:off\_\u2022\_tls:off\_\u2022\_test_mongocxx_ref:r3.8.0"
     run_on:
       - ubuntu2204-small
       - ubuntu2204-large

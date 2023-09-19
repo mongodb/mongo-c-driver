@@ -72,7 +72,7 @@ class Configuration(NamedTuple):
 
     @property
     def suffix(self) -> str:
-        return f",{_NBSP}".join(f"{k}:{v}" for k, v in self._asdict().items())
+        return f"{_NBSP}•{_NBSP}".join(f"{k}:{v}" for k, v in self._asdict().items())
 
 
 class PartialConfiguration(NamedTuple):
