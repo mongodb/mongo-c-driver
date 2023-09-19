@@ -353,6 +353,21 @@ test_exhaust_cursor_works (void)
    const bson_t *result;
    while (mongoc_cursor_next (cursor, &result))
       ;
+   // Expect an error if exhaust cursors are not supported.
+   const bool sharded = _mongoc_topology_get_type (cursor->client->topology) ==
+                        MONGOC_TOPOLOGY_SHARDED;
+   int64_t wire_version;
+   test_framework_get_max_wire_version (&wire_version);
+   if (sharded && wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CURSOR,
+                             MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                             "exhaust cursors require");
+   } else {
+      // Expect no error.
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   }
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (coll);
