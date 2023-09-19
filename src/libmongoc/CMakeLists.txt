@@ -242,6 +242,18 @@ get_directory_property(TLS_BACKEND _mongoc-tls-backend)
 message(STATUS "libmongoc TLS : ${TLS_BACKEND}")
 # Used by *-config.cmake to do a find_dependency():
 get_directory_property(TLS_IMPORT_PACKAGE _mongoc-tls-package)
+set_package_properties(
+   OpenSSL PROPERTIES
+   DESCRIPTION "the standard open-source implementation of TLS, X509, and more"
+   TYPE OPTIONAL
+   PURPOSE "Provides a cryptography and TLS backend"
+)
+set_package_properties(
+   LibreSSL PROPERTIES
+   DESCRIPTION "an alternative implementation of the OpenSSL interface, created by the OpenBSD project"
+   TYPE OPTIONAL
+   PURPOSE "Provides a cryptography and TLS backend"
+)
 
 mongo_bool01(MONGOC_ENABLE_SSL [[TLS_BACKEND]])
 mongo_bool01(MONGOC_ENABLE_SSL_SECURE_CHANNEL [[TLS_BACKEND STREQUAL "SecureChannel"]])
@@ -254,6 +266,8 @@ mongo_bool01(MONGOC_ENABLE_CRYPTO_LIBCRYPTO [[MONGOC_ENABLE_SSL_OPENSSL OR MONGO
 mongo_bool01(MONGOC_ENABLE_CRYPTO_CNG [[MONGOC_ENABLE_SSL_SECURE_CHANNEL]])
 mongo_bool01(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO [[MONGOC_ENABLE_SSL_SECURE_TRANSPORT]])
 mongo_bool01(MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE [[ENABLE_CRYPTO_SYSTEM_PROFILE]])
+add_feature_info("TLS" "${MONGOC_ENABLE_SSL}" "for secure network communication (${TLS_BACKEND})")
+add_feature_info("Cryptography" "${MONGOC_ENABLE_CRYPTO}" "cryptographic primitives (${TLS_BACKEND})")
 
 include(CMakePushCheckState)
 include(CheckSymbolExists)
@@ -274,6 +288,7 @@ if(ENABLE_CRYPTO_SYSTEM_PROFILE AND NOT MONGOC_ENABLE_SSL_OPENSSL)
    message (FATAL_ERROR "ENABLE_CRYPTO_SYSTEM_PROFILE is only available with OpenSSL")
 endif()
 
+set(_aws_feature_desc "authenticate with MongoDB servers using credentials from AWS instance metadata")
 if(ENABLE_MONGODB_AWS_AUTH)
    # We may want AWS auth
    if(NOT MONGOC_ENABLE_SSL)
@@ -282,15 +297,18 @@ if(ENABLE_MONGODB_AWS_AUTH)
          # Okay: Just turn it off
          message(STATUS "Note: AWS Authentication was disabled automatically because no TLS library is found/enabled")
          set(_enable_aws_auth FALSE)
+         add_feature_info("AWS Authentication" OFF "${_aws_feature_desc}. (Disabled automatically: No TLS backend available)")
       else()
          # Bad
          message(FATAL_ERROR "MongoDB AWS Authentication requires a TLS library, no TLS library was found/enabled")
       endif()
    endif()
    set(_enable_aws_auth TRUE)
+   add_feature_info("AWS Authentication" ON "${_aws_feature_desc}")
 else()
    # AWS Auth is explicitly disabled
    set(_enable_aws_auth FALSE)
+   add_feature_info("AWS Authentication" OFF "${_aws_feature_desc}. (Manually disabled)")
 endif()
 
 # .d8888.  .d8b.  .d8888. db
@@ -368,7 +386,11 @@ mongo_bool01(MONGOC_HAVE_SASL_CLIENT_DONE [[SASL2_HAVE_SASL_CLIENT_DONE]])
 mongo_bool01(MONGOC_ENABLE_SASL_SSPI [[SASL_BACKEND STREQUAL "SSPI"]])
 mongo_bool01(MONGOC_ENABLE_SASL_CYRUS [[SASL_BACKEND STREQUAL "Cyrus"]])
 mongo_bool01(MONGOC_ENABLE_SASL [[MONGOC_ENABLE_SASL_SSPI OR MONGOC_ENABLE_SASL_CYRUS]])
-add_feature_info("SASL Authentication" "${MONGOC_ENABLE_SASL}" "(${SASL_BACKEND})")
+add_feature_info(
+   "SASL Authentication"
+   "${MONGOC_ENABLE_SASL}"
+   "authenticate with MongoDB servers using SASL: “Simple Authentication and Security Layer” (${SASL_BACKEND})"
+)
 
 if (ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
    set (MONGOC_NO_AUTOMATIC_GLOBALS 0)

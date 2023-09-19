@@ -623,4 +623,4 @@ if (CMAKE_GENERATOR STREQUAL "Ninja Multi-Config" AND PROJECT_IS_TOP_LEVEL)
    set (CMAKE_CROSS_CONFIGS "all")
 endif ()
 
-feature_summary(WHAT ENABLED_FEATURES DISABLED_FEATURES)
+feature_summary(WHAT ALL)
