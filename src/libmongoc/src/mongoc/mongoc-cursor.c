@@ -1018,18 +1018,20 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    }
 
    if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
-      /* Fallback to non-exhaust cursor following
-         https://github.com/mongodb/specifications/blob/ddfc8b583d49aaf8c4c19fa01255afb66b36b92e/source/find_getmore_killcursors_commands.rst#exhaust
-         is required since mongos < 7.2 doesn't support exhaust cursors */
       const bool sharded =
          _mongoc_topology_get_type (cursor->client->topology) ==
          MONGOC_TOPOLOGY_SHARDED;
       const int32_t wire_version = server_stream->sd->max_wire_version;
       if (sharded && wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
-         MONGOC_ERROR (
-            "exhaust cursors not supported with mongos wire version %d, "
-            "using normal cursor instead",
-            wire_version);
+         /* Return error since mongos < 7.2 doesn't support exhaust cursors */
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "exhaust cursors require mongos with wire version: "
+                         "%d, but mongos has wire version: %d.",
+                         wire_version,
+                         WIRE_VERSION_MONGOS_EXHAUST);
+         _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
       parts.assembled.op_msg_is_exhaust = true;
