@@ -324,8 +324,9 @@ test_exhaust_cursor (bool pooled)
 }
 
 static void
-test_exhaust_cursor_works (void)
+test_exhaust_cursor_works (void *context)
 {
+   BSON_UNUSED (context);
    bson_error_t error;
    mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll =
@@ -788,8 +789,12 @@ test_exhaust_in_child (void)
 void
 test_exhaust_install (TestSuite *suite)
 {
-   TestSuite_Add (
-      suite, "/Client/exhaust_cursor/works", test_exhaust_cursor_works);
+   TestSuite_AddFull (suite,
+                      "/Client/exhaust_cursor/works",
+                      test_exhaust_cursor_works,
+                      NULL,
+                      NULL,
+                      skip_if_no_exhaust);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/single",
                       test_exhaust_cursor_single,
