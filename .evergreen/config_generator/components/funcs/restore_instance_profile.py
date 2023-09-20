@@ -14,11 +14,14 @@ class RestoreInstanceProfile(Function):
                 exit 0
             fi
 
-            cd "drivers-evergreen-tools/.evergreen/auth_aws"
-            if [ -f "./aws_e2e_setup.json" ]; then
-                . ./activate-authawsvenv.sh
-                python ./lib/aws_assign_instance_profile.py
+            cd drivers-evergreen-tools/.evergreen/auth_aws
+            if [[ ! -f aws_e2e_setup.json ]]; then
+                echo "aws_e2e_setup.json not present ... skipping"
+                exit 0
             fi
+
+            . ./activate-authawsvenv.sh
+            python ./lib/aws_assign_instance_profile.py
             '''
         ),
     ]
