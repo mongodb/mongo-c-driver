@@ -24,7 +24,7 @@ class RestoreInstanceProfile(Function):
             
             echo "restoring instance profile ... "
             # Capture and hide logs on success. Logs may included expected `HTTP Error 404: Not Found` messages when checking for instance profile.
-            if ! ( python ./lib/aws_assign_instance_profile.py 2>&1 >| output.txt ); then
+            if ! { python ./lib/aws_assign_instance_profile.py 2>&1 >|output.txt }; then
                 echo "reassigning instance profile ... failed"
                 cat output.txt 1>&2
                 exit 1
