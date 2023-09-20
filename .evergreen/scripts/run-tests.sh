@@ -236,7 +236,7 @@ fi
 if [[ ! "${test_args[*]}" =~ "-l" ]]; then
   # /http tests are only run if the set of tests to execute were not limited.
   echo "Waiting for simple HTTP server to start..."
-  wait_for_server "simple HTTP" 8000
+  wait_for_server "simple HTTP" 18000
   echo "Waiting for simple HTTP server to start... done."
 fi
 
