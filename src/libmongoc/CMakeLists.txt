@@ -228,14 +228,6 @@ function(_use_named_tls_lib libname)
    set_property(DIRECTORY PROPERTY _mongoc-tls-backend "${backend}")
 endfunction()
 
-# XXX: Some platforms (e.g. Arch) install LibreSSL in a qualified path to not collide
-#      with OpenSSL. Adding those as "roots" here will cause FindLibreSSL to search
-#      thos directories as well.
-list(APPEND LIBRESSL_ROOT_DIR
-   /usr/lib/libressl/
-   /usr/include/libressl/
-)
-
 _pick_which_tls_lib("${ENABLE_SSL}")
 # This property will be set by _pick_which_tls_lib:
 get_directory_property(TLS_BACKEND _mongoc-tls-backend)

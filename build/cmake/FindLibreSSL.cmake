@@ -64,6 +64,10 @@ Hints
 
 Set LIBRESSL_ROOT_DIR to the root directory of an LibreSSL installation.
 
+XXX: Note! This file differs somewhat from the upstream FindLibreSSL and has
+been modified with fixes used by mongo-c-driver. Such differences are noted
+where they appear.
+
 ]=======================================================================]
 
 INCLUDE(FindPackageHandleStandardArgs)
@@ -91,6 +95,15 @@ endif()
 set(_LIBRESSL_ROOT_HINTS_AND_PATHS
     HINTS ${_LIBRESSL_ROOT_HINTS}
     PATHS ${_LIBRESSL_ROOT_PATHS}
+    # XXX: Changed from upstream FindLibreSSL:
+    #   Some platforms (e.g. Arch) install LibreSSL in a qualified path so as not to
+    #   collide with OpenSSL. Add path suffixies that match such distributions
+    PATH_SUFFIXES
+        include
+        lib
+        libressl
+        libressl/include
+        libressl/lib
 )
 
 # Find Include Path
@@ -98,8 +111,6 @@ find_path(LIBRESSL_INCLUDE_DIR
     NAMES
         tls.h
     ${_LIBRESSL_ROOT_HINTS_AND_PATHS}
-    PATH_SUFFIXES
-        include
 )
 
 # Find Crypto Library
@@ -109,8 +120,6 @@ find_library(LIBRESSL_CRYPTO_LIBRARY
         crypto
         NAMES_PER_DIR
     ${_LIBRESSL_ROOT_HINTS_AND_PATHS}
-    PATH_SUFFIXES
-        lib
 )
 
 # Find SSL Library
@@ -120,8 +129,6 @@ find_library(LIBRESSL_SSL_LIBRARY
         ssl
         NAMES_PER_DIR
     ${_LIBRESSL_ROOT_HINTS_AND_PATHS}
-    PATH_SUFFIXES
-        lib
 )
 
 # Find TLS Library
@@ -131,8 +138,6 @@ find_library(LIBRESSL_TLS_LIBRARY
         tls
         NAMES_PER_DIR
     ${_LIBRESSL_ROOT_HINTS_AND_PATHS}
-    PATH_SUFFIXES
-        lib
 )
 
 # Set Libraries
