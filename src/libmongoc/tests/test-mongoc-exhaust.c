@@ -17,14 +17,51 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "exhaust-test"
 
+/* Server support for exhaust cursors depends on server topology and version:
+ * Server Version      Server Behavior
+ * ------------------  -----------------------------------
+ * mongod <4.2         only supports with OP_QUERY.
+ * mongod >=4.2,<5.1   supports with OP_MSG and OP_QUERY.
+ * mongod >=5.1        only supports with OP_MSG.
 
-int
-skip_if_mongos (void)
+ * mongos <7.1         does not support.
+ * mongos >=7.1        only supports with OP_MSG.
+
+
+ * When attempting to create an exhaust cursor, libmongoc behaves as follows:
+
+ * Server Version      libmongoc behavior
+ * ------------------  -----------------------------------
+ * mongod <4.2         uses OP_QUERY.
+ * mongod >=4.2,<5.1   uses OP_MSG.
+ * mongod >=5.1        uses OP_MSG.
+
+ * mongos <7.1         returns error
+ * mongos >=7.1        uses OP_MSG.
+ */
+
+static int
+skip_if_no_exhaust (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
-   return test_framework_is_mongos () ? 0 : 1;
+
+   int64_t max_wire_version;
+   test_framework_get_max_wire_version (&max_wire_version);
+
+   // mongos only supports exhaust cursors on server version 7.1+.
+   if (test_framework_is_mongos ()) {
+      if (max_wire_version >= WIRE_VERSION_MONGOS_EXHAUST) {
+         return 1;
+      }
+      return 0;
+   }
+
+   // mongod supports exhaust cursors over OP_MSG or OP_QUERY for all versions
+   // supported by libmongoc.
+
+   return 1;
 }
 
 
@@ -141,7 +178,7 @@ test_exhaust_cursor (bool pooled)
    /* create a couple of cursors */
    {
       cursor = mongoc_collection_find (
-         collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q, NULL, NULL);
+         collection, MONGOC_QUERY_EXHAUST, 0, 0, 5, &q, NULL, NULL);
 
       cursor2 = mongoc_collection_find (
          collection, MONGOC_QUERY_NONE, 0, 0, 0, &q, NULL, NULL);
@@ -158,7 +195,10 @@ test_exhaust_cursor (bool pooled)
       }
       BSON_ASSERT (r);
       BSON_ASSERT (doc);
-      BSON_ASSERT (cursor->in_exhaust);
+
+      // With OP_MSG, a cursor only becomes exhaust after the first getMore
+      while (!cursor->in_exhaust && mongoc_cursor_next (cursor, &doc))
+         ;
       BSON_ASSERT (client->in_exhaust);
 
       /* destroy the cursor, make sure the connection pool was not cleared */
@@ -174,7 +214,7 @@ test_exhaust_cursor (bool pooled)
     * regular cursor */
    {
       cursor = mongoc_collection_find (
-         collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q, NULL, NULL);
+         collection, MONGOC_QUERY_EXHAUST, 0, 0, 5, &q, NULL, NULL);
 
       r = mongoc_cursor_next (cursor2, &doc);
       if (!r) {
@@ -199,7 +239,9 @@ test_exhaust_cursor (bool pooled)
          BSON_ASSERT (doc);
       }
 
-      r = mongoc_cursor_next (cursor, &doc);
+      while (!cursor->in_exhaust && (r = mongoc_cursor_next (cursor, &doc), r))
+         ;
+      BSON_ASSERT (client->in_exhaust);
       BSON_ASSERT (r);
       BSON_ASSERT (doc);
 
@@ -246,13 +288,8 @@ test_exhaust_cursor (bool pooled)
       stream =
          (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes, server_id);
 
-      for (i = 1; i < 10; i++) {
-         r = mongoc_cursor_next (cursor, &doc);
-         BSON_ASSERT (r);
-         BSON_ASSERT (doc);
-      }
-
-      r = mongoc_cursor_next (cursor, &doc);
+      while (cursor->in_exhaust && (r = mongoc_cursor_next (cursor, &doc), r))
+         ;
       BSON_ASSERT (!r);
       BSON_ASSERT (!doc);
 
@@ -287,6 +324,58 @@ test_exhaust_cursor (bool pooled)
 }
 
 static void
+test_exhaust_cursor_works (void *context)
+{
+   BSON_UNUSED (context);
+   bson_error_t error;
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll =
+      mongoc_client_get_collection (client, "db", "coll");
+
+   // Drop collection to remove prior test data.
+   mongoc_collection_drop (coll, NULL /* ignore error */);
+
+   // Insert enough documents to require more than one batch.
+   // With OP_MSG, a cursor only becomes exhaust after the first getMore.
+   for (int i = 0; i < 5; i++) {
+      bool ok = mongoc_collection_insert_one (coll,
+                                              tmp_bson ("{'i': %d}", i),
+                                              NULL /* opts */,
+                                              NULL /* reply */,
+                                              &error);
+      ASSERT_OR_PRINT (ok, error);
+   }
+
+   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+      coll,
+      tmp_bson ("{}"),
+      tmp_bson ("{'exhaust': true, 'batchSize': 2}"),
+      NULL /* read_prefs */);
+   const bson_t *result;
+   while (mongoc_cursor_next (cursor, &result))
+      ;
+   // Expect an error if exhaust cursors are not supported.
+   const bool sharded = _mongoc_topology_get_type (cursor->client->topology) ==
+                        MONGOC_TOPOLOGY_SHARDED;
+   int64_t wire_version;
+   test_framework_get_max_wire_version (&wire_version);
+   if (sharded && wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CURSOR,
+                             MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                             "exhaust cursors require");
+   } else {
+      // Expect no error.
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+static void
 test_exhaust_cursor_single (void *context)
 {
    BSON_UNUSED (context);
@@ -300,57 +389,6 @@ test_exhaust_cursor_pool (void *context)
    BSON_UNUSED (context);
 
    test_exhaust_cursor (true);
-}
-
-static void
-test_exhaust_cursor_fallback (void *unused)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_error_t error;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-
-   BSON_UNUSED (unused);
-
-   client = test_framework_new_default_client ();
-   ASSERT (client);
-
-   collection = get_test_collection (client, "test_exhaust_cursor_fallback");
-   ASSERT (collection);
-
-   (void) mongoc_collection_drop (collection, &error);
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (
-                       collection, tmp_bson ("{'a': 1}"), NULL, NULL, &error),
-                    error);
-
-
-   cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{}"), tmp_bson ("{'exhaust': true}"), NULL);
-   ASSERT (cursor);
-
-   /* Cursor should be a normal cursor despite exhaust option. */
-   ASSERT (!cursor->in_exhaust);
-   ASSERT (!cursor->client->in_exhaust);
-
-   /* Warning message is generated on call to mongoc_cursor_next() during which
-    * server wire version is discovered, not on call to
-    * mongoc_collection_find_with_opts(). */
-   capture_logs (true);
-   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc),
-                    (mongoc_cursor_error (cursor, &error), error));
-   ASSERT_CAPTURED_LOG (
-      "cursor",
-      MONGOC_LOG_LEVEL_WARNING,
-      "exhaust cursors not supported with OP_MSG, using normal cursor instead");
-   capture_logs (false);
-
-   ASSERT_MATCH (doc, "{'a': 1}");
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 static void
@@ -385,7 +423,7 @@ test_exhaust_cursor_multi_batch (void *context)
    ASSERT_OR_PRINT (server_id, error);
 
    cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
+      collection, MONGOC_QUERY_EXHAUST, 0, 0, 10, tmp_bson ("{}"), NULL, NULL);
 
    i = 0;
    while (mongoc_cursor_next (cursor, &cursor_doc)) {
@@ -401,6 +439,39 @@ test_exhaust_cursor_multi_batch (void *context)
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    bson_destroy (&doc);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_cursor_server_hint_with_exhaust (void *unused)
+{
+   BSON_UNUSED (unused);
+   bson_error_t error;
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll =
+      get_test_collection (client, "cursor_server_hint_with_exhaust");
+   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (
+      coll,
+      tmp_bson ("{}"),
+      tmp_bson ("{'exhaust': true}"), /* opts */
+      NULL /* read_prefs */);
+
+   // Set a bogus server ID.
+   mongoc_cursor_set_hint (cursor, 123);
+
+   // Iterate the cursor.
+   const bson_t *result;
+   while (mongoc_cursor_next (cursor, &result))
+      ;
+   // Expect an error due to the bogus server ID.
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Could not find server with id: 123");
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
 }
 
@@ -719,36 +790,38 @@ void
 test_exhaust_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
+                      "/Client/exhaust_cursor/works",
+                      test_exhaust_cursor_works,
+                      NULL,
+                      NULL,
+                      skip_if_no_exhaust);
+   TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/single",
                       test_exhaust_cursor_single,
                       NULL,
                       NULL,
-                      skip_if_mongos,
-                      test_framework_skip_if_no_legacy_opcodes);
+                      skip_if_no_exhaust);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/pool",
                       test_exhaust_cursor_pool,
                       NULL,
                       NULL,
-                      skip_if_mongos,
-                      test_framework_skip_if_no_legacy_opcodes);
+                      skip_if_no_exhaust);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/batches",
                       test_exhaust_cursor_multi_batch,
                       NULL,
                       NULL,
-                      skip_if_mongos,
-                      test_framework_skip_if_no_legacy_opcodes);
-   TestSuite_AddFull (suite,
-                      "/Client/exhaust_cursor/fallback",
-                      test_exhaust_cursor_fallback,
-                      NULL,
-                      NULL,
-                      skip_if_mongos,
-                      test_framework_skip_if_max_wire_version_less_than_14);
+                      skip_if_no_exhaust);
    TestSuite_AddLive (suite,
                       "/Client/set_max_await_time_ms",
                       test_cursor_set_max_await_time_ms);
+   TestSuite_AddFull (suite,
+                      "/Client/exhaust_cursor/server_hint",
+                      test_cursor_server_hint_with_exhaust,
+                      NULL,
+                      NULL,
+                      skip_if_no_exhaust);
    TestSuite_AddMockServerTest (
       suite,
       "/Client/exhaust_cursor/err/network/1st_batch/single",

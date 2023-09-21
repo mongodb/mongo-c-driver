@@ -141,7 +141,7 @@ To add a "sessionId", construct a :symbol:`mongoc_client_session_t` with :symbol
 
 To add a "readConcern", construct a :symbol:`mongoc_read_concern_t` with :symbol:`mongoc_read_concern_new` and configure it with :symbol:`mongoc_read_concern_set_level`. Then use :symbol:`mongoc_read_concern_append` to add the read concern to ``opts``.
 
-"exhaust" requests the construction of an exhaust cursor. For MongoDB servers before 5.1, this option converts the command into a legacy OP_QUERY message. For MongoDB servers 5.1 and newer, this option is ignored and a normal cursor is constructed instead.
+"exhaust" requests the construction of an exhaust cursor.
 
 For some options like "collation", the driver returns an error if the server version is too old to support the feature.
 Any fields in ``opts`` that are not listed here are passed to the server unmodified.
