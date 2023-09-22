@@ -31,7 +31,7 @@ CxxVersion = Literal["master", "r3.8.0"]
 "C++ driver refs that are under CI test"
 
 # A Unicode non-breaking space character
-_NBSP = "\N{No-break space}"
+_BULLET = "\N{Bullet}"
 
 
 class Configuration(NamedTuple):
@@ -72,7 +72,7 @@ class Configuration(NamedTuple):
 
     @property
     def suffix(self) -> str:
-        return f"{_NBSP}•{_NBSP}".join(f"{k}:{v}" for k, v in self._asdict().items())
+        return f"{_BULLET}".join(f"{k}={v}" for k, v in self._asdict().items())
 
 
 class PartialConfiguration(NamedTuple):
@@ -183,7 +183,7 @@ CONTAINER_RUN_DISTROS = [
 def tasks() -> Iterable[Task]:
     for conf in Configuration.all():
         yield earthly_task(
-            name=f"check{_NBSP}:{_NBSP}{conf.suffix}",
+            name=f"check:{conf.suffix}",
             targets=("test-example", "test-cxx-driver"),
             config=conf,
         )
