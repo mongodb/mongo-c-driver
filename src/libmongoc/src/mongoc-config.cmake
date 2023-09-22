@@ -5,13 +5,6 @@ find_dependency(bson-1.0 @MONGOC_MAJOR_VERSION@.@MONGOC_MINOR_VERSION@.@MONGOC_M
 set(MONGOC_TLS_BACKEND [[@TLS_BACKEND@]])
 set(_tls_package [[@TLS_IMPORT_PACKAGE@]])
 if(_tls_package)
-  # XXX: Some platforms (e.g. Arch) install LibreSSL in a qualified path to not collide
-  #      with OpenSSL. Adding those as "roots" here will cause FindLibreSSL to search
-  #      thos directories as well.
-  list(APPEND LIBRESSL_ROOT_DIR
-    /usr/lib/libressl/
-    /usr/include/libressl/
-    )
   # We bring our own FindLibreSSL, since most systems do not have one yet. The system's version
   # will be preferred, if possible.
   set(_prev_path "${CMAKE_MODULE_PATH}")

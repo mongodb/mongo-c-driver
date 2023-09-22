@@ -191,7 +191,7 @@ set(SecureTransport/LINK_LIBRARIES "-framework CoreFoundation" "-framework Secur
 set(SecureTransport/pkg_config_LIBS -framework Corefoundation -framework Security)
 set(SecureChannel/LINK_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib)
 set(SecureChannel/pkg_config_LIBS ${SecureChannel/LINK_LIBRARIES})
-set(LibreSSL/LINK_LIBRARIES LibreSSL::TLS LibreSSL::SSL LibreSSL::Crypto)
+set(LibreSSL/LINK_LIBRARIES LibreSSL::TLS LibreSSL::Crypto)
 set(LibreSSL/pkg_config_LIBS -ltls -lcrypto)
 set(OpenSSL/LINK_LIBRARIES OpenSSL::SSL OpenSSL::Crypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
 set(OpenSSL/pkg_config_LIBS -lssl -lcrypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
