@@ -187,7 +187,7 @@ function(_auto_pick_tls_lib)
 endfunction()
 
 # Per-backend link libs/options:
-set(SecureTransport/LINK_OPTIONS "SHELL:-framework CoreFoundation" "SHELL:-framework Security")
+set(SecureTransport/LINK_LIBRARIES "-framework CoreFoundation" "-framework Security")
 set(SecureTransport/pkg_config_LIBS -framework Corefoundation -framework Security)
 set(SecureChannel/LINK_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib)
 set(SecureChannel/pkg_config_LIBS ${SecureChannel/LINK_LIBRARIES})
