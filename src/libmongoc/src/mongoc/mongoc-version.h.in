@@ -15,10 +15,11 @@
  */
 
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
+// clang-format off
 
 #ifndef MONGOC_VERSION_H
 #define MONGOC_VERSION_H
@@ -29,7 +30,7 @@
  *
  * MONGOC major version component (e.g. 1 if %MONGOC_VERSION is 1.2.3)
  */
-#define MONGOC_MAJOR_VERSION (@MONGOC_MAJOR_VERSION@)
+#define MONGOC_MAJOR_VERSION (@libmongoc_VERSION_MAJOR@)
 
 
 /**
@@ -37,7 +38,7 @@
  *
  * MONGOC minor version component (e.g. 2 if %MONGOC_VERSION is 1.2.3)
  */
-#define MONGOC_MINOR_VERSION (@MONGOC_MINOR_VERSION@)
+#define MONGOC_MINOR_VERSION (@libmongoc_VERSION_MINOR@)
 
 
 /**
@@ -45,7 +46,7 @@
  *
  * MONGOC micro version component (e.g. 3 if %MONGOC_VERSION is 1.2.3)
  */
-#define MONGOC_MICRO_VERSION (@MONGOC_MICRO_VERSION@)
+#define MONGOC_MICRO_VERSION (@libmongoc_VERSION_PATCH@)
 
 
 /**
@@ -53,7 +54,7 @@
  *
  * MONGOC prerelease version component (e.g. pre if %MONGOC_VERSION is 1.2.3-pre)
  */
-#define MONGOC_PRERELEASE_VERSION (@MONGOC_PRERELEASE_VERSION@)
+#define MONGOC_PRERELEASE_VERSION (@libmongoc_VERSION_PRERELEASE@)
 
 
 /**
@@ -61,7 +62,7 @@
  *
  * MONGOC version.
  */
-#define MONGOC_VERSION (@MONGOC_VERSION@)
+#define MONGOC_VERSION (@libmongoc_VERSION_FULL@)
 
 
 /**
@@ -70,7 +71,7 @@
  * MONGOC version, encoded as a string, useful for printing and
  * concatenation.
  */
-#define MONGOC_VERSION_S "@MONGOC_VERSION@"
+#define MONGOC_VERSION_S "@libmongoc_VERSION_FULL@"
 
 
 /**
