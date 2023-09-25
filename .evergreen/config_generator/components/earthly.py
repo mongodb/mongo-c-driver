@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import functools
 import itertools
-from typing import Any, Iterable, Literal, TypeVar, cast, get_args, NamedTuple, get_type_hints
+from typing import Any, Iterable, Literal, TypeVar, get_args, NamedTuple, get_type_hints
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_task import EvgTaskRef
 from ..etc.utils import Task
@@ -75,47 +76,30 @@ class Configuration(NamedTuple):
         return f"{_BULLET}".join(f"{k}={v}" for k, v in self._asdict().items())
 
 
-class PartialConfiguration(NamedTuple):
+def task_filter(env: EnvKey, conf: Configuration) -> bool:
     """
-    This is equivalent to 'Configuration', but all fields are optional. This is
-    used to select configurations based on a subset of its field values.
+    Control which tasks are actually defined by matching on the
     """
-
-    sasl: SASLOption | None
-    tls: TLSOption | None
-    test_mongocxx_ref: CxxVersion | None
-
-    @classmethod
-    def _matchfield(cls, against: T | None, value: T) -> bool:
-        """
-        Check an exclusion parameter.
-
-        Returns True if the 'against' value is None or is equal to the value.
-        """
-        return against is None or against == value
-
-    def matches(self, conf: Configuration) -> bool:
-        """Test if the given configuration matches this partial config"""
-        # This line does nothing, but will generate an error if the definition
-        # of Configuration and PartialConfiguration do not match:
-        PartialConfiguration(**conf._asdict())
-        # Check pair-wise if all attributes match:
-        return all(self._matchfield(test, val) for test, val in zip(self, conf))
-
-
-_EXCLUDED: list[tuple[EnvKey, PartialConfiguration]] = [
-    # Exclude LibreSSL builds for Ubuntu, which does not have LibreSSL packages:
-    ("u22", PartialConfiguration(None, "LibreSSL", None)),
-]
-"""
-Per-environment configurations which are excluded from the task matrix.
-"""
+    match env, conf:
+        # We only need one task with "sasl=off"
+        case "u22", ("off", "OpenSSL", "master"):
+            return True
+        # Other sasl=off tasks we'll just ignore:
+        case _, ("off", _tls, _cxx):
+            return False
+        # Ubuntu does not ship with a LibreSSL package:
+        case e, (_sasl, "LibreSSL", _cxx) if _ENV_NAMES[e].startswith("Ubuntu"):
+            return False
+        # Anything else: Allow it to run:
+        case _:
+            return True
 
 
 def envs_for(config: Configuration) -> Iterable[EnvKey]:
     """Get all environment keys that are not excluded for the given configuration"""
-    excluded_envs = (env for env, excl in _EXCLUDED if excl.matches(config))
-    return set(get_args(EnvKey)) - set(excluded_envs)
+    all_envs: tuple[EnvKey, ...] = get_args(EnvKey)
+    allow_env_for_config = functools.partial(task_filter, conf=config)
+    return filter(allow_env_for_config, all_envs)
 
 
 def earthly_task(
@@ -123,10 +107,14 @@ def earthly_task(
     name: str,
     targets: Iterable[str],
     config: Configuration,
-) -> Task:
+) -> Task | None:
     # Attach "earthly-xyz" tags to the task to allow build variants to select
     # these tasks by the environment of that variant.
-    env_tags = (f"earthly-{e}" for e in sorted(envs_for(config)))
+    env_tags = sorted(f"earthly-{e}" for e in sorted(envs_for(config)))
+    if not env_tags:
+        # All environments have been excluded for this configuration. This means
+        # the task itself should not be run:
+        return
     # Generate the build-arg arguments based on the configuration options. The
     # NamedTuple field names must match with the ARG keys in the Earthfile!
     earthly_args = [f"--{key}={val}" for key, val in config._asdict().items()]
@@ -182,11 +170,13 @@ CONTAINER_RUN_DISTROS = [
 
 def tasks() -> Iterable[Task]:
     for conf in Configuration.all():
-        yield earthly_task(
+        task = earthly_task(
             name=f"check:{conf.suffix}",
             targets=("test-example", "test-cxx-driver"),
             config=conf,
         )
+        if task is not None:
+            yield task
 
 
 def variants() -> list[BuildVariant]:
