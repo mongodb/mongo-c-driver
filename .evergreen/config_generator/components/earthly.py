@@ -78,7 +78,8 @@ class Configuration(NamedTuple):
 
 def task_filter(env: EnvKey, conf: Configuration) -> bool:
     """
-    Control which tasks are actually defined by matching on the
+    Control which tasks are actually defined by matching on the platform and
+    configuration values.
     """
     match env, conf:
         # We only need one task with "sasl=off"
