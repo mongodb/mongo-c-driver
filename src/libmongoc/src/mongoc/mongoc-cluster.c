@@ -19,6 +19,7 @@
 
 #include <string.h>
 
+#include "mcd-rpc.h"
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-client-side-encryption-private.h"
@@ -893,7 +894,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       if (negotiate_sasl_supported_mechs) {
          bsonParse (reply,
                     find (allOf (key ("ok"), isFalse), //
-                          do ({
+                          do({
                              /* hello response returned ok: 0. According to
                               * auth spec: "If the hello of the MongoDB
                               * Handshake fails with an error, drivers MUST
@@ -3512,9 +3513,11 @@ _mongoc_cluster_run_opmsg_send (mongoc_cluster_t *cluster,
 
    mongoc_server_stream_t *const server_stream = cmd->server_stream;
 
-   const uint32_t flags = cmd->is_acknowledged
-                             ? MONGOC_OP_MSG_FLAG_NONE
-                             : MONGOC_OP_MSG_FLAG_MORE_TO_COME;
+   const uint32_t flags =
+      (cmd->is_acknowledged ? MONGOC_OP_MSG_FLAG_NONE
+                            : MONGOC_OP_MSG_FLAG_MORE_TO_COME) |
+      (cmd->op_msg_is_exhaust ? MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED
+                              : MONGOC_OP_MSG_FLAG_NONE);
 
    {
       int32_t message_length = 0;
@@ -3703,6 +3706,9 @@ _mongoc_cluster_run_opmsg_recv (mongoc_cluster_t *cluster,
 
    bson_t body;
 
+   uint32_t op_msg_flags = mcd_rpc_op_msg_get_flag_bits (rpc);
+   cluster->client->in_exhaust = op_msg_flags & MONGOC_OP_MSG_FLAG_MORE_TO_COME;
+
    if (!mcd_rpc_message_get_body (rpc, &body)) {
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
                    MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -3752,11 +3758,11 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       return false;
    }
 
-   if (cluster->client->in_exhaust) {
+   if (!cmd->op_msg_is_exhaust && cluster->client->in_exhaust) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_IN_EXHAUST,
-                      "a cursor derived from this client is in exhaust");
+                      "another cursor derived from this client is in exhaust");
       bson_init (reply);
       return false;
    }
@@ -3765,7 +3771,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new ();
 
-   if (!_mongoc_cluster_run_opmsg_send (cluster, cmd, rpc, reply, error)) {
+   if (!cluster->client->in_exhaust &&
+       !_mongoc_cluster_run_opmsg_send (cluster, cmd, rpc, reply, error)) {
       goto done;
    }
 

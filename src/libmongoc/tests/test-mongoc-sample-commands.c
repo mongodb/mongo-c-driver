@@ -4343,10 +4343,7 @@ test_sample_commands (void)
    test_sample_aggregation (db);
    test_sample_indexes (db);
    test_sample_run_command (db);
-   /* TODO: until SERVER-46679 is resolved, skip on > 4.2 servers */
-   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_4)) {
-      test_sample_txn_commands (client);
-   }
+   test_sample_txn_commands (client);
 
    if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_9)) {
       test_sample_versioned_api ();

@@ -2368,6 +2368,8 @@ WIRE_VERSION_CHECKS (17)
 WIRE_VERSION_CHECKS (19)
 /* wire version 21 begins with the 7.0 release. */
 WIRE_VERSION_CHECKS (21)
+/* wire version 22 begins with the 7.1 release. */
+WIRE_VERSION_CHECKS (22)
 
 int
 test_framework_skip_if_no_dual_ip_hostname (void)

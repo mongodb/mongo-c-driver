@@ -65,6 +65,7 @@ typedef struct _mongoc_cmd_t {
    mongoc_server_api_t *api;
    bool is_acknowledged;
    bool is_txn_finish;
+   bool op_msg_is_exhaust;
 } mongoc_cmd_t;
 
 

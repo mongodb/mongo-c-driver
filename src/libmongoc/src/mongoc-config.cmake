@@ -1,5 +1,5 @@
 include(CMakeFindDependencyMacro)
-find_dependency(bson-1.0 @MONGOC_MAJOR_VERSION@.@MONGOC_MINOR_VERSION@.@MONGOC_MICRO_VERSION@)
+find_dependency(bson-1.0 @libmongoc_VERSION@)
 
 # If we need to import a TLS package for our imported targets, do that now:
 set(MONGOC_TLS_BACKEND [[@TLS_BACKEND@]])

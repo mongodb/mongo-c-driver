@@ -238,7 +238,6 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                               const mongoc_read_concern_t *read_concern)
 {
    mongoc_cursor_t *cursor;
-   mongoc_topology_description_type_t td_type;
    uint32_t server_id;
    mongoc_read_concern_t *read_concern_local = NULL;
    bson_error_t validate_err;
@@ -363,16 +362,6 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                          MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                          "Cannot specify both 'exhaust' and 'limit'.");
-         GOTO (finish);
-      }
-
-      td_type = _mongoc_topology_get_type (client->topology);
-
-      if (td_type == MONGOC_TOPOLOGY_SHARDED) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_CURSOR,
-                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                         "Cannot use exhaust cursor with sharded cluster.");
          GOTO (finish);
       }
    }
@@ -887,6 +876,7 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
                               mongoc_server_stream_t *stream,
                               int32_t *flags /* OUT */)
 {
+   /* CDRIVER-4722: these flags are only used in legacy OP_QUERY */
    bson_iter_t iter;
    const char *key;
 
@@ -928,6 +918,15 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
    }
 
    return true;
+}
+
+bool
+_mongoc_cursor_use_op_msg (const mongoc_cursor_t *cursor, int32_t wire_version)
+{
+   /* CDRIVER-4722: always true once 4.2 is the minimum supported
+      No check needed for 3.6 as it's the current minimum */
+   return !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST) ||
+          wire_version >= WIRE_VERSION_4_2;
 }
 
 bool
@@ -975,11 +974,6 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
-      if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
-         MONGOC_WARNING (
-            "exhaust cursors not supported with OP_MSG, using normal "
-            "cursor instead");
-      }
    }
 
    if (parts.assembled.session) {
@@ -1023,12 +1017,24 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       parts.user_query_flags = (mongoc_query_flags_t) flags;
    }
 
-   /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.
-    * user_query_flags is unused in OP_MSG, so this technically has no effect,
-    * but is done anyways to ensure the query flags match handling of options.
-    */
-   if (parts.user_query_flags & MONGOC_QUERY_EXHAUST) {
-      parts.user_query_flags ^= MONGOC_QUERY_EXHAUST;
+   if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
+      const bool sharded =
+         _mongoc_topology_get_type (cursor->client->topology) ==
+         MONGOC_TOPOLOGY_SHARDED;
+      const int32_t wire_version = server_stream->sd->max_wire_version;
+      if (sharded && wire_version < WIRE_VERSION_MONGOS_EXHAUST) {
+         /* Return error since mongos < 7.2 doesn't support exhaust cursors */
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "exhaust cursors require mongos with wire version: "
+                         "%d, but mongos has wire version: %d.",
+                         wire_version,
+                         WIRE_VERSION_MONGOS_EXHAUST);
+         _mongoc_bson_init_if_set (reply);
+         GOTO (done);
+      }
+      parts.assembled.op_msg_is_exhaust = true;
    }
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
@@ -1728,9 +1734,11 @@ _mongoc_cursor_response_refresh (mongoc_cursor_t *cursor,
    /* server replies to find / aggregate with {cursor: {id: N, firstBatch: []}},
     * to getMore command with {cursor: {id: N, nextBatch: []}}. */
    if (_mongoc_cursor_run_command (
-          cursor, command, opts, &response->reply, false) &&
-       _mongoc_cursor_start_reading_response (cursor, response)) {
-      return;
+          cursor, command, opts, &response->reply, false)) {
+      if (_mongoc_cursor_start_reading_response (cursor, response)) {
+         cursor->in_exhaust = cursor->client->in_exhaust;
+         return;
+      }
    }
    if (!cursor->error.domain) {
       bson_set_error (&cursor->error,
