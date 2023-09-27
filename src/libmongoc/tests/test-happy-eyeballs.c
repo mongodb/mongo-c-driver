@@ -360,22 +360,22 @@ _testcase_run (he_testcase_t *testcase)
 
 #define CLIENT(client) \
    {                   \
-#client          \
+      #client          \
    }
 
 #define CLIENT_WITH_DNS_CACHE_TIMEOUT(type, timeout) \
    {                                                 \
-#type, timeout                                 \
+      #type, timeout                                 \
    }
 #define HANGUP true
 #define LISTEN false
 #define SERVER(type, hangup) \
    {                         \
-#type, hangup          \
+      #type, hangup          \
    }
 #define DELAYED_SERVER(type, hangup, delay) \
    {                                        \
-#type, hangup, delay                  \
+      #type, hangup, delay                  \
    }
 #define SERVERS(...) \
    {                 \
@@ -385,7 +385,7 @@ _testcase_run (he_testcase_t *testcase)
 #define DURATION_MS(min, max) (min), (max)
 #define EXPECT(type, num_acmds, duration) \
    {                                      \
-#type, num_acmds, duration          \
+      #type, num_acmds, duration          \
    }
 #define NCMDS(n) (n)
 
