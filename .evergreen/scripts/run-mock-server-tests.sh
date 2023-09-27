@@ -32,6 +32,7 @@ export MONGOC_TEST_SERVER_LOG="json"
 export MONGOC_TEST_SKIP_MOCK="off"
 export MONGOC_TEST_SKIP_LIVE="on"
 export MONGOC_TEST_SKIP_SLOW="on"
+export MONGOC_TEST_IPV4_AND_IPV6_HOST="ipv4_and_ipv6.test.build.10gen.cc"
 
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
