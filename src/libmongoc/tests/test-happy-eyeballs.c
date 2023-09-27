@@ -437,12 +437,6 @@ test_happy_eyeballs_dns_cache (void)
 }
 
 void
-test_happy_eyeballs_retirement (void)
-{
-   /* test connecting to a retired node that fails to initiate a connection. */
-}
-
-void
 test_happy_eyeballs_install (TestSuite *suite)
 {
 #define E 1000 /* epsilon. wiggle room for time constraints. */
