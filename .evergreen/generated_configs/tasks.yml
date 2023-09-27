@@ -2230,6 +2230,232 @@ tasks:
   - name: kms-divergence-check
     commands:
       - func: kms-divergence-check
+  - name: loadbalanced-compile
+    run_on: rhel8.7-large
+    tags: [loadbalanced]
+    commands:
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          env:
+            CC: gcc
+            CFLAGS: -fno-omit-frame-pointer
+            EXTRA_CONFIGURE_FLAGS: -DENABLE_EXTRA_ALIGNMENT=OFF
+            SSL: OPENSSL
+          args:
+            - -c
+            - .evergreen/scripts/compile.sh
+      - func: upload-build
+  - name: loadbalanced-test-auth-ssl-5.0
+    run_on: rhel8.7-small
+    tags: [loadbalanced]
+    depends_on: [{ name: loadbalanced-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: auth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "5.0"
+          SSL: ssl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start load balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: auth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: ssl
+  - name: loadbalanced-test-auth-ssl-6.0
+    run_on: rhel8.7-small
+    tags: [loadbalanced]
+    depends_on: [{ name: loadbalanced-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: auth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "6.0"
+          SSL: ssl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start load balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: auth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: ssl
+  - name: loadbalanced-test-auth-ssl-7.0
+    run_on: rhel8.7-small
+    tags: [loadbalanced]
+    depends_on: [{ name: loadbalanced-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: auth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "7.0"
+          SSL: ssl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start load balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: auth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: ssl
+  - name: loadbalanced-test-auth-ssl-latest
+    run_on: rhel8.7-small
+    tags: [loadbalanced]
+    depends_on: [{ name: loadbalanced-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: auth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: latest
+          SSL: ssl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start load balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: auth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: ssl
+  - name: loadbalanced-test-noauth-nossl-5.0
+    run_on: rhel8.7-small
+    tags: [loadbalanced]
+    depends_on: [{ name: loadbalanced-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: noauth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "5.0"
+          SSL: nossl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start load balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: noauth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: nossl
+  - name: loadbalanced-test-noauth-nossl-6.0
+    run_on: rhel8.7-small
+    tags: [loadbalanced]
+    depends_on: [{ name: loadbalanced-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: noauth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "6.0"
+          SSL: nossl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start load balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: noauth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: nossl
+  - name: loadbalanced-test-noauth-nossl-7.0
+    run_on: rhel8.7-small
+    tags: [loadbalanced]
+    depends_on: [{ name: loadbalanced-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: noauth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: "7.0"
+          SSL: nossl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start load balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: noauth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: nossl
+  - name: loadbalanced-test-noauth-nossl-latest
+    run_on: rhel8.7-small
+    tags: [loadbalanced]
+    depends_on: [{ name: loadbalanced-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: loadbalanced-compile
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+        vars:
+          AUTH: noauth
+          LOAD_BALANCER: "on"
+          MONGODB_VERSION: latest
+          SSL: nossl
+          TOPOLOGY: sharded_cluster
+      - func: run-simple-http-server
+      - func: start load balancer
+        vars:
+          MONGODB_URI: mongodb://localhost:27017,localhost:27018
+      - func: run-tests
+        vars:
+          AUTH: noauth
+          CC: gcc
+          LOADBALANCED: loadbalanced
+          SSL: nossl
   - name: make-docs
     commands:
       - func: make-docs

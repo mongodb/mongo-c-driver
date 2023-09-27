@@ -38,6 +38,10 @@ buildvariants:
       MONGOC_EARTHLY_ENV: u22
     tasks:
       - name: .earthly-u22
+  - name: loadbalanced
+    display_name: Load Balanced Tests
+    tasks:
+      - name: .loadbalanced
   - name: mock-server-test
     display_name: Mock Server Test
     expansions:
