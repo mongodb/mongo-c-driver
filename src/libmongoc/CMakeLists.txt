@@ -12,6 +12,8 @@ project (libmongoc
 set(libmongoc_VERSION_PRERELEASE ${mongo-c-driver_VERSION_PRERELEASE})
 set(libmongoc_VERSION_FULL ${mongo-c-driver_VERSION_FULL})
 
+set (MONGOC_API_VERSION 1.0)
+
 include (CheckSchedGetCPU)
 include (CheckStructHasMember)
 include (CheckSymbolExists)
@@ -25,20 +27,6 @@ set (MONGOC_API_VERSION 1.0)
 set (MONGOC_TARGETS_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}")
 
 # Defaults.
-set (MONGOC_ENABLE_SSL 0)
-set (MONGOC_ENABLE_SSL_OPENSSL 0)
-set (MONGOC_HAVE_ASN1_STRING_GET0_DATA 0)
-set (MONGOC_ENABLE_SSL_LIBRESSL 0)
-set (MONGOC_ENABLE_SSL_SECURE_TRANSPORT 0)
-set (MONGOC_ENABLE_SSL_SECURE_CHANNEL 0)
-
-set (MONGOC_ENABLE_CRYPTO 0)
-set (MONGOC_ENABLE_CRYPTO_LIBCRYPTO 0)
-set (MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO 0)
-set (MONGOC_ENABLE_CRYPTO_CNG 0)
-
-set (MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE 0)
-
 set (MONGOC_ENABLE_COMPRESSION 0)
 set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
@@ -147,99 +135,180 @@ if (NOT ENABLE_ZSTD STREQUAL OFF)
    endif()
 endif()
 
-if (NOT ENABLE_SSL STREQUAL OFF)
-   # Try OpenSSL automatically everywhere but Mac and Windows.
-   if (ENABLE_SSL STREQUAL "OPENSSL"
-       OR (NOT APPLE AND NOT WIN32 AND ENABLE_SSL STREQUAL "AUTO"))
-      # Sets OPENSSL_FOUND on success.
-      include (FindOpenSSL)
-   endif ()
-
-   if (ENABLE_SSL STREQUAL LIBRESSL)
-      include (FindPkgConfig)
-      message (STATUS " Searching for LibreSSL/libtls")
-      pkg_check_modules (LIBRESSL libtls)
-      if (LIBRESSL_FOUND)
-         message (STATUS "   Found ${LIBRESSL_LIBRARIES}")
-         set (SSL_LIBRARIES ${LIBRESSL_LIBRARIES})
-         if (LIBRESSL_INCLUDE_DIRS)
-           include_directories (SYSTEM "${LIBRESSL_INCLUDE_DIRS}")
-         endif ()
-         link_directories ("${LIBRESSL_LIBRARY_DIRS}")
-         set (LIBRESSL 1)
-      else ()
-         message (STATUS "   Not found")
-      endif ()
-   endif ()
-
-   if (ENABLE_SSL STREQUAL DARWIN OR (APPLE AND ENABLE_SSL STREQUAL "AUTO"))
-      if (APPLE)
-         set (SECURE_TRANSPORT 1)
-      else ()
-         message (FATAL_ERROR "ENABLE_SSL=DARWIN only supported on Mac OS X")
-      endif ()
-   endif ()
-
-   if (ENABLE_SSL STREQUAL WINDOWS OR (WIN32 AND ENABLE_SSL STREQUAL "AUTO"))
-      if (WIN32)
-         set (SECURE_CHANNEL 1)
-      else ()
-         message (FATAL_ERROR "ENABLE_SSL=WINDOWS only supported on Windows")
-      endif ()
-   endif ()
-
-   if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT AND NOT SECURE_CHANNEL AND NOT LIBRESSL)
-      if (ENABLE_SSL STREQUAL AUTO)
-         set (ENABLE_SSL OFF)
-      else ()
-         message (FATAL_ERROR "No SSL library found")
-      endif ()
-   endif ()
-endif ()
-
-if (OPENSSL_FOUND)
-   if (APPLE AND NOT OPENSSL_ROOT_DIR)
-      message (WARNING "Building with OpenSSL but OPENSSL_ROOT_DIR not defined. If build fails to link"
-         " to OpenSSL, define OPENSSL_ROOT_DIR as the path to the OpenSSL installation directory.")
-   endif ()
-   set (MONGOC_ENABLE_SSL 1)
-   set (MONGOC_ENABLE_SSL_OPENSSL 1)
-   set (MONGOC_ENABLE_CRYPTO 1)
-   set (MONGOC_ENABLE_CRYPTO_LIBCRYPTO 1)
-elseif (SECURE_TRANSPORT)
-   set (MONGOC_ENABLE_SSL 1)
-   set (MONGOC_ENABLE_SSL_SECURE_TRANSPORT 1)
-   set (MONGOC_ENABLE_CRYPTO 1)
-   set (MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO 1)
-elseif (SECURE_CHANNEL)
-   set (MONGOC_ENABLE_SSL 1)
-   set (MONGOC_ENABLE_SSL_SECURE_CHANNEL 1)
-   set (MONGOC_ENABLE_CRYPTO 1)
-   set (MONGOC_ENABLE_CRYPTO_CNG 1)
-elseif (LIBRESSL)
-   set (MONGOC_ENABLE_SSL 1)
-   set (MONGOC_ENABLE_SSL_LIBRESSL 1)
-   set (MONGOC_ENABLE_CRYPTO 1)
-   set (MONGOC_ENABLE_CRYPTO_LIBCRYPTO 1)
-endif ()
-
-if (ENABLE_CRYPTO_SYSTEM_PROFILE)
-   if (OPENSSL_FOUND)
-      set (MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE 1)
-   else ()
-      message (FATAL_ERROR "ENABLE_CRYPTO_SYSTEM_PROFILE only available with OpenSSL")
-   endif ()
-endif ()
-
-if (MONGOC_ENABLE_MONGODB_AWS_AUTH AND ENABLE_SSL STREQUAL OFF)
-   message (FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH but no SSL library was found")
-endif ()
-
 add_library(_mongoc-dependencies INTERFACE)
 add_library(mongo::detail::c_dependencies ALIAS _mongoc-dependencies)
 target_link_libraries(_mongoc-dependencies INTERFACE mongo::detail::c_platform)
 install(TARGETS _mongoc-dependencies EXPORT mongoc-targets)
 set_property(TARGET _mongoc-dependencies PROPERTY EXPORT_NAME detail::c_dependencies)
+
+# d888888b db      .d8888.
+# `~~88~~' 88      88'  YP
+#    88    88      `8bo.
+#    88    88        `Y8b.
+#    88    88booo. db   8D
+#    YP    Y88888P `8888Y'
+
+# Pick the TLS library to use.
+function(_pick_which_tls_lib ssl_opt)
+   # Initial value, if not later set:
+   set_property(DIRECTORY PROPERTY _mongoc-tls-backend OFF)
+   if(ssl_opt STREQUAL "AUTO")
+      # Try to pick one automatically
+      _auto_pick_tls_lib()
+   elseif(ssl_opt)
+      # The user named a TLS library specifically. Use that one:
+      _use_named_tls_lib("${ssl_opt}")
+   else()
+      # User has disabled TLS selection
+   endif()
+endfunction()
+
+# Attempt to automatically find and use a TLS library for the current platform
+function(_auto_pick_tls_lib)
+   if(WIN32)
+      # Windows has SecureChannel
+      _use_named_tls_lib(WINDOWS)
+   elseif(APPLE)
+      # Apple has SecureTransport
+      _use_named_tls_lib(DARWIN)
+   else()
+      # Try to find one of the common open-source TLS libraries
+      find_package(OpenSSL)
+      if(OpenSSL_FOUND)
+         _use_named_tls_lib(OPENSSL)
+      else()
+         # No OpenSSL. What about LibreSSL?
+         find_package(LibreSSL)
+         if(LibreSSL_FOUND)
+            _use_named_tls_lib(LIBRESSL)
+         endif()
+      endif()
+   endif()
+endfunction()
+
+# Per-backend link libs/options:
+set(SecureTransport/LINK_LIBRARIES "-framework CoreFoundation" "-framework Security")
+set(SecureTransport/pkg_config_LIBS -framework Corefoundation -framework Security)
+set(SecureChannel/LINK_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib)
+set(SecureChannel/pkg_config_LIBS ${SecureChannel/LINK_LIBRARIES})
+set(LibreSSL/LINK_LIBRARIES LibreSSL::TLS LibreSSL::Crypto)
+set(LibreSSL/pkg_config_LIBS -ltls -lcrypto)
+set(OpenSSL/LINK_LIBRARIES OpenSSL::SSL OpenSSL::Crypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
+set(OpenSSL/pkg_config_LIBS -lssl -lcrypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
+# Use *exactly* the TLS library identified by the given name, which is one of
+#  `OPENSSL`, `LIBRESSL`, `DARWIN`, or `WINDOWS`.
+function(_use_named_tls_lib libname)
+   # Use this property to track what package we import for our TLS libraries:
+   set_property(DIRECTORY PROPERTY _mongoc-tls-package NO)
+   if(libname STREQUAL "OPENSSL")
+      find_package(OpenSSL REQUIRED)
+      set(backend OpenSSL)
+      set_property(DIRECTORY PROPERTY _mongoc-tls-package OpenSSL)
+   elseif(libname STREQUAL "LIBRESSL")
+      find_package(LibreSSL REQUIRED)
+      set(backend LibreSSL)
+      install(
+         FILES "${mongo-c-driver_SOURCE_DIR}/build/cmake/FindLibreSSL.cmake"
+         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}/3rdParty"
+         )
+      set_property(DIRECTORY PROPERTY _mongoc-tls-package LibreSSL)
+   elseif(libname STREQUAL "DARWIN")
+      set(backend SecureTransport)
+   elseif(libname STREQUAL "WINDOWS")
+      set(backend SecureChannel)
+   else()
+      message(FATAL_ERROR "Unknown TLS library requested: “${libname}”")
+   endif()
+   add_library(_mongoc-tls_backend INTERFACE)
+   install(TARGETS _mongoc-tls_backend EXPORT mongoc-targets)
+   target_link_libraries(_mongoc-dependencies INTERFACE _mongoc-tls_backend)
+   set_property(TARGET _mongoc-tls_backend PROPERTY EXPORT_NAME detail::c_tls_backend)
+   target_link_libraries(_mongoc-tls_backend INTERFACE ${${backend}/LINK_LIBRARIES})
+   target_link_options(_mongoc-tls_backend INTERFACE ${${backend}/LINK_OPTIONS})
+   set_property(DIRECTORY PROPERTY _mongoc-tls-backend "${backend}")
+endfunction()
+
+_pick_which_tls_lib("${ENABLE_SSL}")
+# This property will be set by _pick_which_tls_lib:
+get_directory_property(TLS_BACKEND _mongoc-tls-backend)
+message(STATUS "libmongoc TLS : ${TLS_BACKEND}")
+# Used by *-config.cmake to do a find_dependency():
+get_directory_property(TLS_IMPORT_PACKAGE _mongoc-tls-package)
+set_package_properties(
+   OpenSSL PROPERTIES
+   DESCRIPTION "the standard open-source implementation of TLS, X509, and more"
+   TYPE OPTIONAL
+   PURPOSE "Provides a cryptography and TLS backend"
+)
+set_package_properties(
+   LibreSSL PROPERTIES
+   DESCRIPTION "an alternative implementation of the OpenSSL interface, created by the OpenBSD project"
+   TYPE OPTIONAL
+   PURPOSE "Provides a cryptography and TLS backend"
+)
+
+mongo_bool01(MONGOC_ENABLE_SSL [[TLS_BACKEND]])
+mongo_bool01(MONGOC_ENABLE_SSL_SECURE_CHANNEL [[TLS_BACKEND STREQUAL "SecureChannel"]])
+mongo_bool01(MONGOC_ENABLE_SSL_SECURE_TRANSPORT [[TLS_BACKEND STREQUAL "SecureTransport"]])
+mongo_bool01(MONGOC_ENABLE_SSL_OPENSSL [[TLS_BACKEND STREQUAL "OpenSSL"]])
+mongo_bool01(MONGOC_ENABLE_SSL_LIBRESSL [[TLS_BACKEND STREQUAL "LibreSSL"]])
+
+mongo_bool01(MONGOC_ENABLE_CRYPTO [[TLS_BACKEND]])
+mongo_bool01(MONGOC_ENABLE_CRYPTO_LIBCRYPTO [[MONGOC_ENABLE_SSL_OPENSSL OR MONGOC_ENABLE_SSL_LIBRESSL]])
+mongo_bool01(MONGOC_ENABLE_CRYPTO_CNG [[MONGOC_ENABLE_SSL_SECURE_CHANNEL]])
+mongo_bool01(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO [[MONGOC_ENABLE_SSL_SECURE_TRANSPORT]])
+mongo_bool01(MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE [[ENABLE_CRYPTO_SYSTEM_PROFILE]])
+add_feature_info("TLS" "${MONGOC_ENABLE_SSL}" "for secure network communication (${TLS_BACKEND})")
+add_feature_info("Cryptography" "${MONGOC_ENABLE_CRYPTO}" "cryptographic primitives (${TLS_BACKEND})")
+
+include(CMakePushCheckState)
+include(CheckSymbolExists)
+if(TLS_BACKEND STREQUAL "OpenSSL")
+   # Check for newer OpenSSL string functions
+   cmake_push_check_state()
+   list(APPEND CMAKE_REQUIRED_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
+   check_symbol_exists(
+      ASN1_STRING_get0_data
+      "openssl/asn1.h"
+      HAVE_ASN1_STRING_GET0_DATA
+   )
+   cmake_pop_check_state()
+endif()
+mongo_bool01(MONGOC_HAVE_ASN1_STRING_GET0_DATA [[HAVE_ASN1_STRING_GET0_DATA]])
+
+if(ENABLE_CRYPTO_SYSTEM_PROFILE AND NOT MONGOC_ENABLE_SSL_OPENSSL)
+   message (FATAL_ERROR "ENABLE_CRYPTO_SYSTEM_PROFILE is only available with OpenSSL")
+endif()
+
+set(_aws_feature_desc "authenticate with MongoDB servers using credentials from AWS instance metadata")
+if(ENABLE_MONGODB_AWS_AUTH)
+   # We may want AWS auth
+   if(NOT MONGOC_ENABLE_SSL)
+      # No TLS libs
+      if(ENABLE_MONGODB_AWS_AUTH STREQUAL "AUTO")
+         # Okay: Just turn it off
+         message(STATUS "Note: AWS Authentication was disabled automatically because no TLS library is found/enabled")
+         set(_enable_aws_auth FALSE)
+         add_feature_info("AWS Authentication" OFF "${_aws_feature_desc}. (Disabled automatically: No TLS backend available)")
+      else()
+         # Bad
+         message(FATAL_ERROR "MongoDB AWS Authentication requires a TLS library, no TLS library was found/enabled")
+      endif()
+   endif()
+   set(_enable_aws_auth TRUE)
+   add_feature_info("AWS Authentication" ON "${_aws_feature_desc}")
+else()
+   # AWS Auth is explicitly disabled
+   set(_enable_aws_auth FALSE)
+   add_feature_info("AWS Authentication" OFF "${_aws_feature_desc}. (Manually disabled)")
+endif()
+
+# .d8888.  .d8b.  .d8888. db
+# 88'  YP d8' `8b 88'  YP 88
+# `8bo.   88ooo88 `8bo.   88
+#   `Y8b. 88~~~88   `Y8b. 88
+# db   8D 88   88 db   8D 88booo.
+# `8888Y' YP   YP `8888Y' Y88888P
 
 function(_pick_sasl sasl)
    if(sasl STREQUAL "AUTO")
@@ -309,7 +378,11 @@ mongo_bool01(MONGOC_HAVE_SASL_CLIENT_DONE [[SASL2_HAVE_SASL_CLIENT_DONE]])
 mongo_bool01(MONGOC_ENABLE_SASL_SSPI [[SASL_BACKEND STREQUAL "SSPI"]])
 mongo_bool01(MONGOC_ENABLE_SASL_CYRUS [[SASL_BACKEND STREQUAL "Cyrus"]])
 mongo_bool01(MONGOC_ENABLE_SASL [[MONGOC_ENABLE_SASL_SSPI OR MONGOC_ENABLE_SASL_CYRUS]])
-add_feature_info("SASL Authentication" "${MONGOC_ENABLE_SASL}" "(${SASL_BACKEND})")
+add_feature_info(
+   "SASL Authentication"
+   "${MONGOC_ENABLE_SASL}"
+   "authenticate with MongoDB servers using SASL: “Simple Authentication and Security Layer” (${SASL_BACKEND})"
+)
 
 if (ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
    set (MONGOC_NO_AUTOMATIC_GLOBALS 0)
@@ -556,6 +629,33 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/../../src/common/common-b64.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-md5.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-thread.c
+
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-scram.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ssl.c
+
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-libressl.c
+
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-cng.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-cng.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-channel.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-secure-channel.c
+
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-common-crypto.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-common-crypto.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-transport.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-secure-transport.c
+
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-openssl.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ocsp-cache.c
 )
 
 set (HEADERS
@@ -616,76 +716,6 @@ set (HEADERS_FORWARDING
    ${PROJECT_SOURCE_DIR}/src/mongoc/forwarding/mongoc.h
 )
 
-if (NOT ENABLE_SSL STREQUAL OFF)
-   set (SOURCES ${SOURCES}
-      ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
-      ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-scram.c
-      ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls.c
-      ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ssl.c
-   )
-
-   if (OPENSSL_FOUND)
-      message (STATUS "Compiling against OpenSSL")
-      set (SOURCES ${SOURCES}
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-openssl.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ocsp-cache.c
-      )
-      set (SSL_LIBRARIES ${OPENSSL_LIBRARIES})
-      include_directories (SYSTEM ${OPENSSL_INCLUDE_DIR})
-      if (WIN32)
-         set (SSL_LIBRARIES ${SSL_LIBRARIES} crypt32.lib)
-      else ()
-         set (SSL_STATIC_LIBRARIES ${CMAKE_DL_LIBS})
-      endif ()
-   elseif (SECURE_TRANSPORT)
-      message (STATUS "Compiling against Secure Transport")
-      set (SOURCES ${SOURCES}
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-common-crypto.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-common-crypto.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-transport.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-secure-transport.c
-      )
-      set (SSL_LIBRARIES "-framework CoreFoundation -framework Security")
-   elseif (SECURE_CHANNEL)
-      message (STATUS "Compiling against Secure Channel")
-      set (SOURCES ${SOURCES}
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-cng.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-cng.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-channel.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-secure-channel.c
-      )
-      set (SSL_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib)
-   elseif (LIBRESSL)
-      message (STATUS "Compiling against LibreSSL")
-      set (SOURCES ${SOURCES}
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
-         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-libressl.c
-      )
-      set (SSL_LIBRARIES -ltls -lcrypto)
-   endif ()
-else ()
-   message (STATUS "SSL disabled")
-endif () # ENABLE_SSL
-
-# Check for newer OpenSSL string function.
-cmake_push_check_state()
-list(APPEND CMAKE_REQUIRED_LIBRARIES ${SSL_LIBRARIES})
-check_symbol_exists (
-   ASN1_STRING_get0_data
-   "openssl/asn1.h"
-   HAVE_ASN1_STRING_GET0_DATA
-)
-cmake_pop_check_state()
-if (HAVE_ASN1_STRING_GET0_DATA)
-   set (MONGOC_HAVE_ASN1_STRING_GET0_DATA 1)
-endif ()
-
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -719,11 +749,9 @@ else ()
 endif ()
 
 set (LIBRARIES
-   ${SSL_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
-   ${SSL_LIBRARIES} ${SSL_STATIC_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
@@ -846,6 +874,8 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    if(SASL_BACKEND STREQUAL "Cyrus")
       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lsasl2")
    endif()
+
+   set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${${TLS_BACKEND}/pkg_config_LIBS})
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
@@ -1247,7 +1277,7 @@ endif ()
 
 # Collect link items for the static library to be inserted into the pkg-config
 if(TARGET mongoc_static)
-   set(link_options ${SSL_LIBRARIES} ${ZLIB_LIBRARIES}
+   set(link_options ${ZLIB_LIBRARIES}
       ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY})
    # Replace all absolute paths with search-dir link-file options:
    list(TRANSFORM link_options

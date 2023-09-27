@@ -1,5 +1,18 @@
 include(CMakeFindDependencyMacro)
 find_dependency(bson-1.0 @libmongoc_VERSION@)
+
+# If we need to import a TLS package for our imported targets, do that now:
+set(MONGOC_TLS_BACKEND [[@TLS_BACKEND@]])
+set(_tls_package [[@TLS_IMPORT_PACKAGE@]])
+if(_tls_package)
+  # We bring our own FindLibreSSL, since most systems do not have one yet. The system's version
+  # will be preferred, if possible.
+  set(_prev_path "${CMAKE_MODULE_PATH}")
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/3rdParty")
+  find_dependency("${_tls_package}")
+  set(CMAKE_MODULE_PATH "${_prev_path}")
+endif()
+
 include("${CMAKE_CURRENT_LIST_DIR}/mongoc-targets.cmake")
 
 unset(_required)

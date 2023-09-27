@@ -440,11 +440,6 @@ if (ENABLE_MONGOC)
       message (FATAL_ERROR "ENABLE_TESTS requires ENABLE_STATIC or ENABLE_STATIC_BUILD")
    endif ()
 
-   if (NOT ENABLE_SSL MATCHES "DARWIN|WINDOWS|OPENSSL|LIBRESSL|AUTO|OFF")
-      message (FATAL_ERROR
-               "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, LIBRESSL, AUTO, or OFF")
-   endif ()
-
    set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
    set (UTF8PROC_SOURCES
@@ -507,26 +502,26 @@ if (ENABLE_MONGOC)
       message (FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH option must be ON, AUTO, or OFF")
    endif ()
    set (MONGOC_ENABLE_MONGODB_AWS_AUTH 0)
-   if (ENABLE_MONGODB_AWS_AUTH STREQUAL ON)
-      if (MSVC AND MSVC_VERSION LESS 1900)
-         message (FATAL_ERROR "Use Visual Studio 2015 or higher for ENABLE_MONGODB_AWS_AUTH")
-      endif ()
-      if (ENABLE_SSL STREQUAL OFF)
-         message (FATAL_ERROR
-            "Option ENABLE_MONGODB_AWS_AUTH requires ENABLE_SSL not set to OFF"
-         )
-      endif ()
-      set (MONGOC_ENABLE_MONGODB_AWS_AUTH 1)
-   elseif (ENABLE_MONGODB_AWS_AUTH STREQUAL AUTO)
+   if (ENABLE_MONGODB_AWS_AUTH STREQUAL "AUTO")
       if (MSVC AND MSVC_VERSION LESS 1900)
          message (WARNING "MS Visual Studio too old for ENABLE_MONGODB_AWS_AUTH")
-      elseif (ENABLE_SSL STREQUAL OFF)
-              message (WARNING
+      elseif (NOT ENABLE_SSL)
+            message (WARNING
             "Option ENABLE_MONGODB_AWS_AUTH requires ENABLE_SSL not set to OFF"
          )
       else ()
          set (MONGOC_ENABLE_MONGODB_AWS_AUTH 1)
       endif ()
+   elseif (ENABLE_MONGODB_AWS_AUTH)
+      if (MSVC AND MSVC_VERSION LESS 1900)
+         message (FATAL_ERROR "Use Visual Studio 2015 or higher for ENABLE_MONGODB_AWS_AUTH")
+      endif ()
+      if (NOT ENABLE_SSL)
+         message (FATAL_ERROR
+            "Option ENABLE_MONGODB_AWS_AUTH requires ENABLE_SSL not set to OFF"
+         )
+      endif ()
+      set (MONGOC_ENABLE_MONGODB_AWS_AUTH 1)
    endif ()
 
    add_subdirectory (src/libmongoc)
