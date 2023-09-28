@@ -101,6 +101,7 @@ def variants():
     return [
         BuildVariant(
             name="loadbalanced",
-            display_name="Load Balanced Tests",
-            tasks=[EvgTaskRef(name='.loadbalanced')]),
+            display_name="loadbalanced",
+            tasks=[EvgTaskRef(name='.loadbalanced')]
+        ),
     ]
