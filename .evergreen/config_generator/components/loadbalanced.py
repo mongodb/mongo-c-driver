@@ -13,7 +13,7 @@ from config_generator.etc.utils import Task, bash_exec
 
 def functions():
     return {
-        'start load balancer': [
+        'start-load-balancer': [
             bash_exec(
                 command_type=EvgCommandType.SETUP,
                 script='''\
@@ -50,7 +50,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
                 'LOAD_BALANCER': 'on',
             }),
             RunSimpleHTTPServer.call(),
-            FunctionCall(func='start load balancer', vars={
+            FunctionCall(func='start-load-balancer', vars={
                 'MONGODB_URI': 'mongodb://localhost:27017,localhost:27018'
             }),
             RunTests().call(vars={

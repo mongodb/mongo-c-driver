@@ -556,7 +556,7 @@ class DNSTask(MatrixTask):
         if self.settings.loadbalanced:
             dns = "loadbalanced"
             yield func("fetch-det")
-            yield func("start load balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018")
+            yield func("start-load-balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018")
         elif self.settings.auth:
             dns = "dns-auth"
         yield func("run-tests", SSL="ssl", AUTH=self.display("auth"), DNS=dns)
