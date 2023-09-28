@@ -41,6 +41,10 @@ def generate_test_tasks(SSL, TAG, MATRIX):
 
         for auth, topology, server_ver in product(auths, topologies, server_vers):
             test_tags = tags + [f'sasl-{sasl}', auth, topology, server_ver]
+            # Do not add `nossl` tag to prevent being selected by legacy config variants.
+            # Remove the `if` when CDRIVER-4571 is resolved.
+            if SSL != 'nossl':
+                test_tags += SSL
 
             test_task_name = f'sasl-{sasl}-{SSL}-{distro_str}-test-{server_ver}-{topology}-{auth}'
 
