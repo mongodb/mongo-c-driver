@@ -86,7 +86,7 @@ static BSON_ONCE_FUN (_block_until_first_cache_entry_populated)
    BSON_ONCE_RETURN;
 }
 
-static BSON_ONCE_FUN (_unblock_when_first_cache_entry_populated)
+static BSON_ONCE_FUN (_unblock_after_first_cache_entry_populated)
 {
    bson_mutex_unlock (&first_cache_entry_lock);
 
@@ -1222,7 +1222,7 @@ CLEANUP:
    bson_free (val_v);
 
    bson_once (&unblock_after_first_entry_once_control,
-              _unblock_when_first_cache_entry_populated);
+              _unblock_after_first_cache_entry_populated);
    return rval;
 }
 
