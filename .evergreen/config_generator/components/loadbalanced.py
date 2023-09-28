@@ -8,7 +8,12 @@ from config_generator.components.funcs.fetch_det import FetchDET
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_tests import RunTests
 from config_generator.components.funcs.upload_build import UploadBuild
+from config_generator.etc.distros import make_distro_str, find_small_distro
 from config_generator.etc.utils import Task, bash_exec
+
+# Use `rhel8.7` distro. `rhel8.7` distro includes necessary dependency: `haproxy`.
+_DISTRO_NAME = "rhel8.7"
+_COMPILER = "gcc"
 
 
 def functions():
@@ -33,10 +38,11 @@ def functions():
 def make_test_task(auth: bool, ssl: bool, server_version: str):
     auth_str = "auth" if auth else "noauth"
     ssl_str = "ssl" if ssl else "nossl"
+    distro_str = make_distro_str(_DISTRO_NAME, _COMPILER, None)
     return Task(
-        name=f"loadbalanced-test-{server_version}-{auth_str}-{ssl_str}",
-        depends_on=[EvgTaskDependency(name="loadbalanced-compile")],
-        # Use `rhel8.7` distro. `rhel8.7` distro includes necessary dependency: `haproxy`.
+        name=f"loadbalanced-{distro_str}-test-{server_version}-{auth_str}-{ssl_str}",
+        depends_on=[EvgTaskDependency(
+            name="loadbalanced-{distro_str}-compile")],
         run_on="rhel8.7-small",
         tags=['loadbalanced'],
         commands=[
@@ -64,8 +70,9 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
 
 
 def tasks():
+    distro_str = make_distro_str(_DISTRO_NAME, _COMPILER, None)
     yield Task(
-        name="loadbalanced-compile",
+        name=f"loadbalanced-{distro_str}-compile",
         run_on="rhel8.7-large",
         tags=['loadbalanced'],
         commands=[
