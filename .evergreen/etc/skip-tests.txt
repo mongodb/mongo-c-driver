@@ -66,7 +66,6 @@
 /change_streams/legacy/change-streams-errors # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000'] (on ASAN Tests Ubuntu 18.04 build variant)
 
 /transactions/legacy/mongos-recovery-token/"commitTransaction retry fails on new mongos" # fails with server selection timeout (CDRIVER-4268)
-/crud/unified/aggregate-out-readConcern/"readConcern available with out stage" # server error on sharded: "PlanExecutor error" (CDRIVER-4161)
 /transactions/legacy/pin-mongos/"unpin after transient error within a transaction and commit" # (CDRIVER-4351) server selection timeout (on ASAN Tests Ubuntu 18.04 build variant)
 /Samples # (CDRIVER-4352) strange "heartbeat failed" error
 /server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns # (CDRIVER-4353) this initially seemed like a zSeries w/ RHEL8 issue, but it also appeared on arm64 w/ Ubuntu 18.04
