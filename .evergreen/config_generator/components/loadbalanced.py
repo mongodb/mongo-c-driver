@@ -44,7 +44,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
         depends_on=[EvgTaskDependency(
             name=f"loadbalanced-{distro_str}-compile")],
         run_on=find_small_distro(_DISTRO_NAME).name,
-        tags=['loadbalanced'],
+        tags=['loadbalanced', _DISTRO_NAME, _COMPILER, auth_str, ssl_str],
         commands=[
             FetchBuild.call(build_name='loadbalanced-compile'),
             FetchDET.call(),
@@ -74,7 +74,7 @@ def tasks():
     yield Task(
         name=f"loadbalanced-{distro_str}-compile",
         run_on=find_large_distro(_DISTRO_NAME).name,
-        tags=['loadbalanced'],
+        tags=['loadbalanced', _DISTRO_NAME, _COMPILER],
         commands=[
             bash_exec(
                 command_type=EvgCommandType.TEST,
