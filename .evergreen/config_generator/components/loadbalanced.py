@@ -34,7 +34,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
     auth_str = "auth" if auth else "noauth"
     ssl_str = "ssl" if ssl else "nossl"
     return Task(
-        name=f"loadbalanced-test-{auth_str}-{ssl_str}-{server_version}",
+        name=f"loadbalanced-test-{server_version}-{auth_str}-{ssl_str}",
         depends_on=[EvgTaskDependency(name="loadbalanced-compile")],
         # Use `rhel8.7` distro. `rhel8.7` distro includes necessary dependency: `haproxy`.
         run_on="rhel8.7-small",
