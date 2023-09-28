@@ -37,7 +37,7 @@ def functions():
 
 def make_test_task(auth: bool, ssl: bool, server_version: str):
     auth_str = "auth" if auth else "noauth"
-    ssl_str = "ssl" if ssl else "nossl"
+    ssl_str = "openssl" if ssl else "nossl"
     distro_str = make_distro_str(_DISTRO_NAME, _COMPILER, None)
     return Task(
         name=f"loadbalanced-{distro_str}-test-{server_version}-{auth_str}-{ssl_str}",
