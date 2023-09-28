@@ -493,7 +493,7 @@ done:
    RETURN (ret);
 }
 
-bool
+static bool
 _in_sharded_txn (const mongoc_client_session_t *session)
 {
    return session && _mongoc_client_session_in_txn_or_ending (session) &&
