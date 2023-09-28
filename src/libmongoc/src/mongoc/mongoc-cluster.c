@@ -894,7 +894,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       if (negotiate_sasl_supported_mechs) {
          bsonParse (reply,
                     find (allOf (key ("ok"), isFalse), //
-                          do({
+                          do ({
                              /* hello response returned ok: 0. According to
                               * auth spec: "If the hello of the MongoDB
                               * Handshake fails with an error, drivers MUST
