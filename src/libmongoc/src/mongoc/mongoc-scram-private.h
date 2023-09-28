@@ -38,9 +38,17 @@ BSON_BEGIN_DECLS
 #define MONGOC_SCRAM_B64_HASH_MAX_SIZE \
    MONGOC_SCRAM_B64_ENCODED_SIZE (MONGOC_SCRAM_HASH_MAX_SIZE)
 
+enum {
+   /* It is unlikely that there will be more than 64 different user accounts
+    * used in a single process */
+   MONGOC_SCRAM_CACHE_SIZE = 64,
+};
+
 typedef struct _mongoc_scram_cache_t {
+   /* book keeping */
+   bool taken;
    /* pre-secrets */
-   char *hashed_password;
+   char hashed_password[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
    uint32_t iterations;
    /* secrets */
@@ -53,7 +61,7 @@ typedef struct _mongoc_scram_t {
    int step;
    char *user;
    char *pass;
-   char *hashed_password;
+   char hashed_password[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
    uint32_t iterations;
    uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
