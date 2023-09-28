@@ -42,7 +42,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
     return Task(
         name=f"loadbalanced-{distro_str}-test-{server_version}-{auth_str}-{ssl_str}",
         depends_on=[EvgTaskDependency(
-            name="loadbalanced-{distro_str}-compile")],
+            name=f"loadbalanced-{distro_str}-compile")],
         run_on="rhel8.7-small",
         tags=['loadbalanced'],
         commands=[
