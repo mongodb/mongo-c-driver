@@ -1145,7 +1145,7 @@ tasks:
       SSL: ssl
       TOPOLOGY: sharded_cluster
   - func: fetch-det
-  - func: start load balancer
+  - func: start-load-balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
   - func: run-tests

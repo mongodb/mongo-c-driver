@@ -473,7 +473,7 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile-scan-build.sh
-  start load balancer:
+  start-load-balancer:
     - command: subprocess.exec
       type: setup
       params:

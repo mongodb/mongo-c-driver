@@ -39,7 +39,7 @@ buildvariants:
     tasks:
       - name: .earthly-u22
   - name: loadbalanced
-    display_name: Load Balanced Tests
+    display_name: loadbalanced
     tasks:
       - name: .loadbalanced
   - name: mock-server-test
