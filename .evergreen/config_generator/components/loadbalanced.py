@@ -46,7 +46,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
         run_on=find_small_distro(_DISTRO_NAME).name,
         tags=['loadbalanced', _DISTRO_NAME, _COMPILER, auth_str, ssl_str],
         commands=[
-            FetchBuild.call(build_name='loadbalanced-compile'),
+            FetchBuild.call(build_name=f"loadbalanced-{distro_str}-compile"),
             FetchDET.call(),
             BootstrapMongoOrchestration().call(vars={
                 'AUTH': auth_str,
