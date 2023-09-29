@@ -65,23 +65,23 @@ test_bson_utf8_escape_for_json (void)
    char *unescaped = "\x0e";
 
    str = bson_utf8_escape_for_json ("my\0key", 6);
-   BSON_ASSERT (0 == memcmp (str, "my\\u0000key", 7));
+   ASSERT_MEMCMP (str, "my\\u0000key", 7);
    bson_free (str);
 
    str = bson_utf8_escape_for_json ("my\"key", 6);
-   BSON_ASSERT (0 == memcmp (str, "my\\\"key", 8));
+   ASSERT_MEMCMP (str, "my\\\"key", 8);
    bson_free (str);
 
    str = bson_utf8_escape_for_json ("my\\key", 6);
-   BSON_ASSERT (0 == memcmp (str, "my\\\\key", 8));
+   ASSERT_MEMCMP (str, "my\\\\key", 8);
    bson_free (str);
 
    str = bson_utf8_escape_for_json ("\\\"\\\"", -1);
-   BSON_ASSERT (0 == memcmp (str, "\\\\\\\"\\\\\\\"", 9));
+   ASSERT_MEMCMP (str, "\\\\\\\"\\\\\\\"", 9);
    bson_free (str);
 
    str = bson_utf8_escape_for_json (unescaped, -1);
-   BSON_ASSERT (0 == memcmp (str, "\\u000e", 7));
+   ASSERT_MEMCMP (str, "\\u000e", 7);
    bson_free (str);
 }
 

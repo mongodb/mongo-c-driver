@@ -233,6 +233,9 @@ bson_utf8_validate (const char *utf8, /* IN */
 }
 
 
+#define BSON_BIT_TEST(bits, bit) \
+   (((bits)[(bit) / (sizeof((bits)[0])*8)] >> ((bit) & (sizeof((bits)[0])*8-1))) & 1)
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -266,7 +269,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
    bson_unichar_t c;
    bson_string_t *str;
    bool length_provided = true;
-   const char *end;
+   ssize_t pos;
 
    BSON_ASSERT (utf8);
 
@@ -275,45 +278,102 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
       utf8_len = strlen (utf8);
    }
 
+   if (utf8_len == 0) {
+      return bson_strdup ("");
+   }
+
    str = bson_string_alloc (utf8_len);
 
-   end = utf8 + utf8_len;
+   pos = 0;
 
-   while (utf8 < end) {
-      c = bson_utf8_get_char (utf8);
+   do {
+      static const bson_unichar_t charmap[8] = {
+         0xffffffff, 0x00000004, 0x10000000, 0x00000000,
+         0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff};
+
+      c = (unsigned char) utf8[pos];
+
+      if (!BSON_BIT_TEST(charmap, c)) {
+         /* Not a special character. Move along, but copy the remaining buffer
+          * upon reaching the end of the string. */
+         pos++;
+         utf8_len--;
+         if (utf8_len == 0) {
+            bson_string_append_ex (str, utf8, pos);
+            break;
+         }
+
+         continue;
+      }
+
+      /* Special character. First, append the previous "safe" buffer up to this
+       * position, then reset. */
+      if (pos) {
+         bson_string_append_ex (str, utf8, pos);
+         utf8 += pos;
+         pos = 0;
+      }
+
+      /* Read unicode character and validate it. Then, update the cursor and
+       * length before moving on to the next character. */
+      if (c >= 0x80) {
+         const char* utf8_old = utf8;
+         uint8_t char_len;
+
+         c = bson_utf8_get_char (utf8);
+         if (!c) {
+            /* invalid UTF-8 */
+            bson_string_free (str, true);
+            return NULL;
+         }
+
+         bson_string_append_unichar (str, c);
+         utf8 = bson_utf8_next_char (utf8);
+
+         char_len = utf8 - utf8_old;
+         utf8_len -= char_len;
+         pos = 0;
+
+         continue;
+      }
 
       switch (c) {
-      case '\\':
       case '"':
-         bson_string_append_c (str, '\\');
-         bson_string_append_unichar (str, c);
+         bson_string_append (str, "\\\"");
          break;
+
+      case '\\':
+         bson_string_append (str, "\\\\");
+         break;
+
       case '\b':
          bson_string_append (str, "\\b");
          break;
+
       case '\f':
          bson_string_append (str, "\\f");
          break;
+
       case '\n':
          bson_string_append (str, "\\n");
          break;
+
       case '\r':
          bson_string_append (str, "\\r");
          break;
+
       case '\t':
          bson_string_append (str, "\\t");
          break;
+
       default:
-         if (c < ' ') {
-            bson_string_append_printf (str, "\\u%04x", (unsigned) c);
-         } else {
-            bson_string_append_unichar (str, c);
-         }
+         BSON_ASSERT (c < ' ');
+         bson_string_append_printf (str, "\\u%04x", (unsigned) c);
          break;
       }
 
       if (c) {
-         utf8 = bson_utf8_next_char (utf8);
+         utf8++;
       } else {
          if (length_provided && !*utf8) {
             /* we escaped nil as '\u0000', now advance past it */
@@ -324,10 +384,14 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
             return NULL;
          }
       }
-   }
+
+      utf8_len--;
+   } while (utf8_len);
 
    return bson_string_free (str, false);
 }
+
+#undef BSON_BIT_TEST
 
 
 /*

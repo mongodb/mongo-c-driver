@@ -160,6 +160,45 @@ bson_string_free (bson_string_t *string, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * bson_string_append_ex --
+ *
+ *       Append the UTF-8 string @str of given length @len to @string.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+bson_string_append_ex (bson_string_t *string, /* IN */
+                       const char *str,       /* IN */
+                       uint32_t len)          /* IN */
+{
+   BSON_ASSERT (string);
+   BSON_ASSERT (str);
+
+   if ((string->alloc - string->len - 1) < len) {
+      string->alloc += len;
+      if (!bson_is_power_of_two (string->alloc)) {
+         string->alloc =
+            (uint32_t) bson_next_power_of_two ((size_t) string->alloc);
+      }
+      string->str = bson_realloc (string->str, string->alloc);
+   }
+
+   memcpy (string->str + string->len, str, len);
+   string->len += len;
+   string->str[string->len] = '\0';
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * bson_string_append --
  *
  *       Append the UTF-8 string @str to @string.
@@ -177,25 +216,7 @@ void
 bson_string_append (bson_string_t *string, /* IN */
                     const char *str)       /* IN */
 {
-   uint32_t len;
-
-   BSON_ASSERT (string);
-   BSON_ASSERT (str);
-
-   len = (uint32_t) strlen (str);
-
-   if ((string->alloc - string->len - 1) < len) {
-      string->alloc += len;
-      if (!bson_is_power_of_two (string->alloc)) {
-         string->alloc =
-            (uint32_t) bson_next_power_of_two ((size_t) string->alloc);
-      }
-      string->str = bson_realloc (string->str, string->alloc);
-   }
-
-   memcpy (string->str + string->len, str, len);
-   string->len += len;
-   string->str[string->len] = '\0';
+   bson_string_append_ex (string, str, (uint32_t) strlen (str));
 }
 
 
