@@ -87,6 +87,18 @@ test_bson_utf8_escape_for_json (void)
 
 
 static void
+test_bson_utf8_escape_for_json_performance (void)
+{
+   char *str;
+
+   for (int i = 0; i < 1000000; i++) {
+      str = bson_utf8_escape_for_json ("my\0key", 6);
+      bson_free (str);
+   }
+}
+
+
+static void
 test_bson_utf8_invalid (void)
 {
    /* no UTF-8 sequence can start with 0x80 */
@@ -259,6 +271,8 @@ test_utf8_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/utf8/nil", test_bson_utf8_nil);
    TestSuite_Add (
       suite, "/bson/utf8/escape_for_json", test_bson_utf8_escape_for_json);
+   TestSuite_Add (
+      suite, "/bson/utf8/escape_for_json_performance", test_bson_utf8_escape_for_json_performance);
    TestSuite_Add (
       suite, "/bson/utf8/get_char_next_char", test_bson_utf8_get_char);
    TestSuite_Add (
