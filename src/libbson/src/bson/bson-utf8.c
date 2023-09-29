@@ -270,12 +270,12 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
    BSON_ASSERT (utf8);
 
-   str = bson_string_new (NULL);
-
    if (utf8_len < 0) {
       length_provided = false;
       utf8_len = strlen (utf8);
    }
+
+   str = bson_string_alloc (utf8_len);
 
    end = utf8 + utf8_len;
 

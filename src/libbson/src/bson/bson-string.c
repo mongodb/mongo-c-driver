@@ -84,6 +84,57 @@ bson_string_new (const char *str) /* IN */
    return ret;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_string_alloc --
+ *
+ *       Create a new bson_string_t and allocate memory for it.
+ *
+ *       bson_string_t is a power-of-2 allocation growing string. Every
+ *       time data is appended the next power of two size is chosen for
+ *       the allocation. Pretty standard stuff.
+ *
+ *       It is UTF-8 aware through the use of bson_string_append_unichar().
+ *       The proper UTF-8 character sequence will be used.
+ *
+ * Parameters:
+ *       @len: Length of the string to allocate
+ *
+ * Returns:
+ *       A newly allocated bson_string_t that should be freed with
+ *       bson_string_free().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bson_string_t *
+bson_string_alloc (uint8_t len)
+{
+   bson_string_t *ret;
+
+   ret = bson_malloc0 (sizeof *ret);
+   ret->len = 0;
+   ret->alloc = len + 1;
+
+   if (!bson_is_power_of_two (ret->alloc)) {
+      ret->alloc = (uint32_t) bson_next_power_of_two ((size_t) ret->alloc);
+   }
+
+   BSON_ASSERT (ret->alloc >= 1);
+
+   ret->str = bson_malloc (ret->alloc);
+
+   ret->str[ret->len] = '\0';
+
+   ret->str[ret->len] = '\0';
+
+   return ret;
+}
+
 char *
 bson_string_free (bson_string_t *string, /* IN */
                   bool free_segment)     /* IN */

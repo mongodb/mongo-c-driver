@@ -305,6 +305,37 @@ test_bson_strcasecmp (void)
 }
 
 
+static void
+_append_hello_world_string (bson_string_t *str)
+{
+   for (const char *c = "hello world"; *c; c++) {
+      bson_string_append_c (str, *c);
+   }
+}
+
+
+static void
+test_bson_string_new_performance (void)
+{
+   for (int i = 0; i < 1000000; i++) {
+      bson_string_t *str = bson_string_new (NULL);
+      _append_hello_world_string (str);
+      bson_string_free (str, true);
+   }
+}
+
+
+static void
+test_bson_string_alloc_performance (void)
+{
+   for (int i = 0; i < 1000000; i++) {
+      bson_string_t *str = bson_string_alloc (11);
+      _append_hello_world_string (str);
+      bson_string_free (str, true);
+   }
+}
+
+
 void
 test_string_install (TestSuite *suite)
 {
@@ -323,4 +354,8 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/snprintf", test_bson_snprintf);
    TestSuite_Add (suite, "/bson/string/strnlen", test_bson_strnlen);
    TestSuite_Add (suite, "/bson/string/strcasecmp", test_bson_strcasecmp);
+   TestSuite_Add (
+      suite, "/bson/string/new_performance", test_bson_string_new_performance);
+   TestSuite_Add (
+      suite, "/bson/string/alloc_performance", test_bson_string_alloc_performance);
 }

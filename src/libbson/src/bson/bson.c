@@ -1583,7 +1583,7 @@ bson_append_regex_w_len (bson_t *bson,
       options = "";
    }
 
-   options_sorted = bson_string_new (NULL);
+   options_sorted = bson_string_alloc (strlen (options));
 
    _bson_append_regex_options_sorted (options_sorted, options);
 
