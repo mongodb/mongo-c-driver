@@ -260,9 +260,6 @@ int
 test_framework_skip_if_no_client_side_encryption (void);
 
 int
-test_framework_skip_if_time_sensitive (void);
-
-int
 test_framework_skip_if_no_aws (void);
 
 int
