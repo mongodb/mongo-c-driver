@@ -368,7 +368,7 @@ bson_utf8_escape_for_json (const char *utf8, /* IN */
 
       default:
          BSON_ASSERT (c < ' ');
-         bson_string_append_printf (str, "\\u%04x", (unsigned) c);
+         bson_string_append_codepoint (str, c);
          break;
       }
 
