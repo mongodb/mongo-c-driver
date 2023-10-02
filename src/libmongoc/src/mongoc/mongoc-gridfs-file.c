@@ -15,6 +15,7 @@
  */
 
 
+#include "bits/stdint-uintn.h"
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "gridfs_file"
 
@@ -181,15 +182,14 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
 
    bson_append_document_end (update, &child);
 
-   r = mongoc_collection_update (file->gridfs->files,
-                                 MONGOC_UPDATE_UPSERT,
-                                 selector,
-                                 update,
-                                 NULL,
-                                 &file->error);
+   bson_t *opts = bson_new_from_json (
+      (const uint8_t *) BSON_STR ({"upsert" : true}), -1, NULL);
+   r = mongoc_collection_update_one (
+      file->gridfs->files, selector, update, opts, NULL, &file->error);
 
    bson_destroy (selector);
    bson_destroy (update);
+   bson_destroy (opts);
 
    file->is_dirty = 0;
 
@@ -669,15 +669,14 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    bson_append_int32 (update, "n", -1, file->n);
    bson_append_binary (update, "data", -1, BSON_SUBTYPE_BINARY, buf, len);
 
-   r = mongoc_collection_update (file->gridfs->chunks,
-                                 MONGOC_UPDATE_UPSERT,
-                                 selector,
-                                 update,
-                                 NULL,
-                                 &file->error);
+   bson_t *opts = bson_new_from_json (
+      (const uint8_t *) BSON_STR ({"upsert" : true}), -1, NULL);
+   r = mongoc_collection_update_one (
+      file->gridfs->chunks, selector, update, opts, NULL, &file->error);
 
    bson_destroy (selector);
    bson_destroy (update);
+   bson_destroy (opts);
 
    if (r) {
       _mongoc_gridfs_file_page_destroy (file->page);

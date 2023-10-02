@@ -2122,9 +2122,7 @@ test_example_52 (mongoc_database_t *db)
       "lastModified", BCON_BOOL (true),
       "}");
 
-   /* MONGOC_UPDATE_NONE means "no special options" */
-   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, selector,
-                                 update, NULL, &error);
+   r = mongoc_collection_update_one(collection, selector, update, NULL, NULL, &error);
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -2179,7 +2177,7 @@ test_example_53 (mongoc_database_t *db)
       "lastModified", BCON_BOOL (true),
       "}");
 
-   r = mongoc_collection_update (collection, MONGOC_UPDATE_MULTI_UPDATE, selector, update, NULL, &error);
+   r = mongoc_collection_update_many(collection, selector, update, NULL, NULL, &error);
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -2238,7 +2236,7 @@ test_example_54 (mongoc_database_t *db)
       "]");
 
    /* MONGOC_UPDATE_NONE means "no special options" */
-   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, selector, replacement, NULL, &error);
+   r = mongoc_collection_replace_one(collection, selector, replacement, NULL, NULL, &error);
    bson_destroy (selector);
    bson_destroy (replacement);
 
@@ -4333,11 +4331,13 @@ test_sample_commands (void)
    test_sample_command (test_example_53, 53, db, collection, false);
    test_sample_command (test_example_54, 54, db, collection, true);
    test_sample_command (test_example_55, 55, db, collection, false);
+   test_sample_command (test_example_56, 56, db, collection, true);
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
-   test_sample_command (test_example_56, 56, db, collection, true);
-   test_sample_command (test_example_59, 59, db, collection, true);
-   test_sample_command (test_example_60, 60, db, collection, true);
+   if (test_framework_skip_if_not_replset ()) {
+      test_sample_command (test_example_59, 59, db, collection, true);
+      test_sample_command (test_example_60, 60, db, collection, true);
+   }
    test_sample_change_stream_command (test_example_change_stream, db);
    test_sample_causal_consistency (client);
    test_sample_aggregation (db);
