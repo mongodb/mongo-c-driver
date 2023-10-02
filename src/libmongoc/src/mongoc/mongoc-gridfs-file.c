@@ -15,7 +15,6 @@
  */
 
 
-#include "bits/stdint-uintn.h"
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "gridfs_file"
 
