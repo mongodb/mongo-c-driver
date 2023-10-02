@@ -28,7 +28,6 @@
 /mongohouse/runCommand # CDRIVER-4333
 
 /versioned_api/transaction-handling/"All commands in a transaction declare an API version" # (CDRIVER-4335) API parameters are only allowed in the first command of a multi-document transaction
-/Topology/request_scan_on_error # (CDRIVER-4338) precondition failed: checks_cmp (&checks, "n_succeeded", '=', 2), and other times fails with a socket timeout
 /streamable/topology_version/update # (CDRIVER-4339) _force_scan(): precondition failed: sd
 /Stepdown/not_primary_keep # (CDRIVER-4341) Assert Failure: 673 == 674
 /Topology/multiple_selection_errors # (CDRIVER-4342) [No suitable servers found (`serverSelectionTryOnce` set): [Failed to resolve 'doesntexist'] [Failed to resolve 'example.com']] does not contain [calling hello on 'example.com:2']
