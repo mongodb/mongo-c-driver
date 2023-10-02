@@ -28,9 +28,6 @@
 /mongohouse/runCommand # CDRIVER-4333
 
 /versioned_api/transaction-handling/"All commands in a transaction declare an API version" # (CDRIVER-4335) API parameters are only allowed in the first command of a multi-document transaction
-/versioned_api/test-commands-deprecation-errors # (CDRIVER-4336) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/versioned_api/test-commands-strict-mode # (CDRIVER-4336) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/versioned_api/runcommand-helper-no-api-version-declared # (CDRIVER-4336) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /Topology/request_scan_on_error # (CDRIVER-4338) precondition failed: checks_cmp (&checks, "n_succeeded", '=', 2), and other times fails with a socket timeout
 /streamable/topology_version/update # (CDRIVER-4339) _force_scan(): precondition failed: sd
 /Stepdown/not_primary_keep # (CDRIVER-4341) Assert Failure: 673 == 674
