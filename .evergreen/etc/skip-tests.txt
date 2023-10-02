@@ -37,13 +37,6 @@
 /ClientPool/pop_timeout # (CDRIVER-4348) precondition failed: duration_usec / 1000 >= 1990
 /Client/get_handshake_hello_response/pooled # (CDRIVER-4349) Assert Failure: "Unknown" != "PossiblePrimary"
 
-# These all look like they could be related to CDRIVER-4111
-/Client/fetch_stream/retry/fail # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/command/read_prefs/pooled # (CDRIVER-4340) request_matches_msg(): precondition failed: request
-/Client/mongos_seeds_reconnect/single # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/mongos_seeds_connect/pooled # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/exhaust_cursor/err/server/2nd_batch/pooled # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/rs_seeds_connect/pooled # (CDRIVER-4340) hang up! monitor: [127.0.0.1:59723] command or network error occurred: Failed to read 4 bytes: socket error or timeout
 /inheritance/find/readPrefs # (CDRIVER-4350) request_matches_msg(): precondition failed: request
 /BulkOperation/error/unordered # (CDRIVER-4350) request_matches_msg(): precondition failed: request
 /command_monitoring/get_error # (CDRIVER-4350) request_matches_msg(): precondition failed: request
