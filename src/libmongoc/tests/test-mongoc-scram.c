@@ -94,6 +94,86 @@ test_mongoc_scram_iteration_count (void)
    test_iteration_count (10000, true);
 }
 
+static void
+test_mongoc_scram_sasl_prep (void)
+{
+   int i, ntests;
+   char *normalized;
+   bson_error_t err;
+   /* examples from RFC 4013 section 3. */
+   sasl_prep_testcase_t tests[] = {
+      // normalization
+      {"\x65\xCC\x81", "\xC3\xA9", true, true},
+      {"\xC2\xAA", "a", true, true},
+      {"Henry \xE2\x85\xA3", "Henry IV", true, true},
+      {"A\xEF\xAC\x83n", "Affin", true, true},
+      // mapped to nothing character (Table B.1)
+      {"I\xC2\xADX", "IX", true, true},
+      // mapped to nothing character (Table C.1.2)
+      {"I\xE2\x80\x80\xC2\xA0X", "I  X", true, true},
+      // prohibited character
+      {"banana \x07 apple", "(invalid)", true, false},
+      // unassigned codepoint (Table A.1)
+      {"banana \xe0\xAA\xBA apple", "(invalid)", true, false},
+      // bidi: RandALCat but not RandALCat at beginning and end
+      {"\xD8\xA7\x31", "(invalid)", true, false},
+      // bidi: RandALCat and LCat characters
+      {"\xFB\x1D apple \x09\xA8", "(invalid)", true, false},
+      // bidi: RandALCat with RandALCat at beginning and end
+      {"\xD8\xA1 \xDC\x92", "\xD8\xA1 \xDC\x92", true, true},
+      // normalization and mapped to nothing
+      {"I\xE2\x80\x80\xC2\xA0X \xE2\x85\xA3", "I  X IV", true, true},
+      {"user", "user", false, true},
+      {"USER", "USER", false, true}};
+   ntests = sizeof (tests) / sizeof (sasl_prep_testcase_t);
+   for (i = 0; i < ntests; i++) {
+      ASSERT_CMPINT (tests[i].should_be_required,
+                     ==,
+                     _mongoc_sasl_prep_required (tests[i].original));
+      memset (&err, 0, sizeof (err));
+      normalized = _mongoc_sasl_prep (tests[i].original, &err);
+      if (tests[i].should_succeed) {
+         ASSERT_CMPSTR (tests[i].normalized, normalized);
+         ASSERT_CMPINT (err.code, ==, 0);
+         bson_free (normalized);
+      } else {
+         ASSERT_CMPINT (err.code, ==, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR);
+         ASSERT_CMPINT (err.domain, ==, MONGOC_ERROR_SCRAM);
+         BSON_ASSERT (normalized == NULL);
+      }
+   }
+}
+
+static void
+test_mongoc_utf8_char_length (void)
+{
+   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length (","), ==, 1u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length ("ɶ"), ==, 2u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length ("ྡྷ"), ==, 3u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length ("🌂"), ==, 4u);
+}
+
+static void
+test_mongoc_utf8_string_length (void)
+{
+   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length (",ase"), ==, 4u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length ("ɸɴ"), ==, 2u);
+   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length ("ྡྷ🌂e4🌕"), ==, 5u);
+   ASSERT_CMPSIZE_T (
+      _mongoc_utf8_string_length ("no special characters"), ==, 21u);
+}
+
+static void
+test_mongoc_utf8_to_unicode (void)
+{
+   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point (",", 1), ==, 0x002C);
+   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point ("ɶ", 2), ==, 0x0276);
+   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point ("ྡྷ", 3), ==, 0x0FA2);
+   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point ("🌂", 4), ==, 0x1F302);
+}
+
+#endif
+
 enum {
    // ensure there are more users than slots in cache to test cache invalidation
    NUM_CACHE_TEST_USERS = 10 + MONGOC_SCRAM_CACHE_SIZE,
@@ -101,15 +181,6 @@ enum {
    // ensure that there are several times that the cache needs to be invalidated
    NUM_CACHE_TEST_THREADS = 3 * NUM_CACHE_TEST_USERS,
 };
-
-static int
-_test_skip_if_replica_set (void)
-{
-   char *replset_name = test_framework_replset_name ();
-   const bool is_replica_set = !replset_name;
-   bson_free (replset_name);
-   return is_replica_set;
-}
 
 static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
 {
@@ -210,86 +281,6 @@ test_mongoc_scram_cache_invalidation (void *ctx)
    mongoc_client_pool_destroy (pool);
    mongoc_database_destroy (db);
 }
-
-static void
-test_mongoc_scram_sasl_prep (void)
-{
-   int i, ntests;
-   char *normalized;
-   bson_error_t err;
-   /* examples from RFC 4013 section 3. */
-   sasl_prep_testcase_t tests[] = {
-      // normalization
-      {"\x65\xCC\x81", "\xC3\xA9", true, true},
-      {"\xC2\xAA", "a", true, true},
-      {"Henry \xE2\x85\xA3", "Henry IV", true, true},
-      {"A\xEF\xAC\x83n", "Affin", true, true},
-      // mapped to nothing character (Table B.1)
-      {"I\xC2\xADX", "IX", true, true},
-      // mapped to nothing character (Table C.1.2)
-      {"I\xE2\x80\x80\xC2\xA0X", "I  X", true, true},
-      // prohibited character
-      {"banana \x07 apple", "(invalid)", true, false},
-      // unassigned codepoint (Table A.1)
-      {"banana \xe0\xAA\xBA apple", "(invalid)", true, false},
-      // bidi: RandALCat but not RandALCat at beginning and end
-      {"\xD8\xA7\x31", "(invalid)", true, false},
-      // bidi: RandALCat and LCat characters
-      {"\xFB\x1D apple \x09\xA8", "(invalid)", true, false},
-      // bidi: RandALCat with RandALCat at beginning and end
-      {"\xD8\xA1 \xDC\x92", "\xD8\xA1 \xDC\x92", true, true},
-      // normalization and mapped to nothing
-      {"I\xE2\x80\x80\xC2\xA0X \xE2\x85\xA3", "I  X IV", true, true},
-      {"user", "user", false, true},
-      {"USER", "USER", false, true}};
-   ntests = sizeof (tests) / sizeof (sasl_prep_testcase_t);
-   for (i = 0; i < ntests; i++) {
-      ASSERT_CMPINT (tests[i].should_be_required,
-                     ==,
-                     _mongoc_sasl_prep_required (tests[i].original));
-      memset (&err, 0, sizeof (err));
-      normalized = _mongoc_sasl_prep (tests[i].original, &err);
-      if (tests[i].should_succeed) {
-         ASSERT_CMPSTR (tests[i].normalized, normalized);
-         ASSERT_CMPINT (err.code, ==, 0);
-         bson_free (normalized);
-      } else {
-         ASSERT_CMPINT (err.code, ==, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR);
-         ASSERT_CMPINT (err.domain, ==, MONGOC_ERROR_SCRAM);
-         BSON_ASSERT (normalized == NULL);
-      }
-   }
-}
-
-static void
-test_mongoc_utf8_char_length (void)
-{
-   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length (","), ==, 1u);
-   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length ("ɶ"), ==, 2u);
-   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length ("ྡྷ"), ==, 3u);
-   ASSERT_CMPSIZE_T (_mongoc_utf8_char_length ("🌂"), ==, 4u);
-}
-
-static void
-test_mongoc_utf8_string_length (void)
-{
-   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length (",ase"), ==, 4u);
-   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length ("ɸɴ"), ==, 2u);
-   ASSERT_CMPSIZE_T (_mongoc_utf8_string_length ("ྡྷ🌂e4🌕"), ==, 5u);
-   ASSERT_CMPSIZE_T (
-      _mongoc_utf8_string_length ("no special characters"), ==, 21u);
-}
-
-static void
-test_mongoc_utf8_to_unicode (void)
-{
-   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point (",", 1), ==, 0x002C);
-   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point ("ɶ", 2), ==, 0x0276);
-   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point ("ྡྷ", 3), ==, 0x0FA2);
-   ASSERT_CMPUINT32 (_mongoc_utf8_get_first_code_point ("🌂", 4), ==, 0x1F302);
-}
-
-#endif
 
 static void
 _clear_scram_users (void)
@@ -795,15 +786,13 @@ test_scram_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/scram/utf8_string_length", test_mongoc_utf8_string_length);
    TestSuite_Add (suite, "/scram/utf8_to_unicode", test_mongoc_utf8_to_unicode);
-   TestSuite_AddFull (
-      suite,
-      "/scram/cache_invalidation",
-      test_mongoc_scram_cache_invalidation,
-      NULL,
-      NULL,
-      _test_skip_if_replica_set); /* this is testing scram cache invalidation,
-                                     no need to test on a replica set */
 #endif
+   TestSuite_AddFull (suite,
+                      "/scram/cache_invalidation",
+                      test_mongoc_scram_cache_invalidation,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/scram/auth_tests",
                       test_mongoc_scram_auth,
