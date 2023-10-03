@@ -1,3 +1,7 @@
+// test-mongoc-primary-stepdown.c contains tests specified in:
+// `Connections Survive Primary Step Down Tests`. See:
+// https://github.com/mongodb/specifications/tree/db3114e957f7c0976a1af09882dbb46cb4a70049/source/connections-survive-step-down/tests
+
 #include "mongoc/mongoc.h"
 #include "mongoc/mongoc-read-concern-private.h"
 #include "mongoc/mongoc-util-private.h"
