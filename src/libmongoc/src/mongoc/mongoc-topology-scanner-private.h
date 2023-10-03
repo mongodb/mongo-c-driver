@@ -214,7 +214,6 @@ _mongoc_topology_scanner_add_speculative_authentication (
    bson_t *cmd,
    const mongoc_uri_t *uri,
    const mongoc_ssl_opt_t *ssl_opts,
-   mongoc_scram_cache_t *scram_cache,
    mongoc_scram_t *scram /* OUT */);
 
 void

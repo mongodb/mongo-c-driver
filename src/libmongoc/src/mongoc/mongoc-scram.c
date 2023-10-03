@@ -32,6 +32,19 @@
 #include "common-thread-private.h"
 #include <utf8proc.h>
 
+typedef struct _mongoc_scram_cache_t {
+   /* book keeping */
+   bool taken;
+   /* pre-secrets */
+   char hashed_password[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
+   uint32_t iterations;
+   /* secrets */
+   uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t server_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t salted_password[MONGOC_SCRAM_HASH_MAX_SIZE];
+} mongoc_scram_cache_t;
+
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
 
@@ -154,29 +167,6 @@ _mongoc_scram_cache_apply_secrets (mongoc_scram_cache_t *cache,
 }
 
 
-static mongoc_scram_cache_t *
-_mongoc_scram_cache_copy (const mongoc_scram_cache_t *cache)
-{
-   mongoc_scram_cache_t *ret = NULL;
-
-   if (cache) {
-      ret = (mongoc_scram_cache_t *) bson_malloc0 (sizeof (*ret));
-      memcpy (ret->hashed_password,
-              cache->hashed_password,
-              sizeof (ret->hashed_password));
-      memcpy (
-         ret->decoded_salt, cache->decoded_salt, sizeof (ret->decoded_salt));
-      ret->iterations = cache->iterations;
-      memcpy (ret->client_key, cache->client_key, sizeof (ret->client_key));
-      memcpy (ret->server_key, cache->server_key, sizeof (ret->server_key));
-      memcpy (ret->salted_password,
-              cache->salted_password,
-              sizeof (ret->salted_password));
-   }
-
-   return ret;
-}
-
 void
 _mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache)
 {
@@ -240,29 +230,6 @@ done:
 }
 
 
-mongoc_scram_cache_t *
-_mongoc_scram_get_cache (mongoc_scram_t *scram)
-{
-   BSON_ASSERT (scram);
-   mongoc_scram_cache_t *cache_copy = NULL;
-   mongoc_scram_cache_t cache;
-   bool cache_hit = _mongoc_scram_cache_has_presecrets (&cache, scram);
-   if (cache_hit) {
-      cache_copy = _mongoc_scram_cache_copy (&cache);
-   }
-
-   return cache_copy;
-}
-
-
-void
-_mongoc_scram_set_cache (mongoc_scram_t *scram, mongoc_scram_cache_t *cache)
-{
-   BSON_ASSERT (scram);
-   scram->cache = _mongoc_scram_cache_copy (cache);
-}
-
-
 void
 _mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass)
 {
@@ -311,10 +278,6 @@ _mongoc_scram_destroy (mongoc_scram_t *scram)
    memset (scram->hashed_password, 0, sizeof (scram->hashed_password));
 
    bson_free (scram->auth_message);
-
-   if (scram->cache) {
-      _mongoc_scram_cache_destroy (scram->cache);
-   }
 
    memset (scram, 0, sizeof *scram);
 }

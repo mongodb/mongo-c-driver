@@ -62,8 +62,6 @@ typedef struct _mongoc_cluster_t {
 
    mongoc_set_t *nodes;
    mongoc_array_t iov;
-
-   mongoc_scram_cache_t *scram_cache;
 } mongoc_cluster_t;
 
 
