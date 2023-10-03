@@ -1071,8 +1071,9 @@ test_select_after_try_once (void)
 static void
 test_multiple_selection_errors (void *context)
 {
-   const char *uri = "mongodb://doesntexist,example.com:2/?replicaSet=rs"
-                     "&connectTimeoutMS=100";
+   const char *uri =
+      "mongodb://doesntexist.invalid,example.invalid/?replicaSet=rs"
+      "&connectTimeoutMS=100";
    mongoc_client_t *client;
    bson_t reply;
    bson_error_t error;
@@ -1088,13 +1089,13 @@ test_multiple_selection_errors (void *context)
 
    /* Like:
     * "No suitable servers found (`serverselectiontryonce` set):
-    *  [Failed to resolve 'doesntexist']
-    *  [connection error calling hello on 'example.com:2']"
+    *  [Failed to resolve 'doesntexist.invalid']
+    *  [Failed to resolve 'example.invalid']
     */
    ASSERT_CONTAINS (error.message, "No suitable servers found");
    /* either "connection error" or "connection timeout" calling hello */
-   ASSERT_CONTAINS (error.message, "calling hello on 'example.com:2'");
-   ASSERT_CONTAINS (error.message, "[Failed to resolve 'doesntexist']");
+   ASSERT_CONTAINS (error.message, "[Failed to resolve 'doesntexist.invalid']");
+   ASSERT_CONTAINS (error.message, "[Failed to resolve 'example.invalid']");
 
    bson_destroy (&reply);
    mongoc_client_destroy (client);
