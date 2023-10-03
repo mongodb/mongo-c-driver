@@ -276,10 +276,10 @@ test_mongoc_scram_cache_invalidation (void *ctx)
       BSON_ASSERT (rc == 0);
    }
 
-   mongoc_uri_destroy (uri);
+   mongoc_database_destroy (db);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
-   mongoc_database_destroy (db);
+   mongoc_uri_destroy (uri);
 }
 
 static void
