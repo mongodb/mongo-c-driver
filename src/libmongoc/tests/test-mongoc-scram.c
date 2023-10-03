@@ -233,16 +233,11 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
 static void
 test_mongoc_scram_cache_invalidation (void *ctx)
 {
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_client_t *client = NULL;
    bson_error_t error;
    mongoc_uri_t *const uri = test_framework_get_uri ();
    BSON_ASSERT (uri);
 
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
-   BSON_ASSERT (pool);
-   test_framework_set_pool_ssl_opts (pool);
-   client = mongoc_client_pool_pop (pool);
+   mongoc_client_t *client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    mongoc_database_t *const db = mongoc_client_get_database (client, "admin");
@@ -278,8 +273,6 @@ test_mongoc_scram_cache_invalidation (void *ctx)
    }
 
    mongoc_database_destroy (db);
-   mongoc_client_pool_push (pool, client);
-   mongoc_client_pool_destroy (pool);
    mongoc_uri_destroy (uri);
 }
 
