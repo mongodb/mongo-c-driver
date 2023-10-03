@@ -80,31 +80,8 @@ _mongoc_utf8_code_point_to_str (uint32_t c, char *out);
 
 static bson_shared_mutex_t g_scram_cache_rwlock;
 
-/*
- * On the first cache miss, let one thread fill the first cache entry before
- * letting other threads proceed. This stops the inrush of many threads trying
- * to get scram credentials on an empty scram cache.
- */
-static bson_once_t block_until_first_entry_once_control = BSON_ONCE_INIT;
-static bson_once_t unblock_after_first_entry_once_control = BSON_ONCE_INIT;
-static bson_mutex_t first_cache_entry_lock;
-
 static bson_once_t init_cache_once_control = BSON_ONCE_INIT;
 static bson_mutex_t clear_cache_lock;
-
-static BSON_ONCE_FUN (_block_until_first_cache_entry_populated)
-{
-   bson_mutex_lock (&first_cache_entry_lock);
-
-   BSON_ONCE_RETURN;
-}
-
-static BSON_ONCE_FUN (_unblock_after_first_cache_entry_populated)
-{
-   bson_mutex_unlock (&first_cache_entry_lock);
-
-   BSON_ONCE_RETURN;
-}
 
 /*
  * Cache lookups are a linear search through this table. This table is a
@@ -127,8 +104,6 @@ _mongoc_scram_cache_clear (void)
 static BSON_ONCE_FUN (_mongoc_scram_cache_init)
 {
    bson_shared_mutex_init (&g_scram_cache_rwlock);
-   bson_mutex_init (&first_cache_entry_lock);
-   bson_mutex_init (&clear_cache_lock);
    _mongoc_scram_cache_clear ();
 
    BSON_ONCE_RETURN;
@@ -952,8 +927,6 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
        * Block other threads here to until SCRAM step 3 finishes so that the
        * cache will get populated for the others threads.
        */
-      bson_once (&block_until_first_entry_once_control,
-                 _block_until_first_cache_entry_populated);
    }
 
    if (!*scram->salted_password) {
@@ -1165,8 +1138,6 @@ CLEANUP:
    bson_free (val_e);
    bson_free (val_v);
 
-   bson_once (&unblock_after_first_entry_once_control,
-              _unblock_after_first_cache_entry_populated);
    return rval;
 }
 
