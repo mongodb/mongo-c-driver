@@ -375,9 +375,7 @@ again:
          !memcmp (cache_entry->salted_password,
                   scram->salted_password,
                   sizeof (cache_entry->salted_password)) &&
-         !memcmp (cache_entry->decoded_salt,
-                  scram->decoded_salt,
-                  sizeof (cache_entry->salted_password));
+         );
 
       if (already_exists) {
          /* cache entry already populated between read and write lock
