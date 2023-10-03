@@ -1069,7 +1069,7 @@ test_select_after_try_once (void)
 
 
 static void
-test_multiple_selection_errors (void *context)
+test_multiple_selection_errors (void)
 {
    const char *uri =
       "mongodb://doesntexist.invalid,example.invalid/?replicaSet=rs"
@@ -1077,8 +1077,6 @@ test_multiple_selection_errors (void *context)
    mongoc_client_t *client;
    bson_t reply;
    bson_error_t error;
-
-   BSON_UNUSED (context);
 
    client = test_framework_client_new (uri, NULL);
    mongoc_client_command_simple (
@@ -2833,12 +2831,9 @@ test_topology_install (TestSuite *suite)
                                 NULL,
                                 NULL,
                                 test_framework_skip_if_slow);
-   TestSuite_AddFull (suite,
-                      "/Topology/multiple_selection_errors",
-                      test_multiple_selection_errors,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_offline);
+   TestSuite_Add (suite,
+                  "/Topology/multiple_selection_errors",
+                  test_multiple_selection_errors);
    TestSuite_AddMockServerTest (
       suite, "/Topology/connect_timeout/succeed", test_select_after_timeout);
    TestSuite_AddMockServerTest (
