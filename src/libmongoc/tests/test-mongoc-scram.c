@@ -226,8 +226,6 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
    bson_free (cache_test_user_uri);
    mongoc_collection_destroy (collection);
    mongoc_uri_destroy (cache_test_uri);
-   mongoc_client_pool_push (pool, client);
-   mongoc_client_pool_destroy (pool);
 
    BSON_THREAD_RETURN;
 }
