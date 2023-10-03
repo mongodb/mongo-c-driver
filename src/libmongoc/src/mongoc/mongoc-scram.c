@@ -32,7 +32,7 @@
 #include "common-thread-private.h"
 #include <utf8proc.h>
 
-typedef struct _mongoc_scram_cache_t {
+typedef struct _mongoc_scram_cache_entry_t {
    /* book keeping */
    bool taken;
    /* pre-secrets */
@@ -43,7 +43,7 @@ typedef struct _mongoc_scram_cache_t {
    uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t server_key[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t salted_password[MONGOC_SCRAM_HASH_MAX_SIZE];
-} mongoc_scram_cache_t;
+} mongoc_scram_cache_entry_t;
 
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
@@ -114,7 +114,7 @@ static BSON_ONCE_FUN (_unblock_after_first_cache_entry_populated)
  * in the future, but a linear lookup is currently fast enough and is much
  * simpler logic to reason about.
  */
-static mongoc_scram_cache_t g_scram_cache[MONGOC_SCRAM_CACHE_SIZE];
+static mongoc_scram_cache_entry_t g_scram_cache[MONGOC_SCRAM_CACHE_SIZE];
 
 static void
 _mongoc_scram_cache_clear (void)
@@ -153,7 +153,7 @@ _scram_hash_size (mongoc_scram_t *scram)
 
 /* Copies the cache's secrets to scram */
 static void
-_mongoc_scram_cache_apply_secrets (mongoc_scram_cache_t *cache,
+_mongoc_scram_cache_apply_secrets (mongoc_scram_cache_entry_t *cache,
                                    mongoc_scram_t *scram)
 {
    BSON_ASSERT (cache);
@@ -168,7 +168,7 @@ _mongoc_scram_cache_apply_secrets (mongoc_scram_cache_t *cache,
 
 
 void
-_mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache)
+_mongoc_scram_cache_destroy (mongoc_scram_cache_entry_t *cache)
 {
    BSON_ASSERT (cache);
    bson_free (cache);
@@ -180,7 +180,7 @@ _mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache)
  * Populate `cache` with the values found in the global cache if found.
  */
 static bool
-_mongoc_scram_cache_has_presecrets (mongoc_scram_cache_t *cache /* out */,
+_mongoc_scram_cache_has_presecrets (mongoc_scram_cache_entry_t *cache /* out */,
                                     const mongoc_scram_t *scram)
 {
    bool cache_hit = false;
@@ -192,8 +192,8 @@ _mongoc_scram_cache_has_presecrets (mongoc_scram_cache_t *cache /* out */,
 
    /*
     * - Take a read lock
-    * - Search through g_scram_cache if the hashed_password, decoded_salt, and iterations
-    *   match an entry.
+    * - Search through g_scram_cache if the hashed_password, decoded_salt, and
+    *   iterations match an entry.
     * - If so, then return true
     * - Otherwise return false
     */
@@ -201,7 +201,7 @@ _mongoc_scram_cache_has_presecrets (mongoc_scram_cache_t *cache /* out */,
 
    for (size_t i = 0; i < MONGOC_SCRAM_CACHE_SIZE; i++) {
       if (g_scram_cache[i].taken) {
-         mongoc_scram_cache_t *cache_entry = &g_scram_cache[i];
+         mongoc_scram_cache_entry_t *cache_entry = &g_scram_cache[i];
          cache_hit =
             !strcmp (cache_entry->hashed_password, scram->hashed_password) &&
             cache_entry->iterations == scram->iterations &&
@@ -288,7 +288,7 @@ _mongoc_scram_cache_update_values (const mongoc_scram_t *scram)
    bson_shared_mutex_lock (&g_scram_cache_rwlock);
 
    for (size_t i = 0; i < MONGOC_SCRAM_CACHE_SIZE; i++) {
-      mongoc_scram_cache_t *cache_entry = &g_scram_cache[i];
+      mongoc_scram_cache_entry_t *cache_entry = &g_scram_cache[i];
       bool cache_hit =
          !strcmp (cache_entry->hashed_password, scram->hashed_password) &&
          cache_entry->iterations == scram->iterations &&
@@ -322,7 +322,7 @@ _mongoc_scram_cache_insert (const mongoc_scram_t *scram)
 
 again:
    for (size_t i = 0; i < MONGOC_SCRAM_CACHE_SIZE; i++) {
-      mongoc_scram_cache_t *cache_entry = &g_scram_cache[i];
+      mongoc_scram_cache_entry_t *cache_entry = &g_scram_cache[i];
       bool already_exists =
          !strcmp (cache_entry->hashed_password, scram->hashed_password) &&
          cache_entry->iterations == scram->iterations &&
@@ -381,7 +381,7 @@ again:
 static void
 _mongoc_scram_update_cache (const mongoc_scram_t *scram)
 {
-   mongoc_scram_cache_t cache;
+   mongoc_scram_cache_entry_t cache;
    bool found = _mongoc_scram_cache_has_presecrets (&cache, scram);
    if (found) {
       bool values_match =
@@ -944,7 +944,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    scram->iterations = iterations;
    memcpy (scram->decoded_salt, decoded_salt, sizeof (scram->decoded_salt));
 
-   mongoc_scram_cache_t cache;
+   mongoc_scram_cache_entry_t cache;
    if (_mongoc_scram_cache_has_presecrets (&cache, scram)) {
       _mongoc_scram_cache_apply_secrets (&cache, scram);
    } else {
