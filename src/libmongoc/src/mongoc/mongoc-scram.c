@@ -107,23 +107,7 @@ static void
 _mongoc_scram_cache_clear (void)
 {
    bson_mutex_lock (&clear_cache_lock);
-   for (size_t i = 0; i < MONGOC_SCRAM_CACHE_SIZE; i++) {
-      g_scram_cache[i].taken = false;
-      g_scram_cache[i].iterations = 0;
-      memset (g_scram_cache[i].hashed_password,
-              0,
-              sizeof (g_scram_cache[i].hashed_password));
-      memset (g_scram_cache[i].decoded_salt,
-              0,
-              sizeof (g_scram_cache[i].decoded_salt));
-      memset (
-         g_scram_cache[i].client_key, 0, sizeof (g_scram_cache[i].client_key));
-      memset (
-         g_scram_cache[i].server_key, 0, sizeof (g_scram_cache[i].server_key));
-      memset (g_scram_cache[i].salted_password,
-              0,
-              sizeof (g_scram_cache[i].salted_password));
-   }
+   memset (g_scram_cache, 0, sizeof (g_scram_cache));
    bson_mutex_unlock (&clear_cache_lock);
 }
 
