@@ -13,6 +13,11 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 
+typedef struct {
+   // If `use_pooled` is true, a test is run with a `mongoc_client_t` obtained
+   // from a `mongoc_client_pool_t`.
+   bool use_pooled;
+} test_ctx_t;
 
 static mongoc_uri_t *
 _get_test_uri (void)
@@ -94,7 +99,7 @@ _connection_count (mongoc_client_t *client, uint32_t server_id)
 typedef void (*_test_fn_t) (mongoc_client_t *);
 
 static void
-_run_test_single_and_pooled (_test_fn_t test)
+_run_test_single_or_pooled (_test_fn_t test, bool use_pooled)
 {
    mongoc_uri_t *uri;
    mongoc_client_t *client;
@@ -102,24 +107,26 @@ _run_test_single_and_pooled (_test_fn_t test)
 
    uri = _get_test_uri ();
 
-   /* Run in single-threaded mode */
-   client = test_framework_client_new_from_uri (uri, NULL);
-   test_framework_set_ssl_opts (client);
-   _setup_test_with_client (client);
-   test (client);
-   mongoc_client_destroy (client);
-
-   /* Run in pooled mode */
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
-   test_framework_set_pool_ssl_opts (pool);
-   client = mongoc_client_pool_pop (pool);
-   _setup_test_with_client (client);
-   /* Wait one second to be assured that the RTT connection has been established
-    * as well. */
-   _mongoc_usleep (1000 * 1000);
-   test (client);
-   mongoc_client_pool_push (pool, client);
-   mongoc_client_pool_destroy (pool);
+   if (!use_pooled) {
+      /* Run in single-threaded mode */
+      client = test_framework_client_new_from_uri (uri, NULL);
+      test_framework_set_ssl_opts (client);
+      _setup_test_with_client (client);
+      test (client);
+      mongoc_client_destroy (client);
+   } else {
+      /* Run in pooled mode */
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      test_framework_set_pool_ssl_opts (pool);
+      client = mongoc_client_pool_pop (pool);
+      _setup_test_with_client (client);
+      /* Wait one second to be assured that the RTT connection has been
+       * established as well. */
+      _mongoc_usleep (1000 * 1000);
+      test (client);
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   }
 
    mongoc_uri_destroy (uri);
 }
@@ -205,16 +212,16 @@ test_getmore_iteration (mongoc_client_t *client)
 }
 
 static void
-test_getmore_iteration_runner (void *ctx)
+test_getmore_iteration_runner (void *ctx_void)
 {
-   BSON_UNUSED (ctx);
+   test_ctx_t *ctx = ctx_void;
 
    /* Only run on 4.2 or higher */
    if (!test_framework_max_wire_version_at_least (8)) {
       return;
    }
 
-   _run_test_single_and_pooled (test_getmore_iteration);
+   _run_test_single_or_pooled (test_getmore_iteration, ctx->use_pooled);
 }
 
 static void
@@ -276,16 +283,16 @@ test_not_primary_keep_pool (mongoc_client_t *client)
 }
 
 static void
-test_not_primary_keep_pool_runner (void *ctx)
+test_not_primary_keep_pool_runner (void *ctx_void)
 {
-   BSON_UNUSED (ctx);
+   test_ctx_t *ctx = ctx_void;
 
    /* Only run on 4.2 and higher */
    if (!test_framework_max_wire_version_at_least (8)) {
       return;
    }
 
-   _run_test_single_and_pooled (test_not_primary_keep_pool);
+   _run_test_single_or_pooled (test_not_primary_keep_pool, ctx->use_pooled);
 }
 
 static void
@@ -350,11 +357,11 @@ test_not_primary_reset_pool (mongoc_client_t *client)
 }
 
 static void
-test_not_primary_reset_pool_runner (void *ctx)
+test_not_primary_reset_pool_runner (void *ctx_void)
 {
    int64_t max_wire_version;
 
-   BSON_UNUSED (ctx);
+   test_ctx_t *ctx = ctx_void;
 
    /* Only run if version 4.0 */
    test_framework_get_max_wire_version (&max_wire_version);
@@ -362,7 +369,7 @@ test_not_primary_reset_pool_runner (void *ctx)
       return;
    }
 
-   _run_test_single_and_pooled (test_not_primary_reset_pool);
+   _run_test_single_or_pooled (test_not_primary_reset_pool, ctx->use_pooled);
 }
 
 static void
@@ -424,16 +431,16 @@ test_shutdown_reset_pool (mongoc_client_t *client)
 }
 
 static void
-test_shutdown_reset_pool_runner (void *ctx)
+test_shutdown_reset_pool_runner (void *ctx_void)
 {
-   BSON_UNUSED (ctx);
+   test_ctx_t *ctx = ctx_void;
 
    /* Only run if version >= 4.0 */
    if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_0)) {
       return;
    }
 
-   _run_test_single_and_pooled (test_shutdown_reset_pool);
+   _run_test_single_or_pooled (test_shutdown_reset_pool, ctx->use_pooled);
 }
 
 static void
@@ -495,58 +502,102 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
 }
 
 static void
-test_interrupted_shutdown_reset_pool_runner (void *ctx)
+test_interrupted_shutdown_reset_pool_runner (void *ctx_void)
 {
-   BSON_UNUSED (ctx);
+   test_ctx_t *ctx = ctx_void;
 
    /* Only run if version >= 4.0 */
    if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_0)) {
       return;
    }
 
-   _run_test_single_and_pooled (test_interrupted_shutdown_reset_pool);
+   _run_test_single_or_pooled (test_interrupted_shutdown_reset_pool,
+                               ctx->use_pooled);
 }
 
 void
 test_primary_stepdown_install (TestSuite *suite)
 {
+   test_ctx_t single_ctx = {.use_pooled = false};
+   test_ctx_t pooled_ctx = {.use_pooled = true};
+
    TestSuite_AddFull (suite,
-                      "/Stepdown/getmore",
+                      "/Stepdown/getmore/single",
                       test_getmore_iteration_runner,
                       NULL,
-                      NULL,
+                      &single_ctx,
                       test_framework_skip_if_auth,
                       test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
-                      "/Stepdown/not_primary_keep",
+                      "/Stepdown/getmore/pooled",
+                      test_getmore_iteration_runner,
+                      NULL,
+                      &pooled_ctx,
+                      test_framework_skip_if_auth,
+                      test_framework_skip_if_not_replset);
+
+   TestSuite_AddFull (suite,
+                      "/Stepdown/not_primary_keep/single",
                       test_not_primary_keep_pool_runner,
                       NULL,
-                      NULL,
+                      &single_ctx,
                       test_framework_skip_if_auth,
                       test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
-                      "/Stepdown/not_primary_reset",
+                      "/Stepdown/not_primary_keep/pooled",
+                      test_not_primary_keep_pool_runner,
+                      NULL,
+                      &pooled_ctx,
+                      test_framework_skip_if_auth,
+                      test_framework_skip_if_not_replset);
+
+   TestSuite_AddFull (suite,
+                      "/Stepdown/not_primary_reset/single",
                       test_not_primary_reset_pool_runner,
                       NULL,
-                      NULL,
+                      &single_ctx,
                       test_framework_skip_if_auth,
                       test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
-                      "/Stepdown/shutdown_reset_pool",
+                      "/Stepdown/not_primary_reset/pooled",
+                      test_not_primary_reset_pool_runner,
+                      NULL,
+                      &pooled_ctx,
+                      test_framework_skip_if_auth,
+                      test_framework_skip_if_not_replset);
+
+   TestSuite_AddFull (suite,
+                      "/Stepdown/shutdown_reset_pool/single",
                       test_shutdown_reset_pool_runner,
                       NULL,
-                      NULL,
+                      &single_ctx,
                       test_framework_skip_if_auth,
                       test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
-                      "/Stepdown/interrupt_shutdown",
+                      "/Stepdown/shutdown_reset_pool/pooled",
+                      test_shutdown_reset_pool_runner,
+                      NULL,
+                      &pooled_ctx,
+                      test_framework_skip_if_auth,
+                      test_framework_skip_if_not_replset);
+
+   TestSuite_AddFull (suite,
+                      "/Stepdown/interrupt_shutdown/single",
                       test_interrupted_shutdown_reset_pool_runner,
                       NULL,
+                      &single_ctx,
+                      test_framework_skip_if_auth,
+                      test_framework_skip_if_not_replset);
+
+   TestSuite_AddFull (suite,
+                      "/Stepdown/interrupt_shutdown/pooled",
+                      test_interrupted_shutdown_reset_pool_runner,
                       NULL,
+                      &pooled_ctx,
                       test_framework_skip_if_auth,
                       test_framework_skip_if_not_replset);
 }
