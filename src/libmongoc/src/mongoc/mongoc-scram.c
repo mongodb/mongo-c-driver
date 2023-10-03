@@ -218,7 +218,7 @@ _mongoc_scram_cache_has_presecrets (mongoc_scram_cache_t *cache /* out */,
 
    /*
     * - Take a read lock
-    * - Search through g_scram_cache if the hashed_password, decoded_salt, etc
+    * - Search through g_scram_cache if the hashed_password, decoded_salt, and iterations
     *   match an entry.
     * - If so, then return true
     * - Otherwise return false
