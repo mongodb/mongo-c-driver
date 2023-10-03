@@ -521,83 +521,29 @@ test_primary_stepdown_install (TestSuite *suite)
    test_ctx_t single_ctx = {.use_pooled = false};
    test_ctx_t pooled_ctx = {.use_pooled = true};
 
-   TestSuite_AddFull (suite,
-                      "/Stepdown/getmore/single",
-                      test_getmore_iteration_runner,
-                      NULL,
-                      &single_ctx,
-                      test_framework_skip_if_auth,
+#define TestPooledAndSingle(name, fn)                      \
+   TestSuite_AddFull (suite,                               \
+                      name "/single",                      \
+                      fn,                                  \
+                      NULL,                                \
+                      &single_ctx,                         \
+                      test_framework_skip_if_auth,         \
+                      test_framework_skip_if_not_replset); \
+   TestSuite_AddFull (suite,                               \
+                      name "/pooled",                      \
+                      fn,                                  \
+                      NULL,                                \
+                      &pooled_ctx,                         \
+                      test_framework_skip_if_auth,         \
                       test_framework_skip_if_not_replset);
 
-   TestSuite_AddFull (suite,
-                      "/Stepdown/getmore/pooled",
-                      test_getmore_iteration_runner,
-                      NULL,
-                      &pooled_ctx,
-                      test_framework_skip_if_auth,
-                      test_framework_skip_if_not_replset);
-
-   TestSuite_AddFull (suite,
-                      "/Stepdown/not_primary_keep/single",
-                      test_not_primary_keep_pool_runner,
-                      NULL,
-                      &single_ctx,
-                      test_framework_skip_if_auth,
-                      test_framework_skip_if_not_replset);
-
-   TestSuite_AddFull (suite,
-                      "/Stepdown/not_primary_keep/pooled",
-                      test_not_primary_keep_pool_runner,
-                      NULL,
-                      &pooled_ctx,
-                      test_framework_skip_if_auth,
-                      test_framework_skip_if_not_replset);
-
-   TestSuite_AddFull (suite,
-                      "/Stepdown/not_primary_reset/single",
-                      test_not_primary_reset_pool_runner,
-                      NULL,
-                      &single_ctx,
-                      test_framework_skip_if_auth,
-                      test_framework_skip_if_not_replset);
-
-   TestSuite_AddFull (suite,
-                      "/Stepdown/not_primary_reset/pooled",
-                      test_not_primary_reset_pool_runner,
-                      NULL,
-                      &pooled_ctx,
-                      test_framework_skip_if_auth,
-                      test_framework_skip_if_not_replset);
-
-   TestSuite_AddFull (suite,
-                      "/Stepdown/shutdown_reset_pool/single",
-                      test_shutdown_reset_pool_runner,
-                      NULL,
-                      &single_ctx,
-                      test_framework_skip_if_auth,
-                      test_framework_skip_if_not_replset);
-
-   TestSuite_AddFull (suite,
-                      "/Stepdown/shutdown_reset_pool/pooled",
-                      test_shutdown_reset_pool_runner,
-                      NULL,
-                      &pooled_ctx,
-                      test_framework_skip_if_auth,
-                      test_framework_skip_if_not_replset);
-
-   TestSuite_AddFull (suite,
-                      "/Stepdown/interrupt_shutdown/single",
-                      test_interrupted_shutdown_reset_pool_runner,
-                      NULL,
-                      &single_ctx,
-                      test_framework_skip_if_auth,
-                      test_framework_skip_if_not_replset);
-
-   TestSuite_AddFull (suite,
-                      "/Stepdown/interrupt_shutdown/pooled",
-                      test_interrupted_shutdown_reset_pool_runner,
-                      NULL,
-                      &pooled_ctx,
-                      test_framework_skip_if_auth,
-                      test_framework_skip_if_not_replset);
+   TestPooledAndSingle ("/Stepdown/getmore", test_getmore_iteration_runner);
+   TestPooledAndSingle ("/Stepdown/not_primary_keep",
+                        test_not_primary_keep_pool_runner);
+   TestPooledAndSingle ("/Stepdown/not_primary_reset",
+                        test_not_primary_reset_pool_runner);
+   TestPooledAndSingle ("/Stepdown/shutdown_reset_pool",
+                        test_shutdown_reset_pool_runner);
+   TestPooledAndSingle ("/Stepdown/interrupt_shutdown",
+                        test_interrupted_shutdown_reset_pool_runner);
 }
