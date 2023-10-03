@@ -27,7 +27,6 @@
 /mongohouse/listDatabases # CDRIVER-4333
 /mongohouse/runCommand # CDRIVER-4333
 
-/versioned_api/transaction-handling/"All commands in a transaction declare an API version" # (CDRIVER-4335) API parameters are only allowed in the first command of a multi-document transaction
 /Stepdown/not_primary_keep # (CDRIVER-4341) Assert Failure: 673 == 674
 /Topology/multiple_selection_errors # (CDRIVER-4342) [No suitable servers found (`serverSelectionTryOnce` set): [Failed to resolve 'doesntexist'] [Failed to resolve 'example.com']] does not contain [calling hello on 'example.com:2']
 /Topology/server_removed/single # (CDRIVER-4343) error domain 1 doesn't match expected 2
