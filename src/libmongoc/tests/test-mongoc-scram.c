@@ -193,7 +193,7 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
    const char *password = "mypass";
    char *username = bson_strdup_printf ("cachetestuser%dX", i);
 
-   const char *uri_str = "mongodb://localhost:27017/";
+   char *uri_str = test_framework_get_uri_str_no_auth ("admin");
    char *cache_test_user_uri =
       test_framework_add_user_password (uri_str, username, password);
    BSON_ASSERT (cache_test_user_uri);
