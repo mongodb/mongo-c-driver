@@ -201,13 +201,16 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
    mongoc_uri_t *cache_test_uri = mongoc_uri_new (cache_test_user_uri);
    BSON_ASSERT (cache_test_uri);
 
-   mongoc_client_pool_t *pool =
-      test_framework_client_pool_new_from_uri (cache_test_uri, NULL);
-   BSON_ASSERT (pool);
+   // Set serverSelectionTryOnce=false so a single failed connection attempt
+   // does not result in an error.
+   mongoc_uri_set_option_as_bool (
+      cache_test_uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
 
-   test_framework_set_pool_ssl_opts (pool);
+   mongoc_client_t *client =
+      test_framework_client_new_from_uri (cache_test_uri, NULL /* api */);
+   BSON_ASSERT (client);
 
-   mongoc_client_t *client = mongoc_client_pool_pop (pool);
+   test_framework_set_ssl_opts (client);
    BSON_ASSERT (client);
 
    mongoc_collection_t *collection =
