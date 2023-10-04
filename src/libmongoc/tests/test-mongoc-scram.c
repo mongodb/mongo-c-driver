@@ -193,7 +193,7 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
    const char *password = "mypass";
    char *username = bson_strdup_printf ("cachetestuser%dX", i);
 
-   char *uri_str = test_framework_get_uri_str_no_auth ("admin");
+   const char *uri_str = "mongodb://localhost:27017/";
    char *cache_test_user_uri =
       test_framework_add_user_password (uri_str, username, password);
    BSON_ASSERT (cache_test_user_uri);
@@ -222,10 +222,11 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
       mongoc_collection_insert_one (collection, &insert, NULL, NULL, &error);
    ASSERT_OR_PRINT (ok, error);
 
-   bson_free (username);
-   bson_free (cache_test_user_uri);
    mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
    mongoc_uri_destroy (cache_test_uri);
+   bson_free (cache_test_user_uri);
+   bson_free (username);
 
    BSON_THREAD_RETURN;
 }
@@ -273,6 +274,7 @@ test_mongoc_scram_cache_invalidation (void *ctx)
    }
 
    mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
 }
 
