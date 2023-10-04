@@ -144,9 +144,9 @@ _test_server_selection_error_dns_multi_success (bool pooled)
    char *uri_str;
 
    host = test_framework_get_host ();
-   uri_str = bson_strdup_printf ("mongodb://example-localhost:27017,"
+   uri_str = bson_strdup_printf ("mongodb://example-localhost.invalid:27017,"
                                  "%s:%d,"
-                                 "other-example-localhost:27017/",
+                                 "other-example-localhost.invalid:27017/",
                                  host,
                                  test_framework_get_port ());
 
