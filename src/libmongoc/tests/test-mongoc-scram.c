@@ -182,6 +182,8 @@ enum {
    NUM_CACHE_TEST_THREADS = 3 * NUM_CACHE_TEST_USERS,
 };
 
+static char *_scram_cache_invalidation_uri_str = NULL;
+
 static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
 {
    bson_error_t error;
@@ -193,7 +195,7 @@ static BSON_THREAD_FUN (_scram_cache_invalidation_thread, username_number_ptr)
    const char *password = "mypass";
    char *username = bson_strdup_printf ("cachetestuser%dX", i);
 
-   const char *uri_str = "mongodb://localhost:27017/";
+   const char *uri_str = _scram_cache_invalidation_uri_str;
    char *cache_test_user_uri =
       test_framework_add_user_password (uri_str, username, password);
    BSON_ASSERT (cache_test_user_uri);
@@ -246,6 +248,9 @@ test_mongoc_scram_cache_invalidation (void *ctx)
 
    bson_t *roles = tmp_bson ("[{'role': 'readWrite', 'db': 'admin'}]");
 
+   _scram_cache_invalidation_uri_str =
+      test_framework_get_uri_str_no_auth ("admin");
+
    /* Remove cache test users if they already exist.
     * Create more test users than could exist in cache. */
    for (int i = 0; i < NUM_CACHE_TEST_USERS; i++) {
@@ -273,6 +278,8 @@ test_mongoc_scram_cache_invalidation (void *ctx)
       BSON_ASSERT (rc == 0);
    }
 
+   bson_free (_scram_cache_invalidation_uri_str);
+   _scram_cache_invalidation_uri_str = NULL;
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
