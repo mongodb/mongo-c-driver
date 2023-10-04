@@ -1071,9 +1071,8 @@ test_select_after_try_once (void)
 static void
 test_multiple_selection_errors (void)
 {
-   const char *uri =
-      "mongodb://doesntexist.invalid,example.invalid/?replicaSet=rs"
-      "&connectTimeoutMS=100";
+   const char *const uri = "mongodb://doesntexist.invalid,example.invalid/"
+                           "?replicaSet=rs&connectTimeoutMS=100";
    mongoc_client_t *client;
    bson_t reply;
    bson_error_t error;
