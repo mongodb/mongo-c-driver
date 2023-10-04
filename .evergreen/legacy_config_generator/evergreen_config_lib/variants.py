@@ -449,10 +449,32 @@ all_variants = [
         "clang 6.0 (Ubuntu 18.04)",
         "ubuntu1804-test",
         [
-            "debug-compile-aws",
             "debug-compile-sasl-openssl-static",
             ".authentication-tests .asan",
-            ".test-aws",
+        ],
+        {"CC": "clang"},
+    ),
+    Variant(
+        "aws-ubuntu1804",
+        "AWS Tests (Ubuntu 18.04)",
+        "ubuntu1804-small",
+        [
+            "debug-compile-aws",
+            ".test-aws-4.4",
+            ".test-aws-5.0",
+            ".test-aws-6.0",
+        ],
+        {"CC": "clang"},
+    ),
+    # Test 7.0+ with Ubuntu 20.04+ since MongoDB 7.0 no longer ships binaries for Ubuntu 18.04.
+    Variant(
+        "aws-ubuntu2004",
+        "AWS Tests (Ubuntu 20.04)",
+        "ubuntu2004-small",
+        [
+            "debug-compile-aws",
+            ".test-aws-7.0",
+            ".test-aws-latest",
         ],
         {"CC": "clang"},
     ),
