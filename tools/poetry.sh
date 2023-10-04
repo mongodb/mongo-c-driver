@@ -45,12 +45,21 @@ install-poetry() {
     # Download the automated installer:
     installer=$poetry_home/install-poetry.py
     download-file --uri=https://install.python-poetry.org --out="$installer"
+    python_binary="$(find-python)"
     # Run the install:
     with-lock "$POETRY_HOME/.install.lock" \
         env POETRY_HOME="$poetry_home" \
-        "$(find-python)" -u "$installer" --yes --version "$poetry_version" \
+        "$python_binary" -u "$installer" --yes --version "$poetry_version" \
     || (
         cat -- poetry-installer*.log && fail "Poetry installation failed"
+    )
+    # Extra step must be taken to ensure Poetry's virtual environment continues to use the correct Python binary.
+    # See: https://github.com/python-poetry/poetry/issues/522#issuecomment-492369712
+    with-lock "$POETRY_HOME/.install.lock" \
+        env POETRY_HOME="$poetry_home" \
+        "$POETRY_EXE" env use "$python_binary" \
+    || (
+        fail "Poetry installation failed (env use <path/to/python>)"
     )
     printf %s "$poetry_version" > "$POETRY_HOME/installed.txt"
 }
