@@ -865,7 +865,7 @@ mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VE
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    target_link_libraries (mongoc_static ${STATIC_LIBRARIES} ${BSON_LIBRARIES})
-   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
+   # target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
    target_include_directories (mongoc_static PRIVATE ${BSON_INCLUDE_DIRS})
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
