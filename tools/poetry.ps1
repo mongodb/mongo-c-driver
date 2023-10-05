@@ -72,10 +72,11 @@ $stamp_file = Join-Path $PoetryHome ".installed.done"
 # Poetry respects the POETRY_HOME environment variable.
 $env:POETRY_HOME = $PoetryHome
 
+$py = Find-Python
+
 # Create the Poetry installation if it is not already present
 if (!(Test-Path $stamp_file)) {
     Write-Debug "Installing Poetry $PoetryVersion into [$PoetryHome]"
-    $py = Find-Python
     # Lock to prevent concurrent installations
     $mtx = New-Object System.Threading.Mutex($false, "Global\MongoCPoetryInstall")
     [void]$mtx.WaitOne()
@@ -96,5 +97,6 @@ if (!(Test-Path $stamp_file)) {
 
 # Execute the Poetry command
 $poetry_exe = Join-Path $PoetryHome "bin/poetry.exe"
+& $poetry_exe env use $py
 & $poetry_exe @Command
 exit $LASTEXITCODE
