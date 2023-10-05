@@ -259,39 +259,6 @@ _mongoc_scram_destroy (mongoc_scram_t *scram)
 }
 
 static void
-_mongoc_scram_cache_update_values (const mongoc_scram_t *scram)
-{
-   bson_shared_mutex_lock (&g_scram_cache_rwlock);
-
-   for (size_t i = 0; i < MONGOC_SCRAM_CACHE_SIZE; i++) {
-      mongoc_scram_cache_entry_t *cache_entry = &g_scram_cache[i];
-      bool cache_hit =
-         !strcmp (cache_entry->hashed_password, scram->hashed_password) &&
-         cache_entry->iterations == scram->iterations &&
-         !memcmp (cache_entry->decoded_salt,
-                  scram->decoded_salt,
-                  sizeof (cache_entry->decoded_salt));
-      if (cache_hit) {
-         memcpy (cache_entry->client_key,
-                 scram->client_key,
-                 sizeof (cache_entry->client_key));
-         memcpy (cache_entry->server_key,
-                 scram->server_key,
-                 sizeof (cache_entry->server_key));
-         memcpy (cache_entry->salted_password,
-                 scram->salted_password,
-                 sizeof (cache_entry->salted_password));
-         memcpy (cache_entry->decoded_salt,
-                 scram->decoded_salt,
-                 sizeof (cache_entry->salted_password));
-         break;
-      }
-   }
-
-   bson_shared_mutex_unlock (&g_scram_cache_rwlock);
-}
-
-static void
 _mongoc_scram_cache_insert (const mongoc_scram_t *scram)
 {
    bson_shared_mutex_lock (&g_scram_cache_rwlock);
@@ -359,23 +326,7 @@ _mongoc_scram_update_cache (const mongoc_scram_t *scram)
 {
    mongoc_scram_cache_entry_t cache;
    bool found = _mongoc_scram_cache_has_presecrets (&cache, scram);
-   if (found) {
-      bool values_match =
-         !memcmp (
-            cache.server_key, scram->server_key, sizeof (cache.server_key)) &&
-         !memcmp (
-            cache.client_key, scram->client_key, sizeof (cache.client_key)) &&
-         !memcmp (cache.decoded_salt,
-                  scram->decoded_salt,
-                  sizeof (cache.decoded_salt)) &&
-         !memcmp (cache.salted_password,
-                  scram->salted_password,
-                  sizeof (cache.salted_password));
-      if (!values_match) {
-         /* cache hit, but values are out of date */
-         _mongoc_scram_cache_update_values (scram);
-      }
-   } else {
+   if (!found) {
       /* cache miss, insert this as a new cache entry */
       _mongoc_scram_cache_insert (scram);
    }
