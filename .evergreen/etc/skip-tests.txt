@@ -28,7 +28,6 @@
 /mongohouse/runCommand # CDRIVER-4333
 
 /Stepdown/not_primary_keep # (CDRIVER-4341) Assert Failure: 673 == 674
-/Topology/multiple_selection_errors # (CDRIVER-4342) [No suitable servers found (`serverSelectionTryOnce` set): [Failed to resolve 'doesntexist'] [Failed to resolve 'example.com']] does not contain [calling hello on 'example.com:2']
 /change_stream/live/track_resume_token # (CDRIVER-4344) Condition 'bson_compare (resume_token, &doc2_rt) == 0' failed
 /change_stream/resumable_error # (CDRIVER-4345) getMore: not found
 /BulkOperation/split # (CDRIVER-4346) Assert Failure: count of split_1512376901_50824 is 97759, not 100010
