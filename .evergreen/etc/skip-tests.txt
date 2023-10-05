@@ -29,7 +29,6 @@
 
 /Stepdown/not_primary_keep # (CDRIVER-4341) Assert Failure: 673 == 674
 /change_stream/live/track_resume_token # (CDRIVER-4344) Condition 'bson_compare (resume_token, &doc2_rt) == 0' failed
-/change_stream/resumable_error # (CDRIVER-4345) getMore: not found
 /BulkOperation/split # (CDRIVER-4346) Assert Failure: count of split_1512376901_50824 is 97759, not 100010
 /ClientPool/pop_timeout # (CDRIVER-4348) precondition failed: duration_usec / 1000 >= 1990
 /Client/get_handshake_hello_response/pooled # (CDRIVER-4349) Assert Failure: "Unknown" != "PossiblePrimary"
