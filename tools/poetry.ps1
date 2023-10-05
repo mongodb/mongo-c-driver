@@ -97,6 +97,6 @@ if (!(Test-Path $stamp_file)) {
 
 # Execute the Poetry command
 $poetry_exe = Join-Path $PoetryHome "bin/poetry.exe"
-& $poetry_exe env use $py
+& $poetry_exe env use --quiet $py
 & $poetry_exe @Command
 exit $LASTEXITCODE
