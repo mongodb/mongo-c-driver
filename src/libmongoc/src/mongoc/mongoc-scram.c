@@ -104,6 +104,7 @@ _mongoc_scram_cache_clear (void)
 static BSON_ONCE_FUN (_mongoc_scram_cache_init)
 {
    bson_shared_mutex_init (&g_scram_cache_rwlock);
+   bson_mutex_init (&clear_cache_lock);
    _mongoc_scram_cache_clear ();
 
    BSON_ONCE_RETURN;
