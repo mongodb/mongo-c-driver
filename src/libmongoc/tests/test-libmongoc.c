@@ -2534,17 +2534,6 @@ test_framework_skip_if_serverless (void)
 }
 
 int
-test_framework_skip_if_time_sensitive (void)
-{
-/* Skip time sensitive tests on macOS per CDRIVER-3549. */
-#ifdef __APPLE__
-   return 0;
-#else
-   return 1;
-#endif
-}
-
-int
 test_framework_skip_due_to_cdriver3708 (void)
 {
    if (0 == test_framework_skip_if_auth () &&
