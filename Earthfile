@@ -255,14 +255,14 @@ test-vcpkg-classic:
     RUN rm -rf _build && \
         make test-classic
 
-# test-vcpkg-manifetst-mode :
+# test-vcpkg-manifest-mode :
 #   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and
 #   install a mongo-c-driver package based on the content of a vcpkg.json manifest
 #   that is injected into the project.
 test-vcpkg-manifest-mode:
     FROM +vcpkg-base
     RUN apk add jq
-    RUN jq -n ' {\
+    RUN jq -n ' { \
             name: "test-app", \
             version: "1.2.3", \
             dependencies: ["mongo-c-driver"], \

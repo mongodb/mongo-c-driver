@@ -46,8 +46,7 @@ This table details the names and usage notes of such packages.
       ``libbson-doc``
     - ``libmongoc-1.0-0``, ``libmongoc-dev``,
       ``libmongoc-doc``
-    - The ``libmongoclient`` packages are for the C++ database driver and will
-      transitively depend on ``libmongoc``.
+    - .. empty cell
 
   - - :index:`Yum <!pair: Yum; package names>`/:index:`DNF <!pair: DNF; package names>`
     - RHEL-based systems (RHEL, :index:`Fedora`, :index:`CentOS`,
@@ -63,8 +62,8 @@ This table details the names and usage notes of such packages.
     - ``libmongoc``, ``libmongoc-dev``, ``libmongoc-static``
     - .. empty cell
 
-  - - :index:`pacman <pair: !package names; pacman>`
-    - :index:`Arch Linux <pair: !package names; Arch Linux>`
+  - - :index:`pacman <!pair: package names; pacman>`
+    - :index:`Arch Linux <!pair: package names; Arch Linux>`
     - ``mongo-c-driver``
     - ``mongo-c-driver``
     - A single package provides both runtime and development support for both

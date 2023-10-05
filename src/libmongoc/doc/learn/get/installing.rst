@@ -63,7 +63,7 @@ Installing using vcpkg
 
 .. note::
   This page will not detail how to get started using vcpkg_. For that, refer to
-  `"Get started with vcpkg" (external)`__
+  `Get started with vcpkg`__
 
   __ https://vcpkg.io/en/getting-started
 
@@ -154,7 +154,8 @@ The following Linux distributions provide |libbson| and |libmongoc| packages:
 
 .. seealso::
 
-  For a complete list of package names, see: :doc:`/ref/packages`.
+  For a list of available packages and package options, see:
+  :doc:`/ref/packages`.
 
 
 .. index::
