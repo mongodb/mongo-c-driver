@@ -31,7 +31,7 @@ include (MongoPlatform)
 include (GeneratePkgConfig)
 
 include(CMakeDependentOption)
-CMAKE_DEPENDENT_OPTION(BUILD_SHARED_LIBS "Build shared libraries" ON "BUILD_STATIC_LIBS" OFF)
+CMAKE_DEPENDENT_OPTION(BUILD_SHARED_LIBS "Build shared libraries" ON  "BUILD_STATIC_LIBS" OFF)
 CMAKE_DEPENDENT_OPTION(BUILD_STATIC_LIBS "Build static libraries" OFF "BUILD_SHARED_LIBS" ON)
 
 if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
