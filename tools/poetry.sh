@@ -28,11 +28,14 @@
 #       executed).
 # * WANT_POETRY_VERSION (overridable) (default 1.5.1)
 #     • The version of Poetry that will be installed by run-poetry when executed.
+# * POETRY_PYTHON_VERSION (overridable) (default to result of find-python)
+#     • The Python binary to use by the Poetry installer and virtual environment(s).
 
 # Load vars and utils:
 . "$(dirname "${BASH_SOURCE[0]}")/use.sh" python paths base with_lock download
 
 : "${WANT_POETRY_VERSION:=1.5.1}"
+: "${POETRY_PYTHON_BINARY:="$(find-python)"}"
 declare -r -x POETRY_HOME=${FORCE_POETRY_HOME:-"$BUILD_CACHE_DIR/poetry-$WANT_POETRY_VERSION"}
 declare -r POETRY_EXE=$POETRY_HOME/bin/poetry$EXE_SUFFIX
 
@@ -45,21 +48,12 @@ install-poetry() {
     # Download the automated installer:
     installer=$poetry_home/install-poetry.py
     download-file --uri=https://install.python-poetry.org --out="$installer"
-    python_binary="$(find-python)"
     # Run the install:
     with-lock "$POETRY_HOME/.install.lock" \
         env POETRY_HOME="$poetry_home" \
-        "$python_binary" -u "$installer" --yes --version "$poetry_version" \
+        "$POETRY_PYTHON_BINARY" -u "$installer" --yes --version "$poetry_version" \
     || (
         cat -- poetry-installer*.log && fail "Poetry installation failed"
-    )
-    # Extra step must be taken to ensure Poetry's virtual environment continues to use the correct Python binary.
-    # See: https://github.com/python-poetry/poetry/issues/522#issuecomment-492369712
-    with-lock "$POETRY_HOME/.install.lock" \
-        env POETRY_HOME="$poetry_home" \
-        "$POETRY_EXE" env use "$python_binary" \
-    || (
-        fail "Poetry installation failed (env use <path/to/python>)"
     )
     printf %s "$poetry_version" > "$POETRY_HOME/installed.txt"
 }
@@ -72,6 +66,14 @@ ensure-poetry() {
     if ! is-file "$home/installed.txt" || [[ "$(cat "$home/installed.txt")" != "$version" ]]; then
         install-poetry "$version" "$home"
     fi
+    # Extra step must be taken to ensure Poetry's virtual environment uses the correct Python binary.
+    # See: https://github.com/python-poetry/poetry/issues/522
+    with-lock "$POETRY_HOME/.install.lock" \
+        env POETRY_HOME="$POETRY_HOME" \
+        "$POETRY_EXE" env use "$POETRY_PYTHON_BINARY" \
+    || (
+        fail "Poetry failed to set Python binary to $POETRY_PYTHON_BINARY"
+    )
 }
 
 run-poetry() {
