@@ -30,6 +30,13 @@ include (MongoSettings)
 include (MongoPlatform)
 include (GeneratePkgConfig)
 
+CMAKE_DEPENDENT_OPTION(BUILD_SHARED_LIBS "Build shared libraries" ON "BUILD_STATIC_LIBS" OFF)
+CMAKE_DEPENDENT_OPTION(BUILD_STATIC_LIBS "Build static libraries" OFF "BUILD_SHARED_LIBS" ON)
+
+if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
+   message(FATAL_ERROR "Both BUILD_SHARED_LIBS and BUILD_STATIC_LIBS have been disabled")
+endif()
+
 # Subcomponents:
 mongo_bool_setting(ENABLE_MONGOC "Enable the build of libmongoc libraries (The MongoDB C database driver)")
 mongo_bool_setting(
