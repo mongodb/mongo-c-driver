@@ -460,9 +460,9 @@ all_variants = [
         "ubuntu1804-small",
         [
             "debug-compile-aws",
-            ".test-aws-4.4",
-            ".test-aws-5.0",
-            ".test-aws-6.0",
+            ".test-aws .4.4",
+            ".test-aws .5.0",
+            ".test-aws .6.0",
         ],
         {"CC": "clang"},
     ),
@@ -473,8 +473,8 @@ all_variants = [
         "ubuntu2004-small",
         [
             "debug-compile-aws",
-            ".test-aws-7.0",
-            ".test-aws-latest",
+            ".test-aws .7.0",
+            ".test-aws .latest",
         ],
         {"CC": "clang"},
     ),
