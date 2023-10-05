@@ -70,7 +70,7 @@ ensure-poetry() {
     # See: https://github.com/python-poetry/poetry/issues/522
     with-lock "$POETRY_HOME/.install.lock" \
         env POETRY_HOME="$POETRY_HOME" \
-        "$POETRY_EXE" env use "$POETRY_PYTHON_BINARY" \
+        "$POETRY_EXE" env use --quiet -- "$POETRY_PYTHON_BINARY" \
     || (
         fail "Poetry failed to set Python binary to $POETRY_PYTHON_BINARY"
     )
