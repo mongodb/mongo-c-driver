@@ -27,7 +27,3 @@ find_dependency(bson-static-1.0)
 
 set (BSON_STATIC_LIBRARY mongo::bson_static)
 set (BSON_STATIC_LIBRARIES mongo::bson_static)
-
-+set (BSON_LIBRARIES ${BSON_STATIC_LIBRARIES})
-+set (BSON_INCLUDE_DIRS ${BSON_STATIC_INCLUDE_DIRS})
-+set (BSON_DEFINITIONS BSON_STATIC)

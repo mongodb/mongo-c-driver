@@ -818,7 +818,6 @@ target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIE
 target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
-target_include_directories (mongoc_shared PRIVATE ${BSON_INCLUDE_DIRS})
 
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
@@ -864,9 +863,7 @@ mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VE
 
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   target_link_libraries (mongoc_static ${STATIC_LIBRARIES} ${BSON_LIBRARIES})
-   # target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
-   target_include_directories (mongoc_static PRIVATE ${BSON_INCLUDE_DIRS})
+   target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (mongoc_static PUBLIC -fPIC)
       message (STATUS "Adding -fPIC to compilation of mongoc_static components")
@@ -933,7 +930,6 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
-target_include_directories (mongoc-stat PRIVATE ${BSON_INCLUDE_DIRS})
 target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
 
 # mongoc-stat works if shared memory performance counters are enabled.
