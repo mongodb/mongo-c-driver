@@ -103,6 +103,12 @@ The ``mongo-c-driver`` Conan_ recipe includes several build settings that
 correspond to the configure-time build settings available when building the
 |mongo-c-driver| project.
 
+.. seealso::
+
+  `The mongo-c-driver Conan recipe (includes libbson)`__
+
+  __ https://github.com/conan-io/conan-center-index/tree/master/recipes/mongo-c-driver
+
 .. list-table::
   :header-rows: 1
   :align: left
@@ -171,11 +177,19 @@ correspond to the configure-time build settings available when building the
 .. index:: !vcpkg; Optional features
 .. _ref.vcpkg.features:
 
-Optional Features from vcpkg
-****************************
+vcpkg Optional Features
+***********************
 
 The ``mongo-c-driver`` package offered by vcpkg_ supports several optional
-features:
+features.
+
+.. seealso::
+
+  - `The vcpkg libbson port`__
+  - `The vcpkg mongo-c-driver port`__
+
+  __ https://github.com/microsoft/vcpkg/tree/master/ports/libbson
+  __ https://github.com/microsoft/vcpkg/tree/master/ports/mongo-c-driver
 
 .. list-table::
   :header-rows: 1
