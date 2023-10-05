@@ -515,8 +515,8 @@ all_variants = [
         [
             "debug-compile-nosasl-openssl",
             "debug-compile-nosasl-nossl",
-            ".versioned-api-5.0",
-            ".versioned-api-6.0",
+            ".versioned-api .5.0",
+            ".versioned-api .6.0",
         ],
         {},
     ),
@@ -528,7 +528,7 @@ all_variants = [
         [
             "debug-compile-nosasl-openssl",
             "debug-compile-nosasl-nossl",
-            ".versioned-api-7.0",
+            ".versioned-api .7.0",
         ],
         {},
     ),

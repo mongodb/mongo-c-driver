@@ -759,7 +759,7 @@ for server_version in [ "7.0", "6.0", "5.0"]:
             ),
             PostCompileTask(
                 "test-versioned-api-accept-version-two-" + server_version,
-                tags=["versioned-api", f"versioned-api-{server_version}"],
+                tags=["versioned-api", f"{server_version}"],
                 get_build="debug-compile-nosasl-nossl",
                 commands=[
                     func("fetch-det"),
