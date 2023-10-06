@@ -28,7 +28,4 @@ It depends on :doc:`libbson <bson:index>` to generate and parse BSON documents, 
    application-performance-monitoring
 
 
-Indices and Tables
-------------------
-
 * :ref:`genindex`

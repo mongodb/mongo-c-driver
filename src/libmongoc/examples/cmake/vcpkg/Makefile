@@ -1,7 +1,7 @@
 .SILENT:
 
 THIS_FILE := $(realpath $(lastword $(MAKEFILE_LIST)))
-THIS_DIR := $(shell dirname $(THIS_FILE))
+THIS_DIR := $(dir $(THIS_FILE))
 
 VCPKG_ROOT ?= /opt/vcpkg
 

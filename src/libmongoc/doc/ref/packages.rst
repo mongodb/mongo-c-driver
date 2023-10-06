@@ -71,17 +71,15 @@ This table details the names and usage notes of such packages.
 
   - - :index:`Homebrew <!pair: Homebrew; package names>`
     - :index:`macOS <!pair: macOS; package names>`
-    - |ditto|
-    - |ditto|
-    - |ditto|
+    - ``mongo-c-driver``
+    - ``mongo-c-driver``
+    - .. empty
 
   - - :index:`Conan <!pair: Conan; package names>`
     - Cross-platform
-    - |ditto|
-    - |ditto|
-    - |ditto|
-
-      See: :ref:`ref.conan.settings`
+    - ``mongo-c-driver``
+    - ``mongo-c-driver``
+    - See: :ref:`ref.conan.settings`
 
   - - :index:`vcpkg <!pair: vcpkg; package names>`
     - Cross-platform
@@ -89,9 +87,6 @@ This table details the names and usage notes of such packages.
     - ``mongo-c-driver``
     - See: :ref:`ref.vcpkg.features`
 
-
-.. - This prevents the quote-pair rewriting if we use had written two U+0027's directly:
-.. |ditto| unicode:: U+0027 U+0027
 
 .. index:: !Conan; Settings and Features
 .. _ref.conan.settings:
