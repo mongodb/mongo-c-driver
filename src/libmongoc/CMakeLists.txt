@@ -878,7 +878,7 @@ mongo_generate_pkg_config(mongoc_shared INSTALL RENAME libmongoc-${MONGOC_API_VE
 
 endif ()
 
-if (BUILD_SHARED_LIBS)
+if (BUILD_STATIC_LIBS)
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES} mongo::detail::c_dependencies)
