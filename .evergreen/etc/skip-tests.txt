@@ -17,8 +17,6 @@
 # /skip/entire/test # this will be output by the runner as the skip reason
 # /skip/part/of/spec/test/"sub-test description" # this will also be output
 
-/Topology/slow_server/pooled # CDRIVER-4257
-
 /mongohouse/aggregate # CDRIVER-4333
 /mongohouse/estimatedDocumentCount # CDRIVER-4333
 /mongohouse/find # CDRIVER-4333
