@@ -27,24 +27,11 @@
 /mongohouse/listDatabases # CDRIVER-4333
 /mongohouse/runCommand # CDRIVER-4333
 
-/versioned_api/transaction-handling/"All commands in a transaction declare an API version" # (CDRIVER-4335) API parameters are only allowed in the first command of a multi-document transaction
-/Topology/request_scan_on_error # (CDRIVER-4338) precondition failed: checks_cmp (&checks, "n_succeeded", '=', 2), and other times fails with a socket timeout
-/streamable/topology_version/update # (CDRIVER-4339) _force_scan(): precondition failed: sd
-/Topology/multiple_selection_errors # (CDRIVER-4342) [No suitable servers found (`serverSelectionTryOnce` set): [Failed to resolve 'doesntexist'] [Failed to resolve 'example.com']] does not contain [calling hello on 'example.com:2']
-/Topology/server_removed/single # (CDRIVER-4343) error domain 1 doesn't match expected 2
 /change_stream/live/track_resume_token # (CDRIVER-4344) Condition 'bson_compare (resume_token, &doc2_rt) == 0' failed
-/change_stream/resumable_error # (CDRIVER-4345) getMore: not found
 /BulkOperation/split # (CDRIVER-4346) Assert Failure: count of split_1512376901_50824 is 97759, not 100010
 /ClientPool/pop_timeout # (CDRIVER-4348) precondition failed: duration_usec / 1000 >= 1990
 /Client/get_handshake_hello_response/pooled # (CDRIVER-4349) Assert Failure: "Unknown" != "PossiblePrimary"
 
-# These all look like they could be related to CDRIVER-4111
-/Client/fetch_stream/retry/fail # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/command/read_prefs/pooled # (CDRIVER-4340) request_matches_msg(): precondition failed: request
-/Client/mongos_seeds_reconnect/single # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/mongos_seeds_connect/pooled # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/exhaust_cursor/err/server/2nd_batch/pooled # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/rs_seeds_connect/pooled # (CDRIVER-4340) hang up! monitor: [127.0.0.1:59723] command or network error occurred: Failed to read 4 bytes: socket error or timeout
 /inheritance/find/readPrefs # (CDRIVER-4350) request_matches_msg(): precondition failed: request
 /BulkOperation/error/unordered # (CDRIVER-4350) request_matches_msg(): precondition failed: request
 /command_monitoring/get_error # (CDRIVER-4350) request_matches_msg(): precondition failed: request

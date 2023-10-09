@@ -1435,6 +1435,7 @@ tasks:
 - name: test-versioned-api-7.0
   tags:
   - versioned-api
+  - versioned-api-7.0
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
@@ -1457,6 +1458,7 @@ tasks:
       SSL: ssl
 - name: test-versioned-api-accept-version-two-7.0
   tags:
+  - '7.0'
   - versioned-api
   depends_on:
     name: debug-compile-nosasl-nossl
@@ -1481,6 +1483,7 @@ tasks:
 - name: test-versioned-api-6.0
   tags:
   - versioned-api
+  - versioned-api-6.0
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
@@ -1503,6 +1506,7 @@ tasks:
       SSL: ssl
 - name: test-versioned-api-accept-version-two-6.0
   tags:
+  - '6.0'
   - versioned-api
   depends_on:
     name: debug-compile-nosasl-nossl
@@ -1527,6 +1531,7 @@ tasks:
 - name: test-versioned-api-5.0
   tags:
   - versioned-api
+  - versioned-api-5.0
   depends_on:
     name: debug-compile-nosasl-openssl
   commands:
@@ -1549,6 +1554,7 @@ tasks:
       SSL: ssl
 - name: test-versioned-api-accept-version-two-5.0
   tags:
+  - '5.0'
   - versioned-api
   depends_on:
     name: debug-compile-nosasl-nossl
@@ -1795,6 +1801,7 @@ tasks:
   - func: upload-build
 - name: test-aws-openssl-regular-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1814,6 +1821,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-regular-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1833,6 +1841,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-regular-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1852,6 +1861,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-regular-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1871,6 +1881,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-regular-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1890,6 +1901,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-ec2-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1909,6 +1921,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ec2-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1928,6 +1941,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ec2-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1947,6 +1961,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ec2-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1966,6 +1981,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ec2-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1985,6 +2001,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ecs-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2004,6 +2021,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-ecs-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2023,6 +2041,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-ecs-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2042,6 +2061,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-ecs-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2061,6 +2081,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-ecs-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2080,6 +2101,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-lambda-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2099,6 +2121,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-lambda-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2118,6 +2141,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-lambda-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2137,6 +2161,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-lambda-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2156,6 +2181,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-lambda-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2175,6 +2201,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-assume_role-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2194,6 +2221,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2213,6 +2241,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2232,6 +2261,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2251,6 +2281,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2270,6 +2301,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role_with_web_identity-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2289,6 +2321,7 @@ tasks:
       TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
 - name: test-aws-openssl-assume_role_with_web_identity-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2308,6 +2341,7 @@ tasks:
       TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
 - name: test-aws-openssl-assume_role_with_web_identity-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2327,6 +2361,7 @@ tasks:
       TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
 - name: test-aws-openssl-assume_role_with_web_identity-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2346,6 +2381,7 @@ tasks:
       TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
 - name: test-aws-openssl-assume_role_with_web_identity-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -14627,10 +14663,27 @@ buildvariants:
     CC: clang
   run_on: ubuntu1804-test
   tasks:
-  - debug-compile-aws
   - debug-compile-sasl-openssl-static
   - .authentication-tests .asan
-  - .test-aws
+- name: aws-ubuntu1804
+  display_name: AWS Tests (Ubuntu 18.04)
+  expansions:
+    CC: clang
+  run_on: ubuntu1804-small
+  tasks:
+  - debug-compile-aws
+  - .test-aws .4.4
+  - .test-aws .5.0
+  - .test-aws .6.0
+- name: aws-ubuntu2004
+  display_name: AWS Tests (Ubuntu 20.04)
+  expansions:
+    CC: clang
+  run_on: ubuntu2004-small
+  tasks:
+  - debug-compile-aws
+  - .test-aws .7.0
+  - .test-aws .latest
 - name: mongohouse
   display_name: Mongohouse Test
   run_on: ubuntu1804-test
@@ -14669,13 +14722,21 @@ buildvariants:
     - rhel90-arm64-small
   tags:
   - pr-merge-gate
-- name: versioned-api
-  display_name: Versioned API Tests
+- name: versioned-api-ubuntu1804
+  display_name: Versioned API Tests (Ubuntu 18.04)
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-nosasl-openssl
   - debug-compile-nosasl-nossl
-  - .versioned-api
+  - .versioned-api .5.0
+  - .versioned-api .6.0
+- name: versioned-api-ubuntu2004
+  display_name: Versioned API Tests (Ubuntu 20.04)
+  run_on: ubuntu2004-test
+  tasks:
+  - debug-compile-nosasl-openssl
+  - debug-compile-nosasl-nossl
+  - .versioned-api .7.0
 - name: testazurekms-variant
   display_name: Azure KMS
   run_on: debian10-small

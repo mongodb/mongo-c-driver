@@ -449,10 +449,32 @@ all_variants = [
         "clang 6.0 (Ubuntu 18.04)",
         "ubuntu1804-test",
         [
-            "debug-compile-aws",
             "debug-compile-sasl-openssl-static",
             ".authentication-tests .asan",
-            ".test-aws",
+        ],
+        {"CC": "clang"},
+    ),
+    Variant(
+        "aws-ubuntu1804",
+        "AWS Tests (Ubuntu 18.04)",
+        "ubuntu1804-small",
+        [
+            "debug-compile-aws",
+            ".test-aws .4.4",
+            ".test-aws .5.0",
+            ".test-aws .6.0",
+        ],
+        {"CC": "clang"},
+    ),
+    # Test 7.0+ with Ubuntu 20.04+ since MongoDB 7.0 no longer ships binaries for Ubuntu 18.04.
+    Variant(
+        "aws-ubuntu2004",
+        "AWS Tests (Ubuntu 20.04)",
+        "ubuntu2004-small",
+        [
+            "debug-compile-aws",
+            ".test-aws .7.0",
+            ".test-aws .latest",
         ],
         {"CC": "clang"},
     ),
@@ -487,10 +509,27 @@ all_variants = [
         tags=["pr-merge-gate"],
     ),
     Variant(
-        "versioned-api",
-        "Versioned API Tests",
+        "versioned-api-ubuntu1804",
+        "Versioned API Tests (Ubuntu 18.04)",
         "ubuntu1804-test",
-        ["debug-compile-nosasl-openssl", "debug-compile-nosasl-nossl", ".versioned-api"],
+        [
+            "debug-compile-nosasl-openssl",
+            "debug-compile-nosasl-nossl",
+            ".versioned-api .5.0",
+            ".versioned-api .6.0",
+        ],
+        {},
+    ),
+    # Test 7.0+ with Ubuntu 20.04+ since MongoDB 7.0 no longer ships binaries for Ubuntu 18.04.
+    Variant(
+        "versioned-api-ubuntu2004",
+        "Versioned API Tests (Ubuntu 20.04)",
+        "ubuntu2004-test",
+        [
+            "debug-compile-nosasl-openssl",
+            "debug-compile-nosasl-nossl",
+            ".versioned-api .7.0",
+        ],
         {},
     ),
 ]

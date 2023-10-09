@@ -1069,15 +1069,13 @@ test_select_after_try_once (void)
 
 
 static void
-test_multiple_selection_errors (void *context)
+test_multiple_selection_errors (void)
 {
-   const char *uri = "mongodb://doesntexist,example.com:2/?replicaSet=rs"
-                     "&connectTimeoutMS=100";
+   const char *const uri = "mongodb://doesntexist.invalid,example.invalid/"
+                           "?replicaSet=rs&connectTimeoutMS=100";
    mongoc_client_t *client;
    bson_t reply;
    bson_error_t error;
-
-   BSON_UNUSED (context);
 
    client = test_framework_client_new (uri, NULL);
    mongoc_client_command_simple (
@@ -1088,13 +1086,13 @@ test_multiple_selection_errors (void *context)
 
    /* Like:
     * "No suitable servers found (`serverselectiontryonce` set):
-    *  [Failed to resolve 'doesntexist']
-    *  [connection error calling hello on 'example.com:2']"
+    *  [Failed to resolve 'doesntexist.invalid']
+    *  [Failed to resolve 'example.invalid']
     */
    ASSERT_CONTAINS (error.message, "No suitable servers found");
    /* either "connection error" or "connection timeout" calling hello */
-   ASSERT_CONTAINS (error.message, "calling hello on 'example.com:2'");
-   ASSERT_CONTAINS (error.message, "[Failed to resolve 'doesntexist']");
+   ASSERT_CONTAINS (error.message, "[Failed to resolve 'doesntexist.invalid']");
+   ASSERT_CONTAINS (error.message, "[Failed to resolve 'example.invalid']");
 
    bson_destroy (&reply);
    mongoc_client_destroy (client);
@@ -2832,12 +2830,9 @@ test_topology_install (TestSuite *suite)
                                 NULL,
                                 NULL,
                                 test_framework_skip_if_slow);
-   TestSuite_AddFull (suite,
-                      "/Topology/multiple_selection_errors",
-                      test_multiple_selection_errors,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_offline);
+   TestSuite_Add (suite,
+                  "/Topology/multiple_selection_errors",
+                  test_multiple_selection_errors);
    TestSuite_AddMockServerTest (
       suite, "/Topology/connect_timeout/succeed", test_select_after_timeout);
    TestSuite_AddMockServerTest (
