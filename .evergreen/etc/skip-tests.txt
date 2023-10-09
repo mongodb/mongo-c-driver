@@ -30,18 +30,9 @@
 /ClientPool/pop_timeout # (CDRIVER-4348) precondition failed: duration_usec / 1000 >= 1990
 /Client/get_handshake_hello_response/pooled # (CDRIVER-4349) Assert Failure: "Unknown" != "PossiblePrimary"
 
-/inheritance/find/readPrefs # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/BulkOperation/error/unordered # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/command_monitoring/get_error # (CDRIVER-4350) request_matches_msg(): precondition failed: request
 /change_streams/legacy/change-streams # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /change_streams/legacy/change-streams-resume-allowlist # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /change_streams/legacy/change-streams-resume-errorLabels # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/Collection/find_with_opts/newoption # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/inheritance/replace_one/writeConcern # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/Collection/find_with_opts/newoption # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/unified/assertNumberConnectionsCheckedOut # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/unified/entity-client-cmap-events # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/unified/entity-client-storeEventsAsEntities # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /unified/entity-find-cursor # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /change_streams/legacy/change-streams-errors # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000'] (on ASAN Tests Ubuntu 18.04 build variant)
 
