@@ -37,7 +37,6 @@
 /change_streams/legacy/change-streams-resume-allowlist # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /change_streams/legacy/change-streams-resume-errorLabels # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /unified/assertNumberConnectionsCheckedOut # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/unified/entity-client-cmap-events # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /unified/entity-client-storeEventsAsEntities # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /unified/entity-find-cursor # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /change_streams/legacy/change-streams-errors # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000'] (on ASAN Tests Ubuntu 18.04 build variant)
