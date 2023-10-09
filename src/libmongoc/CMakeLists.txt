@@ -948,6 +948,7 @@ if (BUILD_SHARED_LIBS)
        )
     endif ()
 endif ()
+
 add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
 
 if (BUILD_SHARED_LIBS)
