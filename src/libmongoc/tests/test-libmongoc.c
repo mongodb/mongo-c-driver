@@ -1998,31 +1998,6 @@ test_framework_skip_if_offline (void)
 
 
 int
-test_framework_skip_if_rhel8_zseries (void)
-{
-   /* CDRIVER-3923: It appears that when running on RHEL8 on zSeries the
-    * /server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns test
-    * fails.  The best guess is that calling getaddrinfo() on that platform
-    * blocks for 5 seconds, while the test expects a server selection error
-    * after 3000 ms, or 3 seconds.  Skip the test when executing on RHEL8 on
-    * zSeries. */
-#ifdef __s390x__
-   char *name;
-   char *version;
-   _mongoc_linux_distro_scanner_get_distro (&name, &version);
-   bool rhel = strcmp (name, "Red Hat Enterprise Linux") == 0;
-   bool vers8 = version[0] == '8';
-   int skip = (rhel && vers8) ? 0 : 1;
-   bson_free (name);
-   bson_free (version);
-   return skip;
-#else
-   return 1;
-#endif
-}
-
-
-int
 test_framework_skip_if_slow (void)
 {
    return test_framework_getenv_bool ("MONGOC_TEST_SKIP_SLOW") ? 0 : 1;
