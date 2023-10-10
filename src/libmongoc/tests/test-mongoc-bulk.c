@@ -3491,7 +3491,6 @@ test_bulk_split (void)
    mongoc_collection_t *collection;
    bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk_op;
-   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    bson_iter_t iter, error_iter, indexnum;
    bson_t doc, result;
    bson_error_t error;
@@ -3506,20 +3505,35 @@ test_bulk_split (void)
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
-   // Start a session.
+   collection = get_test_collection (client, "split");
+   BSON_ASSERT (collection);
+
+   // Apply settings to guarantee "read-your-own-writes" semantics.
+   // Intended to address undercounts reading results reported in CDRIVER-4346.
    {
+      // https://www.mongodb.com/docs/manual/core/read-isolation-consistency-recency/#client-sessions-and-causal-consistency-guarantees
+      // describes how to guarantee "read-your-own-writes".
+
+      // Start a causally consistent session.
       mongoc_session_opt_t *sopts = mongoc_session_opts_new ();
       mongoc_session_opts_set_causal_consistency (sopts, true);
       session = mongoc_client_start_session (client, sopts, NULL);
       mongoc_session_opts_destroy (sopts);
+
+      // Apply read concern majority.
+      mongoc_read_concern_t *rc = mongoc_read_concern_new ();
+      mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+      mongoc_collection_set_read_concern (collection, rc);
+      mongoc_read_concern_destroy (rc);
+
+      // Apply write concern majority.
+      mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_collection_set_write_concern (collection, wc);
+      mongoc_write_concern_destroy (wc);
    }
 
-   collection = get_test_collection (client, "split");
-   BSON_ASSERT (collection);
 
-   mongoc_write_concern_set_w (wc, 1);
-
-   mongoc_write_concern_append (wc, &opts);
    bson_append_bool (&opts, "ordered", 7, false);
    ASSERT_OR_PRINT (mongoc_client_session_append (session, &opts, &error),
                     error);
@@ -3597,8 +3611,6 @@ test_bulk_split (void)
    mongoc_bulk_operation_destroy (bulk_op);
    bson_destroy (&opts);
    bson_destroy (&result);
-
-   mongoc_write_concern_destroy (wc);
 
    mongoc_collection_destroy (collection);
    mongoc_client_session_destroy (session);
