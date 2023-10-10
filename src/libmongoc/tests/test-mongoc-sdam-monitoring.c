@@ -848,7 +848,7 @@ _test_heartbeat_fails_dns (bool pooled)
     * client for a client pool). */
    start = bson_get_monotonic_time ();
    uri = mongoc_uri_new (
-      "mongodb://doesntexist.invalid/?serverSelectionTimeoutMS=3000");
+      "mongodb://doesntexist.invalid/?serverSelectionTimeoutMS=100");
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
       pool_set_heartbeat_event_callbacks (pool, &context);
