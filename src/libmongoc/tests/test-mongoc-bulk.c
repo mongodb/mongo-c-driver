@@ -3485,8 +3485,10 @@ test_numerous_unordered (void *ctx)
 
 
 static void
-test_bulk_split (void)
+test_bulk_split (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_t opts = BSON_INITIALIZER;
@@ -5330,7 +5332,12 @@ test_bulk_install (TestSuite *suite)
       suite, "/BulkOperation/OP_MSG/max_batch_size", test_bulk_max_batch_size);
    TestSuite_AddLive (
       suite, "/BulkOperation/OP_MSG/max_msg_size", test_bulk_max_msg_size);
-   TestSuite_AddLive (suite, "/BulkOperation/split", test_bulk_split);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/split",
+                      test_bulk_split,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_sessions);
    TestSuite_AddFull (suite,
                       "/BulkOperation/write_concern/split",
                       test_bulk_write_concern_split,
