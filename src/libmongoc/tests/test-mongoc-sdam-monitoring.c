@@ -862,13 +862,12 @@ _test_heartbeat_fails_dns (bool pooled)
    r = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
-   /* This should result in either a DNS failure or connection failure depending
-    * on the network. We assert the domain/code but not the message string. */
+   /* Expect a server selection error. */
    ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "");
+                          "No suitable servers found");
 
    duration = bson_get_monotonic_time () - start;
 
