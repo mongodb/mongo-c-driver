@@ -869,7 +869,6 @@ _test_heartbeat_fails_dns (bool pooled)
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
                           "No suitable servers found");
 
-   duration = bson_get_monotonic_time () - start;
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -877,6 +876,8 @@ _test_heartbeat_fails_dns (bool pooled)
    } else {
       mongoc_client_destroy (client);
    }
+
+   duration = bson_get_monotonic_time () - start;
 
    durations = &context.heartbeat_failed_durations;
 
