@@ -893,18 +893,14 @@ _test_heartbeat_fails_dns (bool pooled)
 }
 
 static void
-test_heartbeat_fails_dns_single (void *ctx)
+test_heartbeat_fails_dns_single (void)
 {
-   BSON_UNUSED (ctx);
-
    _test_heartbeat_fails_dns (false);
 }
 
 static void
-test_heartbeat_fails_dns_pooled (void *ctx)
+test_heartbeat_fails_dns_pooled (void)
 {
-   BSON_UNUSED (ctx);
-
    _test_heartbeat_fails_dns (true);
 }
 
@@ -1054,21 +1050,14 @@ test_sdam_monitoring_install (TestSuite *suite)
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
       test_heartbeat_events_pooled_failed);
-   TestSuite_AddFull (
+   TestSuite_Add (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/dns",
-      test_heartbeat_fails_dns_single,
-      NULL,
-      NULL,
-      test_framework_skip_if_offline);
-   TestSuite_AddFull (
+      test_heartbeat_fails_dns_single);
+   TestSuite_Add (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns",
-      test_heartbeat_fails_dns_pooled,
-      NULL,
-      NULL,
-      test_framework_skip_if_offline,
-      test_framework_skip_if_rhel8_zseries);
+      test_heartbeat_fails_dns_pooled);
    TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/no_duplicates",
