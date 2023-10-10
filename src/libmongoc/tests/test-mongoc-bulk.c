@@ -3498,12 +3498,21 @@ test_bulk_split (void)
    int n_docs;
    int i;
    uint32_t r;
+   mongoc_client_session_t *session;
 
    /* ensure we need two batches */
    n_docs = (int) test_framework_max_write_batch_size () + 10;
 
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
+
+   // Start a session.
+   {
+      mongoc_session_opt_t *sopts = mongoc_session_opts_new ();
+      mongoc_session_opts_set_causal_consistency (sopts, true);
+      session = mongoc_client_start_session (client, sopts, NULL);
+      mongoc_session_opts_destroy (sopts);
+   }
 
    collection = get_test_collection (client, "split");
    BSON_ASSERT (collection);
@@ -3512,6 +3521,8 @@ test_bulk_split (void)
 
    mongoc_write_concern_append (wc, &opts);
    bson_append_bool (&opts, "ordered", 7, false);
+   ASSERT_OR_PRINT (mongoc_client_session_append (session, &opts, &error),
+                    error);
    bulk_op =
       mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
@@ -3548,7 +3559,20 @@ test_bulk_split (void)
    BSON_ASSERT (!r);
 
    /* all 100,010 docs were inserted, either by the first or second bulk op */
-   ASSERT_COUNT (n_docs, collection);
+   {
+      bson_t count_opts = BSON_INITIALIZER;
+      ASSERT_OR_PRINT (
+         mongoc_client_session_append (session, &count_opts, &error), error);
+      int64_t count = mongoc_collection_count_documents (collection,
+                                                         tmp_bson ("{}"),
+                                                         &count_opts,
+                                                         NULL /* read_prefs */,
+                                                         NULL /* reply */,
+                                                         &error);
+      ASSERT_OR_PRINT (count != -1, error);
+      ASSERT_CMPINT64 (count, ==, 100010);
+      bson_destroy (&count_opts);
+   }
 
    /* result like {writeErrors: [{index: i, code: n, errmsg: ''}, ... ]} */
    bson_iter_init_find (&iter, &result, "writeErrors");
@@ -3577,6 +3601,7 @@ test_bulk_split (void)
    mongoc_write_concern_destroy (wc);
 
    mongoc_collection_destroy (collection);
+   mongoc_client_session_destroy (session);
    mongoc_client_destroy (client);
 }
 
