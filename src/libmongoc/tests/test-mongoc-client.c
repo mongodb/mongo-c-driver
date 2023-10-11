@@ -4089,7 +4089,18 @@ test_mongoc_client_get_handshake_hello_response_pooled (void)
    invalidated_sd =
       mongoc_client_get_server_description (client, monitor_sd->id);
    BSON_ASSERT (NULL != invalidated_sd);
-   ASSERT_CMPSTR ("Unknown", mongoc_server_description_type (invalidated_sd));
+
+   // Check the resulting server description.
+   // Invalidating sets the type to Unknown.
+   // A background monitor may have set the type to PossiblePrimary.
+   const char *got_description_type =
+      mongoc_server_description_type (invalidated_sd);
+   if (0 != strcmp ("Unknown", got_description_type) &&
+       0 != strcmp ("PossiblePrimary", got_description_type)) {
+      test_error ("Expected server to have type 'Unknown' or "
+                  "'PossiblePrimary', got: '%s'",
+                  got_description_type);
+   }
 
    /* The previously established connection should have a valid server
     * description. */
