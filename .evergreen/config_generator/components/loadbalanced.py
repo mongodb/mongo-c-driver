@@ -63,7 +63,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
                 'AUTH': auth_str,
                 'SSL': ssl_str,
                 'LOADBALANCED': 'loadbalanced',
-                'CC': 'gcc',
+                'CC': _COMPILER,
             })
         ],
     )
@@ -79,7 +79,7 @@ def tasks():
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 env={
-                    'CC': 'gcc',
+                    'CC': _COMPILER,
                     'CFLAGS': '-fno-omit-frame-pointer',
                     'EXTRA_CONFIGURE_FLAGS': '-DENABLE_EXTRA_ALIGNMENT=OFF',
                     'SSL': 'OPENSSL'
