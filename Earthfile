@@ -245,6 +245,45 @@ multibuild:
             --sasl=Cyrus --sasl=off \
             --tls=LibreSSL
 
+# test-vcpkg-classic :
+#   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and
+#   install a mongo-c-driver build in "classic mode". *Does not* use the local
+#   mongo-c-driver repository.
+test-vcpkg-classic:
+    FROM +vcpkg-base
+    RUN vcpkg install mongo-c-driver
+    RUN rm -rf _build && \
+        make test-classic
+
+# test-vcpkg-manifest-mode :
+#   Builds src/libmongoc/examples/cmake/vcpkg by using vcpkg to download and
+#   install a mongo-c-driver package based on the content of a vcpkg.json manifest
+#   that is injected into the project.
+test-vcpkg-manifest-mode:
+    FROM +vcpkg-base
+    RUN apk add jq
+    RUN jq -n ' { \
+            name: "test-app", \
+            version: "1.2.3", \
+            dependencies: ["mongo-c-driver"], \
+        }' > vcpkg.json && \
+        cat vcpkg.json
+    RUN rm -rf _build && \
+        make test-manifest-mode
+
+vcpkg-base:
+    FROM alpine:3.18
+    RUN apk add cmake curl gcc g++ musl-dev ninja-is-really-ninja zip unzip tar \
+                build-base git pkgconf perl bash linux-headers
+    ENV VCPKG_ROOT=/opt/vcpkg-git
+    ENV VCPKG_FORCE_SYSTEM_BINARIES=1
+    GIT CLONE --branch=2023.06.20 https://github.com/microsoft/vcpkg $VCPKG_ROOT
+    RUN sh $VCPKG_ROOT/bootstrap-vcpkg.sh -disableMetrics && \
+        install -spD -m 755 $VCPKG_ROOT/vcpkg /usr/local/bin/
+    LET src_dir=/opt/mongoc-vcpkg-example
+    COPY src/libmongoc/examples/cmake/vcpkg/ $src_dir
+    WORKDIR $src_dir
+
 # run :
 #   Run one or more targets simultaneously.
 #

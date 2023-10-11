@@ -376,7 +376,7 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
       "admin",
       tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': { 'times': 2 }, "
                 "'data': {'closeConnection': true, 'failCommands': ['ping', "
-                "'isMaster']}}"),
+                "'hello']}}"),
       NULL /* read prefs */,
       NULL /* reply */,
       &error);
@@ -393,7 +393,7 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
       error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
 
    /* The next attempted command should attempt to scan, and fail when
-    * performing the handshake with the isMaster command. */
+    * performing the handshake with the hello command. */
    ok = mongoc_client_command_simple (client,
                                       "admin",
                                       tmp_bson ("{'ping': 1}"),

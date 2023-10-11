@@ -4,12 +4,10 @@
 
 
 static void
-test_mongoc_usleep_basic (void *unused)
+test_mongoc_usleep_basic (void)
 {
    int64_t start;
    int64_t duration;
-
-   BSON_UNUSED (unused);
 
    start = bson_get_monotonic_time ();
    _mongoc_usleep (50 * 1000); /* 50 ms */
@@ -21,10 +19,5 @@ test_mongoc_usleep_basic (void *unused)
 void
 test_usleep_install (TestSuite *suite)
 {
-   TestSuite_AddFull (suite,
-                      "/Sleep/basic",
-                      test_mongoc_usleep_basic,
-                      NULL /* dtor */,
-                      NULL /* dtor */,
-                      test_framework_skip_if_time_sensitive);
+   TestSuite_Add (suite, "/Sleep/basic", test_mongoc_usleep_basic);
 }

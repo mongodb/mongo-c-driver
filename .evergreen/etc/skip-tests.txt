@@ -17,8 +17,6 @@
 # /skip/entire/test # this will be output by the runner as the skip reason
 # /skip/part/of/spec/test/"sub-test description" # this will also be output
 
-/Topology/slow_server/pooled # CDRIVER-4257
-
 /mongohouse/aggregate # CDRIVER-4333
 /mongohouse/estimatedDocumentCount # CDRIVER-4333
 /mongohouse/find # CDRIVER-4333
@@ -27,46 +25,16 @@
 /mongohouse/listDatabases # CDRIVER-4333
 /mongohouse/runCommand # CDRIVER-4333
 
-/versioned_api/transaction-handling/"All commands in a transaction declare an API version" # (CDRIVER-4335) API parameters are only allowed in the first command of a multi-document transaction
-/versioned_api/test-commands-deprecation-errors # (CDRIVER-4336) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/versioned_api/test-commands-strict-mode # (CDRIVER-4336) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/versioned_api/runcommand-helper-no-api-version-declared # (CDRIVER-4336) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/command_monitoring/unified/redacted-commands # (CDRIVER-4337) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/Topology/request_scan_on_error # (CDRIVER-4338) precondition failed: checks_cmp (&checks, "n_succeeded", '=', 2), and other times fails with a socket timeout
-/streamable/topology_version/update # (CDRIVER-4339) _force_scan(): precondition failed: sd
-/Stepdown/not_primary_keep # (CDRIVER-4341) Assert Failure: 673 == 674
-/Topology/multiple_selection_errors # (CDRIVER-4342) [No suitable servers found (`serverSelectionTryOnce` set): [Failed to resolve 'doesntexist'] [Failed to resolve 'example.com']] does not contain [calling hello on 'example.com:2']
-/Topology/server_removed/single # (CDRIVER-4343) error domain 1 doesn't match expected 2
 /change_stream/live/track_resume_token # (CDRIVER-4344) Condition 'bson_compare (resume_token, &doc2_rt) == 0' failed
-/change_stream/resumable_error # (CDRIVER-4345) getMore: not found
-/BulkOperation/split # (CDRIVER-4346) Assert Failure: count of split_1512376901_50824 is 97759, not 100010
 /ClientPool/pop_timeout # (CDRIVER-4348) precondition failed: duration_usec / 1000 >= 1990
-/Client/get_handshake_hello_response/pooled # (CDRIVER-4349) Assert Failure: "Unknown" != "PossiblePrimary"
 
-# These all look like they could be related to CDRIVER-4111
-/Client/fetch_stream/retry/fail # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/command/read_prefs/pooled # (CDRIVER-4340) request_matches_msg(): precondition failed: request
-/Client/mongos_seeds_reconnect/single # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/mongos_seeds_connect/pooled # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/exhaust_cursor/err/server/2nd_batch/pooled # (CDRIVER-4340) looks like the mock server hangs up prematurely
-/Client/rs_seeds_connect/pooled # (CDRIVER-4340) hang up! monitor: [127.0.0.1:59723] command or network error occurred: Failed to read 4 bytes: socket error or timeout
-/inheritance/find/readPrefs # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/BulkOperation/error/unordered # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/command_monitoring/get_error # (CDRIVER-4350) request_matches_msg(): precondition failed: request
 /change_streams/legacy/change-streams # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /change_streams/legacy/change-streams-resume-allowlist # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /change_streams/legacy/change-streams-resume-errorLabels # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/Collection/find_with_opts/newoption # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/inheritance/replace_one/writeConcern # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/Collection/find_with_opts/newoption # (CDRIVER-4350) request_matches_msg(): precondition failed: request
-/unified/assertNumberConnectionsCheckedOut # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/unified/entity-client-cmap-events # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
-/unified/entity-client-storeEventsAsEntities # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /unified/entity-find-cursor # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000']
 /change_streams/legacy/change-streams-errors # (CDRIVER-4350) Could not establish stream for node 127.0.0.1:8000: [TLS handshake failed: Connection timed out calling hello on '127.0.0.1:8000'] (on ASAN Tests Ubuntu 18.04 build variant)
 
 /transactions/legacy/mongos-recovery-token/"commitTransaction retry fails on new mongos" # fails with server selection timeout (CDRIVER-4268)
-/crud/unified/aggregate-out-readConcern/"readConcern available with out stage" # server error on sharded: "PlanExecutor error" (CDRIVER-4161)
 /transactions/legacy/pin-mongos/"unpin after transient error within a transaction and commit" # (CDRIVER-4351) server selection timeout (on ASAN Tests Ubuntu 18.04 build variant)
 /Samples # (CDRIVER-4352) strange "heartbeat failed" error
 /server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns # (CDRIVER-4353) this initially seemed like a zSeries w/ RHEL8 issue, but it also appeared on arm64 w/ Ubuntu 18.04

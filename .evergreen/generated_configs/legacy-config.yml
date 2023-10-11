@@ -307,18 +307,6 @@ functions:
         . ./activate-authawsvenv.sh
         popd # ../drivers-evergreen-tools/.evergreen/auth_aws
         bash .evergreen/scripts/run-aws-tests.sh
-  start load balancer:
-  - command: shell.exec
-    params:
-      shell: bash
-      script: |-
-        set -o errexit
-        export DRIVERS_TOOLS=./drivers-evergreen-tools
-        export MONGODB_URI="${MONGODB_URI}"
-        bash $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
-  - command: expansions.update
-    params:
-      file: lb-expansion.yml
 tasks:
 - name: hardened-compile
   tags:
@@ -1157,7 +1145,7 @@ tasks:
       SSL: ssl
       TOPOLOGY: sharded_cluster
   - func: fetch-det
-  - func: start load balancer
+  - func: start-load-balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
   - func: run-tests
@@ -1434,6 +1422,7 @@ tasks:
       ASAN: 'on'
 - name: test-versioned-api-7.0
   tags:
+  - '7.0'
   - versioned-api
   depends_on:
     name: debug-compile-nosasl-openssl
@@ -1457,6 +1446,7 @@ tasks:
       SSL: ssl
 - name: test-versioned-api-accept-version-two-7.0
   tags:
+  - '7.0'
   - versioned-api
   depends_on:
     name: debug-compile-nosasl-nossl
@@ -1480,6 +1470,7 @@ tasks:
       SSL: nossl
 - name: test-versioned-api-6.0
   tags:
+  - '6.0'
   - versioned-api
   depends_on:
     name: debug-compile-nosasl-openssl
@@ -1503,6 +1494,7 @@ tasks:
       SSL: ssl
 - name: test-versioned-api-accept-version-two-6.0
   tags:
+  - '6.0'
   - versioned-api
   depends_on:
     name: debug-compile-nosasl-nossl
@@ -1526,6 +1518,7 @@ tasks:
       SSL: nossl
 - name: test-versioned-api-5.0
   tags:
+  - '5.0'
   - versioned-api
   depends_on:
     name: debug-compile-nosasl-openssl
@@ -1549,6 +1542,7 @@ tasks:
       SSL: ssl
 - name: test-versioned-api-accept-version-two-5.0
   tags:
+  - '5.0'
   - versioned-api
   depends_on:
     name: debug-compile-nosasl-nossl
@@ -1795,6 +1789,7 @@ tasks:
   - func: upload-build
 - name: test-aws-openssl-regular-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1814,6 +1809,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-regular-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1833,6 +1829,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-regular-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1852,6 +1849,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-regular-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1871,6 +1869,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-regular-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1890,6 +1889,7 @@ tasks:
       TESTCASE: REGULAR
 - name: test-aws-openssl-ec2-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1909,6 +1909,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ec2-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1928,6 +1929,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ec2-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1947,6 +1949,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ec2-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1966,6 +1969,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ec2-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -1985,6 +1989,7 @@ tasks:
       TESTCASE: EC2
 - name: test-aws-openssl-ecs-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2004,6 +2009,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-ecs-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2023,6 +2029,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-ecs-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2042,6 +2049,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-ecs-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2061,6 +2069,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-ecs-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2080,6 +2089,7 @@ tasks:
       TESTCASE: ECS
 - name: test-aws-openssl-lambda-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2099,6 +2109,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-lambda-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2118,6 +2129,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-lambda-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2137,6 +2149,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-lambda-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2156,6 +2169,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-lambda-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2175,6 +2189,7 @@ tasks:
       TESTCASE: LAMBDA
 - name: test-aws-openssl-assume_role-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2194,6 +2209,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2213,6 +2229,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2232,6 +2249,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2251,6 +2269,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2270,6 +2289,7 @@ tasks:
       TESTCASE: ASSUME_ROLE
 - name: test-aws-openssl-assume_role_with_web_identity-latest
   tags:
+  - latest
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2289,6 +2309,7 @@ tasks:
       TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
 - name: test-aws-openssl-assume_role_with_web_identity-7.0
   tags:
+  - '7.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2308,6 +2329,7 @@ tasks:
       TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
 - name: test-aws-openssl-assume_role_with_web_identity-6.0
   tags:
+  - '6.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2327,6 +2349,7 @@ tasks:
       TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
 - name: test-aws-openssl-assume_role_with_web_identity-5.0
   tags:
+  - '5.0'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -2346,6 +2369,7 @@ tasks:
       TESTCASE: ASSUME_ROLE_WITH_WEB_IDENTITY
 - name: test-aws-openssl-assume_role_with_web_identity-4.4
   tags:
+  - '4.4'
   - test-aws
   depends_on:
     name: debug-compile-aws
@@ -13753,230 +13777,6 @@ tasks:
         set -o errexit
         LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa bash .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
-- name: test-loadbalanced-asan-auth-openssl-7.0
-  tags:
-  - '7.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '7.0'
-      SSL: ssl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      LOADBALANCED: loadbalanced
-      SSL: ssl
-- name: test-loadbalanced-asan-auth-openssl-6.0
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '6.0'
-      SSL: ssl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      LOADBALANCED: loadbalanced
-      SSL: ssl
-- name: test-loadbalanced-asan-auth-openssl-5.0
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '5.0'
-      SSL: ssl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      LOADBALANCED: loadbalanced
-      SSL: ssl
-- name: test-loadbalanced-asan-auth-openssl-latest
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: auth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: latest
-      SSL: ssl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      LOADBALANCED: loadbalanced
-      SSL: ssl
-- name: test-loadbalanced-asan-noauth-nossl-7.0
-  tags:
-  - '7.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '7.0'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      LOADBALANCED: loadbalanced
-      SSL: nossl
-- name: test-loadbalanced-asan-noauth-nossl-6.0
-  tags:
-  - '6.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '6.0'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      LOADBALANCED: loadbalanced
-      SSL: nossl
-- name: test-loadbalanced-asan-noauth-nossl-5.0
-  tags:
-  - '5.0'
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: '5.0'
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      LOADBALANCED: loadbalanced
-      SSL: nossl
-- name: test-loadbalanced-asan-noauth-nossl-latest
-  tags:
-  - latest
-  - test-asan
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: fetch-det
-  - func: bootstrap-mongo-orchestration
-    vars:
-      AUTH: noauth
-      LOAD_BALANCER: 'on'
-      MONGODB_VERSION: latest
-      SSL: nossl
-      TOPOLOGY: sharded_cluster
-  - func: run-simple-http-server
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run-tests
-    vars:
-      ASAN: 'on'
-      AUTH: noauth
-      LOADBALANCED: loadbalanced
-      SSL: nossl
 - name: testazurekms-task
   commands:
   - func: fetch-source
@@ -14627,10 +14427,27 @@ buildvariants:
     CC: clang
   run_on: ubuntu1804-test
   tasks:
-  - debug-compile-aws
   - debug-compile-sasl-openssl-static
   - .authentication-tests .asan
-  - .test-aws
+- name: aws-ubuntu1804
+  display_name: AWS Tests (Ubuntu 18.04)
+  expansions:
+    CC: clang
+  run_on: ubuntu1804-small
+  tasks:
+  - debug-compile-aws
+  - .test-aws .4.4
+  - .test-aws .5.0
+  - .test-aws .6.0
+- name: aws-ubuntu2004
+  display_name: AWS Tests (Ubuntu 20.04)
+  expansions:
+    CC: clang
+  run_on: ubuntu2004-small
+  tasks:
+  - debug-compile-aws
+  - .test-aws .7.0
+  - .test-aws .latest
 - name: mongohouse
   display_name: Mongohouse Test
   run_on: ubuntu1804-test
@@ -14669,13 +14486,21 @@ buildvariants:
     - rhel90-arm64-small
   tags:
   - pr-merge-gate
-- name: versioned-api
-  display_name: Versioned API Tests
+- name: versioned-api-ubuntu1804
+  display_name: Versioned API Tests (Ubuntu 18.04)
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-nosasl-openssl
   - debug-compile-nosasl-nossl
-  - .versioned-api
+  - .versioned-api .5.0
+  - .versioned-api .6.0
+- name: versioned-api-ubuntu2004
+  display_name: Versioned API Tests (Ubuntu 20.04)
+  run_on: ubuntu2004-test
+  tasks:
+  - debug-compile-nosasl-openssl
+  - debug-compile-nosasl-nossl
+  - .versioned-api .7.0
 - name: testazurekms-variant
   display_name: Azure KMS
   run_on: debian10-small

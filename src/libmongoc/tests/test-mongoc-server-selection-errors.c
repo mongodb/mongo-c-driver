@@ -91,9 +91,9 @@ static void
 test_server_selection_error_dns_direct_single (void)
 {
    server_selection_error_dns (
-      "mongodb://example-localhost:27017/",
+      "mongodb://example-localhost.invalid:27017/",
       "No suitable servers found (`serverSelectionTryOnce` set): "
-      "[Fake error for 'example-localhost']",
+      "[Fake error for 'example-localhost.invalid']",
       false,
       false);
 }
@@ -104,9 +104,9 @@ test_server_selection_error_dns_direct_pooled (void *ctx)
    BSON_UNUSED (ctx);
 
    server_selection_error_dns (
-      "mongodb://example-localhost:27017/",
+      "mongodb://example-localhost.invalid:27017/",
       "No suitable servers found: `serverSelectionTimeoutMS` expired: "
-      "[Fake error for 'example-localhost']",
+      "[Fake error for 'example-localhost.invalid']",
       false,
       true);
 }
@@ -115,10 +115,11 @@ static void
 test_server_selection_error_dns_multi_fail_single (void)
 {
    server_selection_error_dns (
-      "mongodb://example-localhost:27017,other-example-localhost:27017/",
+      "mongodb://"
+      "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
       "No suitable servers found (`serverSelectionTryOnce` set):"
-      " [Fake error for 'example-localhost']"
-      " [Fake error for 'other-example-localhost']",
+      " [Fake error for 'example-localhost.invalid']"
+      " [Fake error for 'other-example-localhost.invalid']",
       false,
       false);
 }
@@ -129,10 +130,11 @@ test_server_selection_error_dns_multi_fail_pooled (void *ctx)
    BSON_UNUSED (ctx);
 
    server_selection_error_dns (
-      "mongodb://example-localhost:27017,other-example-localhost:27017/",
+      "mongodb://"
+      "example-localhost.invalid:27017,other-example-localhost.invalid:27017/",
       "No suitable servers found: `serverSelectionTimeoutMS` expired:"
-      " [Fake error for 'example-localhost']"
-      " [Fake error for 'other-example-localhost']",
+      " [Fake error for 'example-localhost.invalid']"
+      " [Fake error for 'other-example-localhost.invalid']",
       false,
       true);
 }
@@ -144,9 +146,9 @@ _test_server_selection_error_dns_multi_success (bool pooled)
    char *uri_str;
 
    host = test_framework_get_host ();
-   uri_str = bson_strdup_printf ("mongodb://example-localhost:27017,"
+   uri_str = bson_strdup_printf ("mongodb://example-localhost.invalid:27017,"
                                  "%s:%d,"
-                                 "other-example-localhost:27017/",
+                                 "other-example-localhost.invalid:27017/",
                                  host,
                                  test_framework_get_port ());
 

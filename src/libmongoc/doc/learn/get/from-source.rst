@@ -354,7 +354,7 @@ with |libmongoc|. Follow the process at :ref:`learn.get.build` and
 
 .. [#vs_env]
 
-  If you with to configure and build the project using Microsoft Visual C++,
+  If you wish to configure and build the project using Microsoft Visual C++,
   then the Visual C++ tools and environment variables may need to be set when
   running any CMake or build command.
 
